@@ -89,6 +89,8 @@ mod test_usage_without_macros_or_plugins {
         let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
         let actual_ids = connection.query_all::<_, i32>(&select_id).unwrap();
         let actual_names = connection.query_all::<_, String>(&select_name).unwrap();
+        // fails to compile (we should test this)
+        // let actual_names = connection.query_all::<_, String>(&select_id).unwrap();
 
         assert_eq!(expected_ids, actual_ids);
         assert_eq!(expected_names, actual_names);
