@@ -1,5 +1,7 @@
 extern crate postgres;
 
+use {Queriable, QuerySource};
+
 use self::postgres::rows::Row;
 
 pub struct Serial;
@@ -7,22 +9,36 @@ pub struct VarChar;
 
 pub trait NativeSqlType {}
 
-impl NativeSqlType for Serial {}
-impl NativeSqlType for VarChar {}
-
 pub trait FromSql<A: NativeSqlType> {
     fn from_sql(row: &Row, idx: usize) -> Self;
 }
 
-impl FromSql<Serial> for i32 {
-    fn from_sql(row: &Row, idx: usize) -> Self {
-        row.get(idx)
+macro_rules! primitive_impls {
+    ($($Source:ident -> $Target:ident),+,) => {
+        $(
+            impl NativeSqlType for $Source {}
+            impl FromSql<$Source> for $Target {
+                fn from_sql(row: &Row, idx: usize) -> Self {
+                    row.get(idx)
+                }
+            }
+
+            impl<QS> Queriable<QS> for $Target where
+                QS: QuerySource<SqlType=$Source>
+            {
+                type Row = Self;
+
+                fn build(row: Self::Row) -> Self {
+                    row
+                }
+            }
+        )+
     }
 }
-impl FromSql<VarChar> for String {
-    fn from_sql(row: &Row, idx: usize) -> Self {
-        row.get(idx)
-    }
+
+primitive_impls! {
+    Serial -> i32,
+    VarChar -> String,
 }
 
 macro_rules! tuple_impls {
