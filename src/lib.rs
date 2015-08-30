@@ -22,6 +22,7 @@ mod test_usage_without_compiler_plugins {
         age: Option<i16>,
     }
 
+    // Compiler plugin will automatically invoke this based on schema
     table! {
         users {
             id -> Serial,
@@ -30,6 +31,7 @@ mod test_usage_without_compiler_plugins {
         }
     }
 
+    // Compiler plugin will replace this with #[derive(Queriable)]
     queriable! {
         User {
             id -> i32,
@@ -79,12 +81,14 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let select_id = users.select(id);
-        // fails to compile (we should test this)
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
         // let select_id = users::table.select(posts::id);
         let select_name = users.select(name);
         let ids = connection.query_all(&select_id).unwrap();
         let names: Vec<String> = connection.query_all(&select_name).unwrap();
-        // fails to compile (we should test this)
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
         // let names: Vec<String> = connection.query_all(&select_id).unwrap();
 
         assert_eq!(vec![1, 2], ids);
@@ -120,7 +124,8 @@ mod test_usage_without_compiler_plugins {
 
         let select_count = unsafe { users::table.select_sql::<types::BigInt>("COUNT(*)") };
         let get_count = || connection.query_one::<_, i64>(&select_count).unwrap();
-        // fails to compile (we should test this)
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
         // let actual_count = connection.query_one::<_, String>(&select_count).unwrap();
 
         assert_eq!(Some(2), get_count());
