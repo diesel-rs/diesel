@@ -14,7 +14,6 @@ pub use connection::Connection;
 mod test_usage_without_compiler_plugins {
     use super::*;
     use types::NativeSqlType;
-    use std::env;
 
     #[derive(PartialEq, Eq, Debug)]
     struct User {
@@ -36,21 +35,23 @@ mod test_usage_without_compiler_plugins {
         }
     }
 
-    fn connection() -> Connection {
-        let connection_url = env::var("DATABASE_URL").ok()
-            .expect("DATABASE_URL must be set in order to run tests");
-        let result = Connection::establish(&connection_url).unwrap();
-        result.execute("BEGIN").unwrap();
-        result
-    }
-
-    fn setup_users_table(connection: &Connection) {
-        connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL)")
+    #[test]
+    fn selecting_basic_data() {
+        let connection = connection();
+        setup_users_table(&connection);
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
             .unwrap();
+
+        let expected_data = vec![
+            (1i32, "Sean".to_string()),
+            (2i32, "Tess".to_string()),
+         ];
+        let actual_data = connection.query_all(&users::table).unwrap();
+        assert_eq!(expected_data, actual_data);
     }
 
     #[test]
-    fn it_can_perform_a_basic_query() {
+    fn selecting_a_struct() {
         let connection = connection();
         setup_users_table(&connection);
         connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
@@ -102,5 +103,18 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         assert_eq!(Some(3), get_count());
+    }
+
+    fn connection() -> Connection {
+        let connection_url = ::std::env::var("DATABASE_URL").ok()
+            .expect("DATABASE_URL must be set in order to run tests");
+        let result = Connection::establish(&connection_url).unwrap();
+        result.execute("BEGIN").unwrap();
+        result
+    }
+
+    fn setup_users_table(connection: &Connection) {
+        connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL)")
+            .unwrap();
     }
 }

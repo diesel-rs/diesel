@@ -3,6 +3,7 @@ extern crate postgres;
 use self::postgres::rows::Row;
 
 use super::{NativeSqlType, FromSql};
+use Queriable;
 
 macro_rules! tuple_impls {
     ($(
@@ -20,6 +21,17 @@ macro_rules! tuple_impls {
                     (
                         $($T::from_sql(row, idx + $idx)),+
                     )
+                }
+            }
+
+            impl<$($T),+,$($ST),+> Queriable<($($ST),+)> for ($($T),+) where
+                $($T: FromSql<$ST>),+,
+                $($ST: NativeSqlType),+
+            {
+                type Row = Self;
+
+                fn build(row: Self::Row) -> Self {
+                    row
                 }
             }
         )+
