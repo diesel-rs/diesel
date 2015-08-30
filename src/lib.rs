@@ -48,8 +48,8 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let expected_data = vec![
-            (1i32, "Sean".to_string(), None::<i16>),
-            (2i32, "Tess".to_string(), None::<i16>),
+            (1, "Sean".to_string(), None::<i16>),
+            (2, "Tess".to_string(), None::<i16>),
          ];
         let actual_data = connection.query_all(&users::table).unwrap();
         assert_eq!(expected_data, actual_data);
