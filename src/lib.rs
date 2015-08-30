@@ -70,7 +70,7 @@ mod test_usage_without_compiler_plugins {
 
     #[test]
     fn with_safe_select() {
-        use self::users::*;
+        use self::users::columns::*;
         use self::users::table as users;
 
         let connection = connection();
@@ -93,7 +93,7 @@ mod test_usage_without_compiler_plugins {
 
     #[test]
     fn selecting_multiple_columns() {
-        use self::users::*;
+        use self::users::columns::*;
         use self::users::table as users;
 
         let connection = connection();

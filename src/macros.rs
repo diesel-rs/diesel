@@ -5,7 +5,7 @@ macro_rules! table {
         }
     ) => {
         mod $name {
-            use {QuerySource, Table, Column};
+            use {QuerySource, Table};
             use types::*;
 
             #[allow(non_camel_case_types)]
@@ -29,6 +29,10 @@ macro_rules! table {
                 }
             }
 
+            pub mod columns {
+                use super::table;
+                use {Table, Column};
+                use types::*;
             $(
                 #[allow(non_camel_case_types, dead_code)]
                 pub struct $column_name;
@@ -38,7 +42,9 @@ macro_rules! table {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
                 }
-            )+
+            )+}
+
+            pub use self::columns::*;
         }
     }
 }
