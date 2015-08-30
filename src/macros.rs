@@ -1,17 +1,18 @@
 macro_rules! table {
     (
         $name:ident {
-            $($column_name:ident -> $Type:ident,)+
+            $($column_name:ident -> $Type:ty,)+
         }
     ) => {
         mod $name {
-            use {types, QuerySource, Table, Column};
+            use {QuerySource, Table, Column};
+            use types::*;
 
             #[allow(non_camel_case_types)]
             pub struct table;
 
             unsafe impl QuerySource for table {
-                type SqlType = ($(types::$Type),+);
+                type SqlType = ($($Type),+);
 
                 fn select_clause(&self) -> &str {
                     "*"
@@ -29,10 +30,10 @@ macro_rules! table {
             }
 
             $(
-                #[allow(non_camel_case_types)]
+                #[allow(non_camel_case_types, dead_code)]
                 pub struct $column_name;
 
-                unsafe impl Column<types::$Type, table> for $column_name {
+                unsafe impl Column<$Type, table> for $column_name {
                     fn name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
@@ -45,7 +46,7 @@ macro_rules! table {
 macro_rules! queriable {
     (
         $Struct:ident {
-            $($field_name:ident -> $Type:ident,)+
+            $($field_name:ident -> $Type:ty,)+
         }
     ) => {
         impl <ST> Queriable<ST> for $Struct where

@@ -19,12 +19,14 @@ mod test_usage_without_compiler_plugins {
     struct User {
         id: i32,
         name: String,
+        age: Option<i16>,
     }
 
     table! {
         users {
             id -> Serial,
             name -> VarChar,
+            age -> Nullable<SmallInt>,
         }
     }
 
@@ -32,6 +34,7 @@ mod test_usage_without_compiler_plugins {
         User {
             id -> i32,
             name -> String,
+            age -> Option<i16>,
         }
     }
 
@@ -43,8 +46,8 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let expected_data = vec![
-            (1i32, "Sean".to_string()),
-            (2i32, "Tess".to_string()),
+            (1i32, "Sean".to_string(), None::<i16>),
+            (2i32, "Tess".to_string(), None::<i16>),
          ];
         let actual_data = connection.query_all(&users::table).unwrap();
         assert_eq!(expected_data, actual_data);
@@ -58,8 +61,8 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let expected_users = vec![
-            User { id: 1, name: "Sean".to_string() },
-            User { id: 2, name: "Tess".to_string() },
+            User { id: 1, name: "Sean".to_string(), age: None },
+            User { id: 2, name: "Tess".to_string(), age: None },
          ];
         let actual_users = connection.query_all(&users::table).unwrap();
         assert_eq!(expected_users, actual_users);
@@ -114,7 +117,10 @@ mod test_usage_without_compiler_plugins {
     }
 
     fn setup_users_table(connection: &Connection) {
-        connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL)")
-            .unwrap();
+        connection.execute("CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR NOT NULL,
+            age SMALLINT
+        )").unwrap();
     }
 }

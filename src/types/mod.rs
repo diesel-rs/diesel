@@ -11,6 +11,7 @@ pub struct TinyInt;
 pub struct SmallInt;
 pub struct Integer;
 pub struct BigInt;
+pub struct Nullable<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {}
 

@@ -1,8 +1,9 @@
 extern crate postgres;
 
 use self::postgres::rows::Row;
+use self::postgres::types::FromSql as NativeFromSql;
 
-use super::{NativeSqlType, FromSql};
+use super::{NativeSqlType, FromSql, Nullable};
 use Queriable;
 
 macro_rules! primitive_impls {
@@ -33,4 +34,14 @@ primitive_impls! {
     SmallInt -> i16,
     Integer -> i32,
     BigInt -> i64,
+}
+
+impl<T: NativeSqlType> NativeSqlType for Nullable<T> {}
+impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
+    T: FromSql<ST> + NativeFromSql,
+    ST: NativeSqlType,
+{
+    fn from_sql(row: &Row, idx: usize) -> Self {
+        row.get(idx)
+    }
 }
