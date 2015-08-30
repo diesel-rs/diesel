@@ -3,13 +3,15 @@ pub mod types;
 mod query_source;
 mod connection;
 mod result;
+#[macro_use]
+mod macros;
 
 pub use result::*;
 pub use query_source::{QuerySource, Queriable};
 pub use connection::Connection;
 
 #[cfg(test)]
-mod test_usage_without_macros_or_plugins {
+mod test_usage_without_compiler_plugins {
     use super::{types, QuerySource, Queriable, Connection};
     use types::NativeSqlType;
     use std::env;
@@ -20,31 +22,17 @@ mod test_usage_without_macros_or_plugins {
         name: String,
     }
 
-    struct UserTable;
-
-    unsafe impl QuerySource for UserTable {
-        type SqlType = (types::Serial, types::VarChar);
-
-        fn select_clause(&self) -> &str {
-            "*"
-        }
-
-        fn from_clause(&self) -> &str {
-            "users"
+    table! {
+        users {
+            id -> Serial,
+            name -> VarChar,
         }
     }
 
-    impl<ST> Queriable<ST> for User where
-        ST: NativeSqlType,
-        (i32, String): types::FromSql<ST>,
-    {
-        type Row = (i32, String);
-
-        fn build(row: (i32, String)) -> Self {
-            User {
-                id: row.0,
-                name: row.1,
-            }
+    queriable! {
+        User {
+            id -> i32,
+            name -> String,
         }
     }
 
@@ -72,7 +60,7 @@ mod test_usage_without_macros_or_plugins {
             User { id: 1, name: "Sean".to_string() },
             User { id: 2, name: "Tess".to_string() },
          ];
-        let actual_users = connection.query_all(&UserTable).unwrap();
+        let actual_users = connection.query_all(&users::table).unwrap();
         assert_eq!(expected_users, actual_users);
     }
 
@@ -83,8 +71,8 @@ mod test_usage_without_macros_or_plugins {
         connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
             .unwrap();
 
-        let select_id = unsafe { UserTable.select::<types::Serial>("id") };
-        let select_name = unsafe { UserTable.select::<types::VarChar>("name") };
+        let select_id = unsafe { users::table.select::<types::Serial>("id") };
+        let select_name = unsafe { users::table.select::<types::VarChar>("name") };
 
         let expected_ids = vec![1, 2];
         let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
