@@ -1,8 +1,8 @@
 use types::{FromSql, NativeSqlType};
 use std::marker::PhantomData;
 
-pub trait Queriable<QS: QuerySource> {
-    type Row: FromSql<QS::SqlType>;
+pub trait Queriable<ST: NativeSqlType> {
+    type Row: FromSql<ST>;
 
     fn build(row: Self::Row) -> Self;
 }

@@ -24,7 +24,7 @@ impl Connection {
 
     pub fn query_all<T, U>(&self, source: &T) -> Result<Vec<U>> where
         T: QuerySource,
-        U: Queriable<T>,
+        U: Queriable<T::SqlType>,
     {
         let query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
         let stmt = try!(self.internal_connection.prepare(&query));

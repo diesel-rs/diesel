@@ -1,11 +1,12 @@
 extern crate postgres;
 
-use {Queriable, QuerySource};
+use Queriable;
 
 use self::postgres::rows::Row;
 
 pub struct Serial;
 pub struct VarChar;
+pub struct Integer;
 
 pub trait NativeSqlType {}
 
@@ -23,9 +24,7 @@ macro_rules! primitive_impls {
                 }
             }
 
-            impl<QS> Queriable<QS> for $Target where
-                QS: QuerySource<SqlType=$Source>
-            {
+            impl Queriable<$Source> for $Target {
                 type Row = Self;
 
                 fn build(row: Self::Row) -> Self {
@@ -39,6 +38,7 @@ macro_rules! primitive_impls {
 primitive_impls! {
     Serial -> i32,
     VarChar -> String,
+    Integer -> i32,
 }
 
 macro_rules! tuple_impls {

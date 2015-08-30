@@ -11,6 +11,7 @@ pub use connection::Connection;
 #[cfg(test)]
 mod test_usage_without_macros_or_plugins {
     use super::{types, QuerySource, Queriable, Connection};
+    use types::NativeSqlType;
     use std::env;
 
     #[derive(PartialEq, Eq, Debug)]
@@ -33,9 +34,9 @@ mod test_usage_without_macros_or_plugins {
         }
     }
 
-    impl<QS> Queriable<QS> for User where
-        QS: QuerySource,
-        (i32, String): types::FromSql<QS::SqlType>,
+    impl<ST> Queriable<ST> for User where
+        ST: NativeSqlType,
+        (i32, String): types::FromSql<ST>,
     {
         type Row = (i32, String);
 
