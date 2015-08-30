@@ -14,12 +14,12 @@ macro_rules! table {
             unsafe impl QuerySource for table {
                 type SqlType = ($($Type),+);
 
-                fn select_clause(&self) -> &str {
-                    "*"
+                fn select_clause(&self) -> String {
+                    "*".to_string()
                 }
 
-                fn from_clause(&self) -> &str {
-                    stringify!($name)
+                fn from_clause(&self) -> String {
+                    stringify!($name).to_string()
                 }
             }
 

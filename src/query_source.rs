@@ -11,8 +11,8 @@ pub trait Queriable<ST: NativeSqlType> {
 pub unsafe trait QuerySource: Sized {
     type SqlType: NativeSqlType;
 
-    fn select_clause(&self) -> &str;
-    fn from_clause(&self) -> &str;
+    fn select_clause(&self) -> String;
+    fn from_clause(&self) -> String;
 
     unsafe fn select_sql<A: NativeSqlType>(self, columns: &str)
         -> SelectSqlQuerySource<A, Self>
@@ -63,11 +63,11 @@ unsafe impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
 {
     type SqlType = A;
 
-    fn select_clause(&self) -> &str {
-        &self.columns
+    fn select_clause(&self) -> String {
+        self.columns.clone()
     }
 
-    fn from_clause(&self) -> &str {
+    fn from_clause(&self) -> String {
         self.source.from_clause()
     }
 }
