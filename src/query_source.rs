@@ -1,5 +1,6 @@
 use types::{FromSql, NativeSqlType};
 use std::marker::PhantomData;
+use std::convert::Into;
 
 pub trait Queriable<ST: NativeSqlType> {
     type Row: FromSql<ST>;
@@ -13,32 +14,57 @@ pub unsafe trait QuerySource: Sized {
     fn select_clause(&self) -> &str;
     fn from_clause(&self) -> &str;
 
-    unsafe fn select_sql<A: NativeSqlType>(self, columns: &'static str) -> SelectedQuerySource<A, Self> {
-        SelectedQuerySource {
-            columns: columns,
+    unsafe fn select_sql<A: NativeSqlType>(self, columns: &str)
+        -> SelectSqlQuerySource<A, Self>
+    {
+        self.select_sql_inner(columns)
+    }
+
+    unsafe fn select_sql_inner<A, S>(self, columns: S)
+        -> SelectSqlQuerySource<A, Self> where
+        A: NativeSqlType,
+        S: Into<String>
+    {
+        SelectSqlQuerySource {
+            columns: columns.into(),
             source: self,
             _marker: PhantomData,
         }
     }
 }
 
-pub struct SelectedQuerySource<A, S> where
+pub unsafe trait Column<A: NativeSqlType, T: Table> {
+    fn name(&self) -> String;
+}
+
+pub unsafe trait Table: QuerySource {
+    fn name(&self) -> &str;
+
+    fn select<A, C>(self, column: C) -> SelectSqlQuerySource<A, Self> where
+        A: NativeSqlType,
+        C: Column<A, Self>,
+    {
+        unsafe { self.select_sql_inner(column.name()) }
+    }
+}
+
+pub struct SelectSqlQuerySource<A, S> where
     A: NativeSqlType,
     S: QuerySource,
 {
-    columns: &'static str,
+    columns: String,
     source: S,
     _marker: PhantomData<A>,
 }
 
-unsafe impl<A, S> QuerySource for SelectedQuerySource<A, S> where
+unsafe impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
     A: NativeSqlType,
     S: QuerySource,
 {
     type SqlType = A;
 
     fn select_clause(&self) -> &str {
-        self.columns
+        &self.columns
     }
 
     fn from_clause(&self) -> &str {

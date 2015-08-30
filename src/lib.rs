@@ -7,12 +7,12 @@ mod result;
 mod macros;
 
 pub use result::*;
-pub use query_source::{QuerySource, Queriable};
+pub use query_source::{QuerySource, Queriable, Table, Column};
 pub use connection::Connection;
 
 #[cfg(test)]
 mod test_usage_without_compiler_plugins {
-    use super::{types, QuerySource, Queriable, Connection};
+    use super::*;
     use types::NativeSqlType;
     use std::env;
 
@@ -62,6 +62,26 @@ mod test_usage_without_compiler_plugins {
          ];
         let actual_users = connection.query_all(&users::table).unwrap();
         assert_eq!(expected_users, actual_users);
+    }
+
+    #[test]
+    fn with_safe_select() {
+        let connection = connection();
+        setup_users_table(&connection);
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+
+        let select_id = users::table.select(users::id);
+        // fails to compile (we should test this)
+        // let select_id = users::table.select(posts::id);
+        let select_name = users::table.select(users::name);
+        let ids = connection.query_all(&select_id).unwrap();
+        let names: Vec<String> = connection.query_all(&select_name).unwrap();
+        // fails to compile (we should test this)
+        // let names: Vec<String> = connection.query_all(&select_id).unwrap();
+
+        assert_eq!(vec![1, 2], ids);
+        assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
     }
 
     #[test]

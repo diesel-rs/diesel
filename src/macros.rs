@@ -5,7 +5,7 @@ macro_rules! table {
         }
     ) => {
         mod $name {
-            use {types, QuerySource};
+            use {types, QuerySource, Table, Column};
 
             #[allow(non_camel_case_types)]
             pub struct table;
@@ -21,6 +21,23 @@ macro_rules! table {
                     stringify!($name)
                 }
             }
+
+            unsafe impl Table for table {
+                fn name(&self) -> &str {
+                    stringify!($name)
+                }
+            }
+
+            $(
+                #[allow(non_camel_case_types)]
+                pub struct $column_name;
+
+                unsafe impl Column<types::$Type, table> for $column_name {
+                    fn name(&self) -> String {
+                        format!("{}.{}", table.name(), stringify!($column_name))
+                    }
+                }
+            )+
         }
     }
 }
