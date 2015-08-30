@@ -7,7 +7,7 @@ use super::{NativeSqlType, FromSql, Nullable};
 use Queriable;
 
 macro_rules! primitive_impls {
-    ($($Source:ident -> $Target:ident),+,) => {
+    ($($Source:ident -> $Target:ty),+,) => {
         $(
             impl NativeSqlType for super::$Source {}
             impl FromSql<super::$Source> for $Target {
@@ -28,12 +28,22 @@ macro_rules! primitive_impls {
 }
 
 primitive_impls! {
+    Bool -> bool,
+
+    SmallSerial -> i16,
     Serial -> i32,
-    VarChar -> String,
-    TinyInt -> i8,
+    BigSerial -> i64,
+
     SmallInt -> i16,
     Integer -> i32,
     BigInt -> i64,
+
+    Float -> f32,
+    Double -> f64,
+
+    VarChar -> String,
+
+    Binary -> Vec<u8>,
 }
 
 impl<T: NativeSqlType> NativeSqlType for Nullable<T> {}
