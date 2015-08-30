@@ -22,6 +22,12 @@ mod test_usage_without_compiler_plugins {
         age: Option<i16>,
     }
 
+    #[derive(PartialEq, Eq, Debug)]
+    struct UserWithoutId {
+        name: String,
+        age: Option<i16>,
+    }
+
     // Compiler plugin will automatically invoke this based on schema
     table! {
         users {
@@ -35,6 +41,13 @@ mod test_usage_without_compiler_plugins {
     queriable! {
         User {
             id -> i32,
+            name -> String,
+            age -> Option<i16>,
+        }
+    }
+
+    queriable! {
+        UserWithoutId {
             name -> String,
             age -> Option<i16>,
         }
@@ -107,8 +120,28 @@ mod test_usage_without_compiler_plugins {
 
         let source = users.select((name, age));
         let expected_data = vec![
-            ("Jim".to_string(), Some(30i16)),
-            ("Bob".to_string(), Some(40i16)),
+            ("Jim".to_string(), Some(30)),
+            ("Bob".to_string(), Some(40)),
+        ];
+        let actual_data = connection.query_all(&source).unwrap();
+
+        assert_eq!(expected_data, actual_data);
+    }
+
+    #[test]
+    fn selecting_multiple_columns_into_struct() {
+        use self::users::columns::*;
+        use self::users::table as users;
+
+        let connection = connection();
+        setup_users_table(&connection);
+        connection.execute("INSERT INTO users (name, age) VALUES ('Jim', 30), ('Bob', 40)")
+            .unwrap();
+
+        let source = users.select((name, age));
+        let expected_data = vec![
+            UserWithoutId { name: "Jim".to_string(), age: Some(30) },
+            UserWithoutId { name: "Bob".to_string(), age:  Some(40) },
         ];
         let actual_data = connection.query_all(&source).unwrap();
 
