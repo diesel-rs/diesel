@@ -7,7 +7,10 @@ use self::postgres::rows::Row;
 
 pub struct Serial;
 pub struct VarChar;
+pub struct TinyInt;
+pub struct SmallInt;
 pub struct Integer;
+pub struct BigInt;
 
 pub trait NativeSqlType {}
 

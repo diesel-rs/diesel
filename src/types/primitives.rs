@@ -29,5 +29,8 @@ macro_rules! primitive_impls {
 primitive_impls! {
     Serial -> i32,
     VarChar -> String,
+    TinyInt -> i8,
+    SmallInt -> i16,
     Integer -> i32,
+    BigInt -> i64,
 }

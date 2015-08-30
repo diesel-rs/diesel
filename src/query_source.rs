@@ -13,7 +13,7 @@ pub unsafe trait QuerySource: Sized {
     fn select_clause(&self) -> &str;
     fn from_clause(&self) -> &str;
 
-    unsafe fn select<A: NativeSqlType>(self, columns: &'static str) -> SelectedQuerySource<A, Self> {
+    unsafe fn select_sql<A: NativeSqlType>(self, columns: &'static str) -> SelectedQuerySource<A, Self> {
         SelectedQuerySource {
             columns: columns,
             source: self,

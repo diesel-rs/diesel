@@ -65,23 +65,22 @@ mod test_usage_without_compiler_plugins {
     }
 
     #[test]
-    fn with_select_clause() {
+    fn with_select_sql() {
         let connection = connection();
         setup_users_table(&connection);
         connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
             .unwrap();
 
-        let select_id = unsafe { users::table.select::<types::Serial>("id") };
-        let select_name = unsafe { users::table.select::<types::VarChar>("name") };
-
-        let expected_ids = vec![1, 2];
-        let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
-        let actual_ids = connection.query_all::<_, i32>(&select_id).unwrap();
-        let actual_names = connection.query_all::<_, String>(&select_name).unwrap();
+        let select_count = unsafe { users::table.select_sql::<types::BigInt>("COUNT(*)") };
+        let get_count = || connection.query_one::<_, i64>(&select_count).unwrap();
         // fails to compile (we should test this)
-        // let actual_names = connection.query_all::<_, String>(&select_id).unwrap();
+        // let actual_count = connection.query_one::<_, String>(&select_count).unwrap();
 
-        assert_eq!(expected_ids, actual_ids);
-        assert_eq!(expected_names, actual_names);
+        assert_eq!(Some(2), get_count());
+
+        connection.execute("INSERT INTO users (name) VALUES ('Jim')")
+            .unwrap();
+
+        assert_eq!(Some(3), get_count());
     }
 }
