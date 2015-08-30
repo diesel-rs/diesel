@@ -3,12 +3,17 @@ extern crate postgres;
 use self::postgres::rows::Row;
 
 use super::{NativeSqlType, FromSql};
-use Queriable;
+use {Queriable, Table, Column};
+
+// FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
+macro_rules! e {
+    ($e:expr) => { $e }
+}
 
 macro_rules! tuple_impls {
     ($(
         $Tuple:ident {
-            $(($idx:expr) -> $T:ident, $ST:ident,)+
+            $(($idx:tt) -> $T:ident, $ST:ident,)+
         }
     )+) => {
         $(
@@ -19,7 +24,7 @@ macro_rules! tuple_impls {
             {
                 fn from_sql(row: &Row, idx: usize) -> Self {
                     (
-                        $($T::from_sql(row, idx + $idx)),+
+                        $(e!($T::from_sql(row, idx + $idx))),+
                     )
                 }
             }
@@ -32,6 +37,19 @@ macro_rules! tuple_impls {
 
                 fn build(row: Self::Row) -> Self {
                     row
+                }
+            }
+
+            unsafe impl<$($T),+, $($ST),+, SourceTable>
+                Column<($($ST),+), SourceTable> for ($($T),+) where
+                $($T: Column<$ST, SourceTable>),+,
+                $($ST: NativeSqlType),+,
+                SourceTable: Table,
+            {
+                #[allow(non_snake_case)]
+                fn name(&self) -> String {
+                    let parts: &[String] = e!(&[$(self.$idx.name()),*]);
+                    parts.join(", ")
                 }
             }
         )+

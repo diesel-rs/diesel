@@ -89,6 +89,23 @@ mod test_usage_without_compiler_plugins {
     }
 
     #[test]
+    fn selecting_multiple_columns() {
+        let connection = connection();
+        setup_users_table(&connection);
+        connection.execute("INSERT INTO users (name, age) VALUES ('Jim', 30), ('Bob', 40)")
+            .unwrap();
+
+        let source = users::table.select((users::name, users::age));
+        let expected_data = vec![
+            ("Jim".to_string(), Some(30i16)),
+            ("Bob".to_string(), Some(40i16)),
+        ];
+        let actual_data = connection.query_all(&source).unwrap();
+
+        assert_eq!(expected_data, actual_data);
+    }
+
+    #[test]
     fn with_select_sql() {
         let connection = connection();
         setup_users_table(&connection);
