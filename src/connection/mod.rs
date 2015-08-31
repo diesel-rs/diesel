@@ -34,20 +34,31 @@ impl Connection {
         }).nth(0))
     }
 
-    pub fn query_all<T, U>(&self, source: &T) -> Result<Vec<U>> where
+    pub fn query_all<T, U>(&self, source: &T) -> Result<Cursor<U>> where
         T: QuerySource,
         U: Queriable<T::SqlType>,
     {
         let stmt = try!(self.prepare_query(source));
         let rows = try!(stmt.query(&[]));
-        Ok(rows.into_iter().map(|row| {
+        let result: Vec<U> = rows.into_iter().map(|row| {
             let values = U::Row::from_sql(&row, 0);
             U::build(values)
-        }).collect())
+        }).collect();
+        Ok(Cursor(result.into_iter()))
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> Result<Statement> {
         let query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
         self.internal_connection.prepare(&query).map_err(|e| e.into())
+    }
+}
+
+pub struct Cursor<T>(::std::vec::IntoIter<T>);
+
+impl<T> Iterator for Cursor<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        self.0.next()
     }
 }

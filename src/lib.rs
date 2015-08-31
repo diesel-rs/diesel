@@ -64,7 +64,8 @@ mod test_usage_without_compiler_plugins {
             (1, "Sean".to_string(), None::<i16>),
             (2, "Tess".to_string(), None::<i16>),
          ];
-        let actual_data = connection.query_all(&users::table).unwrap();
+        let actual_data: Vec<_> = connection.query_all(&users::table)
+            .unwrap().collect();
         assert_eq!(expected_data, actual_data);
     }
 
@@ -79,7 +80,8 @@ mod test_usage_without_compiler_plugins {
             User { id: 1, name: "Sean".to_string(), age: None },
             User { id: 2, name: "Tess".to_string(), age: None },
          ];
-        let actual_users = connection.query_all(&users::table).unwrap();
+        let actual_users: Vec<_> = connection.query_all(&users::table)
+            .unwrap().collect();
         assert_eq!(expected_users, actual_users);
     }
 
@@ -98,11 +100,14 @@ mod test_usage_without_compiler_plugins {
         // it continues to fail to compile.
         // let select_id = users::table.select(posts::id);
         let select_name = users.select(name);
-        let ids = connection.query_all(&select_id).unwrap();
-        let names: Vec<String> = connection.query_all(&select_name).unwrap();
+        let ids: Vec<_> = connection.query_all(&select_id)
+            .unwrap().collect();
+        let names: Vec<String> = connection.query_all(&select_name)
+            .unwrap().collect();
         // This should fail type checking, and we should add a test to ensure
         // it continues to fail to compile.
-        // let names: Vec<String> = connection.query_all(&select_id).unwrap();
+        // let names: Vec<String> = connection.query_all(&select_id)
+        // .unwrap().collect();
 
         assert_eq!(vec![1, 2], ids);
         assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
@@ -123,7 +128,8 @@ mod test_usage_without_compiler_plugins {
             ("Jim".to_string(), Some(30)),
             ("Bob".to_string(), Some(40)),
         ];
-        let actual_data = connection.query_all(&source).unwrap();
+        let actual_data: Vec<_> = connection.query_all(&source)
+            .unwrap().collect();
 
         assert_eq!(expected_data, actual_data);
     }
@@ -143,7 +149,8 @@ mod test_usage_without_compiler_plugins {
             UserWithoutId { name: "Jim".to_string(), age: Some(30) },
             UserWithoutId { name: "Bob".to_string(), age:  Some(40) },
         ];
-        let actual_data = connection.query_all(&source).unwrap();
+        let actual_data: Vec<_> = connection.query_all(&source)
+            .unwrap().collect();
 
         assert_eq!(expected_data, actual_data);
     }
