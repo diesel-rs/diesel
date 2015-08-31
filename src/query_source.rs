@@ -8,19 +8,19 @@ pub trait Queriable<ST: NativeSqlType> {
     fn build(row: Self::Row) -> Self;
 }
 
-pub unsafe trait QuerySource: Sized {
+pub trait QuerySource: Sized {
     type SqlType: NativeSqlType;
 
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
 
-    unsafe fn select_sql<A: NativeSqlType>(self, columns: &str)
+    fn select_sql<A: NativeSqlType>(self, columns: &str)
         -> SelectSqlQuerySource<A, Self>
     {
         self.select_sql_inner(columns)
     }
 
-    unsafe fn select_sql_inner<A, S>(self, columns: S)
+    fn select_sql_inner<A, S>(self, columns: S)
         -> SelectSqlQuerySource<A, Self> where
         A: NativeSqlType,
         S: Into<String>
@@ -33,18 +33,18 @@ pub unsafe trait QuerySource: Sized {
     }
 }
 
-pub unsafe trait Column<A: NativeSqlType, T: Table> {
+pub trait Column<A: NativeSqlType, T: Table> {
     fn name(&self) -> String;
 }
 
-pub unsafe trait Table: QuerySource {
+pub trait Table: QuerySource {
     fn name(&self) -> &str;
 
     fn select<A, C>(self, column: C) -> SelectSqlQuerySource<A, Self> where
         A: NativeSqlType,
         C: Column<A, Self>,
     {
-        unsafe { self.select_sql_inner(column.name()) }
+        self.select_sql_inner(column.name())
     }
 }
 
@@ -57,7 +57,7 @@ pub struct SelectSqlQuerySource<A, S> where
     _marker: PhantomData<A>,
 }
 
-unsafe impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
+impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
     A: NativeSqlType,
     S: QuerySource,
 {

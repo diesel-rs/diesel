@@ -40,7 +40,7 @@ macro_rules! tuple_impls {
                 }
             }
 
-            unsafe impl<$($T),+, $($ST),+, SourceTable>
+            impl<$($T),+, $($ST),+, SourceTable>
                 Column<($($ST),+), SourceTable> for ($($T),+) where
                 $($T: Column<$ST, SourceTable>),+,
                 $($ST: NativeSqlType),+,

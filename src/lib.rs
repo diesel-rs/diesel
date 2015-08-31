@@ -107,7 +107,7 @@ mod test_usage_without_compiler_plugins {
         // This should fail type checking, and we should add a test to ensure
         // it continues to fail to compile.
         // let names: Vec<String> = connection.query_all(&select_id)
-        // .unwrap().collect();
+        //     .unwrap().collect();
 
         assert_eq!(vec![1, 2], ids);
         assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
@@ -162,7 +162,7 @@ mod test_usage_without_compiler_plugins {
         connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
             .unwrap();
 
-        let select_count = unsafe { users::table.select_sql::<types::BigInt>("COUNT(*)") };
+        let select_count = users::table.select_sql::<types::BigInt>("COUNT(*)");
         let get_count = || connection.query_one::<_, i64>(&select_count).unwrap();
         // This should fail type checking, and we should add a test to ensure
         // it continues to fail to compile.

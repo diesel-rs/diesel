@@ -11,7 +11,7 @@ macro_rules! table {
             #[allow(non_camel_case_types)]
             pub struct table;
 
-            unsafe impl QuerySource for table {
+            impl QuerySource for table {
                 type SqlType = ($($Type),+);
 
                 fn select_clause(&self) -> String {
@@ -23,7 +23,7 @@ macro_rules! table {
                 }
             }
 
-            unsafe impl Table for table {
+            impl Table for table {
                 fn name(&self) -> &str {
                     stringify!($name)
                 }
@@ -37,7 +37,7 @@ macro_rules! table {
                 #[allow(non_camel_case_types, dead_code)]
                 pub struct $column_name;
 
-                unsafe impl Column<$Type, table> for $column_name {
+                impl Column<$Type, table> for $column_name {
                     fn name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
