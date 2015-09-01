@@ -72,3 +72,13 @@ macro_rules! queriable {
         }
     }
 }
+
+macro_rules! joinable {
+    ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
+        impl JoinTo<$parent::table> for $child::table {
+            fn join_sql(&self) -> String {
+                format!("{} = {}", $child::$source.name(), $parent::$target.name())
+            }
+        }
+    }
+}

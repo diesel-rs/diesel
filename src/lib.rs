@@ -84,11 +84,7 @@ mod test_usage_without_compiler_plugins {
         }
     }
 
-    impl JoinTo<users::table> for posts::table {
-        fn join_sql(&self) -> String {
-            format!("{} = {}", users::id.name(), posts::user_id.name())
-        }
-    }
+    joinable!(posts -> users (user_id = id));
 
     impl Queriable<(posts::SqlType, users::SqlType)> for (Post, User) {
         type Row = (
