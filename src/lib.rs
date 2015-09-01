@@ -85,20 +85,7 @@ mod test_usage_without_compiler_plugins {
     }
 
     joinable!(posts -> users (user_id = id));
-
-    impl Queriable<(posts::SqlType, users::SqlType)> for (Post, User) {
-        type Row = (
-            <Post as Queriable<posts::SqlType>>::Row,
-            <User as Queriable<users::SqlType>>::Row,
-        );
-
-        fn build(row: Self::Row) -> Self {
-            (
-                <Post as Queriable<posts::SqlType>>::build(row.0),
-                <User as Queriable<users::SqlType>>::build(row.1),
-            )
-        }
-    }
+    belongs_to!(User, users, Post, posts);
 
     #[test]
     fn selecting_basic_data() {

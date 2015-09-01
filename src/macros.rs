@@ -82,3 +82,21 @@ macro_rules! joinable {
         }
     }
 }
+
+macro_rules! belongs_to {
+    ($parent:ty, $parent_table:ident, $child:ty, $child_table:ident) => {
+        impl Queriable<($child_table::SqlType, $parent_table::SqlType)> for ($child, $parent) {
+            type Row = (
+                <$child as Queriable<$child_table::SqlType>>::Row,
+                <$parent as Queriable<$parent_table::SqlType>>::Row,
+            );
+
+            fn build(row: Self::Row) -> Self {
+                (
+                    <$child as Queriable<$child_table::SqlType>>::build(row.0),
+                    <$parent as Queriable<$parent_table::SqlType>>::build(row.1),
+                )
+            }
+        }
+    }
+}
