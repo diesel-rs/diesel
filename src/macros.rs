@@ -9,6 +9,7 @@ macro_rules! table {
             use types::*;
 
             #[allow(non_camel_case_types)]
+            #[derive(Clone, Copy)]
             pub struct table;
 
             pub type SqlType = ($($Type),+);
@@ -75,11 +76,30 @@ macro_rules! queriable {
 
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
+        use query_source::{SelectableColumn, InnerJoinSource};
+
+        joinable_inner!($child -> $parent ($source = $target));
+        joinable_inner!($parent -> $child ($target = $source));
+    }
+}
+
+macro_rules! joinable_inner {
+    ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl JoinTo<$parent::table> for $child::table {
             fn join_sql(&self) -> String {
                 format!("{} = {}", $child::$source.name(), $parent::$target.name())
             }
         }
+
+        impl<A, C> SelectableColumn<A, $parent::table, InnerJoinSource<$child::table, $parent::table>> for C where
+            A: NativeSqlType,
+            C: Column<A, $parent::table>,
+        {}
+
+        impl<A, C> SelectableColumn<A, $child::table, InnerJoinSource<$child::table, $parent::table>> for C where
+            A: NativeSqlType,
+            C: Column<A, $child::table>,
+        {}
     }
 }
 

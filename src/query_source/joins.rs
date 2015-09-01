@@ -1,5 +1,6 @@
 use {QuerySource, Table};
 
+#[derive(Clone, Copy)]
 pub struct InnerJoinSource<Left, Right> {
     left: Left,
     right: Right,
@@ -33,4 +34,3 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 pub trait JoinTo<T: Table>: Table {
     fn join_sql(&self) -> String;
 }
-

@@ -235,6 +235,34 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(expected_data, actual_data);
     }
 
+    #[test]
+    fn select_single_from_join() {
+        let connection = connection();
+        setup_users_table(&connection);
+        setup_posts_table(&connection);
+
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+        connection.execute("INSERT INTO posts (user_id, title) VALUES
+            (1, 'Hello'),
+            (2, 'World')
+        ").unwrap();
+
+        let source = posts::table.inner_join(users::table);
+        let select_name = source.select(users::name);
+        let select_title = source.select(posts::title);
+
+        let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
+        let actual_names: Vec<String> = connection.query_all(&select_name).unwrap().collect();
+
+        assert_eq!(expected_names, actual_names);
+
+        let expected_titles = vec!["Hello".to_string(), "World".to_string()];
+        let actual_titles: Vec<String> = connection.query_all(&select_title).unwrap().collect();
+
+        assert_eq!(expected_titles, actual_titles);
+    }
+
     fn connection() -> Connection {
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");

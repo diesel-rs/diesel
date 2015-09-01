@@ -3,7 +3,7 @@ mod select;
 
 use types::{FromSql, NativeSqlType};
 use std::convert::Into;
-use self::joins::InnerJoinSource;
+pub use self::joins::InnerJoinSource;
 use self::select::SelectSqlQuerySource;
 
 pub use self::joins::JoinTo;
@@ -19,6 +19,14 @@ pub trait QuerySource: Sized {
 
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
+
+    fn select<A, C, T>(self, column: C) -> SelectSqlQuerySource<A, Self> where
+        A: NativeSqlType,
+        T: Table,
+        C: SelectableColumn<A, T, Self>,
+    {
+        self.select_sql_inner(column.name())
+    }
 
     fn select_sql<A: NativeSqlType>(self, columns: &str)
         -> SelectSqlQuerySource<A, Self>
@@ -42,13 +50,6 @@ pub trait Column<A: NativeSqlType, T: Table> {
 pub trait Table: QuerySource {
     fn name(&self) -> &str;
 
-    fn select<A, C>(self, column: C) -> SelectSqlQuerySource<A, Self> where
-        A: NativeSqlType,
-        C: Column<A, Self>,
-    {
-        self.select_sql_inner(column.name())
-    }
-
     fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
         T: Table,
         Self: JoinTo<T>,
@@ -56,3 +57,14 @@ pub trait Table: QuerySource {
         InnerJoinSource::new(self, other)
     }
 }
+
+pub trait SelectableColumn<A, T, QS: QuerySource>: Column<A, T> where
+    A: NativeSqlType,
+    T: Table,
+{}
+
+impl<A, T, C> SelectableColumn<A, T, T> for C where
+    A: NativeSqlType,
+    T: Table,
+    C: Column<A, T>,
+{}
