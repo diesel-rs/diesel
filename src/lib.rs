@@ -1,8 +1,10 @@
 pub mod types;
 
-mod query_source;
 mod connection;
+mod query_source;
 mod result;
+mod row;
+
 #[macro_use]
 mod macros;
 

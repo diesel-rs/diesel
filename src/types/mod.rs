@@ -1,9 +1,7 @@
 mod tuples;
 mod primitives;
 
-extern crate postgres;
-
-use self::postgres::rows::Row;
+use row::Row;
 
 pub struct Bool;
 
@@ -27,9 +25,5 @@ pub struct Nullable<T: NativeSqlType>(T);
 pub trait NativeSqlType {}
 
 pub trait FromSql<A: NativeSqlType> {
-    fn from_sql(row: &Row, idx: usize) -> Self;
-
-    fn consumed_columns() -> usize {
-        1
-    }
+    fn from_sql<T: Row>(row: &mut T) -> Self;
 }

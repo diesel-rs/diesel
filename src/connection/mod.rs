@@ -1,8 +1,8 @@
 extern crate postgres;
 
-use super::query_source::{Queriable, QuerySource};
-use super::{Result, ConnectionResult};
-use super::types::FromSql;
+use {Result, ConnectionResult, QuerySource, Queriable};
+use types::FromSql;
+use row::PgRow;
 use self::postgres::{SslMode, Statement};
 
 pub struct Connection {
@@ -29,7 +29,7 @@ impl Connection {
         let stmt = try!(self.prepare_query(source));
         let rows = try!(stmt.query(&[]));
         Ok(rows.into_iter().map(|row| {
-            let values = U::Row::from_sql(&row, 0);
+            let values = U::Row::from_sql(&mut PgRow::wrap(row));
             U::build(values)
         }).nth(0))
     }
@@ -41,7 +41,7 @@ impl Connection {
         let stmt = try!(self.prepare_query(source));
         let rows = try!(stmt.query(&[]));
         let result: Vec<U> = rows.into_iter().map(|row| {
-            let values = U::Row::from_sql(&row, 0);
+            let values = U::Row::from_sql(&mut PgRow::wrap(row));
             U::build(values)
         }).collect();
         Ok(Cursor(result.into_iter()))

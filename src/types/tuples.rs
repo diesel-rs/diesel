@@ -1,9 +1,6 @@
-extern crate postgres;
-
-use self::postgres::rows::Row;
-
 use super::{NativeSqlType, FromSql};
 use {Queriable, Table, Column};
+use row::Row;
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -23,18 +20,8 @@ macro_rules! tuple_impls {
                 $($ST: NativeSqlType),+
             {
                 #[allow(unused_assignments)]
-                fn from_sql(row: &Row, mut idx: usize) -> Self {
-                    (
-                        $({
-                            let value = $T::from_sql(row, idx);
-                            idx += $T::consumed_columns();
-                            value
-                        }),+
-                    )
-                }
-
-                fn consumed_columns() -> usize {
-                    $($T::consumed_columns() + )* 0
+                fn from_sql<T: Row>(row: &mut T) -> Self {
+                    ($($T::from_sql(row)),+)
                 }
             }
 
