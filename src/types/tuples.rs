@@ -22,10 +22,19 @@ macro_rules! tuple_impls {
                 $($T: FromSql<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                fn from_sql(row: &Row, idx: usize) -> Self {
+                #[allow(unused_assignments)]
+                fn from_sql(row: &Row, mut idx: usize) -> Self {
                     (
-                        $(e!($T::from_sql(row, idx + $idx))),+
+                        $({
+                            let value = $T::from_sql(row, idx);
+                            idx += $T::consumed_columns();
+                            value
+                        }),+
                     )
+                }
+
+                fn consumed_columns() -> usize {
+                    $($T::consumed_columns() + )* 0
                 }
             }
 

@@ -11,11 +11,13 @@ macro_rules! table {
             #[allow(non_camel_case_types)]
             pub struct table;
 
+            pub type SqlType = ($($Type),+);
+
             impl QuerySource for table {
-                type SqlType = ($($Type),+);
+                type SqlType = SqlType;
 
                 fn select_clause(&self) -> String {
-                    "*".to_string()
+                    format!("{}.*", stringify!($name))
                 }
 
                 fn from_clause(&self) -> String {

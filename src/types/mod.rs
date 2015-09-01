@@ -28,4 +28,8 @@ pub trait NativeSqlType {}
 
 pub trait FromSql<A: NativeSqlType> {
     fn from_sql(row: &Row, idx: usize) -> Self;
+
+    fn consumed_columns() -> usize {
+        1
+    }
 }

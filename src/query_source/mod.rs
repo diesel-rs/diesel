@@ -1,6 +1,12 @@
+mod joins;
+mod select;
+
 use types::{FromSql, NativeSqlType};
-use std::marker::PhantomData;
 use std::convert::Into;
+use self::joins::InnerJoinSource;
+use self::select::SelectSqlQuerySource;
+
+pub use self::joins::JoinTo;
 
 pub trait Queriable<ST: NativeSqlType> {
     type Row: FromSql<ST>;
@@ -25,11 +31,7 @@ pub trait QuerySource: Sized {
         A: NativeSqlType,
         S: Into<String>
     {
-        SelectSqlQuerySource {
-            columns: columns.into(),
-            source: self,
-            _marker: PhantomData,
-        }
+        SelectSqlQuerySource::new(columns.into(), self)
     }
 }
 
@@ -46,28 +48,11 @@ pub trait Table: QuerySource {
     {
         self.select_sql_inner(column.name())
     }
-}
 
-pub struct SelectSqlQuerySource<A, S> where
-    A: NativeSqlType,
-    S: QuerySource,
-{
-    columns: String,
-    source: S,
-    _marker: PhantomData<A>,
-}
-
-impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
-    A: NativeSqlType,
-    S: QuerySource,
-{
-    type SqlType = A;
-
-    fn select_clause(&self) -> String {
-        self.columns.clone()
-    }
-
-    fn from_clause(&self) -> String {
-        self.source.from_clause()
+    fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
+        T: Table,
+        Self: JoinTo<T>,
+    {
+        InnerJoinSource::new(self, other)
     }
 }

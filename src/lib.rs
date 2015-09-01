@@ -7,7 +7,7 @@ mod result;
 mod macros;
 
 pub use result::*;
-pub use query_source::{QuerySource, Queriable, Table, Column};
+pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 pub use connection::Connection;
 
 #[cfg(test)]
@@ -22,10 +22,23 @@ mod test_usage_without_compiler_plugins {
         age: Option<i16>,
     }
 
+    impl User {
+        fn without_age(id: i32, name: &str) -> Self {
+            User { id: id, name: name.to_string(), age: None }
+        }
+    }
+
     #[derive(PartialEq, Eq, Debug)]
     struct UserWithoutId {
         name: String,
         age: Option<i16>,
+    }
+
+    #[derive(PartialEq, Eq, Debug)]
+    struct Post {
+        id: i32,
+        user_id: i32,
+        title: String,
     }
 
     // Compiler plugin will automatically invoke this based on schema
@@ -34,6 +47,14 @@ mod test_usage_without_compiler_plugins {
             id -> Serial,
             name -> VarChar,
             age -> Nullable<SmallInt>,
+        }
+    }
+
+    table! {
+        posts {
+            id -> Serial,
+            user_id -> Integer,
+            title -> VarChar,
         }
     }
 
@@ -50,6 +71,34 @@ mod test_usage_without_compiler_plugins {
         UserWithoutId {
             name -> String,
             age -> Option<i16>,
+        }
+    }
+
+    queriable! {
+        Post {
+            id -> i32,
+            user_id -> i32,
+            title -> String,
+        }
+    }
+
+    impl JoinTo<users::table> for posts::table {
+        fn join_sql(&self) -> String {
+            format!("{} = {}", users::id.name(), posts::user_id.name())
+        }
+    }
+
+    impl Queriable<(posts::SqlType, users::SqlType)> for (Post, User) {
+        type Row = (
+            <Post as Queriable<posts::SqlType>>::Row,
+            <User as Queriable<users::SqlType>>::Row,
+        );
+
+        fn build(row: Self::Row) -> Self {
+            (
+                <Post as Queriable<posts::SqlType>>::build(row.0),
+                <User as Queriable<users::SqlType>>::build(row.1),
+            )
         }
     }
 
@@ -176,6 +225,31 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(Some(3), get_count());
     }
 
+    #[test]
+    fn belongs_to() {
+        let connection = connection();
+        setup_users_table(&connection);
+        setup_posts_table(&connection);
+
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+        connection.execute("INSERT INTO posts (user_id, title) VALUES
+            (1, 'Hello'),
+            (2, 'World')
+        ").unwrap();
+
+        let sean = User::without_age(1, "Sean");
+        let tess = User::without_age(2, "Tess");
+        let seans_post = Post { id: 1, user_id: 1, title: "Hello".to_string() };
+        let tess_post = Post { id: 2, user_id: 2, title: "World".to_string() };
+
+        let expected_data = vec![(seans_post, sean), (tess_post, tess)];
+        let source = posts::table.inner_join(users::table);
+        let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
+
+        assert_eq!(expected_data, actual_data);
+    }
+
     fn connection() -> Connection {
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");
@@ -189,6 +263,14 @@ mod test_usage_without_compiler_plugins {
             id SERIAL PRIMARY KEY,
             name VARCHAR NOT NULL,
             age SMALLINT
+        )").unwrap();
+    }
+
+    fn setup_posts_table(connection: &Connection) {
+        connection.execute("CREATE TABLE posts (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            title VARCHAR NOT NULL
         )").unwrap();
     }
 }
