@@ -132,7 +132,7 @@ mod test_usage_without_compiler_plugins {
         let select_id = users.select(id);
         // This should fail type checking, and we should add a test to ensure
         // it continues to fail to compile.
-        // let select_id = users::table.select(posts::id);
+        // let select_id = users.select(posts::id);
         let select_name = users.select(name);
         let ids: Vec<_> = connection.query_all(&select_id)
             .unwrap().collect();
@@ -158,6 +158,10 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let source = users.select((name, age));
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
+        // let source = users.select((posts::title, posts::user_id));
+        // let source = users.select((posts::title, name));
         let expected_data = vec![
             ("Jim".to_string(), Some(30)),
             ("Bob".to_string(), Some(40)),
@@ -261,6 +265,31 @@ mod test_usage_without_compiler_plugins {
         let actual_titles: Vec<String> = connection.query_all(&select_title).unwrap().collect();
 
         assert_eq!(expected_titles, actual_titles);
+    }
+
+    #[test]
+    fn select_multiple_from_join() {
+        let connection = connection();
+        setup_users_table(&connection);
+        setup_posts_table(&connection);
+
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+        connection.execute("INSERT INTO posts (user_id, title) VALUES
+            (1, 'Hello'),
+            (2, 'World')
+        ").unwrap();
+
+        let source = posts::table.inner_join(users::table)
+            .select((users::name, posts::title));
+
+        let expected_data = vec![
+            ("Sean".to_string(), "Hello".to_string()),
+            ("Tess".to_string(), "World".to_string()),
+        ];
+        let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
+
+        assert_eq!(expected_data, actual_data);
     }
 
     fn connection() -> Connection {

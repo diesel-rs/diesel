@@ -1,5 +1,6 @@
 use super::{NativeSqlType, FromSql};
-use {Queriable, Table, Column};
+use {Queriable, Table, Column, QuerySource};
+use query_source::SelectableColumn;
 use row::Row;
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
@@ -10,7 +11,7 @@ macro_rules! e {
 macro_rules! tuple_impls {
     ($(
         $Tuple:ident {
-            $(($idx:tt) -> $T:ident, $ST:ident,)+
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
         }
     )+) => {
         $(
@@ -36,11 +37,11 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($ST),+, SourceTable>
-                Column<($($ST),+), SourceTable> for ($($T),+) where
-                $($T: Column<$ST, SourceTable>),+,
+            impl<$($T),+, $($ST),+, $($TT),+>
+                Column<($($ST),+), ($($TT),+)> for ($($T),+) where
+                $($T: Column<$ST, $TT>),+,
                 $($ST: NativeSqlType),+,
-                SourceTable: Table,
+                $($TT: Table),+,
             {
                 #[allow(non_snake_case)]
                 fn name(&self) -> String {
@@ -48,108 +49,117 @@ macro_rules! tuple_impls {
                     parts.join(", ")
                 }
             }
+
+            impl<$($T),+, $($ST),+, $($TT),+, QS>
+                SelectableColumn<($($ST),+), ($($TT),+), QS>
+                for ($($T),+) where
+                $($T: SelectableColumn<$ST, $TT, QS>),+,
+                $($ST: NativeSqlType),+,
+                $($TT: Table),+,
+                QS: QuerySource,
+            {}
         )+
     }
 }
 
 tuple_impls! {
     T2 {
-        (0) -> A, SA,
-        (1) -> B, SB,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
     }
     T3 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
     }
     T4 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
     }
     T5 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
     }
     T6 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
     }
     T7 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
     }
     T8 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
-        (7) -> H, SH,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
     }
     T9 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
-        (7) -> H, SH,
-        (8) -> I, SI,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
     }
     T10 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
-        (7) -> H, SH,
-        (8) -> I, SI,
-        (9) -> J, SJ,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
     }
     T11 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
-        (7) -> H, SH,
-        (8) -> I, SI,
-        (9) -> J, SJ,
-        (10) -> K, SK,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
     }
     T12 {
-        (0) -> A, SA,
-        (1) -> B, SB,
-        (2) -> C, SC,
-        (3) -> D, SD,
-        (4) -> E, SE,
-        (5) -> F, SF,
-        (6) -> G, SG,
-        (7) -> H, SH,
-        (8) -> I, SI,
-        (9) -> J, SJ,
-        (10) -> K, SK,
-        (11) -> L, SL,
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
+        (11) -> L, SL, TL,
     }
 }
