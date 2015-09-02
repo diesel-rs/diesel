@@ -92,12 +92,10 @@ macro_rules! joinable_inner {
         }
 
         impl<A, C> SelectableColumn<A, $parent::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            A: NativeSqlType,
             C: Column<A, $parent::table>,
         {}
 
         impl<A, C> SelectableColumn<A, $child::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            A: NativeSqlType,
             C: Column<A, $child::table>,
         {}
     }

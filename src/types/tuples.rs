@@ -16,6 +16,7 @@ macro_rules! tuple_impls {
     )+) => {
         $(
             impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {}
+
             impl<$($T),+,$($ST),+> FromSql<($($ST),+)> for ($($T),+) where
                 $($T: FromSql<$ST>),+,
                 $($ST: NativeSqlType),+
@@ -40,8 +41,6 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, $($TT),+>
                 Column<($($ST),+), ($($TT),+)> for ($($T),+) where
                 $($T: Column<$ST, $TT>),+,
-                $($ST: NativeSqlType),+,
-                $($TT: Table),+,
             {
                 #[allow(non_snake_case)]
                 fn name(&self) -> String {
@@ -54,8 +53,6 @@ macro_rules! tuple_impls {
                 SelectableColumn<($($ST),+), ($($TT),+), QS>
                 for ($($T),+) where
                 $($T: SelectableColumn<$ST, $TT, QS>),+,
-                $($ST: NativeSqlType),+,
-                $($TT: Table),+,
                 QS: QuerySource,
             {}
         )+
