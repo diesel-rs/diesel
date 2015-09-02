@@ -292,6 +292,26 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(expected_data, actual_data);
     }
 
+    #[test]
+    fn select_only_one_side_of_join() {
+        let connection = connection();
+        setup_users_table(&connection);
+        setup_posts_table(&connection);
+
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+        connection.execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
+            .unwrap();
+
+        let source = users::table.inner_join(posts::table).select(users::star);
+
+        let expected_data = vec![User::without_age(2, "Tess")];
+        let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
+
+        assert_eq!(expected_data, actual_data);
+
+    }
+
     fn connection() -> Connection {
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");

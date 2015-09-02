@@ -5,8 +5,9 @@ macro_rules! table {
         }
     ) => {
         mod $name {
-            use {QuerySource, Table};
+            use {QuerySource, Table, Column};
             use types::*;
+            pub use self::columns::*;
 
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
@@ -18,7 +19,7 @@ macro_rules! table {
                 type SqlType = SqlType;
 
                 fn select_clause(&self) -> String {
-                    format!("{}.*", stringify!($name))
+                    star.name()
                 }
 
                 fn from_clause(&self) -> String {
@@ -36,18 +37,25 @@ macro_rules! table {
                 use super::table;
                 use {Table, Column};
                 use types::*;
-            $(
+
                 #[allow(non_camel_case_types, dead_code)]
+                pub struct star;
+
+                impl Column<super::SqlType, table> for star {
+                    fn name(&self) -> String {
+                        format!("{}.*", table.name())
+                    }
+                }
+
+                $(#[allow(non_camel_case_types, dead_code)]
                 pub struct $column_name;
 
                 impl Column<$Type, table> for $column_name {
                     fn name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
-                }
-            )+}
-
-            pub use self::columns::*;
+                })+
+            }
         }
     }
 }
