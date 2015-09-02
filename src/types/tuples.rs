@@ -38,9 +38,12 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T),+, $($ST),+, $($TT),+>
-                Column<($($ST),+), ($($TT),+)> for ($($T),+) where
-                $($T: Column<$ST, $TT>),+,
+                Column<($($TT),+)> for ($($T),+) where
+                $($T: Column<$TT, SqlType=$ST>),+,
+                $($ST: NativeSqlType),+,
             {
+                type SqlType = ($($ST),+);
+
                 #[allow(non_snake_case)]
                 fn name(&self) -> String {
                     let parts: &[String] = e!(&[$(self.$idx.name()),*]);
@@ -48,10 +51,10 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($ST),+, $($TT),+, QS>
-                SelectableColumn<($($ST),+), ($($TT),+), QS>
+            impl<$($T),+, $($TT),+, QS>
+                SelectableColumn<($($TT),+), QS>
                 for ($($T),+) where
-                $($T: SelectableColumn<$ST, $TT, QS>),+,
+                $($T: SelectableColumn<$TT, QS>),+,
                 QS: QuerySource,
             {}
         )+

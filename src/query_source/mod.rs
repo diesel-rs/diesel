@@ -20,9 +20,8 @@ pub trait QuerySource: Sized {
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
 
-    fn select<A, C, T>(self, column: C) -> SelectSqlQuerySource<A, Self> where
-        A: NativeSqlType,
-        C: SelectableColumn<A, T, Self>,
+    fn select<C, T>(self, column: C) -> SelectSqlQuerySource<C::SqlType, Self> where
+        C: SelectableColumn<T, Self>,
     {
         self.select_sql_inner(column.name())
     }
@@ -42,7 +41,9 @@ pub trait QuerySource: Sized {
     }
 }
 
-pub trait Column<SqlType, Table> {
+pub trait Column<Table> {
+    type SqlType: NativeSqlType;
+
     fn name(&self) -> String;
 }
 
@@ -57,9 +58,9 @@ pub trait Table: QuerySource {
     }
 }
 
-pub trait SelectableColumn<A, T, QS: QuerySource>: Column<A, T> {}
+pub trait SelectableColumn<T, QS: QuerySource>: Column<T> {}
 
-impl<A, T, C> SelectableColumn<A, T, T> for C where
+impl<T, C> SelectableColumn<T, T> for C where
     T: Table,
-    C: Column<A, T>,
+    C: Column<T>,
 {}

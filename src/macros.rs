@@ -41,7 +41,9 @@ macro_rules! table {
                 #[allow(non_camel_case_types, dead_code)]
                 pub struct star;
 
-                impl Column<super::SqlType, table> for star {
+                impl Column<table> for star {
+                    type SqlType = super::SqlType;
+
                     fn name(&self) -> String {
                         format!("{}.*", table.name())
                     }
@@ -50,7 +52,9 @@ macro_rules! table {
                 $(#[allow(non_camel_case_types, dead_code)]
                 pub struct $column_name;
 
-                impl Column<$Type, table> for $column_name {
+                impl Column<table> for $column_name {
+                    type SqlType = $Type;
+
                     fn name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
@@ -99,12 +103,12 @@ macro_rules! joinable_inner {
             }
         }
 
-        impl<A, C> SelectableColumn<A, $parent::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            C: Column<A, $parent::table>,
+        impl<C> SelectableColumn<$parent::table, InnerJoinSource<$child::table, $parent::table>> for C where
+            C: Column<$parent::table>,
         {}
 
-        impl<A, C> SelectableColumn<A, $child::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            C: Column<A, $child::table>,
+        impl<C> SelectableColumn<$child::table, InnerJoinSource<$child::table, $parent::table>> for C where
+            C: Column<$child::table>,
         {}
     }
 }
