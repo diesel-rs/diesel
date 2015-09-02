@@ -21,7 +21,6 @@ macro_rules! tuple_impls {
                 $($T: FromSql<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                #[allow(unused_assignments)]
                 fn from_sql<T: Row>(row: &mut T) -> Self {
                     ($($T::from_sql(row)),+)
                 }
