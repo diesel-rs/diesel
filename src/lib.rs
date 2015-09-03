@@ -21,19 +21,19 @@ mod test_usage_without_compiler_plugins {
     struct User {
         id: i32,
         name: String,
-        age: Option<i16>,
+        hair_color: Option<String>,
     }
 
     impl User {
-        fn without_age(id: i32, name: &str) -> Self {
-            User { id: id, name: name.to_string(), age: None }
+        fn new(id: i32, name: &str) -> Self {
+            User { id: id, name: name.to_string(), hair_color: None }
         }
     }
 
     #[derive(PartialEq, Eq, Debug)]
     struct UserWithoutId {
         name: String,
-        age: Option<i16>,
+        hair_color: Option<String>,
     }
 
     #[derive(PartialEq, Eq, Debug)]
@@ -48,7 +48,7 @@ mod test_usage_without_compiler_plugins {
         users {
             id -> Serial,
             name -> VarChar,
-            age -> Nullable<SmallInt>,
+            hair_color -> Nullable<VarChar>,
         }
     }
 
@@ -65,14 +65,14 @@ mod test_usage_without_compiler_plugins {
         User {
             id -> i32,
             name -> String,
-            age -> Option<i16>,
+            hair_color -> Option<String>,
         }
     }
 
     queriable! {
         UserWithoutId {
             name -> String,
-            age -> Option<i16>,
+            hair_color -> Option<String>,
         }
     }
 
@@ -95,8 +95,8 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let expected_data = vec![
-            (1, "Sean".to_string(), None::<i16>),
-            (2, "Tess".to_string(), None::<i16>),
+            (1, "Sean".to_string(), None::<String>),
+            (2, "Tess".to_string(), None::<String>),
          ];
         let actual_data: Vec<_> = connection.query_all(&users::table)
             .unwrap().collect();
@@ -111,9 +111,9 @@ mod test_usage_without_compiler_plugins {
             .unwrap();
 
         let expected_users = vec![
-            User { id: 1, name: "Sean".to_string(), age: None },
-            User { id: 2, name: "Tess".to_string(), age: None },
-         ];
+            User::new(1, "Sean"),
+            User::new(2, "Tess"),
+        ];
         let actual_users: Vec<_> = connection.query_all(&users::table)
             .unwrap().collect();
         assert_eq!(expected_users, actual_users);
@@ -154,17 +154,17 @@ mod test_usage_without_compiler_plugins {
 
         let connection = connection();
         setup_users_table(&connection);
-        connection.execute("INSERT INTO users (name, age) VALUES ('Jim', 30), ('Bob', 40)")
+        connection.execute("INSERT INTO users (name, hair_color) VALUES ('Jim', 'Black'), ('Bob', 'Brown')")
             .unwrap();
 
-        let source = users.select((name, age));
+        let source = users.select((name, hair_color));
         // This should fail type checking, and we should add a test to ensure
         // it continues to fail to compile.
         // let source = users.select((posts::title, posts::user_id));
         // let source = users.select((posts::title, name));
         let expected_data = vec![
-            ("Jim".to_string(), Some(30)),
-            ("Bob".to_string(), Some(40)),
+            ("Jim".to_string(), Some("Black".to_string())),
+            ("Bob".to_string(), Some("Brown".to_string())),
         ];
         let actual_data: Vec<_> = connection.query_all(&source)
             .unwrap().collect();
@@ -179,13 +179,13 @@ mod test_usage_without_compiler_plugins {
 
         let connection = connection();
         setup_users_table(&connection);
-        connection.execute("INSERT INTO users (name, age) VALUES ('Jim', 30), ('Bob', 40)")
+        connection.execute("INSERT INTO users (name, hair_color) VALUES ('Jim', 'Black'), ('Bob', 'Brown')")
             .unwrap();
 
-        let source = users.select((name, age));
+        let source = users.select((name, hair_color));
         let expected_data = vec![
-            UserWithoutId { name: "Jim".to_string(), age: Some(30) },
-            UserWithoutId { name: "Bob".to_string(), age:  Some(40) },
+            UserWithoutId { name: "Jim".to_string(), hair_color: Some("Black".to_string()) },
+            UserWithoutId { name: "Bob".to_string(), hair_color: Some("Brown".to_string()) },
         ];
         let actual_data: Vec<_> = connection.query_all(&source)
             .unwrap().collect();
@@ -227,8 +227,8 @@ mod test_usage_without_compiler_plugins {
             (2, 'World')
         ").unwrap();
 
-        let sean = User::without_age(1, "Sean");
-        let tess = User::without_age(2, "Tess");
+        let sean = User::new(1, "Sean");
+        let tess = User::new(2, "Tess");
         let seans_post = Post { id: 1, user_id: 1, title: "Hello".to_string() };
         let tess_post = Post { id: 2, user_id: 2, title: "World".to_string() };
 
@@ -305,7 +305,7 @@ mod test_usage_without_compiler_plugins {
 
         let source = users::table.inner_join(posts::table).select(users::star);
 
-        let expected_data = vec![User::without_age(2, "Tess")];
+        let expected_data = vec![User::new(2, "Tess")];
         let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
 
         assert_eq!(expected_data, actual_data);
@@ -324,7 +324,7 @@ mod test_usage_without_compiler_plugins {
         connection.execute("CREATE TABLE users (
             id SERIAL PRIMARY KEY,
             name VARCHAR NOT NULL,
-            age SMALLINT
+            hair_color VARCHAR
         )").unwrap();
     }
 
