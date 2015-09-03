@@ -28,8 +28,14 @@ macro_rules! table {
             }
 
             impl Table for table {
+                type PrimaryKey = id;
+
                 fn name(&self) -> &str {
                     stringify!($name)
+                }
+
+                fn primary_key(&self) -> Self::PrimaryKey {
+                    id
                 }
             }
 

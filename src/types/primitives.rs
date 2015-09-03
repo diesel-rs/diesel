@@ -2,7 +2,7 @@ extern crate postgres;
 
 use self::postgres::types::FromSql as NativeFromSql;
 
-use super::{NativeSqlType, FromSql, Nullable};
+use super::{NativeSqlType, FromSql, Nullable, ToSql};
 use Queriable;
 use row::Row;
 
@@ -14,6 +14,9 @@ macro_rules! primitive_impls {
                 fn from_sql<T: Row>(row: &mut T) -> Self {
                     row.take()
                 }
+            }
+
+            impl ToSql<super::$Source> for $Target {
             }
 
             impl Queriable<super::$Source> for $Target {
@@ -54,4 +57,10 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
     fn from_sql<R: Row>(row: &mut R) -> Self {
         row.take()
     }
+}
+
+impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
+    T: ToSql<ST>,
+    ST: NativeSqlType,
+{
 }

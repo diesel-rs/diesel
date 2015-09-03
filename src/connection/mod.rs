@@ -27,7 +27,7 @@ impl Connection {
         U: Queriable<T::SqlType>,
     {
         let stmt = try!(self.prepare_query(source));
-        let rows = try!(stmt.query(&[]));
+        let rows = try!(stmt.query(source.bind_params()));
         Ok(rows.into_iter().map(|row| {
             let values = U::Row::from_sql(&mut PgRow::wrap(row));
             U::build(values)
@@ -39,7 +39,7 @@ impl Connection {
         U: Queriable<T::SqlType>,
     {
         let stmt = try!(self.prepare_query(source));
-        let rows = try!(stmt.query(&[]));
+        let rows = try!(stmt.query(source.bind_params()));
         let result: Vec<U> = rows.into_iter().map(|row| {
             let values = U::Row::from_sql(&mut PgRow::wrap(row));
             U::build(values)
@@ -48,7 +48,12 @@ impl Connection {
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> Result<Statement> {
-        let query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
+        let mut query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
+
+        if let Some(where_sql) = source.where_clause() {
+            query = query + &format!(" WHERE {}", where_sql);
+        }
+
         self.internal_connection.prepare(&query).map_err(|e| e.into())
     }
 }
