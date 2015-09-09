@@ -1,64 +1,102 @@
-extern crate postgres;
+extern crate pq_sys;
 
-use {Result, ConnectionResult, QuerySource, Queriable};
-use types::FromSql;
-use row::PgRow;
-use self::postgres::{SslMode, Statement};
+mod cursor;
+
+pub use self::cursor::Cursor;
+
+use {Result, ConnectionResult, ConnectionError, QuerySource, Queriable};
+use db_result::DbResult;
+use types::NativeSqlType;
+use std::ffi::{CString, CStr};
+use std::{str, ptr};
+
+use self::pq_sys::*;
 
 pub struct Connection {
-    internal_connection: postgres::Connection,
+    internal_connection: *mut PGconn,
 }
 
 impl Connection {
     pub fn establish(database_url: &str) -> ConnectionResult<Connection> {
-        let pgconn = try!(postgres::Connection::connect(database_url, &SslMode::None));
-        Ok(Connection {
-            internal_connection: pgconn,
-        })
+        let connection_string = try!(CString::new(database_url));
+        let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
+        let connection_status = unsafe { PQstatus(connection_ptr) };
+        match connection_status {
+            CONNECTION_OK => {
+                Ok(Connection {
+                    internal_connection: connection_ptr,
+                })
+            },
+            _ => {
+                let message = last_error_message(connection_ptr);
+                Err(ConnectionError::BadConnection(message))
+            }
+        }
     }
 
-    pub fn execute(&self, query: &str) -> Result<u64> {
-        self.internal_connection.execute(query, &[])
-            .map_err(|e| e.into())
+    pub fn execute(&self, query: &str) -> Result<usize> {
+        self.execute_inner(query).map(|res| res.rows_affected())
     }
 
     pub fn query_one<T, U>(&self, source: &T) -> Result<Option<U>> where
         T: QuerySource,
         U: Queriable<T::SqlType>,
     {
-        let stmt = try!(self.prepare_query(source));
-        let rows = try!(stmt.query(&[]));
-        Ok(rows.into_iter().map(|row| {
-            let values = U::Row::from_sql(&mut PgRow::wrap(row));
-            U::build(values)
-        }).nth(0))
+        self.query_all(source).map(|mut e| e.nth(0))
     }
 
-    pub fn query_all<T, U>(&self, source: &T) -> Result<Cursor<U>> where
+    pub fn query_all<T, U>(&self, source: &T) -> Result<Cursor<T::SqlType, U>> where
         T: QuerySource,
         U: Queriable<T::SqlType>,
     {
-        let stmt = try!(self.prepare_query(source));
-        let rows = try!(stmt.query(&[]));
-        let result: Vec<U> = rows.into_iter().map(|row| {
-            let values = U::Row::from_sql(&mut PgRow::wrap(row));
-            U::build(values)
-        }).collect();
-        Ok(Cursor(result.into_iter()))
+        let sql = self.prepare_query(source);
+        self.query_sql(&sql)
     }
 
-    fn prepare_query<T: QuerySource>(&self, source: &T) -> Result<Statement> {
-        let query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
-        self.internal_connection.prepare(&query).map_err(|e| e.into())
+    pub fn query_sql<T, U>(&self, query: &str) -> Result<Cursor<T, U>> where
+        T: NativeSqlType,
+        U: Queriable<T>,
+    {
+        let result = try!(self.execute_inner(query));
+        Ok(Cursor::new(result))
+    }
+
+    fn prepare_query<T: QuerySource>(&self, source: &T) -> String {
+        format!("SELECT {} FROM {}", source.select_clause(), source.from_clause())
+    }
+
+    fn execute_inner(&self, query: &str) -> Result<DbResult> {
+        let query = try!(CString::new(query));
+        let internal_res = unsafe {
+            PQexecParams(
+                self.internal_connection,
+                query.as_ptr(),
+                0,
+                ptr::null(),
+                ptr::null(),
+                ptr::null(),
+                ptr::null(),
+                1,
+           )
+        };
+        DbResult::new(self, internal_res)
+    }
+
+    pub fn last_error_message(&self) -> String {
+        last_error_message(self.internal_connection)
     }
 }
 
-pub struct Cursor<T>(::std::vec::IntoIter<T>);
+fn last_error_message(conn: *const PGconn) -> String {
+    unsafe {
+        let error_ptr = PQerrorMessage(conn);
+        let bytes = CStr::from_ptr(error_ptr).to_bytes();
+        str::from_utf8_unchecked(bytes).to_string()
+    }
+}
 
-impl<T> Iterator for Cursor<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<T> {
-        self.0.next()
+impl Drop for Connection {
+    fn drop(&mut self) {
+        unsafe { PQfinish(self.internal_connection) };
     }
 }

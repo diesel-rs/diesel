@@ -1,30 +1,34 @@
-extern crate postgres;
-
-use self::postgres::rows::Row as PgInnerRow;
-use self::postgres::types::FromSql as PgFromSql;
+use db_result::DbResult;
 
 pub trait Row {
-    fn take<T: PgFromSql>(&mut self) -> T;
+    fn take(&mut self) -> &[u8];
+    fn next_is_null(&self) -> bool;
 }
 
-pub struct PgRow<'a> {
-    inner: PgInnerRow<'a>,
-    idx: usize,
+pub struct DbRow<'a> {
+    db_result: &'a DbResult,
+    row_idx: usize,
+    col_idx: usize,
 }
 
-impl<'a> PgRow<'a> {
-    pub fn wrap(inner: PgInnerRow<'a>) -> Self {
-        PgRow {
-            inner: inner,
-            idx: 0,
+impl<'a> DbRow<'a> {
+    pub fn new(db_result: &'a DbResult, row_idx: usize) -> Self {
+        DbRow {
+            db_result: db_result,
+            row_idx: row_idx,
+            col_idx: 0,
         }
     }
 }
 
-impl<'a> Row for PgRow<'a> {
-    fn take<T: PgFromSql>(&mut self) -> T {
-        let current_idx = self.idx;
-        self.idx += 1;
-        self.inner.get(current_idx)
+impl<'a> Row for DbRow<'a> {
+    fn take(&mut self) -> &[u8] {
+        let current_idx = self.col_idx;
+        self.col_idx += 1;
+        self.db_result.get(self.row_idx, current_idx)
+    }
+
+    fn next_is_null(&self) -> bool {
+        self.db_result.is_null(self.row_idx, self.col_idx)
     }
 }

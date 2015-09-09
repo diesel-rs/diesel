@@ -1,6 +1,8 @@
+#![deny(warnings)]
 pub mod types;
 
 mod connection;
+mod db_result;
 mod query_source;
 mod result;
 mod row;
@@ -14,7 +16,7 @@ pub use connection::Connection;
 
 #[cfg(test)]
 mod test_usage_without_compiler_plugins {
-    use super::*;
+    pub use super::*;
     use types::NativeSqlType;
 
     #[derive(PartialEq, Eq, Debug)]
@@ -309,10 +311,96 @@ mod test_usage_without_compiler_plugins {
         let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
 
         assert_eq!(expected_data, actual_data);
-
     }
 
-    fn connection() -> Connection {
+    mod primitive_types {
+        use super::*;
+        use types::*;
+
+        #[test]
+        fn boolean_from_sql() {
+            assert_eq!(true, query_single_value::<Bool, bool>("SELECT 't'::bool"));
+            assert_eq!(false, query_single_value::<Bool, bool>("SELECT 'f'::bool"));
+            assert_eq!(Some(true),
+                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT 't'::bool"));
+            assert_eq!(None,
+                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT NULL::bool"));
+        }
+
+        #[test]
+        fn i16_from_sql() {
+            assert_eq!(0, query_single_value::<SmallInt, i16>("SELECT 0::int2"));
+            assert_eq!(-1, query_single_value::<SmallInt, i16>("SELECT -1::int2"));
+            assert_eq!(1, query_single_value::<SmallInt, i16>("SELECT 1::int2"));
+        }
+
+        #[test]
+        fn i32_from_sql() {
+            assert_eq!(0, query_single_value::<Integer, i32>("SELECT 0"));
+            assert_eq!(-1, query_single_value::<Integer, i32>("SELECT -1"));
+            assert_eq!(70000, query_single_value::<Integer, i32>("SELECT 70000"));
+        }
+
+        #[test]
+        fn i64_from_sql() {
+            assert_eq!(0, query_single_value::<BigInt, i64>("SELECT 0::int8"));
+            assert_eq!(-1, query_single_value::<BigInt, i64>("SELECT -1::int8"));
+            assert_eq!(283745982374,
+                query_single_value::<BigInt, i64>("SELECT 283745982374::int8"));
+        }
+
+        use std::{f32, f64};
+
+        #[test]
+        fn f32_from_sql() {
+            assert_eq!(0.0, query_single_value::<Float, f32>("SELECT 0.0::real"));
+            assert_eq!(0.5, query_single_value::<Float, f32>("SELECT 0.5::real"));
+            let nan = query_single_value::<Float, f32>("SELECT 'NaN'::real");
+            assert!(nan.is_nan());
+            assert_eq!(f32::INFINITY,
+                query_single_value::<Float, f32>("SELECT 'Infinity'::real"));
+            assert_eq!(-f32::INFINITY,
+                query_single_value::<Float, f32>("SELECT '-Infinity'::real"));
+        }
+
+        #[test]
+        fn f64_from_sql() {
+            assert_eq!(0.0, query_single_value::<Double, f64>("SELECT 0.0::double precision"));
+            assert_eq!(0.5, query_single_value::<Double, f64>("SELECT 0.5::double precision"));
+            let nan = query_single_value::<Double, f64>("SELECT 'NaN'::double precision");
+            assert!(nan.is_nan());
+            assert_eq!(f64::INFINITY,
+                query_single_value::<Double, f64>("SELECT 'Infinity'::double precision"));
+            assert_eq!(-f64::INFINITY,
+                query_single_value::<Double, f64>("SELECT '-Infinity'::double precision"));
+        }
+
+        #[test]
+        fn string_from_sql() {
+            assert_eq!("hello", &query_single_value::<VarChar, String>("SELECT 'hello'"));
+            assert_eq!("world", &query_single_value::<VarChar, String>("SELECT 'world'"));
+        }
+
+        #[test]
+        fn binary_from_sql() {
+            let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
+            assert_eq!(invalid_utf8_bytes,
+                query_single_value::<Binary, Vec<u8>>("SELECT E'\\\\x1F8B'::bytea"));
+            assert_eq!(Vec::<u8>::new(),
+                query_single_value::<Binary, Vec<u8>>("SELECT ''::bytea"));
+            assert_eq!(vec![0u8],
+                query_single_value::<Binary, Vec<u8>>("SELECT E'\\\\000'::bytea"));
+        }
+
+        fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
+            let connection = connection();
+            let mut cursor = connection.query_sql::<T, U>(sql)
+                .unwrap();
+            cursor.nth(0).unwrap()
+        }
+    }
+
+    pub fn connection() -> Connection {
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");
         let result = Connection::establish(&connection_url).unwrap();

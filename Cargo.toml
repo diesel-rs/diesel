@@ -4,4 +4,6 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@thoughtbot.com>"]
 
 [dependencies]
-postgres = "0.9.*"
+libc = "*"
+pq-sys = "0.1.*"
+byteorder = "0.3.*"
