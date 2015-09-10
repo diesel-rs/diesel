@@ -2,6 +2,7 @@ mod tuples;
 mod primitives;
 
 use row::Row;
+use std::error::Error;
 
 pub struct Bool;
 
@@ -24,6 +25,6 @@ pub struct Nullable<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {}
 
-pub trait FromSql<A: NativeSqlType> {
-    fn from_sql<T: Row>(row: &mut T) -> Self;
+pub trait FromSql<A: NativeSqlType>: Sized {
+    fn from_sql<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
 }

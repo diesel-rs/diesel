@@ -321,10 +321,6 @@ mod test_usage_without_compiler_plugins {
         fn boolean_from_sql() {
             assert_eq!(true, query_single_value::<Bool, bool>("SELECT 't'::bool"));
             assert_eq!(false, query_single_value::<Bool, bool>("SELECT 'f'::bool"));
-            assert_eq!(Some(true),
-                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT 't'::bool"));
-            assert_eq!(None,
-                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT NULL::bool"));
         }
 
         #[test]
@@ -390,6 +386,24 @@ mod test_usage_without_compiler_plugins {
                 query_single_value::<Binary, Vec<u8>>("SELECT ''::bytea"));
             assert_eq!(vec![0u8],
                 query_single_value::<Binary, Vec<u8>>("SELECT E'\\\\000'::bytea"));
+        }
+
+        #[test]
+        fn option_from_sql() {
+            assert_eq!(Some(true),
+                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT 't'::bool"));
+            assert_eq!(None,
+                query_single_value::<Nullable<Bool>, Option<bool>>("SELECT NULL"));
+            assert_eq!(Some(1),
+                query_single_value::<Nullable<Integer>, Option<i32>>("SELECT 1"));
+            assert_eq!(None,
+                query_single_value::<Nullable<Integer>, Option<i32>>("SELECT NULL"));
+            assert_eq!(Some("Hello!".to_string()),
+                query_single_value::<Nullable<VarChar>, Option<String>>("SELECT 'Hello!'"));
+            assert_eq!(Some("".to_string()),
+                query_single_value::<Nullable<VarChar>, Option<String>>("SELECT ''"));
+            assert_eq!(None,
+                query_single_value::<Nullable<VarChar>, Option<String>>("SELECT NULL"));
         }
 
         fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {

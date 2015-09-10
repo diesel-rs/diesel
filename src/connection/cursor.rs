@@ -32,7 +32,10 @@ impl<ST, T> Iterator for Cursor<ST, T> where
         } else {
             let mut row = self.db_result.get_row(self.current_row);
             self.current_row += 1;
-            let values = T::Row::from_sql(&mut row);
+            let values = match T::Row::from_sql(&mut row) {
+                Ok(value) => value,
+                Err(reason) => panic!("Error reading values {}", reason.description()),
+            };
             let result = T::build(values);
             Some(result)
         }

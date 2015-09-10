@@ -2,6 +2,7 @@ use super::{NativeSqlType, FromSql};
 use {Queriable, Table, Column, QuerySource};
 use query_source::SelectableColumn;
 use row::Row;
+use std::error::Error;
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -21,8 +22,8 @@ macro_rules! tuple_impls {
                 $($T: FromSql<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                fn from_sql<T: Row>(row: &mut T) -> Self {
-                    ($($T::from_sql(row)),+)
+                fn from_sql<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
+                    Ok(($(try!($T::from_sql(row))),+))
                 }
             }
 
