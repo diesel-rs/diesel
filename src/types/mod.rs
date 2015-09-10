@@ -1,5 +1,3 @@
-extern crate postgres;
-
 mod tuples;
 mod primitives;
 
@@ -29,5 +27,3 @@ pub trait NativeSqlType {}
 pub trait FromSql<A: NativeSqlType> {
     fn from_sql<T: Row>(row: &mut T) -> Self;
 }
-
-pub trait ToSql<A: NativeSqlType>: postgres::types::ToSql {}

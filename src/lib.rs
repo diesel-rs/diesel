@@ -309,22 +309,7 @@ mod test_usage_without_compiler_plugins {
         let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
 
         assert_eq!(expected_data, actual_data);
-    }
 
-    #[test]
-    fn find_by_id() {
-        use FindError::RecordNotFound;
-        use self::users::table as users;
-
-        let connection = connection();
-        setup_users_table(&connection);
-
-        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-            .unwrap();
-
-        assert_eq!(Ok(User::new(1, "Sean")), users.find(&connection, &1));
-        assert_eq!(Ok(User::new(2, "Tess")), users.find(&connection, &2));
-        assert_eq!(Err(RecordNotFound), users.find::<User, _>(&connection, &3));
     }
 
     fn connection() -> Connection {
