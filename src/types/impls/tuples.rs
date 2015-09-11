@@ -1,8 +1,8 @@
-use super::{NativeSqlType, FromSqlRow};
-use {Queriable, Table, Column, QuerySource};
 use query_source::SelectableColumn;
 use row::Row;
 use std::error::Error;
+use types::{NativeSqlType, FromSqlRow};
+use {Queriable, Table, Column, QuerySource};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
