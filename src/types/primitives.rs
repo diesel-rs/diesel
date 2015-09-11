@@ -172,14 +172,17 @@ impl<T, ST> FromSql<Array<ST>> for Vec<T> where
                 let lower_bound = try!(bytes.read_i32::<BigEndian>());
 
                 assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
-                assert!(!has_null, "arrays containing null are not supported");
                 assert!(lower_bound == 1, "lower bound must be 1");
 
                 (0..num_elements).map(|_| {
-                    let elem_size = try!(bytes.read_i32::<BigEndian>()) as usize;
-                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size);
-                    bytes = new_bytes;
-                    T::from_sql(Some(&elem_bytes))
+                    let elem_size = try!(bytes.read_i32::<BigEndian>());
+                    if has_null && elem_size == -1 {
+                        T::from_sql(None)
+                    } else {
+                        let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+                        bytes = new_bytes;
+                        T::from_sql(Some(&elem_bytes))
+                    }
                 }).collect()
             },
             None => unexpected_null(),

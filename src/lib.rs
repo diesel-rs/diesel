@@ -413,9 +413,22 @@ mod test_usage_without_compiler_plugins {
                     "SELECT ARRAY['t', 'f', 't']::bool[]"));
             assert_eq!(vec![1, 2, 3],
                 query_single_value::<Array<Integer>, Vec<i32>>("SELECT ARRAY[1, 2, 3]"));
-            assert_eq!(vec!["Hello".to_string(), "world".to_string()],
+            assert_eq!(vec!["Hello".to_string(), "".to_string(), "world".to_string()],
                 query_single_value::<Array<VarChar>, Vec<String>>(
-                    "SELECT ARRAY['Hello', 'world']"));
+                    "SELECT ARRAY['Hello', '', 'world']"));
+        }
+
+        #[test]
+        fn pg_array_containing_null() {
+            let query = "SELECT ARRAY['Hello', '', NULL, 'world']";
+            let data = query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>(query);
+            let expected = vec![
+                Some("Hello".to_string()),
+                Some("".to_string()),
+                None,
+                Some("world".to_string()),
+            ];
+            assert_eq!(expected, data);
         }
 
         fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
