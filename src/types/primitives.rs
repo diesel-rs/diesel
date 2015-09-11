@@ -43,21 +43,28 @@ primitive_impls! {
     Binary -> Vec<u8>,
 }
 
+macro_rules! not_none {
+    ($bytes:expr) => {
+        match $bytes {
+            Some(bytes) => bytes,
+            None => return Err(Box::new(UnexpectedNullError {
+                msg: "Unexpected null for non-null column".to_string(),
+            })),
+        }
+    }
+}
+
 impl FromSql<super::Bool> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(bytes) => Ok(bytes[0] != 0),
-            None => unexpected_null(),
-        }
+        let bytes = not_none!(bytes);
+        Ok(bytes[0] != 0)
     }
 }
 
 impl FromSql<super::SmallInt> for i16 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => bytes.read_i16::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let mut bytes = not_none!(bytes);
+        bytes.read_i16::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -69,10 +76,8 @@ impl FromSql<super::SmallSerial> for i16 {
 
 impl FromSql<super::Integer> for i32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => bytes.read_i32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let mut bytes = not_none!(bytes);
+        bytes.read_i32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -84,10 +89,8 @@ impl FromSql<super::Serial> for i32 {
 
 impl FromSql<super::BigInt> for i64 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => bytes.read_i64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let mut bytes = not_none!(bytes);
+        bytes.read_i64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -99,37 +102,28 @@ impl FromSql<super::BigSerial> for i64 {
 
 impl FromSql<super::Float> for f32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => bytes.read_f32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let mut bytes = not_none!(bytes);
+        bytes.read_f32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
 impl FromSql<super::Double> for f64 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => bytes.read_f64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let mut bytes = not_none!(bytes);
+        bytes.read_f64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
 impl FromSql<super::VarChar> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(bytes) => String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error>),
-            None => unexpected_null(),
-        }
+        let bytes = not_none!(bytes);
+        String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
 impl FromSql<super::Binary> for Vec<u8> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(bytes) => Ok(bytes.into()),
-            None => unexpected_null(),
-        }
+        Ok(not_none!(bytes).into())
     }
 }
 
@@ -163,30 +157,26 @@ impl<T, ST> FromSql<Array<ST>> for Vec<T> where
     ST: NativeSqlType,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(mut bytes) => {
-                let num_dimensions = try!(bytes.read_i32::<BigEndian>());
-                let has_null = try!(bytes.read_i32::<BigEndian>()) != 0;
-                let _oid = try!(bytes.read_i32::<BigEndian>());
-                let num_elements = try!(bytes.read_i32::<BigEndian>());
-                let lower_bound = try!(bytes.read_i32::<BigEndian>());
+        let mut bytes = not_none!(bytes);
+        let num_dimensions = try!(bytes.read_i32::<BigEndian>());
+        let has_null = try!(bytes.read_i32::<BigEndian>()) != 0;
+        let _oid = try!(bytes.read_i32::<BigEndian>());
+        let num_elements = try!(bytes.read_i32::<BigEndian>());
+        let lower_bound = try!(bytes.read_i32::<BigEndian>());
 
-                assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
-                assert!(lower_bound == 1, "lower bound must be 1");
+        assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
+        assert!(lower_bound == 1, "lower bound must be 1");
 
-                (0..num_elements).map(|_| {
-                    let elem_size = try!(bytes.read_i32::<BigEndian>());
-                    if has_null && elem_size == -1 {
-                        T::from_sql(None)
-                    } else {
-                        let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
-                        bytes = new_bytes;
-                        T::from_sql(Some(&elem_bytes))
-                    }
-                }).collect()
-            },
-            None => unexpected_null(),
-        }
+        (0..num_elements).map(|_| {
+            let elem_size = try!(bytes.read_i32::<BigEndian>());
+            if has_null && elem_size == -1 {
+                T::from_sql(None)
+            } else {
+                let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+                bytes = new_bytes;
+                T::from_sql(Some(&elem_bytes))
+            }
+        }).collect()
     }
 }
 
@@ -215,10 +205,4 @@ impl Error for UnexpectedNullError {
     fn description(&self) -> &str {
         &self.msg
     }
-}
-
-fn unexpected_null<T>() -> Result<T, Box<Error>> {
-    Err(Box::new(UnexpectedNullError {
-        msg: "Unexpected null for non-null column".to_string(),
-    }))
 }
