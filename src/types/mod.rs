@@ -26,5 +26,19 @@ pub struct Nullable<T: NativeSqlType>(T);
 pub trait NativeSqlType {}
 
 pub trait FromSql<A: NativeSqlType>: Sized {
-    fn from_sql<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
+    fn from_sql(bytes: &[u8], is_null: bool) -> Result<Self, Box<Error>>;
+}
+
+pub trait FromSqlRow<A: NativeSqlType>: Sized {
+    fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
+}
+
+impl<A, T> FromSqlRow<A> for T where
+    A: NativeSqlType,
+    T: FromSql<A>,
+{
+    fn build_from_row<R: Row>(row: &mut R) -> Result<Self, Box<Error>> {
+        let is_null = row.next_is_null();
+        Self::from_sql(row.take(), is_null)
+    }
 }

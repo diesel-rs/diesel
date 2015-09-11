@@ -1,6 +1,6 @@
 use Queriable;
 use db_result::DbResult;
-use types::{NativeSqlType, FromSql};
+use types::{NativeSqlType, FromSqlRow};
 
 use std::marker::PhantomData;
 
@@ -32,7 +32,7 @@ impl<ST, T> Iterator for Cursor<ST, T> where
         } else {
             let mut row = self.db_result.get_row(self.current_row);
             self.current_row += 1;
-            let values = match T::Row::from_sql(&mut row) {
+            let values = match T::Row::build_from_row(&mut row) {
                 Ok(value) => value,
                 Err(reason) => panic!("Error reading values {}", reason.description()),
             };

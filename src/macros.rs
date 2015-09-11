@@ -72,7 +72,7 @@ macro_rules! queriable {
     ) => {
         impl <ST> Queriable<ST> for $Struct where
             ST: NativeSqlType,
-            ($($Type),+): types::FromSql<ST>,
+            ($($Type),+): types::FromSqlRow<ST>,
         {
             type Row = ($($Type),+);
 

@@ -1,4 +1,4 @@
-use super::{NativeSqlType, FromSql};
+use super::{NativeSqlType, FromSqlRow};
 use {Queriable, Table, Column, QuerySource};
 use query_source::SelectableColumn;
 use row::Row;
@@ -18,17 +18,17 @@ macro_rules! tuple_impls {
         $(
             impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {}
 
-            impl<$($T),+,$($ST),+> FromSql<($($ST),+)> for ($($T),+) where
-                $($T: FromSql<$ST>),+,
+            impl<$($T),+,$($ST),+> FromSqlRow<($($ST),+)> for ($($T),+) where
+                $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                fn from_sql<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
-                    Ok(($(try!($T::from_sql(row))),+))
+                fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
+                    Ok(($(try!($T::build_from_row(row))),+))
                 }
             }
 
             impl<$($T),+,$($ST),+> Queriable<($($ST),+)> for ($($T),+) where
-                $($T: FromSql<$ST>),+,
+                $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
                 type Row = Self;
