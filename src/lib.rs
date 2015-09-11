@@ -406,6 +406,18 @@ mod test_usage_without_compiler_plugins {
                 query_single_value::<Nullable<VarChar>, Option<String>>("SELECT NULL"));
         }
 
+        #[test]
+        fn pg_array_from_sql() {
+            assert_eq!(vec![true, false, true],
+                query_single_value::<Array<Bool>, Vec<bool>>(
+                    "SELECT ARRAY['t', 'f', 't']::bool[]"));
+            assert_eq!(vec![1, 2, 3],
+                query_single_value::<Array<Integer>, Vec<i32>>("SELECT ARRAY[1, 2, 3]"));
+            assert_eq!(vec!["Hello".to_string(), "world".to_string()],
+                query_single_value::<Array<VarChar>, Vec<String>>(
+                    "SELECT ARRAY['Hello', 'world']"));
+        }
+
         fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
             let connection = connection();
             let mut cursor = connection.query_sql::<T, U>(sql)

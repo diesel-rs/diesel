@@ -22,6 +22,7 @@ pub struct VarChar;
 pub struct Binary;
 
 pub struct Nullable<T: NativeSqlType>(T);
+pub struct Array<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {}
 
