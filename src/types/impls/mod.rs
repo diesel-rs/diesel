@@ -13,3 +13,5 @@ mod primitives;
 mod tuples;
 mod array;
 mod option;
+mod integers;
+mod floats;

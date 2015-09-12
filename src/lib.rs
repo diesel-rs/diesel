@@ -313,6 +313,42 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(expected_data, actual_data);
     }
 
+    #[test]
+    fn find() {
+        use self::users::table as users;
+
+        let connection = connection();
+        setup_users_table(&connection);
+
+        connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+
+        assert_eq!(Ok(Some(User::new(1, "Sean"))), connection.find(&users, &1));
+        assert_eq!(Ok(Some(User::new(2, "Tess"))), connection.find(&users, &2));
+        assert_eq!(Ok(None::<User>), connection.find(&users, &3));
+    }
+
+    table! {
+        users_with_name_pk (name) {
+            name -> VarChar,
+        }
+    }
+
+    #[test]
+    fn find_with_non_serial_pk() {
+        use self::users_with_name_pk::table as users;
+
+        let connection = connection();
+        connection.execute("CREATE TABLE users_with_name_pk (name VARCHAR PRIMARY KEY)")
+            .unwrap();
+        connection.execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
+            .unwrap();
+
+        assert_eq!(Ok(Some("Sean".to_string())), connection.find(&users, &"Sean"));
+        assert_eq!(Ok(Some("Tess".to_string())), connection.find(&users, &"Tess".to_string()));
+        assert_eq!(Ok(None::<String>), connection.find(&users, &"Wibble"));
+    }
+
     fn connection() -> Connection {
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");

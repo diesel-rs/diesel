@@ -4,6 +4,17 @@ macro_rules! table {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
+        table! {
+            $name (id) {
+                $($column_name -> $Type,)+
+            }
+        }
+    };
+    (
+        $name:ident ($pk:ident) {
+            $($column_name:ident -> $Type:ty,)+
+        }
+    ) => {
         mod $name {
             use {QuerySource, Table, Column};
             use types::*;
@@ -28,8 +39,14 @@ macro_rules! table {
             }
 
             impl Table for table {
+                type PrimaryKey = columns::$pk;
+
                 fn name(&self) -> &str {
                     stringify!($name)
+                }
+
+                fn primary_key(&self) -> Self::PrimaryKey {
+                    columns::$pk
                 }
             }
 

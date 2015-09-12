@@ -1,16 +1,17 @@
 extern crate pq_sys;
+extern crate libc;
 
 mod cursor;
 
 pub use self::cursor::Cursor;
 
-use {Result, ConnectionResult, ConnectionError, QuerySource, Queriable};
 use db_result::DbResult;
-use types::NativeSqlType;
+use query_source::{Table, Column};
+use self::pq_sys::*;
 use std::ffi::{CString, CStr};
 use std::{str, ptr};
-
-use self::pq_sys::*;
+use types::{NativeSqlType, ToSql};
+use {Result, ConnectionResult, ConnectionError, QuerySource, Queriable};
 
 pub struct Connection {
     internal_connection: *mut PGconn,
@@ -59,6 +60,45 @@ impl Connection {
     {
         let result = try!(self.execute_inner(query));
         Ok(Cursor::new(result))
+    }
+
+    fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
+        -> Result<Cursor<T, U>> where
+        T: NativeSqlType,
+        U: Queriable<T>,
+        PT: NativeSqlType,
+        P: ToSql<PT>,
+    {
+        let query = try!(CString::new(query));
+        let mut param_data = Vec::new();
+        params.to_sql(&mut param_data).unwrap();
+        let params = [param_data.as_ptr() as *const libc::c_char];
+        let param_lengths = [param_data.len() as libc::c_int];
+        let param_formats = [1 as libc::c_int];
+        let internal_res = unsafe {
+            PQexecParams(
+                self.internal_connection,
+                query.as_ptr(),
+                1,
+                ptr::null(),
+                params.as_ptr(),
+                param_lengths.as_ptr(),
+                param_formats.as_ptr(),
+                1,
+           )
+        };
+        let db_result = try!(DbResult::new(self, internal_res));
+        Ok(Cursor::new(db_result))
+    }
+
+    pub fn find<T, U, PK>(&self, source: &T, id: &PK) -> Result<Option<U>> where
+        T: Table,
+        U: Queriable<T::SqlType>,
+        PK: ToSql<<T::PrimaryKey as Column<T>>::SqlType>,
+    {
+        let sql = self.prepare_query(source);
+        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().name());
+        self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> String {

@@ -1,10 +1,8 @@
-extern crate byteorder;
-
-use self::byteorder::{ReadBytesExt, BigEndian};
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql};
+use types::{NativeSqlType, FromSql, ToSql};
 use {Queriable, types};
 use std::error::Error;
+use std::io::Write;
 
 macro_rules! primitive_impls {
     ($($Source:ident -> $Target:ty),+,) => {
@@ -48,55 +46,13 @@ impl FromSql<types::Bool> for bool {
     }
 }
 
-impl FromSql<types::SmallInt> for i16 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let mut bytes = not_none!(bytes);
-        bytes.read_i16::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
-
-impl FromSql<types::SmallSerial> for i16 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        <Self as FromSql<types::SmallInt>>::from_sql(bytes)
-    }
-}
-
-impl FromSql<types::Integer> for i32 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let mut bytes = not_none!(bytes);
-        bytes.read_i32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
-
-impl FromSql<types::Serial> for i32 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        <Self as FromSql<types::Integer>>::from_sql(bytes)
-    }
-}
-
-impl FromSql<types::BigInt> for i64 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let mut bytes = not_none!(bytes);
-        bytes.read_i64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
-
-impl FromSql<types::BigSerial> for i64 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        <Self as FromSql<types::BigInt>>::from_sql(bytes)
-    }
-}
-
-impl FromSql<types::Float> for f32 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let mut bytes = not_none!(bytes);
-        bytes.read_f32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
-impl FromSql<types::Double> for f64 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let mut bytes = not_none!(bytes);
-        bytes.read_f64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
+impl ToSql<types::Bool> for bool {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+        if *self {
+            out.write_all(&[1])
+        } else {
+            out.write_all(&[0])
+        }.map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -107,8 +63,40 @@ impl FromSql<types::VarChar> for String {
     }
 }
 
+impl ToSql<types::VarChar> for String {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+        out.write_all(self.as_bytes()).map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
+impl<'a> ToSql<types::VarChar> for &'a str {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+        out.write_all(self.as_bytes()).map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
 impl FromSql<types::Binary> for Vec<u8> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         Ok(not_none!(bytes).into())
     }
+}
+
+impl ToSql<types::Binary> for Vec<u8> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+        out.write_all(&self).map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
+impl<'a> ToSql<types::Binary> for &'a [u8] {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+        out.write_all(self).map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
+#[test]
+fn bool_to_sql() {
+    let mut bytes = vec![];
+    true.to_sql(&mut bytes).unwrap();
+    false.to_sql(&mut bytes).unwrap();
+    assert_eq!(bytes, vec![1u8, 0u8]);
 }

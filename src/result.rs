@@ -2,7 +2,7 @@ use std::result;
 use std::convert::From;
 use std::ffi::NulError;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),

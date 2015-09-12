@@ -2,6 +2,7 @@ mod impls;
 
 use row::Row;
 use std::error::Error;
+use std::io::Write;
 
 pub struct Bool;
 
@@ -45,4 +46,8 @@ impl<A, T> FromSqlRow<A> for T where
         };
         Self::from_sql(bytes)
     }
+}
+
+pub trait ToSql<A: NativeSqlType> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>>;
 }

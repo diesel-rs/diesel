@@ -48,7 +48,9 @@ pub trait Column<Table> {
 }
 
 pub trait Table: QuerySource {
+    type PrimaryKey: Column<Self>;
     fn name(&self) -> &str;
+    fn primary_key(&self) -> Self::PrimaryKey;
 
     fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
         T: Table,
