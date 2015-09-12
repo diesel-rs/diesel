@@ -326,6 +326,9 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(Ok(Some(User::new(1, "Sean"))), connection.find(&users, &1));
         assert_eq!(Ok(Some(User::new(2, "Tess"))), connection.find(&users, &2));
         assert_eq!(Ok(None::<User>), connection.find(&users, &3));
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
+        // connection.find(&users, &"1").unwrap();
     }
 
     table! {
@@ -347,6 +350,9 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(Ok(Some("Sean".to_string())), connection.find(&users, &"Sean"));
         assert_eq!(Ok(Some("Tess".to_string())), connection.find(&users, &"Tess".to_string()));
         assert_eq!(Ok(None::<String>), connection.find(&users, &"Wibble"));
+        // This should fail type checking, and we should add a test to ensure
+        // it continues to fail to compile.
+        // connection.find(&users, &1).unwrap();
     }
 
     fn connection() -> Connection {
