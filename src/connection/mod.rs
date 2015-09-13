@@ -116,9 +116,11 @@ impl Connection {
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
-    pub fn insert<T, Values, U>(&self, source: &T, records: Vec<U>) -> Result<()> where
+    pub fn insert<T, Values, U, Out>(&self, source: &T, records: Vec<U>)
+        -> Result<Cursor<T::SqlType, Out>> where
         T: Table,
         U: Insertable<T, Values>,
+        Out: Queriable<T::SqlType>,
     {
         let mut param_index = 1;
         let param_placeholders = records.iter()
@@ -126,15 +128,16 @@ impl Connection {
             .collect::<Vec<_>>()
             .join(",");
         let sql = format!(
-            "INSERT INTO {} ({}) VALUES {}",
+            "INSERT INTO {} ({}) VALUES {} RETURNING {}",
             source.name(),
             U::columns().name(),
             param_placeholders,
+            source.select_clause(),
         );
         let params = records.into_iter()
             .flat_map(|r| r.values().values_to_sql().unwrap())
             .collect();
-        self.exec_sql_params(&sql, &params).map(|_| ())
+        self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> String {

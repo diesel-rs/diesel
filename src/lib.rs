@@ -374,7 +374,7 @@ mod test_usage_without_compiler_plugins {
             NewUser::new("Sean", Some("Black")),
             NewUser::new("Tess", None),
         ];
-        connection.insert(&users, new_users).unwrap();
+        let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
 
         let expected_users = vec![
             User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -383,6 +383,7 @@ mod test_usage_without_compiler_plugins {
         let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
 
         assert_eq!(expected_users, actual_users);
+        assert_eq!(expected_users, inserted_users);
     }
 
     struct NewUser {
