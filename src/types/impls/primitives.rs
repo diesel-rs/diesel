@@ -1,5 +1,5 @@
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql, ToSql};
+use types::{NativeSqlType, FromSql, ToSql, IsNull};
 use {Queriable, types};
 use std::error::Error;
 use std::io::Write;
@@ -47,12 +47,15 @@ impl FromSql<types::Bool> for bool {
 }
 
 impl ToSql<types::Bool> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        if *self {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        let write_result = if *self {
             out.write_all(&[1])
         } else {
             out.write_all(&[0])
-        }.map_err(|e| Box::new(e) as Box<Error>)
+        };
+        write_result
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -64,14 +67,18 @@ impl FromSql<types::VarChar> for String {
 }
 
 impl ToSql<types::VarChar> for String {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_all(self.as_bytes()).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_all(self.as_bytes())
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
 impl<'a> ToSql<types::VarChar> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_all(self.as_bytes()).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_all(self.as_bytes())
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -82,14 +89,18 @@ impl FromSql<types::Binary> for Vec<u8> {
 }
 
 impl ToSql<types::Binary> for Vec<u8> {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_all(&self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_all(&self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
 impl<'a> ToSql<types::Binary> for &'a [u8] {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_all(self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_all(self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 

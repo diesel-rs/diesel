@@ -2,7 +2,7 @@ extern crate byteorder;
 
 use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use super::option::UnexpectedNullError;
-use types::{FromSql, ToSql};
+use types::{FromSql, ToSql, IsNull};
 use types;
 use std::error::Error;
 use std::io::Write;
@@ -15,8 +15,10 @@ impl FromSql<types::SmallInt> for i16 {
 }
 
 impl ToSql<types::SmallInt> for i16 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_i16::<BigEndian>(*self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_i16::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -27,7 +29,7 @@ impl FromSql<types::SmallSerial> for i16 {
 }
 
 impl ToSql<types::SmallSerial> for i16 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         ToSql::<types::SmallInt>::to_sql(self, out)
     }
 }
@@ -40,8 +42,10 @@ impl FromSql<types::Integer> for i32 {
 }
 
 impl ToSql<types::Integer> for i32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_i32::<BigEndian>(*self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_i32::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -52,7 +56,7 @@ impl FromSql<types::Serial> for i32 {
 }
 
 impl ToSql<types::Serial> for i32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         ToSql::<types::Integer>::to_sql(self, out)
     }
 }
@@ -65,8 +69,10 @@ impl FromSql<types::BigInt> for i64 {
 }
 
 impl ToSql<types::BigInt> for i64 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_i64::<BigEndian>(*self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_i64::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -77,7 +83,7 @@ impl FromSql<types::BigSerial> for i64 {
 }
 
 impl ToSql<types::BigSerial> for i64 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         ToSql::<types::BigInt>::to_sql(self, out)
     }
 }

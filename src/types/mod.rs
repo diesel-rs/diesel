@@ -48,6 +48,12 @@ impl<A, T> FromSqlRow<A> for T where
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum IsNull {
+    Yes,
+    No,
+}
+
 pub trait ToSql<A: NativeSqlType> {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>>;
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
 }

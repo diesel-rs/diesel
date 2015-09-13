@@ -2,7 +2,7 @@ extern crate byteorder;
 
 use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use super::option::UnexpectedNullError;
-use types::{FromSql, ToSql};
+use types::{FromSql, ToSql, IsNull};
 use types;
 use std::error::Error;
 use std::io::Write;
@@ -15,8 +15,10 @@ impl FromSql<types::Float> for f32 {
 }
 
 impl ToSql<types::Float> for f32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_f32::<BigEndian>(*self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_f32::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
@@ -28,7 +30,9 @@ impl FromSql<types::Double> for f64 {
 }
 
 impl ToSql<types::Double> for f64 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<(), Box<Error>> {
-        out.write_f64::<BigEndian>(*self).map_err(|e| Box::new(e) as Box<Error>)
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_f64::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error>)
     }
 }

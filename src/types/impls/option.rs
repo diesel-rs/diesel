@@ -1,7 +1,8 @@
-use types::{NativeSqlType, FromSql, Nullable};
 use Queriable;
 use std::error::Error;
 use std::fmt;
+use std::io::Write;
+use types::{NativeSqlType, FromSql, Nullable, ToSql, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Nullable<T> {}
 
@@ -27,6 +28,19 @@ impl<T, ST> Queriable<Nullable<ST>> for Option<T> where
     }
 }
 
+impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
+    T: ToSql<ST>,
+    ST: NativeSqlType,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        if let &Some(ref value) = self {
+            value.to_sql(out)
+        } else {
+            Ok(IsNull::Yes)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct UnexpectedNullError {
     pub msg: String,
@@ -42,4 +56,26 @@ impl Error for UnexpectedNullError {
     fn description(&self) -> &str {
         &self.msg
     }
+}
+
+#[cfg(test)]
+use types;
+
+#[test]
+fn option_to_sql() {
+    type Type = types::Nullable<types::VarChar>;
+    let mut bytes = Vec::<u8>::new();
+
+    let is_null = ToSql::<Type>::to_sql(&None::<String>, &mut bytes).unwrap();
+    assert_eq!(IsNull::Yes, is_null);
+    assert!(bytes.is_empty());
+
+    let is_null = ToSql::<Type>::to_sql(&Some(""), &mut bytes).unwrap();
+    assert_eq!(IsNull::No, is_null);
+    assert!(bytes.is_empty());
+
+    let is_null = ToSql::<Type>::to_sql(&Some("Sean"), &mut bytes).unwrap();
+    let expectd_bytes: Vec<_> = "Sean".as_bytes().into();
+    assert_eq!(IsNull::No, is_null);
+    assert_eq!(expectd_bytes, bytes);
 }
