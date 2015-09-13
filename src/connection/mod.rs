@@ -6,11 +6,12 @@ mod cursor;
 pub use self::cursor::Cursor;
 
 use db_result::DbResult;
+use persistable::{Insertable, AsBindParam};
 use query_source::{Table, Column};
 use self::pq_sys::*;
 use std::ffi::{CString, CStr};
 use std::{str, ptr};
-use types::{NativeSqlType, ToSql};
+use types::{NativeSqlType, ToSql, ValuesToSql};
 use {Result, ConnectionResult, ConnectionError, QuerySource, Queriable};
 
 pub struct Connection {
@@ -67,28 +68,42 @@ impl Connection {
         T: NativeSqlType,
         U: Queriable<T>,
         PT: NativeSqlType,
-        P: ToSql<PT>,
+        P: ValuesToSql<PT>,
     {
+        let param_data = params.values_to_sql().unwrap();
+        let db_result = try!(self.exec_sql_params(query, &param_data));
+        Ok(Cursor::new(db_result))
+    }
+
+    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>) -> Result<DbResult> {
         let query = try!(CString::new(query));
-        let mut param_data = Vec::new();
-        params.to_sql(&mut param_data).unwrap();
-        let params = [param_data.as_ptr() as *const libc::c_char];
-        let param_lengths = [param_data.len() as libc::c_int];
-        let param_formats = [1 as libc::c_int];
+        let params_pointer = param_data.iter()
+            .map(|data| { match data {
+                &Some(ref data) => data.as_ptr() as *const libc::c_char,
+                &None => ptr::null(),
+            }})
+            .collect::<Vec<_>>();
+        let param_lengths = param_data.iter()
+            .map(|data| data.as_ref().map(|d| d.len()).unwrap_or(0) as libc::c_int)
+            .collect::<Vec<_>>();
+        let param_formats = param_data.iter()
+            .map(|_| 1 as libc::c_int)
+            .collect::<Vec<_>>();
+
         let internal_res = unsafe {
             PQexecParams(
                 self.internal_connection,
                 query.as_ptr(),
-                1,
+                param_data.len() as libc::c_int,
                 ptr::null(),
-                params.as_ptr(),
+                params_pointer.as_ptr(),
                 param_lengths.as_ptr(),
                 param_formats.as_ptr(),
                 1,
-           )
+            )
         };
-        let db_result = try!(DbResult::new(self, internal_res));
-        Ok(Cursor::new(db_result))
+
+        DbResult::new(self, internal_res)
     }
 
     pub fn find<T, U, PK>(&self, source: &T, id: &PK) -> Result<Option<U>> where
@@ -99,6 +114,27 @@ impl Connection {
         let sql = self.prepare_query(source);
         let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().qualified_name());
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
+    }
+
+    pub fn insert<T, Values, U>(&self, source: &T, records: Vec<U>) -> Result<()> where
+        T: Table,
+        U: Insertable<T, Values>,
+    {
+        let mut param_index = 1;
+        let param_placeholders = records.iter()
+            .map(|_| { format!("({})", U::Columns::as_bind_param(&mut param_index)) })
+            .collect::<Vec<_>>()
+            .join(",");
+        let sql = format!(
+            "INSERT INTO {} ({}) VALUES {}",
+            source.name(),
+            U::columns().name(),
+            param_placeholders,
+        );
+        let params = records.into_iter()
+            .flat_map(|r| r.values().values_to_sql().unwrap())
+            .collect();
+        self.exec_sql_params(&sql, &params).map(|_| ())
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> String {

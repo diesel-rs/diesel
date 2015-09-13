@@ -1,7 +1,8 @@
+use persistable::AsBindParam;
 use query_source::SelectableColumn;
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow};
+use types::{NativeSqlType, FromSqlRow, ValuesToSql};
 use {Queriable, Table, Column, QuerySource};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
@@ -24,6 +25,16 @@ macro_rules! tuple_impls {
             {
                 fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
                     Ok(($(try!($T::build_from_row(row))),+))
+                }
+            }
+
+            impl<$($T),+,$($ST),+> ValuesToSql<($($ST),+)> for ($($T),+) where
+                $($T: ValuesToSql<$ST>),+,
+                $($ST: NativeSqlType),+
+            {
+                fn values_to_sql(&self) -> Result<Vec<Option<Vec<u8>>>, Box<Error>> {
+                    let values = e!(vec![$(try!(self.$idx.values_to_sql())),*]);
+                    Ok(values.into_iter().flat_map(|v| v).collect())
                 }
             }
 
@@ -64,6 +75,17 @@ macro_rules! tuple_impls {
                 $($T: SelectableColumn<$TT, QS>),+,
                 QS: QuerySource,
             {}
+
+
+            impl<$($T),+, $($ST),+, $($TT),+>
+                AsBindParam<($($TT),+)> for ($($T),+) where
+                $($T: Column<$TT, SqlType=$ST> + AsBindParam<$TT>),+,
+                $($ST: NativeSqlType),+,
+            {
+                fn as_bind_param(idx: &mut usize) -> String {
+                    [$($T::as_bind_param(idx)),+].join(",")
+                }
+            }
         )+
     }
 }

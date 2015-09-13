@@ -114,6 +114,40 @@ macro_rules! queriable {
     }
 }
 
+macro_rules! insertable {
+    (
+        $Struct:ident -> $table_mod:ident {
+            $($field_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        insertable! {
+            $Struct -> $table_mod {
+                $($table_mod, $field_name -> $Type,)+
+            }
+        }
+    };
+    (
+        $Struct:ident -> $table_mod:ident {
+            $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        impl $crate::persistable::Insertable<$table_mod::table, ($($field_table_name::table),+)>
+            for $Struct
+        {
+            type Columns = ($($table_mod::$field_name),+);
+            type Values = ($($Type),+);
+
+            fn columns() -> Self::Columns {
+                ($($table_mod::$field_name),+)
+            }
+
+            fn values(self) -> Self::Values {
+                ($(self.$field_name),+)
+            }
+        }
+    };
+}
+
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         use query_source::{SelectableColumn, InnerJoinSource};

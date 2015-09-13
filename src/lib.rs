@@ -1,4 +1,5 @@
 #![deny(warnings)]
+pub mod persistable;
 pub mod types;
 
 mod connection;
@@ -361,6 +362,48 @@ mod test_usage_without_compiler_plugins {
         let result = Connection::establish(&connection_url).unwrap();
         result.execute("BEGIN").unwrap();
         result
+    }
+
+    #[test]
+    fn insert_records() {
+        use self::users::table as users;
+        let connection = connection();
+        setup_users_table(&connection);
+
+        let new_users = vec![
+            NewUser::new("Sean", Some("Black")),
+            NewUser::new("Tess", None),
+        ];
+        connection.insert(&users, new_users).unwrap();
+
+        let expected_users = vec![
+            User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
+            User { id: 2, name: "Tess".to_string(), hair_color: None },
+        ];
+        let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+
+        assert_eq!(expected_users, actual_users);
+    }
+
+    struct NewUser {
+        name: String,
+        hair_color: Option<String>,
+    }
+
+    impl NewUser {
+        fn new(name: &str, hair_color: Option<&str>) -> Self {
+            NewUser {
+                name: name.to_string(),
+                hair_color: hair_color.map(|s| s.to_string()),
+            }
+        }
+    }
+
+    insertable! {
+        NewUser -> users {
+            name -> String,
+            hair_color -> Option<String>,
+        }
     }
 
     fn setup_users_table(connection: &Connection) {
