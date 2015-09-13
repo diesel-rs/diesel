@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! table {
     (
         $name:ident {
@@ -16,8 +17,8 @@ macro_rules! table {
         }
     ) => {
         mod $name {
-            use {QuerySource, Table, Column};
-            use types::*;
+            use $crate::{QuerySource, Table, Column};
+            use $crate::types::*;
             pub use self::columns::*;
 
             #[allow(non_camel_case_types)]
@@ -52,10 +53,11 @@ macro_rules! table {
 
             pub mod columns {
                 use super::table;
-                use {Table, Column};
-                use types::*;
+                use $crate::{Table, Column};
+                use $crate::types::*;
 
                 #[allow(non_camel_case_types, dead_code)]
+                #[derive(Debug, PartialEq)]
                 pub struct star;
 
                 impl Column<table> for star {
@@ -71,6 +73,7 @@ macro_rules! table {
                 }
 
                 $(#[allow(non_camel_case_types, dead_code)]
+                #[derive(Debug, PartialEq)]
                 pub struct $column_name;
 
                 impl Column<table> for $column_name {
