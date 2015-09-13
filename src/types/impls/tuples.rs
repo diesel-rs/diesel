@@ -46,6 +46,12 @@ macro_rules! tuple_impls {
                 type SqlType = ($($ST),+);
 
                 #[allow(non_snake_case)]
+                fn qualified_name(&self) -> String {
+                    let parts: &[String] = e!(&[$(self.$idx.qualified_name()),*]);
+                    parts.join(", ")
+                }
+
+                #[allow(non_snake_case)]
                 fn name(&self) -> String {
                     let parts: &[String] = e!(&[$(self.$idx.name()),*]);
                     parts.join(", ")

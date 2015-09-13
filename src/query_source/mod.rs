@@ -23,7 +23,7 @@ pub trait QuerySource: Sized {
     fn select<C, T>(self, column: C) -> SelectSqlQuerySource<C::SqlType, Self> where
         C: SelectableColumn<T, Self>,
     {
-        self.select_sql_inner(column.name())
+        self.select_sql_inner(column.qualified_name())
     }
 
     fn select_sql<A: NativeSqlType>(self, columns: &str)
@@ -45,6 +45,8 @@ pub trait Column<Table> {
     type SqlType: NativeSqlType;
 
     fn name(&self) -> String;
+
+    fn qualified_name(&self) -> String;
 }
 
 pub trait Table: QuerySource {

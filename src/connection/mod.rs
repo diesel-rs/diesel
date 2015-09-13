@@ -97,7 +97,7 @@ impl Connection {
         PK: ToSql<<T::PrimaryKey as Column<T>>::SqlType>,
     {
         let sql = self.prepare_query(source);
-        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().name());
+        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().qualified_name());
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 

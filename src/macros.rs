@@ -30,7 +30,7 @@ macro_rules! table {
                 type SqlType = SqlType;
 
                 fn select_clause(&self) -> String {
-                    star.name()
+                    star.qualified_name()
                 }
 
                 fn from_clause(&self) -> String {
@@ -62,6 +62,10 @@ macro_rules! table {
                     type SqlType = super::SqlType;
 
                     fn name(&self) -> String {
+                        "*".to_string()
+                    }
+
+                    fn qualified_name(&self) -> String {
                         format!("{}.*", table.name())
                     }
                 }
@@ -73,6 +77,10 @@ macro_rules! table {
                     type SqlType = $Type;
 
                     fn name(&self) -> String {
+                        stringify!($column_name).to_string()
+                    }
+
+                    fn qualified_name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
                 })+
@@ -87,7 +95,7 @@ macro_rules! queriable {
             $($field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl <ST> Queriable<ST> for $Struct where
+        impl<ST> Queriable<ST> for $Struct where
             ST: NativeSqlType,
             ($($Type),+): types::FromSqlRow<ST>,
         {
@@ -116,7 +124,7 @@ macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl JoinTo<$parent::table> for $child::table {
             fn join_sql(&self) -> String {
-                format!("{} = {}", $child::$source.name(), $parent::$target.name())
+                format!("{} = {}", $child::$source.qualified_name(), $parent::$target.qualified_name())
             }
         }
 
