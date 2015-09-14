@@ -77,13 +77,16 @@ macro_rules! tuple_impls {
             {}
 
 
-            impl<$($T),+, $($ST),+, $($TT),+>
-                AsBindParam<($($TT),+)> for ($($T),+) where
-                $($T: Column<$TT, SqlType=$ST> + AsBindParam<$TT>),+,
+            impl<$($T),+, $($ST),+> AsBindParam<($($ST),+)> for ($($T),+) where
+                $($T: AsBindParam<$ST>),+,
                 $($ST: NativeSqlType),+,
             {
-                fn as_bind_param(idx: &mut usize) -> String {
-                    [$($T::as_bind_param(idx)),+].join(",")
+                fn as_bind_param(&self, idx: &mut usize) -> String {
+                    e!([$(self.$idx.as_bind_param(idx)),+].join(","))
+                }
+
+                fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+                    e!([$(self.$idx.as_bind_param_for_insert(idx)),+].join(","))
                 }
             }
         )+

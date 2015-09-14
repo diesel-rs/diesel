@@ -1,8 +1,9 @@
+use persistable::AsBindParam;
+use std::error::Error;
+use std::io::Write;
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, IsNull};
 use {Queriable, types};
-use std::error::Error;
-use std::io::Write;
 
 macro_rules! primitive_impls {
     ($($Source:ident -> $Target:ty),+,) => {
@@ -14,6 +15,12 @@ macro_rules! primitive_impls {
 
                 fn build(row: Self::Row) -> Self {
                     row
+                }
+            }
+
+            impl AsBindParam<types::$Source> for $Target {
+                fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+                    AsBindParam::<types::$Source>::as_bind_param(self, idx)
                 }
             }
         )+

@@ -78,10 +78,7 @@ impl Connection {
     fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>) -> Result<DbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
-            .map(|data| { match data {
-                &Some(ref data) => data.as_ptr() as *const libc::c_char,
-                &None => ptr::null(),
-            }})
+            .filter_map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char))
             .collect::<Vec<_>>();
         let param_lengths = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.len()).unwrap_or(0) as libc::c_int)
@@ -94,7 +91,7 @@ impl Connection {
             PQexecParams(
                 self.internal_connection,
                 query.as_ptr(),
-                param_data.len() as libc::c_int,
+                params_pointer.len() as libc::c_int,
                 ptr::null(),
                 params_pointer.as_ptr(),
                 param_lengths.as_ptr(),
@@ -123,8 +120,11 @@ impl Connection {
         Out: Queriable<T::SqlType>,
     {
         let mut param_index = 1;
-        let param_placeholders = records.iter()
-            .map(|_| { format!("({})", U::Columns::as_bind_param(&mut param_index)) })
+        let values: Vec<_> = records.into_iter()
+            .map(|r| r.values())
+            .collect();
+        let param_placeholders = values.iter()
+            .map(|record| { format!("({})", record.as_bind_param_for_insert(&mut param_index)) })
             .collect::<Vec<_>>()
             .join(",");
         let sql = format!(
@@ -134,8 +134,8 @@ impl Connection {
             param_placeholders,
             source.select_clause(),
         );
-        let params = records.into_iter()
-            .flat_map(|r| r.values().values_to_sql().unwrap())
+        let params = values.into_iter()
+            .flat_map(|r| r.values_to_sql().unwrap())
             .collect();
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
