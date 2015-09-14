@@ -145,20 +145,7 @@ impl Connection {
     }
 
     fn execute_inner(&self, query: &str) -> Result<DbResult> {
-        let query = try!(CString::new(query));
-        let internal_res = unsafe {
-            PQexecParams(
-                self.internal_connection,
-                query.as_ptr(),
-                0,
-                ptr::null(),
-                ptr::null(),
-                ptr::null(),
-                ptr::null(),
-                1,
-           )
-        };
-        DbResult::new(self, internal_res)
+        self.exec_sql_params(query, &Vec::new())
     }
 
     pub fn last_error_message(&self) -> String {
