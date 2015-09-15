@@ -34,12 +34,6 @@ mod test_usage_without_compiler_plugins {
     }
 
     #[derive(PartialEq, Eq, Debug)]
-    struct UserWithoutId {
-        name: String,
-        hair_color: Option<String>,
-    }
-
-    #[derive(PartialEq, Eq, Debug)]
     struct Post {
         id: i32,
         user_id: i32,
@@ -67,13 +61,6 @@ mod test_usage_without_compiler_plugins {
     queriable! {
         User {
             id -> i32,
-            name -> String,
-            hair_color -> Option<String>,
-        }
-    }
-
-    queriable! {
-        UserWithoutId {
             name -> String,
             hair_color -> Option<String>,
         }
@@ -187,8 +174,8 @@ mod test_usage_without_compiler_plugins {
 
         let source = users.select((name, hair_color));
         let expected_data = vec![
-            UserWithoutId { name: "Jim".to_string(), hair_color: Some("Black".to_string()) },
-            UserWithoutId { name: "Bob".to_string(), hair_color: Some("Brown".to_string()) },
+            NewUser::new("Jim", Some("Black")),
+            NewUser::new("Bob", Some("Brown")),
         ];
         let actual_data: Vec<_> = connection.query_all(&source)
             .unwrap().collect();
@@ -436,6 +423,7 @@ mod test_usage_without_compiler_plugins {
         assert_eq!(expected_users, inserted_users);
     }
 
+    #[derive(Debug, PartialEq, Eq)]
     struct NewUser {
         name: String,
         hair_color: Option<String>,
@@ -456,6 +444,13 @@ mod test_usage_without_compiler_plugins {
 
     insertable! {
         NewUser -> users {
+            name -> String,
+            hair_color -> Option<String>,
+        }
+    }
+
+    queriable! {
+        NewUser {
             name -> String,
             hair_color -> Option<String>,
         }
