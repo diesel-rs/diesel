@@ -16,7 +16,7 @@ macro_rules! table {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
-        mod $name {
+        pub mod $name {
             use $crate::{QuerySource, Table, Column};
             use $crate::types::*;
             pub use self::columns::*;
@@ -98,9 +98,9 @@ macro_rules! queriable {
             $($field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl<ST> Queriable<ST> for $Struct where
-            ST: NativeSqlType,
-            ($($Type),+): types::FromSqlRow<ST>,
+        impl<ST> $crate::Queriable<ST> for $Struct where
+            ST: $crate::types::NativeSqlType,
+            ($($Type),+): $crate::types::FromSqlRow<ST>,
         {
             type Row = ($($Type),+);
 
@@ -150,8 +150,6 @@ macro_rules! insertable {
 
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
-        use query_source::{SelectableColumn, InnerJoinSource};
-
         joinable_inner!($child -> $parent ($source = $target));
         joinable_inner!($parent -> $child ($target = $source));
     }
@@ -159,34 +157,42 @@ macro_rules! joinable {
 
 macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
-        impl JoinTo<$parent::table> for $child::table {
+        impl $crate::JoinTo<$parent::table> for $child::table {
             fn join_sql(&self) -> String {
+                use $crate::Column;
                 format!("{} = {}", $child::$source.qualified_name(), $parent::$target.qualified_name())
             }
         }
 
-        impl<C> SelectableColumn<$parent::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            C: Column<$parent::table>,
+        impl<C> $crate::query_source::SelectableColumn<
+            $parent::table,
+            $crate::query_source::InnerJoinSource<$child::table, $parent::table>
+        > for C where
+            C: $crate::Column<$parent::table>,
         {}
 
-        impl<C> SelectableColumn<$child::table, InnerJoinSource<$child::table, $parent::table>> for C where
-            C: Column<$child::table>,
+        impl<C> $crate::query_source::SelectableColumn<
+            $child::table,
+            $crate::query_source::InnerJoinSource<$child::table, $parent::table>
+        > for C where
+            C: $crate::Column<$child::table>,
         {}
     }
 }
 
 macro_rules! belongs_to {
     ($parent:ty, $parent_table:ident, $child:ty, $child_table:ident) => {
-        impl Queriable<($child_table::SqlType, $parent_table::SqlType)> for ($child, $parent) {
+        impl $crate::Queriable<($child_table::SqlType, $parent_table::SqlType)>
+        for ($child, $parent) {
             type Row = (
-                <$child as Queriable<$child_table::SqlType>>::Row,
-                <$parent as Queriable<$parent_table::SqlType>>::Row,
+                <$child as $crate::Queriable<$child_table::SqlType>>::Row,
+                <$parent as $crate::Queriable<$parent_table::SqlType>>::Row,
             );
 
             fn build(row: Self::Row) -> Self {
                 (
-                    <$child as Queriable<$child_table::SqlType>>::build(row.0),
-                    <$parent as Queriable<$parent_table::SqlType>>::build(row.1),
+                    <$child as $crate::Queriable<$child_table::SqlType>>::build(row.0),
+                    <$parent as $crate::Queriable<$parent_table::SqlType>>::build(row.1),
                 )
             }
         }
