@@ -113,3 +113,20 @@ fn with_select_sql() {
 
     assert_eq!(Some(3), get_count());
 }
+
+#[test]
+fn selecting_nullable_followed_by_non_null() {
+    use tests::schema::users::columns::*;
+    use tests::schema::users::table as users;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    connection.execute("INSERT INTO users (name) VALUES ('Sean')")
+        .unwrap();
+
+    let source = users.select((hair_color, name));
+    let expected_data = vec![(None::<String>, "Sean".to_string())];
+    let data: Vec<_> = connection.query_all(&source).unwrap().collect();
+
+    assert_eq!(expected_data, data);
+}

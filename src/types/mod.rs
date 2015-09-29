@@ -39,12 +39,7 @@ impl<A, T> FromSqlRow<A> for T where
     T: FromSql<A>,
 {
     fn build_from_row<R: Row>(row: &mut R) -> Result<Self, Box<Error>> {
-        let bytes = if row.next_is_null() {
-            None
-        } else {
-            Some(row.take())
-        };
-        Self::from_sql(bytes)
+        Self::from_sql(row.take())
     }
 }
 

@@ -1,8 +1,7 @@
 use db_result::DbResult;
 
 pub trait Row {
-    fn take(&mut self) -> &[u8];
-    fn next_is_null(&self) -> bool;
+    fn take(&mut self) -> Option<&[u8]>;
 }
 
 pub struct DbRow<'a> {
@@ -22,13 +21,9 @@ impl<'a> DbRow<'a> {
 }
 
 impl<'a> Row for DbRow<'a> {
-    fn take(&mut self) -> &[u8] {
+    fn take(&mut self) -> Option<&[u8]> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
         self.db_result.get(self.row_idx, current_idx)
-    }
-
-    fn next_is_null(&self) -> bool {
-        self.db_result.is_null(self.row_idx, self.col_idx)
     }
 }
