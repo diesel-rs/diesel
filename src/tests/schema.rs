@@ -16,6 +16,18 @@ pub struct Post {
     pub id: i32,
     pub user_id: i32,
     pub title: String,
+    pub text: Option<String>,
+}
+
+impl Post {
+    pub fn new(id: i32, user_id: i32, title: &str, text: Option<&str>) -> Self {
+        Post {
+            id: id,
+            user_id: user_id,
+            title: title.to_string(),
+            text: text.map(|s| s.to_string()),
+        }
+    }
 }
 
 // Compiler plugin will automatically invoke this based on schema
@@ -32,6 +44,7 @@ table! {
         id -> Serial,
         user_id -> Integer,
         title -> VarChar,
+        text -> Nullable<Text>,
     }
 }
 
@@ -49,6 +62,7 @@ queriable! {
         id -> i32,
         user_id -> i32,
         title -> String,
+        text -> Option<String>,
     }
 }
 
@@ -98,7 +112,8 @@ pub fn setup_posts_table(connection: &Connection) {
     connection.execute("CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
-        title VARCHAR NOT NULL
+        title VARCHAR NOT NULL,
+        body TEXT
     )").unwrap();
 }
 

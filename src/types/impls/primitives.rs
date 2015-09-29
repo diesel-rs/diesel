@@ -42,6 +42,7 @@ primitive_impls! {
     Double -> f64,
 
     VarChar -> String,
+    Text -> String,
 
     Binary -> Vec<u8>,
 }
@@ -86,6 +87,24 @@ impl<'a> ToSql<types::VarChar> for &'a str {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
+impl FromSql<types::Text> for String {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+        <Self as FromSql<types::VarChar>>::from_sql(bytes)
+    }
+}
+
+impl ToSql<types::Text> for String {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        ToSql::<types::VarChar>::to_sql(self, out)
+    }
+}
+
+impl<'a> ToSql<types::Text> for &'a str {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        ToSql::<types::VarChar>::to_sql(self, out)
     }
 }
 

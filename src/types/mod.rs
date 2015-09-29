@@ -18,6 +18,7 @@ pub struct Float;
 pub struct Double;
 
 pub struct VarChar;
+pub struct Text;
 
 pub struct Binary;
 

@@ -9,15 +9,15 @@ fn belongs_to() {
 
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
-    connection.execute("INSERT INTO posts (user_id, title) VALUES
-        (1, 'Hello'),
-        (2, 'World')
+    connection.execute("INSERT INTO posts (user_id, title, body) VALUES
+        (1, 'Hello', 'Content'),
+        (2, 'World', DEFAULT)
     ").unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    let seans_post = Post { id: 1, user_id: 1, title: "Hello".to_string() };
-    let tess_post = Post { id: 2, user_id: 2, title: "World".to_string() };
+    let seans_post = Post::new(1, 1, "Hello", Some("Content"));
+    let tess_post = Post::new(2, 2, "World", None);
 
     let expected_data = vec![(seans_post, sean), (tess_post, tess)];
     let source = posts::table.inner_join(users::table);
