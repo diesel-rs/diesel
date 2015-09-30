@@ -166,16 +166,54 @@ macro_rules! joinable_inner {
 
         impl<C> $crate::query_source::SelectableColumn<
             $parent::table,
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>
+            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
         > for C where
             C: $crate::Column<$parent::table>,
-        {}
+        {
+        }
 
         impl<C> $crate::query_source::SelectableColumn<
             $child::table,
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>
+            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
         > for C where
             C: $crate::Column<$child::table>,
-        {}
+        {
+        }
+
+        impl<C> $crate::query_source::SelectableColumn<
+            $parent::table,
+            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
+            $crate::types::Nullable<C::SqlType>,
+        > for C where
+            C: $crate::Column<$parent::table>,
+        {
+        }
+
+        impl<C> $crate::query_source::SelectableColumn<
+            $child::table,
+            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
+        > for C where
+            C: $crate::Column<$child::table>,
+        {
+        }
+    }
+}
+
+macro_rules! left_outer_queriable {
+    ($parent:ty, $parent_table:ident, $child:ty, $child_table:ident) => {
+        impl $crate::Queriable<($parent_table::SqlType, $crate::types::Nullable<$child_table::SqlType>)>
+        for ($parent, Option<$child>) {
+            type Row = (
+                <$parent as $crate::Queriable<$parent_table::SqlType>>::Row,
+                Option<<$child as $crate::Queriable<$child_table::SqlType>>::Row>,
+            );
+
+            fn build(row: Self::Row) -> Self {
+                (
+                    <$parent as $crate::Queriable<$parent_table::SqlType>>::build(row.0),
+                    row.1.map(<$child as $crate::Queriable<$child_table::SqlType>>::build),
+                )
+            }
+        }
     }
 }

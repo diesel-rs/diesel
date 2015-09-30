@@ -2,7 +2,7 @@ use persistable::AsBindParam;
 use query_source::SelectableColumn;
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow, ValuesToSql};
+use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
 use {Queriable, Table, Column, QuerySource};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
@@ -12,7 +12,7 @@ macro_rules! e {
 
 macro_rules! tuple_impls {
     ($(
-        $Tuple:ident {
+        $Tuple:tt {
             $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
         }
     )+) => {
@@ -25,6 +25,19 @@ macro_rules! tuple_impls {
             {
                 fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
                     Ok(($(try!($T::build_from_row(row))),+))
+                }
+            }
+
+            impl<$($T),+,$($ST),+> FromSqlRow<Nullable<($($ST),+)>> for Option<($($T),+)> where
+                $($T: FromSqlRow<$ST>),+,
+                $($ST: NativeSqlType),+
+            {
+                fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
+                    if e!(row.next_is_null($Tuple)) {
+                        Ok(None)
+                    } else {
+                        Ok(Some(($(try!($T::build_from_row(row))),+)))
+                    }
                 }
             }
 
@@ -69,13 +82,23 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($TT),+, QS>
-                SelectableColumn<($($TT),+), QS>
+            impl<$($T),+, $($ST),+, $($TT),+, QS>
+                SelectableColumn<($($TT),+), QS, ($($ST),+)>
                 for ($($T),+) where
-                $($T: SelectableColumn<$TT, QS>),+,
+                $($ST: NativeSqlType),+,
+                $($T: SelectableColumn<$TT, QS, $ST>),+,
                 QS: QuerySource,
-            {}
+            {
+            }
 
+            impl<$($T),+, $($ST),+, $($TT),+, QS>
+                SelectableColumn<($($TT),+), QS, Nullable<($($ST),+)>>
+                for ($($T),+) where
+                $($ST: NativeSqlType),+,
+                $($T: SelectableColumn<$TT, QS, Nullable<$ST>>),+,
+                QS: QuerySource,
+            {
+            }
 
             impl<$($T),+, $($ST),+> AsBindParam<($($ST),+)> for ($($T),+) where
                 $($T: AsBindParam<$ST>),+,
@@ -94,29 +117,29 @@ macro_rules! tuple_impls {
 }
 
 tuple_impls! {
-    T2 {
+    2 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
     }
-    T3 {
+    3 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
     }
-    T4 {
+    4 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
         (3) -> D, SD, TD,
     }
-    T5 {
+    5 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
         (3) -> D, SD, TD,
         (4) -> E, SE, TE,
     }
-    T6 {
+    6 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -124,7 +147,7 @@ tuple_impls! {
         (4) -> E, SE, TE,
         (5) -> F, SF, TF,
     }
-    T7 {
+    7 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -133,7 +156,7 @@ tuple_impls! {
         (5) -> F, SF, TF,
         (6) -> G, SG, TG,
     }
-    T8 {
+    8 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -143,7 +166,7 @@ tuple_impls! {
         (6) -> G, SG, TG,
         (7) -> H, SH, TH,
     }
-    T9 {
+    9 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -154,7 +177,7 @@ tuple_impls! {
         (7) -> H, SH, TH,
         (8) -> I, SI, TI,
     }
-    T10 {
+    10 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -166,7 +189,7 @@ tuple_impls! {
         (8) -> I, SI, TI,
         (9) -> J, SJ, TJ,
     }
-    T11 {
+    11 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,
@@ -179,7 +202,7 @@ tuple_impls! {
         (9) -> J, SJ, TJ,
         (10) -> K, SK, TK,
     }
-    T12 {
+    12 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
         (2) -> C, SC, TC,

@@ -2,7 +2,7 @@ use Queriable;
 use std::error::Error;
 use std::fmt;
 use std::io::Write;
-use types::{NativeSqlType, FromSql, Nullable, ToSql, IsNull};
+use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Nullable<T> {}
 
@@ -19,7 +19,8 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
 }
 
 impl<T, ST> Queriable<Nullable<ST>> for Option<T> where
-    T: FromSql<ST> + Queriable<ST>,
+    T: Queriable<ST>,
+    Option<T>: FromSqlRow<Nullable<ST>>,
     ST: NativeSqlType,
 {
     type Row = Self;

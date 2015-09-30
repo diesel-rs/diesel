@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -16,16 +16,16 @@ pub struct Post {
     pub id: i32,
     pub user_id: i32,
     pub title: String,
-    pub text: Option<String>,
+    pub body: Option<String>,
 }
 
 impl Post {
-    pub fn new(id: i32, user_id: i32, title: &str, text: Option<&str>) -> Self {
+    pub fn new(id: i32, user_id: i32, title: &str, body: Option<&str>) -> Self {
         Post {
             id: id,
             user_id: user_id,
             title: title.to_string(),
-            text: text.map(|s| s.to_string()),
+            body: body.map(|s| s.to_string()),
         }
     }
 }
@@ -44,7 +44,7 @@ table! {
         id -> Serial,
         user_id -> Integer,
         title -> VarChar,
-        text -> Nullable<Text>,
+        body -> Nullable<Text>,
     }
 }
 
@@ -62,11 +62,12 @@ queriable! {
         id -> i32,
         user_id -> i32,
         title -> String,
-        text -> Option<String>,
+        body -> Option<String>,
     }
 }
 
 joinable!(posts -> users (user_id = id));
+left_outer_queriable!(User, users, Post, posts);
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NewUser {

@@ -1,4 +1,5 @@
 use {QuerySource, Table};
+use types::Nullable;
 
 #[derive(Clone, Copy)]
 pub struct InnerJoinSource<Left, Right> {
@@ -27,6 +28,37 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 
     fn from_clause(&self) -> String {
         format!("{} INNER JOIN {} ON {}",
+            self.left.name(), self.right.name(), self.left.join_sql())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct LeftOuterJoinSource<Left, Right> {
+    left: Left,
+    right: Right,
+}
+
+impl<Left, Right> LeftOuterJoinSource<Left, Right> {
+    pub fn new(left: Left, right: Right) -> Self {
+        LeftOuterJoinSource {
+            left: left,
+            right: right,
+        }
+    }
+}
+
+impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
+    Left: Table + JoinTo<Right>,
+    Right: Table,
+{
+    type SqlType = (Left::SqlType, Nullable<Right::SqlType>);
+
+    fn select_clause(&self) -> String {
+        format!("{}, {}", self.left.select_clause(), self.right.select_clause())
+    }
+
+    fn from_clause(&self) -> String {
+        format!("{} LEFT OUTER JOIN {} ON {}",
             self.left.name(), self.right.name(), self.left.join_sql())
     }
 }

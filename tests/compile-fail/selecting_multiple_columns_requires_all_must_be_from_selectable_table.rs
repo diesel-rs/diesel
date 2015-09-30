@@ -22,7 +22,10 @@ fn main() {
     let connection = Connection::establish("").unwrap();
     let stuff = users::table.select((posts::id, posts::user_id));
     //~^ ERROR SelectableColumn
-    //~| ERROR E0277
+    let stuff = users::table.select((posts::id, posts::user_id));
+    //~^ ERROR E0277
+    let stuff = users::table.select((posts::id, users::name));
+    //~^ ERROR SelectableColumn
     let stuff = users::table.select((posts::id, users::name));
     //~^ ERROR E0277
 }

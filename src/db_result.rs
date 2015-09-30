@@ -46,11 +46,11 @@ impl DbResult {
     }
 
     pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
-        let row_idx = row_idx as libc::c_int;
-        let col_idx = col_idx as libc::c_int;
         if self.is_null(row_idx, col_idx) {
             None
         } else {
+            let row_idx = row_idx as libc::c_int;
+            let col_idx = col_idx as libc::c_int;
             unsafe {
                 let value_ptr = PQgetvalue(self.internal_result, row_idx, col_idx);
                 let value_ptr = mem::transmute::<_, *const u8>(value_ptr);
@@ -60,12 +60,12 @@ impl DbResult {
         }
     }
 
-    fn is_null(&self, row_idx: libc::c_int, col_idx: libc::c_int) -> bool {
+    pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
             0 != PQgetisnull(
                 self.internal_result,
-                row_idx,
-                col_idx,
+                row_idx as libc::c_int,
+                col_idx as libc::c_int,
             )
         }
     }
