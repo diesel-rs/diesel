@@ -20,12 +20,13 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
 
 impl<T, ST> Queriable<Nullable<ST>> for Option<T> where
     T: Queriable<ST>,
-    Option<T>: FromSqlRow<Nullable<ST>>,
+    Option<T::Row>: FromSqlRow<Nullable<ST>>,
     ST: NativeSqlType,
 {
-    type Row = Self;
-    fn build(row: Self) -> Self {
-        row
+    type Row = Option<T::Row>;
+
+    fn build(row: Self::Row) -> Self {
+        row.map(T::build)
     }
 }
 

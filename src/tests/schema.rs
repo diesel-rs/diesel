@@ -67,7 +67,6 @@ queriable! {
 }
 
 joinable!(posts -> users (user_id = id));
-left_outer_queriable!(User, users, Post, posts);
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NewUser {
