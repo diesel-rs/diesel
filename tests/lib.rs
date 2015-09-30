@@ -1,7 +1,10 @@
 #[macro_use]
 extern crate yaqb;
 
-mod compile_tests;
+mod find;
+mod insert;
+mod joins;
 mod macros;
 mod schema;
+mod select;
 mod types;

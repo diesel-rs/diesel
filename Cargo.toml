@@ -12,6 +12,11 @@ byteorder = "0.3.*"
 compiletest_rs = "*"
 
 [[test]]
+name = "compile_tests"
+path = "tests/compile_tests.rs"
+harness = true
+
+[[test]]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true

@@ -1,8 +1,8 @@
-use super::schema::*;
+use schema::*;
 
 #[test]
 fn find() {
-    use tests::schema::users::table as users;
+    use schema::users::table as users;
 
     let connection = connection();
     setup_users_table(&connection);

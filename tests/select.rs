@@ -1,5 +1,5 @@
 use super::schema::*;
-use {types, QuerySource};
+use yaqb::{types, QuerySource};
 
 #[test]
 fn selecting_basic_data() {
@@ -35,8 +35,8 @@ fn selecting_a_struct() {
 
 #[test]
 fn with_safe_select() {
-    use tests::schema::users::columns::*;
-    use tests::schema::users::table as users;
+    use schema::users::columns::*;
+    use schema::users::table as users;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -56,8 +56,8 @@ fn with_safe_select() {
 
 #[test]
 fn selecting_multiple_columns() {
-    use tests::schema::users::columns::*;
-    use tests::schema::users::table as users;
+    use schema::users::columns::*;
+    use schema::users::table as users;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -77,8 +77,8 @@ fn selecting_multiple_columns() {
 
 #[test]
 fn selecting_multiple_columns_into_struct() {
-    use tests::schema::users::columns::*;
-    use tests::schema::users::table as users;
+    use schema::users::columns::*;
+    use schema::users::table as users;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -116,8 +116,8 @@ fn with_select_sql() {
 
 #[test]
 fn selecting_nullable_followed_by_non_null() {
-    use tests::schema::users::columns::*;
-    use tests::schema::users::table as users;
+    use schema::users::columns::*;
+    use schema::users::table as users;
 
     let connection = connection();
     setup_users_table(&connection);

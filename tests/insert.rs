@@ -2,7 +2,7 @@ use super::schema::*;
 
 #[test]
 fn insert_records() {
-    use tests::schema::users::table as users;
+    use schema::users::table as users;
     let connection = connection();
     setup_users_table(&connection);
 
@@ -24,7 +24,7 @@ fn insert_records() {
 
 #[test]
 fn insert_with_defaults() {
-    use tests::schema::users::table as users;
+    use schema::users::table as users;
     let connection = connection();
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
@@ -49,7 +49,7 @@ fn insert_with_defaults() {
 
 #[test]
 fn insert_with_defaults_not_provided() {
-    use tests::schema::users::table as users;
+    use schema::users::table as users;
     let connection = connection();
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,

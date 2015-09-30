@@ -11,9 +11,6 @@ mod row;
 #[macro_use]
 mod macros;
 
-#[cfg(test)]
-mod tests;
-
 pub use result::*;
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 pub use connection::Connection;
