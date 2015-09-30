@@ -70,7 +70,11 @@ pub trait Table: QuerySource {
     }
 }
 
-pub trait SelectableColumn<T, QS: QuerySource, SqlType: NativeSqlType = <Self as Column<T>>::SqlType>: Column<T> {
+pub trait SelectableColumn<
+    T,
+    QS: QuerySource,
+    SqlType: NativeSqlType = <Self as Column<T>>::SqlType,
+>: Column<T> {
 }
 
 impl<T, C> SelectableColumn<T, T> for C where
