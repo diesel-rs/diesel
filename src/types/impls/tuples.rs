@@ -39,13 +39,13 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T),+,$($ST),+> Queriable<($($ST),+)> for ($($T),+) where
-                $($T: FromSqlRow<$ST>),+,
+                $($T: Queriable<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                type Row = Self;
+                type Row = ($($T::Row),+);
 
                 fn build(row: Self::Row) -> Self {
-                    row
+                    ($($T::build(e!(row.$idx))),+)
                 }
             }
 

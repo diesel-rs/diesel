@@ -179,22 +179,3 @@ macro_rules! joinable_inner {
         {}
     }
 }
-
-macro_rules! belongs_to {
-    ($parent:ty, $parent_table:ident, $child:ty, $child_table:ident) => {
-        impl $crate::Queriable<($child_table::SqlType, $parent_table::SqlType)>
-        for ($child, $parent) {
-            type Row = (
-                <$child as $crate::Queriable<$child_table::SqlType>>::Row,
-                <$parent as $crate::Queriable<$parent_table::SqlType>>::Row,
-            );
-
-            fn build(row: Self::Row) -> Self {
-                (
-                    <$child as $crate::Queriable<$child_table::SqlType>>::build(row.0),
-                    <$parent as $crate::Queriable<$parent_table::SqlType>>::build(row.1),
-                )
-            }
-        }
-    }
-}
