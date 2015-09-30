@@ -92,6 +92,7 @@ macro_rules! table {
     }
 }
 
+#[macro_export]
 macro_rules! queriable {
     (
         $Struct:ident {
@@ -114,6 +115,7 @@ macro_rules! queriable {
     }
 }
 
+#[macro_export]
 macro_rules! insertable {
     (
         $Struct:ident -> $table_mod:ident {
@@ -148,6 +150,7 @@ macro_rules! insertable {
     };
 }
 
+#[macro_export]
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         joinable_inner!($child -> $parent ($source = $target));
@@ -155,6 +158,7 @@ macro_rules! joinable {
     }
 }
 
+#[macro_export]
 macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl $crate::JoinTo<$parent::table> for $child::table {
@@ -163,37 +167,47 @@ macro_rules! joinable_inner {
                 format!("{} = {}", $child::$source.qualified_name(), $parent::$target.qualified_name())
             }
         }
+    }
+}
 
-        impl<C> $crate::query_source::SelectableColumn<
+#[macro_export]
+macro_rules! select_column_workaround {
+    ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
+        $(select_column_inner!($parent -> $child $column_name);)+
+        select_column_inner!($parent -> $child star);
+    }
+}
+
+#[macro_export]
+macro_rules! select_column_inner {
+    ($parent:ident -> $child:ident $column_name:ident) => {
+        impl $crate::query_source::SelectableColumn<
             $parent::table,
             $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
-        > for C where
-            C: $crate::Column<$parent::table>,
+        > for $parent::$column_name
         {
         }
 
-        impl<C> $crate::query_source::SelectableColumn<
-            $child::table,
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
-        > for C where
-            C: $crate::Column<$child::table>,
+        impl $crate::query_source::SelectableColumn<
+            $parent::table,
+            $crate::query_source::InnerJoinSource<$parent::table, $child::table>,
+        > for $parent::$column_name
         {
         }
 
-        impl<C> $crate::query_source::SelectableColumn<
+        impl $crate::query_source::SelectableColumn<
             $parent::table,
             $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-            $crate::types::Nullable<C::SqlType>,
-        > for C where
-            C: $crate::Column<$parent::table>,
+            $crate::types::Nullable<
+                <$parent::$column_name as $crate::Column<$parent::table>>::SqlType>,
+        > for $parent::$column_name
         {
         }
 
-        impl<C> $crate::query_source::SelectableColumn<
-            $child::table,
-            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-        > for C where
-            C: $crate::Column<$child::table>,
+        impl $crate::query_source::SelectableColumn<
+            $parent::table,
+            $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
+        > for $parent::$column_name
         {
         }
     }

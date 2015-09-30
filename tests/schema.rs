@@ -99,7 +99,7 @@ queriable! {
     }
 }
 
-use Connection;
+use yaqb::Connection;
 
 pub fn setup_users_table(connection: &Connection) {
     connection.execute("CREATE TABLE users (

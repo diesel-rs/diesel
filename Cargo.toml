@@ -10,3 +10,8 @@ byteorder = "0.3.*"
 
 [dev-dependencies]
 compiletest_rs = "*"
+
+[[test]]
+name = "integration_tests"
+path = "tests/lib.rs"
+harness = true

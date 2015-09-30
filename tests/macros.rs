@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate yaqb;
 
 use yaqb::{QuerySource, Table, Column};
