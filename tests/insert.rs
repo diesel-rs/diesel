@@ -72,6 +72,27 @@ fn insert_with_defaults_not_provided() {
     assert_eq!(expected_users, inserted_users);
 }
 
+#[test]
+fn insert_without_return_returns_number_of_rows_inserted() {
+    use schema::users::table as users;
+    let connection = connection();
+    connection.execute("CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR NOT NULL,
+        hair_color VARCHAR NOT NULL DEFAULT 'Green'
+    )").unwrap();
+    let new_users = vec![
+        BaldUser { name: "Sean".to_string() },
+        BaldUser { name: "Tess".to_string() },
+    ];
+    let second_new_users = vec![BaldUser { name: "Guy".to_string() }];
+    let count = connection.insert_without_return(&users, new_users).unwrap();
+    let second_count = connection.insert_without_return(&users, second_new_users).unwrap();
+
+    assert_eq!(2, count);
+    assert_eq!(1, second_count);
+}
+
 struct BaldUser {
     name: String,
 }

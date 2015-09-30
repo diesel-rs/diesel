@@ -119,14 +119,7 @@ impl Connection {
         U: Insertable<T, Values>,
         Out: Queriable<T::SqlType>,
     {
-        let mut param_index = 1;
-        let values: Vec<_> = records.into_iter()
-            .map(|r| r.values())
-            .collect();
-        let param_placeholders = values.iter()
-            .map(|record| { format!("({})", record.as_bind_param_for_insert(&mut param_index)) })
-            .collect::<Vec<_>>()
-            .join(",");
+        let (values, param_placeholders) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING {}",
             source.name(),
@@ -140,6 +133,24 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
+    pub fn insert_without_return<T, Values, U>(&self, source: &T, records: Vec<U>)
+        -> Result<usize> where
+        T: Table,
+        U: Insertable<T, Values>,
+    {
+        let (values, param_placeholders) = self.placeholders_for_insert(records);
+        let sql = format!(
+            "INSERT INTO {} ({}) VALUES {}",
+            source.name(),
+            U::columns().name(),
+            param_placeholders,
+        );
+        let params = values.into_iter()
+            .flat_map(|r| r.values_to_sql().unwrap())
+            .collect();
+        self.exec_sql_params(&sql, &params).map(|r| r.rows_affected())
+    }
+
     fn prepare_query<T: QuerySource>(&self, source: &T) -> String {
         format!("SELECT {} FROM {}", source.select_clause(), source.from_clause())
     }
@@ -150,6 +161,22 @@ impl Connection {
 
     pub fn last_error_message(&self) -> String {
         last_error_message(self.internal_connection)
+    }
+
+    fn placeholders_for_insert<T, Values, U>(&self, records: Vec<U>)
+        -> (Vec<<U as Insertable<T, Values>>::Values>, String) where
+        T: Table,
+        U: Insertable<T, Values>,
+    {
+        let mut param_index = 1;
+        let values: Vec<_> = records.into_iter()
+            .map(|r| r.values())
+            .collect();
+        let param_placeholders = values.iter()
+            .map(|record| { format!("({})", record.as_bind_param_for_insert(&mut param_index)) })
+            .collect::<Vec<_>>()
+            .join(",");
+        (values, param_placeholders)
     }
 }
 
