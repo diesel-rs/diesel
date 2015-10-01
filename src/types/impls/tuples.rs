@@ -88,7 +88,8 @@ macro_rules! tuple_impls {
                 SelectableExpression<QS, ($($ST),+)>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableExpression<QS, $ST> + NonAggregate),+,
+                $($T: SelectableExpression<QS, $ST>),+,
+                ($($T),+): Expression,
                 QS: QuerySource,
             {
             }
@@ -97,7 +98,8 @@ macro_rules! tuple_impls {
                 SelectableExpression<QS, Nullable<($($ST),+)>>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableExpression<QS, Nullable<$ST>> + NonAggregate),+,
+                $($T: SelectableExpression<QS, Nullable<$ST>>),+,
+                ($($T),+): Expression,
                 QS: QuerySource,
             {
             }
