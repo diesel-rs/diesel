@@ -20,5 +20,7 @@ table! {
 fn main() {
     let connection = Connection::establish("").unwrap();
     let select_id = users::table.select(posts::id);
-    //~^ ERROR E0277
+    //~^ ERROR type mismatch
+    // ERROR expected struct `posts::table`,
+    // ERROR found struct `users::table` [E0271]
 }

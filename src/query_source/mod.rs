@@ -1,10 +1,11 @@
 mod joins;
 mod select;
 
-use types::{FromSqlRow, NativeSqlType};
-use std::convert::Into;
+use expression::{Expression, SelectableExpression};
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use self::select::SelectSqlQuerySource;
+use std::convert::Into;
+use types::{FromSqlRow, NativeSqlType};
 
 pub use self::joins::JoinTo;
 
@@ -20,11 +21,11 @@ pub trait QuerySource: Sized {
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
 
-    fn select<C, T, ST>(self, column: C) -> SelectSqlQuerySource<ST, Self> where
+    fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self> where
         ST: NativeSqlType,
-        C: SelectableColumn<T, Self, ST>,
+        E: SelectableExpression<Self, ST>,
     {
-        self.select_sql_inner(column.qualified_name())
+        self.select_sql_inner(expr.to_sql())
     }
 
     fn select_sql<A: NativeSqlType>(self, columns: &str)
@@ -42,7 +43,8 @@ pub trait QuerySource: Sized {
     }
 }
 
-pub trait Column<Table> {
+pub trait Column {
+    type Table: Table;
     type SqlType: NativeSqlType;
 
     fn name(&self) -> String;
@@ -50,8 +52,19 @@ pub trait Column<Table> {
     fn qualified_name(&self) -> String;
 }
 
+impl<C: Column> Expression for C {
+    type SqlType = <Self as Column>::SqlType;
+
+    fn to_sql(&self) -> String {
+        self.qualified_name()
+    }
+}
+
+impl<C: Column> SelectableExpression<C::Table> for C {
+}
+
 pub trait Table: QuerySource {
-    type PrimaryKey: Column<Self>;
+    type PrimaryKey: Column<Table=Self>;
     fn name(&self) -> &str;
     fn primary_key(&self) -> Self::PrimaryKey;
 
@@ -68,17 +81,4 @@ pub trait Table: QuerySource {
     {
         LeftOuterJoinSource::new(self, other)
     }
-}
-
-pub trait SelectableColumn<
-    T,
-    QS: QuerySource,
-    SqlType: NativeSqlType = <Self as Column<T>>::SqlType,
->: Column<T> {
-}
-
-impl<T, C> SelectableColumn<T, T> for C where
-    T: Table,
-    C: Column<T>,
-{
 }

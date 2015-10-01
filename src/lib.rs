@@ -4,6 +4,7 @@ pub mod types;
 
 mod connection;
 mod db_result;
+pub mod expression;
 pub mod query_source;
 mod result;
 mod row;

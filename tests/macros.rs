@@ -1,6 +1,8 @@
 extern crate yaqb;
 
 use yaqb::{QuerySource, Table, Column};
+use yaqb::expression::*;
+use yaqb::persistable::InsertableColumns;
 
 table! {
     users {
@@ -30,6 +32,6 @@ fn test_table_macro() {
     assert_eq!("users", users.name());
     assert_eq!(id, users.primary_key());
 
-    assert_eq!("id, name", (id, name).name());
-    assert_eq!("users.id, users.name", (id, name).qualified_name());
+    assert_eq!("id, name", (id, name).names());
+    assert_eq!("users.id, users.name", (id, name).to_sql());
 }

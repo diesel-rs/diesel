@@ -1,14 +1,30 @@
 use query_source::{Table, Column};
 use types::{ValuesToSql, Nullable, NativeSqlType};
 
-pub trait Insertable<T: Table, QS = T> {
-    type Columns: Column<QS>;
-    type Values: ValuesToSql<<Self::Columns as Column<QS>>::SqlType> +
-        AsBindParam<<Self::Columns as Column<QS>>::SqlType>;
+pub trait Insertable<T: Table> {
+    type Columns: InsertableColumns<Table=T>;
+    type Values: ValuesToSql<<Self::Columns as InsertableColumns>::SqlType> +
+        AsBindParam<<Self::Columns as InsertableColumns>::SqlType>;
 
     fn columns() -> Self::Columns;
 
     fn values(self) -> Self::Values;
+}
+
+pub trait InsertableColumns {
+    type Table: Table;
+    type SqlType: NativeSqlType;
+
+    fn names(&self) -> String;
+}
+
+impl<C: Column> InsertableColumns for C {
+    type Table = <Self as Column>::Table;
+    type SqlType = <Self as Column>::SqlType;
+
+    fn names(&self) -> String {
+        self.name()
+    }
 }
 
 pub trait AsBindParam<T: NativeSqlType> {

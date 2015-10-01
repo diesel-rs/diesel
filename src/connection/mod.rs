@@ -6,7 +6,7 @@ mod cursor;
 pub use self::cursor::Cursor;
 
 use db_result::DbResult;
-use persistable::{Insertable, AsBindParam};
+use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_source::{Table, Column};
 use self::pq_sys::*;
 use std::ffi::{CString, CStr};
@@ -106,24 +106,24 @@ impl Connection {
     pub fn find<T, U, PK>(&self, source: &T, id: &PK) -> Result<Option<U>> where
         T: Table,
         U: Queriable<T::SqlType>,
-        PK: ToSql<<T::PrimaryKey as Column<T>>::SqlType>,
+        PK: ToSql<<T::PrimaryKey as Column>::SqlType>,
     {
         let sql = self.prepare_query(source);
         let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().qualified_name());
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
-    pub fn insert<T, Values, U, Out>(&self, source: &T, records: Vec<U>)
+    pub fn insert<T, U, Out>(&self, source: &T, records: Vec<U>)
         -> Result<Cursor<T::SqlType, Out>> where
         T: Table,
-        U: Insertable<T, Values>,
+        U: Insertable<T>,
         Out: Queriable<T::SqlType>,
     {
         let (values, param_placeholders) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING {}",
             source.name(),
-            U::columns().name(),
+            U::columns().names(),
             param_placeholders,
             source.select_clause(),
         );
@@ -133,16 +133,16 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
-    pub fn insert_without_return<T, Values, U>(&self, source: &T, records: Vec<U>)
+    pub fn insert_without_return<T, U>(&self, source: &T, records: Vec<U>)
         -> Result<usize> where
         T: Table,
-        U: Insertable<T, Values>,
+        U: Insertable<T>,
     {
         let (values, param_placeholders) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {}",
             source.name(),
-            U::columns().name(),
+            U::columns().names(),
             param_placeholders,
         );
         let params = values.into_iter()
@@ -163,10 +163,10 @@ impl Connection {
         last_error_message(self.internal_connection)
     }
 
-    fn placeholders_for_insert<T, Values, U>(&self, records: Vec<U>)
-        -> (Vec<<U as Insertable<T, Values>>::Values>, String) where
+    fn placeholders_for_insert<T, U>(&self, records: Vec<U>)
+        -> (Vec<<U as Insertable<T>>::Values>, String) where
         T: Table,
-        U: Insertable<T, Values>,
+        U: Insertable<T>,
     {
         let mut param_index = 1;
         let values: Vec<_> = records.into_iter()

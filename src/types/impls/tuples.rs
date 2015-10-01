@@ -1,5 +1,5 @@
-use persistable::AsBindParam;
-use query_source::SelectableColumn;
+use expression::{Expression, SelectableExpression};
+use persistable::{AsBindParam, InsertableColumns};
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
@@ -62,40 +62,39 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($ST),+, $($TT),+>
-                Column<($($TT),+)> for ($($T),+) where
-                $($T: Column<$TT, SqlType=$ST>),+,
-                $($ST: NativeSqlType),+,
-            {
-                type SqlType = ($($ST),+);
+            impl<$($T: Expression),+> Expression for ($($T),+) {
+                type SqlType = ($(<$T as Expression>::SqlType),+);
 
-                #[allow(non_snake_case)]
-                fn qualified_name(&self) -> String {
-                    let parts: &[String] = e!(&[$(self.$idx.qualified_name()),*]);
+                fn to_sql(&self) -> String {
+                    let parts: &[String] = e!(&[$(self.$idx.to_sql()),*]);
                     parts.join(", ")
                 }
+            }
 
-                #[allow(non_snake_case)]
-                fn name(&self) -> String {
+            impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns for ($($T),+) {
+                type Table = T;
+                type SqlType = ($(<$T as Column>::SqlType),+);
+
+                fn names(&self) -> String {
                     let parts: &[String] = e!(&[$(self.$idx.name()),*]);
                     parts.join(", ")
                 }
             }
 
-            impl<$($T),+, $($ST),+, $($TT),+, QS>
-                SelectableColumn<($($TT),+), QS, ($($ST),+)>
+            impl<$($T),+, $($ST),+, QS>
+                SelectableExpression<QS, ($($ST),+)>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableColumn<$TT, QS, $ST>),+,
+                $($T: SelectableExpression<QS, $ST>),+,
                 QS: QuerySource,
             {
             }
 
-            impl<$($T),+, $($ST),+, $($TT),+, QS>
-                SelectableColumn<($($TT),+), QS, Nullable<($($ST),+)>>
+            impl<$($T),+, $($ST),+, QS>
+                SelectableExpression<QS, Nullable<($($ST),+)>>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableColumn<$TT, QS, Nullable<$ST>>),+,
+                $($T: SelectableExpression<QS, Nullable<$ST>>),+,
                 QS: QuerySource,
             {
             }

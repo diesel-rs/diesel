@@ -60,7 +60,8 @@ macro_rules! table {
                 #[derive(Debug, PartialEq)]
                 pub struct star;
 
-                impl Column<table> for star {
+                impl Column for star {
+                    type Table = table;
                     type SqlType = super::SqlType;
 
                     fn name(&self) -> String {
@@ -76,7 +77,8 @@ macro_rules! table {
                 #[derive(Debug, PartialEq)]
                 pub struct $column_name;
 
-                impl Column<table> for $column_name {
+                impl Column for $column_name {
+                    type Table = table;
                     type SqlType = $Type;
 
                     fn name(&self) -> String {
@@ -133,7 +135,7 @@ macro_rules! insertable {
             $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl $crate::persistable::Insertable<$table_mod::table, ($($field_table_name::table),+)>
+        impl $crate::persistable::Insertable<$table_mod::table>
             for $Struct
         {
             type Columns = ($($table_mod::$field_name),+);
@@ -181,31 +183,27 @@ macro_rules! select_column_workaround {
 #[macro_export]
 macro_rules! select_column_inner {
     ($parent:ident -> $child:ident $column_name:ident) => {
-        impl $crate::query_source::SelectableColumn<
-            $parent::table,
+        impl $crate::expression::SelectableExpression<
             $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
         > for $parent::$column_name
         {
         }
 
-        impl $crate::query_source::SelectableColumn<
-            $parent::table,
+        impl $crate::expression::SelectableExpression<
             $crate::query_source::InnerJoinSource<$parent::table, $child::table>,
         > for $parent::$column_name
         {
         }
 
-        impl $crate::query_source::SelectableColumn<
-            $parent::table,
+        impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
             $crate::types::Nullable<
-                <$parent::$column_name as $crate::Column<$parent::table>>::SqlType>,
+                <$parent::$column_name as $crate::Column>::SqlType>,
         > for $parent::$column_name
         {
         }
 
-        impl $crate::query_source::SelectableColumn<
-            $parent::table,
+        impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
         > for $parent::$column_name
         {
