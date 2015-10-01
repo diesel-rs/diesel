@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate yaqb;
 
+mod expressions;
 mod find;
 mod insert;
 mod joins;

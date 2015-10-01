@@ -1,3 +1,7 @@
+mod count;
+
+pub use self::count::count;
+
 use query_source::QuerySource;
 use types::NativeSqlType;
 
