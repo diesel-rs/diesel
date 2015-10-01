@@ -14,3 +14,15 @@ fn test_count_counts_the_rows() {
     connection.insert_without_return(&users, vec![NewUser::new("Sean", None)]).unwrap();
     assert_eq!(Some(1), connection.query_one(&source).unwrap());
 }
+
+#[test]
+fn test_count_star() {
+    let connection = connection();
+    setup_users_table(&connection);
+    let source = users.count();
+
+    assert_eq!(Some(0), connection.query_one(&source).unwrap());
+    connection.insert_without_return(&users, vec![NewUser::new("Sean", None)]).unwrap();
+    assert_eq!(Some(1), connection.query_one(&source).unwrap());
+    assert_eq!("COUNT(*)", source.select_clause());
+}

@@ -1,11 +1,11 @@
 mod joins;
 mod select;
 
-use expression::{Expression, SelectableExpression};
+use expression::{Expression, SelectableExpression, count_star};
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use self::select::SelectSqlQuerySource;
 use std::convert::Into;
-use types::{FromSqlRow, NativeSqlType};
+use types::{self, FromSqlRow, NativeSqlType};
 
 pub use self::joins::JoinTo;
 
@@ -26,6 +26,10 @@ pub trait QuerySource: Sized {
         E: SelectableExpression<Self, ST>,
     {
         self.select_sql_inner(expr.to_sql())
+    }
+
+    fn count(self) -> SelectSqlQuerySource<types::BigInt, Self> {
+        self.select(count_star())
     }
 
     fn select_sql<A: NativeSqlType>(self, columns: &str)

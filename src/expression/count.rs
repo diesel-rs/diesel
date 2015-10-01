@@ -2,14 +2,18 @@ use query_source::QuerySource;
 use super::{Expression, SelectableExpression};
 use types::BigInt;
 
-pub struct Count<T: Expression> {
-    target: T,
-}
-
 pub fn count<T: Expression>(t: T) -> Count<T> {
     Count {
         target: t,
     }
+}
+
+pub fn count_star() -> CountStar {
+    CountStar
+}
+
+pub struct Count<T: Expression> {
+    target: T,
 }
 
 impl<T: Expression> Expression for Count<T> {
@@ -21,4 +25,17 @@ impl<T: Expression> Expression for Count<T> {
 }
 
 impl<T: Expression, QS: QuerySource> SelectableExpression<QS> for Count<T> {
+}
+
+pub struct CountStar;
+
+impl Expression for CountStar {
+    type SqlType = BigInt;
+
+    fn to_sql(&self) -> String {
+        "COUNT(*)".to_string()
+    }
+}
+
+impl<QS: QuerySource> SelectableExpression<QS> for CountStar {
 }

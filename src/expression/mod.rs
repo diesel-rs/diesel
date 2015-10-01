@@ -1,6 +1,6 @@
 mod count;
 
-pub use self::count::count;
+pub use self::count::{count, count_star};
 
 use query_source::QuerySource;
 use types::NativeSqlType;
