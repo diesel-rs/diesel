@@ -16,3 +16,6 @@ pub trait SelectableExpression<
     Type: NativeSqlType = <Self as Expression>::SqlType,
 >: Expression {
 }
+
+pub trait NonAggregate: Expression {
+}

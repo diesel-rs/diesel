@@ -1,7 +1,7 @@
 mod joins;
 mod select;
 
-use expression::{Expression, SelectableExpression, count_star};
+use expression::{Expression, SelectableExpression, NonAggregate, count_star};
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use self::select::SelectSqlQuerySource;
 use std::convert::Into;
@@ -65,6 +65,9 @@ impl<C: Column> Expression for C {
 }
 
 impl<C: Column> SelectableExpression<C::Table> for C {
+}
+
+impl<C: Column> NonAggregate for C {
 }
 
 pub trait Table: QuerySource {

@@ -1,4 +1,4 @@
-use expression::{Expression, SelectableExpression};
+use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{AsBindParam, InsertableColumns};
 use row::Row;
 use std::error::Error;
@@ -62,13 +62,16 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T: Expression),+> Expression for ($($T),+) {
+            impl<$($T: Expression + NonAggregate),+> Expression for ($($T),+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn to_sql(&self) -> String {
                     let parts: &[String] = e!(&[$(self.$idx.to_sql()),*]);
                     parts.join(", ")
                 }
+            }
+
+            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {
             }
 
             impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns for ($($T),+) {
@@ -85,7 +88,7 @@ macro_rules! tuple_impls {
                 SelectableExpression<QS, ($($ST),+)>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableExpression<QS, $ST>),+,
+                $($T: SelectableExpression<QS, $ST> + NonAggregate),+,
                 QS: QuerySource,
             {
             }
@@ -94,7 +97,7 @@ macro_rules! tuple_impls {
                 SelectableExpression<QS, Nullable<($($ST),+)>>
                 for ($($T),+) where
                 $($ST: NativeSqlType),+,
-                $($T: SelectableExpression<QS, Nullable<$ST>>),+,
+                $($T: SelectableExpression<QS, Nullable<$ST>> + NonAggregate),+,
                 QS: QuerySource,
             {
             }
