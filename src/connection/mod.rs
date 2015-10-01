@@ -81,7 +81,7 @@ impl Connection {
             .filter_map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char))
             .collect::<Vec<_>>();
         let param_lengths = param_data.iter()
-            .map(|data| data.as_ref().map(|d| d.len()).unwrap_or(0) as libc::c_int)
+            .filter_map(|data| data.as_ref().map(|d| d.len() as libc::c_int))
             .collect::<Vec<_>>();
         let param_formats = param_data.iter()
             .map(|_| 1 as libc::c_int)

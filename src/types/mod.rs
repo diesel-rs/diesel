@@ -1,4 +1,7 @@
+mod ord;
 mod impls;
+
+pub use self::ord::SqlOrd;
 
 use row::Row;
 use std::error::Error;

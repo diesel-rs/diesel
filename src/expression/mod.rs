@@ -1,6 +1,8 @@
 mod count;
+mod max;
 
 pub use self::count::{count, count_star};
+pub use self::max::max;
 
 use query_source::QuerySource;
 use types::NativeSqlType;
