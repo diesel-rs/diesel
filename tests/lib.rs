@@ -8,4 +8,5 @@ mod joins;
 mod macros;
 mod schema;
 mod select;
+mod transactions;
 mod types;

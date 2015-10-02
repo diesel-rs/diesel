@@ -10,9 +10,10 @@ use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_source::{Table, Column};
 use self::pq_sys::*;
 use std::ffi::{CString, CStr};
-use std::{str, ptr};
+use std::{str, ptr, result};
 use types::{NativeSqlType, ToSql, ValuesToSql};
-use {Result, ConnectionResult, ConnectionError, QuerySource, Queriable};
+use result::*;
+use {QuerySource, Queriable};
 
 pub struct Connection {
     internal_connection: *mut PGconn,
@@ -33,6 +34,22 @@ impl Connection {
                 let message = last_error_message(connection_ptr);
                 Err(ConnectionError::BadConnection(message))
             }
+        }
+    }
+
+    pub fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
+        F: FnOnce() -> result::Result<T, E>,
+    {
+        try!(self.execute("BEGIN"));
+        match f() {
+            Ok(value) => {
+                try!(self.execute("COMMIT"));
+                Ok(value)
+            },
+            Err(e) => {
+                try!(self.execute("ROLLBACK"));
+                Err(TransactionError::UserReturnedError(e))
+            },
         }
     }
 

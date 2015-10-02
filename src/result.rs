@@ -16,8 +16,15 @@ pub enum ConnectionError {
     BadConnection(String),
 }
 
+#[derive(Debug, PartialEq)]
+pub enum TransactionError<E> {
+    CouldntCreateTransaction(Error),
+    UserReturnedError(E),
+}
+
 pub type Result<T> = result::Result<T, Error>;
 pub type ConnectionResult<T> = result::Result<T, ConnectionError>;
+pub type TransactionResult<T, E> = result::Result<T, TransactionError<E>>;
 
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {
@@ -28,6 +35,12 @@ impl From<NulError> for ConnectionError {
 impl From<NulError> for Error {
     fn from(e: NulError) -> Self {
         Error::InvalidCString(e)
+    }
+}
+
+impl<E> From<Error> for TransactionError<E> {
+    fn from(e: Error) -> Self {
+        TransactionError::CouldntCreateTransaction(e)
     }
 }
 
@@ -63,6 +76,24 @@ impl StdError for ConnectionError {
         match self {
             &ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
             &ConnectionError::BadConnection(ref s) => &s,
+        }
+    }
+}
+
+impl<E: Display> Display for TransactionError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &TransactionError::CouldntCreateTransaction(ref e) => e.fmt(f),
+            &TransactionError::UserReturnedError(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl<E: StdError> StdError for TransactionError<E> {
+    fn description(&self) -> &str {
+        match self {
+            &TransactionError::CouldntCreateTransaction(ref e) => e.description(),
+            &TransactionError::UserReturnedError(ref e) => e.description(),
         }
     }
 }

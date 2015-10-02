@@ -119,9 +119,13 @@ pub fn setup_posts_table(connection: &Connection) {
 }
 
 pub fn connection() -> Connection {
-    let connection_url = ::std::env::var("DATABASE_URL").ok()
-        .expect("DATABASE_URL must be set in order to run tests");
-    let result = Connection::establish(&connection_url).unwrap();
+    let result = connection_without_transaction();
     result.execute("BEGIN").unwrap();
     result
+}
+
+pub fn connection_without_transaction() -> Connection {
+    let connection_url = ::std::env::var("DATABASE_URL").ok()
+        .expect("DATABASE_URL must be set in order to run tests");
+    Connection::establish(&connection_url).unwrap()
 }
