@@ -4,6 +4,7 @@ extern crate yaqb;
 mod expressions;
 mod find;
 mod insert;
+mod internal_details;
 mod joins;
 mod macros;
 mod schema;

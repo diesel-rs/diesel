@@ -83,7 +83,7 @@ impl Connection {
         Ok(Cursor::new(result))
     }
 
-    fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
+    pub fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
         -> Result<Cursor<T, U>> where
         T: NativeSqlType,
         U: Queriable<T>,
@@ -98,10 +98,12 @@ impl Connection {
     fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>) -> Result<DbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
-            .filter_map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char))
+            .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
+                 .unwrap_or(ptr::null()))
             .collect::<Vec<_>>();
         let param_lengths = param_data.iter()
-            .filter_map(|data| data.as_ref().map(|d| d.len() as libc::c_int))
+            .map(|data| data.as_ref().map(|d| d.len() as libc::c_int)
+                 .unwrap_or(0))
             .collect::<Vec<_>>();
         let param_formats = param_data.iter()
             .map(|_| 1 as libc::c_int)
@@ -139,7 +141,7 @@ impl Connection {
         U: Insertable<T>,
         Out: Queriable<T::SqlType>,
     {
-        let (values, param_placeholders) = self.placeholders_for_insert(records);
+        let (param_placeholders, params) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING {}",
             source.name(),
@@ -147,9 +149,6 @@ impl Connection {
             param_placeholders,
             source.select_clause(),
         );
-        let params = values.into_iter()
-            .flat_map(|r| r.values_to_sql().unwrap())
-            .collect();
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
@@ -158,16 +157,13 @@ impl Connection {
         T: Table,
         U: Insertable<T>,
     {
-        let (values, param_placeholders) = self.placeholders_for_insert(records);
+        let (param_placeholders, params) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {}",
             source.name(),
             U::columns().names(),
             param_placeholders,
         );
-        let params = values.into_iter()
-            .flat_map(|r| r.values_to_sql().unwrap())
-            .collect();
         self.exec_sql_params(&sql, &params).map(|r| r.rows_affected())
     }
 
@@ -184,7 +180,7 @@ impl Connection {
     }
 
     fn placeholders_for_insert<T, U>(&self, records: Vec<U>)
-        -> (Vec<<U as Insertable<T>>::Values>, String) where
+        -> (String, Vec<Option<Vec<u8>>>) where
         T: Table,
         U: Insertable<T>,
     {
@@ -196,7 +192,11 @@ impl Connection {
             .map(|record| { format!("({})", record.as_bind_param_for_insert(&mut param_index)) })
             .collect::<Vec<_>>()
             .join(",");
-        (values, param_placeholders)
+        let params = values.into_iter()
+            .flat_map(|r| r.values_to_sql().unwrap()
+                      .into_iter().filter(|i| i.is_some()))
+            .collect();
+        (param_placeholders, params)
     }
 
     fn begin_transaction(&self) -> Result<usize> {
