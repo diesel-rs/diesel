@@ -74,8 +74,7 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {
             }
 
-            impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns for ($($T),+) {
-                type Table = T;
+            impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns<T> for ($($T),+) {
                 type SqlType = ($(<$T as Column>::SqlType),+);
 
                 fn names(&self) -> String {
