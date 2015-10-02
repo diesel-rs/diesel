@@ -56,12 +56,41 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     drop_test_table(&connection, test_name);
 }
 
+#[test]
+fn transactions_can_be_nested() {
+    let connection = connection_without_transaction();
+    let test_name = "transactions_can_be_nested";
+    setup_test_table(&connection, test_name);
+    let get_count = || count_test_table(&connection, test_name);
+
+    let _ = connection.transaction::<(), (), _>(|| {
+        connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
+        assert_eq!(1, get_count());
+        let _ = connection.transaction::<(), (), _>(|| {
+            connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
+            assert_eq!(2, get_count());
+            Err(())
+        });
+        assert_eq!(1, get_count());
+        let _ = connection.transaction::<(), (), _>(|| {
+            connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
+            assert_eq!(2, get_count());
+            Ok(())
+        });
+        assert_eq!(2, get_count());
+        Err(())
+    });
+    assert_eq!(0, get_count());
+
+    drop_test_table(&connection, test_name);
+}
+
 fn setup_test_table(connection: &Connection, table_name: &str) {
     connection.execute(&format!("CREATE TABLE {} (id SERIAL PRIMARY KEY)", table_name)).unwrap();
 }
 
 fn drop_test_table(connection: &Connection, table_name: &str) {
-    connection.execute(&format!("DROP TABLE IF EXISTS {}", table_name)).unwrap();
+    connection.execute(&format!("DROP TABLE {}", table_name)).unwrap();
 }
 
 fn count_test_table(connection: &Connection, table_name: &str) -> i64 {

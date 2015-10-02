@@ -8,15 +8,17 @@ pub use self::cursor::Cursor;
 use db_result::DbResult;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_source::{Table, Column};
+use result::*;
 use self::pq_sys::*;
+use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::{str, ptr, result};
 use types::{NativeSqlType, ToSql, ValuesToSql};
-use result::*;
 use {QuerySource, Queriable};
 
 pub struct Connection {
     internal_connection: *mut PGconn,
+    transaction_depth: Cell<i32>,
 }
 
 impl Connection {
@@ -28,6 +30,7 @@ impl Connection {
             CONNECTION_OK => {
                 Ok(Connection {
                     internal_connection: connection_ptr,
+                    transaction_depth: Cell::new(0),
                 })
             },
             _ => {
@@ -40,14 +43,14 @@ impl Connection {
     pub fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
         F: FnOnce() -> result::Result<T, E>,
     {
-        try!(self.execute("BEGIN"));
+        try!(self.begin_transaction());
         match f() {
             Ok(value) => {
-                try!(self.execute("COMMIT"));
+                try!(self.commit_transaction());
                 Ok(value)
             },
             Err(e) => {
-                try!(self.execute("ROLLBACK"));
+                try!(self.rollback_transaction());
                 Err(TransactionError::UserReturnedError(e))
             },
         }
@@ -194,6 +197,42 @@ impl Connection {
             .collect::<Vec<_>>()
             .join(",");
         (values, param_placeholders)
+    }
+
+    fn begin_transaction(&self) -> Result<usize> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(1, if transaction_depth == 0 {
+            self.execute("BEGIN")
+        } else {
+            self.execute(&format!("SAVEPOINT yaqb_savepoint_{}", transaction_depth))
+        })
+    }
+
+    fn rollback_transaction(&self) -> Result<usize> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth == 1 {
+            self.execute("ROLLBACK")
+        } else {
+            self.execute(&format!("ROLLBACK TO SAVEPOINT yaqb_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn commit_transaction(&self) -> Result<usize> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth <= 1 {
+            self.execute("COMMIT")
+        } else {
+            self.execute(&format!("RELEASE SAVEPOINT yaqb_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn change_transaction_depth(&self, by: i32, query: Result<usize>) -> Result<usize> {
+        if query.is_ok() {
+            self.transaction_depth.set(self.transaction_depth.get() + by);
+        }
+        query
     }
 }
 
