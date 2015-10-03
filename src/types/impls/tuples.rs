@@ -107,10 +107,7 @@ macro_rules! tuple_impls {
             {
             }
 
-            impl<$($T),+, $($ST),+> AsBindParam<($($ST),+)> for ($($T),+) where
-                $($T: AsBindParam<$ST>),+,
-                $($ST: NativeSqlType),+,
-            {
+            impl<$($T: AsBindParam),+> AsBindParam for ($($T),+) {
                 fn as_bind_param(&self, idx: &mut usize) -> String {
                     e!([$(self.$idx.as_bind_param(idx)),+].join(","))
                 }

@@ -21,7 +21,7 @@ pub trait Expression: Sized {
     }
 
     fn eq<T>(self, other: T) -> Eq<Self, Bound<Self::SqlType, T>> where
-        T: ValuesToSql<Self::SqlType> + AsBindParam<Self::SqlType>
+        T: ValuesToSql<Self::SqlType> + AsBindParam
     {
         Eq { left: self, right: Bound::new(other) }
     }
@@ -80,7 +80,7 @@ impl<T, U> Bound<T, U> {
 
 impl<T, U> Expression for Bound<T, U> where
     T: NativeSqlType,
-    U: AsBindParam<T> + ValuesToSql<T> + Debug,
+    U: AsBindParam + ValuesToSql<T> + Debug,
 {
     type SqlType = T;
 

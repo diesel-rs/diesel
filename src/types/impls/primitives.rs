@@ -1,4 +1,3 @@
-use persistable::AsBindParam;
 use std::error::Error;
 use std::io::Write;
 use super::option::UnexpectedNullError;
@@ -15,12 +14,6 @@ macro_rules! primitive_impls {
 
                 fn build(row: Self::Row) -> Self {
                     row
-                }
-            }
-
-            impl AsBindParam<types::$Source> for $Target {
-                fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
-                    AsBindParam::<types::$Source>::as_bind_param(self, idx)
                 }
             }
         )+
@@ -45,12 +38,6 @@ primitive_impls! {
     Text -> String,
 
     Binary -> Vec<u8>,
-}
-
-impl<'a> AsBindParam<types::VarChar> for &'a str {
-    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
-        AsBindParam::<types::VarChar>::as_bind_param(self, idx)
-    }
 }
 
 impl FromSql<types::Bool> for bool {
