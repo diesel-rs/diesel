@@ -47,6 +47,12 @@ primitive_impls! {
     Binary -> Vec<u8>,
 }
 
+impl<'a> AsBindParam<types::VarChar> for &'a str {
+    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+        AsBindParam::<types::VarChar>::as_bind_param(self, idx)
+    }
+}
+
 impl FromSql<types::Bool> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let bytes = not_none!(bytes);
