@@ -35,8 +35,7 @@ fn selecting_a_struct() {
 
 #[test]
 fn with_safe_select() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -56,8 +55,7 @@ fn with_safe_select() {
 
 #[test]
 fn selecting_multiple_columns() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -77,8 +75,7 @@ fn selecting_multiple_columns() {
 
 #[test]
 fn selecting_multiple_columns_into_struct() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -116,8 +113,7 @@ fn with_select_sql() {
 
 #[test]
 fn selecting_nullable_followed_by_non_null() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);

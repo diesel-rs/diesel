@@ -21,6 +21,11 @@ macro_rules! table {
             use $crate::types::*;
             pub use self::columns::*;
 
+            pub mod dsl {
+                pub use super::columns::*;
+                pub use super::table as $name;
+            }
+
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
             pub struct table;

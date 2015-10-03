@@ -3,8 +3,7 @@ use yaqb::*;
 
 #[test]
 fn filter_by_int_equality() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);
@@ -20,8 +19,7 @@ fn filter_by_int_equality() {
 
 #[test]
 fn filter_by_string_equality() {
-    use schema::users::columns::*;
-    use schema::users::table as users;
+    use schema::users::dsl::*;
 
     let connection = connection();
     setup_users_table(&connection);

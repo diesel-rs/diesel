@@ -1,6 +1,5 @@
 use schema::{connection, NewUser, setup_users_table};
-use schema::users::columns::*;
-use schema::users::table as users;
+use schema::users::dsl::*;
 use yaqb::*;
 use yaqb::expression::dsl::*;
 

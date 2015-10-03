@@ -11,8 +11,7 @@ table! {
 }
 
 fn main() {
-    use self::users::columns::*;
-    use self::users::table as users;
+    use self::users::dsl::*;
 
     let connection = Connection::establish("").unwrap();
     let select_id = users.select(id);
