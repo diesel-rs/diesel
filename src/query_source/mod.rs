@@ -1,7 +1,10 @@
+mod filter;
 mod joins;
 mod select;
 
-use expression::{Expression, SelectableExpression, NonAggregate, count_star};
+use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::dsl::count_star;
+use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use self::select::SelectSqlQuerySource;
 use std::convert::Into;
@@ -20,6 +23,10 @@ pub trait QuerySource: Sized {
 
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
+
+    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
+        None
+    }
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self> where
         ST: NativeSqlType,
@@ -87,5 +94,11 @@ pub trait Table: QuerySource {
         Self: JoinTo<T>,
     {
         LeftOuterJoinSource::new(self, other)
+    }
+
+    fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
+        T: SelectableExpression<Self, types::Bool>,
+    {
+        FilteredQuerySource::new(self, predicate)
     }
 }

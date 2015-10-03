@@ -13,5 +13,6 @@ mod row;
 mod macros;
 
 pub use connection::Connection;
+pub use expression::{Expression, SelectableExpression};
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 pub use result::*;

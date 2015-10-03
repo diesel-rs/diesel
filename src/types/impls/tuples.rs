@@ -69,6 +69,12 @@ macro_rules! tuple_impls {
                     let parts: &[String] = e!(&[$(self.$idx.to_sql()),*]);
                     parts.join(", ")
                 }
+
+                fn binds(&self) -> Vec<Option<Vec<u8>>> {
+                    let mut result = Vec::new();
+                    $(result.append(&mut e!(self.$idx.binds()));)+
+                    result
+                }
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {

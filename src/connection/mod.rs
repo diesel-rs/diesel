@@ -71,8 +71,8 @@ impl Connection {
         T: QuerySource,
         U: Queriable<T::SqlType>,
     {
-        let sql = self.prepare_query(source);
-        self.query_sql(&sql)
+        let (sql, params) = self.prepare_query(source);
+        self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
     pub fn query_sql<T, U>(&self, query: &str) -> Result<Cursor<T, U>> where
@@ -130,7 +130,8 @@ impl Connection {
         U: Queriable<T::SqlType>,
         PK: ToSql<<T::PrimaryKey as Column>::SqlType>,
     {
-        let sql = self.prepare_query(source);
+        let (sql, binds) = self.prepare_query(source);
+        assert!(binds.is_empty());
         let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().qualified_name());
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
@@ -167,8 +168,15 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(|r| r.rows_affected())
     }
 
-    fn prepare_query<T: QuerySource>(&self, source: &T) -> String {
-        format!("SELECT {} FROM {}", source.select_clause(), source.from_clause())
+    fn prepare_query<T: QuerySource>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>) {
+        let mut query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
+        let mut params = Vec::new();
+        if let Some((filter, mut binds)) = source.where_clause() {
+            query.push_str(" WHERE ");
+            query.push_str(&filter);
+            params.append(&mut binds);
+        }
+        (query, params)
     }
 
     fn execute_inner(&self, query: &str) -> Result<DbResult> {

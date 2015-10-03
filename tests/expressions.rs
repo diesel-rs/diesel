@@ -2,7 +2,7 @@ use schema::{connection, NewUser, setup_users_table};
 use schema::users::columns::*;
 use schema::users::table as users;
 use yaqb::*;
-use yaqb::expression::*;
+use yaqb::expression::dsl::*;
 
 #[test]
 fn test_count_counts_the_rows() {
