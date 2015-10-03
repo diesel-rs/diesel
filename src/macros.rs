@@ -120,22 +120,22 @@ macro_rules! queriable {
 #[macro_export]
 macro_rules! insertable {
     (
-        $Struct:ident -> $table_mod:ident {
+        $Struct:ty => $table_mod:ident {
             $($field_name:ident -> $Type:ty,)+
         }
     ) => {
         insertable! {
-            $Struct -> $table_mod {
+            $Struct => $table_mod {
                 $($table_mod, $field_name -> $Type,)+
             }
         }
     };
     (
-        $Struct:ident -> $table_mod:ident {
+        $Struct:ty => $table_mod:ident {
             $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl $crate::persistable::Insertable<$table_mod::table>
+        impl<'a, 'b, 'c> $crate::persistable::Insertable<$table_mod::table>
             for $Struct
         {
             type Columns = ($($table_mod::$field_name),+);

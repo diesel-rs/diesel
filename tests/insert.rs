@@ -98,7 +98,38 @@ struct BaldUser {
 }
 
 insertable! {
-    BaldUser -> users {
+    BaldUser => users {
         name -> String,
     }
+}
+
+struct BorrowedUser<'a> {
+    name: &'a str,
+}
+
+insertable! {
+    BorrowedUser<'a> => users {
+        name -> &'a str,
+    }
+}
+
+#[test]
+fn insert_borrowed_content() {
+    use schema::users::table as users;
+    let connection = connection();
+    setup_users_table(&connection);
+    let new_users = vec![
+        BorrowedUser { name: "Sean" },
+        BorrowedUser { name: "Tess" },
+    ];
+    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
+
+    let expected_users = vec![
+        User::new(1, "Sean"),
+        User::new(2, "Tess"),
+    ];
+    let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+
+    assert_eq!(expected_users, actual_users);
+    assert_eq!(expected_users, inserted_users);
 }

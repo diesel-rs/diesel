@@ -86,7 +86,7 @@ impl NewUser {
 }
 
 insertable! {
-    NewUser -> users {
+    NewUser => users {
         name -> String,
         hair_color -> Option<String>,
     }
