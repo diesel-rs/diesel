@@ -20,3 +20,8 @@ harness = true
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
+
+[[bench]]
+name = "benchmarks"
+path = "tests/bench.rs"
+bench = true
