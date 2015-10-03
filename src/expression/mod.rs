@@ -8,7 +8,6 @@ pub mod dsl {
 
 pub use self::dsl::*;
 
-use query_source::QuerySource;
 use types::{self, NativeSqlType, ValuesToSql};
 use persistable::AsBindParam;
 
@@ -29,7 +28,7 @@ pub trait Expression: Sized {
 }
 
 pub trait SelectableExpression<
-    QS: QuerySource,
+    QS,
     Type: NativeSqlType = <Self as Expression>::SqlType,
 >: Expression {
 }
@@ -62,7 +61,6 @@ impl<T, U> Expression for Eq<T, U> where
 impl<T, U, QS> SelectableExpression<QS> for Eq<T, U> where
     T: SelectableExpression<QS>,
     U: SelectableExpression<QS>,
-    QS: QuerySource,
 {
 }
 
@@ -98,6 +96,5 @@ impl<T, U> Expression for Bound<T, U> where
 
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
     Bound<T, U>: Expression,
-    QS: QuerySource,
 {
 }

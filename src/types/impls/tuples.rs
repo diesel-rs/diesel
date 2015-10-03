@@ -3,7 +3,7 @@ use persistable::{AsBindParam, InsertableColumns};
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
-use {Queriable, Table, Column, QuerySource};
+use {Queriable, Table, Column};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -95,7 +95,6 @@ macro_rules! tuple_impls {
                 $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, $ST>),+,
                 ($($T),+): Expression,
-                QS: QuerySource,
             {
             }
 
@@ -105,7 +104,6 @@ macro_rules! tuple_impls {
                 $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, Nullable<$ST>>),+,
                 ($($T),+): Expression,
-                QS: QuerySource,
             {
             }
 

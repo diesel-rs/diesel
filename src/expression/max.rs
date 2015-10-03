@@ -1,4 +1,3 @@
-use query_source::QuerySource;
 use super::{Expression, SelectableExpression};
 use types::{SqlOrd, NativeSqlType};
 
@@ -23,5 +22,5 @@ impl<T: Expression> Expression for Max<T> {
     }
 }
 
-impl<T: Expression, QS: QuerySource> SelectableExpression<QS> for Max<T> {
+impl<T: Expression, QS> SelectableExpression<QS> for Max<T> {
 }

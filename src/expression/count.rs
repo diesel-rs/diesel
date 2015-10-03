@@ -1,4 +1,3 @@
-use query_source::QuerySource;
 use super::{Expression, SelectableExpression};
 use types::BigInt;
 
@@ -24,7 +23,7 @@ impl<T: Expression> Expression for Count<T> {
     }
 }
 
-impl<T: Expression, QS: QuerySource> SelectableExpression<QS> for Count<T> {
+impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
 }
 
 pub struct CountStar;
@@ -37,5 +36,5 @@ impl Expression for CountStar {
     }
 }
 
-impl<QS: QuerySource> SelectableExpression<QS> for CountStar {
+impl<QS> SelectableExpression<QS> for CountStar {
 }

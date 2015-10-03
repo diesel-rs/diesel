@@ -76,7 +76,7 @@ impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
     fn to_sql(&self) -> String { "".to_string() }
 }
 
-impl<T: types::NativeSqlType, QS: QuerySource> SelectableExpression<QS> for Arbitrary<T> {}
+impl<T: types::NativeSqlType, QS> SelectableExpression<QS> for Arbitrary<T> {}
 
 fn arbitrary<T: types::NativeSqlType>() -> Arbitrary<T> {
     Arbitrary { _marker: PhantomData }
