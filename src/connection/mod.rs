@@ -136,10 +136,10 @@ impl Connection {
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
-    pub fn insert<T, U, Out>(&self, source: &T, records: Vec<U>)
+    pub fn insert<'a, T, U, Out>(&self, source: &T, records: &'a [U])
         -> Result<Cursor<T::SqlType, Out>> where
         T: Table,
-        U: Insertable<T>,
+        U: Insertable<'a, T>,
         Out: Queriable<T::SqlType>,
     {
         let (param_placeholders, params) = self.placeholders_for_insert(records);
@@ -153,10 +153,10 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
-    pub fn insert_without_return<T, U>(&self, source: &T, records: Vec<U>)
+    pub fn insert_without_return<'a, T, U>(&self, source: &T, records: &'a [U])
         -> Result<usize> where
         T: Table,
-        U: Insertable<T>,
+        U: Insertable<'a, T>,
     {
         let (param_placeholders, params) = self.placeholders_for_insert(records);
         let sql = format!(
@@ -187,10 +187,10 @@ impl Connection {
         last_error_message(self.internal_connection)
     }
 
-    fn placeholders_for_insert<T, U>(&self, records: Vec<U>)
+    fn placeholders_for_insert<'a, T, U>(&self, records: &'a [U])
         -> (String, Vec<Option<Vec<u8>>>) where
         T: Table,
-        U: Insertable<T>,
+        U: Insertable<'a, T>,
     {
         let mut param_index = 1;
         let values: Vec<_> = records.into_iter()

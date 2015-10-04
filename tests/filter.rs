@@ -7,8 +7,8 @@ fn filter_by_int_equality() {
 
     let connection = connection();
     setup_users_table(&connection);
-    let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    connection.insert_without_return(&users, data).unwrap();
+    let data = [NewUser::new("Sean", None), NewUser::new("Tess", None)];
+    connection.insert_without_return(&users, &data).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -23,8 +23,8 @@ fn filter_by_string_equality() {
 
     let connection = connection();
     setup_users_table(&connection);
-    let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    connection.insert_without_return(&users, data).unwrap();
+    let data = [NewUser::new("Sean", None), NewUser::new("Tess", None)];
+    connection.insert_without_return(&users, &data).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");

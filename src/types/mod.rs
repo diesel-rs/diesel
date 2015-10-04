@@ -74,3 +74,12 @@ impl<A, T> ValuesToSql<A> for T where
         Ok(vec![bytes])
     }
 }
+
+impl<'a, A, T> ToSql<A> for &'a T where
+    A: NativeSqlType,
+    T: ToSql<A>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        (*self).to_sql(out)
+    }
+}

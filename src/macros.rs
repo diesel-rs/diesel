@@ -140,18 +140,18 @@ macro_rules! insertable {
             $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl<'a, 'b, 'c> $crate::persistable::Insertable<$table_mod::table>
+        impl<'a: 'insert, 'insert> $crate::persistable::Insertable<'insert, $table_mod::table>
             for $Struct
         {
             type Columns = ($($table_mod::$field_name),+);
-            type Values = ($($Type),+);
+            type Values = ($(&'insert $Type),+);
 
             fn columns() -> Self::Columns {
                 ($($table_mod::$field_name),+)
             }
 
-            fn values(self) -> Self::Values {
-                ($(self.$field_name),+)
+            fn values(&'insert self) -> Self::Values {
+                ($(&self.$field_name),+)
             }
         }
     };

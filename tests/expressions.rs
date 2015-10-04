@@ -10,7 +10,7 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(star));
 
     assert_eq!(Some(0), connection.query_one(&source).unwrap());
-    connection.insert_without_return(&users, vec![NewUser::new("Sean", None)]).unwrap();
+    connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
     assert_eq!(Some(1), connection.query_one(&source).unwrap());
 }
 
@@ -21,7 +21,7 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Some(0), connection.query_one(&source).unwrap());
-    connection.insert_without_return(&users, vec![NewUser::new("Sean", None)]).unwrap();
+    connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
     assert_eq!(Some(1), connection.query_one(&source).unwrap());
     assert_eq!("COUNT(*)", source.select_clause());
 }
@@ -53,12 +53,12 @@ fn max_returns_same_type_as_expression_being_maxed() {
     setup_users_table(&connection);
     let source = users.select(max(name));
 
-    let data = vec![
+    let data = [
         NewUser::new("B", None),
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    connection.insert_without_return(&users, data).unwrap();
+    connection.insert_without_return(&users, &data).unwrap();
     assert_eq!(Some("C".to_string()), connection.query_one(&source).unwrap());
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
     assert_eq!(Some("B".to_string()), connection.query_one(&source).unwrap());

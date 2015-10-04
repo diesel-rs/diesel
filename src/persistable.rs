@@ -1,14 +1,14 @@
 use query_source::{Table, Column};
 use types::{ValuesToSql, NativeSqlType};
 
-pub trait Insertable<T: Table> {
+pub trait Insertable<'a, T: Table> {
     type Columns: InsertableColumns<T>;
     type Values: ValuesToSql<<Self::Columns as InsertableColumns<T>>::SqlType>
         + AsBindParam;
 
     fn columns() -> Self::Columns;
 
-    fn values(self) -> Self::Values;
+    fn values(&'a self) -> Self::Values;
 }
 
 pub trait InsertableColumns<T: Table> {
@@ -47,6 +47,12 @@ impl<T: AsBindParam> AsBindParam for Option<T> {
 impl<'a> AsBindParam for &'a str {
     fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
         self.as_bind_param(idx)
+    }
+}
+
+impl<'a, T: AsBindParam> AsBindParam for &'a T {
+    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+        (*self).as_bind_param_for_insert(idx)
     }
 }
 
