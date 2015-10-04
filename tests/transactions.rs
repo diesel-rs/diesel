@@ -85,6 +85,32 @@ fn transactions_can_be_nested() {
     drop_test_table(&connection, test_name);
 }
 
+#[test]
+fn test_transaction_always_rolls_back() {
+    let connection = connection_without_transaction();
+    let test_name = "test_transaction_always_rolls_back";
+    setup_test_table(&connection, test_name);
+
+    let result = connection.test_transaction(|| {
+        try_no_coerce!(connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
+        assert_eq!(1, count_test_table(&connection, test_name));
+        Ok("success")
+    });
+    assert_eq!(0, count_test_table(&connection, test_name));
+    assert_eq!("success", result);
+
+    drop_test_table(&connection, test_name);
+}
+
+#[test]
+#[should_panic(expected = "Transaction did not succeed")]
+fn test_transaction_panics_on_error() {
+    let connection = connection_without_transaction();
+    connection.test_transaction::<(), _, _>(|| {
+        Err(())
+    });
+}
+
 fn setup_test_table(connection: &Connection, table_name: &str) {
     connection.execute(&format!("CREATE TABLE {} (id SERIAL PRIMARY KEY)", table_name)).unwrap();
 }

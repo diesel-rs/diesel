@@ -56,6 +56,17 @@ impl Connection {
         }
     }
 
+    pub fn test_transaction<T, E, F>(&self, f: F) -> T where
+        F: FnOnce() -> result::Result<T, E>,
+    {
+        let mut user_result = None;
+        let _ = self.transaction::<(), _, _>(|| {
+            user_result = f().ok();
+            Err(())
+        });
+        user_result.expect("Transaction did not succeed")
+    }
+
     pub fn execute(&self, query: &str) -> Result<usize> {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
