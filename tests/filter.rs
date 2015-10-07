@@ -79,11 +79,31 @@ fn filter_then_select() {
     assert_eq!(None::<String>, connection.query_one(&users.filter(name.eq("Jim")).select(name)).unwrap());
 }
 
+table! {
+    points (x) {
+        x -> Integer,
+        y -> Integer,
+    }
+}
+
+#[test]
+fn filter_on_column_equality() {
+    use self::points::dsl::*;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE points (x INTEGER NOT NULL, y INTEGER NOT NULL)").unwrap();
+    connection.execute("INSERT INTO POINTS (x, y) VALUES (1, 1), (1, 2), (2, 2)").unwrap();
+
+    let expected_data = vec![(1, 1), (2, 2)];
+    let query = points.filter(x.eq(y));
+    let data: Vec<_> = connection.query_all(&query).unwrap().collect();
+    assert_eq!(expected_data, data);
+}
+
 fn connection_with_sean_and_tess_in_users_table() -> Connection {
     let connection = connection();
     setup_users_table(&connection);
     let data = [NewUser::new("Sean", None), NewUser::new("Tess", None)];
     connection.insert_without_return(&users::table, &data).unwrap();
-
     connection
 }

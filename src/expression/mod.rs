@@ -22,10 +22,22 @@ pub trait Expression: Sized {
         Vec::new()
     }
 
-    fn eq<T>(self, other: T) -> Eq<Self, Bound<Self::SqlType, T>> where
-        T: ValuesToSql<Self::SqlType> + AsBindParam
-    {
-        Eq { left: self, right: Bound::new(other) }
+    fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
+        Eq { left: self, right: other.as_expression() }
+    }
+}
+
+pub trait AsExpression<T: NativeSqlType> {
+    type Expression: Expression;
+
+    fn as_expression(self) -> Self::Expression;
+}
+
+impl<T: Expression> AsExpression<T::SqlType> for T {
+    type Expression = Self;
+
+    fn as_expression(self) -> Self {
+        self
     }
 }
 
@@ -75,7 +87,7 @@ pub struct Bound<T, U> {
 }
 
 impl<T, U> Bound<T, U> {
-    fn new(item: U) -> Self {
+    pub fn new(item: U) -> Self {
         Bound { item: item, _marker: PhantomData }
     }
 }

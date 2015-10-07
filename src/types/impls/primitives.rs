@@ -1,3 +1,4 @@
+use expression::{Expression, AsExpression, Bound};
 use std::error::Error;
 use std::io::Write;
 use super::option::UnexpectedNullError;
@@ -14,6 +15,14 @@ macro_rules! primitive_impls {
 
                 fn build(row: Self::Row) -> Self {
                     row
+                }
+            }
+
+            impl AsExpression<types::$Source> for $Target {
+                type Expression = Bound<types::$Source, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
                 }
             }
         )+
@@ -80,6 +89,22 @@ impl<'a> ToSql<types::VarChar> for &'a str {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error>)
+    }
+}
+
+impl<'a> AsExpression<types::VarChar> for &'a str {
+    type Expression = Bound<types::VarChar, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a> AsExpression<types::Text> for &'a str {
+    type Expression = Bound<types::Text, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
     }
 }
 
