@@ -42,6 +42,10 @@ macro_rules! table {
                 fn from_clause(&self) -> String {
                     stringify!($name).to_string()
                 }
+
+                fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
+                    None
+                }
             }
 
             impl Table for table {
@@ -211,6 +215,20 @@ macro_rules! select_column_inner {
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
         > for $parent::$column_name
+        {
+        }
+
+        impl<A, S, E> $crate::expression::SelectableExpression<
+            $crate::query_source::SelectSqlQuerySource<A, S, E>>
+            for $parent::$column_name where
+            $parent::$column_name: $crate::expression::SelectableExpression<S>,
+        {
+        }
+
+        impl<Source, Pred> $crate::expression::SelectableExpression<
+            $crate::query_source::FilteredQuerySource<Source, Pred>>
+            for $parent::$column_name where
+            $parent::$column_name: $crate::expression::SelectableExpression<Source>,
         {
         }
     }

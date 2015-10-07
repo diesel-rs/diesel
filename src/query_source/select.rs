@@ -35,4 +35,8 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
     fn from_clause(&self) -> String {
         self.source.from_clause()
     }
+
+    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
+        self.source.where_clause()
+    }
 }

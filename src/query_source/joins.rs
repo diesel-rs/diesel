@@ -30,6 +30,10 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
         format!("{} INNER JOIN {} ON {}",
             self.left.name(), self.right.name(), self.left.join_sql())
     }
+
+    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
+        None
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -60,6 +64,10 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     fn from_clause(&self) -> String {
         format!("{} LEFT OUTER JOIN {} ON {}",
             self.left.name(), self.right.name(), self.left.join_sql())
+    }
+
+    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
+        None
     }
 }
 

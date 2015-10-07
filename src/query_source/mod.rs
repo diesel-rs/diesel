@@ -4,9 +4,9 @@ mod select;
 
 use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
 use expression::count::*;
-use self::filter::FilteredQuerySource;
+pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
-use self::select::SelectSqlQuerySource;
+pub use self::select::SelectSqlQuerySource;
 use std::convert::Into;
 use types::{self, FromSqlRow, NativeSqlType};
 
@@ -23,10 +23,7 @@ pub trait QuerySource: Sized {
 
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
-
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-        None
-    }
+    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)>;
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
         SelectSqlQuerySource<ST, Self, E>: QuerySource,
@@ -51,6 +48,12 @@ pub trait QuerySource: Sized {
     {
         let sql = SqlLiteral::new(columns.into());
         SelectSqlQuerySource::new(sql, self)
+    }
+
+    fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
+        T: SelectableExpression<Self, types::Bool>,
+    {
+        FilteredQuerySource::new(self, predicate)
     }
 }
 
@@ -94,11 +97,5 @@ pub trait Table: QuerySource {
         Self: JoinTo<T>,
     {
         LeftOuterJoinSource::new(self, other)
-    }
-
-    fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
-        T: SelectableExpression<Self, types::Bool>,
-    {
-        FilteredQuerySource::new(self, predicate)
     }
 }
