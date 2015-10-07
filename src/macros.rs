@@ -62,7 +62,7 @@ macro_rules! table {
                 use $crate::types::*;
 
                 #[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug)]
+                #[derive(Debug, Clone, Copy)]
                 pub struct star;
 
                 impl Column for star {
@@ -79,7 +79,7 @@ macro_rules! table {
                 }
 
                 $(#[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug)]
+                #[derive(Debug, Clone, Copy)]
                 pub struct $column_name;
 
                 impl Column for $column_name {

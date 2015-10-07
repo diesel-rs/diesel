@@ -3,6 +3,7 @@ use types::NativeSqlType;
 use std::marker::PhantomData;
 use expression::SelectableExpression;
 
+#[derive(Copy, Clone)]
 pub struct SelectSqlQuerySource<A, S, E> {
     columns: E,
     source: S,

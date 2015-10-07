@@ -7,26 +7,26 @@ use row::Row;
 use std::error::Error;
 use std::io::Write;
 
-pub struct Bool;
+#[derive(Clone, Copy)] pub struct Bool;
 
-pub struct SmallSerial;
-pub struct Serial;
-pub struct BigSerial;
+#[derive(Clone, Copy)] pub struct SmallSerial;
+#[derive(Clone, Copy)] pub struct Serial;
+#[derive(Clone, Copy)] pub struct BigSerial;
 
-pub struct SmallInt;
-pub struct Integer;
-pub struct BigInt;
+#[derive(Clone, Copy)] pub struct SmallInt;
+#[derive(Clone, Copy)] pub struct Integer;
+#[derive(Clone, Copy)] pub struct BigInt;
 
-pub struct Float;
-pub struct Double;
+#[derive(Clone, Copy)] pub struct Float;
+#[derive(Clone, Copy)] pub struct Double;
 
-pub struct VarChar;
-pub struct Text;
+#[derive(Clone, Copy)] pub struct VarChar;
+#[derive(Clone, Copy)] pub struct Text;
 
-pub struct Binary;
+#[derive(Clone, Copy)] pub struct Binary;
 
-pub struct Nullable<T: NativeSqlType>(T);
-pub struct Array<T: NativeSqlType>(T);
+#[derive(Clone, Copy)] pub struct Nullable<T: NativeSqlType>(T);
+#[derive(Clone, Copy)] pub struct Array<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {}
 

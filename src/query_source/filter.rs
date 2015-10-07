@@ -2,6 +2,7 @@ use expression::SelectableExpression;
 use types;
 use {QuerySource};
 
+#[derive(Clone, Copy)]
 pub struct FilteredQuerySource<T, P> {
     source: T,
     predicate: P,
