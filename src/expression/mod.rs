@@ -1,5 +1,6 @@
-mod count;
+pub mod count;
 mod max;
+mod sql_literal;
 
 pub mod dsl {
     pub use super::count::{count, count_star};
@@ -7,6 +8,7 @@ pub mod dsl {
 }
 
 pub use self::dsl::*;
+pub use self::sql_literal::SqlLiteral;
 
 use types::{self, NativeSqlType, ValuesToSql};
 use persistable::AsBindParam;

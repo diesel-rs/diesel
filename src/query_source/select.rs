@@ -1,15 +1,16 @@
 use QuerySource;
 use types::NativeSqlType;
 use std::marker::PhantomData;
+use expression::SelectableExpression;
 
-pub struct SelectSqlQuerySource<A, S> {
-    columns: String,
+pub struct SelectSqlQuerySource<A, S, E> {
+    columns: E,
     source: S,
     _marker: PhantomData<A>,
 }
 
-impl<A, S> SelectSqlQuerySource<A, S> {
-    pub fn new(columns: String, source: S) -> Self {
+impl<A, S, E> SelectSqlQuerySource<A, S, E> {
+    pub fn new(columns: E, source: S) -> Self {
         SelectSqlQuerySource {
             columns: columns,
             source: source,
@@ -19,14 +20,15 @@ impl<A, S> SelectSqlQuerySource<A, S> {
 }
 
 
-impl<A, S> QuerySource for SelectSqlQuerySource<A, S> where
+impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
     A: NativeSqlType,
     S: QuerySource,
+    E: SelectableExpression<S, A>,
 {
     type SqlType = A;
 
     fn select_clause(&self) -> String {
-        self.columns.clone()
+        self.columns.to_sql()
     }
 
     fn from_clause(&self) -> String {

@@ -2,8 +2,8 @@ mod filter;
 mod joins;
 mod select;
 
-use expression::{Expression, SelectableExpression, NonAggregate};
-use expression::dsl::count_star;
+use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
+use expression::count::*;
 use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use self::select::SelectSqlQuerySource;
@@ -28,29 +28,29 @@ pub trait QuerySource: Sized {
         None
     }
 
-    fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self> where
-        ST: NativeSqlType,
-        E: SelectableExpression<Self, ST>,
+    fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
+        SelectSqlQuerySource<ST, Self, E>: QuerySource,
     {
-        self.select_sql_inner(expr.to_sql())
+        SelectSqlQuerySource::new(expr, self)
     }
 
-    fn count(self) -> SelectSqlQuerySource<types::BigInt, Self> {
+    fn count(self) -> SelectSqlQuerySource<types::BigInt, Self, CountStar> {
         self.select(count_star())
     }
 
     fn select_sql<A: NativeSqlType>(self, columns: &str)
-        -> SelectSqlQuerySource<A, Self>
+        -> SelectSqlQuerySource<A, Self, SqlLiteral<A>>
     {
         self.select_sql_inner(columns)
     }
 
     fn select_sql_inner<A, S>(self, columns: S)
-        -> SelectSqlQuerySource<A, Self> where
+        -> SelectSqlQuerySource<A, Self, SqlLiteral<A>> where
         A: NativeSqlType,
         S: Into<String>
     {
-        SelectSqlQuerySource::new(columns.into(), self)
+        let sql = SqlLiteral::new(columns.into());
+        SelectSqlQuerySource::new(sql, self)
     }
 }
 
