@@ -147,7 +147,7 @@ impl Connection {
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
-    pub fn insert<'a, T, U, Out>(&self, source: &T, records: &'a [U])
+    pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])
         -> Result<Cursor<T::SqlType, Out>> where
         T: Table,
         U: Insertable<'a, T>,
@@ -164,7 +164,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
-    pub fn insert_without_return<'a, T, U>(&self, source: &T, records: &'a [U])
+    pub fn insert_without_return<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
         -> Result<usize> where
         T: Table,
         U: Insertable<'a, T>,
@@ -198,7 +198,7 @@ impl Connection {
         last_error_message(self.internal_connection)
     }
 
-    fn placeholders_for_insert<'a, T, U>(&self, records: &'a [U])
+    fn placeholders_for_insert<'a, T: 'a, U>(&self, records: &'a [U])
         -> (String, Vec<Option<Vec<u8>>>) where
         T: Table,
         U: Insertable<'a, T>,

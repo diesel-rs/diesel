@@ -20,11 +20,7 @@ fn main() {
     let ids: Vec<i32> = connection.query_all(&select_name).unwrap().collect();
     //~^ ERROR the trait `yaqb::query_source::Queriable<yaqb::types::VarChar>` is not implemented for the type `i32`
     //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
     let names: Vec<String> = connection.query_all(&select_id).unwrap().collect();
     //~^ ERROR the trait `yaqb::query_source::Queriable<yaqb::types::Serial>` is not implemented
-    //~| ERROR E0277
-    //~| ERROR E0277
     //~| ERROR E0277
 }
