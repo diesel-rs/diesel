@@ -36,8 +36,4 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         self.source.from_clause(out)
     }
-
-    fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        self.source.where_clause(out)
-    }
 }

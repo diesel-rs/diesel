@@ -1,11 +1,11 @@
-mod filter;
+// mod filter;
 mod joins;
 mod select;
 
 use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
 use expression::count::*;
 use query_builder::{QueryBuilder, BuildQueryResult};
-pub use self::filter::FilteredQuerySource;
+// pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 pub use self::select::SelectSqlQuerySource;
 use std::convert::Into;
@@ -24,14 +24,15 @@ pub trait QuerySource: Sized {
 
     fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-    fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+    // fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
         try!(self.select_clause(out));
         out.push_sql(" FROM ");
-        try!(self.from_clause(out));
-        self.where_clause(out)
+        self.from_clause(out)
+        // try!(self.from_clause(out));
+        // self.where_clause(out)
     }
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
@@ -59,11 +60,11 @@ pub trait QuerySource: Sized {
         SelectSqlQuerySource::new(sql, self)
     }
 
-    fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
-        T: SelectableExpression<Self, types::Bool>,
-    {
-        FilteredQuerySource::new(self, predicate)
-    }
+//     fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
+//         T: SelectableExpression<Self, types::Bool>,
+//     {
+//         FilteredQuerySource::new(self, predicate)
+//     }
 }
 
 pub trait Column {

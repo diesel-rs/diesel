@@ -43,10 +43,6 @@ macro_rules! table {
                 fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
                     out.push_identifier(stringify!($name))
                 }
-
-                fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
-                    Ok(())
-                }
             }
 
             impl Table for table {
@@ -223,13 +219,6 @@ macro_rules! select_column_inner {
             $crate::query_source::SelectSqlQuerySource<A, S, E>>
             for $parent::$column_name where
             $parent::$column_name: $crate::expression::SelectableExpression<S>,
-        {
-        }
-
-        impl<Source, Pred> $crate::expression::SelectableExpression<
-            $crate::query_source::FilteredQuerySource<Source, Pred>>
-            for $parent::$column_name where
-            $parent::$column_name: $crate::expression::SelectableExpression<Source>,
         {
         }
     }
