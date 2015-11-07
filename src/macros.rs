@@ -17,7 +17,7 @@ macro_rules! table {
         }
     ) => {
         pub mod $name {
-            use $crate::{QuerySource, Table, Column};
+            use $crate::*;
             use $crate::query_builder::{QueryBuilder, BuildQueryResult};
             use $crate::types::*;
             pub use self::columns::*;
@@ -36,16 +36,16 @@ macro_rules! table {
             impl QuerySource for table {
                 type SqlType = SqlType;
 
-                fn select_clause(&self) -> String {
-                    star.qualified_name()
+                fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                    star.to_sql(out)
                 }
 
                 fn from_clause(&self) -> String {
                     stringify!($name).to_string()
                 }
 
-                fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-                    None
+                fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
+                    Ok(())
                 }
 
                 fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {

@@ -4,12 +4,11 @@ mod select;
 
 use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
 use expression::count::*;
-use query_builder::QueryBuilder;
+use query_builder::{QueryBuilder, BuildQueryResult};
 pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 pub use self::select::SelectSqlQuerySource;
 use std::convert::Into;
-use std::error::Error;
 use types::{self, FromSqlRow, NativeSqlType};
 
 pub use self::joins::JoinTo;
@@ -23,12 +22,10 @@ pub trait Queriable<ST: NativeSqlType> {
 pub trait QuerySource: Sized {
     type SqlType: NativeSqlType;
 
-    fn select_clause(&self) -> String;
+    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn from_clause(&self) -> String;
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)>;
-    fn to_sql<T: QueryBuilder>(&self, _out: &mut T) -> Result<(), Box<Error>> {
-        Ok(())
-    }
+    fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
         SelectSqlQuerySource<ST, Self, E>: QuerySource,
@@ -74,8 +71,9 @@ pub trait Column {
 impl<C: Column> Expression for C {
     type SqlType = <Self as Column>::SqlType;
 
-    fn to_sql(&self) -> String {
-        self.qualified_name()
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        out.push_sql(&self.qualified_name());
+        Ok(())
     }
 }
 

@@ -1,5 +1,6 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{AsBindParam, InsertableColumns};
+use query_builder::{QueryBuilder, BuildQueryResult};
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
@@ -65,15 +66,15 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> Expression for ($($T),+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
-                fn to_sql(&self) -> String {
-                    let parts: &[String] = e!(&[$(self.$idx.to_sql()),*]);
-                    parts.join(", ")
-                }
-
-                fn binds(&self) -> Vec<Option<Vec<u8>>> {
-                    let mut result = Vec::new();
-                    $(result.append(&mut e!(self.$idx.binds()));)+
-                    result
+                fn to_sql<Builder: QueryBuilder>(&self, out: &mut Builder)
+                -> BuildQueryResult {
+                    $(
+                        if e!($idx) != 0 {
+                            out.push_sql(", ");
+                        }
+                        try!(e!(self.$idx.to_sql(out)));
+                    )+
+                    Ok(())
                 }
             }
 

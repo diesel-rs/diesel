@@ -10,17 +10,14 @@ pub mod dsl {
 pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
-use types::{self, NativeSqlType, ValuesToSql};
 use persistable::AsBindParam;
+use query_builder::{QueryBuilder, BuildQueryResult};
+use types::{self, NativeSqlType, ValuesToSql};
 
 pub trait Expression: Sized {
     type SqlType: NativeSqlType;
 
-    fn to_sql(&self) -> String;
-
-    fn binds(&self) -> Vec<Option<Vec<u8>>> {
-        Vec::new()
-    }
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 
     fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
         Eq { left: self, right: other.as_expression() }
@@ -61,14 +58,11 @@ impl<T, U> Expression for Eq<T, U> where
 {
     type SqlType = types::Bool;
 
-    fn to_sql(&self) -> String {
-        format!("{} = {}", self.left.to_sql(), self.right.to_sql())
-    }
-
-    fn binds(&self) -> Vec<Option<Vec<u8>>> {
-        let mut binds = self.left.binds();
-        binds.append(&mut self.right.binds());
-        binds
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        try!(self.left.to_sql(out));
+        out.push_sql(" = ");
+        try!(self.right.to_sql(out));
+        Ok(())
     }
 }
 
@@ -98,13 +92,10 @@ impl<T, U> Expression for Bound<T, U> where
 {
     type SqlType = T;
 
-    fn to_sql(&self) -> String {
-        self.item.as_bind_param(&mut 1)
-    }
-
-    fn binds(&self) -> Vec<Option<Vec<u8>>> {
-        self.item.values_to_sql()
-            .ok().expect(&format!("Error serializing {:?}", self.item))
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        self.item.values_to_sql().map(|mut values| {
+            out.push_bound_value(values.pop().unwrap());
+        })
     }
 }
 

@@ -24,28 +24,24 @@ impl<T, P> QuerySource for FilteredQuerySource<T, P> where
 {
     type SqlType = T::SqlType;
 
-    fn select_clause(&self) -> String {
-        self.source.select_clause()
+    fn select_clause<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        self.source.select_clause(out)
     }
 
     fn from_clause(&self) -> String {
         self.source.from_clause()
     }
 
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-        Some((self.predicate.to_sql(), self.predicate.binds()))
+    fn where_clause<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        out.push_sql(" WHERE ");
+        self.predicate.to_sql(out)
     }
 
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         out.push_sql("SELECT ");
-        out.push_sql(&self.select_clause());
+        try!(self.select_clause(out));
         out.push_sql(" FROM ");
         out.push_sql(&self.from_clause());
-        if let Some((sql, mut binds)) = self.where_clause() {
-            out.push_sql(" WHERE ");
-            out.push_sql(&sql);
-            out.push_binds(&mut binds);
-        }
-        Ok(())
+        self.where_clause(out)
     }
 }

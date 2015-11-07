@@ -1,3 +1,4 @@
+use query_builder::{QueryBuilder, BuildQueryResult};
 use super::{Expression, SelectableExpression};
 use types::{SqlOrd, NativeSqlType};
 
@@ -17,8 +18,11 @@ pub struct Max<T: Expression> {
 impl<T: Expression> Expression for Max<T> {
     type SqlType = T::SqlType;
 
-    fn to_sql(&self) -> String {
-        format!("MAX({})", self.target.to_sql())
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        out.push_sql("MAX(");
+        try!(self.target.to_sql(out));
+        out.push_sql(")");
+        Ok(())
     }
 }
 

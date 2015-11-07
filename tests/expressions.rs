@@ -1,6 +1,7 @@
 use schema::{connection, NewUser, setup_users_table};
 use schema::users::dsl::*;
 use yaqb::*;
+use yaqb::query_builder::*;
 use yaqb::expression::dsl::*;
 
 #[test]
@@ -23,7 +24,9 @@ fn test_count_star() {
     assert_eq!(Some(0), connection.query_one(&source).unwrap());
     connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
     assert_eq!(Some(1), connection.query_one(&source).unwrap());
-    assert_eq!("COUNT(*)", source.select_clause());
+    let mut query_builder = ::yaqb::query_builder::pg::PgQueryBuilder::new(&connection);
+    source.select_clause(&mut query_builder).unwrap();
+    assert_eq!("COUNT(*)", &query_builder.sql);
 }
 
 table! {
@@ -73,7 +76,9 @@ struct Arbitrary<T: types::NativeSqlType> {
 impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
     type SqlType = T;
 
-    fn to_sql(&self) -> String { "".to_string() }
+    fn to_sql<B: QueryBuilder>(&self, _out: &mut B) -> BuildQueryResult {
+        Ok(())
+    }
 }
 
 impl<T: types::NativeSqlType, QS> SelectableExpression<QS> for Arbitrary<T> {}

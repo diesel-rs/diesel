@@ -29,28 +29,23 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
 {
     type SqlType = A;
 
-    fn select_clause(&self) -> String {
-        self.columns.to_sql()
+    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        self.columns.to_sql(out)
     }
 
     fn from_clause(&self) -> String {
         self.source.from_clause()
     }
 
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-        self.source.where_clause()
+    fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        self.source.where_clause(out)
     }
 
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
-        out.push_sql(&self.select_clause());
+        try!(self.select_clause(out));
         out.push_sql(" FROM ");
         out.push_sql(&self.from_clause());
-        if let Some((sql, mut binds)) = self.where_clause() {
-            out.push_sql(" WHERE ");
-            out.push_sql(&sql);
-            out.push_binds(&mut binds);
-        }
-        Ok(())
+        self.where_clause(out)
     }
 }

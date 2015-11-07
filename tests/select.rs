@@ -1,5 +1,5 @@
 use super::schema::*;
-use yaqb::{types, QuerySource};
+use yaqb::*;
 
 #[test]
 fn selecting_basic_data() {
@@ -125,4 +125,20 @@ fn selecting_nullable_followed_by_non_null() {
     let data: Vec<_> = connection.query_all(&source).unwrap().collect();
 
     assert_eq!(expected_data, data);
+}
+
+#[test]
+fn selecting_expression_with_bind_param() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .unwrap();
+
+    let source = users.select(name.eq("Sean".to_string()));
+    let expected_data = vec![true, false];
+    let actual_data: Vec<_> = connection.query_all(&source).unwrap().collect();
+
+    assert_eq!(expected_data, actual_data);
 }

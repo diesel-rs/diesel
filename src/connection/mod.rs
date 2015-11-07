@@ -156,11 +156,10 @@ impl Connection {
     {
         let (param_placeholders, params) = self.placeholders_for_insert(records);
         let sql = format!(
-            "INSERT INTO {} ({}) VALUES {} RETURNING {}",
+            "INSERT INTO {} ({}) VALUES {} RETURNING *",
             source.name(),
             U::columns().names(),
             param_placeholders,
-            source.select_clause(),
         );
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }

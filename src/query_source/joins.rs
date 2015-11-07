@@ -23,8 +23,10 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 {
     type SqlType = (Left::SqlType, Right::SqlType);
 
-    fn select_clause(&self) -> String {
-        format!("{}, {}", self.left.select_clause(), self.right.select_clause())
+    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        try!(self.left.select_clause(out));
+        out.push_sql(", ");
+        self.right.select_clause(out)
     }
 
     fn from_clause(&self) -> String {
@@ -32,13 +34,13 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
             self.left.name(), self.right.name(), self.left.join_sql())
     }
 
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-        None
+    fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
+        Ok(())
     }
 
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
-        out.push_sql(&self.select_clause());
+        try!(self.select_clause(out));
         out.push_sql(" FROM ");
         try!(out.push_identifier(self.left.name()));
         out.push_sql(" INNER JOIN ");
@@ -70,8 +72,10 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 {
     type SqlType = (Left::SqlType, Nullable<Right::SqlType>);
 
-    fn select_clause(&self) -> String {
-        format!("{}, {}", self.left.select_clause(), self.right.select_clause())
+    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        try!(self.left.select_clause(out));
+        out.push_sql(", ");
+        self.right.select_clause(out)
     }
 
     fn from_clause(&self) -> String {
@@ -79,13 +83,13 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
             self.left.name(), self.right.name(), self.left.join_sql())
     }
 
-    fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
-        None
+    fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
+        Ok(())
     }
 
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
-        out.push_sql(&self.select_clause());
+        try!(self.select_clause(out));
         out.push_sql(" FROM ");
         try!(out.push_identifier(self.left.name()));
         out.push_sql(" LEFT OUTER JOIN ");
