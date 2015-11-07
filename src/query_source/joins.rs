@@ -41,14 +41,6 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
         Ok(())
     }
-
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        out.push_sql("SELECT ");
-        try!(self.select_clause(out));
-        out.push_sql(" FROM ");
-        try!(self.from_clause(out));
-        Ok(())
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -88,14 +80,6 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     }
 
     fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
-        Ok(())
-    }
-
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        out.push_sql("SELECT ");
-        try!(self.select_clause(out));
-        out.push_sql(" FROM ");
-        try!(self.from_clause(out));
         Ok(())
     }
 }

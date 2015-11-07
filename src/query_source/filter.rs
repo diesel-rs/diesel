@@ -36,12 +36,4 @@ impl<T, P> QuerySource for FilteredQuerySource<T, P> where
         out.push_sql(" WHERE ");
         self.predicate.to_sql(out)
     }
-
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
-        out.push_sql("SELECT ");
-        try!(self.select_clause(out));
-        out.push_sql(" FROM ");
-        try!(self.from_clause(out));
-        self.where_clause(out)
-    }
 }

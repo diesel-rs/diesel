@@ -25,7 +25,14 @@ pub trait QuerySource: Sized {
     fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        try!(self.select_clause(out));
+        out.push_sql(" FROM ");
+        try!(self.from_clause(out));
+        self.where_clause(out)
+    }
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
         SelectSqlQuerySource<ST, Self, E>: QuerySource,

@@ -40,12 +40,4 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
     fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         self.source.where_clause(out)
     }
-
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        out.push_sql("SELECT ");
-        try!(self.select_clause(out));
-        out.push_sql(" FROM ");
-        try!(self.from_clause(out));
-        self.where_clause(out)
-    }
 }

@@ -47,11 +47,6 @@ macro_rules! table {
                 fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
                     Ok(())
                 }
-
-                fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-                    out.push_sql("SELECT * FROM ");
-                    out.push_identifier(stringify!($name))
-                }
             }
 
             impl Table for table {
