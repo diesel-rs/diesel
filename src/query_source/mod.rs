@@ -4,10 +4,12 @@ mod select;
 
 use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
 use expression::count::*;
+use query_builder::QueryBuilder;
 pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 pub use self::select::SelectSqlQuerySource;
 use std::convert::Into;
+use std::error::Error;
 use types::{self, FromSqlRow, NativeSqlType};
 
 pub use self::joins::JoinTo;
@@ -24,6 +26,9 @@ pub trait QuerySource: Sized {
     fn select_clause(&self) -> String;
     fn from_clause(&self) -> String;
     fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)>;
+    fn to_sql<T: QueryBuilder>(&self, _out: &mut T) -> Result<(), Box<Error>> {
+        Ok(())
+    }
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
         SelectSqlQuerySource<ST, Self, E>: QuerySource,

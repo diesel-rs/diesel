@@ -7,6 +7,7 @@ pub use self::cursor::Cursor;
 
 use db_result::DbResult;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
+use query_builder::pg::PgQueryBuilder;
 use query_source::{Table, Column};
 use result::*;
 use self::pq_sys::*;
@@ -180,14 +181,9 @@ impl Connection {
     }
 
     fn prepare_query<T: QuerySource>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>) {
-        let mut query = format!("SELECT {} FROM {}", source.select_clause(), source.from_clause());
-        let mut params = Vec::new();
-        if let Some((filter, mut binds)) = source.where_clause() {
-            query.push_str(" WHERE ");
-            query.push_str(&filter);
-            params.append(&mut binds);
-        }
-        (query, params)
+        let mut query_builder = PgQueryBuilder::new(self);
+        source.to_sql(&mut query_builder).unwrap();
+        (query_builder.sql, query_builder.binds)
     }
 
     fn execute_inner(&self, query: &str) -> Result<DbResult> {
@@ -253,6 +249,22 @@ impl Connection {
         }
         query
     }
+
+    pub fn escape_identifier(&self, identifier: &str) -> Result<PgString> {
+        let result_ptr = unsafe { PQescapeIdentifier(
+            self.internal_connection,
+            identifier.as_ptr() as *const libc::c_char,
+            identifier.len() as libc::size_t,
+        ) };
+
+        if result_ptr.is_null() {
+            Err(Error::DatabaseError(last_error_message(self.internal_connection)))
+        } else {
+            unsafe {
+                Ok(PgString::new(result_ptr))
+            }
+        }
+    }
 }
 
 fn last_error_message(conn: *const PGconn) -> String {
@@ -266,5 +278,36 @@ fn last_error_message(conn: *const PGconn) -> String {
 impl Drop for Connection {
     fn drop(&mut self) {
         unsafe { PQfinish(self.internal_connection) };
+    }
+}
+
+pub struct PgString {
+    pg_str: *mut libc::c_char,
+}
+
+impl PgString {
+    unsafe fn new(ptr: *mut libc::c_char) -> Self {
+        PgString {
+            pg_str: ptr,
+        }
+    }
+}
+
+impl ::std::ops::Deref for PgString {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        unsafe {
+            let c_string = CStr::from_ptr(self.pg_str);
+            str::from_utf8_unchecked(c_string.to_bytes())
+        }
+    }
+}
+
+impl Drop for PgString {
+    fn drop(&mut self) {
+        unsafe {
+            PQfreemem(self.pg_str as *mut libc::c_void)
+        }
     }
 }

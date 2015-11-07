@@ -1,4 +1,5 @@
 use {QuerySource, Table};
+use query_builder::{QueryBuilder, BuildQueryResult};
 use types::Nullable;
 
 #[derive(Clone, Copy)]
@@ -34,6 +35,18 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
         None
     }
+
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        out.push_sql(&self.select_clause());
+        out.push_sql(" FROM ");
+        try!(out.push_identifier(self.left.name()));
+        out.push_sql(" INNER JOIN ");
+        try!(out.push_identifier(self.right.name()));
+        out.push_sql(" ON ");
+        out.push_sql(&self.left.join_sql());
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -68,6 +81,18 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 
     fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
         None
+    }
+
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        out.push_sql(&self.select_clause());
+        out.push_sql(" FROM ");
+        try!(out.push_identifier(self.left.name()));
+        out.push_sql(" LEFT OUTER JOIN ");
+        try!(out.push_identifier(self.right.name()));
+        out.push_sql(" ON ");
+        out.push_sql(&self.left.join_sql());
+        Ok(())
     }
 }
 

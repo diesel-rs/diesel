@@ -1,7 +1,8 @@
 use QuerySource;
-use types::NativeSqlType;
-use std::marker::PhantomData;
 use expression::SelectableExpression;
+use query_builder::{QueryBuilder, BuildQueryResult};
+use std::marker::PhantomData;
+use types::NativeSqlType;
 
 #[derive(Copy, Clone)]
 pub struct SelectSqlQuerySource<A, S, E> {
@@ -38,5 +39,18 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
 
     fn where_clause(&self) -> Option<(String, Vec<Option<Vec<u8>>>)> {
         self.source.where_clause()
+    }
+
+    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        out.push_sql(&self.select_clause());
+        out.push_sql(" FROM ");
+        out.push_sql(&self.from_clause());
+        if let Some((sql, mut binds)) = self.where_clause() {
+            out.push_sql(" WHERE ");
+            out.push_sql(&sql);
+            out.push_binds(&mut binds);
+        }
+        Ok(())
     }
 }
