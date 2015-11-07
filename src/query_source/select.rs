@@ -33,8 +33,8 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
         self.columns.to_sql(out)
     }
 
-    fn from_clause(&self) -> String {
-        self.source.from_clause()
+    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        self.source.from_clause(out)
     }
 
     fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
@@ -45,7 +45,7 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
         out.push_sql("SELECT ");
         try!(self.select_clause(out));
         out.push_sql(" FROM ");
-        out.push_sql(&self.from_clause());
+        try!(self.from_clause(out));
         self.where_clause(out)
     }
 }

@@ -29,9 +29,13 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
         self.right.select_clause(out)
     }
 
-    fn from_clause(&self) -> String {
-        format!("{} INNER JOIN {} ON {}",
-            self.left.name(), self.right.name(), self.left.join_sql())
+    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        try!(self.left.from_clause(out));
+        out.push_sql(" INNER JOIN ");
+        try!(self.right.from_clause(out));
+        out.push_sql(" ON ");
+        out.push_sql(&self.left.join_sql());
+        Ok(())
     }
 
     fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
@@ -42,11 +46,7 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
         out.push_sql("SELECT ");
         try!(self.select_clause(out));
         out.push_sql(" FROM ");
-        try!(out.push_identifier(self.left.name()));
-        out.push_sql(" INNER JOIN ");
-        try!(out.push_identifier(self.right.name()));
-        out.push_sql(" ON ");
-        out.push_sql(&self.left.join_sql());
+        try!(self.from_clause(out));
         Ok(())
     }
 }
@@ -78,9 +78,13 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
         self.right.select_clause(out)
     }
 
-    fn from_clause(&self) -> String {
-        format!("{} LEFT OUTER JOIN {} ON {}",
-            self.left.name(), self.right.name(), self.left.join_sql())
+    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        try!(self.left.from_clause(out));
+        out.push_sql(" LEFT OUTER JOIN ");
+        try!(self.right.from_clause(out));
+        out.push_sql(" ON ");
+        out.push_sql(&self.left.join_sql());
+        Ok(())
     }
 
     fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
@@ -91,11 +95,7 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
         out.push_sql("SELECT ");
         try!(self.select_clause(out));
         out.push_sql(" FROM ");
-        try!(out.push_identifier(self.left.name()));
-        out.push_sql(" LEFT OUTER JOIN ");
-        try!(out.push_identifier(self.right.name()));
-        out.push_sql(" ON ");
-        out.push_sql(&self.left.join_sql());
+        try!(self.from_clause(out));
         Ok(())
     }
 }

@@ -40,8 +40,8 @@ macro_rules! table {
                     star.to_sql(out)
                 }
 
-                fn from_clause(&self) -> String {
-                    stringify!($name).to_string()
+                fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                    out.push_identifier(stringify!($name))
                 }
 
                 fn where_clause<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {

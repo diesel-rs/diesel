@@ -23,7 +23,7 @@ pub trait QuerySource: Sized {
     type SqlType: NativeSqlType;
 
     fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-    fn from_clause(&self) -> String;
+    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 
