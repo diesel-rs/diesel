@@ -10,9 +10,9 @@ fn find() {
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    assert_eq!(Ok(Some(User::new(1, "Sean"))), connection.find(&users, &1));
-    assert_eq!(Ok(Some(User::new(2, "Tess"))), connection.find(&users, &2));
-    assert_eq!(Ok(None::<User>), connection.find(&users, &3));
+    assert_eq!(Ok(Some(User::new(1, "Sean"))), connection.find(users, &1));
+    assert_eq!(Ok(Some(User::new(2, "Tess"))), connection.find(users, &2));
+    assert_eq!(Ok(None::<User>), connection.find(users, &3));
 }
 
 table! {
@@ -31,7 +31,7 @@ fn find_with_non_serial_pk() {
     connection.execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    assert_eq!(Ok(Some("Sean".to_string())), connection.find(&users, &"Sean"));
-    assert_eq!(Ok(Some("Tess".to_string())), connection.find(&users, &"Tess".to_string()));
-    assert_eq!(Ok(None::<String>), connection.find(&users, &"Wibble"));
+    assert_eq!(Ok(Some("Sean".to_string())), connection.find(users, &"Sean"));
+    assert_eq!(Ok(Some("Tess".to_string())), connection.find(users, &"Tess".to_string()));
+    assert_eq!(Ok(None::<String>), connection.find(users, &"Wibble"));
 }

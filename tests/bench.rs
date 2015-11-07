@@ -18,6 +18,6 @@ fn bench_selecting_10k_rows(b: &mut Bencher) {
     conn.insert_without_return(&users::table, &data).unwrap();
 
     b.iter(|| {
-        conn.query_all(&users::table).unwrap().collect::<Vec<User>>()
+        conn.query_all(users::table).unwrap().collect::<Vec<User>>()
     })
 }

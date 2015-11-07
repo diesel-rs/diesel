@@ -11,6 +11,7 @@ pub fn max<ST, T>(t: T) -> Max<T> where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Max<T: Expression> {
     target: T,
 }

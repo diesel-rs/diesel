@@ -4,7 +4,7 @@ mod select;
 
 use expression::{Expression, SelectableExpression, NonAggregate, SqlLiteral};
 use expression::count::*;
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 // pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 pub use self::select::SelectSqlQuerySource;
@@ -20,20 +20,8 @@ pub trait Queriable<ST: NativeSqlType> {
 }
 
 pub trait QuerySource: Sized {
-    type SqlType: NativeSqlType;
-
-    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
     // fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        out.push_sql("SELECT ");
-        try!(self.select_clause(out));
-        out.push_sql(" FROM ");
-        self.from_clause(out)
-        // try!(self.from_clause(out));
-        // self.where_clause(out)
-    }
 
     fn select<E, ST>(self, expr: E) -> SelectSqlQuerySource<ST, Self, E> where
         SelectSqlQuerySource<ST, Self, E>: QuerySource,
@@ -91,10 +79,13 @@ impl<C: Column> SelectableExpression<C::Table> for C {
 impl<C: Column> NonAggregate for C {
 }
 
-pub trait Table: QuerySource {
+pub trait Table: QuerySource + AsQuery + Sized {
     type PrimaryKey: Column<Table=Self>;
+    type Star: Column<Table=Self>;
+
     fn name(&self) -> &str;
     fn primary_key(&self) -> Self::PrimaryKey;
+    fn star(&self) -> Self::Star;
 
     fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
         T: Table,

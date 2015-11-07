@@ -16,7 +16,7 @@ fn insert_records() {
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: 2, name: "Tess".to_string(), hair_color: None },
     ];
-    let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+    let actual_users: Vec<_> = connection.query_all(users).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);
@@ -41,7 +41,7 @@ fn insert_with_defaults() {
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
-    let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+    let actual_users: Vec<_> = connection.query_all(users).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);
@@ -66,7 +66,7 @@ fn insert_with_defaults_not_provided() {
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
         User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
-    let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+    let actual_users: Vec<_> = connection.query_all(users).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);
@@ -128,7 +128,7 @@ fn insert_borrowed_content() {
         User::new(1, "Sean"),
         User::new(2, "Tess"),
     ];
-    let actual_users: Vec<_> = connection.query_all(&users).unwrap().collect();
+    let actual_users: Vec<_> = connection.query_all(users).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);

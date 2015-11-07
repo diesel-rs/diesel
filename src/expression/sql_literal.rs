@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use super::{Expression, SelectableExpression};
 use types::NativeSqlType;
 
+#[derive(Debug, Clone)]
 pub struct SqlLiteral<ST> {
     sql: String,
     _marker: PhantomData<ST>,

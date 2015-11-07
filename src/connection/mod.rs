@@ -7,15 +7,15 @@ pub use self::cursor::Cursor;
 
 use db_result::DbResult;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
+use query_builder::{AsQuery, Query};
 use query_builder::pg::PgQueryBuilder;
-use query_source::{Table, Column};
+use query_source::{Table, Column, Queriable};
 use result::*;
 use self::pq_sys::*;
 use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::{str, ptr, result};
 use types::{NativeSqlType, ToSql, ValuesToSql};
-use {QuerySource, Queriable};
 
 pub struct Connection {
     internal_connection: *mut PGconn,
@@ -72,18 +72,18 @@ impl Connection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    pub fn query_one<T, U>(&self, source: &T) -> Result<Option<U>> where
-        T: QuerySource,
+    pub fn query_one<T, U>(&self, source: T) -> Result<Option<U>> where
+        T: AsQuery,
         U: Queriable<T::SqlType>,
     {
         self.query_all(source).map(|mut e| e.nth(0))
     }
 
-    pub fn query_all<T, U>(&self, source: &T) -> Result<Cursor<T::SqlType, U>> where
-        T: QuerySource,
+    pub fn query_all<T, U>(&self, source: T) -> Result<Cursor<T::SqlType, U>> where
+        T: AsQuery,
         U: Queriable<T::SqlType>,
     {
-        let (sql, params) = self.prepare_query(source);
+        let (sql, params) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params).map(Cursor::new)
     }
 
@@ -137,14 +137,15 @@ impl Connection {
         DbResult::new(self, internal_res)
     }
 
-    pub fn find<T, U, PK>(&self, source: &T, id: &PK) -> Result<Option<U>> where
+    pub fn find<T, U, PK>(&self, source: T, id: &PK) -> Result<Option<U>> where
         T: Table,
         U: Queriable<T::SqlType>,
         PK: ToSql<<T::PrimaryKey as Column>::SqlType>,
     {
-        let (sql, binds) = self.prepare_query(source);
+        let pk = source.primary_key();
+        let (sql, binds) = self.prepare_query(&source.as_query());
         assert!(binds.is_empty());
-        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", source.primary_key().qualified_name());
+        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", pk.qualified_name());
         self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
     }
 
@@ -179,7 +180,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params).map(|r| r.rows_affected())
     }
 
-    fn prepare_query<T: QuerySource>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>) {
+    fn prepare_query<T: Query>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>) {
         let mut query_builder = PgQueryBuilder::new(self);
         source.to_sql(&mut query_builder).unwrap();
         (query_builder.sql, query_builder.binds)

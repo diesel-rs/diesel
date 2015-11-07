@@ -18,7 +18,7 @@ macro_rules! table {
     ) => {
         pub mod $name {
             use $crate::*;
-            use $crate::query_builder::{QueryBuilder, BuildQueryResult};
+            use $crate::query_builder::*;
             use $crate::types::*;
             pub use self::columns::*;
 
@@ -34,19 +34,23 @@ macro_rules! table {
             pub type SqlType = ($($Type),+);
 
             impl QuerySource for table {
-                type SqlType = SqlType;
-
-                fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-                    star.to_sql(out)
-                }
-
                 fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
                     out.push_identifier(stringify!($name))
                 }
             }
 
+            impl AsQuery for table {
+                type SqlType = SqlType;
+                type Query = SelectStatement<SqlType, star, Self>;
+
+                fn as_query(self) -> Self::Query {
+                    SelectStatement::simple(star, self)
+                }
+            }
+
             impl Table for table {
                 type PrimaryKey = columns::$pk;
+                type Star = star;
 
                 fn name(&self) -> &str {
                     stringify!($name)
@@ -54,6 +58,10 @@ macro_rules! table {
 
                 fn primary_key(&self) -> Self::PrimaryKey {
                     columns::$pk
+                }
+
+                fn star(&self) -> Self::Star {
+                    star
                 }
             }
 

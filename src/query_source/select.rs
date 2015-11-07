@@ -1,6 +1,6 @@
 use QuerySource;
 use expression::SelectableExpression;
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use std::marker::PhantomData;
 use types::NativeSqlType;
 
@@ -27,13 +27,20 @@ impl<A, S, E> QuerySource for SelectSqlQuerySource<A, S, E> where
     S: QuerySource,
     E: SelectableExpression<S, A>,
 {
-    type SqlType = A;
-
-    fn select_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        self.columns.to_sql(out)
-    }
-
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         self.source.from_clause(out)
+    }
+}
+
+impl<A, S, E> AsQuery for SelectSqlQuerySource<A, S, E> where
+    A: NativeSqlType,
+    S: QuerySource,
+    E: SelectableExpression<S, A>,
+{
+    type SqlType = A;
+    type Query = SelectStatement<A, E, S>;
+
+    fn as_query(self) -> Self::Query {
+        SelectStatement::simple(self.columns, self.source)
     }
 }

@@ -9,9 +9,9 @@ fn filter_by_int_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), connection.query_one(&users.filter(id.eq(1))).unwrap());
-    assert_eq!(Some(tess), connection.query_one(&users.filter(id.eq(2))).unwrap());
-    assert_eq!(None::<User>, connection.query_one(&users.filter(id.eq(3))).unwrap());
+    assert_eq!(Some(sean), connection.query_one(users.filter(id.eq(1))).unwrap());
+    assert_eq!(Some(tess), connection.query_one(users.filter(id.eq(2))).unwrap());
+    assert_eq!(None::<User>, connection.query_one(users.filter(id.eq(3))).unwrap());
 }
 
 #[test]
@@ -22,9 +22,9 @@ fn filter_by_string_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), connection.query_one(&users.filter(name.eq("Sean"))).unwrap());
-    assert_eq!(Some(tess), connection.query_one(&users.filter(name.eq("Tess"))).unwrap());
-    assert_eq!(None::<User>, connection.query_one(&users.filter(name.eq("Jim"))).unwrap());
+    assert_eq!(Some(sean), connection.query_one(users.filter(name.eq("Sean"))).unwrap());
+    assert_eq!(Some(tess), connection.query_one(users.filter(name.eq("Tess"))).unwrap());
+    assert_eq!(None::<User>, connection.query_one(users.filter(name.eq("Jim"))).unwrap());
 }
 
 #[test]
@@ -42,11 +42,11 @@ fn filter_after_joining() {
     let tess_post = Post::new(2, 2, "World", None);
     let source = users::table.inner_join(posts::table);
     assert_eq!(Some((sean, seans_post)),
-        connection.query_one(&source.filter(name.eq("Sean"))).unwrap());
+        connection.query_one(source.filter(name.eq("Sean"))).unwrap());
     assert_eq!(Some((tess, tess_post)),
-        connection.query_one(&source.filter(name.eq("Tess"))).unwrap());
+        connection.query_one(source.filter(name.eq("Tess"))).unwrap());
     assert_eq!(None::<(User, Post)>,
-        connection.query_one(&source.filter(name.eq("Jim"))).unwrap());
+        connection.query_one(source.filter(name.eq("Jim"))).unwrap());
 }
 
 #[test]
@@ -57,10 +57,10 @@ fn select_then_filter() {
 
     let source = users.select(name);
     assert_eq!(Some("Sean".to_string()),
-        connection.query_one(&source.filter(name.eq("Sean"))).unwrap());
+        connection.query_one(source.filter(name.eq("Sean"))).unwrap());
     assert_eq!(Some("Tess".to_string()),
-        connection.query_one(&source.filter(name.eq("Tess"))).unwrap());
-    assert_eq!(None::<String>, connection.query_one(&source.filter(name.eq("Jim"))).unwrap());
+        connection.query_one(source.filter(name.eq("Tess"))).unwrap());
+    assert_eq!(None::<String>, connection.query_one(source.filter(name.eq("Jim"))).unwrap());
 }
 
 #[test]
@@ -73,10 +73,10 @@ fn filter_then_select() {
     connection.insert_without_return(&users, &data).unwrap();
 
     assert_eq!(Some("Sean".to_string()),
-        connection.query_one(&users.filter(name.eq("Sean")).select(name)).unwrap());
+        connection.query_one(users.filter(name.eq("Sean")).select(name)).unwrap());
     assert_eq!(Some("Tess".to_string()),
-        connection.query_one(&users.filter(name.eq("Tess")).select(name)).unwrap());
-    assert_eq!(None::<String>, connection.query_one(&users.filter(name.eq("Jim")).select(name)).unwrap());
+        connection.query_one(users.filter(name.eq("Tess")).select(name)).unwrap());
+    assert_eq!(None::<String>, connection.query_one(users.filter(name.eq("Jim")).select(name)).unwrap());
 }
 
 table! {
@@ -96,7 +96,7 @@ fn filter_on_column_equality() {
 
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.filter(x.eq(y));
-    let data: Vec<_> = connection.query_all(&query).unwrap().collect();
+    let data: Vec<_> = connection.query_all(query).unwrap().collect();
     assert_eq!(expected_data, data);
 }
 

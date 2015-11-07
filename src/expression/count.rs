@@ -12,6 +12,7 @@ pub fn count_star() -> CountStar {
     CountStar
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Count<T: Expression> {
     target: T,
 }
@@ -30,6 +31,7 @@ impl<T: Expression> Expression for Count<T> {
 impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct CountStar;
 
 impl Expression for CountStar {

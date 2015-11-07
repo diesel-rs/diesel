@@ -10,9 +10,9 @@ fn test_count_counts_the_rows() {
     setup_users_table(&connection);
     let source = users.select(count(star));
 
-    assert_eq!(Some(0), connection.query_one(&source).unwrap());
+    assert_eq!(Some(0), connection.query_one(source).unwrap());
     connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
-    assert_eq!(Some(1), connection.query_one(&source).unwrap());
+    assert_eq!(Some(1), connection.query_one(source).unwrap());
 }
 
 #[test]
@@ -21,12 +21,14 @@ fn test_count_star() {
     setup_users_table(&connection);
     let source = users.count();
 
-    assert_eq!(Some(0), connection.query_one(&source).unwrap());
+    assert_eq!(Some(0), connection.query_one(source).unwrap());
     connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
-    assert_eq!(Some(1), connection.query_one(&source).unwrap());
+    assert_eq!(Some(1), connection.query_one(source).unwrap());
+
+    // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     let mut query_builder = ::yaqb::query_builder::pg::PgQueryBuilder::new(&connection);
-    source.select_clause(&mut query_builder).unwrap();
-    assert_eq!("COUNT(*)", &query_builder.sql);
+    source.as_query().to_sql(&mut query_builder).unwrap();
+    assert!(query_builder.sql.starts_with("SELECT COUNT(*) FROM"));
 }
 
 table! {
@@ -45,9 +47,9 @@ fn test_count_max() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(max(n));
 
-    assert_eq!(Some(5), connection.query_one(&source).unwrap());
+    assert_eq!(Some(5), connection.query_one(source).unwrap());
     connection.execute("DELETE FROM numbers WHERE n = 5").unwrap();
-    assert_eq!(Some(2), connection.query_one(&source).unwrap());
+    assert_eq!(Some(2), connection.query_one(source).unwrap());
 }
 
 #[test]
@@ -62,9 +64,9 @@ fn max_returns_same_type_as_expression_being_maxed() {
         NewUser::new("A", None),
     ];
     connection.insert_without_return(&users, &data).unwrap();
-    assert_eq!(Some("C".to_string()), connection.query_one(&source).unwrap());
+    assert_eq!(Some("C".to_string()), connection.query_one(source).unwrap());
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
-    assert_eq!(Some("B".to_string()), connection.query_one(&source).unwrap());
+    assert_eq!(Some("B".to_string()), connection.query_one(source).unwrap());
 }
 
 use std::marker::PhantomData;

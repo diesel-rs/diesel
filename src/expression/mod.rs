@@ -47,6 +47,7 @@ pub trait SelectableExpression<
 pub trait NonAggregate: Expression {
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Eq<T, U> {
     left: T,
     right: U,
@@ -75,6 +76,7 @@ impl<T, U, QS> SelectableExpression<QS> for Eq<T, U> where
 use std::marker::PhantomData;
 use std::fmt::Debug;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {
     item: U,
     _marker: PhantomData<T>,
