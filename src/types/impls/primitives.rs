@@ -1,4 +1,5 @@
-use expression::{Expression, AsExpression, Bound};
+use expression::{Expression, AsExpression};
+use expression::bound::Bound;
 use std::error::Error;
 use std::io::Write;
 use super::option::UnexpectedNullError;
