@@ -1,5 +1,5 @@
 use super::schema::*;
-use yaqb::{Table, QuerySource};
+use yaqb::*;
 
 #[test]
 fn belongs_to() {

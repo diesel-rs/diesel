@@ -16,4 +16,24 @@ fn main() {
     let connection = Connection::establish("").unwrap();
     let source = users.select((id, count(star)));
     //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
 }

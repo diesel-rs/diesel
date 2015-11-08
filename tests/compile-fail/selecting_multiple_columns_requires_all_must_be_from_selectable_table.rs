@@ -22,10 +22,44 @@ fn main() {
     let connection = Connection::establish("").unwrap();
     let stuff = users::table.select((posts::id, posts::user_id));
     //~^ ERROR Selectable
-    let stuff = users::table.select((posts::id, posts::user_id));
-    //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     let stuff = users::table.select((posts::id, users::name));
     //~^ ERROR Selectable
-    let stuff = users::table.select((posts::id, users::name));
-    //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
 }

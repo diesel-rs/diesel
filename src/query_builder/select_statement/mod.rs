@@ -1,3 +1,5 @@
+mod dsl_impls;
+
 use expression::*;
 use query_source::QuerySource;
 use std::marker::PhantomData;

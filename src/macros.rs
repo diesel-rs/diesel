@@ -222,12 +222,5 @@ macro_rules! select_column_inner {
         > for $parent::$column_name
         {
         }
-
-        impl<A, S, E> $crate::expression::SelectableExpression<
-            $crate::query_source::SelectSqlQuerySource<A, S, E>>
-            for $parent::$column_name where
-            $parent::$column_name: $crate::expression::SelectableExpression<S>,
-        {
-        }
     }
 }
