@@ -2,7 +2,7 @@
 extern crate yaqb;
 
 mod expressions;
-// mod filter;
+mod filter;
 mod find;
 mod insert;
 mod internal_details;

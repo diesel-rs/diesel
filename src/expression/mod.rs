@@ -1,7 +1,7 @@
 pub mod bound;
 pub mod count;
+pub mod eq;
 
-mod eq;
 mod max;
 mod sql_literal;
 

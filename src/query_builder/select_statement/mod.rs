@@ -1,36 +1,42 @@
 mod dsl_impls;
 
 use expression::*;
+use expression::bound::Bound;
 use query_source::QuerySource;
 use std::marker::PhantomData;
 use super::{Query, QueryBuilder, BuildQueryResult};
-use types::NativeSqlType;
+use types::{Bool, NativeSqlType};
 
 #[derive(Debug, Clone, Copy)]
-pub struct SelectStatement<SqlType, Select, From> {
+pub struct SelectStatement<SqlType, Select, From, Where = Bound<Bool, bool>> {
     select: Select,
     from: From,
+    where_clause: Where,
     _marker: PhantomData<SqlType>,
 }
 
-impl<ST, S, F> SelectStatement<ST, S, F> {
-    pub fn new(select: S, from: F) -> Self {
+impl<ST, S, F, W> SelectStatement<ST, S, F, W> {
+    pub fn new(select: S, from: F, where_clause: W) -> Self {
         SelectStatement {
             select: select,
             from: from,
+            where_clause: where_clause,
             _marker: PhantomData,
         }
     }
+}
 
+impl<ST, S, F> SelectStatement<ST, S, F> {
     pub fn simple(select: S, from: F) -> Self {
-        SelectStatement::new(select, from)
+        SelectStatement::new(select, from, Bound::new(true))
     }
 }
 
-impl<Type, Select, From> Query for SelectStatement<Type, Select, From> where
+impl<Type, Select, From, Where> Query for SelectStatement<Type, Select, From, Where> where
     Type: NativeSqlType,
     From: QuerySource,
     Select: SelectableExpression<From, Type>,
+    Where: SelectableExpression<From, Bool>,
 {
     type SqlType = Type;
 
@@ -38,6 +44,8 @@ impl<Type, Select, From> Query for SelectStatement<Type, Select, From> where
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
-        self.from.from_clause(out)
+        try!(self.from.from_clause(out));
+        out.push_sql(" WHERE ");
+        self.where_clause.to_sql(out)
     }
 }

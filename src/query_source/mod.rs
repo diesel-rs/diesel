@@ -1,9 +1,7 @@
-// mod filter;
 mod joins;
 
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
-// pub use self::filter::FilteredQuerySource;
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use types::{FromSqlRow, NativeSqlType};
 
@@ -17,13 +15,6 @@ pub trait Queriable<ST: NativeSqlType> {
 
 pub trait QuerySource: Sized {
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-    // fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
-
-//     fn filter<T>(self, predicate: T) -> FilteredQuerySource<Self, T> where
-//         T: SelectableExpression<Self, types::Bool>,
-//     {
-//         FilteredQuerySource::new(self, predicate)
-//     }
 }
 
 pub trait Column {
@@ -51,7 +42,7 @@ impl<C: Column> NonAggregate for C {
 }
 
 pub trait Table: QuerySource + AsQuery + Sized {
-    type PrimaryKey: Column<Table=Self>;
+    type PrimaryKey: Column<Table=Self> + Expression;
     type Star: Column<Table=Self>;
 
     fn name(&self) -> &str;

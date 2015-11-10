@@ -6,9 +6,12 @@ mod cursor;
 pub use self::cursor::Cursor;
 
 use db_result::DbResult;
+use expression::{AsExpression, Expression};
+use expression::eq::Eq;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_builder::{AsQuery, Query};
 use query_builder::pg::PgQueryBuilder;
+use query_dsl::FilterDsl;
 use query_source::{Table, Column, Queriable};
 use result::*;
 use self::pq_sys::*;
@@ -21,6 +24,10 @@ pub struct Connection {
     internal_connection: *mut PGconn,
     transaction_depth: Cell<i32>,
 }
+
+type PrimaryKey<T> = <T as Table>::PrimaryKey;
+type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
+type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
 
 impl Connection {
     pub fn establish(database_url: &str) -> ConnectionResult<Connection> {
@@ -137,16 +144,13 @@ impl Connection {
         DbResult::new(self, internal_res)
     }
 
-    pub fn find<T, U, PK>(&self, source: T, id: &PK) -> Result<Option<U>> where
-        T: Table,
-        U: Queriable<T::SqlType>,
-        PK: ToSql<<T::PrimaryKey as Column>::SqlType>,
+    pub fn find<T, U, PK>(&self, source: T, id: PK) -> Result<Option<U>> where
+        T: Table + FilterDsl<FindPredicate<T, PK>>,
+        U: Queriable<<<T as FilterDsl<FindPredicate<T, PK>>>::Output as Query>::SqlType>,
+        PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
     {
         let pk = source.primary_key();
-        let (sql, binds) = self.prepare_query(&source.as_query());
-        assert!(binds.is_empty());
-        let sql = sql + &format!(" WHERE {} = $1 LIMIT 1", pk.qualified_name());
-        self.query_sql_params(&sql, id).map(|mut e| e.nth(0))
+        self.query_one(source.filter(pk.eq(id)))
     }
 
     pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])
