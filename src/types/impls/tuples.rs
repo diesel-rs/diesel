@@ -82,7 +82,7 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns<T> for ($($T),+) {
-                type SqlType = ($(<$T as Column>::SqlType),+);
+                type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn names(&self) -> String {
                     let parts: &[String] = e!(&[$(self.$idx.name()),*]);

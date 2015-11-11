@@ -1,3 +1,4 @@
+use expression::Expression;
 use query_source::{Table, Column};
 use types::{ValuesToSql, NativeSqlType};
 
@@ -18,7 +19,7 @@ pub trait InsertableColumns<T: Table> {
 }
 
 impl<C: Column<Table=T>, T: Table> InsertableColumns<T> for C {
-    type SqlType = <Self as Column>::SqlType;
+    type SqlType = <Self as Expression>::SqlType;
 
     fn names(&self) -> String {
         self.name()

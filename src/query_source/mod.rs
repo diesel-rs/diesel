@@ -17,22 +17,12 @@ pub trait QuerySource: Sized {
     fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 }
 
-pub trait Column {
+pub trait Column: Expression {
     type Table: Table;
-    type SqlType: NativeSqlType;
 
     fn name(&self) -> String;
 
     fn qualified_name(&self) -> String;
-}
-
-impl<C: Column> Expression for C {
-    type SqlType = <Self as Column>::SqlType;
-
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-        out.push_sql(&self.qualified_name());
-        Ok(())
-    }
 }
 
 impl<C: Column> SelectableExpression<C::Table> for C {

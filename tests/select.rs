@@ -142,3 +142,33 @@ fn selecting_expression_with_bind_param() {
 
     assert_eq!(expected_data, actual_data);
 }
+
+table! {
+    select {
+        id -> Serial,
+        join -> Integer,
+    }
+}
+
+#[test]
+fn selecting_columns_and_tables_with_reserved_names() {
+    use self::select::dsl::*;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE \"select\" (
+        id SERIAL PRIMARY KEY,
+        \"join\" INTEGER NOT NULL
+    )").unwrap();
+    connection.execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+        .unwrap();
+
+    let expected_data = vec![(1, 1), (2, 2), (3, 3)];
+    let actual_data: Vec<(i32, i32)> = connection.query_all(select)
+        .unwrap().collect();
+    assert_eq!(expected_data, actual_data);
+
+    let expected_data = vec![1, 2, 3];
+    let actual_data: Vec<i32> = connection.query_all(select.select(join))
+        .unwrap().collect();
+    assert_eq!(expected_data, actual_data);
+}

@@ -67,16 +67,26 @@ macro_rules! table {
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Column};
+                use $crate::{Table, Column, Expression};
+                use $crate::query_builder::{QueryBuilder, BuildQueryResult};
                 use $crate::types::*;
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]
                 pub struct star;
 
+                impl Expression for star {
+                    type SqlType = super::SqlType;
+
+                    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                        try!(out.push_identifier(table.name()));
+                        out.push_sql(".*");
+                        Ok(())
+                    }
+                }
+
                 impl Column for star {
                     type Table = table;
-                    type SqlType = super::SqlType;
 
                     fn name(&self) -> String {
                         "*".to_string()
@@ -91,9 +101,18 @@ macro_rules! table {
                 #[derive(Debug, Clone, Copy)]
                 pub struct $column_name;
 
+                impl Expression for $column_name {
+                    type SqlType = $Type;
+
+                    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                        try!(out.push_identifier(table.name()));
+                        out.push_sql(".");
+                        out.push_identifier(stringify!($column_name))
+                    }
+                }
+
                 impl Column for $column_name {
                     type Table = table;
-                    type SqlType = $Type;
 
                     fn name(&self) -> String {
                         stringify!($column_name).to_string()
@@ -212,7 +231,7 @@ macro_rules! select_column_inner {
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
             $crate::types::Nullable<
-                <$parent::$column_name as $crate::Column>::SqlType>,
+                <$parent::$column_name as $crate::Expression>::SqlType>,
         > for $parent::$column_name
         {
         }
