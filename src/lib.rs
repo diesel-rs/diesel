@@ -14,7 +14,7 @@ mod row;
 #[macro_use]
 mod macros;
 
-pub use connection::Connection;
+pub use connection::{Connection, Cursor};
 pub use expression::{Expression, SelectableExpression};
 pub use query_dsl::*;
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};

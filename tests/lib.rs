@@ -3,6 +3,7 @@ extern crate yaqb;
 
 mod expressions;
 mod filter;
+mod filter_operators;
 mod find;
 mod insert;
 mod internal_details;
