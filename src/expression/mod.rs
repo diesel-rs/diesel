@@ -1,3 +1,4 @@
+pub mod and;
 pub mod bound;
 pub mod count;
 pub mod eq;
@@ -14,8 +15,9 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use query_builder::{QueryBuilder, BuildQueryResult};
+use self::and::And;
 use self::eq::Eq;
-use types::NativeSqlType;
+use types::{Bool, NativeSqlType};
 
 pub trait Expression: Sized {
     type SqlType: NativeSqlType;
@@ -24,6 +26,10 @@ pub trait Expression: Sized {
 
     fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
         Eq::new(self, other.as_expression())
+    }
+
+    fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self, T::Expression> {
+        And::new(self, other.as_expression())
     }
 }
 
