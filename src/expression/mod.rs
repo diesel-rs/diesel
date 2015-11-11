@@ -56,8 +56,10 @@ pub trait Expression: Sized {
         NotBetween::new(self, And::new(other.start.as_expression(), other.end.as_expression()))
     }
 
-    fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self, T::Expression> {
-        And::new(self, other.as_expression())
+    fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self::Expression, T::Expression> where
+        Self: AsExpression<Bool>,
+    {
+        And::new(self.as_expression(), other.as_expression())
     }
 }
 
