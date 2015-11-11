@@ -1,6 +1,6 @@
 use expression::*;
-use expression::predicates::And;
 use query_builder::*;
+use query_builder::where_clause::*;
 use query_dsl::*;
 use types::{Bool, NativeSqlType};
 
@@ -19,11 +19,11 @@ impl<ST, S, F, W, Selection, Type> SelectDsl<Selection, Type>
 
 impl<ST, S, F, W, Predicate> FilterDsl<Predicate>
     for SelectStatement<ST, S, F, W> where
-    W: Expression<SqlType=Bool>,
-    Predicate: Expression<SqlType=Bool>,
-    SelectStatement<ST, S, F, And<W, Predicate>>: Query,
+    Predicate: SelectableExpression<F, SqlType=Bool>,
+    W: WhereAnd<Predicate>,
+    SelectStatement<ST, S, F, W::Output>: Query,
 {
-    type Output = SelectStatement<ST, S, F, And<W, Predicate>>;
+    type Output = SelectStatement<ST, S, F, W::Output>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(self.select, self.from, self.where_clause.and(predicate))

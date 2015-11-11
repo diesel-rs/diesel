@@ -8,6 +8,7 @@ mod insert;
 mod internal_details;
 mod joins;
 mod macros;
+mod perf_details;
 mod schema;
 mod select;
 mod transactions;

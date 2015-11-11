@@ -1,6 +1,7 @@
 pub mod pg;
 
 mod select_statement;
+mod where_clause;
 
 pub use self::select_statement::SelectStatement;
 
@@ -16,9 +17,11 @@ pub trait QueryBuilder {
     fn push_bound_value(&mut self, binds: Option<Vec<u8>>);
 }
 
-pub trait Query {
+pub trait Query: QueryFragment {
     type SqlType: NativeSqlType;
+}
 
+pub trait QueryFragment {
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
 }
 

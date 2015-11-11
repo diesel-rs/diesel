@@ -1,14 +1,14 @@
 mod dsl_impls;
 
 use expression::*;
-use expression::bound::Bound;
 use query_source::QuerySource;
 use std::marker::PhantomData;
-use super::{Query, QueryBuilder, BuildQueryResult};
-use types::{Bool, NativeSqlType};
+use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
+use super::where_clause::NoWhereClause;
+use types::NativeSqlType;
 
 #[derive(Debug, Clone, Copy)]
-pub struct SelectStatement<SqlType, Select, From, Where = Bound<Bool, bool>> {
+pub struct SelectStatement<SqlType, Select, From, Where = NoWhereClause> {
     select: Select,
     from: From,
     where_clause: Where,
@@ -28,24 +28,28 @@ impl<ST, S, F, W> SelectStatement<ST, S, F, W> {
 
 impl<ST, S, F> SelectStatement<ST, S, F> {
     pub fn simple(select: S, from: F) -> Self {
-        SelectStatement::new(select, from, Bound::new(true))
+        SelectStatement::new(select, from, NoWhereClause)
     }
 }
 
 impl<Type, Select, From, Where> Query for SelectStatement<Type, Select, From, Where> where
     Type: NativeSqlType,
-    From: QuerySource,
-    Select: SelectableExpression<From, Type>,
-    Where: SelectableExpression<From, Bool>,
+    SelectStatement<Type, Select, From, Where>: QueryFragment
 {
     type SqlType = Type;
+}
 
+impl<Type, Select, From, Where> QueryFragment for SelectStatement<Type, Select, From, Where> where
+    Type: NativeSqlType,
+    From: QuerySource,
+    Select: SelectableExpression<From, Type>,
+    Where: QueryFragment,
+{
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
         try!(self.from.from_clause(out));
-        out.push_sql(" WHERE ");
         self.where_clause.to_sql(out)
     }
 }
