@@ -28,6 +28,28 @@ fn filter_by_string_equality() {
 }
 
 #[test]
+fn filter_by_equality_on_nullable_columns() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    let data = vec![
+        NewUser::new("Sean", Some("black")),
+        NewUser::new("Tess", Some("brown")),
+        NewUser::new("Jim", Some("black")),
+    ];
+    connection.insert_without_return(&users, &data).unwrap();
+
+    let sean = User::with_hair_color(1, "Sean", "black");
+    let tess = User::with_hair_color(2, "Tess", "brown");
+    let jim = User::with_hair_color(3, "Jim", "black");
+    let source = users.filter(hair_color.eq("black"));
+    assert_eq!(vec![sean, jim], connection.query_all(source).unwrap().collect::<Vec<_>>());
+    let source = users.filter(hair_color.eq("brown"));
+    assert_eq!(vec![tess], connection.query_all(source).unwrap().collect::<Vec<_>>());
+}
+
+#[test]
 fn filter_after_joining() {
     use schema::users::name;
 

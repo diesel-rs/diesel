@@ -9,6 +9,14 @@ impl User {
     pub fn new(id: i32, name: &str) -> Self {
         User { id: id, name: name.to_string(), hair_color: None }
     }
+
+    pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
+        User {
+            id: id,
+            name: name.to_string(),
+            hair_color: Some(hair_color.to_string()),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
