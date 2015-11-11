@@ -139,6 +139,44 @@ fn filter_on_multiple_columns() {
         .collect::<Vec<_>>());
 }
 
+#[test]
+fn filter_called_twice_means_same_thing_as_and() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    let data = [
+        NewUser::new("Sean", Some("black")),
+        NewUser::new("Sean", Some("brown")),
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", Some("black")),
+        NewUser::new("Tess", Some("brown")),
+    ];
+    assert_eq!(5, connection.insert_without_return(&users, &data).unwrap());
+
+    let black_haired_sean = User::with_hair_color(1, "Sean", "black");
+    let brown_haired_sean = User::with_hair_color(2, "Sean", "brown");
+    let _bald_sean = User::new(3, "Sean");
+    let black_haired_tess = User::with_hair_color(4, "Tess", "black");
+    let brown_haired_tess = User::with_hair_color(5, "Tess", "brown");
+
+    let source = users.filter(name.eq("Sean")).filter(hair_color.eq("black"));
+    assert_eq!(vec![black_haired_sean], connection.query_all(source).unwrap()
+        .collect::<Vec<_>>());
+
+    let source = users.filter(name.eq("Sean")).filter(hair_color.eq("brown"));
+    assert_eq!(vec![brown_haired_sean], connection.query_all(source).unwrap()
+        .collect::<Vec<_>>());
+
+    let source = users.filter(name.eq("Tess")).filter(hair_color.eq("black"));
+    assert_eq!(vec![black_haired_tess], connection.query_all(source).unwrap()
+        .collect::<Vec<_>>());
+
+    let source = users.filter(name.eq("Tess")).filter(hair_color.eq("brown"));
+    assert_eq!(vec![brown_haired_tess], connection.query_all(source).unwrap()
+        .collect::<Vec<_>>());
+}
+
 table! {
     points (x) {
         x -> Integer,
