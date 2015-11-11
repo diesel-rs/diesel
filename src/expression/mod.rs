@@ -1,7 +1,6 @@
-pub mod and;
 pub mod bound;
 pub mod count;
-pub mod eq;
+pub mod predicates;
 
 mod max;
 mod sql_literal;
@@ -15,8 +14,7 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use query_builder::{QueryBuilder, BuildQueryResult};
-use self::and::And;
-use self::eq::Eq;
+use self::predicates::*;
 use types::{Bool, NativeSqlType};
 
 pub trait Expression: Sized {

@@ -7,7 +7,7 @@ pub use self::cursor::Cursor;
 
 use db_result::DbResult;
 use expression::{AsExpression, Expression};
-use expression::eq::Eq;
+use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_builder::{AsQuery, Query};
 use query_builder::pg::PgQueryBuilder;
