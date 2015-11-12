@@ -1,5 +1,6 @@
 pub mod pg;
 
+mod order_clause;
 mod select_statement;
 mod where_clause;
 
