@@ -1,10 +1,13 @@
 extern crate byteorder;
 
-use Queriable;
-use self::byteorder::{ReadBytesExt, BigEndian};
-use types::{self, NativeSqlType, FromSql, Array};
-use super::option::UnexpectedNullError;
+use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use std::error::Error;
+use std::io::Write;
+
+use Queriable;
+use persistable::AsBindParam;
+use super::option::UnexpectedNullError;
+use types::{self, NativeSqlType, FromSql, ToSql, Array, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
     fn oid() -> u32 {
@@ -60,5 +63,78 @@ impl<T, ST> Queriable<Array<ST>> for Vec<T> where
     type Row = Self;
     fn build(row: Self) -> Self {
         row
+    }
+}
+
+use expression::AsExpression;
+use expression::bound::Bound;
+
+impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
+    ST: NativeSqlType,
+    T: ToSql<ST>,
+{
+    type Expression = Bound<Array<ST>, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
+    ST: NativeSqlType,
+    T: ToSql<ST>,
+{
+    type Expression = Bound<Array<ST>, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
+    ST: NativeSqlType,
+    T: ToSql<ST>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        let num_dimensions = 1;
+        try!(out.write_i32::<BigEndian>(num_dimensions));
+        let flags = 0;
+        try!(out.write_i32::<BigEndian>(flags));
+        try!(out.write_u32::<BigEndian>(ST::oid()));
+        try!(out.write_i32::<BigEndian>(self.len() as i32));
+        let index_offset = 0;
+        try!(out.write_i32::<BigEndian>(index_offset));
+
+        let mut buffer = Vec::new();
+        for elem in self.iter() {
+            let is_null = try!(elem.to_sql(&mut buffer));
+            assert!(is_null == IsNull::No, "Arrays containing null are not supported");
+            try!(out.write_i32::<BigEndian>(buffer.len() as i32));
+            try!(out.write_all(&buffer));
+            buffer.clear();
+        }
+
+        Ok(IsNull::No)
+    }
+}
+
+impl<ST, T> ToSql<Array<ST>> for Vec<T> where
+    ST: NativeSqlType,
+    T: ToSql<ST>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        (&self as &[T]).to_sql(out)
+    }
+}
+
+impl<'a, T> AsBindParam for &'a [T] {
+    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+        self.as_bind_param(idx)
+    }
+}
+
+impl<T> AsBindParam for Vec<T> {
+    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
+        self.as_bind_param(idx)
     }
 }

@@ -1,3 +1,4 @@
+pub mod array_comparison;
 pub mod bound;
 pub mod count;
 pub mod predicates;
@@ -8,6 +9,7 @@ mod sql_literal;
 pub mod dsl {
     pub use super::count::{count, count_star};
     pub use super::max::max;
+    pub use super::array_comparison::any;
 }
 
 pub use self::dsl::*;

@@ -1,6 +1,5 @@
 use persistable::AsBindParam;
 use query_builder::*;
-use std::fmt::Debug;
 use std::marker::PhantomData;
 use super::{Expression, SelectableExpression, NonAggregate};
 use types::{NativeSqlType, ValuesToSql};
@@ -19,7 +18,7 @@ impl<T, U> Bound<T, U> {
 
 impl<T, U> Expression for Bound<T, U> where
     T: NativeSqlType,
-    U: AsBindParam + ValuesToSql<T> + Debug,
+    U: AsBindParam + ValuesToSql<T>,
 {
     type SqlType = T;
 

@@ -103,6 +103,24 @@ fn filter_by_like() {
         connection.query_all(users.filter(name.not_like("%Griffin"))).as_vec());
 }
 
+#[test]
+fn filter_by_any() {
+    use schema::users::dsl::*;
+    use yaqb::expression::dsl::any;
+
+    let connection = connection_with_3_users();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let jim = User::new(3, "Jim");
+
+    let owned_names = vec!["Sean", "Tess"];
+    let borrowed_names: &[&str] = &["Sean", "Jim"];
+    assert_eq!(vec![sean.clone(), tess],
+        connection.query_all(users.filter(name.eq(any(owned_names)))).as_vec());
+    assert_eq!(vec![sean, jim],
+        connection.query_all(users.filter(name.eq(any(borrowed_names)))).as_vec());
+}
+
 trait TestResultHelpers<U> {
     fn as_vec(self) -> Vec<U>;
 }

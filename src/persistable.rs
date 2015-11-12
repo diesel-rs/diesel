@@ -67,4 +67,4 @@ macro_rules! as_bind_param {
     )+}
 }
 
-as_bind_param!(bool, i16, i32, i64, f32, f64, String, Vec<u8>);
+as_bind_param!(bool, i16, i32, i64, f32, f64, String);
