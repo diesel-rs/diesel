@@ -8,7 +8,7 @@ use yaqb::expression::dsl::*;
 fn test_count_counts_the_rows() {
     let connection = connection();
     setup_users_table(&connection);
-    let source = users.select(count(users::star));
+    let source = users.select(count(users.star()));
 
     assert_eq!(Some(0), connection.query_one(source).unwrap());
     connection.insert_without_return(&users, &[NewUser::new("Sean", None)]).unwrap();
