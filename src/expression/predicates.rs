@@ -1,5 +1,5 @@
 use query_builder::*;
-use super::{Expression, SelectableExpression};
+use super::{Expression, SelectableExpression, NonAggregate};
 use types::Bool;
 
 macro_rules! infix_predicate {
@@ -35,6 +35,12 @@ macro_rules! infix_predicate {
         impl<T, U, QS> SelectableExpression<QS> for $name<T, U> where
             T: SelectableExpression<QS>,
             U: SelectableExpression<QS>,
+        {
+        }
+
+        impl<T, U> NonAggregate for $name<T, U> where
+            T: NonAggregate,
+            U: NonAggregate,
         {
         }
     }

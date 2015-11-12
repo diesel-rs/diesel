@@ -32,7 +32,7 @@ impl<C: Column> NonAggregate for C {
 }
 
 pub trait Table: QuerySource + AsQuery + Sized {
-    type PrimaryKey: Column<Table=Self> + Expression;
+    type PrimaryKey: Column<Table=Self> + Expression + NonAggregate;
     type Star: Column<Table=Self>;
 
     fn name(&self) -> &str;

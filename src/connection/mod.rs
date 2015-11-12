@@ -6,7 +6,7 @@ mod cursor;
 pub use self::cursor::Cursor;
 
 use db_result::DbResult;
-use expression::{AsExpression, Expression};
+use expression::{AsExpression, Expression, NonAggregate};
 use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_builder::{AsQuery, Query};
@@ -147,7 +147,8 @@ impl Connection {
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> Result<Option<U>> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         U: Queriable<<<T as FilterDsl<FindPredicate<T, PK>>>::Output as Query>::SqlType>,
-        PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
+        PK: AsExpression<PkType<T>>,
+        <PK as AsExpression<PkType<T>>>::Expression: NonAggregate,
     {
         let pk = source.primary_key();
         self.query_one(source.filter(pk.eq(id)))

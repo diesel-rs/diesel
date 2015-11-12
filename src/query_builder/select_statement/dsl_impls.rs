@@ -19,7 +19,7 @@ impl<ST, S, F, W, Selection, Type> SelectDsl<Selection, Type>
 
 impl<ST, S, F, W, Predicate> FilterDsl<Predicate>
     for SelectStatement<ST, S, F, W> where
-    Predicate: SelectableExpression<F, SqlType=Bool>,
+    Predicate: SelectableExpression<F, SqlType=Bool> + NonAggregate,
     W: WhereAnd<Predicate>,
     SelectStatement<ST, S, F, W::Output>: Query,
 {

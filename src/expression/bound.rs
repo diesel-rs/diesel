@@ -2,7 +2,7 @@ use persistable::AsBindParam;
 use query_builder::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use super::{Expression, SelectableExpression};
+use super::{Expression, SelectableExpression, NonAggregate};
 use types::{NativeSqlType, ValuesToSql};
 
 #[derive(Debug, Clone, Copy)]
@@ -31,6 +31,11 @@ impl<T, U> Expression for Bound<T, U> where
 }
 
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
+    Bound<T, U>: Expression,
+{
+}
+
+impl<T, U> NonAggregate for Bound<T, U> where
     Bound<T, U>: Expression,
 {
 }
