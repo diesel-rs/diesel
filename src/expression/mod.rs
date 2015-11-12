@@ -5,6 +5,7 @@ pub mod predicates;
 
 mod max;
 mod sql_literal;
+mod ordering;
 
 pub mod dsl {
     pub use super::count::{count, count_star};
@@ -74,6 +75,10 @@ pub trait Expression: Sized {
         Self: AsExpression<types::VarChar>,
     {
         NotLike::new(self.as_expression(), other.as_expression())
+    }
+
+    fn desc(self) -> ordering::Desc<Self> {
+        ordering::Desc::new(self)
     }
 }
 

@@ -62,6 +62,12 @@ primitive_impls! {
     Binary -> (Vec<u8>, 17),
 }
 
+impl NativeSqlType for () {
+    fn oid() -> u32 {
+        0
+    }
+}
+
 impl FromSql<types::Bool> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let bytes = not_none!(bytes);
