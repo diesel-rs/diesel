@@ -8,7 +8,7 @@ mod db_result;
 pub mod query_builder;
 mod query_dsl;
 pub mod query_source;
-mod result;
+pub mod result;
 mod row;
 
 #[macro_use]
@@ -18,4 +18,4 @@ pub use connection::{Connection, Cursor};
 pub use expression::{Expression, SelectableExpression};
 pub use query_dsl::*;
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
-pub use result::*;
+pub use result::{TransactionError, TransactionResult, ConnectionError, ConnectionResult};

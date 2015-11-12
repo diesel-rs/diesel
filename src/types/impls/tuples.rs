@@ -28,7 +28,7 @@ macro_rules! tuple_impls {
                 $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
+                fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     Ok(($(try!($T::build_from_row(row))),+))
                 }
             }
@@ -37,7 +37,7 @@ macro_rules! tuple_impls {
                 $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>> {
+                fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     if e!(row.next_is_null($Tuple)) {
                         Ok(None)
                     } else {
@@ -85,7 +85,7 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {
             }
 
-            impl<$($T: Column<Table=T>),+, T: Table> InsertableColumns<T> for ($($T),+) {
+            impl<$($T: Column<Table=Tab>),+, Tab: Table> InsertableColumns<Tab> for ($($T),+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn names(&self) -> String {
@@ -224,5 +224,71 @@ tuple_impls! {
         (9) -> J, SJ, TJ,
         (10) -> K, SK, TK,
         (11) -> L, SL, TL,
+    }
+    13 {
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
+        (11) -> L, SL, TL,
+        (12) -> M, SM, TM,
+    }
+    14 {
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
+        (11) -> L, SL, TL,
+        (12) -> M, SM, TM,
+        (13) -> N, SN, TN,
+    }
+    15 {
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
+        (11) -> L, SL, TL,
+        (12) -> M, SM, TM,
+        (13) -> N, SN, TN,
+        (14) -> O, SO, TO,
+    }
+    16 {
+        (0) -> A, SA, TA,
+        (1) -> B, SB, TB,
+        (2) -> C, SC, TC,
+        (3) -> D, SD, TD,
+        (4) -> E, SE, TE,
+        (5) -> F, SF, TF,
+        (6) -> G, SG, TG,
+        (7) -> H, SH, TH,
+        (8) -> I, SI, TI,
+        (9) -> J, SJ, TJ,
+        (10) -> K, SK, TK,
+        (11) -> L, SL, TL,
+        (12) -> M, SM, TM,
+        (13) -> N, SN, TN,
+        (14) -> O, SO, TO,
+        (15) -> P, SP, TP,
     }
 }

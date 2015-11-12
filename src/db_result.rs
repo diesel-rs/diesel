@@ -1,7 +1,8 @@
 extern crate pq_sys;
 extern crate libc;
 
-use {Result, Error, Connection};
+use connection::Connection;
+use result::{Error, Result};
 use row::DbRow;
 
 use self::pq_sys::*;

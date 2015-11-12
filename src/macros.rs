@@ -23,7 +23,7 @@ macro_rules! table {
             pub use self::columns::*;
 
             pub mod dsl {
-                pub use super::columns::*;
+                pub use super::columns::{$($column_name),+};
                 pub use super::table as $name;
             }
 

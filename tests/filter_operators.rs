@@ -1,5 +1,6 @@
 use schema::*;
 use yaqb::*;
+use yaqb::result::Result;
 
 #[test]
 fn filter_by_inequality() {
