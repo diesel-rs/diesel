@@ -2,11 +2,28 @@ extern crate byteorder;
 
 use Queriable;
 use self::byteorder::{ReadBytesExt, BigEndian};
-use types::{NativeSqlType, FromSql, Array};
+use types::{self, NativeSqlType, FromSql, Array};
 use super::option::UnexpectedNullError;
 use std::error::Error;
 
-impl<T: NativeSqlType> NativeSqlType for Array<T> {}
+impl<T: NativeSqlType> NativeSqlType for Array<T> {
+    fn oid() -> u32 {
+        let oid = T::oid();
+        if oid == types::Bool::oid() { 1000 }
+        else if oid == types::SmallInt::oid() { 1005 }
+        else if oid == types::Integer::oid() { 1007 }
+        else if oid == types::BigInt::oid() { 1016 }
+
+        else if oid == types::Float::oid() { 1021 }
+        else if oid == types::Double::oid() { 1022 }
+
+        else if oid == types::VarChar::oid() { 1015 }
+        else if oid == types::Text::oid() { 1009 }
+
+        else if oid == types::Binary::oid() { 1001 }
+        else { 0 }
+    }
+}
 
 impl<T, ST> FromSql<Array<ST>> for Vec<T> where
     T: FromSql<ST>,

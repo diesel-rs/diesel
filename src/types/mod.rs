@@ -28,7 +28,9 @@ use std::io::Write;
 #[derive(Clone, Copy)] pub struct Nullable<T: NativeSqlType>(T);
 #[derive(Clone, Copy)] pub struct Array<T: NativeSqlType>(T);
 
-pub trait NativeSqlType {}
+pub trait NativeSqlType {
+    fn oid() -> u32;
+}
 
 pub trait FromSql<A: NativeSqlType>: Sized {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>>;

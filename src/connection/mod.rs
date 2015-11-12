@@ -90,8 +90,8 @@ impl Connection {
         T: AsQuery,
         U: Queriable<T::SqlType>,
     {
-        let (sql, params) = self.prepare_query(&source.as_query());
-        self.exec_sql_params(&sql, &params).map(Cursor::new)
+        let (sql, params, types) = self.prepare_query(&source.as_query());
+        self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
     }
 
     pub fn query_sql<T, U>(&self, query: &str) -> Result<Cursor<T, U>> where
@@ -110,16 +110,19 @@ impl Connection {
         P: ValuesToSql<PT>,
     {
         let param_data = params.values_to_sql().unwrap();
-        let db_result = try!(self.exec_sql_params(query, &param_data));
+        let db_result = try!(self.exec_sql_params(query, &param_data, &None));
         Ok(Cursor::new(db_result))
     }
 
-    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>) -> Result<DbResult> {
+    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> Result<DbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
                  .unwrap_or(ptr::null()))
             .collect::<Vec<_>>();
+        let param_types_ptr = param_types.as_ref()
+            .map(|types| types.as_ptr())
+            .unwrap_or(ptr::null());
         let param_lengths = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int)
                  .unwrap_or(0))
@@ -133,7 +136,7 @@ impl Connection {
                 self.internal_connection,
                 query.as_ptr(),
                 params_pointer.len() as libc::c_int,
-                ptr::null(),
+                param_types_ptr,
                 params_pointer.as_ptr(),
                 param_lengths.as_ptr(),
                 param_formats.as_ptr(),
@@ -167,7 +170,7 @@ impl Connection {
             U::columns().names(),
             param_placeholders,
         );
-        self.exec_sql_params(&sql, &params).map(Cursor::new)
+        self.exec_sql_params(&sql, &params, &None).map(Cursor::new)
     }
 
     pub fn insert_without_return<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
@@ -182,17 +185,17 @@ impl Connection {
             U::columns().names(),
             param_placeholders,
         );
-        self.exec_sql_params(&sql, &params).map(|r| r.rows_affected())
+        self.exec_sql_params(&sql, &params, &None).map(|r| r.rows_affected())
     }
 
-    fn prepare_query<T: Query>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>) {
+    fn prepare_query<T: Query>(&self, source: &T) -> (String, Vec<Option<Vec<u8>>>, Vec<u32>) {
         let mut query_builder = PgQueryBuilder::new(self);
         source.to_sql(&mut query_builder).unwrap();
-        (query_builder.sql, query_builder.binds)
+        (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
     fn execute_inner(&self, query: &str) -> Result<DbResult> {
-        self.exec_sql_params(query, &Vec::new())
+        self.exec_sql_params(query, &Vec::new(), &None)
     }
 
     pub fn last_error_message(&self) -> String {

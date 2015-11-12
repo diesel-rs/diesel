@@ -7,9 +7,13 @@ use types::{NativeSqlType, FromSql, ToSql, IsNull};
 use {Queriable, types};
 
 macro_rules! primitive_impls {
-    ($($Source:ident -> $Target:ty),+,) => {
+    ($($Source:ident -> ($Target:ty, $oid:expr)),+,) => {
         $(
-            impl NativeSqlType for types::$Source {}
+            impl NativeSqlType for types::$Source {
+                fn oid() -> u32 {
+                    $oid
+                }
+            }
 
             impl Queriable<types::$Source> for $Target {
                 type Row = Self;
@@ -39,23 +43,23 @@ macro_rules! primitive_impls {
 }
 
 primitive_impls! {
-    Bool -> bool,
+    Bool -> (bool, 16),
 
-    SmallSerial -> i16,
-    Serial -> i32,
-    BigSerial -> i64,
+    SmallSerial -> (i16, 21),
+    Serial -> (i32, 23),
+    BigSerial -> (i64, 20),
 
-    SmallInt -> i16,
-    Integer -> i32,
-    BigInt -> i64,
+    SmallInt -> (i16, 21),
+    Integer -> (i32, 23),
+    BigInt -> (i64, 20),
 
-    Float -> f32,
-    Double -> f64,
+    Float -> (f32, 700),
+    Double -> (f64, 701),
 
-    VarChar -> String,
-    Text -> String,
+    VarChar -> (String, 1043),
+    Text -> (String, 25),
 
-    Binary -> Vec<u8>,
+    Binary -> (Vec<u8>, 17),
 }
 
 impl FromSql<types::Bool> for bool {

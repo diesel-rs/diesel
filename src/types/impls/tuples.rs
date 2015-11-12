@@ -18,7 +18,11 @@ macro_rules! tuple_impls {
         }
     )+) => {
         $(
-            impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {}
+            impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {
+                fn oid() -> u32 {
+                    0
+                }
+            }
 
             impl<$($T),+,$($ST),+> FromSqlRow<($($ST),+)> for ($($T),+) where
                 $($T: FromSqlRow<$ST>),+,

@@ -25,7 +25,7 @@ impl<T, U> Expression for Bound<T, U> where
 
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         self.item.values_to_sql().map(|mut values| {
-            out.push_bound_value(values.pop().unwrap());
+            out.push_bound_value::<T>(values.pop().unwrap());
         })
     }
 }

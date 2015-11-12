@@ -4,7 +4,11 @@ use std::fmt;
 use std::io::Write;
 use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull};
 
-impl<T: NativeSqlType> NativeSqlType for Nullable<T> {}
+impl<T: NativeSqlType> NativeSqlType for Nullable<T> {
+    fn oid() -> u32 {
+        T::oid()
+    }
+}
 
 impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
     T: FromSql<ST>,

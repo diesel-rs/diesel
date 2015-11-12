@@ -1,10 +1,12 @@
 use connection::Connection;
 use super::{QueryBuilder, Binds, BuildQueryResult};
+use types::NativeSqlType;
 
 pub struct PgQueryBuilder<'a> {
     conn: &'a Connection,
     pub sql: String,
     pub binds: Binds,
+    pub bind_types: Vec<u32>,
     bind_idx: u32,
 }
 
@@ -14,6 +16,7 @@ impl<'a> PgQueryBuilder<'a> {
             conn: conn,
             sql: String::new(),
             binds: Vec::new(),
+            bind_types: Vec::new(),
             bind_idx: 0,
         }
     }
@@ -29,10 +32,11 @@ impl<'a> QueryBuilder for PgQueryBuilder<'a> {
         Ok(self.push_sql(&escaped_identifier))
     }
 
-    fn push_bound_value(&mut self, bind: Option<Vec<u8>>) {
+    fn push_bound_value<T: NativeSqlType>(&mut self, bind: Option<Vec<u8>>) {
         self.bind_idx += 1;
         let sql = format!("${}", self.bind_idx);
         self.push_sql(&sql);
         self.binds.push(bind);
+        self.bind_types.push(T::oid());
     }
 }
