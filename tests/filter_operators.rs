@@ -81,6 +81,28 @@ fn filter_by_between() {
         connection.query_all(users.filter(id.between(2..3))).as_vec());
 }
 
+#[test]
+fn filter_by_like() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    let data = vec![
+        NewUser::new("Sean Griffin", None),
+        NewUser::new("Tess Griffin", None),
+        NewUser::new("Jim", None),
+    ];
+    connection.insert_without_return(&users, &data).unwrap();
+
+    let sean = User::new(1, "Sean Griffin");
+    let tess = User::new(2, "Tess Griffin");
+    let jim = User::new(3, "Jim");
+    assert_eq!(vec![sean, tess],
+        connection.query_all(users.filter(name.like("%Griffin"))).as_vec());
+    assert_eq!(vec![jim],
+        connection.query_all(users.filter(name.not_like("%Griffin"))).as_vec());
+}
+
 trait TestResultHelpers<U> {
     fn as_vec(self) -> Vec<U>;
 }

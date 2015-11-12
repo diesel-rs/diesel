@@ -15,7 +15,7 @@ pub use self::sql_literal::SqlLiteral;
 
 use query_builder::{QueryBuilder, BuildQueryResult};
 use self::predicates::*;
-use types::{Bool, NativeSqlType};
+use types::{self, NativeSqlType};
 
 pub trait Expression: Sized {
     type SqlType: NativeSqlType;
@@ -56,10 +56,22 @@ pub trait Expression: Sized {
         NotBetween::new(self, And::new(other.start.as_expression(), other.end.as_expression()))
     }
 
-    fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self::Expression, T::Expression> where
-        Self: AsExpression<Bool>,
+    fn and<T: AsExpression<types::Bool>>(self, other: T) -> And<Self::Expression, T::Expression> where
+        Self: AsExpression<types::Bool>,
     {
         And::new(self.as_expression(), other.as_expression())
+    }
+
+    fn like<T: AsExpression<types::VarChar>>(self, other: T) -> Like<Self::Expression, T::Expression> where
+        Self: AsExpression<types::VarChar>,
+    {
+        Like::new(self.as_expression(), other.as_expression())
+    }
+
+    fn not_like<T: AsExpression<types::VarChar>>(self, other: T) -> NotLike<Self::Expression, T::Expression> where
+        Self: AsExpression<types::VarChar>,
+    {
+        NotLike::new(self.as_expression(), other.as_expression())
     }
 }
 
