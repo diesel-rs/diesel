@@ -2,6 +2,7 @@ pub mod array_comparison;
 pub mod bound;
 pub mod count;
 pub mod predicates;
+pub mod functions;
 
 mod max;
 mod sql_literal;

@@ -1,0 +1,48 @@
+#[macro_export]
+macro_rules! sql_function {
+    ($fn_name:ident, ($($arg_name:ident: $arg_type:ident),*) -> $return_type:ident) => {
+        #[allow(non_camel_case_types)]
+        pub struct $fn_name<$($arg_name),*> {
+            $($arg_name: $arg_name),*
+        }
+
+        #[allow(non_camel_case_types)]
+        pub fn $fn_name<$($arg_name),*>($($arg_name: $arg_name),*)
+            -> $fn_name<$(<$arg_name as $crate::expression::AsExpression<$crate::types::$arg_type>>::Expression),*>
+            where $($arg_name: $crate::expression::AsExpression<$crate::types::$arg_type>),+
+        {
+            $fn_name {
+                $($arg_name: $arg_name.as_expression()),+
+            }
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<$($arg_name),*> $crate::expression::Expression for $fn_name<$($arg_name),*> where
+            $($arg_name: $crate::expression::Expression),*
+        {
+            type SqlType = $crate::types::$return_type;
+
+            fn to_sql<T: $crate::query_builder::QueryBuilder>(&self, out: &mut T)
+                -> $crate::query_builder::BuildQueryResult {
+                    out.push_sql(concat!(stringify!($fn_name), "("));
+                    $(try!(self.$arg_name.to_sql(out));)*
+                    out.push_sql(")");
+                    Ok(())
+                }
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $fn_name<$($arg_name),*> where
+            $($arg_name: $crate::expression::SelectableExpression<QS>,)*
+            $fn_name<$($arg_name),*>: $crate::expression::Expression,
+        {
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<$($arg_name),*> $crate::expression::NonAggregate for $fn_name<$($arg_name),*> where
+            $($arg_name: $crate::expression::NonAggregate,)*
+            $fn_name<$($arg_name),*>: $crate::expression::Expression,
+        {
+        }
+    }
+}

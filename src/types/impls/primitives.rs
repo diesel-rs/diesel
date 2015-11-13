@@ -31,7 +31,23 @@ macro_rules! primitive_impls {
                 }
             }
 
+            impl<'a> AsExpression<types::$Source> for &'a $Target {
+                type Expression = Bound<types::$Source, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
             impl AsExpression<types::Nullable<types::$Source>> for $Target {
+                type Expression = <Self as AsExpression<types::$Source>>::Expression;
+
+                fn as_expression(self) -> Self::Expression {
+                    AsExpression::<types::$Source>::as_expression(self)
+                }
+            }
+
+            impl<'a> AsExpression<types::Nullable<types::$Source>> for &'a $Target {
                 type Expression = <Self as AsExpression<types::$Source>>::Expression;
 
                 fn as_expression(self) -> Self::Expression {
