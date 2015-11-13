@@ -1,6 +1,10 @@
 mod ord;
 mod impls;
 
+pub mod structs {
+    pub use super::impls::date_and_time::PgTimestamp;
+}
+
 pub use self::ord::SqlOrd;
 
 use row::Row;
@@ -24,6 +28,8 @@ use std::io::Write;
 #[derive(Clone, Copy)] pub struct Text;
 
 #[derive(Clone, Copy)] pub struct Binary;
+
+#[derive(Clone, Copy)] pub struct Timestamp;
 
 #[derive(Clone, Copy)] pub struct Nullable<T: NativeSqlType>(T);
 #[derive(Clone, Copy)] pub struct Array<T: NativeSqlType>(T);

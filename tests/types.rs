@@ -237,6 +237,32 @@ fn pg_array_containing_null() {
     assert_eq!(expected, data);
 }
 
+#[test]
+fn timestamp_from_sql() {
+    use yaqb::types::structs::PgTimestamp;
+
+    let query = "SELECT '2015-11-13 13:26:48.041057-07'::timestamp";
+    let expected_value = PgTimestamp(500736408041057);
+    assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
+    let query = "SELECT '2015-11-13 13:26:49.041057-07'::timestamp";
+    let expected_value = PgTimestamp(500736409041057);
+    assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
+}
+
+#[test]
+fn pg_timestamp_to_sql_timestamp() {
+    use yaqb::types::structs::PgTimestamp;
+
+    let expected_value = "'2015-11-13 13:26:48.041057-07'::timestamp";
+    let value = PgTimestamp(500736408041057);
+    assert!(query_to_sql_equality::<Timestamp, PgTimestamp>(expected_value, value));
+    let expected_value = "'2015-11-13 13:26:49.041057-07'::timestamp";
+    let value = PgTimestamp(500736409041057);
+    assert!(query_to_sql_equality::<Timestamp, PgTimestamp>(expected_value, value));
+    let expected_non_equal_value = "'2015-11-13 13:26:48.041057-07'::timestamp";
+    assert!(!query_to_sql_equality::<Timestamp, PgTimestamp>(expected_non_equal_value, value));
+}
+
 fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
     let connection = connection();
     let mut cursor = connection.query_sql::<T, U>(sql)

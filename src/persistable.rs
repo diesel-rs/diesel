@@ -1,6 +1,6 @@
 use expression::Expression;
 use query_source::{Table, Column};
-use types::{ValuesToSql, NativeSqlType};
+use types::{self, ValuesToSql, NativeSqlType};
 
 pub trait Insertable<'a, T: Table> {
     type Columns: InsertableColumns<T>;
@@ -67,4 +67,4 @@ macro_rules! as_bind_param {
     )+}
 }
 
-as_bind_param!(bool, i16, i32, i64, f32, f64, String);
+as_bind_param!(bool, i16, i32, i64, f32, f64, String, types::structs::PgTimestamp);
