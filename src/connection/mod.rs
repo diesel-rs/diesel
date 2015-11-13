@@ -11,7 +11,7 @@ use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns, AsBindParam};
 use query_builder::{AsQuery, Query};
 use query_builder::pg::PgQueryBuilder;
-use query_dsl::FilterDsl;
+use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Column, Queriable};
 use result::*;
 use self::pq_sys::*;
@@ -28,6 +28,7 @@ pub struct Connection {
 type PrimaryKey<T> = <T as Table>::PrimaryKey;
 type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
 type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
+type FindOutput<T, PK> = <T as FilterDsl<FindPredicate<T, PK>>>::Output;
 
 impl Connection {
     pub fn establish(database_url: &str) -> ConnectionResult<Connection> {
@@ -149,12 +150,13 @@ impl Connection {
 
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> Result<Option<U>> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
-        U: Queriable<<<T as FilterDsl<FindPredicate<T, PK>>>::Output as Query>::SqlType>,
+        FindOutput<T, PK>: LimitDsl,
+        U: Queriable<<<FindOutput<T, PK> as LimitDsl>::Output as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
         <PK as AsExpression<PkType<T>>>::Expression: NonAggregate,
     {
         let pk = source.primary_key();
-        self.query_one(source.filter(pk.eq(id)))
+        self.query_one(source.filter(pk.eq(id)).limit(1))
     }
 
     pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])

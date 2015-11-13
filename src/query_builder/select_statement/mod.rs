@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 use super::where_clause::NoWhereClause;
 use super::order_clause::NoOrderClause;
+use super::limit_clause::NoLimitClause;
 use types::NativeSqlType;
 
 #[derive(Debug, Clone, Copy)]
@@ -15,21 +16,24 @@ pub struct SelectStatement<
     From,
     Where = NoWhereClause,
     Order = NoOrderClause,
+    Limit = NoLimitClause,
 > {
     select: Select,
     from: From,
     where_clause: Where,
     order: Order,
+    limit: Limit,
     _marker: PhantomData<SqlType>,
 }
 
-impl<ST, S, F, W, O> SelectStatement<ST, S, F, W, O> {
-    pub fn new(select: S, from: F, where_clause: W, order: O) -> Self {
+impl<ST, S, F, W, O, L> SelectStatement<ST, S, F, W, O, L> {
+    pub fn new(select: S, from: F, where_clause: W, order: O, limit: L) -> Self {
         SelectStatement {
             select: select,
             from: from,
             where_clause: where_clause,
             order: order,
+            limit: limit,
             _marker: PhantomData,
         }
     }
@@ -37,23 +41,24 @@ impl<ST, S, F, W, O> SelectStatement<ST, S, F, W, O> {
 
 impl<ST, S, F> SelectStatement<ST, S, F> {
     pub fn simple(select: S, from: F) -> Self {
-        SelectStatement::new(select, from, NoWhereClause, NoOrderClause)
+        SelectStatement::new(select, from, NoWhereClause, NoOrderClause, NoLimitClause)
     }
 }
 
-impl<ST, S, F, W, O> Query for SelectStatement<ST, S, F, W, O> where
+impl<ST, S, F, W, O, L> Query for SelectStatement<ST, S, F, W, O, L> where
     ST: NativeSqlType,
-    SelectStatement<ST, S, F, W, O>: QueryFragment
+    SelectStatement<ST, S, F, W, O, L>: QueryFragment
 {
     type SqlType = ST;
 }
 
-impl<ST, S, F, W, O> QueryFragment for SelectStatement<ST, S, F, W, O> where
+impl<ST, S, F, W, O, L> QueryFragment for SelectStatement<ST, S, F, W, O, L> where
     ST: NativeSqlType,
     F: QuerySource,
     S: SelectableExpression<F, ST>,
     W: QueryFragment,
     O: QueryFragment,
+    L: QueryFragment,
 {
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
@@ -61,6 +66,7 @@ impl<ST, S, F, W, O> QueryFragment for SelectStatement<ST, S, F, W, O> where
         out.push_sql(" FROM ");
         try!(self.from.from_clause(out));
         try!(self.where_clause.to_sql(out));
-        self.order.to_sql(out)
+        try!(self.order.to_sql(out));
+        self.limit.to_sql(out)
     }
 }
