@@ -19,7 +19,7 @@ fn order_by_column() {
         User::new(1, "Sean"),
         User::new(2, "Tess"),
     ];
-    let data: Vec<_> = conn.query_all(users.order(name)).unwrap().collect();
+    let data: Vec<_> = users.order(name).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 
     conn.insert_without_return(&users, &[NewUser::new("Aaron", None)]).unwrap();
@@ -29,7 +29,7 @@ fn order_by_column() {
         User::new(1, "Sean"),
         User::new(2, "Tess"),
     ];
-    let data: Vec<_> = conn.query_all(users.order(name)).unwrap().collect();
+    let data: Vec<_> = users.order(name).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 }
 
@@ -51,7 +51,7 @@ fn order_by_descending_column() {
         User::new(1, "Sean"),
         User::new(3, "Jim"),
     ];
-    let data: Vec<_> = conn.query_all(users.order(name.desc())).unwrap().collect();
+    let data: Vec<_> = users.order(name.desc()).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 
     conn.insert_without_return(&users, &[NewUser::new("Aaron", None)]).unwrap();
@@ -61,6 +61,6 @@ fn order_by_descending_column() {
         User::new(3, "Jim"),
         User::new(4, "Aaron"),
     ];
-    let data: Vec<_> = conn.query_all(users.order(name.desc())).unwrap().collect();
+    let data: Vec<_> = users.order(name.desc()).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 }
