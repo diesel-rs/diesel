@@ -102,8 +102,8 @@ impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
         try!(out.write_i32::<BigEndian>(flags));
         try!(out.write_u32::<BigEndian>(ST::oid()));
         try!(out.write_i32::<BigEndian>(self.len() as i32));
-        let index_offset = 0;
-        try!(out.write_i32::<BigEndian>(index_offset));
+        let lower_bound = 1;
+        try!(out.write_i32::<BigEndian>(lower_bound));
 
         let mut buffer = Vec::new();
         for elem in self.iter() {
