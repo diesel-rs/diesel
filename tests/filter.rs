@@ -9,9 +9,9 @@ fn filter_by_int_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), connection.query_one(users.filter(id.eq(1))).unwrap());
-    assert_eq!(Some(tess), connection.query_one(users.filter(id.eq(2))).unwrap());
-    assert_eq!(None::<User>, connection.query_one(users.filter(id.eq(3))).unwrap());
+    assert_eq!(Some(sean), users.filter(id.eq(1)).first(&connection).unwrap());
+    assert_eq!(Some(tess), users.filter(id.eq(2)).first(&connection).unwrap());
+    assert_eq!(None::<User>, users.filter(id.eq(3)).first(&connection).unwrap());
 }
 
 #[test]
@@ -22,9 +22,9 @@ fn filter_by_string_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), connection.query_one(users.filter(name.eq("Sean"))).unwrap());
-    assert_eq!(Some(tess), connection.query_one(users.filter(name.eq("Tess"))).unwrap());
-    assert_eq!(None::<User>, connection.query_one(users.filter(name.eq("Jim"))).unwrap());
+    assert_eq!(Some(sean), users.filter(name.eq("Sean")).first(&connection).unwrap());
+    assert_eq!(Some(tess), users.filter(name.eq("Tess")).first(&connection).unwrap());
+    assert_eq!(None::<User>, users.filter(name.eq("Jim")).first(&connection).unwrap());
 }
 
 #[test]
@@ -44,9 +44,9 @@ fn filter_by_equality_on_nullable_columns() {
     let tess = User::with_hair_color(2, "Tess", "brown");
     let jim = User::with_hair_color(3, "Jim", "black");
     let source = users.filter(hair_color.eq("black"));
-    assert_eq!(vec![sean, jim], connection.query_all(source).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![sean, jim], source.load(&connection).unwrap().collect::<Vec<_>>());
     let source = users.filter(hair_color.eq("brown"));
-    assert_eq!(vec![tess], connection.query_all(source).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![tess], source.load(&connection).unwrap().collect::<Vec<_>>());
 }
 
 #[test]
@@ -64,11 +64,11 @@ fn filter_after_joining() {
     let tess_post = Post::new(2, 2, "World", None);
     let source = users::table.inner_join(posts::table);
     assert_eq!(Some((sean, seans_post)),
-        connection.query_one(source.filter(name.eq("Sean"))).unwrap());
+        source.filter(name.eq("Sean")).first(&connection).unwrap());
     assert_eq!(Some((tess, tess_post)),
-        connection.query_one(source.filter(name.eq("Tess"))).unwrap());
+        source.filter(name.eq("Tess")).first(&connection).unwrap());
     assert_eq!(None::<(User, Post)>,
-        connection.query_one(source.filter(name.eq("Jim"))).unwrap());
+        source.filter(name.eq("Jim")).first(&connection).unwrap());
 }
 
 #[test]
@@ -79,10 +79,10 @@ fn select_then_filter() {
 
     let source = users.select(name);
     assert_eq!(Some("Sean".to_string()),
-        connection.query_one(source.filter(name.eq("Sean"))).unwrap());
+        source.filter(name.eq("Sean")).first(&connection).unwrap());
     assert_eq!(Some("Tess".to_string()),
-        connection.query_one(source.filter(name.eq("Tess"))).unwrap());
-    assert_eq!(None::<String>, connection.query_one(source.filter(name.eq("Jim"))).unwrap());
+        source.filter(name.eq("Tess")).first(&connection).unwrap());
+    assert_eq!(None::<String>, source.filter(name.eq("Jim")).first(&connection).unwrap());
 }
 
 #[test]
@@ -95,10 +95,10 @@ fn filter_then_select() {
     connection.insert_without_return(&users, &data).unwrap();
 
     assert_eq!(Some("Sean".to_string()),
-        connection.query_one(users.filter(name.eq("Sean")).select(name)).unwrap());
+        users.filter(name.eq("Sean")).select(name).first(&connection).unwrap());
     assert_eq!(Some("Tess".to_string()),
-        connection.query_one(users.filter(name.eq("Tess")).select(name)).unwrap());
-    assert_eq!(None::<String>, connection.query_one(users.filter(name.eq("Jim")).select(name)).unwrap());
+        users.filter(name.eq("Tess")).select(name).first(&connection).unwrap());
+    assert_eq!(None::<String>, users.filter(name.eq("Jim")).select(name).first(&connection).unwrap());
 }
 
 #[test]
@@ -123,19 +123,19 @@ fn filter_on_multiple_columns() {
     let brown_haired_tess = User::with_hair_color(5, "Tess", "brown");
 
     let source = users.filter(name.eq("Sean").and(hair_color.eq("black")));
-    assert_eq!(vec![black_haired_sean], connection.query_all(source).unwrap()
+    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Sean").and(hair_color.eq("brown")));
-    assert_eq!(vec![brown_haired_sean], connection.query_all(source).unwrap()
+    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Tess").and(hair_color.eq("black")));
-    assert_eq!(vec![black_haired_tess], connection.query_all(source).unwrap()
+    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Tess").and(hair_color.eq("brown")));
-    assert_eq!(vec![brown_haired_tess], connection.query_all(source).unwrap()
+    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 }
 
@@ -161,19 +161,19 @@ fn filter_called_twice_means_same_thing_as_and() {
     let brown_haired_tess = User::with_hair_color(5, "Tess", "brown");
 
     let source = users.filter(name.eq("Sean")).filter(hair_color.eq("black"));
-    assert_eq!(vec![black_haired_sean], connection.query_all(source).unwrap()
+    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Sean")).filter(hair_color.eq("brown"));
-    assert_eq!(vec![brown_haired_sean], connection.query_all(source).unwrap()
+    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Tess")).filter(hair_color.eq("black"));
-    assert_eq!(vec![black_haired_tess], connection.query_all(source).unwrap()
+    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 
     let source = users.filter(name.eq("Tess")).filter(hair_color.eq("brown"));
-    assert_eq!(vec![brown_haired_tess], connection.query_all(source).unwrap()
+    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap()
         .collect::<Vec<_>>());
 }
 
@@ -194,6 +194,6 @@ fn filter_on_column_equality() {
 
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.filter(x.eq(y));
-    let data: Vec<_> = connection.query_all(query).unwrap().collect();
+    let data: Vec<_> = query.load(&connection).unwrap().collect();
     assert_eq!(expected_data, data);
 }

@@ -12,7 +12,7 @@ fn selecting_basic_data() {
         (1, "Sean".to_string(), None::<String>),
         (2, "Tess".to_string(), None::<String>),
      ];
-    let actual_data: Vec<_> = connection.query_all(users::table)
+    let actual_data: Vec<_> = users::table.load(&connection)
         .unwrap().collect();
     assert_eq!(expected_data, actual_data);
 }
@@ -28,7 +28,7 @@ fn selecting_a_struct() {
         User::new(1, "Sean"),
         User::new(2, "Tess"),
     ];
-    let actual_users: Vec<_> = connection.query_all(users::table)
+    let actual_users: Vec<_> = users::table.load(&connection)
         .unwrap().collect();
     assert_eq!(expected_users, actual_users);
 }
@@ -44,9 +44,9 @@ fn with_safe_select() {
 
     let select_id = users.select(id);
     let select_name = users.select(name);
-    let ids: Vec<_> = connection.query_all(select_id)
+    let ids: Vec<_> = select_id.load(&connection)
         .unwrap().collect();
-    let names: Vec<String> = connection.query_all(select_name)
+    let names: Vec<String> = select_name.load(&connection)
         .unwrap().collect();
 
     assert_eq!(vec![1, 2], ids);
@@ -67,7 +67,7 @@ fn selecting_multiple_columns() {
         ("Jim".to_string(), Some("Black".to_string())),
         ("Bob".to_string(), Some("Brown".to_string())),
     ];
-    let actual_data: Vec<_> = connection.query_all(source)
+    let actual_data: Vec<_> = source.load(&connection)
         .unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
@@ -87,7 +87,7 @@ fn selecting_multiple_columns_into_struct() {
         NewUser::new("Jim", Some("Black")),
         NewUser::new("Bob", Some("Brown")),
     ];
-    let actual_data: Vec<_> = connection.query_all(source)
+    let actual_data: Vec<_> = source.load(&connection)
         .unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
@@ -122,7 +122,7 @@ fn selecting_nullable_followed_by_non_null() {
 
     let source = users.select((hair_color, name));
     let expected_data = vec![(None::<String>, "Sean".to_string())];
-    let data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, data);
 }
@@ -138,7 +138,7 @@ fn selecting_expression_with_bind_param() {
 
     let source = users.select(name.eq("Sean".to_string()));
     let expected_data = vec![true, false];
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -163,12 +163,12 @@ fn selecting_columns_and_tables_with_reserved_names() {
         .unwrap();
 
     let expected_data = vec![(1, 1), (2, 2), (3, 3)];
-    let actual_data: Vec<(i32, i32)> = connection.query_all(select)
+    let actual_data: Vec<(i32, i32)> = select.load(&connection)
         .unwrap().collect();
     assert_eq!(expected_data, actual_data);
 
     let expected_data = vec![1, 2, 3];
-    let actual_data: Vec<i32> = connection.query_all(select.select(join))
+    let actual_data: Vec<i32> = select.select(join).load(&connection)
         .unwrap().collect();
     assert_eq!(expected_data, actual_data);
 }

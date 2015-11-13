@@ -1,22 +1,22 @@
 use connection::{Connection, Cursor};
-use query_builder::AsQuery;
+use query_builder::{Query, AsQuery};
 use query_source::Queriable;
 use result::Result;
-use types::NativeSqlType;
+use super::LimitDsl;
 
-pub trait LoadDsl {
-    type SqlType: NativeSqlType;
-
+pub trait LoadDsl: AsQuery + LimitDsl + Sized {
     fn load<U>(self, conn: &Connection) -> Result<Cursor<Self::SqlType, U>> where
-        U: Queriable<Self::SqlType>;
-}
-
-impl<T: AsQuery> LoadDsl for T {
-    type SqlType = <T as AsQuery>::SqlType;
-
-    fn load<U>(self, conn: &Connection) -> Result<Cursor<Self::SqlType, U>> where
-        U: Queriable<Self::SqlType>,
+        U: Queriable<Self::SqlType>
     {
         conn.query_all(self)
     }
+
+    fn first<U>(self, conn: &Connection) -> Result<Option<U>> where
+        U: Queriable<<<Self as LimitDsl>::Output as Query>::SqlType>
+    {
+        conn.query_one(self.limit(1))
+    }
+}
+
+impl<T: AsQuery + LimitDsl> LoadDsl for T {
 }

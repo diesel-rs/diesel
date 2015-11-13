@@ -21,7 +21,7 @@ fn belongs_to() {
 
     let expected_data = vec![(seans_post, sean), (tess_post, tess)];
     let source = posts::table.inner_join(users::table);
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -44,12 +44,12 @@ fn select_single_from_join() {
     let select_title = source.select(posts::title);
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
-    let actual_names: Vec<String> = connection.query_all(select_name).unwrap().collect();
+    let actual_names: Vec<String> = select_name.load(&connection).unwrap().collect();
 
     assert_eq!(expected_names, actual_names);
 
     let expected_titles = vec!["Hello".to_string(), "World".to_string()];
-    let actual_titles: Vec<String> = connection.query_all(select_title).unwrap().collect();
+    let actual_titles: Vec<String> = select_title.load(&connection).unwrap().collect();
 
     assert_eq!(expected_titles, actual_titles);
 }
@@ -74,7 +74,7 @@ fn select_multiple_from_join() {
         ("Sean".to_string(), "Hello".to_string()),
         ("Tess".to_string(), "World".to_string()),
     ];
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -93,7 +93,7 @@ fn select_only_one_side_of_join() {
     let source = users::table.inner_join(posts::table).select(users::star);
 
     let expected_data = vec![User::new(2, "Tess")];
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -122,7 +122,7 @@ fn left_outer_joins() {
         (tess, None)
     ];
     let source = users::table.left_outer_join(posts::table);
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -146,7 +146,7 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         ("Tess".to_string(), None),
     ];
     let source = users::table.left_outer_join(posts::table).select((users::name, posts::title));
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -171,7 +171,7 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
     ];
 
     let source = users::table.left_outer_join(posts::table).select((posts::title, posts::body));
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -198,7 +198,7 @@ fn select_complex_from_left_join() {
     ];
 
     let source = users::table.left_outer_join(posts::table).select((users::star, (posts::title, posts::body)));
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -225,7 +225,7 @@ fn select_right_side_with_nullable_column_first() {
     ];
 
     let source = users::table.left_outer_join(posts::table).select((users::star, (posts::body, posts::title)));
-    let actual_data: Vec<_> = connection.query_all(source).unwrap().collect();
+    let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
 }
