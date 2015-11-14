@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate yaqb;
+extern crate quickcheck;
+#[macro_use] extern crate yaqb;
 
 mod expressions;
 mod filter;
@@ -15,3 +15,4 @@ mod schema;
 mod select;
 mod transactions;
 mod types;
+mod types_roundtrip;

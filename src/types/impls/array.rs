@@ -37,6 +37,11 @@ impl<T, ST> FromSql<Array<ST>> for Vec<T> where
         let num_dimensions = try!(bytes.read_i32::<BigEndian>());
         let has_null = try!(bytes.read_i32::<BigEndian>()) != 0;
         let _oid = try!(bytes.read_i32::<BigEndian>());
+
+        if num_dimensions == 0 {
+            return Ok(Vec::new())
+        }
+
         let num_elements = try!(bytes.read_i32::<BigEndian>());
         let lower_bound = try!(bytes.read_i32::<BigEndian>());
 

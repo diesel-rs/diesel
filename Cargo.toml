@@ -10,6 +10,7 @@ byteorder = "0.3.*"
 
 [dev-dependencies]
 compiletest_rs = "*"
+quickcheck = "*"
 
 [[test]]
 name = "compile_tests"
