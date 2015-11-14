@@ -2,6 +2,7 @@ use quickcheck::quickcheck;
 
 use schema::connection;
 use yaqb::*;
+use yaqb::result::Error;
 use yaqb::types::{NativeSqlType, ToSql, Nullable, Array};
 
 fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
@@ -10,9 +11,13 @@ fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
 {
     let connection = connection();
     let query = format!("SELECT $1::{}", type_name);
-    let round_trip_value = connection.query_sql_params::<ST, T, ST, T>(&query, &value)
-        .unwrap().nth(0).unwrap();
-    value == round_trip_value
+    let result = connection.query_sql_params::<ST, T, ST, T>(&query, &value);
+    match result {
+        Ok(mut val) => value == val.nth(0).unwrap(),
+        Err(Error::DatabaseError(msg)) =>
+            &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n",
+        _ => false,
+    }
 }
 
 macro_rules! test_round_trip {
@@ -44,9 +49,8 @@ test_round_trip!(i32_roundtrips, Integer, i32, "int4");
 test_round_trip!(i64_roundtrips, BigInt, i64, "int8");
 test_round_trip!(f32_roundtrips, Float, f32, "real");
 test_round_trip!(f64_roundtrips, Double, f64, "double precision");
-// FIXME: Deal with nul bytes
-// test_round_trip!(string_roundtrips, VarChar, String, "varchar");
-// test_round_trip!(text_roundtrips, Text, String, "text");
+test_round_trip!(string_roundtrips, VarChar, String, "varchar");
+test_round_trip!(text_roundtrips, Text, String, "text");
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>, "bytea");
 
 #[test]
