@@ -75,3 +75,26 @@ fn timestamp_roundtrip() {
     quickcheck(option_round_trip as fn(Option<i64>) -> bool);
     quickcheck(vec_round_trip as fn(Vec<i64>) -> bool);
 }
+
+#[test]
+fn date_roundtrip() {
+    use yaqb::types::structs::PgDate;
+
+    fn round_trip(val: i32) -> bool {
+        test_type_round_trips::<types::Date, _>(PgDate(val), "date")
+    }
+
+    fn option_round_trip(val: Option<i32>) -> bool {
+        let val = val.map(PgDate);
+        test_type_round_trips::<Nullable<types::Date>, _>(val, "date")
+    }
+
+    fn vec_round_trip(val: Vec<i32>) -> bool {
+        let val: Vec<_> = val.into_iter().map(PgDate).collect();
+        test_type_round_trips::<Array<types::Date>, _>(val, "date[]")
+    }
+
+    quickcheck(round_trip as fn(i32) -> bool);
+    quickcheck(option_round_trip as fn(Option<i32>) -> bool);
+    quickcheck(vec_round_trip as fn(Vec<i32>) -> bool);
+}
