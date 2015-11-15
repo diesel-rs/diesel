@@ -1,4 +1,5 @@
 mod date_and_time;
+mod ops;
 
 use schema::{connection, NewUser, setup_users_table};
 use schema::users::dsl::*;

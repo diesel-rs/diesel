@@ -121,7 +121,10 @@ macro_rules! table {
                     fn qualified_name(&self) -> String {
                         format!("{}.{}", table.name(), stringify!($column_name))
                     }
-                })+
+                }
+
+                addable_expr!($column_name);
+                )+
             }
         }
     }

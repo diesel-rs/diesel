@@ -1,8 +1,9 @@
 pub mod array_comparison;
 pub mod bound;
 pub mod count;
-pub mod predicates;
 pub mod functions;
+pub mod ops;
+pub mod predicates;
 
 mod max;
 mod sql_literal;
