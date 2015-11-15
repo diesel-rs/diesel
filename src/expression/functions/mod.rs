@@ -46,3 +46,29 @@ macro_rules! sql_function {
         }
     }
 }
+
+#[macro_export]
+macro_rules! no_arg_sql_function {
+    ($type_name:ident, $return_type:ident) => {
+        #[allow(non_camel_case_types)]
+        pub struct $type_name;
+
+        impl $crate::expression::Expression for $type_name {
+            type SqlType = $crate::types::$return_type;
+
+            fn to_sql<T: $crate::query_builder::QueryBuilder>(&self, out: &mut T)
+                -> $crate::query_builder::BuildQueryResult {
+                    out.push_sql(concat!(stringify!($type_name), "()"));
+                    Ok(())
+                }
+        }
+
+        impl<QS> $crate::expression::SelectableExpression<QS> for $type_name {
+        }
+
+        impl $crate::expression::NonAggregate for $type_name {
+        }
+    }
+}
+
+pub mod date_and_time;

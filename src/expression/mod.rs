@@ -9,9 +9,10 @@ mod sql_literal;
 mod ordering;
 
 pub mod dsl {
-    pub use super::count::{count, count_star};
-    pub use super::max::max;
     pub use super::array_comparison::any;
+    pub use super::count::{count, count_star};
+    pub use super::functions::date_and_time::{now, date};
+    pub use super::max::max;
 }
 
 pub use self::dsl::*;
