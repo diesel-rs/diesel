@@ -175,7 +175,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &None).map(Cursor::new)
     }
 
-    pub fn insert_without_return<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
+    pub fn insert_returning_count<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
         -> Result<usize> where
         T: Table,
         U: Insertable<'a, T>,

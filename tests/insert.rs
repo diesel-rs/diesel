@@ -74,7 +74,7 @@ fn insert_with_defaults_not_provided() {
 }
 
 #[test]
-fn insert_without_return_returns_number_of_rows_inserted() {
+fn insert_returning_count_returns_number_of_rows_inserted() {
     use schema::users::table as users;
     let connection = connection();
     connection.execute("CREATE TABLE users (
@@ -87,8 +87,8 @@ fn insert_without_return_returns_number_of_rows_inserted() {
         BaldUser { name: "Tess".to_string() },
     ];
     let second_new_users = [BaldUser { name: "Guy".to_string() }];
-    let count = connection.insert_without_return(&users, &new_users).unwrap();
-    let second_count = connection.insert_without_return(&users, &second_new_users).unwrap();
+    let count = connection.insert_returning_count(&users, &new_users).unwrap();
+    let second_count = connection.insert_returning_count(&users, &second_new_users).unwrap();
 
     assert_eq!(2, count);
     assert_eq!(1, second_count);

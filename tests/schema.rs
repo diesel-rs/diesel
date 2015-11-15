@@ -142,6 +142,6 @@ pub fn connection_with_sean_and_tess_in_users_table() -> Connection {
     let connection = connection();
     setup_users_table(&connection);
     let data = [NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    connection.insert_without_return(&users::table, &data).unwrap();
+    connection.insert_returning_count(&users::table, &data).unwrap();
     connection
 }
