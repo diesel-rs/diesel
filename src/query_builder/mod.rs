@@ -4,8 +4,10 @@ mod limit_clause;
 mod order_clause;
 mod select_statement;
 mod where_clause;
+mod update_statement;
 
 pub use self::select_statement::SelectStatement;
+pub use self::update_statement::{update, IncompleteUpdateStatement, Changeset};
 
 use std::error::Error;
 use types::NativeSqlType;

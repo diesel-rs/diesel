@@ -57,3 +57,17 @@ infix_predicate!(LtEq, " <= ");
 infix_predicate!(NotBetween, " NOT BETWEEN ");
 infix_predicate!(NotEq, " != ");
 infix_predicate!(NotLike, " NOT LIKE ");
+
+use query_source::Column;
+
+impl<T, U> Changeset for Eq<T, U> where
+    T: Column,
+    U: Expression,
+    Eq<T, U>: Expression,
+{
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        try!(out.push_identifier(&self.left.name()));
+        out.push_sql(" = ");
+        Expression::to_sql(&self.right, out)
+    }
+}
