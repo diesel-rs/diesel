@@ -1,22 +1,23 @@
 use expression::{Expression, NonAggregate};
-use query_builder::{Query, AsQuery};
-use query_source::QuerySource;
+use query_builder::AsQuery;
+use query_source::filter::FilteredQuerySource;
 use types::Bool;
 
+pub type FilterOutput<T, P> = <T as FilterDsl<P>>::Output;
+
 pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {
-    type Output: Query;
+    type Output: AsQuery;
 
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
 
 impl<T, Predicate> FilterDsl<Predicate> for T where
     Predicate: Expression<SqlType=Bool> + NonAggregate,
-    T: QuerySource + AsQuery,
-    T::Query: FilterDsl<Predicate>,
+    FilteredQuerySource<T, Predicate>: AsQuery,
 {
-    type Output = <T::Query as FilterDsl<Predicate>>::Output;
+    type Output = FilteredQuerySource<Self, Predicate>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
-        self.as_query().filter(predicate)
+        FilteredQuerySource::new(self, predicate)
     }
 }

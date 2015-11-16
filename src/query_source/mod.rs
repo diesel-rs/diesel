@@ -1,3 +1,4 @@
+pub mod filter;
 mod joins;
 
 use expression::{Expression, SelectableExpression, NonAggregate};
