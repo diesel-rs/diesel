@@ -4,9 +4,9 @@ pub use self::changeset::Changeset;
 
 use expression::Expression;
 use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
-use query_source::QuerySource;
+use query_source::Table;
 
-pub fn update<T: QuerySource>(source: T) -> IncompleteUpdateStatement<T> {
+pub fn update<T: Table>(source: T) -> IncompleteUpdateStatement<T> {
     IncompleteUpdateStatement(source)
 }
 
@@ -30,8 +30,8 @@ pub struct UpdateStatement<T, U> {
 }
 
 impl<T, U> QueryFragment for UpdateStatement<T, U> where
-    T: QuerySource,
-    U: changeset::Changeset,
+    T: Table,
+    U: changeset::Changeset<Target=T>,
 {
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         out.push_sql("UPDATE ");

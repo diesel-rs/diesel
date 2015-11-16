@@ -62,9 +62,11 @@ use query_source::Column;
 
 impl<T, U> Changeset for Eq<T, U> where
     T: Column,
-    U: Expression,
+    U: SelectableExpression<T::Table>,
     Eq<T, U>: Expression,
 {
+    type Target = T::Table;
+
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         try!(out.push_identifier(&self.left.name()));
         out.push_sql(" = ");
