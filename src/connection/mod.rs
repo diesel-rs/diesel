@@ -128,9 +128,7 @@ impl Connection {
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int)
                  .unwrap_or(0))
             .collect::<Vec<_>>();
-        let param_formats = param_data.iter()
-            .map(|_| 1 as libc::c_int)
-            .collect::<Vec<_>>();
+        let param_formats = vec![1; param_data.len()];
 
         let internal_res = unsafe {
             PQexecParams(
