@@ -1,4 +1,7 @@
 use Queriable;
+use expression::*;
+use expression::bound::Bound;
+use persistable::AsBindParam;
 use std::error::Error;
 use std::fmt;
 use std::io::Write;
@@ -44,6 +47,18 @@ impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
         } else {
             Ok(IsNull::Yes)
         }
+    }
+}
+
+impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
+    Option<T>: ToSql<Nullable<ST>>,
+    T: AsBindParam,
+    ST: NativeSqlType,
+{
+    type Expression = Bound<Nullable<ST>, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
     }
 }
 
