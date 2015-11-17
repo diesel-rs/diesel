@@ -54,3 +54,11 @@ pub trait Table: QuerySource + AsQuery + Sized {
         LeftOuterJoinSource::new(self, other)
     }
 }
+
+impl<T: Table> UpdateTarget for T {
+    type Table = Self;
+
+    fn where_clause<B: QueryBuilder>(&self, _out: &mut B) -> BuildQueryResult {
+        Ok(())
+    }
+}

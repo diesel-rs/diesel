@@ -1,5 +1,5 @@
 use query_builder::{QueryBuilder, BuildQueryResult};
-use query_source::Table;
+use query_source::QuerySource;
 
 pub trait AsChangeset {
     type Changeset: Changeset;
@@ -8,7 +8,7 @@ pub trait AsChangeset {
 }
 
 pub trait Changeset {
-    type Target: Table;
+    type Target: QuerySource;
 
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult;
 }

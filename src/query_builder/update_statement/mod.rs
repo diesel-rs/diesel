@@ -1,12 +1,13 @@
-mod changeset;
+pub mod changeset;
+mod target;
 
 pub use self::changeset::Changeset;
+pub use self::target::UpdateTarget;
 
 use expression::Expression;
 use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
-use query_source::Table;
 
-pub fn update<T: Table>(source: T) -> IncompleteUpdateStatement<T> {
+pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
     IncompleteUpdateStatement(source)
 }
 
@@ -30,13 +31,14 @@ pub struct UpdateStatement<T, U> {
 }
 
 impl<T, U> QueryFragment for UpdateStatement<T, U> where
-    T: Table,
-    U: changeset::Changeset<Target=T>,
+    T: UpdateTarget,
+    U: changeset::Changeset<Target=T::Table>,
 {
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         out.push_sql("UPDATE ");
         try!(self.target.from_clause(out));
         out.push_sql(" SET ");
-        self.values.to_sql(out)
+        try!(self.values.to_sql(out));
+        self.target.where_clause(out)
     }
 }
