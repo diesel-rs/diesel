@@ -65,6 +65,11 @@ impl Connection {
         }
     }
 
+    pub fn begin_test_transaction(&self) -> Result<usize> {
+        assert_eq!(self.transaction_depth.get(), 0);
+        self.begin_transaction()
+    }
+
     pub fn test_transaction<T, E, F>(&self, f: F) -> T where
         F: FnOnce() -> result::Result<T, E>,
     {

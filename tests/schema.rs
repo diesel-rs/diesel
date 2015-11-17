@@ -128,7 +128,7 @@ pub fn setup_posts_table(connection: &Connection) {
 
 pub fn connection() -> Connection {
     let result = connection_without_transaction();
-    result.execute("BEGIN").unwrap();
+    result.begin_test_transaction().unwrap();
     result
 }
 
