@@ -5,6 +5,7 @@ use query_dsl::{FilterDsl, FilterOutput};
 use query_source::QuerySource;
 use types::Bool;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FilteredQuerySource<Source, Predicate> {
     source: Source,
     predicate: Predicate,
@@ -63,5 +64,9 @@ impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> 
     fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql(" WHERE ");
         self.predicate.to_sql(out)
+    }
+
+    fn table(&self) -> &Self::Table {
+        self.source.table()
     }
 }

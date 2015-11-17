@@ -7,7 +7,7 @@ mod where_clause;
 pub mod update_statement;
 
 pub use self::select_statement::SelectStatement;
-pub use self::update_statement::{update, IncompleteUpdateStatement, Changeset, UpdateTarget};
+pub use self::update_statement::{update, IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
 
 use std::error::Error;
 use types::NativeSqlType;

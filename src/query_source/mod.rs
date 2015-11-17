@@ -61,4 +61,8 @@ impl<T: Table> UpdateTarget for T {
     fn where_clause<B: QueryBuilder>(&self, _out: &mut B) -> BuildQueryResult {
         Ok(())
     }
+
+    fn table(&self) -> &Self::Table {
+        self
+    }
 }

@@ -1,7 +1,7 @@
 pub mod changeset;
-mod target;
+pub mod target;
 
-pub use self::changeset::Changeset;
+pub use self::changeset::{Changeset, AsChangeset};
 pub use self::target::UpdateTarget;
 
 use expression::Expression;
@@ -17,7 +17,7 @@ pub struct IncompleteUpdateStatement<T>(T);
 impl<T> IncompleteUpdateStatement<T> {
     pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where
         U: changeset::AsChangeset,
-        UpdateStatement<T, U>: QueryFragment,
+        UpdateStatement<T, U::Changeset>: QueryFragment,
     {
         UpdateStatement {
             target: self.0,
