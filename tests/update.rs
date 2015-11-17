@@ -75,3 +75,15 @@ fn test_updating_multiple_columns() {
     let user = connection.find(users, 1).unwrap();
     assert_eq!(Some(expected_user), user);
 }
+
+#[test]
+fn update_returning_struct() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let command = update(users.filter(id.eq(1))).set(hair_color.eq("black"));
+    let user: Option<User> = connection.query_one(command).unwrap();
+    let expected_user = User::with_hair_color(1, "Sean", "black");
+
+    assert_eq!(Some(expected_user), user);
+}

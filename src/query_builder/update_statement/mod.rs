@@ -5,7 +5,8 @@ pub use self::changeset::Changeset;
 pub use self::target::UpdateTarget;
 
 use expression::Expression;
-use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
+use query_source::Table;
 
 pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
     IncompleteUpdateStatement(source)
@@ -41,4 +42,34 @@ impl<T, U> QueryFragment for UpdateStatement<T, U> where
         try!(self.values.to_sql(out));
         self.target.where_clause(out)
     }
+}
+
+impl<T, U> AsQuery for UpdateStatement<T, U> where
+    UpdateQuery<T, U>: Query,
+{
+    type SqlType = <Self::Query as Query>::SqlType;
+    type Query = UpdateQuery<T, U>;
+
+    fn as_query(self) -> Self::Query {
+        UpdateQuery(self)
+    }
+}
+
+pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
+
+impl<T, U> QueryFragment for UpdateQuery<T, U> where
+    UpdateStatement<T, U>: QueryFragment,
+{
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        try!(self.0.to_sql(out));
+        out.push_sql(" RETURNING *");
+        Ok(())
+    }
+}
+
+impl<T, U> Query for UpdateQuery<T, U> where
+    UpdateQuery<T, U>: QueryFragment,
+    T: UpdateTarget,
+{
+    type SqlType = <<T::Table as Table>::Star as Expression>::SqlType;
 }
