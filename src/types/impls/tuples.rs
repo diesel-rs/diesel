@@ -1,6 +1,7 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{AsBindParam, InsertableColumns};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
+use query_source::QuerySource;
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
@@ -119,6 +120,22 @@ macro_rules! tuple_impls {
 
                 fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
                     e!([$(self.$idx.as_bind_param_for_insert(idx)),+].join(","))
+                }
+            }
+
+            impl<Target, $($T: Changeset<Target=Target>),+> Changeset for ($($T),+) where
+                Target: QuerySource,
+            {
+                type Target = Target;
+
+                fn to_sql<Builder: QueryBuilder>(&self, out: &mut Builder) -> BuildQueryResult {
+                    $(
+                        if e!($idx) != 0 {
+                            out.push_sql(", ");
+                        }
+                        try!(e!(self.$idx.to_sql(out)));
+                    )+
+                    Ok(())
                 }
             }
         )+

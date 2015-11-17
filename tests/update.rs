@@ -58,3 +58,20 @@ fn test_updating_nullable_column() {
         .unwrap().unwrap();
     assert_eq!(None, data);
 }
+
+#[test]
+fn test_updating_multiple_columns() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let command = update(users.filter(id.eq(1))).set((
+        name.eq("Jim"),
+        hair_color.eq(Some("black")),
+    ));
+    connection.execute_returning_count(&command).unwrap();
+
+    let expected_user = User::with_hair_color(1, "Jim", "black");
+    let user = connection.find(users, 1).unwrap();
+    assert_eq!(Some(expected_user), user);
+}
