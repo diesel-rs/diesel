@@ -83,6 +83,14 @@ impl<'a> AsExpression<types::VarChar> for &'a str {
     }
 }
 
+impl<'a, 'b: 'a> AsExpression<types::VarChar> for &'a &'b str {
+    type Expression = Bound<types::VarChar, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
 impl<'a> AsExpression<types::Nullable<types::VarChar>> for &'a str {
     type Expression = <Self as AsExpression<types::VarChar>>::Expression;
 

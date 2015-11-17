@@ -1,5 +1,5 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
-use persistable::{AsBindParam, InsertableColumns};
+use persistable::InsertableColumns;
 use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
 use query_source::QuerySource;
 use row::Row;
@@ -81,6 +81,17 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
+
+                fn to_insert_sql<Builder: QueryBuilder>(&self, out: &mut Builder)
+                -> BuildQueryResult {
+                    $(
+                        if e!($idx) != 0 {
+                            out.push_sql(", ");
+                        }
+                        try!(e!(self.$idx.to_insert_sql(out)));
+                    )+
+                    Ok(())
+                }
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {
@@ -111,16 +122,6 @@ macro_rules! tuple_impls {
                 $($T: SelectableExpression<QS, Nullable<$ST>>),+,
                 ($($T),+): Expression,
             {
-            }
-
-            impl<$($T: AsBindParam),+> AsBindParam for ($($T),+) {
-                fn as_bind_param(&self, idx: &mut usize) -> String {
-                    e!([$(self.$idx.as_bind_param(idx)),+].join(","))
-                }
-
-                fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
-                    e!([$(self.$idx.as_bind_param_for_insert(idx)),+].join(","))
-                }
             }
 
             impl<Target, $($T: Changeset<Target=Target>),+> Changeset for ($($T),+) where

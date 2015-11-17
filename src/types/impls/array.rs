@@ -5,7 +5,6 @@ use std::error::Error;
 use std::io::Write;
 
 use Queriable;
-use persistable::AsBindParam;
 use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, Array, IsNull};
 
@@ -129,17 +128,5 @@ impl<ST, T> ToSql<Array<ST>> for Vec<T> where
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         (&self as &[T]).to_sql(out)
-    }
-}
-
-impl<'a, T> AsBindParam for &'a [T] {
-    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
-        self.as_bind_param(idx)
-    }
-}
-
-impl<T> AsBindParam for Vec<T> {
-    fn as_bind_param_for_insert(&self, idx: &mut usize) -> String {
-        self.as_bind_param(idx)
     }
 }

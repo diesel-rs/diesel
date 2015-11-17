@@ -27,6 +27,9 @@ pub trait Expression: Sized {
     type SqlType: NativeSqlType;
 
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+    fn to_insert_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+        self.to_sql(out)
+    }
 
     fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
         Eq::new(self, other.as_expression())

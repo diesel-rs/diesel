@@ -175,14 +175,22 @@ macro_rules! insertable {
             for $Struct
         {
             type Columns = ($($table_mod::$field_name),+);
-            type Values = ($(&'insert $Type),+);
+            type Values = ($(
+                <&'insert $Type as $crate::expression::AsExpression<
+                    <$table_mod::$field_name as $crate::expression::Expression>::SqlType
+                >>::Expression
+            ),+);
 
             fn columns() -> Self::Columns {
                 ($($table_mod::$field_name),+)
             }
 
             fn values(&'insert self) -> Self::Values {
-                ($(&self.$field_name),+)
+                use $crate::expression::AsExpression;
+                ($(AsExpression::<
+                   <$table_mod::$field_name as $crate::expression::Expression>::SqlType>
+                   ::as_expression(&self.$field_name)
+               ),+)
             }
         }
     };

@@ -9,6 +9,7 @@ pub mod update_statement;
 pub use self::select_statement::SelectStatement;
 pub use self::update_statement::{update, IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
 
+use expression::Expression;
 use std::error::Error;
 use types::NativeSqlType;
 
@@ -27,6 +28,12 @@ pub trait Query: QueryFragment {
 
 pub trait QueryFragment {
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+}
+
+impl<T: Expression> QueryFragment for T {
+    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+        Expression::to_sql(self, out)
+    }
 }
 
 pub trait AsQuery {
