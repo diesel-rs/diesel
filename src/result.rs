@@ -44,6 +44,15 @@ impl<E> From<Error> for TransactionError<E> {
     }
 }
 
+impl From<TransactionError<Error>> for Error {
+    fn from(e: TransactionError<Error>) -> Self {
+        match e {
+            TransactionError::CouldntCreateTransaction(e) => e,
+            TransactionError::UserReturnedError(e) => e,
+        }
+    }
+}
+
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
