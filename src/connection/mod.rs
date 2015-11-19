@@ -163,10 +163,10 @@ impl Connection {
     }
 
     pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])
-        -> Result<Cursor<T::SqlType, Out>> where
+        -> Result<Cursor<<T::Star as Expression>::SqlType, Out>> where
         T: Table,
         U: Insertable<'a, T>,
-        Out: Queriable<T::SqlType>,
+        Out: Queriable<<T::Star as Expression>::SqlType>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
