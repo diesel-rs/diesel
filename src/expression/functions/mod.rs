@@ -2,6 +2,7 @@
 macro_rules! sql_function {
     ($fn_name:ident, ($($arg_name:ident: $arg_type:ident),*) -> $return_type:ident) => {
         #[allow(non_camel_case_types)]
+        #[derive(Debug, Clone, Copy)]
         pub struct $fn_name<$($arg_name),*> {
             $($arg_name: $arg_name),*
         }
