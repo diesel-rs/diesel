@@ -2,13 +2,13 @@ use expression::Expression;
 use query_source::{Table, Column};
 use types::NativeSqlType;
 
-pub trait Insertable<'a, T: Table> {
+pub trait Insertable<T: Table> {
     type Columns: InsertableColumns<T>;
     type Values: Expression<SqlType=<Self::Columns as InsertableColumns<T>>::SqlType>;
 
     fn columns() -> Self::Columns;
 
-    fn values(&'a self) -> Self::Values;
+    fn values(self) -> Self::Values;
 }
 
 pub trait InsertableColumns<T: Table> {

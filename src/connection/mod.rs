@@ -165,14 +165,14 @@ impl Connection {
     pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])
         -> Result<Cursor<<T::Star as Expression>::SqlType, Out>> where
         T: Table,
-        U: Insertable<'a, T>,
+        &'a U: Insertable<T>,
         Out: Queriable<<T::Star as Expression>::SqlType>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING *",
             source.name(),
-            U::columns().names(),
+            <&'a U>::columns().names(),
             param_placeholders,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
@@ -181,13 +181,13 @@ impl Connection {
     pub fn insert_returning_count<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
         -> Result<usize> where
         T: Table,
-        U: Insertable<'a, T>,
+        &'a U: Insertable<T>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {}",
             source.name(),
-            U::columns().names(),
+            <&'a U>::columns().names(),
             &param_placeholders,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(|r| r.rows_affected())
@@ -220,7 +220,7 @@ impl Connection {
     fn placeholders_for_insert<'a, T: 'a, U>(&self, records: &'a [U])
         -> (String, Vec<Option<Vec<u8>>>, Vec<u32>) where
         T: Table,
-        U: Insertable<'a, T>,
+        &'a U: Insertable<T>,
     {
         let mut query_builder = PgQueryBuilder::new(self);
         for (i, record) in records.into_iter().enumerate() {

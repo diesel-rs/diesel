@@ -171,8 +171,8 @@ macro_rules! insertable {
             $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
         }
     ) => {
-        impl<'a: 'insert, 'insert> $crate::persistable::Insertable<'insert, $table_mod::table>
-            for $Struct
+        impl<'a: 'insert, 'insert> $crate::persistable::Insertable<$table_mod::table>
+            for &'insert $Struct
         {
             type Columns = ($($table_mod::$field_name),+);
             type Values = ($(
@@ -185,7 +185,7 @@ macro_rules! insertable {
                 ($($table_mod::$field_name),+)
             }
 
-            fn values(&'insert self) -> Self::Values {
+            fn values(self) -> Self::Values {
                 use $crate::expression::AsExpression;
                 ($(AsExpression::<
                    <$table_mod::$field_name as $crate::expression::Expression>::SqlType>
