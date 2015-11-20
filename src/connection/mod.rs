@@ -162,7 +162,7 @@ impl Connection {
         self.query_one(source.filter(pk.eq(id)).limit(1))
     }
 
-    pub fn insert<T, U, Out>(&self, source: &T, records: U)
+    pub fn insert<T, U, Out>(&self, _source: &T, records: U)
         -> Result<Cursor<<T::Star as Expression>::SqlType, Out>> where
         T: Table,
         U: Insertable<T>,
@@ -171,14 +171,14 @@ impl Connection {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING *",
-            source.name(),
+            T::name(),
             U::columns().names(),
             param_placeholders,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
     }
 
-    pub fn insert_returning_count<T, U>(&self, source: &T, records: U)
+    pub fn insert_returning_count<T, U>(&self, _source: &T, records: U)
         -> Result<usize> where
         T: Table,
         U: Insertable<T>,
@@ -186,7 +186,7 @@ impl Connection {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {}",
-            source.name(),
+            T::name(),
             U::columns().names(),
             &param_placeholders,
         );

@@ -52,7 +52,7 @@ macro_rules! table {
                 type PrimaryKey = columns::$pk;
                 type Star = star;
 
-                fn name(&self) -> &str {
+                fn name() -> &'static str {
                     stringify!($name)
                 }
 
@@ -79,7 +79,7 @@ macro_rules! table {
                     type SqlType = super::SqlType;
 
                     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-                        try!(out.push_identifier(table.name()));
+                        try!(out.push_identifier(table::name()));
                         out.push_sql(".*");
                         Ok(())
                     }
@@ -101,7 +101,7 @@ macro_rules! table {
                     type SqlType = $Type;
 
                     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
-                        try!(out.push_identifier(table.name()));
+                        try!(out.push_identifier(table::name()));
                         out.push_sql(".");
                         out.push_identifier(stringify!($column_name))
                     }

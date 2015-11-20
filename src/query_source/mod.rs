@@ -34,7 +34,7 @@ pub trait Table: QuerySource + AsQuery + Sized {
     type PrimaryKey: Column<Table=Self> + Expression + NonAggregate;
     type Star: Column<Table=Self>;
 
-    fn name(&self) -> &str;
+    fn name() -> &'static str;
     fn primary_key(&self) -> Self::PrimaryKey;
     fn star(&self) -> Self::Star;
 
