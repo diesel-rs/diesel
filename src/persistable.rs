@@ -89,6 +89,6 @@ impl<C: Column<Table=T>, T: Table> InsertableColumns<T> for C {
     type SqlType = <Self as Expression>::SqlType;
 
     fn names(&self) -> String {
-        self.name()
+        Self::name().to_string()
     }
 }

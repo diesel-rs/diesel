@@ -88,8 +88,8 @@ macro_rules! table {
                 impl Column for star {
                     type Table = table;
 
-                    fn name(&self) -> String {
-                        "*".to_string()
+                    fn name() -> &'static str {
+                        "*"
                     }
                 }
 
@@ -110,8 +110,8 @@ macro_rules! table {
                 impl Column for $column_name {
                     type Table = table;
 
-                    fn name(&self) -> String {
-                        stringify!($column_name).to_string()
+                    fn name() -> &'static str {
+                        stringify!($column_name)
                     }
                 }
 

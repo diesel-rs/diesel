@@ -68,7 +68,7 @@ impl<T, U> Changeset for Eq<T, U> where
     type Target = T::Table;
 
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
-        try!(out.push_identifier(&self.left.name()));
+        try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
         Expression::to_sql(&self.right, out)
     }

@@ -101,7 +101,7 @@ macro_rules! tuple_impls {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn names(&self) -> String {
-                    let parts: &[String] = e!(&[$(self.$idx.name()),*]);
+                    let parts: &[&str] = &[$($T::name()),*];
                     parts.join(", ")
                 }
             }
