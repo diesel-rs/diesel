@@ -9,6 +9,50 @@ macro_rules! not_none {
     }
 }
 
+macro_rules! expression_impls {
+    ($($Source:ident -> $Target:ty),+,) => {
+        $(
+            impl<'a> AsExpression<types::$Source> for $Target {
+                type Expression = Bound<types::$Source, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl<'a: 'expr, 'expr> AsExpression<types::$Source> for &'expr $Target {
+                type Expression = Bound<types::$Source, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl<'a> AsExpression<types::Nullable<types::$Source>> for $Target {
+                type Expression = Bound<types::Nullable<types::$Source>, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl<'a: 'expr, 'expr> AsExpression<types::Nullable<types::$Source>> for &'a $Target {
+                type Expression = Bound<types::Nullable<types::$Source>, Self>;
+
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl<'a> ToSql<types::Nullable<types::$Source>> for $Target {
+                fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+                    <Self as ToSql<types::$Source>>::to_sql(self, out)
+                }
+            }
+        )+
+    }
+}
+
 macro_rules! primitive_impls {
     ($($Source:ident -> ($Target:ty, $oid:expr)),+,) => {
         $(
@@ -25,39 +69,8 @@ macro_rules! primitive_impls {
                     row
                 }
             }
-
-            impl AsExpression<types::$Source> for $Target {
-                type Expression = Bound<types::$Source, Self>;
-
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
-                }
-            }
-
-            impl<'a> AsExpression<types::$Source> for &'a $Target {
-                type Expression = Bound<types::$Source, Self>;
-
-                fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
-                }
-            }
-
-            impl AsExpression<types::Nullable<types::$Source>> for $Target {
-                type Expression = <Self as AsExpression<types::$Source>>::Expression;
-
-                fn as_expression(self) -> Self::Expression {
-                    AsExpression::<types::$Source>::as_expression(self)
-                }
-            }
-
-            impl<'a> AsExpression<types::Nullable<types::$Source>> for &'a $Target {
-                type Expression = <Self as AsExpression<types::$Source>>::Expression;
-
-                fn as_expression(self) -> Self::Expression {
-                    AsExpression::<types::$Source>::as_expression(self)
-                }
-            }
         )+
+        expression_impls!($($Source -> $Target),+,);
     }
 }
 

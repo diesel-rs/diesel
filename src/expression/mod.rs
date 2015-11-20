@@ -90,7 +90,7 @@ pub trait Expression: Sized {
 }
 
 pub trait AsExpression<T: NativeSqlType> {
-    type Expression: Expression;
+    type Expression: Expression<SqlType=T>;
 
     fn as_expression(self) -> Self::Expression;
 }

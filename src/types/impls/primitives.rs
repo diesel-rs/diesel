@@ -26,6 +26,13 @@ primitive_impls! {
     Binary -> (Vec<u8>, 17),
 }
 
+expression_impls! {
+    VarChar -> &'a str,
+    Text -> &'a str,
+
+    Binary -> &'a [u8],
+}
+
 impl NativeSqlType for () {
     fn oid() -> u32 {
         0
@@ -75,46 +82,6 @@ impl<'a> ToSql<types::VarChar> for &'a str {
     }
 }
 
-impl<'a> AsExpression<types::VarChar> for &'a str {
-    type Expression = Bound<types::VarChar, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
-    }
-}
-
-impl<'a, 'b: 'a> AsExpression<types::VarChar> for &'a &'b str {
-    type Expression = Bound<types::VarChar, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
-    }
-}
-
-impl<'a> AsExpression<types::Nullable<types::VarChar>> for &'a str {
-    type Expression = <Self as AsExpression<types::VarChar>>::Expression;
-
-    fn as_expression(self) -> Self::Expression {
-        AsExpression::<types::VarChar>::as_expression(self)
-    }
-}
-
-impl<'a> AsExpression<types::Text> for &'a str {
-    type Expression = Bound<types::Text, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
-    }
-}
-
-impl<'a> AsExpression<types::Nullable<types::Text>> for &'a str {
-    type Expression = <Self as AsExpression<types::Text>>::Expression;
-
-    fn as_expression(self) -> Self::Expression {
-        AsExpression::<types::Text>::as_expression(self)
-    }
-}
-
 impl FromSql<types::Text> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         <Self as FromSql<types::VarChar>>::from_sql(bytes)
@@ -158,7 +125,7 @@ impl<'a> ToSql<types::Binary> for &'a [u8] {
 #[test]
 fn bool_to_sql() {
     let mut bytes = vec![];
-    true.to_sql(&mut bytes).unwrap();
-    false.to_sql(&mut bytes).unwrap();
+    ToSql::<types::Bool>::to_sql(&true, &mut bytes).unwrap();
+    ToSql::<types::Bool>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(bytes, vec![1u8, 0u8]);
 }
