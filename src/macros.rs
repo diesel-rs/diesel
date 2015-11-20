@@ -198,6 +198,37 @@ macro_rules! insertable {
 }
 
 #[macro_export]
+macro_rules! changeset {
+    (
+        $Struct:ty => $table_mod:ident {
+            $($field_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        impl<'a: 'update, 'update> $crate::query_builder::AsChangeset
+            for &'update $Struct
+        {
+            type Changeset = ($(
+                $crate::expression::predicates::Eq<
+                    $table_mod::$field_name,
+                    $crate::expression::bound::Bound<
+                        <$table_mod::$field_name as $crate::expression::Expression>::SqlType,
+                        &'update $Type,
+                    >,
+                >
+            ),+);
+
+            fn as_changeset(self) -> Self::Changeset {
+                use $crate::expression::Expression;
+
+                ($(
+                    $table_mod::$field_name.eq(&self.$field_name)
+                ),+)
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         joinable_inner!($child -> $parent ($source = $target));

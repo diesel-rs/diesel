@@ -100,6 +100,13 @@ insertable! {
     }
 }
 
+changeset! {
+    NewUser => users {
+        name -> String,
+        hair_color -> Option<String>,
+    }
+}
+
 queriable! {
     NewUser {
         name -> String,
