@@ -27,9 +27,19 @@ macro_rules! table {
                 pub use super::table as $name;
             }
 
+            #[allow(non_upper_case_globals, dead_code)]
+            pub const all_columns: ($($column_name),+) = ($($column_name),+);
+
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
             pub struct table;
+
+            impl table {
+                #[allow(dead_code)]
+                pub fn star(&self) -> star {
+                    star
+                }
+            }
 
             pub type SqlType = ($($Type),+);
 
@@ -41,16 +51,16 @@ macro_rules! table {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<SqlType, star, Self>;
+                type Query = SelectStatement<SqlType, ($($column_name),+), Self>;
 
                 fn as_query(self) -> Self::Query {
-                    SelectStatement::simple(star, self)
+                    SelectStatement::simple(all_columns, self)
                 }
             }
 
             impl Table for table {
                 type PrimaryKey = columns::$pk;
-                type Star = star;
+                type AllColumns = ($($column_name),+);
 
                 fn name() -> &'static str {
                     stringify!($name)
@@ -60,14 +70,14 @@ macro_rules! table {
                     columns::$pk
                 }
 
-                fn star(&self) -> Self::Star {
-                    star
+                fn all_columns() -> Self::AllColumns {
+                    ($($column_name),+)
                 }
             }
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Column, Expression};
+                use $crate::{Table, Column, Expression, SelectableExpression};
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult};
                 use $crate::types::*;
 
@@ -76,7 +86,7 @@ macro_rules! table {
                 pub struct star;
 
                 impl Expression for star {
-                    type SqlType = super::SqlType;
+                    type SqlType = ();
 
                     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
@@ -85,13 +95,7 @@ macro_rules! table {
                     }
                 }
 
-                impl Column for star {
-                    type Table = table;
-
-                    fn name() -> &'static str {
-                        "*"
-                    }
-                }
+                impl SelectableExpression<table> for star {}
 
                 $(#[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]

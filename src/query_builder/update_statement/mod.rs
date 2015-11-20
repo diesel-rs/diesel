@@ -58,12 +58,13 @@ impl<T, U> AsQuery for UpdateStatement<T, U> where
 pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
 impl<T, U> QueryFragment for UpdateQuery<T, U> where
+    T: UpdateTarget,
     UpdateStatement<T, U>: QueryFragment,
 {
     fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
         try!(self.0.to_sql(out));
-        out.push_sql(" RETURNING *");
-        Ok(())
+        out.push_sql(" RETURNING ");
+        Expression::to_sql(&T::Table::all_columns(), out)
     }
 }
 
@@ -71,5 +72,5 @@ impl<T, U> Query for UpdateQuery<T, U> where
     UpdateQuery<T, U>: QueryFragment,
     T: UpdateTarget,
 {
-    type SqlType = <<T::Table as Table>::Star as Expression>::SqlType;
+    type SqlType = <<T::Table as Table>::AllColumns as Expression>::SqlType;
 }

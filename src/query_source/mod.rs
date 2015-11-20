@@ -32,11 +32,11 @@ impl<C: Column> NonAggregate for C {
 
 pub trait Table: QuerySource + AsQuery + Sized {
     type PrimaryKey: Column<Table=Self> + Expression + NonAggregate;
-    type Star: Column<Table=Self>;
+    type AllColumns: SelectableExpression<Self>;
 
     fn name() -> &'static str;
     fn primary_key(&self) -> Self::PrimaryKey;
-    fn star(&self) -> Self::Star;
+    fn all_columns() -> Self::AllColumns;
 
     fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
         T: Table,

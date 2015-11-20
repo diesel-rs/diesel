@@ -34,7 +34,7 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right>,
     Right: Table,
-    (Left::Star, Right::Star): SelectableExpression<
+    (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    InnerJoinSource<Left, Right>,
                                    (Left::SqlType, Right::SqlType),
                                >,
@@ -42,12 +42,12 @@ impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     type SqlType = (Left::SqlType, Right::SqlType);
     type Query = SelectStatement<
         (Left::SqlType, Right::SqlType),
-        (Left::Star, Right::Star),
+        (Left::AllColumns, Right::AllColumns),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple((self.left.star(), self.right.star()), self)
+        SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
     }
 }
 
@@ -82,7 +82,7 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right>,
     Right: Table,
-    (Left::Star, Right::Star): SelectableExpression<
+    (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    LeftOuterJoinSource<Left, Right>,
                                    (Left::SqlType, Nullable<Right::SqlType>),
                                >,
@@ -90,12 +90,12 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     type SqlType = (Left::SqlType, Nullable<Right::SqlType>);
     type Query = SelectStatement<
         (Left::SqlType, Nullable<Right::SqlType>),
-        (Left::Star, Right::Star),
+        (Left::AllColumns, Right::AllColumns),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple((self.left.star(), self.right.star()), self)
+        SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
     }
 }
 

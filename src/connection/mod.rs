@@ -163,17 +163,19 @@ impl Connection {
     }
 
     pub fn insert<T, U, Out>(&self, _source: &T, records: U)
-        -> Result<Cursor<<T::Star as Expression>::SqlType, Out>> where
+        -> Result<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
         T: Table,
         U: Insertable<T>,
-        Out: Queriable<<T::Star as Expression>::SqlType>,
+        Out: Queriable<<T::AllColumns as Expression>::SqlType>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
+        let (returning, _, _) = self.prepare_query(&T::all_columns());
         let sql = format!(
-            "INSERT INTO {} ({}) VALUES {} RETURNING *",
+            "INSERT INTO {} ({}) VALUES {} RETURNING {}",
             T::name(),
             U::columns().names(),
             param_placeholders,
+            returning,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
     }

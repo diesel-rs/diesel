@@ -90,7 +90,7 @@ fn select_only_one_side_of_join() {
     connection.execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
         .unwrap();
 
-    let source = users::table.inner_join(posts::table).select(users::star);
+    let source = users::table.inner_join(posts::table).select(users::all_columns);
 
     let expected_data = vec![User::new(2, "Tess")];
     let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
@@ -197,7 +197,7 @@ fn select_complex_from_left_join() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::star, (posts::title, posts::body)));
+    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body)));
     let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
@@ -224,7 +224,7 @@ fn select_right_side_with_nullable_column_first() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::star, (posts::body, posts::title)));
+    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title)));
     let actual_data: Vec<_> = source.load(&connection).unwrap().collect();
 
     assert_eq!(expected_data, actual_data);
