@@ -9,7 +9,7 @@ use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
 use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns};
-use query_builder::{AsQuery, Query, QueryFragment, QueryBuilder};
+use query_builder::{AsQuery, Query, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Column, Queriable};
@@ -162,32 +162,32 @@ impl Connection {
         self.query_one(source.filter(pk.eq(id)).limit(1))
     }
 
-    pub fn insert<'a, T: 'a, U, Out>(&self, source: &T, records: &'a [U])
+    pub fn insert<T, U, Out>(&self, source: &T, records: U)
         -> Result<Cursor<<T::Star as Expression>::SqlType, Out>> where
         T: Table,
-        &'a U: Insertable<T>,
+        U: Insertable<T>,
         Out: Queriable<<T::Star as Expression>::SqlType>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {} RETURNING *",
             source.name(),
-            <&'a U>::columns().names(),
+            U::columns().names(),
             param_placeholders,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
     }
 
-    pub fn insert_returning_count<'a, T: 'a, U>(&self, source: &T, records: &'a [U])
+    pub fn insert_returning_count<T, U>(&self, source: &T, records: U)
         -> Result<usize> where
         T: Table,
-        &'a U: Insertable<T>,
+        U: Insertable<T>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let sql = format!(
             "INSERT INTO {} ({}) VALUES {}",
             source.name(),
-            <&'a U>::columns().names(),
+            U::columns().names(),
             &param_placeholders,
         );
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(|r| r.rows_affected())
@@ -217,20 +217,13 @@ impl Connection {
         last_error_message(self.internal_connection)
     }
 
-    fn placeholders_for_insert<'a, T: 'a, U>(&self, records: &'a [U])
+    fn placeholders_for_insert<T, U>(&self, records: U)
         -> (String, Vec<Option<Vec<u8>>>, Vec<u32>) where
         T: Table,
-        &'a U: Insertable<T>,
+        U: Insertable<T>,
     {
         let mut query_builder = PgQueryBuilder::new(self);
-        for (i, record) in records.into_iter().enumerate() {
-            if i != 0 {
-                query_builder.push_sql(", ");
-            }
-            query_builder.push_sql("(");
-            Expression::to_insert_sql(&record.values(), &mut query_builder).unwrap();
-            query_builder.push_sql(")");
-        }
+        records.values().to_insert_sql(&mut query_builder).unwrap();
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 

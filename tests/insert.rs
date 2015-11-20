@@ -7,11 +7,11 @@ fn insert_records() {
     let connection = connection();
     setup_users_table(&connection);
 
-    let new_users = [
+    let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, &new_users).unwrap().collect();
+    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -32,11 +32,11 @@ fn insert_with_defaults() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )").unwrap();
-    let new_users = [
+    let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, &new_users).unwrap().collect();
+    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -57,11 +57,11 @@ fn insert_with_defaults_not_provided() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )").unwrap();
-    let new_users = [
+    let new_users: &[_] = &[
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, &new_users).unwrap().collect();
+    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
@@ -82,13 +82,12 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )").unwrap();
-    let new_users = [
+    let new_users: &[_] = &[
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let second_new_users = [BaldUser { name: "Guy".to_string() }];
-    let count = connection.insert_returning_count(&users, &new_users).unwrap();
-    let second_count = connection.insert_returning_count(&users, &second_new_users).unwrap();
+    let count = connection.insert_returning_count(&users, new_users).unwrap();
+    let second_count = connection.insert_returning_count(&users, &BaldUser { name: "Guy".to_string() }).unwrap();
 
     assert_eq!(2, count);
     assert_eq!(1, second_count);
@@ -119,11 +118,11 @@ fn insert_borrowed_content() {
     use schema::users::table as users;
     let connection = connection();
     setup_users_table(&connection);
-    let new_users = [
+    let new_users: &[_] = &[
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, &new_users).unwrap().collect();
+    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
 
     let expected_users = vec![
         User::new(1, "Sean"),

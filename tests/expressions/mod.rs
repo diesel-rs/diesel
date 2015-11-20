@@ -14,7 +14,7 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(users.star()));
 
     assert_eq!(Some(0), source.first(&connection).unwrap());
-    connection.insert_returning_count(&users, &[NewUser::new("Sean", None)]).unwrap();
+    connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
     assert_eq!(Some(1), source.first(&connection).unwrap());
 }
 
@@ -25,7 +25,7 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Some(0), source.first(&connection).unwrap());
-    connection.insert_returning_count(&users, &[NewUser::new("Sean", None)]).unwrap();
+    connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
     assert_eq!(Some(1), source.first(&connection).unwrap());
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
@@ -61,12 +61,12 @@ fn max_returns_same_type_as_expression_being_maxed() {
     setup_users_table(&connection);
     let source = users.select(max(name));
 
-    let data = [
+    let data: &[_] = &[
         NewUser::new("B", None),
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    connection.insert_returning_count(&users, &data).unwrap();
+    connection.insert_returning_count(&users, data).unwrap();
     assert_eq!(Some("C".to_string()), source.first(&connection).unwrap());
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
     assert_eq!(Some("B".to_string()), source.first(&connection).unwrap());

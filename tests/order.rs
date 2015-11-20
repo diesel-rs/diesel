@@ -22,7 +22,7 @@ fn order_by_column() {
     let data: Vec<_> = users.order(name).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 
-    conn.insert_returning_count(&users, &[NewUser::new("Aaron", None)]).unwrap();
+    conn.insert_returning_count(&users, &NewUser::new("Aaron", None)).unwrap();
     let expected_data = vec![
         User::new(4, "Aaron"),
         User::new(3, "Jim"),
@@ -54,7 +54,7 @@ fn order_by_descending_column() {
     let data: Vec<_> = users.order(name.desc()).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 
-    conn.insert_returning_count(&users, &[NewUser::new("Aaron", None)]).unwrap();
+    conn.insert_returning_count(&users, &NewUser::new("Aaron", None)).unwrap();
     let expected_data = vec![
         User::new(2, "Tess"),
         User::new(1, "Sean"),

@@ -175,11 +175,11 @@ macro_rules! insertable {
             for &'insert $Struct
         {
             type Columns = ($($table_mod::$field_name),+);
-            type Values = ($(
+            type Values = $crate::expression::grouped::Grouped<($(
                 <&'insert $Type as $crate::expression::AsExpression<
                     <$table_mod::$field_name as $crate::expression::Expression>::SqlType
                 >>::Expression
-            ),+);
+            ),+)>;
 
             fn columns() -> Self::Columns {
                 ($($table_mod::$field_name),+)
@@ -187,10 +187,11 @@ macro_rules! insertable {
 
             fn values(self) -> Self::Values {
                 use $crate::expression::AsExpression;
-                ($(AsExpression::<
+                use $crate::expression::grouped::Grouped;
+                Grouped(($(AsExpression::<
                    <$table_mod::$field_name as $crate::expression::Expression>::SqlType>
                    ::as_expression(&self.$field_name)
-               ),+)
+               ),+))
             }
         }
     };
