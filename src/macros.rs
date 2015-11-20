@@ -91,10 +91,6 @@ macro_rules! table {
                     fn name(&self) -> String {
                         "*".to_string()
                     }
-
-                    fn qualified_name(&self) -> String {
-                        format!("{}.*", table.name())
-                    }
                 }
 
                 $(#[allow(non_camel_case_types, dead_code)]
@@ -116,10 +112,6 @@ macro_rules! table {
 
                     fn name(&self) -> String {
                         stringify!($column_name).to_string()
-                    }
-
-                    fn qualified_name(&self) -> String {
-                        format!("{}.{}", table.name(), stringify!($column_name))
                     }
                 }
 

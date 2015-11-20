@@ -22,8 +22,6 @@ pub trait Column: Expression {
     type Table: Table;
 
     fn name(&self) -> String;
-
-    fn qualified_name(&self) -> String;
 }
 
 impl<C: Column> SelectableExpression<C::Table> for C {
