@@ -10,7 +10,7 @@ macro_rules! numeric_type {
     }
 }
 
-numeric_type!(SmallSerial, Serial, BigSerial, SmallInt, Integer, BigInt, Float, Double);
+numeric_type!(SmallInt, Integer, BigInt, Float, Double);
 
 #[macro_export]
 macro_rules! addable_expr {

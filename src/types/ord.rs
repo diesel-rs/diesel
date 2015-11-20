@@ -2,9 +2,6 @@ use types::{self, NativeSqlType};
 
 pub trait SqlOrd {}
 
-impl SqlOrd for types::SmallSerial {}
-impl SqlOrd for types::Serial {}
-impl SqlOrd for types::BigSerial {}
 impl SqlOrd for types::SmallInt {}
 impl SqlOrd for types::Integer {}
 impl SqlOrd for types::BigInt {}

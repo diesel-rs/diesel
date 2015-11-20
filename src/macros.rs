@@ -240,9 +240,11 @@ macro_rules! joinable {
 macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl $crate::JoinTo<$parent::table> for $child::table {
-            fn join_sql(&self) -> String {
-                use $crate::Column;
-                format!("{} = {}", $child::$source.qualified_name(), $parent::$target.qualified_name())
+            type Predicate = $crate::expression::predicates::Eq<$child::$source, $parent::$target>;
+
+            fn join_expression(&self) -> Self::Predicate {
+                use $crate::Expression;
+                $child::$source.eq($parent::$target)
             }
         }
     }

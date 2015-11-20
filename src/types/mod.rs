@@ -13,9 +13,9 @@ use std::io::Write;
 
 #[derive(Clone, Copy)] pub struct Bool;
 
-#[derive(Clone, Copy)] pub struct SmallSerial;
-#[derive(Clone, Copy)] pub struct Serial;
-#[derive(Clone, Copy)] pub struct BigSerial;
+pub type SmallSerial = SmallInt;
+pub type Serial = Integer;
+pub type BigSerial = BigInt;
 
 #[derive(Clone, Copy)] pub struct SmallInt;
 #[derive(Clone, Copy)] pub struct Integer;

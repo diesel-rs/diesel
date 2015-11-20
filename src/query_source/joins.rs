@@ -1,7 +1,7 @@
 use {QuerySource, Table};
 use query_builder::*;
-use expression::SelectableExpression;
-use types::Nullable;
+use expression::{Expression, SelectableExpression};
+use types::{Bool, Nullable};
 
 #[derive(Clone, Copy)]
 pub struct InnerJoinSource<Left, Right> {
@@ -27,8 +27,7 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
         out.push_sql(" INNER JOIN ");
         try!(self.right.from_clause(out));
         out.push_sql(" ON ");
-        out.push_sql(&self.left.join_sql());
-        Ok(())
+        Expression::to_sql(&self.left.join_expression(), out)
     }
 }
 
@@ -76,8 +75,7 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
         out.push_sql(" LEFT OUTER JOIN ");
         try!(self.right.from_clause(out));
         out.push_sql(" ON ");
-        out.push_sql(&self.left.join_sql());
-        Ok(())
+        Expression::to_sql(&self.left.join_expression(), out)
     }
 }
 
@@ -102,5 +100,7 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
 }
 
 pub trait JoinTo<T: Table>: Table {
-    fn join_sql(&self) -> String;
+    type Predicate: Expression<SqlType=Bool>;
+
+    fn join_expression(&self) -> Self::Predicate;
 }

@@ -9,10 +9,6 @@ use {Queriable, types};
 primitive_impls! {
     Bool -> (bool, 16),
 
-    SmallSerial -> (i16, 21),
-    Serial -> (i32, 23),
-    BigSerial -> (i64, 20),
-
     SmallInt -> (i16, 21),
     Integer -> (i32, 23),
     BigInt -> (i64, 20),
