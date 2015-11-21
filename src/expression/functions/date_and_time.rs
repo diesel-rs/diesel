@@ -1,4 +1,4 @@
 no_arg_sql_function!(now, Timestamp);
-numeric_expr!(now);
+operator_allowed!(now, Add, add);
+operator_allowed!(now, Sub, sub);
 sql_function!(date, (x: Timestamp) -> Date);
-generic_numeric_expr!(date, A);

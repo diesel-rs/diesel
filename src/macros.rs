@@ -118,8 +118,6 @@ macro_rules! table {
                         stringify!($column_name)
                     }
                 }
-
-                numeric_expr!($column_name);
                 )+
             }
         }

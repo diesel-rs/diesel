@@ -90,7 +90,6 @@ fn dividing_column() {
     assert_eq!(expected_data, data);
 }
 
-
 #[test]
 fn mix_and_match_all_numeric_ops() {
     use schema::users::dsl::*;

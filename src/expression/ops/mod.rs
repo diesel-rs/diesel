@@ -1,24 +1,10 @@
-use types::{self, NativeSqlType};
-
-pub trait AddableSqlType<Rhs>: NativeSqlType {
-    type Output: NativeSqlType;
-}
-
-macro_rules! numeric_type {
-    ($($tpe: ident),*) => {
-        $(impl AddableSqlType<types::$tpe> for types::$tpe {
-            type Output = types::$tpe;
-        })*
-    }
-}
-
-numeric_type!(SmallInt, Integer, BigInt, Float, Double);
-
 #[macro_export]
-macro_rules! numeric_expr_inner {
+macro_rules! operator_allowed {
     ($tpe: ty, $op: ident, $fn_name: ident) => {
         impl<Rhs> ::std::ops::$op<Rhs> for $tpe where
-            Rhs: $crate::expression::AsExpression<<$tpe as $crate::Expression>::SqlType>,
+            Rhs: $crate::expression::AsExpression<
+                <<$tpe as $crate::Expression>::SqlType as $crate::types::ops::$op>::Rhs
+            >,
         {
             type Output = $crate::expression::ops::$op<Self, Rhs::Expression>;
 
@@ -32,10 +18,10 @@ macro_rules! numeric_expr_inner {
 #[macro_export]
 macro_rules! numeric_expr {
     ($tpe: ty) => {
-        numeric_expr_inner!($tpe, Add, add);
-        numeric_expr_inner!($tpe, Sub, sub);
-        numeric_expr_inner!($tpe, Div, div);
-        numeric_expr_inner!($tpe, Mul, mul);
+        operator_allowed!($tpe, Add, add);
+        operator_allowed!($tpe, Sub, sub);
+        operator_allowed!($tpe, Div, div);
+        operator_allowed!($tpe, Mul, mul);
     }
 }
 
@@ -43,7 +29,10 @@ macro_rules! generic_numeric_expr_inner {
     ($tpe: ident, ($($param: ident),*), $op: ident, $fn_name: ident) => {
         impl<Rhs, $($param),*> ::std::ops::$op<Rhs> for $tpe<$($param),*> where
             $tpe<$($param),*>: $crate::expression::Expression,
-            Rhs: $crate::expression::AsExpression<<$tpe<$($param),*> as $crate::Expression>::SqlType>,
+            <$tpe<$($param),*> as $crate::Expression>::SqlType: $crate::types::ops::$op,
+            Rhs: $crate::expression::AsExpression<
+                <<$tpe<$($param),*> as $crate::Expression>::SqlType as $crate::types::ops::$op>::Rhs,
+            >,
         {
             type Output = $crate::expression::ops::$op<Self, Rhs::Expression>;
 

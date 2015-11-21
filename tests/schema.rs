@@ -46,6 +46,7 @@ table! {
         hair_color -> Nullable<VarChar>,
     }
 }
+numeric_expr!(users::id);
 
 table! {
     posts {

@@ -14,25 +14,5 @@ fn main() {
     use self::users::dsl::*;
 
     let _ = users.select(name + name);
-    //~^ ERROR AddableSqlType
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
+    //~^ ERROR binary operation `+` cannot be applied to type `users::columns::name`
 }

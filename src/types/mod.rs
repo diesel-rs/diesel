@@ -1,3 +1,4 @@
+pub mod ops;
 mod ord;
 mod impls;
 

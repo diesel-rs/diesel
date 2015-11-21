@@ -10,6 +10,7 @@ table! {
         updated_at -> Timestamp,
     }
 }
+operator_allowed!(has_timestamps::created_at, Add, add);
 
 table! {
     has_time {
@@ -95,6 +96,23 @@ fn interval_is_deserialized_properly() {
     let long_time = 4.years() + 3.days() + 2.hours() + 1.minute();
     let expected_data = (one_minute, one_day, one_month, long_time);
     assert_eq!(expected_data, data);
+}
+
+#[test]
+fn adding_interval_to_timestamp() {
+    use self::has_timestamps::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection.execute("INSERT INTO has_timestamps (created_at, updated_at) VALUES
+                       ('2015-11-15 06:07:41', '2015-11-15 20:07:41')").unwrap();
+
+    let expected_data = connection.query_sql::<types::Timestamp, PgTimestamp>("SELECT '2015-11-16 06:07:41'::timestamp")
+        .unwrap().nth(0).unwrap();
+    let actual_data: PgTimestamp = has_timestamps.select(created_at + 1.day())
+        .first(&connection)
+        .unwrap().unwrap();
+    assert_eq!(expected_data, actual_data);
 }
 
 fn setup_test_table(conn: &Connection) {
