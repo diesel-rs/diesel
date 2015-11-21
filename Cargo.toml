@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@thoughtbot.com>"]
 
 [dependencies]
-libc = "*"
-pq-sys = "0.1.*"
+libc = "0.2.*"
+pq-sys = "0.2.*"
 byteorder = "0.3.*"
 
 [dev-dependencies]
