@@ -32,6 +32,28 @@ pub struct PgInterval {
     pub months: i32,
 }
 
+impl PgInterval {
+    pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
+        PgInterval {
+            microseconds: microseconds,
+            days: days,
+            months: months,
+        }
+    }
+
+    pub fn from_microseconds(microseconds: i64) -> Self {
+        Self::new(microseconds, 0, 0)
+    }
+
+    pub fn from_days(days: i32) -> Self {
+        Self::new(0, days, 0)
+    }
+
+    pub fn from_months(months: i32) -> Self {
+        Self::new(0, 0, months)
+    }
+}
+
 primitive_impls! {
     Date -> (PgDate, 1082),
     Interval -> (PgInterval, 1186),
