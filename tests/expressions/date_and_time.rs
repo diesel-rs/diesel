@@ -89,10 +89,10 @@ fn interval_is_deserialized_properly() {
             "SELECT '1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval").unwrap().nth(0).unwrap();
 
-    let one_minute = PgInterval { microseconds: 60_000_000, days: 0, months: 0 };
-    let one_day = PgInterval { microseconds: 0, days: 1, months: 0 };
-    let one_month = PgInterval { microseconds: 0, days: 0, months: 1 };
-    let long_time = PgInterval { microseconds: 7_260_000_000, days: 3, months: 48 };
+    let one_minute = 1.minute();
+    let one_day = 1.day();
+    let one_month = 1.month();
+    let long_time = 4.years() + 3.days() + 2.hours() + 1.minute();
     let expected_data = (one_minute, one_day, one_month, long_time);
     assert_eq!(expected_data, data);
 }

@@ -2,6 +2,7 @@ extern crate byteorder;
 
 use std::error::Error;
 use std::io::Write;
+use std::ops::Add;
 
 use expression::*;
 use expression::bound::Bound;
@@ -94,5 +95,17 @@ impl FromSql<types::Interval> for PgInterval {
             days: try!(FromSql::<types::Integer>::from_sql(Some(&bytes[8..12]))),
             months: try!(FromSql::<types::Integer>::from_sql(Some(&bytes[12..16]))),
         })
+    }
+}
+
+impl Add<PgInterval> for PgInterval {
+    type Output = PgInterval;
+
+    fn add(self, other: PgInterval) -> Self::Output {
+        PgInterval {
+            microseconds: self.microseconds + other.microseconds,
+            days: self.days + other.days,
+            months: self.months + other.months,
+        }
     }
 }

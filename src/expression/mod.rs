@@ -9,12 +9,15 @@ pub mod predicates;
 mod max;
 mod sql_literal;
 mod ordering;
+mod extensions;
 
 pub mod dsl {
     pub use super::array_comparison::any;
     pub use super::count::{count, count_star};
     pub use super::functions::date_and_time::{now, date};
     pub use super::max::max;
+
+    pub use super::extensions::*;
 }
 
 pub use self::dsl::*;
