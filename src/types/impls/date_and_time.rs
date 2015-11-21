@@ -6,6 +6,7 @@ use std::io::Write;
 use expression::*;
 use expression::bound::Bound;
 use query_source::Queriable;
+use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -19,10 +20,22 @@ pub struct PgDate(pub i32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PgTime(pub i64);
 
+/// Intervals in Postgres are separated into 3 parts. A 64 bit integer representing time in
+/// microseconds, a 32 bit integer representing number of minutes, and a 32 bit integer
+/// representing number of months. This struct is a dumb wrapper type, meant only to indicate the
+/// meaning of these parts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PgInterval {
+    pub microseconds: i64,
+    pub days: i32,
+    pub months: i32,
+}
+
 primitive_impls! {
-    Timestamp -> (PgTimestamp, 1114),
     Date -> (PgDate, 1082),
+    Interval -> (PgInterval, 1186),
     Time -> (PgTime, 1083),
+    Timestamp -> (PgTimestamp, 1114),
 }
 
 impl ToSql<types::Timestamp> for PgTimestamp {
@@ -61,5 +74,25 @@ impl FromSql<types::Time> for PgTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         FromSql::<types::BigInt>::from_sql(bytes)
             .map(PgTime)
+    }
+}
+
+impl ToSql<types::Interval> for PgInterval {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        try!(ToSql::<types::BigInt>::to_sql(&self.microseconds, out));
+        try!(ToSql::<types::Integer>::to_sql(&self.days, out));
+        try!(ToSql::<types::Integer>::to_sql(&self.months, out));
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<types::Interval> for PgInterval {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+        let bytes = not_none!(bytes);
+        Ok(PgInterval {
+            microseconds: try!(FromSql::<types::BigInt>::from_sql(Some(&bytes[..8]))),
+            days: try!(FromSql::<types::Integer>::from_sql(Some(&bytes[8..12]))),
+            months: try!(FromSql::<types::Integer>::from_sql(Some(&bytes[12..16]))),
+        })
     }
 }

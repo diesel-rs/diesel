@@ -2,7 +2,7 @@ mod ord;
 mod impls;
 
 pub mod structs {
-    pub use super::impls::date_and_time::{PgTimestamp, PgDate, PgTime};
+    pub use super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
 }
 
 pub use self::ord::SqlOrd;
@@ -30,6 +30,7 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy)] pub struct Binary;
 
 #[derive(Clone, Copy)] pub struct Date;
+#[derive(Clone, Copy)] pub struct Interval;
 #[derive(Clone, Copy)] pub struct Time;
 #[derive(Clone, Copy)] pub struct Timestamp;
 

@@ -79,10 +79,20 @@ macro_rules! test_newtype_round_trip {
     }
 }
 
-fn to_pg_time(int: i64) -> ::yaqb::types::structs::PgTime {
-    PgTime(::std::cmp::max(0, int))
-}
-
 test_newtype_round_trip!(date_roundtrips, Date, PgDate, i32, "date");
 test_newtype_round_trip!(time_roundtrips, Time, to_pg_time, i64, "time");
 test_newtype_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp, i64, "timestamp");
+test_newtype_round_trip!(interval_roundtrips, Interval, to_pg_interval, (i64, i32, i32), "interval");
+
+fn to_pg_time(int: i64) -> PgTime {
+    PgTime(::std::cmp::max(0, int))
+}
+
+fn to_pg_interval(vals: (i64, i32, i32)) -> PgInterval {
+    let (microseconds, days, months) = vals;
+    PgInterval {
+        microseconds: microseconds,
+        days: days,
+        months: months,
+    }
+}
