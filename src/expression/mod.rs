@@ -1,9 +1,11 @@
+#[macro_use]
+pub mod ops;
+
 pub mod array_comparison;
 pub mod bound;
 pub mod count;
 pub mod functions;
 pub mod grouped;
-pub mod ops;
 pub mod predicates;
 
 mod max;

@@ -14,7 +14,7 @@ fn main() {
     use self::users::dsl::*;
 
     let _ = users.select(name + name);
-    //~^ ERROR NumericSqlType
+    //~^ ERROR AddableSqlType
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277

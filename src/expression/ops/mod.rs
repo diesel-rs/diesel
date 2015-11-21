@@ -1,11 +1,13 @@
 use types::{self, NativeSqlType};
 
-pub trait NumericSqlType: NativeSqlType {
+pub trait AddableSqlType<Rhs>: NativeSqlType {
+    type Output: NativeSqlType;
 }
 
 macro_rules! numeric_type {
     ($($tpe: ident),*) => {
-        $(impl NumericSqlType for types::$tpe {
+        $(impl AddableSqlType<types::$tpe> for types::$tpe {
+            type Output = types::$tpe;
         })*
     }
 }

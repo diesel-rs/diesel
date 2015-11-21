@@ -1,6 +1,6 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::{QueryBuilder, BuildQueryResult};
-use super::NumericSqlType;
+use super::AddableSqlType;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
@@ -20,10 +20,10 @@ macro_rules! numeric_operation {
 
         impl<Lhs, Rhs> Expression for $name<Lhs, Rhs> where
             Lhs: Expression,
-            Lhs::SqlType: NumericSqlType,
-            Rhs: Expression<SqlType=Lhs::SqlType>,
+            Lhs::SqlType: AddableSqlType<Rhs::SqlType>,
+            Rhs: Expression,
         {
-            type SqlType = Lhs::SqlType;
+            type SqlType = <Lhs::SqlType as AddableSqlType<Rhs::SqlType>>::Output;
 
             fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
                 try!(self.lhs.to_sql(out));
