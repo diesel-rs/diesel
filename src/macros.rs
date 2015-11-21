@@ -119,7 +119,7 @@ macro_rules! table {
                     }
                 }
 
-                addable_expr!($column_name);
+                numeric_expr!($column_name);
                 )+
             }
         }
