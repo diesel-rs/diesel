@@ -1,5 +1,6 @@
 use schema::connection;
 use yaqb::*;
+use yaqb::types::structs::*;
 use yaqb::expression::dsl::*;
 
 table! {
@@ -7,6 +8,13 @@ table! {
         id -> Serial,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+    }
+}
+
+table! {
+    has_time {
+        id -> Serial,
+        time -> Time,
     }
 }
 
@@ -52,10 +60,35 @@ fn date_uses_sql_function_date() {
     assert_eq!(expected_data, actual_data);
 }
 
+#[test]
+fn time_is_deserialized_properly() {
+    use self::has_time::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection.execute("INSERT INTO has_time (\"time\") VALUES
+                       ('00:00:01'), ('00:02:00'), ('03:00:00')
+                       ").unwrap();
+    let one_second = PgTime(1_000_000);
+    let two_minutes = PgTime(120_000_000);
+    let three_hours = PgTime(10_800_000_000);
+    let expected_data = vec![one_second, two_minutes, three_hours];
+
+    let actual_data: Vec<_> = has_time.select(time)
+        .load(&connection)
+        .unwrap().collect();
+    assert_eq!(expected_data, actual_data);
+}
+
+
 fn setup_test_table(conn: &Connection) {
     conn.execute("CREATE TABLE has_timestamps (
         id SERIAL PRIMARY KEY,
         created_at TIMESTAMP NOT NULL,
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )").unwrap();
+    conn.execute("CREATE TABLE has_time (
+        id SERIAL PRIMARY KEY,
+        \"time\" TIME NOT NULL
     )").unwrap();
 }

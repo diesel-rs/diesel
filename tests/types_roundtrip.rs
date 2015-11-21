@@ -3,6 +3,7 @@ use quickcheck::quickcheck;
 use schema::connection;
 use yaqb::*;
 use yaqb::result::Error;
+use yaqb::types::structs::*;
 use yaqb::types::{NativeSqlType, ToSql, Nullable, Array};
 
 fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
@@ -16,7 +17,7 @@ fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
         Ok(mut val) => value == val.nth(0).unwrap(),
         Err(Error::DatabaseError(msg)) =>
             &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n",
-        _ => false,
+        Err(e) => panic!("Query failed: {:?}", e),
     }
 }
 
@@ -53,48 +54,35 @@ test_round_trip!(string_roundtrips, VarChar, String, "varchar");
 test_round_trip!(text_roundtrips, Text, String, "text");
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>, "bytea");
 
-#[test]
-fn timestamp_roundtrip() {
-    use yaqb::types::structs::PgTimestamp;
+macro_rules! test_newtype_round_trip {
+    ($test_name:ident, $sql_type:ident, $newtype:ident, $tpe:ty, $sql_type_name:expr) => {
+        #[test]
+        fn $test_name() {
+            fn round_trip(val: $tpe) -> bool {
+                test_type_round_trips::<types::$sql_type, _>($newtype(val), $sql_type_name)
+            }
 
-    fn round_trip(val: i64) -> bool {
-        test_type_round_trips::<types::Timestamp, _>(PgTimestamp(val), "timestamp")
+            fn option_round_trip(val: Option<$tpe>) -> bool {
+                let val = val.map($newtype);
+                test_type_round_trips::<Nullable<types::$sql_type>, _>(val, $sql_type_name)
+            }
+
+            fn vec_round_trip(val: Vec<$tpe>) -> bool {
+                let val: Vec<_> = val.into_iter().map($newtype).collect();
+                test_type_round_trips::<Array<types::$sql_type>, _>(val, concat!($sql_type_name, "[]"))
+            }
+
+            quickcheck(round_trip as fn($tpe) -> bool);
+            quickcheck(option_round_trip as fn(Option<$tpe>) -> bool);
+            quickcheck(vec_round_trip as fn(Vec<$tpe>) -> bool);
+        }
     }
-
-    fn option_round_trip(val: Option<i64>) -> bool {
-        let val = val.map(PgTimestamp);
-        test_type_round_trips::<Nullable<types::Timestamp>, _>(val, "timestamp")
-    }
-
-    fn vec_round_trip(val: Vec<i64>) -> bool {
-        let val: Vec<_> = val.into_iter().map(PgTimestamp).collect();
-        test_type_round_trips::<Array<types::Timestamp>, _>(val, "timestamp[]")
-    }
-
-    quickcheck(round_trip as fn(i64) -> bool);
-    quickcheck(option_round_trip as fn(Option<i64>) -> bool);
-    quickcheck(vec_round_trip as fn(Vec<i64>) -> bool);
 }
 
-#[test]
-fn date_roundtrip() {
-    use yaqb::types::structs::PgDate;
-
-    fn round_trip(val: i32) -> bool {
-        test_type_round_trips::<types::Date, _>(PgDate(val), "date")
-    }
-
-    fn option_round_trip(val: Option<i32>) -> bool {
-        let val = val.map(PgDate);
-        test_type_round_trips::<Nullable<types::Date>, _>(val, "date")
-    }
-
-    fn vec_round_trip(val: Vec<i32>) -> bool {
-        let val: Vec<_> = val.into_iter().map(PgDate).collect();
-        test_type_round_trips::<Array<types::Date>, _>(val, "date[]")
-    }
-
-    quickcheck(round_trip as fn(i32) -> bool);
-    quickcheck(option_round_trip as fn(Option<i32>) -> bool);
-    quickcheck(vec_round_trip as fn(Vec<i32>) -> bool);
+fn to_pg_time(int: i64) -> ::yaqb::types::structs::PgTime {
+    PgTime(::std::cmp::max(0, int))
 }
+
+test_newtype_round_trip!(date_roundtrips, Date, PgDate, i32, "date");
+test_newtype_round_trip!(time_roundtrips, Time, to_pg_time, i64, "time");
+test_newtype_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp, i64, "timestamp");
