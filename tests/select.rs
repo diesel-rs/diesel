@@ -185,3 +185,22 @@ fn selecting_columns_with_different_definition_order() {
     assert_eq!(Some(&expected_user), user_from_insert.as_ref());
     assert_eq!(Some(&expected_user), user_from_select.as_ref());
 }
+
+#[test]
+fn selection_using_subselect() {
+    use schema::posts::dsl::*;
+    use yaqb::expression::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    setup_posts_table(&connection);
+    connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello'), (2, 'World')")
+        .unwrap();
+
+    let users = users::table.filter(users::name.eq("Sean")).select(users::id);
+    let data: Vec<String> = posts
+        .select(title)
+        .filter(user_id.eq(any(users)))
+        .load(&connection).unwrap().collect();
+
+    assert_eq!(vec!["Hello".to_string()], data);
+}

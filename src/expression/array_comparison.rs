@@ -42,6 +42,7 @@ impl<Expr, ST> Expression for Any<Expr, ST> where
 impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST> where
     ST: NativeSqlType,
     Any<Expr, ST>: Expression,
+    Expr: SelectableExpression<QS>,
 {
 }
 

@@ -30,7 +30,7 @@ fn test_count_star() {
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     let mut query_builder = ::yaqb::query_builder::pg::PgQueryBuilder::new(&connection);
-    source.as_query().to_sql(&mut query_builder).unwrap();
+    Expression::to_sql(&source.as_query(), &mut query_builder).unwrap();
     assert!(query_builder.sql.starts_with("SELECT COUNT(*) FROM"));
 }
 

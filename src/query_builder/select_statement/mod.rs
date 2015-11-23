@@ -7,7 +7,7 @@ use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 use super::where_clause::NoWhereClause;
 use super::order_clause::NoOrderClause;
 use super::limit_clause::NoLimitClause;
-use types::NativeSqlType;
+use types::{self, NativeSqlType};
 
 #[derive(Debug, Clone, Copy)]
 pub struct SelectStatement<
@@ -52,7 +52,7 @@ impl<ST, S, F, W, O, L> Query for SelectStatement<ST, S, F, W, O, L> where
     type SqlType = ST;
 }
 
-impl<ST, S, F, W, O, L> QueryFragment for SelectStatement<ST, S, F, W, O, L> where
+impl<ST, S, F, W, O, L> Expression for SelectStatement<ST, S, F, W, O, L> where
     ST: NativeSqlType,
     F: QuerySource,
     S: SelectableExpression<F, ST>,
@@ -60,6 +60,8 @@ impl<ST, S, F, W, O, L> QueryFragment for SelectStatement<ST, S, F, W, O, L> whe
     O: QueryFragment,
     L: QueryFragment,
 {
+    type SqlType = types::Array<ST>;
+
     fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
@@ -69,4 +71,14 @@ impl<ST, S, F, W, O, L> QueryFragment for SelectStatement<ST, S, F, W, O, L> whe
         try!(self.order.to_sql(out));
         self.limit.to_sql(out)
     }
+}
+
+impl<ST, S, F, W, O, L, QS> SelectableExpression<QS> for SelectStatement<ST, S, F, W, O, L> where
+    SelectStatement<ST, S, F, W, O, L>: Expression,
+{
+}
+
+impl<ST, S, F, W, O, L> NonAggregate for SelectStatement<ST, S, F, W, O, L> where
+    SelectStatement<ST, S, F, W, O, L>: Expression,
+{
 }
