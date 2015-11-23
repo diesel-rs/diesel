@@ -24,12 +24,6 @@ pub trait Column: Expression {
     fn name() -> &'static str;
 }
 
-impl<C: Column> SelectableExpression<C::Table> for C {
-}
-
-impl<C: Column> NonAggregate for C {
-}
-
 pub trait Table: QuerySource + AsQuery + Sized {
     type PrimaryKey: Column<Table=Self> + Expression + NonAggregate;
     type AllColumns: SelectableExpression<Self>;

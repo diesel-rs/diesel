@@ -78,6 +78,7 @@ macro_rules! table {
             pub mod columns {
                 use super::table;
                 use $crate::{Table, Column, Expression, SelectableExpression};
+                use $crate::expression::NonAggregate;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult};
                 use $crate::types::*;
 
@@ -110,6 +111,10 @@ macro_rules! table {
                         out.push_identifier(stringify!($column_name))
                     }
                 }
+
+                impl SelectableExpression<table> for $column_name {}
+
+                impl NonAggregate for $column_name {}
 
                 impl Column for $column_name {
                     type Table = table;

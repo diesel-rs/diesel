@@ -20,10 +20,6 @@ table! {
 fn main() {
     let _ = users::table.filter(posts::id.eq(1));
     //~^ ERROR SelectableExpression
-    let _ = users::table.filter(posts::id.eq(1));
-    //~^ ERROR E0277
     let _ = users::table.filter(users::name.eq(posts::title));
     //~^ ERROR SelectableExpression
-    let _ = users::table.filter(users::name.eq(posts::title));
-    //~^ ERROR E0277
 }

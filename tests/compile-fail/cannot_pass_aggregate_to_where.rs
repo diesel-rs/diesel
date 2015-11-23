@@ -15,6 +15,4 @@ fn main() {
 
     let source = users.filter(count(id).gt(3));
     //~^ ERROR NonAggregate
-    let source = users.filter(count(id).gt(3));
-    //~^ ERROR E0277
 }

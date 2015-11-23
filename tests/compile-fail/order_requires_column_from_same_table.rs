@@ -17,5 +17,5 @@ table! {
 
 fn main() {
     let source = users::table.order(posts::id);
-    //~^ ERROR type mismatch
+    //~^ ERROR E0277
 }

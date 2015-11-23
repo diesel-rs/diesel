@@ -24,5 +24,5 @@ fn main() {
     let command = update(users).set(posts::title.eq("Hello"));
     //~^ ERROR type mismatch
     let command = update(users).set(name.eq(posts::title));
-    //~^ ERROR type mismatch
+    //~^ ERROR E0277
 }
