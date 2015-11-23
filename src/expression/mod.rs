@@ -4,6 +4,7 @@ pub mod ops;
 pub mod array_comparison;
 pub mod bound;
 pub mod count;
+pub mod extensions;
 pub mod functions;
 pub mod grouped;
 pub mod predicates;
@@ -11,7 +12,6 @@ pub mod predicates;
 mod max;
 mod sql_literal;
 mod ordering;
-mod extensions;
 
 pub mod dsl {
     pub use super::array_comparison::any;
