@@ -3,6 +3,9 @@ use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
 use types::NativeSqlType;
 
+pub type SelectOutput<T, Expr, Type = <Expr as Expression>::SqlType> =
+    <T as SelectDsl<Expr, Type>>::Output;
+
 pub trait SelectDsl<
     Selection: Expression,
     Type: NativeSqlType = <Selection as Expression>::SqlType,

@@ -17,6 +17,7 @@ pub mod helper_types {
         FindByOutput as FindBy,
         LimitOutput as Limit,
         OrderOutput as Order,
+        SelectOutput as Select,
     };
 }
 
