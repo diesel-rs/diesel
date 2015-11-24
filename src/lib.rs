@@ -11,6 +11,10 @@ pub mod query_source;
 pub mod result;
 mod row;
 
+pub mod helper_types {
+    pub use super::query_dsl::{FilterOutput as Filter, FindByOutput as FindBy};
+}
+
 #[macro_use]
 mod macros;
 

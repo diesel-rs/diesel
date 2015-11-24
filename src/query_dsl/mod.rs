@@ -9,5 +9,5 @@ pub use self::count_dsl::CountDsl;
 pub use self::limit_dsl::LimitDsl;
 pub use self::load_dsl::LoadDsl;
 pub use self::select_dsl::{SelectDsl, SelectSqlDsl};
-pub use self::filter_dsl::{FilterDsl, FilterOutput};
+pub use self::filter_dsl::{FilterDsl, FilterOutput, FindByOutput};
 pub use self::order_dsl::OrderDsl;

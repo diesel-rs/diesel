@@ -1,6 +1,7 @@
 extern crate quickcheck;
 #[macro_use] extern crate yaqb;
 
+mod associations;
 mod expressions;
 mod filter;
 mod filter_operators;

@@ -1,3 +1,5 @@
+use yaqb::*;
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct User {
     pub id: i32,
@@ -16,6 +18,10 @@ impl User {
             name: name.to_string(),
             hair_color: Some(hair_color.to_string()),
         }
+    }
+
+    pub fn new_post(&self, title: &str, body: Option<&str>) -> NewPost {
+        NewPost::new(self.id, title, body)
     }
 }
 
@@ -75,9 +81,10 @@ queriable! {
     }
 }
 
-joinable!(posts -> users (user_id = id));
 select_column_workaround!(users -> posts (id, name, hair_color));
 select_column_workaround!(posts -> users (id, user_id, title, body));
+
+one_to_many!(users (User) -> posts (Post) on (user_id = id));
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NewUser {
@@ -115,7 +122,29 @@ queriable! {
     }
 }
 
-use yaqb::Connection;
+pub struct NewPost {
+    user_id: i32,
+    title: String,
+    body: Option<String>,
+}
+
+impl NewPost {
+    pub fn new(user_id: i32, title: &str, body: Option<&str>) -> Self {
+        NewPost {
+            user_id: user_id,
+            title: title.into(),
+            body: body.map(|b| b.into()),
+        }
+    }
+}
+
+insertable! {
+    NewPost => posts {
+        user_id -> i32,
+        title -> String,
+        body -> Option<String>,
+    }
+}
 
 pub fn setup_users_table(connection: &Connection) {
     connection.execute("CREATE TABLE users (

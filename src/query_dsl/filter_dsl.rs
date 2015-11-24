@@ -1,10 +1,13 @@
-use expression::{Expression, NonAggregate};
+use expression::{Expression, AsExpression, NonAggregate};
+use expression::predicates::Eq;
 use query_builder::AsQuery;
 use query_source::{Table, InnerJoinSource, LeftOuterJoinSource};
 use query_source::filter::FilteredQuerySource;
 use types::Bool;
 
 pub type FilterOutput<T, P> = <T as FilterDsl<P>>::Output;
+pub type FindByOutput<T, Lhs, Rhs> = FilterOutput<T,
+    Eq<Lhs, <Rhs as AsExpression<<Lhs as Expression>::SqlType>>::Expression>>;
 
 pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {
     type Output: AsQuery;
