@@ -1,24 +1,29 @@
 #[macro_export]
 macro_rules! sql_function {
-    ($fn_name:ident, ($($arg_name:ident: $arg_type:ident),*) -> $return_type:ident) => {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ident),*) -> $return_type:ident) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug, Clone, Copy)]
-        pub struct $fn_name<$($arg_name),*> {
+        pub struct $struct_name<$($arg_name),*> {
             $($arg_name: $arg_name),*
         }
 
         #[allow(non_camel_case_types)]
+        pub type $fn_name<$($arg_name),*> = $struct_name<$(
+            <$arg_name as $crate::expression::AsExpression<$crate::types::$arg_type>>::Expression
+        ),*>;
+
+        #[allow(non_camel_case_types)]
         pub fn $fn_name<$($arg_name),*>($($arg_name: $arg_name),*)
-            -> $fn_name<$(<$arg_name as $crate::expression::AsExpression<$crate::types::$arg_type>>::Expression),*>
+            -> $fn_name<$($arg_name),*>
             where $($arg_name: $crate::expression::AsExpression<$crate::types::$arg_type>),+
         {
-            $fn_name {
+            $struct_name {
                 $($arg_name: $arg_name.as_expression()),+
             }
         }
 
         #[allow(non_camel_case_types)]
-        impl<$($arg_name),*> $crate::expression::Expression for $fn_name<$($arg_name),*> where
+        impl<$($arg_name),*> $crate::expression::Expression for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::Expression),*
         {
             type SqlType = $crate::types::$return_type;
@@ -33,16 +38,16 @@ macro_rules! sql_function {
         }
 
         #[allow(non_camel_case_types)]
-        impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $fn_name<$($arg_name),*> where
+        impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::SelectableExpression<QS>,)*
-            $fn_name<$($arg_name),*>: $crate::expression::Expression,
+            $struct_name<$($arg_name),*>: $crate::expression::Expression,
         {
         }
 
         #[allow(non_camel_case_types)]
-        impl<$($arg_name),*> $crate::expression::NonAggregate for $fn_name<$($arg_name),*> where
+        impl<$($arg_name),*> $crate::expression::NonAggregate for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::NonAggregate,)*
-            $fn_name<$($arg_name),*>: $crate::expression::Expression,
+            $struct_name<$($arg_name),*>: $crate::expression::Expression,
         {
         }
     }

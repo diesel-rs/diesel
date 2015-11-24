@@ -175,7 +175,7 @@ macro_rules! insertable {
         {
             type Columns = ($($table_mod::$field_name),+);
             type Values = $crate::expression::grouped::Grouped<($(
-                $crate::helper_types::AsExpr<&'insert $Type, $table_mod::$field_name>
+                $crate::expression::helper_types::AsExpr<&'insert $Type, $table_mod::$field_name>
             ),+)>;
 
             fn columns() -> Self::Columns {
@@ -263,6 +263,20 @@ macro_rules! one_to_many {
         ($foreign_key:ident = $primary_key:ident)
     ) => {
         one_to_many!($child_table: $parent_table ($parent_struct) ->
+                     $child_table ($child_struct) on ($foreign_key = $primary_key));
+    };
+    (
+        $association_name:ident -> $association_type:ident :
+        $parent_table:ident ($parent_struct:ty) ->
+        $child_table:ident ($child_struct:ty) on
+        ($foreign_key:ident = $primary_key:ident)
+    ) => {
+        pub type $association_type = $crate::helper_types::FindBy<
+            $child_table::table,
+            $child_table::$foreign_key,
+            i32,
+        >;
+        one_to_many!($association_name: $parent_table ($parent_struct) ->
                      $child_table ($child_struct) on ($foreign_key = $primary_key));
     };
     (

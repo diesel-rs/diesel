@@ -1,6 +1,6 @@
 use expression::predicates::Eq;
 use expression::{Expression, NonAggregate};
-use helper_types::AsExpr;
+use expression::helper_types::AsExpr;
 use query_builder::AsQuery;
 use query_source::filter::FilteredQuerySource;
 use query_source::{Table, InnerJoinSource, LeftOuterJoinSource};

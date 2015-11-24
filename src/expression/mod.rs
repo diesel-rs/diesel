@@ -71,21 +71,15 @@ pub trait Expression: Sized {
         NotBetween::new(self, And::new(other.start.as_expression(), other.end.as_expression()))
     }
 
-    fn and<T: AsExpression<types::Bool>>(self, other: T) -> And<Self::Expression, T::Expression> where
-        Self: AsExpression<types::Bool>,
-    {
+    fn and<T: AsExpression<types::Bool>>(self, other: T) -> And<Self, T::Expression> {
         And::new(self.as_expression(), other.as_expression())
     }
 
-    fn like<T: AsExpression<types::VarChar>>(self, other: T) -> Like<Self::Expression, T::Expression> where
-        Self: AsExpression<types::VarChar>,
-    {
+    fn like<T: AsExpression<types::VarChar>>(self, other: T) -> Like<Self, T::Expression> {
         Like::new(self.as_expression(), other.as_expression())
     }
 
-    fn not_like<T: AsExpression<types::VarChar>>(self, other: T) -> NotLike<Self::Expression, T::Expression> where
-        Self: AsExpression<types::VarChar>,
-    {
+    fn not_like<T: AsExpression<types::VarChar>>(self, other: T) -> NotLike<Self, T::Expression> {
         NotLike::new(self.as_expression(), other.as_expression())
     }
 

@@ -18,8 +18,6 @@ pub mod helper_types {
         LimitOutput as Limit,
         OrderOutput as Order,
     };
-
-    pub use super::expression::helper_types::AsExpr;
 }
 
 #[macro_use]
