@@ -9,6 +9,7 @@ use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
 use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns};
+use helper_types::{FindBy, Limit, AsExpr};
 use query_builder::{AsQuery, Query, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
@@ -28,7 +29,6 @@ pub struct Connection {
 type PrimaryKey<T> = <T as Table>::PrimaryKey;
 type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
 type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
-type FindOutput<T, PK> = <T as FilterDsl<FindPredicate<T, PK>>>::Output;
 
 impl Connection {
     pub fn establish(database_url: &str) -> ConnectionResult<Connection> {
@@ -153,10 +153,10 @@ impl Connection {
 
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> Result<Option<U>> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
-        FindOutput<T, PK>: LimitDsl,
-        U: Queriable<<<FindOutput<T, PK> as LimitDsl>::Output as Query>::SqlType>,
+        FindBy<T, T::PrimaryKey, PK>: LimitDsl,
+        U: Queriable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
-        <PK as AsExpression<PkType<T>>>::Expression: NonAggregate,
+        AsExpr<PK, T::PrimaryKey>: NonAggregate,
     {
         let pk = source.primary_key();
         self.query_one(source.filter(pk.eq(id)).limit(1))

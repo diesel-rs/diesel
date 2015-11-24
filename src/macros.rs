@@ -175,9 +175,7 @@ macro_rules! insertable {
         {
             type Columns = ($($table_mod::$field_name),+);
             type Values = $crate::expression::grouped::Grouped<($(
-                <&'insert $Type as $crate::expression::AsExpression<
-                    <$table_mod::$field_name as $crate::expression::Expression>::SqlType
-                >>::Expression
+                $crate::helper_types::AsExpr<&'insert $Type, $table_mod::$field_name>
             ),+)>;
 
             fn columns() -> Self::Columns {

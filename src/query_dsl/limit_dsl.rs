@@ -1,6 +1,8 @@
 use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
 
+pub type LimitOutput<T> = <T as LimitDsl>::Output;
+
 pub trait LimitDsl {
     type Output: Query;
 

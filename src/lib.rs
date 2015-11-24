@@ -12,7 +12,14 @@ pub mod result;
 mod row;
 
 pub mod helper_types {
-    pub use super::query_dsl::{FilterOutput as Filter, FindByOutput as FindBy};
+    pub use super::query_dsl::{
+        FilterOutput as Filter,
+        FindByOutput as FindBy,
+        LimitOutput as Limit,
+        OrderOutput as Order,
+    };
+
+    pub use super::expression::helper_types::AsExpr;
 }
 
 #[macro_use]
