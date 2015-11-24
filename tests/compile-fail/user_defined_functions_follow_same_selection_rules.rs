@@ -17,8 +17,8 @@ table! {
     }
 }
 
-sql_function!(foo, (x: Integer) -> Integer);
-sql_function!(bar, (x: VarChar) -> VarChar);
+sql_function!(foo, foo_t, (x: Integer) -> Integer);
+sql_function!(bar, bar_t, (x: VarChar) -> VarChar);
 
 fn main() {
     use self::users::name;

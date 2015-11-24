@@ -1,7 +1,7 @@
 use schema::*;
 use yaqb::*;
 
-sql_function!(my_lower, (x: VarChar) -> VarChar);
+sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn test_sql_function() {
