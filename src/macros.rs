@@ -1,4 +1,35 @@
 #[macro_export]
+macro_rules! column {
+    ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy)]
+        pub struct $column_name;
+
+        impl $crate::expression::Expression for $column_name {
+            type SqlType = $Type;
+
+            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+                try!(out.push_identifier($($table)::*::name()));
+                out.push_sql(".");
+                out.push_identifier(stringify!($column_name))
+            }
+        }
+
+        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
+
+        impl $crate::expression::NonAggregate for $column_name {}
+
+        impl $crate::query_source::Column for $column_name {
+            type Table = $($table)::*;
+
+            fn name() -> &'static str {
+                stringify!($column_name)
+            }
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! table {
     (
         $name:ident {
@@ -14,6 +45,34 @@ macro_rules! table {
     (
         $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        table! {
+            $name ($pk) {
+                $($column_name -> $Type,)+
+            } no select {}
+        }
+    };
+    (
+        $name:ident {
+            $($column_name:ident -> $Type:ty,)+
+        } no select {
+            $($no_select_column_name:ident -> $no_select_type:ty,)*
+        }
+    ) => {
+        table! {
+            $name (id) {
+                $($column_name -> $Type,)+
+            } no select {
+                $($no_select_column_name -> $no_select_type,)*
+            }
+        }
+    };
+    (
+        $name:ident ($pk:ident) {
+            $($column_name:ident -> $Type:ty,)+
+        } no select {
+            $($no_select_column_name:ident -> $no_select_type:ty,)*
         }
     ) => {
         pub mod $name {
@@ -78,7 +137,6 @@ macro_rules! table {
             pub mod columns {
                 use super::table;
                 use $crate::{Table, Column, Expression, SelectableExpression};
-                use $crate::expression::NonAggregate;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult};
                 use $crate::types::*;
 
@@ -98,32 +156,8 @@ macro_rules! table {
 
                 impl SelectableExpression<table> for star {}
 
-                $(#[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug, Clone, Copy)]
-                pub struct $column_name;
-
-                impl Expression for $column_name {
-                    type SqlType = $Type;
-
-                    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-                        try!(out.push_identifier(table::name()));
-                        out.push_sql(".");
-                        out.push_identifier(stringify!($column_name))
-                    }
-                }
-
-                impl SelectableExpression<table> for $column_name {}
-
-                impl NonAggregate for $column_name {}
-
-                impl Column for $column_name {
-                    type Table = table;
-
-                    fn name() -> &'static str {
-                        stringify!($column_name)
-                    }
-                }
-                )+
+                $(column!(table, $column_name -> $Type);)+
+                $(column!(table, $no_select_column_name -> $no_select_type);)*
             }
         }
     }
