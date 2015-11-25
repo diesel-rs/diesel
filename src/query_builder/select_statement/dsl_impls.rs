@@ -1,4 +1,5 @@
 use expression::*;
+use expression::aliased::Aliased;
 use query_builder::*;
 use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
@@ -77,5 +78,18 @@ impl<ST, S, F, W, O, L, Of> OffsetDsl for SelectStatement<ST, S, F, W, O, L, Of>
         let offset_clause = OffsetClause(AsExpression::<types::BigInt>::as_expression(offset));
         SelectStatement::new(self.select, self.from, self.where_clause,
             self.order, self.limit, offset_clause)
+    }
+}
+
+impl<'a, ST, S, F, W, O, L, Of, Expr> WithDsl<'a, Expr>
+for SelectStatement<ST, S, F, W, O, L, Of> where
+    SelectStatement<ST, S, WithQuerySource<'a, F, Expr>, W, O, L, Of>: Query,
+{
+    type Output = SelectStatement<ST, S, WithQuerySource<'a, F, Expr>, W, O, L, Of>;
+
+    fn with(self, expr: Aliased<'a, Expr>) -> Self::Output {
+        let source = WithQuerySource::new(self.from, expr);
+        SelectStatement::new(self.select, source, self.where_clause,
+            self.order, self.limit, self.offset)
     }
 }

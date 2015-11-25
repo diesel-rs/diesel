@@ -34,6 +34,23 @@ fn test_count_star() {
     assert!(query_builder.sql.starts_with("SELECT COUNT(*) FROM"));
 }
 
+use yaqb::types::VarChar;
+sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+
+#[test]
+fn test_with_expression_aliased() {
+    let connection = connection();
+
+    let mut query_builder = ::yaqb::query_builder::pg::PgQueryBuilder::new(&connection);
+    let n = lower("sean").aliased("n");
+    let source = users.with(n).filter(n.eq("Jim")).select(id);
+    Expression::to_sql(&source.as_query(), &mut query_builder).unwrap();
+    assert_eq!(
+        r#"SELECT "users"."id" FROM "users", lower($1) "n" WHERE "n" = $2"#,
+        &query_builder.sql
+    );
+}
+
 table! {
     numbers (n) {
         n -> Integer,

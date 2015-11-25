@@ -17,6 +17,13 @@ macro_rules! column {
 
         impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
 
+        impl<'a, ST, Left, Right> SelectableExpression<
+            $crate::WithQuerySource<'a, Left, Right>, ST> for $column_name where
+            ST: NativeSqlType,
+            $column_name: SelectableExpression<Left, ST>
+        {
+        }
+
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {

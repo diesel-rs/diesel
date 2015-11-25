@@ -1,6 +1,7 @@
 #[macro_use]
 pub mod ops;
 
+pub mod aliased;
 pub mod array_comparison;
 pub mod bound;
 pub mod count;
