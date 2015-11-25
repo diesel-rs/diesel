@@ -22,7 +22,7 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right>,
     Right: Table,
 {
-    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.left.from_clause(out));
         out.push_sql(" INNER JOIN ");
         try!(self.right.from_clause(out));
@@ -70,7 +70,7 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right>,
     Right: Table,
 {
-    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.left.from_clause(out));
         out.push_sql(" LEFT OUTER JOIN ");
         try!(self.right.from_clause(out));

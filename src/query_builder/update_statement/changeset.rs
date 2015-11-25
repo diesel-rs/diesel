@@ -10,7 +10,7 @@ pub trait AsChangeset {
 pub trait Changeset {
     type Target: QuerySource;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult;
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
 impl<T> AsChangeset for T where

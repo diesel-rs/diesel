@@ -28,7 +28,7 @@ macro_rules! sql_function {
         {
             type SqlType = $crate::types::$return_type;
 
-            fn to_sql<T: $crate::query_builder::QueryBuilder>(&self, out: &mut T)
+            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
                     out.push_sql(concat!(stringify!($fn_name), "("));
                     $(try!(self.$arg_name.to_sql(out));)*
@@ -62,7 +62,7 @@ macro_rules! no_arg_sql_function {
         impl $crate::expression::Expression for $type_name {
             type SqlType = $crate::types::$return_type;
 
-            fn to_sql<T: $crate::query_builder::QueryBuilder>(&self, out: &mut T)
+            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
                     out.push_sql(concat!(stringify!($type_name), "()"));
                     Ok(())

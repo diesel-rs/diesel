@@ -6,14 +6,14 @@ pub struct Grouped<T>(pub T);
 impl<T: Expression> Expression for Grouped<T> {
     type SqlType = T::SqlType;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("(");
         try!(self.0.to_sql(out));
         out.push_sql(")");
         Ok(())
     }
 
-    fn to_insert_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("(");
         try!(self.0.to_insert_sql(out));
         out.push_sql(")");

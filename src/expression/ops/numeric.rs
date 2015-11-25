@@ -25,7 +25,7 @@ macro_rules! numeric_operation {
         {
             type SqlType = <Lhs::SqlType as types::ops::$name>::Output;
 
-            fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+            fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                 try!(self.lhs.to_sql(out));
                 out.push_sql($op);
                 self.rhs.to_sql(out)

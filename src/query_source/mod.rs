@@ -15,7 +15,7 @@ pub trait Queriable<ST: NativeSqlType> {
 }
 
 pub trait QuerySource: Sized {
-    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
 pub trait Column: Expression {
@@ -50,7 +50,7 @@ pub trait Table: QuerySource + AsQuery + Sized {
 impl<T: Table> UpdateTarget for T {
     type Table = Self;
 
-    fn where_clause<B: QueryBuilder>(&self, _out: &mut B) -> BuildQueryResult {
+    fn where_clause(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 

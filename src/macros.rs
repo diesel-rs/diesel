@@ -44,7 +44,7 @@ macro_rules! table {
             pub type SqlType = ($($Type),+);
 
             impl QuerySource for table {
-                fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                     out.push_identifier(stringify!($name))
                 }
             }
@@ -89,7 +89,7 @@ macro_rules! table {
                 impl Expression for star {
                     type SqlType = ();
 
-                    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
                         out.push_sql(".*");
                         Ok(())
@@ -105,7 +105,7 @@ macro_rules! table {
                 impl Expression for $column_name {
                     type SqlType = $Type;
 
-                    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+                    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
                         out.push_sql(".");
                         out.push_identifier(stringify!($column_name))

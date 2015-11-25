@@ -27,11 +27,11 @@ pub trait Query: QueryFragment {
 }
 
 pub trait QueryFragment {
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult;
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
 impl<T: Expression> QueryFragment for T {
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         Expression::to_sql(self, out)
     }
 }

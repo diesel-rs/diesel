@@ -35,7 +35,7 @@ impl<T, U> QueryFragment for UpdateStatement<T, U> where
     T: UpdateTarget,
     U: changeset::Changeset<Target=T::Table>,
 {
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("UPDATE ");
         try!(self.target.from_clause(out));
         out.push_sql(" SET ");
@@ -61,7 +61,7 @@ impl<T, U> QueryFragment for UpdateQuery<T, U> where
     T: UpdateTarget,
     UpdateStatement<T, U>: QueryFragment,
 {
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.0.to_sql(out));
         out.push_sql(" RETURNING ");
         Expression::to_sql(&T::Table::all_columns(), out)

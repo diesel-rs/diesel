@@ -20,13 +20,13 @@ impl<T, U> Expression for Bound<T, U> where
 {
     type SqlType = T;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.item.values_to_sql().map(|mut values| {
             out.push_bound_value(&self.tpe, values.pop().unwrap());
         })
     }
 
-    fn to_insert_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.item.values_to_sql().map(|mut values| {
             match values.pop().unwrap() {
                 values@Some(_) => out.push_bound_value(&self.tpe, values),

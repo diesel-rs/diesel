@@ -62,7 +62,7 @@ impl<ST, S, F, W, O, L> Expression for SelectStatement<ST, S, F, W, O, L> where
 {
     type SqlType = types::Array<ST>;
 
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");

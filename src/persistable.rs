@@ -70,11 +70,11 @@ impl<'a, T, U> Expression for InsertValues<'a, T, U> where
 {
     type SqlType = <<&'a U as Insertable<T>>::Columns as InsertableColumns<T>>::SqlType;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.to_insert_sql(out)
     }
 
-    fn to_insert_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         for (i, record) in self.values.into_iter().enumerate() {
             if i != 0 {
                 out.push_sql(", ");

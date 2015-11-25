@@ -75,7 +75,7 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> Expression for ($($T),+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
-                fn to_sql<Builder: QueryBuilder>(&self, out: &mut Builder)
+                fn to_sql(&self, out: &mut QueryBuilder)
                 -> BuildQueryResult {
                     $(
                         if e!($idx) != 0 {
@@ -86,7 +86,7 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn to_insert_sql<Builder: QueryBuilder>(&self, out: &mut Builder)
+                fn to_insert_sql(&self, out: &mut QueryBuilder)
                 -> BuildQueryResult {
                     $(
                         if e!($idx) != 0 {
@@ -133,7 +133,7 @@ macro_rules! tuple_impls {
             {
                 type Target = Target;
 
-                fn to_sql<Builder: QueryBuilder>(&self, out: &mut Builder) -> BuildQueryResult {
+                fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                     $(
                         if e!($idx) != 0 {
                             out.push_sql(", ");

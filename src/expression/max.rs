@@ -19,7 +19,7 @@ pub struct Max<T: Expression> {
 impl<T: Expression> Expression for Max<T> {
     type SqlType = T::SqlType;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("MAX(");
         try!(self.target.to_sql(out));
         out.push_sql(")");

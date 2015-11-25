@@ -21,7 +21,7 @@ impl<ST> SqlLiteral<ST> {
 impl<ST: NativeSqlType> Expression for SqlLiteral<ST> {
     type SqlType = ST;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql(&self.sql);
         Ok(())
     }

@@ -31,7 +31,7 @@ impl<Expr, ST> Expression for Any<Expr, ST> where
 {
     type SqlType = ST;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("ANY(");
         try!(self.expr.to_sql(out));
         out.push_sql(")");

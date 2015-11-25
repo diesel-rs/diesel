@@ -20,7 +20,7 @@ pub struct Count<T: Expression> {
 impl<T: Expression> Expression for Count<T> {
     type SqlType = BigInt;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("COUNT(");
         try!(self.target.to_sql(out));
         out.push_sql(")");
@@ -37,7 +37,7 @@ pub struct CountStar;
 impl Expression for CountStar {
     type SqlType = BigInt;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("COUNT(*)");
         Ok(())
     }

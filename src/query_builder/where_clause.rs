@@ -13,7 +13,7 @@ pub trait WhereAnd<Predicate: Expression<SqlType=Bool>> {
 pub struct NoWhereClause;
 
 impl QueryFragment for NoWhereClause {
-    fn to_sql<T: QueryBuilder>(&self, _out: &mut T) -> BuildQueryResult {
+    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 }
@@ -30,7 +30,7 @@ impl<Predicate: Expression<SqlType=Bool>> WhereAnd<Predicate> for NoWhereClause 
 pub struct WhereClause<Expr>(Expr);
 
 impl<Expr: Expression<SqlType=Bool>> QueryFragment for WhereClause<Expr> {
-    fn to_sql<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql(" WHERE ");
         self.0.to_sql(out)
     }

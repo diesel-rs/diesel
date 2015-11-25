@@ -50,7 +50,7 @@ impl<Source, Predicate, NewPredicate> FilterDsl<NewPredicate>
 impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> where
     Source: QuerySource,
 {
-    fn from_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.source.from_clause(out)
     }
 }
@@ -61,7 +61,7 @@ impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> 
 {
     type Table = Source::Table;
 
-    fn where_clause<T: QueryBuilder>(&self, out: &mut T) -> BuildQueryResult {
+    fn where_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql(" WHERE ");
         self.predicate.to_sql(out)
     }

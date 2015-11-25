@@ -18,7 +18,7 @@ impl<T> Expression for Desc<T> where
 {
     type SqlType = ();
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.expr.to_sql(out));
         out.push_sql(" DESC");
         Ok(())

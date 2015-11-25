@@ -25,7 +25,7 @@ macro_rules! infix_predicate {
         {
             type SqlType = Bool;
 
-            fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+            fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                 try!(self.left.to_sql(out));
                 out.push_sql($operator);
                 self.right.to_sql(out)
@@ -68,7 +68,7 @@ impl<T, U> Changeset for Eq<T, U> where
 {
     type Target = T::Table;
 
-    fn to_sql<B: QueryBuilder>(&self, out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
         Expression::to_sql(&self.right, out)

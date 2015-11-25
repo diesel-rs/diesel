@@ -81,7 +81,7 @@ struct Arbitrary<T: types::NativeSqlType> {
 impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
     type SqlType = T;
 
-    fn to_sql<B: QueryBuilder>(&self, _out: &mut B) -> BuildQueryResult {
+    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 }
