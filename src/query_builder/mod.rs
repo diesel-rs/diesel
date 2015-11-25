@@ -1,6 +1,7 @@
 pub mod pg;
 
 mod limit_clause;
+mod offset_clause;
 mod order_clause;
 mod select_statement;
 mod where_clause;

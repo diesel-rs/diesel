@@ -16,6 +16,7 @@ pub mod helper_types {
         FilterOutput as Filter,
         FindByOutput as FindBy,
         LimitOutput as Limit,
+        OffsetOutput as Offset,
         OrderOutput as Order,
         SelectOutput as Select,
     };
