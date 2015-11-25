@@ -197,3 +197,36 @@ fn filter_on_column_equality() {
     let data: Vec<_> = query.load(&connection).unwrap().collect();
     assert_eq!(expected_data, data);
 }
+
+#[test]
+fn filter_with_or() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    connection.insert_returning_count(&users, &NewUser::new("Jim", None))
+        .unwrap();
+
+    let expected_users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
+    let data: Vec<_> = users.filter(name.eq("Sean").or(name.eq("Tess")))
+        .load(&connection).unwrap().collect();
+
+    assert_eq!(expected_users, data);
+}
+
+#[test]
+fn or_doesnt_mess_with_precidence_of_previous_statements() {
+    use schema::users::dsl::*;
+    use yaqb::expression::AsExpression;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let f = AsExpression::<types::Bool>::as_expression(false);
+    let count = users.filter(f).filter(f.or(true))
+        .count().first(&connection).unwrap();
+
+    assert_eq!(Some(0), count);
+
+    let count = users.filter(f.or(f).and(f.or(true)))
+        .count().first(&connection).unwrap();
+
+    assert_eq!(Some(0), count);
+}

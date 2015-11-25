@@ -57,6 +57,7 @@ infix_predicate!(LtEq, " <= ");
 infix_predicate!(NotBetween, " NOT BETWEEN ");
 infix_predicate!(NotEq, " != ");
 infix_predicate!(NotLike, " NOT LIKE ");
+infix_predicate!(Or, " OR ");
 
 use query_source::Column;
 

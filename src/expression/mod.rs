@@ -26,6 +26,7 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use query_builder::{QueryBuilder, BuildQueryResult};
+use self::grouped::Grouped;
 use self::predicates::*;
 use types::{self, NativeSqlType};
 
@@ -73,6 +74,10 @@ pub trait Expression: Sized {
 
     fn and<T: AsExpression<types::Bool>>(self, other: T) -> And<Self, T::Expression> {
         And::new(self.as_expression(), other.as_expression())
+    }
+
+    fn or<T: AsExpression<types::Bool>>(self, other: T) -> Grouped<Or<Self, T::Expression>> {
+        Grouped(Or::new(self, other.as_expression()))
     }
 
     fn like<T: AsExpression<types::VarChar>>(self, other: T) -> Like<Self, T::Expression> {
