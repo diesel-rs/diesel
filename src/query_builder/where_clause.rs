@@ -1,4 +1,5 @@
 use expression::*;
+use expression::expression_methods::*;
 use expression::predicates::And;
 use super::{QueryFragment, QueryBuilder, BuildQueryResult};
 use types::Bool;

@@ -1,4 +1,5 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::expression_methods::*;
 use expression::predicates::And;
 use query_builder::*;
 use query_dsl::{FilterDsl, FilterOutput};

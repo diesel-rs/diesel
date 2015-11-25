@@ -249,8 +249,6 @@ macro_rules! changeset {
             ),+);
 
             fn as_changeset(self) -> Self::Changeset {
-                use $crate::expression::Expression;
-
                 ($(
                     $table_mod::$field_name.eq(&self.$field_name)
                 ),+)
@@ -274,7 +272,6 @@ macro_rules! joinable_inner {
             type Predicate = $crate::expression::predicates::Eq<$child::$source, $parent::$target>;
 
             fn join_expression(&self) -> Self::Predicate {
-                use $crate::Expression;
                 $child::$source.eq($parent::$target)
             }
         }

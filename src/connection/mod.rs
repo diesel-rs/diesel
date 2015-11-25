@@ -7,6 +7,7 @@ pub use self::cursor::Cursor;
 
 use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
+use expression::expression_methods::*;
 use expression::predicates::Eq;
 use persistable::{Insertable, InsertableColumns};
 use helper_types::{FindBy, Limit};
