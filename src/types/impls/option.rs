@@ -7,8 +7,12 @@ use std::io::Write;
 use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Nullable<T> {
-    fn oid() -> u32 {
-        T::oid()
+    fn oid(&self) -> u32 {
+        self.0.oid()
+    }
+
+    fn new() -> Self {
+        Nullable(T::new())
     }
 }
 

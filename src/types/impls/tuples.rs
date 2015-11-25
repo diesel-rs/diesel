@@ -20,8 +20,12 @@ macro_rules! tuple_impls {
     )+) => {
         $(
             impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {
-                fn oid() -> u32 {
+                fn oid(&self) -> u32 {
                     0
+                }
+
+                fn new() -> Self {
+                    ($($T::new()),+)
                 }
             }
 

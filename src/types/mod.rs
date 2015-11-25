@@ -12,34 +12,35 @@ use row::Row;
 use std::error::Error;
 use std::io::Write;
 
-#[derive(Clone, Copy)] pub struct Bool;
+#[derive(Clone, Copy, Default)] pub struct Bool;
 
 pub type SmallSerial = SmallInt;
 pub type Serial = Integer;
 pub type BigSerial = BigInt;
 
-#[derive(Clone, Copy)] pub struct SmallInt;
-#[derive(Clone, Copy)] pub struct Integer;
-#[derive(Clone, Copy)] pub struct BigInt;
+#[derive(Clone, Copy, Default)] pub struct SmallInt;
+#[derive(Clone, Copy, Default)] pub struct Integer;
+#[derive(Clone, Copy, Default)] pub struct BigInt;
 
-#[derive(Clone, Copy)] pub struct Float;
-#[derive(Clone, Copy)] pub struct Double;
+#[derive(Clone, Copy, Default)] pub struct Float;
+#[derive(Clone, Copy, Default)] pub struct Double;
 
-#[derive(Clone, Copy)] pub struct VarChar;
-#[derive(Clone, Copy)] pub struct Text;
+#[derive(Clone, Copy, Default)] pub struct VarChar;
+#[derive(Clone, Copy, Default)] pub struct Text;
 
-#[derive(Clone, Copy)] pub struct Binary;
+#[derive(Clone, Copy, Default)] pub struct Binary;
 
-#[derive(Clone, Copy)] pub struct Date;
-#[derive(Clone, Copy)] pub struct Interval;
-#[derive(Clone, Copy)] pub struct Time;
-#[derive(Clone, Copy)] pub struct Timestamp;
+#[derive(Clone, Copy, Default)] pub struct Date;
+#[derive(Clone, Copy, Default)] pub struct Interval;
+#[derive(Clone, Copy, Default)] pub struct Time;
+#[derive(Clone, Copy, Default)] pub struct Timestamp;
 
-#[derive(Clone, Copy)] pub struct Nullable<T: NativeSqlType>(T);
-#[derive(Clone, Copy)] pub struct Array<T: NativeSqlType>(T);
+#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType>(T);
+#[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {
-    fn oid() -> u32;
+    fn oid(&self) -> u32;
+    fn new() -> Self where Self: Sized;
 }
 
 pub trait FromSql<A: NativeSqlType>: Sized {

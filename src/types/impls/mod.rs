@@ -57,8 +57,12 @@ macro_rules! primitive_impls {
     ($($Source:ident -> ($Target:ty, $oid:expr)),+,) => {
         $(
             impl NativeSqlType for types::$Source {
-                fn oid() -> u32 {
+                fn oid(&self) -> u32 {
                     $oid
+                }
+
+                fn new() -> Self {
+                    types::$Source
                 }
             }
 

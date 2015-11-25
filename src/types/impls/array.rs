@@ -9,21 +9,25 @@ use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, Array, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
-    fn oid() -> u32 {
-        let oid = T::oid();
-        if oid == types::Bool::oid() { 1000 }
-        else if oid == types::SmallInt::oid() { 1005 }
-        else if oid == types::Integer::oid() { 1007 }
-        else if oid == types::BigInt::oid() { 1016 }
+    fn oid(&self) -> u32 {
+        let oid = self.0.oid();
+        if oid == types::Bool.oid() { 1000 }
+        else if oid == types::SmallInt.oid() { 1005 }
+        else if oid == types::Integer.oid() { 1007 }
+        else if oid == types::BigInt.oid() { 1016 }
 
-        else if oid == types::Float::oid() { 1021 }
-        else if oid == types::Double::oid() { 1022 }
+        else if oid == types::Float.oid() { 1021 }
+        else if oid == types::Double.oid() { 1022 }
 
-        else if oid == types::VarChar::oid() { 1015 }
-        else if oid == types::Text::oid() { 1009 }
+        else if oid == types::VarChar.oid() { 1015 }
+        else if oid == types::Text.oid() { 1009 }
 
-        else if oid == types::Binary::oid() { 1001 }
+        else if oid == types::Binary.oid() { 1001 }
         else { 0 }
+    }
+
+    fn new() -> Self {
+        Array(T::new())
     }
 }
 
@@ -104,7 +108,7 @@ impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
         try!(out.write_i32::<BigEndian>(num_dimensions));
         let flags = 0;
         try!(out.write_i32::<BigEndian>(flags));
-        try!(out.write_u32::<BigEndian>(ST::oid()));
+        try!(out.write_u32::<BigEndian>(ST::new().oid()));
         try!(out.write_i32::<BigEndian>(self.len() as i32));
         let lower_bound = 1;
         try!(out.write_i32::<BigEndian>(lower_bound));
