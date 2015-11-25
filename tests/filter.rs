@@ -231,6 +231,7 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
     assert_eq!(Some(0), count);
 }
 
+use yaqb::types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]

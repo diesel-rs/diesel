@@ -1,5 +1,6 @@
 use schema::*;
 use yaqb::*;
+use yaqb::types::VarChar;
 
 sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
 

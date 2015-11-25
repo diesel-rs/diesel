@@ -2,6 +2,7 @@
 extern crate yaqb;
 
 use yaqb::*;
+use yaqb::types::*;
 
 table! {
     users {

@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! sql_function {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ident),*) -> $return_type:ident) => {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug, Clone, Copy)]
         pub struct $struct_name<$($arg_name),*> {
@@ -9,13 +9,13 @@ macro_rules! sql_function {
 
         #[allow(non_camel_case_types)]
         pub type $fn_name<$($arg_name),*> = $struct_name<$(
-            <$arg_name as $crate::expression::AsExpression<$crate::types::$arg_type>>::Expression
+            <$arg_name as $crate::expression::AsExpression<$arg_type>>::Expression
         ),*>;
 
         #[allow(non_camel_case_types)]
         pub fn $fn_name<$($arg_name),*>($($arg_name: $arg_name),*)
             -> $fn_name<$($arg_name),*>
-            where $($arg_name: $crate::expression::AsExpression<$crate::types::$arg_type>),+
+            where $($arg_name: $crate::expression::AsExpression<$arg_type>),+
         {
             $struct_name {
                 $($arg_name: $arg_name.as_expression()),+
@@ -26,7 +26,7 @@ macro_rules! sql_function {
         impl<$($arg_name),*> $crate::expression::Expression for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::Expression),*
         {
-            type SqlType = $crate::types::$return_type;
+            type SqlType = $return_type;
 
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
@@ -55,12 +55,12 @@ macro_rules! sql_function {
 
 #[macro_export]
 macro_rules! no_arg_sql_function {
-    ($type_name:ident, $return_type:ident) => {
+    ($type_name:ident, $return_type:ty) => {
         #[allow(non_camel_case_types)]
         pub struct $type_name;
 
         impl $crate::expression::Expression for $type_name {
-            type SqlType = $crate::types::$return_type;
+            type SqlType = $return_type;
 
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
