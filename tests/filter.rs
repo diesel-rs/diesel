@@ -230,3 +230,23 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
 
     assert_eq!(Some(0), count);
 }
+
+sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+
+#[test]
+fn filter_by_boxed_predicate() {
+    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, SqlType=types::Bool>> {
+        Box::new(lower(users::name).eq(name.to_string()))
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let queried_sean = users::table.filter(by_name("sean")).first(&connection)
+        .unwrap();
+    let queried_tess = users::table.filter(by_name("tess")).first(&connection)
+        .unwrap();
+
+    assert_eq!(Some(sean), queried_sean);
+    assert_eq!(Some(tess), queried_tess);
+}

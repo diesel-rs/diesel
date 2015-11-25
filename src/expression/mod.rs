@@ -119,6 +119,18 @@ pub trait Expression {
     }
 }
 
+impl<T: Expression + ?Sized> Expression for Box<T> {
+    type SqlType = T::SqlType;
+
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        Expression::to_sql(&**self, out)
+    }
+
+    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        Expression::to_insert_sql(&**self, out)
+    }
+}
+
 pub trait AsExpression<T: NativeSqlType> {
     type Expression: Expression<SqlType=T>;
 
@@ -139,5 +151,24 @@ pub trait SelectableExpression<
 >: Expression {
 }
 
+impl<T: ?Sized, ST, QS> SelectableExpression<QS, ST> for Box<T> where
+    T: SelectableExpression<QS, ST>,
+    ST: NativeSqlType,
+    Box<T>: Expression,
+{
+}
+
 pub trait NonAggregate: Expression {
+}
+
+impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
+}
+
+pub trait BoxableExpression<QS, ST: NativeSqlType>: Expression + SelectableExpression<QS, ST> + NonAggregate {
+}
+
+impl<QS, T, ST> BoxableExpression<QS, ST> for T where
+    ST: NativeSqlType,
+    T: Expression + SelectableExpression<QS, ST> + NonAggregate,
+{
 }
