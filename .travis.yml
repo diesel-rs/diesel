@@ -1,0 +1,24 @@
+language: rust
+sudo: false
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+
+before_script:
+- |
+    pip install 'travis-cargo<0.2' --user &&
+    export PATH=$HOME/.local/bin:$PATH
+script:
+- |
+    (cd yaqb && travis-cargo build) &&
+    (cd yaqb && travis-cargo test) &&
+    (cd yaqb_tests && travis-cargo test) &&
