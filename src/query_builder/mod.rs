@@ -6,7 +6,9 @@ mod order_clause;
 mod select_statement;
 mod where_clause;
 pub mod update_statement;
+mod delete_statement;
 
+pub use self::delete_statement::delete;
 pub use self::select_statement::SelectStatement;
 pub use self::update_statement::{update, IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
 

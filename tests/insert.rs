@@ -133,3 +133,19 @@ fn insert_borrowed_content() {
     assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);
 }
+
+#[test]
+fn delete() {
+    use schema::users::dsl::*;
+    use yaqb::query_builder::delete;
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let command = delete(users.filter(name.eq("Sean")));
+    let deleted_rows = connection.execute_returning_count(&command).unwrap();
+
+    assert_eq!(1, deleted_rows);
+
+    let num_users = users.count().first(&connection).unwrap();
+
+    assert_eq!(Some(1), num_users);
+}
