@@ -1,7 +1,7 @@
 use {QuerySource, Table};
 use query_builder::*;
-use expression::{Expression, SelectableExpression};
-use types::{Bool, Nullable};
+use expression::SelectableExpression;
+use types::Nullable;
 
 #[derive(Clone, Copy)]
 pub struct InnerJoinSource<Left, Right> {
@@ -25,9 +25,7 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.left.from_clause(out));
         out.push_sql(" INNER JOIN ");
-        try!(self.right.from_clause(out));
-        out.push_sql(" ON ");
-        Expression::to_sql(&self.left.join_expression(), out)
+        self.left.join_sql(out)
     }
 }
 
@@ -73,9 +71,7 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.left.from_clause(out));
         out.push_sql(" LEFT OUTER JOIN ");
-        try!(self.right.from_clause(out));
-        out.push_sql(" ON ");
-        Expression::to_sql(&self.left.join_expression(), out)
+        self.left.join_sql(out)
     }
 }
 
@@ -100,7 +96,5 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
 }
 
 pub trait JoinTo<T: Table>: Table {
-    type Predicate: Expression<SqlType=Bool>;
-
-    fn join_expression(&self) -> Self::Predicate;
+    fn join_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }

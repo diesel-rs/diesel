@@ -25,7 +25,7 @@ impl User {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -42,6 +42,13 @@ impl Post {
             body: body.map(|s| s.to_string()),
         }
     }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct Comment {
+    id: i32,
+    post_id: i32,
+    text: String,
 }
 
 // Compiler plugin will automatically invoke this based on schema
@@ -63,6 +70,14 @@ table! {
     }
 }
 
+table! {
+    comments {
+        id -> Serial,
+        post_id -> Integer,
+        text -> Text,
+    }
+}
+
 // Compiler plugin will replace this with #[derive(Queriable)]
 queriable! {
     User {
@@ -81,10 +96,22 @@ queriable! {
     }
 }
 
+queriable! {
+    Comment {
+        id -> i32,
+        post_id -> i32,
+        text -> String,
+    }
+}
+
 select_column_workaround!(users -> posts (id, name, hair_color));
 select_column_workaround!(posts -> users (id, user_id, title, body));
+select_column_workaround!(users -> comments (id, name, hair_color));
+select_column_workaround!(comments -> users (id, post_id, text));
 
 one_to_many!(users (User) -> posts (Post) on (user_id = id));
+joinable!(comments -> posts (post_id = id));
+join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NewUser {
@@ -146,6 +173,27 @@ insertable! {
     }
 }
 
+pub struct NewComment {
+    post_id: i32,
+    text: String,
+}
+
+impl NewComment {
+    pub fn new(post_id: i32, text: &str) -> Self {
+        NewComment {
+            post_id: post_id,
+            text: text.into(),
+        }
+    }
+}
+
+insertable! {
+    NewComment => comments {
+        post_id -> i32,
+        text -> String,
+    }
+}
+
 pub fn setup_users_table(connection: &Connection) {
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
@@ -160,6 +208,14 @@ pub fn setup_posts_table(connection: &Connection) {
         user_id INTEGER NOT NULL,
         title VARCHAR NOT NULL,
         body TEXT
+    )").unwrap();
+}
+
+pub fn setup_comments_table(connection: &Connection) {
+    connection.execute("CREATE TABLE comments (
+        id SERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL,
+        text TEXT NOT NULL
     )").unwrap();
 }
 

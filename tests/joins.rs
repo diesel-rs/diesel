@@ -250,3 +250,33 @@ fn select_then_join() {
 
     assert_eq!(expected_data, data);
 }
+
+#[test]
+fn join_through_other() {
+    use schema::users::dsl::*;
+    let connection = connection_with_sean_and_tess_in_users_table();
+    setup_posts_table(&connection);
+    setup_comments_table(&connection);
+
+    connection.insert_returning_count(&users, &NewUser::new("Jim", None))
+        .unwrap();
+    connection.insert_returning_count(&posts::table, &vec![
+        NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
+        NewPost::new(1, "Hello again!", None),
+    ]).unwrap();
+    let comments: Vec<Comment> = connection.insert(&comments::table, &vec![
+        NewComment::new(1, "OMG"), NewComment::new(2, "WTF"),
+        NewComment::new(3, "Best post ever!!!")]).unwrap().collect();
+
+    let data: Vec<_> = users.inner_join(comments::table).load(&connection)
+        .unwrap().collect();
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let expected_data = vec![
+        (sean.clone(), comments[0].clone()),
+        (tess, comments[1].clone()),
+        (sean, comments[2].clone()),
+    ];
+    assert_eq!(expected_data, data);
+}

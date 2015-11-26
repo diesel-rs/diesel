@@ -276,10 +276,13 @@ macro_rules! joinable {
 macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl $crate::JoinTo<$parent::table> for $child::table {
-            type Predicate = $crate::expression::predicates::Eq<$child::$source, $parent::$target>;
+            fn join_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
+                -> $crate::query_builder::BuildQueryResult
+            {
+                try!($parent::table.from_clause(out));
+                out.push_sql(" ON ");
 
-            fn join_expression(&self) -> Self::Predicate {
-                $child::$source.eq($parent::$target)
+                $child::$source.eq($parent::$target).to_sql(out)
             }
         }
     }
@@ -364,6 +367,21 @@ macro_rules! select_column_inner {
             $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
         > for $parent::$column_name
         {
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! join_through {
+    ($parent:ident -> $through:ident -> $child:ident) => {
+        impl $crate::JoinTo<$child::table> for $parent::table {
+            fn join_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
+                -> $crate::query_builder::BuildQueryResult
+            {
+                try!($crate::JoinTo::<$through::table>::join_sql(&$parent::table, out));
+                out.push_sql(" INNER JOIN ");
+                $crate::JoinTo::<$child::table>::join_sql(&$through::table, out)
+            }
         }
     }
 }
