@@ -1,12 +1,10 @@
 [package]
-name = "yaqb"
+name = "yaqb_tests"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
-libc = "0.2.*"
-pq-sys = "0.2.*"
-byteorder = "0.3.*"
+yaqb = { path = "../yaqb" }
 
 [dev-dependencies]
 compiletest_rs = "*"
