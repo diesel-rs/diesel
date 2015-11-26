@@ -135,3 +135,22 @@ fn max_accepts_all_numeric_string_and_date_types() {
     let _ = users.select(max(arbitrary::<types::Nullable<types::VarChar>>()));
     let _ = users.select(max(arbitrary::<types::Nullable<types::Text>>()));
 }
+
+sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);
+
+#[test]
+fn function_with_multiple_arguments() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    connection.insert_returning_count(&users,
+        &vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)])
+        .unwrap();
+
+    let expected_data = vec!["black".to_string(), "Tess".to_string()];
+    let data: Vec<String> = users.select(coalesce(hair_color, name))
+        .load(&connection).unwrap().collect();
+
+    assert_eq!(expected_data, data);
+}

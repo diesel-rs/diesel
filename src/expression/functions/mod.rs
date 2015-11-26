@@ -24,14 +24,15 @@ macro_rules! sql_function {
 
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*> $crate::expression::Expression for $struct_name<$($arg_name),*> where
-            $($arg_name: $crate::expression::Expression),*
+            for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
         {
             type SqlType = $return_type;
 
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
                     out.push_sql(concat!(stringify!($fn_name), "("));
-                    $(try!(self.$arg_name.to_sql(out));)*
+                    try!($crate::expression::Expression::to_sql(
+                        &($(&self.$arg_name),*), out));
                     out.push_sql(")");
                     Ok(())
                 }
