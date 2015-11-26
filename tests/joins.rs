@@ -229,3 +229,24 @@ fn select_right_side_with_nullable_column_first() {
 
     assert_eq!(expected_data, actual_data);
 }
+
+#[test]
+fn select_then_join() {
+    use schema::users::dsl::*;
+    let connection = connection_with_sean_and_tess_in_users_table();
+    setup_posts_table(&connection);
+
+    connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
+        .unwrap();
+    let expected_data = vec![1];
+    let data: Vec<_> = users.select(id).inner_join(posts::table)
+        .load(&connection).unwrap().collect();
+
+    assert_eq!(expected_data, data);
+
+    let expected_data = vec![1, 2];
+    let data: Vec<_> = users.select(id).left_outer_join(posts::table)
+        .load(&connection).unwrap().collect();
+
+    assert_eq!(expected_data, data);
+}

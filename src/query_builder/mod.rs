@@ -27,6 +27,10 @@ pub trait Query: QueryFragment {
     type SqlType: NativeSqlType;
 }
 
+impl<'a, T: Query> Query for &'a T where &'a T: QueryFragment {
+    type SqlType = T::SqlType;
+}
+
 pub trait QueryFragment {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
