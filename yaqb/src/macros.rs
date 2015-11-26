@@ -177,29 +177,6 @@ macro_rules! table {
 }
 
 #[macro_export]
-macro_rules! queriable {
-    (
-        $Struct:ident {
-            $($field_name:ident -> $Type:ty,)+
-        }
-    ) => {
-        impl<ST> $crate::Queriable<ST> for $Struct where
-            ST: $crate::types::NativeSqlType,
-            ($($Type),+): $crate::types::FromSqlRow<ST>,
-        {
-            type Row = ($($Type),+);
-
-            fn build(row: Self::Row) -> Self {
-                let ($($field_name),+) = row;
-                $Struct {
-                    $($field_name: $field_name),+
-                }
-            }
-        }
-    }
-}
-
-#[macro_export]
 macro_rules! insertable {
     (
         $Struct:ty => $table_mod:ident {

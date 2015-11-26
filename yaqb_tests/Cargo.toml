@@ -5,6 +5,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 yaqb = { path = "../yaqb" }
+yaqb_codegen = { path = "../yaqb_codegen" }
 
 [dev-dependencies]
 compiletest_rs = "*"

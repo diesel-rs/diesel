@@ -1,6 +1,6 @@
 use yaqb::*;
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -25,7 +25,7 @@ impl User {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -44,7 +44,7 @@ impl Post {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -78,32 +78,6 @@ table! {
     }
 }
 
-// Compiler plugin will replace this with #[derive(Queriable)]
-queriable! {
-    User {
-        id -> i32,
-        name -> String,
-        hair_color -> Option<String>,
-    }
-}
-
-queriable! {
-    Post {
-        id -> i32,
-        user_id -> i32,
-        title -> String,
-        body -> Option<String>,
-    }
-}
-
-queriable! {
-    Comment {
-        id -> i32,
-        post_id -> i32,
-        text -> String,
-    }
-}
-
 select_column_workaround!(users -> posts (id, name, hair_color));
 select_column_workaround!(posts -> users (id, user_id, title, body));
 select_column_workaround!(users -> comments (id, name, hair_color));
@@ -113,7 +87,7 @@ one_to_many!(users (User) -> posts (Post) on (user_id = id));
 joinable!(comments -> posts (post_id = id));
 join_through!(users -> posts -> comments);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Queriable)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -137,13 +111,6 @@ insertable! {
 
 changeset! {
     NewUser => users {
-        name -> String,
-        hair_color -> Option<String>,
-    }
-}
-
-queriable! {
-    NewUser {
         name -> String,
         hair_color -> Option<String>,
     }

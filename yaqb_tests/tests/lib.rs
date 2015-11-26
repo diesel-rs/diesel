@@ -1,3 +1,6 @@
+#![feature(custom_derive, plugin)]
+#![plugin(yaqb_codegen)]
+
 extern crate quickcheck;
 #[macro_use] extern crate yaqb;
 

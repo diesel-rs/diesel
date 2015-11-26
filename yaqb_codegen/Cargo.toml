@@ -1,0 +1,13 @@
+[package]
+name = "yaqb_codegen"
+version = "0.1.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[dependencies]
+aster = { version = "^0.8.0", default-features = false }
+quasi = { verision = "^0.3.5", default-features = false }
+quasi_macros = { version = "^0.3.5" }
+
+[lib]
+name = "yaqb_codegen"
+plugin = true
