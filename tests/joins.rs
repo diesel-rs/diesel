@@ -265,8 +265,8 @@ fn join_through_other() {
         NewPost::new(1, "Hello again!", None),
     ]).unwrap();
     let comments: Vec<Comment> = connection.insert(&comments::table, &vec![
-        NewComment::new(1, "OMG"), NewComment::new(2, "WTF"),
-        NewComment::new(3, "Best post ever!!!")]).unwrap().collect();
+        NewComment(1, "OMG"), NewComment(2, "WTF"),
+        NewComment(3, "Best post ever!!!")]).unwrap().collect();
 
     let data: Vec<_> = users.inner_join(comments::table).load(&connection)
         .unwrap().collect();

@@ -1,3 +1,9 @@
+// FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
+#[macro_export]
+macro_rules! yaqb_internal_expr_conversion {
+    ($e:expr) => { $e }
+}
+
 #[macro_export]
 macro_rules! column {
     ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
@@ -202,33 +208,33 @@ macro_rules! insertable {
     ) => {
         insertable! {
             $Struct => $table_mod {
-                $($table_mod, $field_name -> $Type,)+
+                $($field_name, $field_name -> $Type,)+
             }
         }
     };
     (
         $Struct:ty => $table_mod:ident {
-            $($field_table_name:ident, $field_name:ident -> $Type:ty,)+
+            $($field_table_name:ident, $field_name:tt -> $Type:ty,)+
         }
     ) => {
         impl<'a: 'insert, 'insert> $crate::persistable::Insertable<$table_mod::table>
             for &'insert $Struct
         {
-            type Columns = ($($table_mod::$field_name),+);
+            type Columns = ($($table_mod::$field_table_name),+);
             type Values = $crate::expression::grouped::Grouped<($(
-                $crate::expression::helper_types::AsExpr<&'insert $Type, $table_mod::$field_name>
+                $crate::expression::helper_types::AsExpr<&'insert $Type, $table_mod::$field_table_name>
             ),+)>;
 
             fn columns() -> Self::Columns {
-                ($($table_mod::$field_name),+)
+                ($($table_mod::$field_table_name),+)
             }
 
             fn values(self) -> Self::Values {
                 use $crate::expression::AsExpression;
                 use $crate::expression::grouped::Grouped;
                 Grouped(($(AsExpression::<
-                   <$table_mod::$field_name as $crate::expression::Expression>::SqlType>
-                   ::as_expression(&self.$field_name)
+                   <$table_mod::$field_table_name as $crate::expression::Expression>::SqlType>
+                   ::as_expression(yaqb_internal_expr_conversion!(&self.$field_name))
                ),+))
             }
         }

@@ -173,24 +173,12 @@ insertable! {
     }
 }
 
-pub struct NewComment {
-    post_id: i32,
-    text: String,
-}
-
-impl NewComment {
-    pub fn new(post_id: i32, text: &str) -> Self {
-        NewComment {
-            post_id: post_id,
-            text: text.into(),
-        }
-    }
-}
+pub struct NewComment<'a>(pub i32, pub &'a str);
 
 insertable! {
-    NewComment => comments {
-        post_id -> i32,
-        text -> String,
+    NewComment<'a> => comments {
+        post_id, 0 -> i32,
+        text, 1 -> &'a str,
     }
 }
 
