@@ -45,6 +45,10 @@ pub trait ExpressionMethods: Expression + Sized {
     fn desc(self) -> ordering::Desc<Self> {
         ordering::Desc::new(self)
     }
+
+    fn asc(self) -> ordering::Asc<Self> {
+        ordering::Asc::new(self)
+    }
 }
 
 impl<T: Expression> ExpressionMethods for T {}

@@ -29,7 +29,7 @@ fn order_by_column() {
         User::new(1, "Sean"),
         User::new(2, "Tess"),
     ];
-    let data: Vec<_> = users.order(name).load(&conn).unwrap().collect();
+    let data: Vec<_> = users.order(name.asc()).load(&conn).unwrap().collect();
     assert_eq!(expected_data, data);
 }
 
