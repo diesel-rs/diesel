@@ -177,48 +177,6 @@ macro_rules! table {
 }
 
 #[macro_export]
-macro_rules! insertable {
-    (
-        $Struct:ty => $table_mod:ident {
-            $($field_name:ident -> $Type:ty,)+
-        }
-    ) => {
-        insertable! {
-            $Struct => $table_mod {
-                $($field_name, $field_name -> $Type,)+
-            }
-        }
-    };
-    (
-        $Struct:ty => $table_mod:ident {
-            $($field_table_name:ident, $field_name:tt -> $Type:ty,)+
-        }
-    ) => {
-        impl<'a: 'insert, 'insert> $crate::persistable::Insertable<$table_mod::table>
-            for &'insert $Struct
-        {
-            type Columns = ($($table_mod::$field_table_name),+);
-            type Values = $crate::expression::grouped::Grouped<($(
-                $crate::expression::helper_types::AsExpr<&'insert $Type, $table_mod::$field_table_name>
-            ),+)>;
-
-            fn columns() -> Self::Columns {
-                ($($table_mod::$field_table_name),+)
-            }
-
-            fn values(self) -> Self::Values {
-                use $crate::expression::AsExpression;
-                use $crate::expression::grouped::Grouped;
-                Grouped(($(AsExpression::<
-                   <$table_mod::$field_table_name as $crate::expression::Expression>::SqlType>
-                   ::as_expression(yaqb_internal_expr_conversion!(&self.$field_name))
-               ),+))
-            }
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! changeset {
     (
         $Struct:ty => $table_mod:ident {

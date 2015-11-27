@@ -5,12 +5,14 @@ use syntax::ast::{
     Item,
     MetaItem,
     MetaItem_,
+    Lit_,
 };
-use syntax::codemap::Span;
+use syntax::attr;
+use syntax::codemap::{Span, Spanned};
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
-use syntax::parse::token::InternedString;
+use syntax::parse::token::{InternedString, str_to_ident};
 
 pub fn expand_insert(
     cx: &mut ExtCtxt,
@@ -59,8 +61,12 @@ fn insertable_impl(
     table: InternedString,
     item: &Item,
 ) -> P<ast::Item> {
+    let generics = match item.node {
+        ast::ItemStruct(_, ref generics) => generics,
+        _ => cx.bug("Expected a struct"),
+    };
     let ty = builder.ty().path()
-        .segment(item.ident).build().build();
+        .segment(item.ident).with_generics(generics.clone()).build().build();
     let table_mod = builder.id(&*table);
     let fields = struct_fields(cx, item);
     let columns_ty = columns_ty(&builder, &table_mod, fields);
@@ -69,7 +75,7 @@ fn insertable_impl(
     let values_expr = values_expr(cx, &builder, &table_mod, fields);
 
     quote_item!(cx,
-        impl<'insert> ::yaqb::persistable::Insertable<$table_mod::table> for
+        impl<'a: 'insert, 'insert> ::yaqb::persistable::Insertable<$table_mod::table> for
             &'insert $ty
         {
             type Columns = $columns_ty;
@@ -104,12 +110,12 @@ fn tuple_ty_from<F: Fn(&ast::StructField) -> P<ast::Ty>>(
     }
 }
 
-fn tuple_expr_from<F: Fn(&ast::StructField) -> P<ast::Expr>>(
+fn tuple_expr_from<F: Fn((usize, &ast::StructField)) -> P<ast::Expr>>(
     builder: &aster::AstBuilder,
     fields: &[ast::StructField],
     f: F,
 ) -> P<ast::Expr> {
-    let exprs: Vec<_> = fields.iter().map(f).collect();
+    let exprs: Vec<_> = fields.iter().enumerate().map(f).collect();
     if exprs.len() == 1 {
         exprs[0].clone()
     } else {
@@ -142,6 +148,23 @@ fn values_ty(
     })
 }
 
+fn column_name(field: &ast::StructField) -> ast::Ident {
+    field.node.attrs.iter()
+        .filter_map(|attr| {
+            match attr.node.value.node {
+                MetaItem_::MetaNameValue(ref name, Spanned {
+                    node: Lit_::LitStr(ref value, _), ..
+                }) if name == &"column_name" => {
+                    attr::mark_used(&attr);
+                    Some(str_to_ident(&value))
+                }
+                _ => None,
+            }
+        }).nth(0)
+        .or_else(|| field.node.ident())
+        .unwrap()
+}
+
 fn column_field_ty(
     builder: &aster::AstBuilder,
     table_mod: &ast::Ident,
@@ -149,7 +172,7 @@ fn column_field_ty(
 ) -> ast::Path {
     builder.path()
         .segment(table_mod).build()
-        .segment(field.node.ident().unwrap()).build()
+        .segment(column_name(field)).build()
         .build()
 }
 
@@ -158,7 +181,7 @@ fn columns_expr(
     table_mod: &ast::Ident,
     fields: &[ast::StructField],
 ) -> P<ast::Expr> {
-    tuple_expr_from(builder, fields, |f|
+    tuple_expr_from(builder, fields, |(_, f)|
         builder.expr().build_path(column_field_ty(builder, table_mod, f)))
 }
 
@@ -168,10 +191,14 @@ fn values_expr(
     table_mod: &ast::Ident,
     fields: &[ast::StructField],
 ) -> P<ast::Expr> {
-    tuple_expr_from(builder, fields, |f| {
-        let field_name = f.node.ident().unwrap();
+    tuple_expr_from(builder, fields, |(i, f)| {
+        let self_ = builder.expr().self_();
+        let field_access = match f.node.ident() {
+            Some(i) => builder.expr().field(i).build(self_),
+            None => builder.expr().tup_field(i).build(self_),
+        };
         let field_ty = column_field_ty(builder, table_mod, f);
         quote_expr!(cx,
-            AsExpression::<<$field_ty as Expression>::SqlType>::as_expression(&self.$field_name))
+            AsExpression::<<$field_ty as Expression>::SqlType>::as_expression(&$field_access))
     })
 }

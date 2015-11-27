@@ -127,14 +127,13 @@ impl NewPost {
     }
 }
 
-pub struct NewComment<'a>(pub i32, pub &'a str);
-
-insertable! {
-    NewComment<'a> => comments {
-        post_id, 0 -> i32,
-        text, 1 -> &'a str,
-    }
-}
+#[insertable_into(comments)]
+pub struct NewComment<'a>(
+    #[column_name="post_id"]
+    pub i32,
+    #[column_name="text"]
+    pub &'a str,
+);
 
 pub fn setup_users_table(connection: &Connection) {
     connection.execute("CREATE TABLE users (

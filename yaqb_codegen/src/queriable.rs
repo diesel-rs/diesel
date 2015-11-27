@@ -76,7 +76,10 @@ fn item_struct_fields<'a>(
         ast::VariantData::Struct(ref fields, _) => {
             fields
         }
-        _ => cx.bug("Tuple structs and unit structs are not supported yet in #[derive(Deserialize)]"),
+        ast::VariantData::Tuple(ref fields, _) => {
+            fields
+        }
+        _ => cx.bug("Unit structs are not supported yet in #[derive(Deserialize)]"),
     }
 }
 

@@ -98,14 +98,9 @@ struct BaldUser {
     name: String,
 }
 
+#[insertable_into(users)]
 struct BorrowedUser<'a> {
     name: &'a str,
-}
-
-insertable! {
-    BorrowedUser<'a> => users {
-        name -> &'a str,
-    }
 }
 
 #[test]
