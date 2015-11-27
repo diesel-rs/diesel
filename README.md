@@ -58,6 +58,7 @@ table! {
 fn users_with_name(connection: &Connection, target_name: &str)
     -> Vec<(i32, String, Option<String>)>
 {
+    use self::users::dsl::*;
     users.filter(name.eq(target_name))
         .load(connection)
         .unwrap()
@@ -65,25 +66,17 @@ fn users_with_name(connection: &Connection, target_name: &str)
 }
 ```
 
+Note that we're importing `users::dsl::*` here. This allows us to deal with only
+the users table, and not have to qualify everything. If we did not have this
+import, we'd need to put `users::` before each column, and reference the table
+as `users::table`.
+
 If you want to be able to query for a struct, you'll need to implement the
 [`Queriable` trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/query_source/mod.rs#L11).
 Luckily, [yaqb_codegen](https://github.com/sgrif/yaqb/tree/master/yaqb_codegen)
 can do this for us automatically.
 
 ```rust
-#[macro_use]
-extern crate yaqb;
-
-use yaqb::*;
-
-table! {
-    users {
-        id -> Serial,
-        name -> VarChar,
-        favorite_color -> Nullable<VarChar>,
-    }
-}
-
 #[derive(Queriable, Debug)]
 pub struct User {
     id: i32,
@@ -94,9 +87,76 @@ pub struct User {
 fn main() {
     let connection = Connection::establish(env!("DATABASE_URL"))
         .unwrap();
-    let users: Vec<User> = users.load(&connection).unwrap().collect();
+    let users: Vec<User> = users::table.load(&connection)
+        .unwrap().collect();
 
     println!("Here are all the users in our database: {:?}", users);
+}
+```
+
+Insert
+------
+
+Inserting data requires implementing the
+[`Insertable` trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/persistable.rs#L8).
+Once again, we can have this be automatically implemented for us by the
+compiler.
+
+```rust
+#[insert_into=users]
+struct NewUser<'a> {
+    name: &'a str,
+    favorite_color: Option<&'a str>,
+}
+
+fn create_user(conn: &Connection, name: &str, favorite_color: Option<&str>)
+  -> DbResult<User>
+{
+    let new_user = NewUser {
+        name: name,
+        favorite_color: favorite_color,
+    };
+    connection.insert(&users::table, &new_user)
+        .map(|mut result| result.nth(0).unwrap())
+}
+```
+
+`insert` can return any struct which implements `Queriable` for the right type.
+If you don't actually want to use the results, you should call
+`insert_returning_count` instead, or the compiler will complain that it can't
+infer what type you meant to return. You use the same struct for inserting and
+querying if you'd like, but you'll need to make the `id` and columns such as
+timestamps optional when they otherwise wouldn't be. For this reason, you
+probably want to create a new struct intead.
+
+You might notice that we're having to manually grab the first record that was
+inserted. That is because `insert` can also take a slice or `Vec` of records,
+and will insert them in a single query. For this reason, `insert` will always
+return an `Iterator`. A helper for this common case will likely be added in the
+future.
+
+For both `#[derive(Queriable)]` and `#[insertable_into]`, you can annotate any
+single field with `#[column_name="name"]`, if the name of your field differs
+from the name of the column. This annotation is required on all fields of tuple
+structs. This cannot be used, however, to work around name collisions with
+keywords that are reserved in Rust, as you cannot have a column with that name.
+This may change in the future.
+
+```rust
+#[insert_into=users]
+struct NewUser<'a>(
+    #[column_name="name"]
+    &'a str,
+    #[column_name="favorite_color"]
+    Option<&'a str>,
+)
+
+fn create_user(conn: &Connection, name: &str, favorite_color: Option<&str>)
+  -> DbResult<User>
+{
+    let new_user = NewUser(name, favorite_color);
+    connection.insert(&users::table, &new_user)
+        .map(|mut result| result.nth(0).unwrap())
 }
 ```
 
