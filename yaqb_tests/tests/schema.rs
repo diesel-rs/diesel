@@ -2,6 +2,7 @@ use yaqb::*;
 extern crate dotenv;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[has_many(posts)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -27,6 +28,7 @@ impl User {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[has_many(comments)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -79,13 +81,11 @@ table! {
     }
 }
 
-select_column_workaround!(users -> posts (id, name, hair_color));
 select_column_workaround!(posts -> users (id, user_id, title, body));
 select_column_workaround!(users -> comments (id, name, hair_color));
 select_column_workaround!(comments -> users (id, post_id, text));
 
-one_to_many!(users (User) -> posts (Post) on (user_id = id));
-joinable!(comments -> posts (post_id = id));
+joinable_inner!(posts -> users (user_id = id));
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queriable)]

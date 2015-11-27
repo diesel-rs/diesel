@@ -238,50 +238,6 @@ macro_rules! select_column_workaround {
 }
 
 #[macro_export]
-macro_rules! one_to_many {
-    (
-        $parent_table:ident ($parent_struct:ty) ->
-        $child_table:ident ($child_struct:ty) on
-        ($foreign_key:ident = $primary_key:ident)
-    ) => {
-        one_to_many!($child_table: $parent_table ($parent_struct) ->
-                     $child_table ($child_struct) on ($foreign_key = $primary_key));
-    };
-    (
-        $association_name:ident -> $association_type:ident :
-        $parent_table:ident ($parent_struct:ty) ->
-        $child_table:ident ($child_struct:ty) on
-        ($foreign_key:ident = $primary_key:ident)
-    ) => {
-        pub type $association_type = $crate::helper_types::FindBy<
-            $child_table::table,
-            $child_table::$foreign_key,
-            i32,
-        >;
-        one_to_many!($association_name: $parent_table ($parent_struct) ->
-                     $child_table ($child_struct) on ($foreign_key = $primary_key));
-    };
-    (
-        $association_name:ident :
-        $parent_table:ident ($parent_struct:ty) ->
-        $child_table:ident ($child_struct:ty) on
-        ($foreign_key:ident = $primary_key:ident)
-    ) => {
-        impl $parent_struct {
-            pub fn $association_name(&self) -> $crate::helper_types::FindBy<
-                $child_table::table,
-                $child_table::$foreign_key,
-                i32,
-            > {
-                $child_table::table.filter($child_table::$foreign_key.eq(self.$primary_key))
-            }
-        }
-
-        joinable!($child_table -> $parent_table ($foreign_key = $primary_key));
-    };
-}
-
-#[macro_export]
 macro_rules! select_column_inner {
     ($parent:ident -> $child:ident $column_name:ident) => {
         impl $crate::expression::SelectableExpression<
