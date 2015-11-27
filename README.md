@@ -41,6 +41,10 @@ to specify the columns and tables that exist using the
 Once you've done that, you can already start using the query builder, and
 pulling out primitives.
 
+Much of the behavior in yaqb comes from traits, and it is recommended that you
+import `yaqb::*`. We avoid exporting generic type names, or any bare functions
+at that level.
+
 ```rust
 #[macro_use]
 extern crate yaqb;
@@ -159,5 +163,58 @@ fn create_user(conn: &Connection, name: &str, favorite_color: Option<&str>)
         .map(|mut result| result.nth(0).unwrap())
 }
 ```
+
+Update
+------
+
+To update a record, you'll need to call the `update` function. Unlike `insert`
+(which may change to use this pattern in the future), `update` is a top level
+function which creates a query that you'll later pass to the `Connection`.
+Here's a simple example.
+
+```rust
+fn change_users_name(conn: &Connection, target: i32, new_name: &str) -> DbResult<User> {
+    use yaqb::query_builder::update;
+    use users::dsl::*;
+
+    let command = update(users.filter(id.eq(target))).set(name.eq(new_name));
+    conn.query_one(&command)
+        .map(|r| r.unwrap())
+}
+```
+
+Similar to `insert`, we always return a `Result<Option<Model>>`, as we can't
+tell at compile time if this is the kind of query that always returns at least 1
+result. This may change in the future.
+
+As with `insert`, we can return any type which implements `Queriable` for the
+right types. If you do not want to use the returned record(s), you should call
+`execute_returning_count` instead of `query_one` or `query_all`.
+
+You can also use a struct to represent the changes, if it implements
+`AsChangeset`. You can generate that from a macro (FIXME: This should be a
+compiler annotation not long after the time of writing this. If it is later than
+12/5/15, please open an issue as I'm being lazy)
+
+```rust
+changeset! {
+    User => users {
+        name -> String,
+        favorite_color -> Option<String>,
+    }
+}
+
+fn save_user(conn: &Connection, user: &mut User) -> DbResult<()> {
+    let command = update(users::table.filter(users::id.eq(user.id)))
+        .set(user);
+    let updated_user = try!(connection.query_one(&command)).unwrap();
+    *user = updated_user;
+    Ok(())
+}
+```
+
+Note that even though we've implemented `AsChangeset`, we still need to specify
+what records we want to update. There will likely be changes that make it harder
+to accidentally update the entire table before 1.0.
 
 FIXME: Replace links to source code with hosted doc pages
