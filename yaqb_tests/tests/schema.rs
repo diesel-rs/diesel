@@ -82,11 +82,9 @@ table! {
     }
 }
 
-select_column_workaround!(posts -> users (id, user_id, title, body));
 select_column_workaround!(users -> comments (id, name, hair_color));
 select_column_workaround!(comments -> users (id, post_id, text));
 
-joinable_inner!(posts -> users (user_id = id));
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queriable)]

@@ -29,6 +29,10 @@ pub fn expand_belongs_to(
         };
 
         push(Annotatable::Item(belonging_to_dsl_impl(cx, &builder)));
+        push(Annotatable::Item(join_to_impl(cx, &builder)));
+        for item in selectable_column_hack(cx, &builder).into_iter() {
+            push(Annotatable::Item(item));
+        }
     }
 }
 
@@ -60,6 +64,18 @@ impl BelongsToAssociationBuilder {
             .build()
     }
 
+    fn parent_table_name(&self) -> ast::Ident {
+        let pluralized = format!("{}s", &self.options.name.name.as_str());
+        str_to_ident(&pluralized)
+    }
+
+    fn parent_table(&self) -> ast::Path {
+        self.builder.path()
+            .segment(self.parent_table_name()).build()
+            .segment("table").build()
+            .build()
+    }
+
     fn foreign_key_name(&self) -> ast::Ident {
         to_foreign_key(&self.options.name.name.as_str())
     }
@@ -78,6 +94,14 @@ impl BelongsToAssociationBuilder {
 
     fn primary_key_name(&self) -> ast::Ident {
         str_to_ident("id")
+    }
+}
+
+impl ::std::ops::Deref for BelongsToAssociationBuilder {
+    type Target = aster::AstBuilder;
+
+    fn deref(&self) -> &Self::Target {
+        &self.builder
     }
 }
 
@@ -105,4 +129,68 @@ fn belonging_to_dsl_impl(
             }
         }
     ).unwrap()
+}
+
+fn join_to_impl(
+    cx: &mut ExtCtxt,
+    builder: &BelongsToAssociationBuilder,
+) -> P<ast::Item> {
+    let child_table = builder.child_table();
+    let parent_table = builder.parent_table();
+    let foreign_key = builder.foreign_key();
+
+    quote_item!(cx,
+        impl ::yaqb::JoinTo<$parent_table> for $child_table {
+            fn join_sql(&self, out: &mut ::yaqb::query_builder::QueryBuilder)
+                -> ::yaqb::query_builder::BuildQueryResult
+            {
+                try!($parent_table.from_clause(out));
+                out.push_sql(" ON ");
+                $foreign_key.eq($parent_table.primary_key()).to_sql(out)
+            }
+        }
+    ).unwrap()
+}
+
+fn selectable_column_hack(
+    cx: &mut ExtCtxt,
+    builder: &BelongsToAssociationBuilder,
+) -> Vec<P<ast::Item>> {
+    let mut result = builder.model.attrs.iter().flat_map(|attr| {
+        selectable_column_impl(cx, builder, attr.column_name)
+    }).collect::<Vec<_>>();
+    result.append(&mut selectable_column_impl(cx, builder, str_to_ident("star")));
+    result
+}
+
+fn selectable_column_impl(
+    cx: &mut ExtCtxt,
+    builder: &BelongsToAssociationBuilder,
+    column_name: ast::Ident,
+) -> Vec<P<ast::Item>> {
+    let parent_table = builder.parent_table();
+    let child_table = builder.child_table();
+    let column = builder.path()
+        .segment(builder.child_table_name()).build()
+        .segment(column_name).build()
+        .build();
+
+    vec![quote_item!(cx,
+        impl ::yaqb::expression::SelectableExpression<
+            ::yaqb::query_source::InnerJoinSource<$parent_table, $child_table>
+        > for $column {}
+    ).unwrap(), quote_item!(cx,
+        impl ::yaqb::expression::SelectableExpression<
+            ::yaqb::query_source::InnerJoinSource<$child_table, $parent_table>
+        > for $column {}
+    ).unwrap(), quote_item!(cx,
+        impl ::yaqb::expression::SelectableExpression<
+            ::yaqb::query_source::LeftOuterJoinSource<$child_table, $parent_table>,
+        > for $column {}
+    ).unwrap(), quote_item!(cx,
+        impl ::yaqb::expression::SelectableExpression<
+            ::yaqb::query_source::LeftOuterJoinSource<$parent_table, $child_table>,
+            ::yaqb::types::Nullable<<$column as ::yaqb::Expression>::SqlType>,
+        > for $column {}
+    ).unwrap()]
 }
