@@ -207,7 +207,7 @@ changeset! {
 fn save_user(conn: &Connection, user: &mut User) -> DbResult<()> {
     let command = update(users::table.filter(users::id.eq(user.id)))
         .set(user);
-    let updated_user = try!(connection.query_one(&command)).unwrap();
+    let updated_user = try!(conn.query_one(&command)).unwrap();
     *user = updated_user;
     Ok(())
 }
@@ -216,5 +216,23 @@ fn save_user(conn: &Connection, user: &mut User) -> DbResult<()> {
 Note that even though we've implemented `AsChangeset`, we still need to specify
 what records we want to update. There will likely be changes that make it harder
 to accidentally update the entire table before 1.0.
+
+Delete
+------
+
+Delete works very similarly to `update`, but does not support returning a
+record.
+
+```rust
+fn delete_user(conn: &Connection, user: User) -> DbResult<()> {
+    use yaqb::query_builder::delete;
+    use users::dsl::*;
+
+    let command = delete(users.filter(id.eq(user.id)));
+    let deleted_rows = try!(conn.execute_returning_count(&command));
+    debug_assert!(deleted_rows == 1);
+    Ok(())
+}
+```
 
 FIXME: Replace links to source code with hosted doc pages
