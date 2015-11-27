@@ -5,7 +5,7 @@ extern crate aster;
 extern crate quasi;
 
 extern crate syntax;
-extern crate rustc;
+extern crate rustc_plugin;
 
 mod associations;
 mod attr;
@@ -14,7 +14,7 @@ mod model;
 mod queriable;
 
 #[plugin_registrar]
-pub fn register(reg: &mut rustc::plugin::Registry) {
+pub fn register(reg: &mut rustc_plugin::Registry) {
     use syntax::parse::token::intern;
     use syntax::ext::base::MultiDecorator;
     reg.register_syntax_extension(

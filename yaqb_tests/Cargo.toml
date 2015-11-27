@@ -12,6 +12,9 @@ compiletest_rs = "*"
 quickcheck = "*"
 dotenv = "0.4.0"
 
+[features]
+unstable = []
+
 [[test]]
 name = "compile_tests"
 path = "tests/compile_tests.rs"

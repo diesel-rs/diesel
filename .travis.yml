@@ -20,3 +20,7 @@ script:
     (cd yaqb && travis-cargo build) &&
     (cd yaqb && travis-cargo test) &&
     (cd yaqb_tests && travis-cargo test)
+addons:
+  postgresql: "9.4"
+env:
+  - DATABASE_URL=postgres://postgres@localhost/

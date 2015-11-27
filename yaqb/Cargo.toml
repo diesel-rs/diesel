@@ -11,3 +11,7 @@ byteorder = "0.3.*"
 [dev-dependencies]
 quickcheck = "*"
 dotenv = "0.4.0"
+
+[features]
+unstable = []
+nightly = []

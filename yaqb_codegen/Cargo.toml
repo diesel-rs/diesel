@@ -6,7 +6,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 aster = { version = "^0.8.0", default-features = false }
 quasi = { verision = "^0.3.5", default-features = false }
-quasi_macros = { version = "^0.3.5" }
+quasi_macros = { git="https://github.com/sgrif/quasi.git" }
 
 [lib]
 name = "yaqb_codegen"

@@ -1,6 +1,9 @@
 YAQB (This will not be the real name. Please open PRs with name ideas)
 ======================================================================
 
+NOTE: You need to be on nightly >= 11/27/2015. Sorry. I hope to work on stable soon
+===================================================================================
+
 This is an early stage ORM in Rust. It is poorly documented, and rapidly
 iterating. I would love early feedback on usage. Help in documenting current
 usage would also be welcomed.
