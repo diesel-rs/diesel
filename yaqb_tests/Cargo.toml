@@ -10,6 +10,7 @@ yaqb_codegen = { path = "../yaqb_codegen" }
 [dev-dependencies]
 compiletest_rs = "*"
 quickcheck = "*"
+dotenv = "0.4.0"
 
 [[test]]
 name = "compile_tests"

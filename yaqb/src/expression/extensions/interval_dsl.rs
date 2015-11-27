@@ -111,6 +111,7 @@ impl DayAndMonthIntervalDsl for f64 {
 
 #[cfg(test)]
 mod tests {
+    extern crate dotenv;
     extern crate quickcheck;
     use self::quickcheck::quickcheck;
     use super::*;
@@ -121,6 +122,7 @@ mod tests {
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
             fn $test_name(val: $tpe) -> bool {
+                dotenv::dotenv().ok();
                 let connection_url = ::std::env::var("DATABASE_URL").ok()
                     .expect("DATABASE_URL must be set in order to run tests");
                 let connection = Connection::establish(&connection_url).unwrap();

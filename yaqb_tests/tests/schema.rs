@@ -1,4 +1,5 @@
 use yaqb::*;
+extern crate dotenv;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 pub struct User {
@@ -167,6 +168,7 @@ pub fn connection() -> Connection {
 }
 
 pub fn connection_without_transaction() -> Connection {
+    dotenv::dotenv().ok();
     let connection_url = ::std::env::var("DATABASE_URL").ok()
         .expect("DATABASE_URL must be set in order to run tests");
     Connection::establish(&connection_url).unwrap()
