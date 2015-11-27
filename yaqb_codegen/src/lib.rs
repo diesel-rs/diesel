@@ -7,6 +7,7 @@ extern crate quasi;
 extern crate syntax;
 extern crate rustc;
 
+mod attr;
 mod insertable;
 mod queriable;
 
