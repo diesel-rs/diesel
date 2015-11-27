@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd yaqb && cargo build && cargo test) &&
+  (cd yaqb_tests && cargo test)
