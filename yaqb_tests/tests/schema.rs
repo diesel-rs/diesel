@@ -88,6 +88,7 @@ joinable!(comments -> posts (post_id = id));
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queriable)]
+#[insertable_into(users)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -102,13 +103,6 @@ impl NewUser {
     }
 }
 
-insertable! {
-    NewUser => users {
-        name -> String,
-        hair_color -> Option<String>,
-    }
-}
-
 changeset! {
     NewUser => users {
         name -> String,
@@ -116,6 +110,7 @@ changeset! {
     }
 }
 
+#[insertable_into(posts)]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -129,14 +124,6 @@ impl NewPost {
             title: title.into(),
             body: body.map(|b| b.into()),
         }
-    }
-}
-
-insertable! {
-    NewPost => posts {
-        user_id -> i32,
-        title -> String,
-        body -> Option<String>,
     }
 }
 

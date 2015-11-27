@@ -93,14 +93,9 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     assert_eq!(1, second_count);
 }
 
+#[insertable_into(users)]
 struct BaldUser {
     name: String,
-}
-
-insertable! {
-    BaldUser => users {
-        name -> String,
-    }
 }
 
 struct BorrowedUser<'a> {

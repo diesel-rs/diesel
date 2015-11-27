@@ -1,4 +1,4 @@
-#![feature(custom_derive, plugin)]
+#![feature(custom_derive, plugin, custom_attribute)]
 #![plugin(yaqb_codegen)]
 
 extern crate quickcheck;

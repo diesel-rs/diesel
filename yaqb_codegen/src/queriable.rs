@@ -59,7 +59,7 @@ pub fn expand_derive_queriable(
     };
 }
 
-fn struct_fields<'a>(cx: &ExtCtxt, item: &'a Item) -> &'a [ast::StructField] {
+pub fn struct_fields<'a>(cx: &ExtCtxt, item: &'a Item) -> &'a [ast::StructField] {
     match item.node {
         ast::ItemStruct(ref variant_data, _) => {
             item_struct_fields(cx, variant_data)

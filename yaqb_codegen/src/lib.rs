@@ -7,6 +7,7 @@ extern crate quasi;
 extern crate syntax;
 extern crate rustc;
 
+mod insertable;
 mod queriable;
 
 #[plugin_registrar]
@@ -15,4 +16,8 @@ pub fn register(reg: &mut rustc::plugin::Registry) {
         syntax::parse::token::intern("derive_Queriable"),
         syntax::ext::base::MultiDecorator(
             Box::new(queriable::expand_derive_queriable)));
+    reg.register_syntax_extension(
+        syntax::parse::token::intern("insertable_into"),
+        syntax::ext::base::MultiDecorator(
+            Box::new(insertable::expand_insert)));
 }
