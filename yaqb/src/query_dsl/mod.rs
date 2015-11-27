@@ -1,3 +1,4 @@
+mod belonging_to_dsl;
 mod count_dsl;
 pub mod limit_dsl;
 mod load_dsl;
@@ -7,6 +8,7 @@ mod offset_dsl;
 mod order_dsl;
 mod with_dsl;
 
+pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::count_dsl::CountDsl;
 pub use self::filter_dsl::{FilterDsl, FilterOutput, FindByOutput};
 pub use self::limit_dsl::{LimitDsl, LimitOutput};

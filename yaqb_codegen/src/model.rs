@@ -42,4 +42,10 @@ impl Model {
         let pluralized = format!("{}s", self.name.name.as_str());
         str_to_ident(&pluralized.to_lowercase())
     }
+
+    pub fn attr_named(&self, name: ast::Ident) -> &Attr {
+        self.attrs.iter().find(|attr| {
+            attr.field_name == Some(name)
+        }).expect(&format!("Couldn't find an attr named {}", name))
+    }
 }

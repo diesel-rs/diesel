@@ -11,6 +11,7 @@ use syntax::ptr::P;
 
 use model::Model;
 use attr::Attr;
+use super::{parse_association_options, AssociationOptions, to_foreign_key};
 
 pub fn expand_has_many(
     cx: &mut ExtCtxt,
@@ -19,23 +20,13 @@ pub fn expand_has_many(
     annotatable: &Annotatable,
     push: &mut FnMut(Annotatable)
 ) {
-    let builder = aster::AstBuilder::new().span(span);
-    let model = match Model::from_annotable(cx, &builder, annotatable) {
-        Some(model) => model,
-        None => {
-            cx.span_err(span,
-                "#[has_many] can only be applied to structs or tuple structs");
-            return;
-        }
-    };
-
-    if let Some(options) = build_has_many_options(cx, span, meta_item) {
+    let options = parse_association_options("has_many", cx, span, meta_item, annotatable);
+    if let Some((builder, model, options)) = options {
         let builder = HasManyAssociationBuilder {
             options: options,
             model: model,
             builder: builder,
         };
-        push(Annotatable::Item(has_many_method(cx, &builder)));
         push(Annotatable::Item(join_to_impl(cx, &builder)));
         for item in selectable_column_hack(cx, &builder).into_iter() {
             push(Annotatable::Item(item));
@@ -43,12 +34,8 @@ pub fn expand_has_many(
     }
 }
 
-struct HasManyOptions {
-    name: ast::Ident,
-}
-
 struct HasManyAssociationBuilder {
-    pub options: HasManyOptions,
+    pub options: AssociationOptions,
     pub model: Model,
     builder: aster::AstBuilder,
 }
@@ -102,58 +89,6 @@ impl ::std::ops::Deref for HasManyAssociationBuilder {
     fn deref(&self) -> &Self::Target {
         &self.builder
     }
-}
-
-fn build_has_many_options(
-    cx: &mut ExtCtxt,
-    span: Span,
-    meta_item: &MetaItem,
-) -> Option<HasManyOptions> {
-    let usage_err = || {
-        cx.span_err(span,
-            "`#[has_many]` must be in the form `#[has_many(child_table, option=value)]`");
-        None
-    };
-    match meta_item.node {
-        ast::MetaList(_, ref options) => {
-            let association_name = match options[0].node {
-                ast::MetaWord(ref name) => str_to_ident(&name),
-                _ => return usage_err(),
-            };
-
-            Some(HasManyOptions {
-                name: association_name,
-            })
-        }
-        _ => usage_err(),
-    }
-}
-
-fn has_many_method(
-    cx: &mut ExtCtxt,
-    builder: &HasManyAssociationBuilder,
-) -> P<ast::Item> {
-    let struct_name = builder.struct_name();
-    let association_name = builder.association_name();
-    let primary_key = builder.primary_key();
-    let foreign_table = builder.foreign_table();
-    let foreign_key = builder.foreign_key();
-    let ref pk_type = primary_key.ty;
-    let pk_access = builder.expr()
-        .field(primary_key.field_name.unwrap())
-        .self_();
-
-    quote_item!(cx,
-        impl $struct_name {
-            pub fn $association_name(&self) -> ::yaqb::helper_types::FindBy<
-                $foreign_table,
-                $foreign_key,
-                $pk_type,
-            > {
-                $foreign_table.filter($foreign_key.eq($pk_access))
-            }
-        }
-    ).unwrap()
 }
 
 fn join_to_impl(
@@ -218,9 +153,4 @@ fn selectable_column_impl(
             ::yaqb::types::Nullable<<$column as ::yaqb::Expression>::SqlType>,
         > for $column {}
     ).unwrap()]
-}
-
-fn to_foreign_key(model_name: &str) -> ast::Ident {
-    let lower_cased = model_name.to_lowercase();
-    str_to_ident(&format!("{}_id", &lower_cased))
 }

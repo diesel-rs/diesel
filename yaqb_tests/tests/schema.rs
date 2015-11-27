@@ -29,6 +29,7 @@ impl User {
 
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 #[has_many(comments)]
+#[belongs_to(user)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,

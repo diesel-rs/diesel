@@ -15,9 +15,9 @@ fn one_to_many_returns_query_source_for_association() {
         tess.new_post("Hello 2", None), tess.new_post("World 2", None),
     ]).unwrap().collect();
 
-    let found_posts: Vec<_> = sean.posts().load(&connection).unwrap().collect();
+    let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap().collect();
     assert_eq!(seans_posts, found_posts);
 
-    let found_posts: Vec<_> = tess.posts().load(&connection).unwrap().collect();
+    let found_posts: Vec<_> = Post::belonging_to(&tess).load(&connection).unwrap().collect();
     assert_eq!(tess_posts, found_posts);
 }

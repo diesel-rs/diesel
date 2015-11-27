@@ -29,4 +29,8 @@ pub fn register(reg: &mut rustc::plugin::Registry) {
         intern("has_many"),
         MultiDecorator(Box::new(associations::expand_has_many))
     );
+    reg.register_syntax_extension(
+        intern("belongs_to"),
+        MultiDecorator(Box::new(associations::expand_belongs_to))
+    );
 }
