@@ -28,6 +28,6 @@ How do I use it?
 ----------------
 
 Take a look at the various files named on what you're trying to do in
-https://github.com/sgrif/yaqb/tree/master/tests. See
-https://github.com/sgrif/yaqb/blob/master/tests/schema.rs for how you can go
-about getting the data structures set up.
+https://github.com/sgrif/yaqb/tree/master/yaqb_tests/tests. See
+https://github.com/sgrif/yaqb/blob/master/yaqb_tests/tests/schema.rs for how
+you can go about getting the data structures set up.
