@@ -2,8 +2,6 @@ language: rust
 sudo: false
 
 rust:
-  - stable
-  - beta
   - nightly
 
 addons:
