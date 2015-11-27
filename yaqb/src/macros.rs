@@ -42,6 +42,72 @@ macro_rules! column {
     }
 }
 
+/// Specifies that a table exists, and what columns it has. This will create a
+/// new public module, with the same name, as the name of the table. In this
+/// module, you'll find a unit struct named `table`, and a unit struct with the
+/// names of each of the columns. In the definition, you can also specify an
+/// additional set of columns which exist, but should not be selected by default
+/// (for example, for things like full text search)
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # #[macro_use] extern crate yaqb;
+/// table! {
+///     users {
+///         id -> Serial,
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// More complex usage:
+///
+/// ```rust
+/// # #[macro_use] extern crate yaqb;
+/// table! {
+///     users (non_standard_primary_key) {
+///         non_standard_primary_key -> Serial,
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     } no select {
+///         complex_index_column -> Text,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// This module will also contain several helper types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the table, renamed to the same name as the module,
+/// and each of the columns. This is useful to glob import when you're dealing
+/// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
+/// instead of `users::table.filter(users::name.eq("Sean"))`.
+///
+/// all_columns
+/// -----------
+///
+/// A constant will be assigned called `all_columns`, which will be a tuple of
+/// all the columns that aren't in the "no select" group. This is what will be
+/// selected if you don't otherwise specify a select clause. It's type will be
+/// `table::AllColumns`. You can also get this value from the
+/// `Table::all_columns` function.
+///
+/// star
+/// ----
+///
+/// This will be the qualified "star" expression for this table (e.g.
+/// `users.*`). Internally, we read columns by index, not by name, so this
+/// column is not safe to read data out of, and it has had it's SQL type set to
+/// `()` to prevent accidentally using it as such. It is sometimes useful for
+/// count statements however. It can also be accessed through the `Table.star()`
+/// method.
 #[macro_export]
 macro_rules! table {
     (
@@ -81,6 +147,26 @@ macro_rules! table {
             }
         }
     };
+    (
+        $name:ident ($pk:ident) {
+            $($column_name:ident -> $Type:ty,)+
+        } no select {
+            $($no_select_column_name:ident -> $no_select_type:ty,)*
+        }
+    ) => {
+        table_body! {
+            $name ($pk) {
+                $($column_name -> $Type,)+
+            } no select {
+                $($no_select_column_name -> $no_select_type,)*
+            }
+        }
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! table_body {
     (
         $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
