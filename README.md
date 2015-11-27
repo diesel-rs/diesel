@@ -1,5 +1,5 @@
-YAQB (This will not be the real name)
-=====================================
+YAQB (This will not be the real name. Please open PRs with name ideas)
+======================================================================
 
 This is an early stage ORM in Rust. It is poorly documented, and rapidly
 iterating. I would love early feedback on usage. Help in documenting current
