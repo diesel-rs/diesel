@@ -24,14 +24,6 @@ Does it support X?
 
 0.1 progress is tracked on https://github.com/sgrif/yaqb/issues/1
 
-How do I use it?
-----------------
-
-Take a look at the various files named on what you're trying to do in
-https://github.com/sgrif/yaqb/tree/master/yaqb_tests/tests. See
-https://github.com/sgrif/yaqb/blob/master/yaqb_tests/tests/schema.rs for how
-you can go about getting the data structures set up.
-
 Getting Started
 ---------------
 
@@ -236,3 +228,11 @@ fn delete_user(conn: &Connection, user: User) -> DbResult<()> {
 ```
 
 FIXME: Replace links to source code with hosted doc pages
+
+How do I do other things?
+-------------------------
+
+Take a look at the various files named on what you're trying to do in
+https://github.com/sgrif/yaqb/tree/master/yaqb_tests/tests. See
+https://github.com/sgrif/yaqb/blob/master/yaqb_tests/tests/schema.rs for how
+you can go about getting the data structures set up.
