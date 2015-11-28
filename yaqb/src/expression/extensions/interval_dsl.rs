@@ -2,23 +2,23 @@ use std::ops::Mul;
 
 use types::structs::PgInterval;
 
-pub trait MicroIntervalDsl: Sized + From<i32> + Mul<Self, Output=Self> {
+pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
     fn microseconds(self) -> PgInterval;
 
     fn milliseconds(self) -> PgInterval {
-        (self * 1000.into()).microseconds()
+        (self.times(1000)).microseconds()
     }
 
     fn seconds(self) -> PgInterval {
-        (self * 1000.into()).milliseconds()
+        (self.times(1000)).milliseconds()
     }
 
     fn minutes(self) -> PgInterval {
-        (self * 60.into()).seconds()
+        (self.times(60)).seconds()
     }
 
     fn hours(self) -> PgInterval {
-        (self * 60.into()).minutes()
+        (self.times(60)).minutes()
     }
 
     fn microsecond(self) -> PgInterval {
@@ -40,18 +40,20 @@ pub trait MicroIntervalDsl: Sized + From<i32> + Mul<Self, Output=Self> {
     fn hour(self) -> PgInterval {
         self.hours()
     }
+
+    fn times(self, x: i32) -> Self;
 }
 
-pub trait DayAndMonthIntervalDsl: Sized + From<i32> + Mul<Self, Output=Self>  {
+pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
     fn days(self) -> PgInterval;
     fn months(self) -> PgInterval;
 
     fn weeks(self) -> PgInterval {
-        (self * 7.into()).days()
+        (self.times(7)).days()
     }
 
     fn years(self) -> PgInterval {
-        (self * 12.into()).months()
+        (self.times(12)).months()
     }
 
     fn day(self) -> PgInterval {
@@ -69,17 +71,27 @@ pub trait DayAndMonthIntervalDsl: Sized + From<i32> + Mul<Self, Output=Self>  {
     fn year(self) -> PgInterval {
         self.years()
     }
+
+    fn times(self, x: i32) -> Self;
 }
 
 impl MicroIntervalDsl for i64 {
     fn microseconds(self) -> PgInterval {
         PgInterval::from_microseconds(self)
     }
+
+    fn times(self, x: i32) -> i64 {
+        self * x as i64
+    }
 }
 
 impl MicroIntervalDsl for f64 {
     fn microseconds(self) -> PgInterval {
         (self.round() as i64).microseconds()
+    }
+
+    fn times(self, x: i32) -> f64 {
+        self * x as f64
     }
 }
 
@@ -90,6 +102,10 @@ impl DayAndMonthIntervalDsl for i32 {
 
     fn months(self) -> PgInterval {
         PgInterval::from_months(self)
+    }
+
+    fn times(self, x: i32) -> i32 {
+        self * x as i32
     }
 }
 
@@ -106,6 +122,10 @@ impl DayAndMonthIntervalDsl for f64 {
 
     fn years(self) -> PgInterval {
         ((self * 12.0).trunc() as i32).months()
+    }
+
+    fn times(self, x: i32) -> f64 {
+        self * x as f64
     }
 }
 
