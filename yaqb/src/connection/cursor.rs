@@ -4,6 +4,8 @@ use types::{NativeSqlType, FromSqlRow};
 
 use std::marker::PhantomData;
 
+/// The type returned by various [`Connection`](struct.Connection.html) methods.
+/// Acts as an iterator over `T`.
 pub struct Cursor<ST, T> {
     current_row: usize,
     db_result: DbResult,
@@ -11,6 +13,7 @@ pub struct Cursor<ST, T> {
 }
 
 impl<ST, T> Cursor<ST, T> {
+    #[doc(hidden)]
     pub fn new(db_result: DbResult) -> Self {
         Cursor {
             current_row: 0,
