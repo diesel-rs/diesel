@@ -11,6 +11,7 @@ use super::where_clause::NoWhereClause;
 use types::{self, NativeSqlType};
 
 #[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
 pub struct SelectStatement<
     SqlType,
     Select,

@@ -1,10 +1,13 @@
 use query_builder::*;
 
-pub fn delete<T: UpdateTarget>(source: T) -> DeleteStatement<T> {
-    DeleteStatement(source)
-}
-
 pub struct DeleteStatement<T>(T);
+
+impl<T> DeleteStatement<T> {
+    #[doc(hidden)]
+    pub fn new(t: T) -> Self {
+        DeleteStatement(t)
+    }
+}
 
 impl<T> QueryFragment for DeleteStatement<T> where
     T: UpdateTarget,

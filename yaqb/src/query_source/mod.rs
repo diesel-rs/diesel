@@ -1,8 +1,10 @@
+#[doc(hidden)]
 pub mod filter;
 mod joins;
 
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
+#[doc(hidden)]
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use types::{FromSqlRow, NativeSqlType};
 

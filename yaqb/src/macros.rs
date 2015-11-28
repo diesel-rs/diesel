@@ -1,10 +1,12 @@
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 #[macro_export]
+#[doc(hidden)]
 macro_rules! yaqb_internal_expr_conversion {
     ($e:expr) => { $e }
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! column {
     ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
         #[allow(non_camel_case_types, dead_code)]
@@ -263,6 +265,7 @@ macro_rules! table_body {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! joinable {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         joinable_inner!($child -> $parent ($source = $target));
@@ -271,6 +274,7 @@ macro_rules! joinable {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! joinable_inner {
     ($child:ident -> $parent:ident ($source:ident = $target:ident)) => {
         impl $crate::JoinTo<$parent::table> for $child::table {
@@ -287,6 +291,7 @@ macro_rules! joinable_inner {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! select_column_workaround {
     ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
         $(select_column_inner!($parent -> $child $column_name);)+
@@ -295,6 +300,7 @@ macro_rules! select_column_workaround {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! select_column_inner {
     ($parent:ident -> $child:ident $column_name:ident) => {
         impl $crate::expression::SelectableExpression<
@@ -326,6 +332,7 @@ macro_rules! select_column_inner {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! join_through {
     ($parent:ident -> $through:ident -> $child:ident) => {
         impl $crate::JoinTo<$child::table> for $parent::table {

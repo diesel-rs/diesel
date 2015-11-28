@@ -12,14 +12,26 @@ pub mod result;
 mod row;
 
 pub mod helper_types {
-    pub use super::query_dsl::{
-        FilterOutput as Filter,
-        FindByOutput as FindBy,
-        LimitOutput as Limit,
-        OffsetOutput as Offset,
-        OrderOutput as Order,
-        SelectOutput as Select,
-    };
+    use super::query_dsl::*;
+    use super::expression::helper_types::Eq;
+
+    pub type Select<Source, Selection, Type = <Selection as super::Expression>::SqlType> =
+        <Source as SelectDsl<Selection, Type>>::Output;
+
+    pub type Filter<Source, Predicate> =
+        <Source as FilterDsl<Predicate>>::Output;
+
+    pub type FindBy<Source, Column, Value> =
+        Filter<Source, Eq<Column, Value>>;
+
+    pub type Order<Source, Ordering> =
+        <Source as OrderDsl<Ordering>>::Output;
+
+    pub type Limit<Source> = <Source as LimitDsl>::Output;
+
+    pub type Offset<Source> = <Source as OffsetDsl>::Output;
+
+    pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 }
 
 #[macro_use]

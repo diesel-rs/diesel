@@ -8,11 +8,14 @@ use expression::Expression;
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
 use query_source::Table;
 
-pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
-    IncompleteUpdateStatement(source)
-}
-
 pub struct IncompleteUpdateStatement<T>(T);
+
+impl<T> IncompleteUpdateStatement<T> {
+    #[doc(hidden)]
+    pub fn new(t: T) -> Self {
+        IncompleteUpdateStatement(t)
+    }
+}
 
 impl<T> IncompleteUpdateStatement<T> {
     pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where

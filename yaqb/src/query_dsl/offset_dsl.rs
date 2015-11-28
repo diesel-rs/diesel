@@ -1,8 +1,6 @@
 use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
 
-pub type OffsetOutput<T> = <T as OffsetDsl>::Output;
-
 pub trait OffsetDsl {
     type Output: Query;
 

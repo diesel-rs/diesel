@@ -20,6 +20,7 @@ impl<'a, T, Expr> WithDsl<'a, Expr> for T where
     }
 }
 
+#[doc(hidden)]
 pub struct WithQuerySource<'a, Left, Right> {
     left: Left,
     right: Aliased<'a, Right>,

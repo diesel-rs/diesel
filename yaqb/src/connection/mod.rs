@@ -255,7 +255,7 @@ impl Connection {
 
     /// Executes the given command, returning the number of rows affected. Used
     /// in conjunction with
-    /// [`update`](../query_builder/update_statement/fn.update.html) and
+    /// [`update`](../query_builder/fn.update.html) and
     /// [`delete`](../query_builder/fn.delete.html)
     pub fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment,

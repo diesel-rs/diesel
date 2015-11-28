@@ -43,7 +43,6 @@ macro_rules! generic_numeric_expr_inner {
     }
 }
 
-#[macro_export]
 macro_rules! generic_numeric_expr {
     ($tpe: ident, $($param: ident),*) => {
         generic_numeric_expr_inner!($tpe, ($($param),*), Add, add);

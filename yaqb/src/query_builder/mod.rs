@@ -1,3 +1,4 @@
+#[doc(hidden)]
 pub mod pg;
 
 mod limit_clause;
@@ -7,10 +8,12 @@ mod select_statement;
 mod where_clause;
 pub mod update_statement;
 mod delete_statement;
+mod functions;
 
-pub use self::delete_statement::delete;
+pub use self::functions::*;
+#[doc(hidden)]
 pub use self::select_statement::SelectStatement;
-pub use self::update_statement::{update, IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
+pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
 
 use expression::Expression;
 use std::error::Error;

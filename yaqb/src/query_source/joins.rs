@@ -3,7 +3,8 @@ use query_builder::*;
 use expression::SelectableExpression;
 use types::Nullable;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
 pub struct InnerJoinSource<Left, Right> {
     left: Left,
     right: Right,
@@ -49,7 +50,8 @@ impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
 pub struct LeftOuterJoinSource<Left, Right> {
     left: Left,
     right: Right,

@@ -1,8 +1,9 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use expression::expression_methods::*;
 use expression::predicates::And;
+use helper_types::Filter;
 use query_builder::*;
-use query_dsl::{FilterDsl, FilterOutput};
+use query_dsl::FilterDsl;
 use query_source::QuerySource;
 use types::Bool;
 
@@ -26,8 +27,8 @@ impl<Source, Predicate> AsQuery for FilteredQuerySource<Source, Predicate> where
     Source: QuerySource + AsQuery,
     Source::Query: FilterDsl<Predicate>,
 {
-    type SqlType = <FilterOutput<Source::Query, Predicate> as AsQuery>::SqlType;
-    type Query = <FilterOutput<Source::Query, Predicate> as AsQuery>::Query;
+    type SqlType = <Filter<Source::Query, Predicate> as AsQuery>::SqlType;
+    type Query = <Filter<Source::Query, Predicate> as AsQuery>::Query;
 
     fn as_query(self) -> Self::Query {
         self.source.as_query().filter(self.predicate)
