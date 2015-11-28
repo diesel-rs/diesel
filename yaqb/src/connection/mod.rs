@@ -164,6 +164,10 @@ impl Connection {
         self.query_one(source.filter(pk.eq(id)).limit(1))
     }
 
+    /// Inserts new records in the database, and returns an `Iterator` of models
+    /// created from the inserted rows. If you do not want to use the returned
+    /// models, you should call [`insert_returning_count`](#method.insert_returning_count)
+    /// instead.
     pub fn insert<T, U, Out>(&self, _source: &T, records: U)
         -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
         T: Table,
@@ -182,6 +186,8 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
     }
 
+    /// Inserts new records into the database, returning the number of rows that
+    /// were saved.
     pub fn insert_returning_count<T, U>(&self, _source: &T, records: U)
         -> QueryResult<usize> where
         T: Table,
