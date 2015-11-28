@@ -24,3 +24,6 @@ addons:
   postgresql: "9.4"
 env:
   - DATABASE_URL=postgres://postgres@localhost/
+
+after_success:
+  - (cd yaqb && travis-cargo --only nightly doc-upload)
