@@ -11,6 +11,7 @@ before_script:
 script:
 - |
   (cd yaqb && travis-cargo build) &&
+  (cd yaqb && travis-cargo doc) &&
   (cd yaqb && travis-cargo test) &&
   (cd yaqb_tests && travis-cargo test)
 env:
