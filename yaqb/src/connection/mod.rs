@@ -20,7 +20,7 @@ use result::*;
 use self::pq_sys::*;
 use std::cell::Cell;
 use std::ffi::{CString, CStr};
-use std::{str, ptr, result};
+use std::{str, ptr};
 use types::{NativeSqlType, ToSql, ValuesToSql};
 
 pub struct Connection {
@@ -52,7 +52,7 @@ impl Connection {
     }
 
     pub fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
-        F: FnOnce() -> result::Result<T, E>,
+        F: FnOnce() -> Result<T, E>,
     {
         try!(self.begin_transaction());
         match f() {
@@ -67,13 +67,13 @@ impl Connection {
         }
     }
 
-    pub fn begin_test_transaction(&self) -> Result<usize> {
+    pub fn begin_test_transaction(&self) -> QueryResult<usize> {
         assert_eq!(self.transaction_depth.get(), 0);
         self.begin_transaction()
     }
 
     pub fn test_transaction<T, E, F>(&self, f: F) -> T where
-        F: FnOnce() -> result::Result<T, E>,
+        F: FnOnce() -> Result<T, E>,
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|| {
@@ -83,18 +83,18 @@ impl Connection {
         user_result.expect("Transaction did not succeed")
     }
 
-    pub fn execute(&self, query: &str) -> Result<usize> {
+    pub fn execute(&self, query: &str) -> QueryResult<usize> {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    pub fn query_one<T, U>(&self, source: T) -> Result<Option<U>> where
+    pub fn query_one<T, U>(&self, source: T) -> QueryResult<Option<U>> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
     {
         self.query_all(source).map(|mut e| e.nth(0))
     }
 
-    pub fn query_all<T, U>(&self, source: T) -> Result<Cursor<T::SqlType, U>> where
+    pub fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U>> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
     {
@@ -102,7 +102,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
     }
 
-    pub fn query_sql<T, U>(&self, query: &str) -> Result<Cursor<T, U>> where
+    pub fn query_sql<T, U>(&self, query: &str) -> QueryResult<Cursor<T, U>> where
         T: NativeSqlType,
         U: Queriable<T>,
     {
@@ -111,7 +111,7 @@ impl Connection {
     }
 
     pub fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
-        -> Result<Cursor<T, U>> where
+        -> QueryResult<Cursor<T, U>> where
         T: NativeSqlType,
         U: Queriable<T>,
         PT: NativeSqlType,
@@ -122,7 +122,7 @@ impl Connection {
         Ok(Cursor::new(db_result))
     }
 
-    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> Result<DbResult> {
+    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<DbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
@@ -153,7 +153,7 @@ impl Connection {
         DbResult::new(self, internal_res)
     }
 
-    pub fn find<T, U, PK>(&self, source: T, id: PK) -> Result<Option<U>> where
+    pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<Option<U>> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
         U: Queriable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
@@ -165,7 +165,7 @@ impl Connection {
     }
 
     pub fn insert<T, U, Out>(&self, _source: &T, records: U)
-        -> Result<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
+        -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
         T: Table,
         U: Insertable<T>,
         Out: Queriable<<T::AllColumns as Expression>::SqlType>,
@@ -183,7 +183,7 @@ impl Connection {
     }
 
     pub fn insert_returning_count<T, U>(&self, _source: &T, records: U)
-        -> Result<usize> where
+        -> QueryResult<usize> where
         T: Table,
         U: Insertable<T>,
     {
@@ -197,7 +197,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(|r| r.rows_affected())
     }
 
-    pub fn execute_returning_count<T>(&self, source: &T) -> Result<usize> where
+    pub fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment,
     {
         let (sql, params, param_types) = self.prepare_query(source);
@@ -213,7 +213,7 @@ impl Connection {
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
-    fn execute_inner(&self, query: &str) -> Result<DbResult> {
+    fn execute_inner(&self, query: &str) -> QueryResult<DbResult> {
         self.exec_sql_params(query, &Vec::new(), &None)
     }
 
@@ -231,7 +231,7 @@ impl Connection {
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
-    fn begin_transaction(&self) -> Result<usize> {
+    fn begin_transaction(&self) -> QueryResult<usize> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(1, if transaction_depth == 0 {
             self.execute("BEGIN")
@@ -240,7 +240,7 @@ impl Connection {
         })
     }
 
-    fn rollback_transaction(&self) -> Result<usize> {
+    fn rollback_transaction(&self) -> QueryResult<usize> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth == 1 {
             self.execute("ROLLBACK")
@@ -250,7 +250,7 @@ impl Connection {
         })
     }
 
-    fn commit_transaction(&self) -> Result<usize> {
+    fn commit_transaction(&self) -> QueryResult<usize> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth <= 1 {
             self.execute("COMMIT")
@@ -260,14 +260,14 @@ impl Connection {
         })
     }
 
-    fn change_transaction_depth(&self, by: i32, query: Result<usize>) -> Result<usize> {
+    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<usize> {
         if query.is_ok() {
             self.transaction_depth.set(self.transaction_depth.get() + by);
         }
         query
     }
 
-    pub fn escape_identifier(&self, identifier: &str) -> Result<PgString> {
+    pub fn escape_identifier(&self, identifier: &str) -> QueryResult<PgString> {
         let result_ptr = unsafe { PQescapeIdentifier(
             self.internal_connection,
             identifier.as_ptr() as *const libc::c_char,

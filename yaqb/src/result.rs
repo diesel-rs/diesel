@@ -1,4 +1,3 @@
-use std::result;
 use std::convert::From;
 use std::error::Error as StdError;
 use std::fmt::{self, Display, Write};
@@ -22,9 +21,9 @@ pub enum TransactionError<E> {
     UserReturnedError(E),
 }
 
-pub type Result<T> = result::Result<T, Error>;
-pub type ConnectionResult<T> = result::Result<T, ConnectionError>;
-pub type TransactionResult<T, E> = result::Result<T, TransactionError<E>>;
+pub type QueryResult<T> = Result<T, Error>;
+pub type ConnectionResult<T> = Result<T, ConnectionError>;
+pub type TransactionResult<T, E> = Result<T, TransactionError<E>>;
 
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {

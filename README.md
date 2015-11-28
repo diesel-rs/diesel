@@ -113,7 +113,7 @@ struct NewUser<'a> {
 }
 
 fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>)
-  -> DbResult<User>
+  -> QueryResult<User>
 {
     let new_user = NewUser {
         name: name,
@@ -155,7 +155,7 @@ struct NewUser<'a>(
 )
 
 fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>)
-  -> DbResult<User>
+  -> QueryResult<User>
 {
     let new_user = NewUser(name, favorite_color);
     connection.insert(&users::table, &new_user)
@@ -172,7 +172,7 @@ function which creates a query that you'll later pass to the `Connection`.
 Here's a simple example.
 
 ```rust
-fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> DbResult<User> {
+fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> QueryResult<User> {
     use yaqb::query_builder::update;
     use users::dsl::*;
 
@@ -203,7 +203,7 @@ changeset! {
     }
 }
 
-fn save_user(connection: &Connection, user: &mut User) -> DbResult<()> {
+fn save_user(connection: &Connection, user: &mut User) -> QueryResult<()> {
     let command = update(users::table.filter(users::id.eq(user.id)))
         .set(user);
     let updated_user = try!(connection.query_one(&command)).unwrap();
@@ -223,7 +223,7 @@ Delete
 record.
 
 ```rust
-fn delete_user(connection: &Connection, user: User) -> DbResult<()> {
+fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
     use yaqb::query_builder::delete;
     use users::dsl::*;
 

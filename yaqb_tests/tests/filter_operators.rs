@@ -1,6 +1,5 @@
 use schema::*;
 use yaqb::*;
-use yaqb::result::Result;
 
 #[test]
 fn filter_by_inequality() {
@@ -126,7 +125,7 @@ trait TestResultHelpers<U> {
     fn as_vec(self) -> Vec<U>;
 }
 
-impl<ST, U> TestResultHelpers<U> for Result<Cursor<ST, U>> where
+impl<ST, U> TestResultHelpers<U> for QueryResult<Cursor<ST, U>> where
     Cursor<ST, U>: Iterator<Item=U>,
 {
     fn as_vec(self) -> Vec<U> {
