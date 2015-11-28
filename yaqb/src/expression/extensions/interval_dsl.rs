@@ -4,6 +4,7 @@ use types::structs::PgInterval;
 
 pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
     fn microseconds(self) -> PgInterval;
+    fn times(self, x: i32) -> Self;
 
     fn milliseconds(self) -> PgInterval {
         (self.times(1000)).microseconds()
@@ -40,13 +41,12 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
     fn hour(self) -> PgInterval {
         self.hours()
     }
-
-    fn times(self, x: i32) -> Self;
 }
 
 pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
     fn days(self) -> PgInterval;
     fn months(self) -> PgInterval;
+    fn times(self, x: i32) -> Self;
 
     fn weeks(self) -> PgInterval {
         (self.times(7)).days()
@@ -71,8 +71,6 @@ pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
     fn year(self) -> PgInterval {
         self.years()
     }
-
-    fn times(self, x: i32) -> Self;
 }
 
 impl MicroIntervalDsl for i64 {
