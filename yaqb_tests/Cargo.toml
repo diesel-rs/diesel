@@ -2,6 +2,7 @@
 name = "yaqb_tests"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT"
 
 [dependencies]
 yaqb = { path = "../yaqb" }
