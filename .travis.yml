@@ -15,7 +15,11 @@ script:
   (cd yaqb && travis-cargo build) &&
   (cd yaqb && travis-cargo doc) &&
   (cd yaqb && travis-cargo test) &&
-  (cd yaqb_tests && travis-cargo test)
+  if test "$TRAVIS_RUST_VERSION" = 'nightly'; then
+    (cd yaqb_tests && travis-cargo test -- --no-default-features)
+  else
+    (cd yaqb_tests && travis-cargo test)
+  fi
 env:
   matrix:
   - DATABASE_URL=postgres://postgres@localhost/
