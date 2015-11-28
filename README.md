@@ -33,7 +33,7 @@ Does it support X?
 Getting Started
 ---------------
 
-Before you can do anything, you'll first need to set up your table You'll want
+Before you can do anything, you'll first need to set up your table. You'll want
 to specify the columns and tables that exist using the
 [`table!` macro](https://github.com/sgrif/yaqb/blob/master/yaqb/src/macros.rs#L45).
 Once you've done that, you can already start using the query builder, and
@@ -68,13 +68,14 @@ fn users_with_name(connection: &Connection, target_name: &str)
 }
 ```
 
-Note that we're importing `users::dsl::*` here. This allows us to deal with only
-the users table, and not have to qualify everything. If we did not have this
-import, we'd need to put `users::` before each column, and reference the table
-as `users::table`.
+Note that we're importing `users::dsl::*` here. This allows us to deal with
+only the users table, and not have to qualify everything. If we did not have
+this import, we'd need to put `users::` before each column, and reference the
+table as `users::table`.
 
 If you want to be able to query for a struct, you'll need to implement the
-[`Queriable` trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/query_source/mod.rs#L11).
+[`Queriable`
+trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/query_source/mod.rs#L11).
 Luckily, [yaqb_codegen](https://github.com/sgrif/yaqb/tree/master/yaqb_codegen)
 can do this for us automatically.
 
@@ -99,8 +100,8 @@ fn main() {
 Insert
 ------
 
-Inserting data requires implementing the
-[`Insertable` trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/persistable.rs#L8).
+Inserting data requires implementing the [`Insertable`
+trait](https://github.com/sgrif/yaqb/blob/master/yaqb/src/persistable.rs#L8).
 Once again, we can have this be automatically implemented for us by the
 compiler.
 
@@ -126,13 +127,13 @@ fn create_user(conn: &Connection, name: &str, favorite_color: Option<&str>)
 `insert` can return any struct which implements `Queriable` for the right type.
 If you don't actually want to use the results, you should call
 `insert_returning_count` instead, or the compiler will complain that it can't
-infer what type you meant to return. You use the same struct for inserting and
-querying if you'd like, but you'll need to make the `id` and columns such as
-timestamps optional when they otherwise wouldn't be. For this reason, you
-probably want to create a new struct intead.
+infer what type you meant to return. You can use the same struct for inserting
+and querying if you'd like, but you'll need to make columns that are not
+present during the insert optional (e.g. `id` and timestamps). For this
+reason, you probably want to create a new struct intead.
 
 You might notice that we're having to manually grab the first record that was
-inserted. That is because `insert` can also take a slice or `Vec` of records,
+inserted. This is because `insert` can also take a slice or `Vec` of records,
 and will insert them in a single query. For this reason, `insert` will always
 return an `Iterator`. A helper for this common case will likely be added in the
 future.
@@ -192,7 +193,7 @@ right types. If you do not want to use the returned record(s), you should call
 You can also use a struct to represent the changes, if it implements
 `AsChangeset`. You can generate that from a macro (FIXME: This should be a
 compiler annotation not long after the time of writing this. If it is later than
-12/5/15, please open an issue as I'm being lazy)
+12/5/15, please open an issue as I'm being lazy).
 
 ```rust
 changeset! {
@@ -218,7 +219,7 @@ to accidentally update the entire table before 1.0.
 Delete
 ------
 
-Delete works very similarly to `update`, but does not support returning a
+`delete` works very similarly to `update`, but does not support returning a
 record.
 
 ```rust
