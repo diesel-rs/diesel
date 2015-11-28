@@ -1,7 +1,9 @@
 language: rust
 sudo: false
 rust:
-- nightly
+  - stable
+  - beta
+  - nightly
 addons:
   postgresql: '9.4'
 before_script:

@@ -1,21 +1,25 @@
-#![feature(custom_derive, plugin, custom_attribute)]
-#![plugin(yaqb_codegen)]
+#![cfg_attr(feature = "unstable", feature(custom_derive, plugin, custom_attribute))]
+#![cfg_attr(feature = "unstable", plugin(yaqb_codegen))]
 
 extern crate quickcheck;
 #[macro_use] extern crate yaqb;
+
+#[cfg(feature = "unstable")]
+include!("lib.in.rs");
+
+#[cfg(not(feature = "unstable"))]
+include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
 mod associations;
 mod expressions;
 mod filter;
 mod filter_operators;
 mod find;
-mod insert;
 mod internal_details;
 mod joins;
 mod macros;
 mod order;
 mod perf_details;
-mod schema;
 mod select;
 mod transactions;
 mod types;

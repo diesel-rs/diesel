@@ -1,9 +1,6 @@
 YAQB (This will not be the real name. Please open PRs with name ideas)
 ======================================================================
 
-NOTE: You need to be on nightly >= 11/27/2015. Sorry. I hope to work on stable soon
-===================================================================================
-
 [![Build Status](https://travis-ci.org/sgrif/yaqb.svg)](https://travis-ci.org/sgrif/yaqb)
 [Documentation](http://sgrif.github.io/yaqb/yaqb/index.html)
 

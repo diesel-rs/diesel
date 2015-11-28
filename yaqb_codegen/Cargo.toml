@@ -3,11 +3,23 @@ name = "yaqb_codegen"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT"
+build = "build.rs"
+
+[build-dependencies]
+quasi_codegen = { verision = "^0.3.8", optional = true }
+syntex = { version = "^0.22.0", optional = true }
 
 [dependencies]
 aster = { version = "^0.8.0", default-features = false }
-quasi = { verision = "^0.3.5", default-features = false }
-quasi_macros = { git="https://github.com/sgrif/quasi.git" }
+quasi = { verision = "^0.3.8", default-features = false }
+quasi_macros = { git="https://github.com/sgrif/quasi.git", optional = true}
+syntex = { version = "^0.22.0", optional = true }
+syntex_syntax = { version = "^0.22.0", optional = true }
+
+[features]
+default = ["with-syntex"]
+nightly = ["quasi_macros"]
+with-syntex = ["quasi/with-syntex", "quasi_codegen", "quasi_codegen/with-syntex", "syntex", "syntex_syntax"]
 
 [lib]
 name = "yaqb_codegen"

@@ -126,7 +126,7 @@ fn selectable_column_impl(
         .segment(column_name).build()
         .build();
 
-    vec![quote_item!(cx,
+    [quote_item!(cx,
         impl ::yaqb::expression::SelectableExpression<
             ::yaqb::query_source::InnerJoinSource<$table, $foreign_table>
         > for $column {}
@@ -143,5 +143,5 @@ fn selectable_column_impl(
             ::yaqb::query_source::LeftOuterJoinSource<$foreign_table, $table>,
             ::yaqb::types::Nullable<<$column as ::yaqb::Expression>::SqlType>,
         > for $column {}
-    ).unwrap()]
+    ).unwrap()].to_vec()
 }
