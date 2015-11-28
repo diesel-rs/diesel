@@ -105,7 +105,7 @@ Once again, we can have this be automatically implemented for us by the
 compiler.
 
 ```rust
-#[insert_into=users]
+#[insertable_into(users)]
 struct NewUser<'a> {
     name: &'a str,
     favorite_color: Option<&'a str>,
@@ -145,7 +145,7 @@ keywords that are reserved in Rust, as you cannot have a column with that name.
 This may change in the future.
 
 ```rust
-#[insert_into=users]
+#[insertable_into(users)]
 struct NewUser<'a>(
     #[column_name="name"]
     &'a str,
