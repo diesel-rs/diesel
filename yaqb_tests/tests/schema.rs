@@ -167,7 +167,9 @@ pub fn connection() -> Connection {
 }
 
 pub fn connection_without_transaction() -> Connection {
-    dotenv::dotenv().ok();
+    let dotenv_path = ::std::env::current_dir()
+        .and_then(|a| Ok(a.join("../.env"))).unwrap();
+    dotenv::from_path(dotenv_path.as_path()).ok();
     let connection_url = ::std::env::var("DATABASE_URL").ok()
         .expect("DATABASE_URL must be set in order to run tests");
     Connection::establish(&connection_url).unwrap()
