@@ -195,28 +195,37 @@ You can also use a struct to represent the changes, if it implements
 
 ```rust
 #[changeset_for(users)]
+pub struct UserChanges {
+    name: String,
+    favorite_color: Option<String>,
+}
+
+fn save_user(connection: &Connection, id: i32, changes: &UserChanges) -> QueryResult<Option<User>> {
+    let command = update(users::table.filter(users::id.eq(id))).set(changes);
+    connection.query_one(command)
+}
+```
+
+Note that even though we've implemented `AsChangeset`, we still need to specify
+what records we want to update. If the struct has the primary key on it, a
+method called `save_changes` will also be added.
+
+```rust
+#[changeset_for(users)]
 pub struct User {
     id: i32,
     name: String,
     favorite_color: Option<String>,
 }
 
-fn save_user(connection: &Connection, user: &mut User) -> QueryResult<()> {
-    use self::users::dsl::*;
-
-    *user = {
-        let command = update(users.filter(id.eq(user.id))).set(&*user);
-        try!(connection.query_one(command)).unwrap()
-    };
-    Ok(())
+fn change_name_to_jim(connection: &Connection, user: &mut User) -> QueryResult<()> {
+    user.name = "Jim".into();
+    user.save_changes(connection)
 }
 ```
 
-We need to set `&*user` here, because we've taken a mutable reference, and
-`AsChangeset` is only implemented for `&User`, not `&mut User`. Note that even
-though we've implemented `AsChangeset`, we still need to specify what records we
-want to update. There will likely be changes that make it harder to accidentally
-update the entire table before 1.0.
+This method will update the model with any fields that are updated in the
+database (for example, if you have timestamps which are updated by triggers).
 
 Delete
 ------

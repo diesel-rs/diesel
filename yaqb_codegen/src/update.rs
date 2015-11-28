@@ -19,7 +19,10 @@ pub fn expand_changeset_for(
 
     if let Some(model) = Model::from_annotable(cx, &builder, annotatable) {
         let table = changeset_tables(cx, meta_item).unwrap();
-        push(Annotatable::Item(changeset_impl(cx, builder, table, &model).unwrap()));
+        push(Annotatable::Item(changeset_impl(cx, builder, &table, &model).unwrap()));
+        if let Some(item) = save_changes_impl(cx, builder, &table, &model) {
+            push(Annotatable::Item(item));
+        }
     } else {
         cx.span_err(meta_item.span,
             "`changeset_for` may only be apllied to enums and structs");
@@ -51,7 +54,7 @@ fn usage_error<T>(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Option<T> {
 fn changeset_impl(
     cx: &mut ExtCtxt,
     builder: aster::AstBuilder,
-    table: InternedString,
+    table: &str,
     model: &Model,
 ) -> Option<P<ast::Item>> {
     let ref struct_name = model.ty;
@@ -59,10 +62,10 @@ fn changeset_impl(
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
     let changeset_ty = builder.ty().tuple()
-        .with_tys(attrs_for_changeset.iter().map(|a| changeset_ty(cx, builder, &table, a)))
+        .with_tys(attrs_for_changeset.iter().map(|a| changeset_ty(cx, builder, table, a)))
         .build();
     let changeset_body = builder.expr().tuple()
-        .with_exprs(attrs_for_changeset.iter().map(|a| changeset_expr(cx, builder, &table, a)))
+        .with_exprs(attrs_for_changeset.iter().map(|a| changeset_expr(cx, builder, table, a)))
         .build();
     quote_item!(cx,
         impl<'a: 'update, 'update> ::yaqb::query_builder::AsChangeset for
@@ -75,6 +78,36 @@ fn changeset_impl(
             }
         }
     )
+}
+
+fn save_changes_impl(
+    cx: &mut ExtCtxt,
+    builder: aster::AstBuilder,
+    table: &str,
+    model: &Model,
+) -> Option<P<ast::Item>> {
+    let ref struct_name = model.ty;
+    let pk = model.primary_key_name();
+    let table = builder.path()
+        .segment(table).build()
+        .segment("table").build()
+        .build();
+    model.attrs.iter().find(|a| a.column_name == pk).and_then(|pk| {
+        let pk_field = pk.field_name.unwrap();
+        quote_item!(cx,
+            impl<'a> $struct_name {
+                pub fn save_changes(&mut self, connection: &::yaqb::Connection) -> ::yaqb::QueryResult<()> {
+                    use ::yaqb::query_builder::update;
+                    *self = {
+                        let command = update($table.filter($table.primary_key().eq(&self.$pk_field)))
+                            .set(&*self);
+                        try!(connection.query_one(command)).unwrap()
+                    };
+                    Ok(())
+                }
+            }
+        )
+    })
 }
 
 fn changeset_ty(

@@ -115,3 +115,16 @@ fn update_with_struct_does_not_set_primary_key() {
 
     assert_eq!(Some(expected_user), user);
 }
+
+#[test]
+fn save_on_struct_with_primary_key_changes_that_struct() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut user = User::with_hair_color(1, "Jim", "blue");
+    user.save_changes(&connection).unwrap();
+
+    let user_in_db = connection.find(users, 1).unwrap().unwrap();
+
+    assert_eq!(user, user_in_db);
+}
