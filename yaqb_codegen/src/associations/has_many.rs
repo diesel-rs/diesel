@@ -6,11 +6,10 @@ use syntax::ast::{
 };
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::parse::token::str_to_ident;
 use syntax::ptr::P;
+use syntax::parse::token::str_to_ident;
 
 use model::Model;
-use attr::Attr;
 use super::{parse_association_options, AssociationOptions, to_foreign_key};
 
 pub fn expand_has_many(
@@ -41,16 +40,8 @@ struct HasManyAssociationBuilder {
 }
 
 impl HasManyAssociationBuilder {
-    fn struct_name(&self) -> &P<ast::Ty> {
-        &self.model.ty
-    }
-
     fn association_name(&self) -> ast::Ident {
         self.options.name
-    }
-
-    fn primary_key(&self) -> &Attr {
-        self.model.primary_key()
     }
 
     fn foreign_table(&self) -> ast::Path {

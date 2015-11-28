@@ -10,7 +10,6 @@ use syntax::parse::token::str_to_ident;
 use syntax::ptr::P;
 
 use model::Model;
-use attr::Attr;
 use super::{parse_association_options, AssociationOptions, to_foreign_key};
 
 pub fn expand_belongs_to(

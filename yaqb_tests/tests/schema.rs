@@ -2,6 +2,7 @@ use yaqb::*;
 extern crate dotenv;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[changeset_for(users)]
 #[has_many(posts)]
 pub struct User {
     pub id: i32,
@@ -89,6 +90,7 @@ join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queriable)]
 #[insertable_into(users)]
+#[changeset_for(users)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -100,13 +102,6 @@ impl NewUser {
             name: name.to_string(),
             hair_color: hair_color.map(|s| s.to_string()),
         }
-    }
-}
-
-changeset! {
-    NewUser => users {
-        name -> String,
-        hair_color -> Option<String>,
     }
 }
 

@@ -101,3 +101,17 @@ fn update_with_struct_as_changes() {
 
     assert_eq!(Some(expected_user), user);
 }
+
+#[test]
+fn update_with_struct_does_not_set_primary_key() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let changes = User::with_hair_color(2, "Jim", "blue");
+    let command = update(users.filter(id.eq(1))).set(&changes);
+
+    let user = connection.query_one(command).unwrap();
+    let expected_user = User::with_hair_color(1, "Jim", "blue");
+
+    assert_eq!(Some(expected_user), user);
+}

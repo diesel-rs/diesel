@@ -19,8 +19,10 @@ impl Model {
         annotatable: &Annotatable,
     ) -> Option<Self> {
         if let Annotatable::Item(ref item) = *annotatable {
-            let ty = builder.ty().id(item.ident);
-            Attr::from_item(cx, item).map(|(_, attrs)| {
+            Attr::from_item(cx, item).map(|(generics, attrs)| {
+                let ty = builder.ty().path()
+                    .segment(item.ident).with_generics(generics.clone())
+                    .build().build();
                 Model {
                     ty: ty,
                     attrs: attrs,
@@ -32,10 +34,8 @@ impl Model {
         }
     }
 
-    pub fn primary_key(&self) -> &Attr {
-        self.attrs.iter().find(|attr| {
-            attr.field_name == Some(str_to_ident("id"))
-        }).expect("primary key must be named `id` for now")
+    pub fn primary_key_name(&self) -> ast::Ident {
+        str_to_ident("id")
     }
 
     pub fn table_name(&self) -> ast::Ident {

@@ -1,5 +1,6 @@
 #![feature(rustc_private, plugin, plugin_registrar)]
 #![plugin(quasi_macros)]
+#![deny(warnings)]
 
 extern crate aster;
 extern crate quasi;
@@ -12,6 +13,7 @@ mod attr;
 mod insertable;
 mod model;
 mod queriable;
+mod update;
 
 #[plugin_registrar]
 pub fn register(reg: &mut rustc_plugin::Registry) {
@@ -24,6 +26,10 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
     reg.register_syntax_extension(
         intern("insertable_into"),
         MultiDecorator(Box::new(insertable::expand_insert))
+    );
+    reg.register_syntax_extension(
+        intern("changeset_for"),
+        MultiDecorator(Box::new(update::expand_changeset_for)),
     );
     reg.register_syntax_extension(
         intern("has_many"),

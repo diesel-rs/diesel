@@ -177,7 +177,7 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
     use users::dsl::*;
 
     let command = update(users.filter(id.eq(target))).set(name.eq(new_name));
-    connection.query_one(&command)
+    connection.query_one(command)
         .map(|r| r.unwrap())
 }
 ```
@@ -191,30 +191,32 @@ right types. If you do not want to use the returned record(s), you should call
 `execute_returning_count` instead of `query_one` or `query_all`.
 
 You can also use a struct to represent the changes, if it implements
-`AsChangeset`. You can generate that from a macro (FIXME: This should be a
-compiler annotation not long after the time of writing this. If it is later than
-12/5/15, please open an issue as I'm being lazy).
+`AsChangeset`. Again, `yaqb_codegen` can generate this for us automatically.
 
 ```rust
-changeset! {
-    User => users {
-        name -> String,
-        favorite_color -> Option<String>,
-    }
+#[changeset_for(users)]
+pub struct User {
+    id: i32,
+    name: String,
+    favorite_color: Option<String>,
 }
 
 fn save_user(connection: &Connection, user: &mut User) -> QueryResult<()> {
-    let command = update(users::table.filter(users::id.eq(user.id)))
-        .set(user);
-    let updated_user = try!(connection.query_one(&command)).unwrap();
-    *user = updated_user;
+    use self::users::dsl::*;
+
+    *user = {
+        let command = update(users.filter(id.eq(user.id))).set(&*user);
+        try!(connection.query_one(command)).unwrap()
+    };
     Ok(())
 }
 ```
 
-Note that even though we've implemented `AsChangeset`, we still need to specify
-what records we want to update. There will likely be changes that make it harder
-to accidentally update the entire table before 1.0.
+We need to set `&*user` here, because we've taken a mutable reference, and
+`AsChangeset` is only implemented for `&User`, not `&mut User`. Note that even
+though we've implemented `AsChangeset`, we still need to specify what records we
+want to update. There will likely be changes that make it harder to accidentally
+update the entire table before 1.0.
 
 Delete
 ------

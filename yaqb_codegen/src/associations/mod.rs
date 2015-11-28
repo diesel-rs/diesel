@@ -1,16 +1,10 @@
 use aster;
-use syntax::ast::{
-    self,
-    Item,
-    MetaItem,
-};
+use syntax::ast::{self, MetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
-use syntax::ptr::P;
 
 use model::Model;
-use attr::Attr;
 
 mod has_many;
 mod belongs_to;

@@ -4,6 +4,7 @@ use syntax::ext::base::ExtCtxt;
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Attr {
     pub column_name: ast::Ident,
     pub field_name: Option<ast::Ident>,
