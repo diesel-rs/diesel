@@ -4,26 +4,7 @@ Diesel - A safe, extensible ORM and Query Builder for Rust
 [![Build Status](https://travis-ci.org/sgrif/diesel.svg)](https://travis-ci.org/sgrif/diesel)
 [Documentation](http://sgrif.github.io/diesel/diesel/index.html)
 
-This is an early stage ORM in Rust. I would love early feedback on usage, so we can stabilize the API.
-
-The goal is to take a different approach here. This is not a port of Active
-Record or Hibernate. This is an attempt to find what a "Rust ORM" is. So far,
-what that seems to be is something that is statically guaranteed to only allow
-correct queries, while still feeling high level.
-
-An "incorrect query" includes, but is not limited to:
-
-- Invalid SQL syntax
-- Attempting to interpret a column as the wrong type (e.g. reading varchar as
-  i32, treating a nullable column as something other than an option)
-- Selecting a column from another table
-- Selecting columns that are not used (this doesn't mean that you have to access
-  that field on your struct, but the struct must have that field)
-
-Does it support X?
-------------------
-
-0.1 progress is tracked on https://github.com/sgrif/diesel/issues/1
+Diesel gets rid of the boilerplate for database interaction and eliminates runtime errors, without sacrificing performance. It takes full advantage of Rust's type system to create a low overhead query builder that "feels like Rust".
 
 Getting Started
 ---------------

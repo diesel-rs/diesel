@@ -1,3 +1,6 @@
+//! Diesel is an ORM and query builder designed to reduce the boilerplate for database
+//! interactions. [A getting started guide](https://github.com/sgrif/diesel#getting-started) can be
+//! found in the README.
 #![deny(warnings)]
 pub mod expression;
 #[doc(hidden)]
