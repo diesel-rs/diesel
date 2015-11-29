@@ -12,25 +12,42 @@ pub mod result;
 mod row;
 
 pub mod helper_types {
+    //! Provide helper types for concisely writing the return type of functions.
+    //! As with iterators, it is unfortunately difficult to return a partially
+    //! constructed query without exposing the exact implementation of the
+    //! function. Without higher kinded types, these various DSLs can't be
+    //! combined into a single trait for boxing purposes.
+    //!
+    //! All types here are in the form `<FirstType as
+    //! DslName<OtherTypes>>::Output`. So the return type of
+    //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
+    //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_dsl::*;
     use super::expression::helper_types::Eq;
 
+    /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection, Type = <Selection as super::Expression>::SqlType> =
         <Source as SelectDsl<Selection, Type>>::Output;
 
+    /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> =
         <Source as FilterDsl<Predicate>>::Output;
 
+    /// Represents the return type of `.filter(lhs.eq(rhs))`
     pub type FindBy<Source, Column, Value> =
         Filter<Source, Eq<Column, Value>>;
 
+    /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> =
         <Source as OrderDsl<Ordering>>::Output;
 
+    /// Represents the return type of `.limit()`
     pub type Limit<Source> = <Source as LimitDsl>::Output;
 
+    /// Represents the return type of `.offset()`
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
+    /// Represents the return type of `.with(aliased_expr)`
     pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 }
 
