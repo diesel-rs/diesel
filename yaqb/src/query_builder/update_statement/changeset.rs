@@ -37,7 +37,7 @@ impl<T: Changeset> Changeset for Vec<T> {
     }
 }
 
-impl<T: Changeset> Changeset for Box<T> {
+impl<T: Changeset + ?Sized> Changeset for Box<T> {
     type Target = T::Target;
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
