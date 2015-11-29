@@ -1,8 +1,5 @@
-#[doc(hidden)]
 pub mod global_expression_methods;
-#[doc(hidden)]
 pub mod bool_expression_methods;
-#[doc(hidden)]
 pub mod text_expression_methods;
 
 pub use self::global_expression_methods::ExpressionMethods;
