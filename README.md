@@ -252,7 +252,7 @@ you can go about getting the data structures set up.
 
 [table]: http://sgrif.github.io/yaqb/yaqb/macro.table!.html
 [queriable]: http://sgrif.github.io/yaqb/yaqb/query_source/trait.Queriable.html
-[insertable]: http://sgrif.github.io/yaqb/yaqb/persistable/trait.Insertable.html
+[insertable]: http://sgrif.github.io/yaqb/yaqb/trait.Insertable.html
 [insert]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.insert
 [insert_returning_count]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.insert_returning_count
 [execute_returning_count]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.execute_returning_count

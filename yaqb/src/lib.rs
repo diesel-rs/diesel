@@ -1,5 +1,6 @@
 #![deny(warnings)]
 pub mod expression;
+#[doc(hidden)]
 pub mod persistable;
 pub mod types;
 
@@ -59,4 +60,6 @@ pub use expression::{Expression, SelectableExpression, BoxableExpression};
 pub use expression::expression_methods::*;
 pub use query_dsl::*;
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
+#[doc(inline)]
+pub use persistable::Insertable;
 pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult};

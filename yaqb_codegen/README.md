@@ -109,7 +109,7 @@ This will persist the model to the database and update it with any fields the
 database returns.
 
 [queriable]: http://sgrif.github.io/yaqb/yaqb/query_source/trait.Queriable.html
-[insertable]: http://sgrif.github.io/yaqb/yaqb/persistable/trait.Insertable.html
+[insertable]: http://sgrif.github.io/yaqb/yaqb/trait.Insertable.html
 [as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/update_statement/changeset/trait.AsChangeset.html
 
 Field annotations
