@@ -4,9 +4,7 @@ Diesel - A safe, extensible ORM and Query Builder for Rust
 [![Build Status](https://travis-ci.org/sgrif/diesel.svg)](https://travis-ci.org/sgrif/diesel)
 [Documentation](http://sgrif.github.io/diesel/diesel/index.html)
 
-This is an early stage ORM in Rust. It is poorly documented, and rapidly
-iterating. I would love early feedback on usage. Help in documenting current
-usage would also be welcomed.
+This is an early stage ORM in Rust. I would love early feedback on usage, so we can stabilize the API.
 
 The goal is to take a different approach here. This is not a port of Active
 Record or Hibernate. This is an attempt to find what a "Rust ORM" is. So far,
