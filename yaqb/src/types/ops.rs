@@ -1,3 +1,7 @@
+//! Apps should not need to concern themselves with this module.
+//!
+//! Crates which add new types which allow numeric operators should implement these traits to
+//! specify what the output is for a given right hand side
 use super::NativeSqlType;
 
 pub trait Add: NativeSqlType {

@@ -11,8 +11,15 @@ use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Timestamps are represented in Postgres as a 32 bit signed integer representing the number of
+/// microseconds since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate
+/// the integer's meaning.
 pub struct PgTimestamp(pub i64);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Dates are represented in Postgres as a 32 bit signed integer representing the number of julian
+/// days since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate the
+/// integer's meaning.
 pub struct PgDate(pub i32);
 
 /// Time is represented in Postgres as a 64 bit signed integer representing the number of
