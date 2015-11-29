@@ -16,6 +16,14 @@ pub trait ExpressionMethods: Expression + Sized {
         NotEq::new(self, other.as_expression())
     }
 
+    fn is_null(self) -> IsNull<Self> {
+       IsNull::new(self)
+    }
+
+    fn is_not_null(self) -> IsNotNull<Self> {
+       IsNotNull::new(self)
+    }
+
     fn gt<T: AsExpression<Self::SqlType>>(self, other: T) -> Gt<Self, T::Expression> {
         Gt::new(self, other.as_expression())
     }

@@ -50,6 +50,40 @@ fn filter_by_equality_on_nullable_columns() {
 }
 
 #[test]
+fn filter_by_is_not_null_on_nullable_columns() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    let data = vec![
+        NewUser::new("Derek", Some("red")),
+        NewUser::new("Gordon", None),
+    ];
+    connection.insert_returning_count(&users, &data).unwrap();
+
+    let derek = User::with_hair_color(1, "Derek", "red");
+    let source = users.filter(hair_color.is_not_null());
+    assert_eq!(vec![derek], source.load(&connection).unwrap().collect::<Vec<_>>());
+}
+
+#[test]
+fn filter_by_is_null_on_nullable_columns() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    setup_users_table(&connection);
+    let data = vec![
+        NewUser::new("Derek", Some("red")),
+        NewUser::new("Gordon", None),
+    ];
+    connection.insert_returning_count(&users, &data).unwrap();
+
+    let gordon = User::new(2, "Gordon");
+    let source = users.filter(hair_color.is_null());
+    assert_eq!(vec![gordon], source.load(&connection).unwrap().collect::<Vec<_>>());
+}
+
+#[test]
 fn filter_after_joining() {
     use schema::users::name;
 
