@@ -4,6 +4,9 @@ use std::fmt::{self, Display, Write};
 use std::ffi::NulError;
 
 #[derive(Debug, PartialEq)]
+/// The generic "things can fail in a myriad of ways" enum. This type is not
+/// indended to be exhaustively matched, and new variants may be added in the
+/// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),
