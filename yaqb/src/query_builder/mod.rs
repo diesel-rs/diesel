@@ -7,7 +7,6 @@ mod offset_clause;
 mod order_clause;
 mod select_statement;
 mod where_clause;
-#[doc(hidden)]
 pub mod update_statement;
 mod delete_statement;
 mod functions;
