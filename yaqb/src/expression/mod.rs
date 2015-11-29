@@ -5,8 +5,10 @@
 //! The most common expression to work with is a
 //! [`Column`](../query_source/trait.Column.html). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`](expression_methods/index.html), or operators which
-//! you can find in [`ops`](ops/index.html).
+//! [`expression_methods`](expression_methods/index.html). You can also call
+//! numeric operators on types which have been passed to
+//! [`operator_allowed!`](../macro.operator_allowed.html) or
+//! [`numeric_expr!`](../macro.numeric_expr.html).
 //!
 //! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
