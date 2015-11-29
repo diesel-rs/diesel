@@ -4,6 +4,8 @@ use query_source::Queriable;
 use result::QueryResult;
 use super::LimitDsl;
 
+/// Methods to execute a query given a connection. These are automatically implemented for the
+/// various query types.
 pub trait LoadDsl: AsQuery + LimitDsl + Sized {
     fn load<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
         U: Queriable<Self::SqlType>

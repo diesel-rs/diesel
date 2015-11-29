@@ -1,6 +1,9 @@
 use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
 
+/// Sets the limit clause of a query. If there was already a limit clause, it
+/// will be overridden. This is automatically implemented for the various query
+/// builder types.
 pub trait LimitDsl {
     type Output: Query;
 

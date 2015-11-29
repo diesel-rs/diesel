@@ -3,6 +3,10 @@ use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
 use types::NativeSqlType;
 
+/// Sets the select clause of a query. If there was already a select clause, it
+/// will be overridden. The expression passed to `select` must actually be valid
+/// for the query (only contains columns from the target table, doesn't mix
+/// aggregate + non-aggregate expressions, etc).
 pub trait SelectDsl<
     Selection: Expression,
     Type: NativeSqlType = <Selection as Expression>::SqlType,
@@ -25,6 +29,7 @@ impl<T, Selection, Type> SelectDsl<Selection, Type> for T where
     }
 }
 
+#[doc(hidden)]
 pub trait SelectSqlDsl: Sized {
     fn select_sql<A>(self, columns: &str)
         -> <Self as SelectDsl<SqlLiteral<A>>>::Output where

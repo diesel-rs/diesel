@@ -32,6 +32,7 @@ use super::delete_statement::DeleteStatement;
 /// // When passed to `query_one`, the update statement will gain `RETURNING *`
 /// assert_eq!((1, "James".to_string()), updated_row);
 /// # }
+/// ```
 pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
     IncompleteUpdateStatement::new(source)
 }
