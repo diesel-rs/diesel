@@ -2,7 +2,7 @@ extern crate dotenv;
 
 use yaqb::*;
 
-fn establish_connection() -> Connection {
+fn connection_no_data() -> Connection {
     let dotenv_path = ::std::env::current_dir()
         .and_then(|a| Ok(a.join("../.env"))).unwrap();
     dotenv::from_path(dotenv_path.as_path()).ok();
@@ -11,6 +11,12 @@ fn establish_connection() -> Connection {
         .expect("DATABASE_URL must be set in order to run tests");
     let connection = Connection::establish(&connection_url).unwrap();
     connection.begin_test_transaction().unwrap();
+
+    connection
+}
+
+fn establish_connection() -> Connection {
+    let connection = connection_no_data();
 
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,

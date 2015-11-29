@@ -14,8 +14,10 @@
 #[macro_use]
 pub mod ops;
 
+#[doc(hidden)]
 pub mod aliased;
 pub mod array_comparison;
+#[doc(hidden)]
 pub mod bound;
 pub mod count;
 pub mod expression_methods;

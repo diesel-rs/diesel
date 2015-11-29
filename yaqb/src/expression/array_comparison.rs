@@ -4,6 +4,36 @@ use query_builder::{QueryBuilder, BuildQueryResult};
 use super::{AsExpression, Expression, SelectableExpression, NonAggregate};
 use types::{Array, NativeSqlType};
 
+/// Creates a PostgreSQL `ANY` expression.
+///
+/// As with most bare functions, this is not exported by default. You can import
+/// it specifically from `yaqb::expression::any`, or glob import
+/// `yaqb::expression::dsl::*`
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate yaqb;
+/// # include!("src/doctest_setup.rs");
+/// # use yaqb::expression::dsl::*;
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Serial,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = establish_connection();
+/// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
+/// let sean = (1, "Sean".to_string());
+/// let jim = (3, "Jim".to_string());
+/// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));
+/// assert_eq!(vec![sean, jim], data.load(&connection).unwrap().collect::<Vec<_>>());
+/// # }
+/// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
     ST: NativeSqlType,
     T: AsExpression<Array<ST>>,
@@ -11,6 +41,7 @@ pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
     Any::new(vals.as_expression())
 }
 
+#[doc(hidden)]
 pub struct Any<Expr, ST> {
     expr: Expr,
     _marker: PhantomData<ST>,

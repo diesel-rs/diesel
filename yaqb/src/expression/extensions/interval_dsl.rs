@@ -2,72 +2,184 @@ use std::ops::Mul;
 
 use types::structs::PgInterval;
 
+/// A DSL added to `i64` and `f64` to construct PostgreSQL intervals of less
+/// than 1 day.
+///
+/// The behavior of these methods when called on `NAN` or `Infinity` is
+/// undefined.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate yaqb;
+/// # include!("src/doctest_setup.rs");
+/// # use yaqb::expression::dsl::*;
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Serial,
+/// #         name -> VarChar,
+/// #         created_at -> Timestamp,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = connection_no_data();
+/// #     connection.execute("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)").unwrap();
+/// connection.execute("INSERT INTO users (name, created_at) VALUES
+///     ('Sean', NOW()), ('Tess', NOW() - '5 minutes'::interval),
+///     ('Jim', NOW() - '10 minutes'::interval)").unwrap();
+///
+/// let mut data = users
+///     .select(name)
+///     .filter(created_at.gt(now - 7.minutes()))
+///     .load(&connection).unwrap();
+/// assert_eq!(Some("Sean".to_string()), data.next());
+/// assert_eq!(Some("Tess".to_string()), data.next());
+/// assert_eq!(None, data.next());
+/// # }
+/// ```
 pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
+    /// Returns a PgInterval representing `self` as microseconds
     fn microseconds(self) -> PgInterval;
+    #[doc(hidden)]
     fn times(self, x: i32) -> Self;
 
+    /// Returns a PgInterval representing `self` as milliseconds
     fn milliseconds(self) -> PgInterval {
         (self.times(1000)).microseconds()
     }
 
+    /// Returns a PgInterval representing `self` as seconds
     fn seconds(self) -> PgInterval {
         (self.times(1000)).milliseconds()
     }
 
+    /// Returns a PgInterval representing `self` as minutes
     fn minutes(self) -> PgInterval {
         (self.times(60)).seconds()
     }
 
+    /// Returns a PgInterval representing `self` as hours
     fn hours(self) -> PgInterval {
         (self.times(60)).minutes()
     }
 
+    /// Identical to `microseconds`
     fn microsecond(self) -> PgInterval {
         self.microseconds()
     }
 
+    /// Identical to `milliseconds`
     fn millisecond(self) -> PgInterval {
         self.milliseconds()
     }
 
+    /// Identical to `seconds`
     fn second(self) -> PgInterval {
         self.seconds()
     }
 
+    /// Identical to `minutes`
     fn minute(self) -> PgInterval {
         self.minutes()
     }
 
+    /// Identical to `hours`
     fn hour(self) -> PgInterval {
         self.hours()
     }
 }
 
+/// A DSL added to `i32` and `f64` to construct PostgreSQL intervals of greater
+/// than 1 day.
+///
+/// The behavior of these methods when called on `NAN` or `Infinity` is
+/// undefined.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate yaqb;
+/// # include!("src/doctest_setup.rs");
+/// # use yaqb::expression::dsl::*;
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Serial,
+/// #         name -> VarChar,
+/// #         created_at -> Timestamp,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = connection_no_data();
+/// #     connection.execute("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)").unwrap();
+/// connection.execute("INSERT INTO users (name, created_at) VALUES
+///     ('Sean', NOW()), ('Tess', NOW() - '5 days'::interval),
+///     ('Jim', NOW() - '10 days'::interval)").unwrap();
+///
+/// let mut data = users
+///     .select(name)
+///     .filter(created_at.gt(now - 7.days()))
+///     .load(&connection).unwrap();
+/// assert_eq!(Some("Sean".to_string()), data.next());
+/// assert_eq!(Some("Tess".to_string()), data.next());
+/// assert_eq!(None, data.next());
+/// # }
+/// ```
 pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
+    /// Returns a PgInterval representing `self` in days
     fn days(self) -> PgInterval;
+    /// Returns a PgInterval representing `self` in monhts
     fn months(self) -> PgInterval;
+    #[doc(hidden)]
     fn times(self, x: i32) -> Self;
 
+    /// Returns a PgInterval representing `self` in weeks
+    ///
+    /// Note: When called on a high precision float, the returned interval may
+    /// be 1 microsecond different than the equivalent string passed to
+    /// PostgreSQL.
     fn weeks(self) -> PgInterval {
         (self.times(7)).days()
     }
 
+    /// Returns a PgInterval representing `self` in weeks
+    ///
+    /// Note: When called on a float, this method will mimic the behavior of
+    /// PostgreSQL's interval parsing, and will ignore units smaller than
+    /// months.
+    ///
+    /// ```rust
+    /// # use yaqb::expression::dsl::*;
+    /// assert_eq!(1.08.years(), 1.year());
+    /// assert_eq!(1.09.years(), 1.year() + 1.month());
+    /// ```
     fn years(self) -> PgInterval {
         (self.times(12)).months()
     }
 
+    /// Identical to `days`
     fn day(self) -> PgInterval {
         self.days()
     }
 
+    /// Identical to `weeks`
     fn week(self) -> PgInterval {
         self.weeks()
     }
 
+    /// Identical to `months`
     fn month(self) -> PgInterval {
         self.months()
     }
 
+    /// Identical to `years`
     fn year(self) -> PgInterval {
         self.years()
     }
