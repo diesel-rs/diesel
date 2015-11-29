@@ -5,7 +5,7 @@ use types::BigInt;
 /// Creates a SQL `COUNT` expression
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically from `yaqb::expression::any`, or glob import
+/// it specifically as `yaqb::expression::count`, or glob import
 /// `yaqb::expression::dsl::*`
 pub fn count<T: Expression>(t: T) -> Count<T> {
     Count {
@@ -19,7 +19,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// [`count`](../../trait.CountDsl.html) on the query instead.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically from `yaqb::expression::any`, or glob import
+/// it specifically as `yaqb::expression::count_star`, or glob import
 /// `yaqb::expression::dsl::*`
 ///
 /// # Example

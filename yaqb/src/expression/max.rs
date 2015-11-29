@@ -2,6 +2,8 @@ use query_builder::{QueryBuilder, BuildQueryResult};
 use super::{Expression, SelectableExpression};
 use types::{SqlOrd, NativeSqlType};
 
+/// Represents a SQL `MAX` function. This function can only take types which are
+/// ordered.
 pub fn max<ST, T>(t: T) -> Max<T> where
     ST: NativeSqlType + SqlOrd,
     T: Expression<SqlType=ST>,

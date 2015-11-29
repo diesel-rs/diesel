@@ -12,20 +12,27 @@
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
+#[doc(hidden)]
 pub mod ops;
 
 #[doc(hidden)]
 pub mod aliased;
+#[doc(hidden)]
 pub mod array_comparison;
 #[doc(hidden)]
 pub mod bound;
+#[doc(hidden)]
 pub mod count;
 pub mod expression_methods;
 pub mod extensions;
+#[doc(hidden)]
 pub mod functions;
+#[doc(hidden)]
 pub mod grouped;
 pub mod helper_types;
+#[doc(hidden)]
 pub mod max;
+#[doc(hidden)]
 pub mod ordering;
 #[doc(hidden)]
 pub mod predicates;
@@ -35,9 +42,13 @@ pub mod sql_literal;
 /// generic to export by default. This module exists to conveniently glob import
 /// in functions where you need them.
 pub mod dsl {
+    #[doc(inline)]
     pub use super::array_comparison::any;
+    #[doc(inline)]
     pub use super::count::{count, count_star};
-    pub use super::functions::date_and_time::{now, date};
+    #[doc(inline)]
+    pub use super::functions::date_and_time::*;
+    #[doc(inline)]
     pub use super::max::max;
 
     pub use super::extensions::*;
@@ -49,6 +60,12 @@ pub use self::sql_literal::SqlLiteral;
 use query_builder::{QueryBuilder, BuildQueryResult};
 use types::NativeSqlType;
 
+/// Represents a typed fragment of SQL. Apps should not need to implement this
+/// type directly, but it may be common to use this as type boundaries.
+/// Libraries should consider using
+/// [`infix_predicate!`](../macro.infix_predicate!.html) or
+/// [`postfix_predicate!`](../macro.postfix_predicate!.html) instead of
+/// implementing this directly.
 pub trait Expression {
     type SqlType: NativeSqlType;
 

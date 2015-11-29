@@ -1,9 +1,6 @@
 #[macro_export]
-macro_rules! infix_predicate {
-    ($name:ident, $operator:expr) => {
-        infix_predicate!($name, $operator, $crate::types::Bool);
-    };
-
+#[doc(hidden)]
+macro_rules! infix_predicate_body {
     ($name:ident, $operator:expr, $return_type:ty) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name<T, U> {
@@ -48,11 +45,32 @@ macro_rules! infix_predicate {
 }
 
 #[macro_export]
-macro_rules! postfix_predicate {
+/// Useful for libraries adding support for new SQL types. Apps should never
+/// need to call this
+///
+/// # Example
+///
+/// ```ignore
+/// infix_predicate!(Matches, " @@ ");
+/// infix_predicate!(Concat, " || ", TsVector);
+/// infix_predicate!(And, " && ", TsQuery);
+/// infix_predicate!(Or, " || ", TsQuery);
+/// infix_predicate!(Contains, " @> ");
+/// infix_predicate!(ContainedBy, " @> ");
+/// ```
+macro_rules! infix_predicate {
     ($name:ident, $operator:expr) => {
-        postfix_predicate!($name, $operator, $crate::types::Bool);
+        infix_predicate!($name, $operator, $crate::types::Bool);
     };
 
+    ($name:ident, $operator:expr, $return_type:ty) => {
+        infix_predicate_body!($name, $operator, $return_type);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! postfix_predicate_body {
     ($name:ident, $operator:expr, $return_type:ty) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name<T> {
@@ -88,6 +106,19 @@ macro_rules! postfix_predicate {
             T: $crate::expression::NonAggregate,
         {
         }
+    }
+}
+
+#[macro_export]
+/// Useful for libraries adding support for new SQL types. Apps should never
+/// need to call this.
+macro_rules! postfix_predicate {
+    ($name:ident, $operator:expr) => {
+        postfix_predicate!($name, $operator, $crate::types::Bool);
+    };
+
+    ($name:ident, $operator:expr, $return_type:ty) => {
+        postfix_predicate_body!($name, $operator, $return_type);
     }
 }
 

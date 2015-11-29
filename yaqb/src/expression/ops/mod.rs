@@ -1,4 +1,9 @@
 #[macro_export]
+/// Implements the Rust operator for a given type. If you create a new SQL
+/// function, which returns a type that you'd like to use an operator on, you
+/// should invoke this macro. Unfortunately, Rust disallows us from
+/// automatically implementing `Add` and other traits from `std::ops`, under its
+/// orphan rules.
 macro_rules! operator_allowed {
     ($tpe: ty, $op: ident, $fn_name: ident) => {
         impl<Rhs> ::std::ops::$op<Rhs> for $tpe where
@@ -16,6 +21,10 @@ macro_rules! operator_allowed {
 }
 
 #[macro_export]
+/// Indicates that an expression allows all numeric operators. If you create new
+/// SQL functions that return a numeric type, you should invoke this macro that
+/// type. Unfortunately, Rust disallows us from automatically implementing `Add`
+/// for types which implement `Expression`, under its orphan rules.
 macro_rules! numeric_expr {
     ($tpe: ty) => {
         operator_allowed!($tpe, Add, add);

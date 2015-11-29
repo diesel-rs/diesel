@@ -4,6 +4,9 @@ use super::{Expression, SelectableExpression};
 use types::NativeSqlType;
 
 #[derive(Debug, Clone)]
+/// Available for when you truly cannot represent something using the expression
+/// DSL. You will need to provide the type of the expression, in addition to the
+/// SQL. The compiler will be unable to verify the correctness of this type.
 pub struct SqlLiteral<ST> {
     sql: String,
     _marker: PhantomData<ST>,
