@@ -3,6 +3,10 @@ name = "diesel"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT"
+description = "A safe, extensible ORM and Query builder"
+documentation = "http://sgrif.github.io/diesel/diesel/index.html"
+homepage = "https://github.com/sgrif/diesel"
+repository = "https://github.com/sgrif/diesel"
 
 [dependencies]
 libc = "0.2.*"
