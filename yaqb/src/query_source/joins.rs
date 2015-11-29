@@ -101,5 +101,6 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
 /// Implementations of this trait will be generated for you automatically by
 /// the [association annotations](FIXME: Add link) from codegen.
 pub trait JoinTo<T: Table>: Table {
+    #[doc(hidden)]
     fn join_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }

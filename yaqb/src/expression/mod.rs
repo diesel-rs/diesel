@@ -1,3 +1,16 @@
+//! AST types representing various typed SQL expressions. Almost all types
+//! implement either [`Expression`](trait.Expression.html) or
+//! [`AsExpression`](trait.AsExpression.html).
+//!
+//! The most common expression to work with is a
+//! [`Column`](../query_source/trait.Column.html). There are various methods
+//! that you can call on these, found in
+//! [`expression_methods`](expression_methods/index.html), or operators which
+//! you can find in [`ops`](ops/index.html).
+//!
+//! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
+//! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
+//! used as an argument to any of the methods described here.
 #[macro_use]
 pub mod ops;
 
@@ -15,6 +28,9 @@ pub mod ordering;
 pub mod predicates;
 pub mod sql_literal;
 
+/// Reexports various top level functions and core extensions that are too
+/// generic to export by default. This module exists to conveniently glob import
+/// in functions where you need them.
 pub mod dsl {
     pub use super::array_comparison::any;
     pub use super::count::{count, count_star};
@@ -34,6 +50,8 @@ pub trait Expression {
     type SqlType: NativeSqlType;
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+
+    #[doc(hidden)]
     fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.to_sql(out)
     }
@@ -63,6 +81,15 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
     }
 }
 
+/// Describes how a type can be represented as an expression for a given type.
+/// These types couldn't just implement [`Expression`](trait.Expression.html)
+/// directly, as many things can be used as an expression of multiple types.
+/// (`String` for example, can be used as either
+/// [`VarChar`](../types/struct.VarChar.html) or
+/// [`Text`](../types/struct.Text.html)).
+///
+/// This trait allows us to use primitives on the right hand side of various
+/// expressions. For example `name.eq("Sean")`
 pub trait AsExpression<T: NativeSqlType> {
     type Expression: Expression<SqlType=T>;
 
@@ -77,6 +104,13 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
     }
 }
 
+/// Indicates that an expression can be selected from a source. The second type
+/// argument is optional, but is used to indicate that the right side of a left
+/// outer join is nullable, even if it wasn't before.
+///
+/// Columns will implement this for their table. Certain special types, like
+/// `CountStar` and [`Bound`](bound/struct.Bound.html) will implement this for
+/// all sources. All other expressions will inherit this from their children.
 pub trait SelectableExpression<
     QS,
     Type: NativeSqlType = <Self as Expression>::SqlType,
@@ -97,6 +131,10 @@ impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
 {
 }
 
+/// Marker trait to indicate that an expression does not include any aggregate
+/// functions. Used to ensure that aggregate expressions aren't mixed with
+/// non-aggregate expressions in a select clause, and that they're never
+/// included in a where clause.
 pub trait NonAggregate: Expression {
 }
 
@@ -106,6 +144,9 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
 }
 
+/// Helper trait used when boxing expressions. This exists to work around the
+/// fact that Rust will not let us use non-core types as bounds on a trait
+/// object (you could not return `Box<Expression+NonAggregate>`)
 pub trait BoxableExpression<QS, ST: NativeSqlType>: Expression + SelectableExpression<QS, ST> + NonAggregate {
 }
 
