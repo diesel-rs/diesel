@@ -3,7 +3,7 @@ use quickcheck::quickcheck;
 use schema::connection;
 use yaqb::*;
 use yaqb::result::Error;
-use yaqb::types::structs::*;
+use yaqb::data_types::*;
 use yaqb::types::{NativeSqlType, ToSql, Nullable, Array};
 
 fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where

@@ -63,3 +63,5 @@ pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 #[doc(inline)]
 pub use persistable::Insertable;
 pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult};
+#[doc(inline)]
+pub use types::structs::data_types;

@@ -1,6 +1,6 @@
 use schema::connection;
 use yaqb::*;
-use yaqb::types::structs::*;
+use yaqb::data_types::*;
 use yaqb::expression::dsl::*;
 
 table! {

@@ -239,7 +239,7 @@ fn pg_array_containing_null() {
 
 #[test]
 fn timestamp_from_sql() {
-    use yaqb::types::structs::PgTimestamp;
+    use yaqb::data_types::PgTimestamp;
 
     let query = "SELECT '2015-11-13 13:26:48.041057-07'::timestamp";
     let expected_value = PgTimestamp(500736408041057);
@@ -251,7 +251,7 @@ fn timestamp_from_sql() {
 
 #[test]
 fn pg_timestamp_to_sql_timestamp() {
-    use yaqb::types::structs::PgTimestamp;
+    use yaqb::data_types::PgTimestamp;
 
     let expected_value = "'2015-11-13 13:26:48.041057-07'::timestamp";
     let value = PgTimestamp(500736408041057);

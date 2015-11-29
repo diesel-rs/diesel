@@ -3,7 +3,9 @@ mod ord;
 mod impls;
 
 pub mod structs {
-    pub use super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
+    pub mod data_types {
+        pub use super::super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
+    }
 }
 
 pub use self::ord::SqlOrd;

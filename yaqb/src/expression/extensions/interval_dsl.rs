@@ -1,6 +1,6 @@
 use std::ops::Mul;
 
-use types::structs::PgInterval;
+use data_types::PgInterval;
 
 /// A DSL added to `i64` and `f64` to construct PostgreSQL intervals of less
 /// than 1 day.
@@ -247,7 +247,7 @@ mod tests {
     use super::*;
     use connection::Connection;
     use types;
-    use types::structs::PgInterval;
+    use data_types::PgInterval;
 
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
