@@ -1,9 +1,6 @@
 #[macro_export]
-macro_rules! sql_function {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
-        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, "");
-    };
-
+#[doc(hidden)]
+macro_rules! sql_function_body {
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
     $docs: expr) => {
         #[allow(non_camel_case_types)]
@@ -62,11 +59,47 @@ macro_rules! sql_function {
 }
 
 #[macro_export]
-macro_rules! no_arg_sql_function {
-    ($type_name:ident, $return_type:ty) => {
-        no_arg_sql_function!($type_name, $return_type, "");
+/// Declare a sql function for use in your code. Useful if you have your own SQL functions that
+/// you'd like to use. You can optionally provide a doc string as well. `$struct_name` should just
+/// be any unique name. You will not need to reference it in your code, but it is required due to
+/// the fact that [`concat_idents!` is
+/// useless](https://github.com/rust-lang/rust/issues/29599#issuecomment-153927167).
+///
+/// This will generate a rust function with the same name to construct the expression, and a helper
+/// type which represents the return type of that function. The function will automatically convert
+/// its arguments to expressions.
+///
+/// # Example
+///
+/// ```no_run
+/// # #[macro_use] extern crate yaqb;
+/// # use yaqb::*;
+/// #
+/// # table! { crates { id -> Serial, name -> VarChar, } }
+/// #
+/// sql_function!(canon_crate_name, canon_crate_name_t, (a: types::VarChar) -> types::VarChar);
+///
+/// # fn main() {
+/// # use self::crates::dsl::*;
+/// let target_name = "yaqb";
+/// crates.filter(canon_crate_name(name).eq(canon_crate_name(target_name)));
+/// // This will generate the following SQL
+/// // SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)
+/// # }
+macro_rules! sql_function {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
+        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, "");
     };
 
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
+    $docs: expr) => {
+        sql_function_body!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, $docs);
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! no_arg_sql_function_body {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
@@ -87,6 +120,28 @@ macro_rules! no_arg_sql_function {
 
         impl $crate::expression::NonAggregate for $type_name {
         }
+    }
+}
+
+#[macro_export]
+/// Declare a 0 argument SQL function for use in your code. This will generate a
+/// unit struct, which is an expression representing calling this function. See
+/// [`now`](expression/dsl/struct.now.html) for example output. `now` was
+/// generated using:
+///
+/// ```no_run
+/// # #[macro_use] extern crate yaqb;
+/// # pub use yaqb::*;
+/// no_arg_sql_function!(now, types::Timestamp, "Represents the SQL NOW() function");
+/// # fn main() {}
+/// ```
+macro_rules! no_arg_sql_function {
+    ($type_name:ident, $return_type:ty) => {
+        no_arg_sql_function!($type_name, $return_type, "");
+    };
+
+    ($type_name:ident, $return_type:ty, $docs:expr) => {
+        no_arg_sql_function_body!($type_name, $return_type, $docs);
     }
 }
 
