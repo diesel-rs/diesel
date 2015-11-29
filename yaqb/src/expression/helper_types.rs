@@ -1,3 +1,6 @@
+//! The types in this module are all shorthand for `PredicateType<Lhs,
+//! AsExpr<Rhs, Lhs>>`. Since we often need to return concrete types, instead of
+//! a boxed trait object, these can be useful for writing concise return types.
 use super::{Expression, AsExpression};
 use types;
 
@@ -33,4 +36,5 @@ pub type Between<Lhs, Rhs> = super::predicates::Between<Lhs,
 pub type NotBetween<Lhs, Rhs> = super::predicates::NotBetween<Lhs,
     super::predicates::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
 
-pub use super::ordering::Desc;
+pub use super::ordering::{Desc, Asc};
+pub use super::predicates::{IsNull, IsNotNull};

@@ -25,6 +25,7 @@ pub mod grouped;
 pub mod helper_types;
 pub mod max;
 pub mod ordering;
+#[doc(hidden)]
 pub mod predicates;
 pub mod sql_literal;
 
