@@ -7,6 +7,8 @@ use std::ffi::NulError;
 pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 #[derive(Debug)]
@@ -57,6 +59,7 @@ impl Display for Error {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
             &Error::DatabaseError(ref s) => write!(f, "{}", &s),
+            &Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
@@ -66,6 +69,7 @@ impl StdError for Error {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.description(),
             &Error::DatabaseError(ref s) => &s,
+            &Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
