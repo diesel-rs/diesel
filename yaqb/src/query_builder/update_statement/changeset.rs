@@ -1,12 +1,17 @@
 use query_builder::{QueryBuilder, BuildQueryResult};
 use query_source::QuerySource;
 
+/// Types which can be passed to
+/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set). This can
+/// be automatically generated for structs by
+/// [`#[changeset_for]`](https://github.com/sgrif/yaqb/tree/master/yaqb_codegen#changeset_fortable_name).
 pub trait AsChangeset {
     type Changeset: Changeset;
 
     fn as_changeset(self) -> Self::Changeset;
 }
 
+/// Apps should not need to concern themselves with this trait.
 pub trait Changeset {
     type Target: QuerySource;
 

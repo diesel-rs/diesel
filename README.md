@@ -261,4 +261,4 @@ you can go about getting the data structures set up.
 [update]: http://sgrif.github.io/yaqb/yaqb/query_builder/fn.update.html
 [delete]: http://sgrif.github.io/yaqb/yaqb/query_builder/fn.delete.html
 [connection]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html
-[as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/update_statement/changeset/trait.AsChangeset.html
+[as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/trait.AsChangeset.html

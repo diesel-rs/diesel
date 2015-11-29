@@ -8,6 +8,8 @@ use expression::Expression;
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
 use query_source::Table;
 
+/// The type returned by [`update`](fn.update.html). The only thing you can do
+/// with this type is call `set` on it.
 pub struct IncompleteUpdateStatement<T>(T);
 
 impl<T> IncompleteUpdateStatement<T> {
@@ -29,6 +31,7 @@ impl<T> IncompleteUpdateStatement<T> {
     }
 }
 
+#[doc(hidden)]
 pub struct UpdateStatement<T, U> {
     target: T,
     values: U,
@@ -58,6 +61,7 @@ impl<T, U> AsQuery for UpdateStatement<T, U> where
     }
 }
 
+#[doc(hidden)]
 pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
 impl<T, U> QueryFragment for UpdateQuery<T, U> where

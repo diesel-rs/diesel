@@ -110,7 +110,7 @@ database returns.
 
 [queriable]: http://sgrif.github.io/yaqb/yaqb/query_source/trait.Queriable.html
 [insertable]: http://sgrif.github.io/yaqb/yaqb/trait.Insertable.html
-[as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/update_statement/changeset/trait.AsChangeset.html
+[as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/trait.AsChangeset.html
 
 Field annotations
 -----------------
