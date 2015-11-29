@@ -1,8 +1,8 @@
-YAQB (This will not be the real name. Please open PRs with name ideas)
-======================================================================
+Diesel - A safe, extensible ORM and Query Builder for Rust
+==========================================================
 
-[![Build Status](https://travis-ci.org/sgrif/yaqb.svg)](https://travis-ci.org/sgrif/yaqb)
-[Documentation](http://sgrif.github.io/yaqb/yaqb/index.html)
+[![Build Status](https://travis-ci.org/sgrif/diesel.svg)](https://travis-ci.org/sgrif/diesel)
+[Documentation](http://sgrif.github.io/diesel/diesel/index.html)
 
 This is an early stage ORM in Rust. It is poorly documented, and rapidly
 iterating. I would love early feedback on usage. Help in documenting current
@@ -25,7 +25,7 @@ An "incorrect query" includes, but is not limited to:
 Does it support X?
 ------------------
 
-0.1 progress is tracked on https://github.com/sgrif/yaqb/issues/1
+0.1 progress is tracked on https://github.com/sgrif/diesel/issues/1
 
 Getting Started
 ---------------
@@ -35,15 +35,15 @@ to specify the columns and tables that exist using the [`table!` macro][table]
 Once you've done that, you can already start using the query builder, and
 pulling out primitives.
 
-Much of the behavior in yaqb comes from traits, and it is recommended that you
-import `yaqb::*`. We avoid exporting generic type names, or any bare functions
+Much of the behavior in diesel comes from traits, and it is recommended that you
+import `diesel::*`. We avoid exporting generic type names, or any bare functions
 at that level.
 
 ```rust
 #[macro_use]
-extern crate yaqb;
+extern crate diesel;
 
-use yaqb::*;
+use diesel::*;
 
 table! {
     users {
@@ -71,7 +71,7 @@ table as `users::table`.
 
 If you want to be able to query for a struct, you'll need to implement the
 [`Queriable` trait][queriable] Luckily,
-[yaqb_codegen](https://github.com/sgrif/yaqb/tree/master/yaqb_codegen) can do
+[diesel_codegen](https://github.com/sgrif/diesel/tree/master/diesel_codegen) can do
 this for us automatically.
 
 ```rust
@@ -167,7 +167,7 @@ later pass to the [`Connection`][connection]. Here's a simple example.
 
 ```rust
 fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> QueryResult<User> {
-    use yaqb::query_builder::update;
+    use diesel::query_builder::update;
     use users::dsl::*;
 
     let command = update(users.filter(id.eq(target))).set(name.eq(new_name));
@@ -187,7 +187,7 @@ returned record(s), you should call
 [`query_one`][query_one] or [`query_all`][query_all].
 
 You can also use a struct to represent the changes, if it implements
-[`AsChangeset`][as_changeset]. Again, `yaqb_codegen` can generate this for us
+[`AsChangeset`][as_changeset]. Again, `diesel_codegen` can generate this for us
 automatically.
 
 ```rust
@@ -232,7 +232,7 @@ support returning a record.
 
 ```rust
 fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
-    use yaqb::query_builder::delete;
+    use diesel::query_builder::delete;
     use users::dsl::*;
 
     let command = delete(users.filter(id.eq(user.id)));
@@ -246,19 +246,19 @@ How do I do other things?
 -------------------------
 
 Take a look at the various files named on what you're trying to do in
-https://github.com/sgrif/yaqb/tree/master/yaqb_tests/tests. See
-https://github.com/sgrif/yaqb/blob/master/yaqb_tests/tests/schema.rs for how
+https://github.com/sgrif/diesel/tree/master/diesel_tests/tests. See
+https://github.com/sgrif/diesel/blob/master/diesel_tests/tests/schema.rs for how
 you can go about getting the data structures set up.
 
-[table]: http://sgrif.github.io/yaqb/yaqb/macro.table!.html
-[queriable]: http://sgrif.github.io/yaqb/yaqb/query_source/trait.Queriable.html
-[insertable]: http://sgrif.github.io/yaqb/yaqb/trait.Insertable.html
-[insert]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.insert
-[insert_returning_count]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.insert_returning_count
-[execute_returning_count]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.execute_returning_count
-[query_one]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.query_one
-[query_all]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html#method.query_all
-[update]: http://sgrif.github.io/yaqb/yaqb/query_builder/fn.update.html
-[delete]: http://sgrif.github.io/yaqb/yaqb/query_builder/fn.delete.html
-[connection]: http://sgrif.github.io/yaqb/yaqb/struct.Connection.html
-[as_changeset]: http://sgrif.github.io/yaqb/yaqb/query_builder/trait.AsChangeset.html
+[table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
+[queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
+[insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
+[insert]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert
+[insert_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert_returning_count
+[execute_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.execute_returning_count
+[query_one]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_one
+[query_all]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_all
+[update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html
+[delete]: http://sgrif.github.io/diesel/diesel/query_builder/fn.delete.html
+[connection]: http://sgrif.github.io/diesel/diesel/struct.Connection.html
+[as_changeset]: http://sgrif.github.io/diesel/diesel/query_builder/trait.AsChangeset.html

@@ -1,0 +1,18 @@
+[package]
+name = "diesel"
+version = "0.1.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT"
+
+[dependencies]
+libc = "0.2.*"
+pq-sys = "0.2.*"
+byteorder = "0.3.*"
+
+[dev-dependencies]
+quickcheck = "*"
+dotenv = "0.4.0"
+
+[features]
+unstable = []
+nightly = []

@@ -1,0 +1,21 @@
+#[macro_use]
+extern crate diesel;
+
+use diesel::*;
+
+table! {
+    users {
+        id -> Serial,
+    }
+}
+
+table! {
+    posts {
+        id -> Serial,
+    }
+}
+
+fn main() {
+    let source = users::table.order(posts::id);
+    //~^ ERROR E0277
+}
