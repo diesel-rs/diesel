@@ -103,7 +103,7 @@ instead, or the compiler will complain that it can't infer what type you meant
 to return. You can use the same struct for inserting and querying if you'd like,
 but you'll need to make columns that are not present during the insert optional
 (e.g. `id` and timestamps). For this reason, you probably want to create a new
-struct intead.
+struct instead.
 
 You might notice that we're having to manually grab the first record that was
 inserted. This is because [`insert`][insert] can also take a slice or `Vec` of
