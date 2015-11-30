@@ -9,9 +9,9 @@ fn filter_by_int_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), users.filter(id.eq(1)).first(&connection).unwrap());
-    assert_eq!(Some(tess), users.filter(id.eq(2)).first(&connection).unwrap());
-    assert_eq!(None::<User>, users.filter(id.eq(3)).first(&connection).unwrap());
+    assert_eq!(Ok(sean), users.filter(id.eq(1)).first(&connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(2)).first(&connection));
+    assert_eq!(Err(NotFound), users.filter(id.eq(3)).first::<User>(&connection));
 }
 
 #[test]
@@ -22,9 +22,9 @@ fn filter_by_string_equality() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Some(sean), users.filter(name.eq("Sean")).first(&connection).unwrap());
-    assert_eq!(Some(tess), users.filter(name.eq("Tess")).first(&connection).unwrap());
-    assert_eq!(None::<User>, users.filter(name.eq("Jim")).first(&connection).unwrap());
+    assert_eq!(Ok(sean), users.filter(name.eq("Sean")).first(&connection));
+    assert_eq!(Ok(tess), users.filter(name.eq("Tess")).first(&connection));
+    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).first::<User>(&connection));
 }
 
 #[test]
@@ -97,12 +97,12 @@ fn filter_after_joining() {
     let seans_post = Post::new(1, 1, "Hello", None);
     let tess_post = Post::new(2, 2, "World", None);
     let source = users::table.inner_join(posts::table);
-    assert_eq!(Some((sean, seans_post)),
-        source.filter(name.eq("Sean")).first(&connection).unwrap());
-    assert_eq!(Some((tess, tess_post)),
-        source.filter(name.eq("Tess")).first(&connection).unwrap());
-    assert_eq!(None::<(User, Post)>,
-        source.filter(name.eq("Jim")).first(&connection).unwrap());
+    assert_eq!(Ok((sean, seans_post)),
+        source.filter(name.eq("Sean")).first(&connection));
+    assert_eq!(Ok((tess, tess_post)),
+        source.filter(name.eq("Tess")).first(&connection));
+    assert_eq!(Err(NotFound),
+        source.filter(name.eq("Jim")).first::<(User, Post)>(&connection));
 }
 
 #[test]
@@ -112,11 +112,11 @@ fn select_then_filter() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let source = users.select(name);
-    assert_eq!(Some("Sean".to_string()),
-        source.filter(name.eq("Sean")).first(&connection).unwrap());
-    assert_eq!(Some("Tess".to_string()),
-        source.filter(name.eq("Tess")).first(&connection).unwrap());
-    assert_eq!(None::<String>, source.filter(name.eq("Jim")).first(&connection).unwrap());
+    assert_eq!(Ok("Sean".to_string()),
+        source.filter(name.eq("Sean")).first(&connection));
+    assert_eq!(Ok("Tess".to_string()),
+        source.filter(name.eq("Tess")).first(&connection));
+    assert_eq!(Err(NotFound), source.filter(name.eq("Jim")).first::<String>(&connection));
 }
 
 #[test]
@@ -128,11 +128,12 @@ fn filter_then_select() {
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
     connection.insert_returning_count(&users, &data).unwrap();
 
-    assert_eq!(Some("Sean".to_string()),
-        users.filter(name.eq("Sean")).select(name).first(&connection).unwrap());
-    assert_eq!(Some("Tess".to_string()),
-        users.filter(name.eq("Tess")).select(name).first(&connection).unwrap());
-    assert_eq!(None::<String>, users.filter(name.eq("Jim")).select(name).first(&connection).unwrap());
+    assert_eq!(Ok("Sean".to_string()),
+        users.filter(name.eq("Sean")).select(name).first(&connection));
+    assert_eq!(Ok("Tess".to_string()),
+        users.filter(name.eq("Tess")).select(name).first(&connection));
+    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).select(name)
+                                   .first::<String>(&connection));
 }
 
 #[test]
@@ -255,14 +256,14 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let f = AsExpression::<types::Bool>::as_expression(false);
     let count = users.filter(f).filter(f.or(true))
-        .count().first(&connection).unwrap();
+        .count().first(&connection);
 
-    assert_eq!(Some(0), count);
+    assert_eq!(Ok(0), count);
 
     let count = users.filter(f.or(f).and(f.or(true)))
-        .count().first(&connection).unwrap();
+        .count().first(&connection);
 
-    assert_eq!(Some(0), count);
+    assert_eq!(Ok(0), count);
 }
 
 use diesel::types::VarChar;
@@ -277,11 +278,9 @@ fn filter_by_boxed_predicate() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    let queried_sean = users::table.filter(by_name("sean")).first(&connection)
-        .unwrap();
-    let queried_tess = users::table.filter(by_name("tess")).first(&connection)
-        .unwrap();
+    let queried_sean = users::table.filter(by_name("sean")).first(&connection);
+    let queried_tess = users::table.filter(by_name("tess")).first(&connection);
 
-    assert_eq!(Some(sean), queried_sean);
-    assert_eq!(Some(tess), queried_tess);
+    assert_eq!(Ok(sean), queried_sean);
+    assert_eq!(Ok(tess), queried_tess);
 }

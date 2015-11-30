@@ -107,11 +107,12 @@ impl Connection {
     /// Executes the given query, returning a single value. Identical to
     /// `source.first(&connection)`. See [the documentation for
     /// `first`](trait.LoadDsl.html#method.first) for more.
-    pub fn query_one<T, U>(&self, source: T) -> QueryResult<Option<U>> where
+    pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
     {
-        self.query_all(source).map(|mut e| e.nth(0))
+        self.query_all(source)
+            .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
     }
 
     /// Executes the given query, returning an `Iterator` over the returned
@@ -195,15 +196,16 @@ impl Connection {
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
+    /// #     use diesel::result::Error::NotFound;
     /// #     let connection = establish_connection();
     /// let sean = (1, "Sean".to_string());
     /// let tess = (2, "Tess".to_string());
-    /// assert_eq!(Some(sean), connection.find(users, 1).unwrap());
-    /// assert_eq!(Some(tess), connection.find(users, 2).unwrap());
-    /// assert_eq!(None::<(i32, String)>, connection.find(users, 3).unwrap());
+    /// assert_eq!(Ok(sean), connection.find(users, 1));
+    /// assert_eq!(Ok(tess), connection.find(users, 2));
+    /// assert_eq!(Err::<(i32, String), _>(NotFound), connection.find(users, 3));
     /// # }
     /// ```
-    pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<Option<U>> where
+    pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
         U: Queriable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,

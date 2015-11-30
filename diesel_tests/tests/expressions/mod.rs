@@ -13,9 +13,9 @@ fn test_count_counts_the_rows() {
     setup_users_table(&connection);
     let source = users.select(count(users.star()));
 
-    assert_eq!(Some(0), source.first(&connection).unwrap());
+    assert_eq!(Ok(0), source.first(&connection));
     connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
-    assert_eq!(Some(1), source.first(&connection).unwrap());
+    assert_eq!(Ok(1), source.first(&connection));
 }
 
 #[test]
@@ -24,9 +24,9 @@ fn test_count_star() {
     setup_users_table(&connection);
     let source = users.count();
 
-    assert_eq!(Some(0), source.first(&connection).unwrap());
+    assert_eq!(Ok(0), source.first(&connection));
     connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
-    assert_eq!(Some(1), source.first(&connection).unwrap());
+    assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     let mut query_builder = ::diesel::query_builder::pg::PgQueryBuilder::new(&connection);
@@ -67,9 +67,9 @@ fn test_count_max() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(max(n));
 
-    assert_eq!(Some(5), source.first(&connection).unwrap());
+    assert_eq!(Ok(5), source.first(&connection));
     connection.execute("DELETE FROM numbers WHERE n = 5").unwrap();
-    assert_eq!(Some(2), source.first(&connection).unwrap());
+    assert_eq!(Ok(2), source.first(&connection));
 }
 
 #[test]
@@ -84,9 +84,9 @@ fn max_returns_same_type_as_expression_being_maxed() {
         NewUser::new("A", None),
     ];
     connection.insert_returning_count(&users, data).unwrap();
-    assert_eq!(Some("C".to_string()), source.first(&connection).unwrap());
+    assert_eq!(Ok("C".to_string()), source.first(&connection));
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
-    assert_eq!(Some("B".to_string()), source.first(&connection).unwrap());
+    assert_eq!(Ok("B".to_string()), source.first(&connection));
 }
 
 use std::marker::PhantomData;

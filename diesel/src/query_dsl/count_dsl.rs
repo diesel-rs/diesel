@@ -20,8 +20,8 @@ use super::SelectDsl;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let count = users.count().first(&connection).unwrap();
-/// assert_eq!(Some(2), count);
+/// let count = users.count().first(&connection);
+/// assert_eq!(Ok(2), count);
 /// # }
 /// ```
 pub trait CountDsl: SelectDsl<CountStar> + Sized {

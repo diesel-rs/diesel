@@ -10,6 +10,7 @@ use std::ffi::NulError;
 pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),
+    NotFound,
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -29,6 +30,20 @@ pub enum TransactionError<E> {
 pub type QueryResult<T> = Result<T, Error>;
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 pub type TransactionResult<T, E> = Result<T, TransactionError<E>>;
+
+pub trait OptionalExtension<T> {
+    fn optional(self) -> Result<Option<T>, Error>;
+}
+
+impl<T> OptionalExtension<T> for QueryResult<T> {
+    fn optional(self) -> Result<Option<T>, Error> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(Error::NotFound) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}
 
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {
@@ -62,6 +77,7 @@ impl Display for Error {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
             &Error::DatabaseError(ref s) => write!(f, "{}", &s),
+            &Error::NotFound => f.write_str("NotFound"),
             &Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -72,6 +88,7 @@ impl StdError for Error {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.description(),
             &Error::DatabaseError(ref s) => &s,
+            &Error::NotFound => "Record not found",
             &Error::__Nonexhaustive => unreachable!(),
         }
     }

@@ -111,7 +111,7 @@ fn adding_interval_to_timestamp() {
         .unwrap().nth(0).unwrap();
     let actual_data: PgTimestamp = has_timestamps.select(created_at + 1.day())
         .first(&connection)
-        .unwrap().unwrap();
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 

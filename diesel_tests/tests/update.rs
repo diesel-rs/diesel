@@ -46,17 +46,16 @@ fn test_updating_nullable_column() {
     let data: Option<String> = users.select(hair_color)
         .filter(id.eq(1))
         .first(&connection)
-        .unwrap().unwrap();
+        .unwrap();
     assert_eq!(Some("black".to_string()), data);
 
     let command = update(users.filter(id.eq(1))).set(hair_color.eq(None::<String>));
     connection.execute_returning_count(&command).unwrap();
 
-    let data: Option<String> = users.select(hair_color)
+    let data: QueryResult<Option<String>> = users.select(hair_color)
         .filter(id.eq(1))
-        .first(&connection)
-        .unwrap().unwrap();
-    assert_eq!(None, data);
+        .first(&connection);
+    assert_eq!(Ok(None::<String>), data);
 }
 
 #[test]
@@ -72,8 +71,8 @@ fn test_updating_multiple_columns() {
     connection.execute_returning_count(&command).unwrap();
 
     let expected_user = User::with_hair_color(1, "Jim", "black");
-    let user = connection.find(users, 1).unwrap();
-    assert_eq!(Some(expected_user), user);
+    let user = connection.find(users, 1);
+    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
@@ -82,10 +81,10 @@ fn update_returning_struct() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let command = update(users.filter(id.eq(1))).set(hair_color.eq("black"));
-    let user: Option<User> = connection.query_one(command).unwrap();
+    let user = connection.query_one(command);
     let expected_user = User::with_hair_color(1, "Sean", "black");
 
-    assert_eq!(Some(expected_user), user);
+    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
@@ -96,10 +95,10 @@ fn update_with_struct_as_changes() {
     let changes = NewUser::new("Jim", Some("blue"));
     let command = update(users.filter(id.eq(1))).set(&changes);
 
-    let user = connection.query_one(command).unwrap();
+    let user = connection.query_one(command);
     let expected_user = User::with_hair_color(1, "Jim", "blue");
 
-    assert_eq!(Some(expected_user), user);
+    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
@@ -110,10 +109,10 @@ fn update_with_struct_does_not_set_primary_key() {
     let changes = User::with_hair_color(2, "Jim", "blue");
     let command = update(users.filter(id.eq(1))).set(&changes);
 
-    let user = connection.query_one(command).unwrap();
+    let user = connection.query_one(command);
     let expected_user = User::with_hair_color(1, "Jim", "blue");
 
-    assert_eq!(Some(expected_user), user);
+    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
@@ -124,7 +123,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     let mut user = User::with_hair_color(1, "Jim", "blue");
     user.save_changes(&connection).unwrap();
 
-    let user_in_db = connection.find(users, 1).unwrap().unwrap();
+    let user_in_db = connection.find(users, 1).unwrap();
 
     assert_eq!(user, user_in_db);
 }

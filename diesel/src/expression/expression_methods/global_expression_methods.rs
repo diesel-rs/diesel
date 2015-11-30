@@ -43,7 +43,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
-    /// assert_eq!(Some(1), data.first(&connection).unwrap());
+    /// assert_eq!(1, data.first(&connection).unwrap());
     /// # }
     /// ```
     fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
@@ -69,7 +69,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
-    /// assert_eq!(Some(2), data.first(&connection).unwrap());
+    /// assert_eq!(2, data.first(&connection).unwrap());
     /// # }
     /// ```
     fn ne<T: AsExpression<Self::SqlType>>(self, other: T) -> NotEq<Self, T::Expression> {
@@ -105,7 +105,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.gt(1));
-    /// assert_eq!(Some("Tess".to_string()), data.first(&connection).unwrap());
+    /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
     /// # }
     /// ```
     fn gt<T: AsExpression<Self::SqlType>>(self, other: T) -> Gt<Self, T::Expression> {
@@ -131,7 +131,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.ge(2));
-    /// assert_eq!(Some("Tess".to_string()), data.first(&connection).unwrap());
+    /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
     /// # }
     /// ```
     fn ge<T: AsExpression<Self::SqlType>>(self, other: T) -> GtEq<Self, T::Expression> {
@@ -157,7 +157,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.lt(2));
-    /// assert_eq!(Some("Sean".to_string()), data.first(&connection).unwrap());
+    /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
     /// # }
     /// ```
     fn lt<T: AsExpression<Self::SqlType>>(self, other: T) -> Lt<Self, T::Expression> {
@@ -183,7 +183,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.le(2));
-    /// assert_eq!(Some("Sean".to_string()), data.first(&connection).unwrap());
+    /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
     /// # }
     fn le<T: AsExpression<Self::SqlType>>(self, other: T) -> LtEq<Self, T::Expression> {
         LtEq::new(self, other.as_expression())

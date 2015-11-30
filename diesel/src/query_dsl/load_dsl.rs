@@ -13,7 +13,11 @@ pub trait LoadDsl: AsQuery + LimitDsl + Sized {
         conn.query_all(self)
     }
 
-    fn first<U>(self, conn: &Connection) -> QueryResult<Option<U>> where
+    /// Attempts to load a single record. Returns `Ok(record)` if found, and
+    /// `Err(NotFound)` if no results are returned. If the query truly is
+    /// optional, you can call `.optional()` on the result of this to get a
+    /// `Result<Option<U>>`.
+    fn first<U>(self, conn: &Connection) -> QueryResult<U> where
         U: Queriable<<<Self as LimitDsl>::Output as Query>::SqlType>
     {
         conn.query_one(self.limit(1))

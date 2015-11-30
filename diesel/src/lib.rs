@@ -65,6 +65,7 @@ pub use query_dsl::*;
 pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 #[doc(inline)]
 pub use persistable::Insertable;
-pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult};
+pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;

@@ -26,10 +26,10 @@ use types::Bool;
 /// #     let connection = establish_connection();
 /// let seans_id = users.filter(name.eq("Sean")).select(id)
 ///     .first(&connection).unwrap();
-/// assert_eq!(Some(1), seans_id);
+/// assert_eq!(1, seans_id);
 /// let tess_id = users.filter(name.eq("Tess")).select(id)
 ///     .first(&connection).unwrap();
-/// assert_eq!(Some(2), tess_id);
+/// assert_eq!(2, tess_id);
 /// # }
 /// ```
 pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {

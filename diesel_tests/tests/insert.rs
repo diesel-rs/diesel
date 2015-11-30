@@ -135,7 +135,7 @@ fn delete() {
 
     assert_eq!(1, deleted_rows);
 
-    let num_users = users.count().first(&connection).unwrap();
+    let num_users = users.count().first(&connection);
 
-    assert_eq!(Some(1), num_users);
+    assert_eq!(Ok(1), num_users);
 }

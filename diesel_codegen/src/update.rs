@@ -101,7 +101,7 @@ fn save_changes_impl(
                     *self = {
                         let command = update($table.filter($table.primary_key().eq(&self.$pk_field)))
                             .set(&*self);
-                        try!(connection.query_one(command)).unwrap()
+                        try!(connection.query_one(command))
                     };
                     Ok(())
                 }

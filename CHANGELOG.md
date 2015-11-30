@@ -13,6 +13,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   to be able to check for specific cases, so `Box<std::error::Error>` is
   not an option.
 
+* `query_one`, `find`, and `first` now assume a single row is returned. For
+  cases where you actually expect 0 or 1 rows to be returned, the `optional`
+  method has been added to the result, in case having a `Result<Option<T>>` is
+  more ideomatic than checking for `Err(NotFound)`.
+
 ## [0.1.0] - 2015-11-29
 
 * Initial release
