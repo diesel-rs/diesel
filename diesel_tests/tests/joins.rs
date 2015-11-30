@@ -268,7 +268,7 @@ fn join_through_other() {
     let comments: Vec<Comment> = insert(&vec![
         NewComment(1, "OMG"), NewComment(2, "WTF"),
         NewComment(3, "Best post ever!!!")
-    ]).into(comments).get_results(&connection).unwrap().collect();
+    ]).into(comments::table).get_results(&connection).unwrap().collect();
 
     let data: Vec<_> = users.inner_join(comments::table).load(&connection)
         .unwrap().collect();
