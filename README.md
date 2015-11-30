@@ -4,7 +4,13 @@ Diesel - A safe, extensible ORM and Query Builder for Rust
 [![Build Status](https://travis-ci.org/sgrif/diesel.svg)](https://travis-ci.org/sgrif/diesel)
 [Documentation](http://sgrif.github.io/diesel/diesel/index.html)
 
-Diesel gets rid of the boilerplate for database interaction and eliminates runtime errors, without sacrificing performance. It takes full advantage of Rust's type system to create a low overhead query builder that "feels like Rust".
+Diesel gets rid of the boilerplate for database interaction and eliminates
+runtime errors, without sacrificing performance. It takes full advantage of
+Rust's type system to create a low overhead query builder that "feels like
+Rust".
+
+We are not feature complete, nor do I think we've covered all use cases. If
+you've found something difficult to accomplish, please open an issue.
 
 Getting Started
 ---------------
