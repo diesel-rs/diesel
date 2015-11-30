@@ -101,7 +101,7 @@ fn with_select_sql() {
         .unwrap();
 
     let select_count = users::table.select_sql::<types::BigInt>("COUNT(*)");
-    let get_count = || connection.query_one::<_, i64>(select_count.clone());
+    let get_count = || select_count.clone().first::<i64>(&connection);
 
     assert_eq!(Ok(2), get_count());
 
@@ -180,7 +180,7 @@ fn selecting_columns_with_different_definition_order() {
         .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
     let user_from_insert = connection.insert(&users::table, &NewUser::new("Sean", Some("black"))).unwrap().nth(0);
-    let user_from_select = connection.query_one(users::table);
+    let user_from_select = users::table.first(&connection);
 
     assert_eq!(Some(expected_user.clone()), user_from_insert);
     assert_eq!(Ok(expected_user), user_from_select);

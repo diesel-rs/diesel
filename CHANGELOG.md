@@ -13,6 +13,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   under the hood, but has been hidden from docs and is not considered public
   API.
 
+* Added `get_result` and `get_results`, which work similarly to `load` and
+  `first`, but are intended to make code read better when working with commands
+  like `create` and `update`. In the future, `get_result` may also check that
+  only a single row was affected.
+
 ### Changed
 
 * Added a hidden `__Nonexhaustive` variant to `result::Error`. This is not

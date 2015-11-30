@@ -157,15 +157,15 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
     use diesel::query_builder::update;
     use users::dsl::*;
 
-    let command = update(users.filter(id.eq(target))).set(name.eq(new_name));
-    connection.query_one(command)
+    update(users.filter(id.eq(target))).set(name.eq(new_name))
+        .get_result(&connection)
 }
 ```
 
 As with [`insert`][insert], we can return any type which implements
 [`Queriable`][queriable] for the right types. If you do not want to use the
 returned record(s), you should call [`execute`][execute] instead of
-[`query_one`][query_one] or [`query_all`][query_all].
+[`run`][run] or [`run_all`][run_all].
 
 You can also use a struct to represent the changes, if it implements
 [`AsChangeset`][as_changeset]. Again, `diesel_codegen` can generate this for us
@@ -179,8 +179,8 @@ pub struct UserChanges {
 }
 
 fn save_user(connection: &Connection, id: i32, changes: &UserChanges) -> QueryResult<User> {
-    let command = update(users::table.filter(users::id.eq(id))).set(changes);
-    connection.query_one(command)
+    update(users::table.filter(users::id.eq(id))).set(changes)
+        .get_result(&connection)
 }
 ```
 
@@ -236,8 +236,8 @@ you can go about getting the data structures set up.
 [insert]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert
 [insert_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert_returning_count
 [execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute
-[query_one]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_one
-[query_all]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_all
+[run]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run
+[run_all]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run_all
 [update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html
 [delete]: http://sgrif.github.io/diesel/diesel/query_builder/fn.delete.html
 [connection]: http://sgrif.github.io/diesel/diesel/struct.Connection.html

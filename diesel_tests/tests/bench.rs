@@ -15,7 +15,7 @@ fn bench_selecting_0_rows_with_trivial_query(b: &mut Bencher) {
     setup_users_table(&conn);
 
     b.iter(|| {
-        conn.query_all(users::table).unwrap().collect::<Vec<User>>()
+        users::table.load(&conn).unwrap().collect::<Vec<User>>();
     })
 }
 
@@ -29,7 +29,7 @@ fn bench_selecting_10k_rows_with_trivial_query(b: &mut Bencher) {
     conn.insert_returning_count(&users::table, &data).unwrap();
 
     b.iter(|| {
-        conn.query_all(users::table).unwrap().collect::<Vec<User>>()
+        users::table.load(&conn).unwrap().collect::<Vec<User>>()
     })
 }
 
@@ -44,7 +44,7 @@ fn bench_selecting_0_rows_with_medium_complex_query(b: &mut Bencher) {
         let target = users.left_outer_join(posts::table)
             .filter(hair_color.eq("black"))
             .order(name.desc());
-        conn.query_all(target).unwrap().collect::<Vec<(User, Option<Post>)>>()
+        target.load(&conn).unwrap().collect::<Vec<(User, Option<Post>)>>()
     })
 }
 
@@ -65,6 +65,6 @@ fn bench_selecting_10k_rows_with_medium_complex_query(b: &mut Bencher) {
         let target = users.left_outer_join(posts::table)
             .filter(hair_color.eq("black"))
             .order(name.desc());
-        conn.query_all(target).unwrap().collect::<Vec<(User, Option<Post>)>>()
+        target.load(&conn).unwrap().collect::<Vec<(User, Option<Post>)>>()
     })
 }

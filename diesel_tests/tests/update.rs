@@ -78,8 +78,8 @@ fn update_returning_struct() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let command = update(users.filter(id.eq(1))).set(hair_color.eq("black"));
-    let user = connection.query_one(command);
+    let user = update(users.filter(id.eq(1))).set(hair_color.eq("black"))
+        .get_result(&connection);
     let expected_user = User::with_hair_color(1, "Sean", "black");
 
     assert_eq!(Ok(expected_user), user);
@@ -91,9 +91,9 @@ fn update_with_struct_as_changes() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let changes = NewUser::new("Jim", Some("blue"));
-    let command = update(users.filter(id.eq(1))).set(&changes);
 
-    let user = connection.query_one(command);
+    let user = update(users.filter(id.eq(1))).set(&changes)
+        .get_result(&connection);
     let expected_user = User::with_hair_color(1, "Jim", "blue");
 
     assert_eq!(Ok(expected_user), user);
@@ -105,9 +105,9 @@ fn update_with_struct_does_not_set_primary_key() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let changes = User::with_hair_color(2, "Jim", "blue");
-    let command = update(users.filter(id.eq(1))).set(&changes);
 
-    let user = connection.query_one(command);
+    let user = update(users.filter(id.eq(1))).set(&changes)
+        .get_result(&connection);
     let expected_user = User::with_hair_color(1, "Jim", "blue");
 
     assert_eq!(Ok(expected_user), user);

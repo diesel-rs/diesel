@@ -104,9 +104,7 @@ impl Connection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    /// Executes the given query, returning a single value. Identical to
-    /// `source.first(&connection)`. See [the documentation for
-    /// `first`](trait.LoadDsl.html#method.first) for more.
+    #[doc(hidden)]
     pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
@@ -115,9 +113,7 @@ impl Connection {
             .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
     }
 
-    /// Executes the given query, returning an `Iterator` over the returned
-    /// rows. Identical to `source.load(&connection)`. See [the documentation
-    /// for `load`](trait.LoadDsl.html#method.load) for more.
+    #[doc(hidden)]
     pub fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U>> where
         T: AsQuery,
         U: Queriable<T::SqlType>,

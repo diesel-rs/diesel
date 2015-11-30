@@ -99,9 +99,9 @@ fn save_changes_impl(
                 pub fn save_changes(&mut self, connection: &::diesel::Connection) -> ::diesel::QueryResult<()> {
                     use ::diesel::query_builder::update;
                     *self = {
-                        let command = update($table.filter($table.primary_key().eq(&self.$pk_field)))
-                            .set(&*self);
-                        try!(connection.query_one(command))
+                        try!(update($table.filter($table.primary_key().eq(&self.$pk_field)))
+                            .set(&*self)
+                            .get_result(&connection))
                     };
                     Ok(())
                 }

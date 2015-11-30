@@ -17,10 +17,10 @@ fn main() {
     let select_id = users.select(id);
     let select_name = users.select(name);
 
-    let ids: Vec<i32> = connection.query_all(select_name).unwrap().collect();
+    let ids: Vec<i32> = select_name.load(&connection).unwrap().collect();
     //~^ ERROR the trait `diesel::query_source::Queriable<diesel::types::VarChar>` is not implemented for the type `i32`
     //~| ERROR E0277
-    let names: Vec<String> = connection.query_all(select_id).unwrap().collect();
+    let names: Vec<String> = select_id.load(&connection).unwrap().collect();
     //~^ ERROR the trait `diesel::query_source::Queriable<diesel::types::Integer>` is not implemented
     //~| ERROR E0277
 }

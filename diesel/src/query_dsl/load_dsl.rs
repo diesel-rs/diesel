@@ -6,7 +6,9 @@ use super::LimitDsl;
 
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
-pub trait LoadDsl: AsQuery + LimitDsl + Sized {
+pub trait LoadDsl: AsQuery + Sized {
+    /// Executes the given query, returning an `Iterator` over the returned
+    /// rows.
     fn load<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
         U: Queriable<Self::SqlType>
     {
@@ -18,13 +20,31 @@ pub trait LoadDsl: AsQuery + LimitDsl + Sized {
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Connection) -> QueryResult<U> where
-        U: Queriable<<<Self as LimitDsl>::Output as Query>::SqlType>
+        U: Queriable<<<Self as LimitDsl>::Output as Query>::SqlType>,
+        Self: LimitDsl,
     {
         conn.query_one(self.limit(1))
     }
+
+    /// Runs the command, and returns the affected row. `Err(NotFound)` will be
+    /// returned if the query affected 0 rows. You can call `.optional()` on the
+    /// result of this if the command was optional to get back a
+    /// `Result<Option<U>>`
+    fn get_result<U>(self, conn: &Connection) -> QueryResult<U> where
+        U: Queriable<Self::SqlType>,
+    {
+        conn.query_one(self)
+    }
+
+    /// Runs the command, returning an `Iterator` over the affected rows.
+    fn get_results<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
+        U: Queriable<Self::SqlType>
+    {
+        self.load(conn)
+    }
 }
 
-impl<T: AsQuery + LimitDsl> LoadDsl for T {
+impl<T: AsQuery> LoadDsl for T {
 }
 
 pub trait ExecuteDsl: QueryFragment + Sized {
