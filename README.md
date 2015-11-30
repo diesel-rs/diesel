@@ -151,13 +151,8 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
 
     let command = update(users.filter(id.eq(target))).set(name.eq(new_name));
     connection.query_one(command)
-        .map(|r| r.unwrap())
 }
 ```
-
-Similar to [`insert`][insert], we always return a `Result<Option<Model>>`, as we can't
-tell at compile time if this is the kind of query that always returns at least 1
-result. This may change in the future.
 
 As with [`insert`][insert], we can return any type which implements
 [`Queriable`][queriable] for the right types. If you do not want to use the
@@ -176,7 +171,7 @@ pub struct UserChanges {
     favorite_color: Option<String>,
 }
 
-fn save_user(connection: &Connection, id: i32, changes: &UserChanges) -> QueryResult<Option<User>> {
+fn save_user(connection: &Connection, id: i32, changes: &UserChanges) -> QueryResult<User> {
     let command = update(users::table.filter(users::id.eq(id))).set(changes);
     connection.query_one(command)
 }
