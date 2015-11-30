@@ -38,7 +38,7 @@ fn filter_by_equality_on_nullable_columns() {
         NewUser::new("Tess", Some("brown")),
         NewUser::new("Jim", Some("black")),
     ];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     let sean = User::with_hair_color(1, "Sean", "black");
     let tess = User::with_hair_color(2, "Tess", "brown");
@@ -59,7 +59,7 @@ fn filter_by_is_not_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     let derek = User::with_hair_color(1, "Derek", "red");
     let source = users.filter(hair_color.is_not_null());
@@ -76,7 +76,7 @@ fn filter_by_is_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     let gordon = User::new(2, "Gordon");
     let source = users.filter(hair_color.is_null());
@@ -126,7 +126,7 @@ fn filter_then_select() {
     let connection = connection();
     setup_users_table(&connection);
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     assert_eq!(Ok("Sean".to_string()),
         users.filter(name.eq("Sean")).select(name).first(&connection));
@@ -149,7 +149,7 @@ fn filter_on_multiple_columns() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    assert_eq!(5, connection.insert_returning_count(&users, data).unwrap());
+    assert_eq!(5, insert(data).into(users).execute(&connection).unwrap());
 
     let black_haired_sean = User::with_hair_color(1, "Sean", "black");
     let brown_haired_sean = User::with_hair_color(2, "Sean", "brown");
@@ -187,7 +187,7 @@ fn filter_called_twice_means_same_thing_as_and() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    assert_eq!(5, connection.insert_returning_count(&users, data).unwrap());
+    assert_eq!(5, insert(data).into(users).execute(&connection).unwrap());
 
     let black_haired_sean = User::with_hair_color(1, "Sean", "black");
     let brown_haired_sean = User::with_hair_color(2, "Sean", "brown");
@@ -238,8 +238,7 @@ fn filter_with_or() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    connection.insert_returning_count(&users, &NewUser::new("Jim", None))
-        .unwrap();
+    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
     let data: Vec<_> = users.filter(name.eq("Sean").or(name.eq("Tess")))

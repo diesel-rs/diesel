@@ -14,7 +14,7 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(users.star()));
 
     assert_eq!(Ok(0), source.first(&connection));
-    connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
+    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 }
 
@@ -25,7 +25,7 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Ok(0), source.first(&connection));
-    connection.insert_returning_count(&users, &NewUser::new("Sean", None)).unwrap();
+    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
@@ -83,7 +83,7 @@ fn max_returns_same_type_as_expression_being_maxed() {
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    connection.insert_returning_count(&users, data).unwrap();
+    insert(data).into(users).execute(&connection).unwrap();
     assert_eq!(Ok("C".to_string()), source.first(&connection));
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
     assert_eq!(Ok("B".to_string()), source.first(&connection));
@@ -144,8 +144,9 @@ fn function_with_multiple_arguments() {
 
     let connection = connection();
     setup_users_table(&connection);
-    connection.insert_returning_count(&users,
-        &vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)])
+    insert(&vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)])
+        .into(users)
+        .execute(&connection)
         .unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];

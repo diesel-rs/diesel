@@ -8,6 +8,7 @@ mod schema;
 use self::test::Bencher;
 use self::schema::*;
 use diesel::*;
+use diesel::query_builder::insert;
 
 #[bench]
 fn bench_selecting_0_rows_with_trivial_query(b: &mut Bencher) {
@@ -26,7 +27,7 @@ fn bench_selecting_10k_rows_with_trivial_query(b: &mut Bencher) {
     let data: Vec<_> = (0..10_000).map(|i| {
         NewUser::new(&format!("User {}", i), None)
     }).collect();
-    conn.insert_returning_count(&users::table, &data).unwrap();
+    insert(&data).into(&users::table).execute(&connection).unwrap();
 
     b.iter(|| {
         users::table.load(&conn).unwrap().collect::<Vec<User>>()
@@ -58,7 +59,7 @@ fn bench_selecting_10k_rows_with_medium_complex_query(b: &mut Bencher) {
         let hair_color = if i % 2 == 0 { "black" } else { "brown" };
         NewUser::new(&format!("User {}", i), Some(hair_color))
     }).collect();
-    conn.insert_returning_count(&users::table, &data).unwrap();
+    insert(&data).into(&users::table).execute(&connection).unwrap();
 
     b.iter(|| {
         use schema::users::dsl::*;

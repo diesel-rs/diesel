@@ -258,15 +258,17 @@ fn join_through_other() {
     setup_posts_table(&connection);
     setup_comments_table(&connection);
 
-    connection.insert_returning_count(&users, &NewUser::new("Jim", None))
-        .unwrap();
-    connection.insert_returning_count(&posts::table, &vec![
+    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
+    insert(&vec![
         NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
         NewPost::new(1, "Hello again!", None),
-    ]).unwrap();
-    let comments: Vec<Comment> = connection.insert(&comments::table, &vec![
+        ]).into(posts::table)
+        .execute(&connection)
+        .unwrap();
+    let comments: Vec<Comment> = insert(&vec![
         NewComment(1, "OMG"), NewComment(2, "WTF"),
-        NewComment(3, "Best post ever!!!")]).unwrap().collect();
+        NewComment(3, "Best post ever!!!")
+    ]).into(comments).get_results(&connection).unwrap().collect();
 
     let data: Vec<_> = users.inner_join(comments::table).load(&connection)
         .unwrap().collect();

@@ -99,14 +99,13 @@ fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>
         name: name,
         favorite_color: favorite_color,
     };
-    connection.insert(&users::table, &new_user)
-        .map(|mut result| result.nth(0).unwrap())
+    insert(&new_user).into(users::table).get_result(connection)
 }
 ```
 
 [`insert`][insert] can return any struct which implements
 [`Queriable`][queriable] for the right type. If you don't actually want to use
-the results, you should call [`insert_returning_count`][insert_returning_count]
+the results, you should call [`execute`][execute]
 instead, or the compiler will complain that it can't infer what type you meant
 to return. You can use the same struct for inserting and querying if you'd like,
 but you'll need to make columns that are not present during the insert optional
@@ -139,8 +138,7 @@ fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>
   -> QueryResult<User>
 {
     let new_user = NewUser(name, favorite_color);
-    connection.insert(&users::table, &new_user)
-        .map(|mut result| result.nth(0).unwrap())
+    insert(&new_user).into(users::table).get_result(connection)
 }
 ```
 
@@ -233,8 +231,7 @@ you can go about getting the data structures set up.
 [table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
 [queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
-[insert]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert
-[insert_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert_returning_count
+[insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
 [execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute
 [run]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run
 [run_all]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run_all

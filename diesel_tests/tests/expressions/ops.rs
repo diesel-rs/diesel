@@ -96,7 +96,7 @@ fn mix_and_match_all_numeric_ops() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let data = vec![NewUser::new("Jim", None), NewUser::new("Bob", None)];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     let expected_data = vec![4, 6, 7, 9];
     let data: Vec<_> = users.select(id * 3 / 2 + 4 - 1).load(&connection)

@@ -92,7 +92,7 @@ fn filter_by_like() {
         NewUser::new("Tess Griffin", None),
         NewUser::new("Jim", None),
     ];
-    connection.insert_returning_count(&users, &data).unwrap();
+    insert(&data).into(users).execute(&connection).unwrap();
 
     let sean = User::new(1, "Sean Griffin");
     let tess = User::new(2, "Tess Griffin");
@@ -141,6 +141,6 @@ fn connection_with_3_users() -> Connection {
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    connection.insert_returning_count(&users::table, &data).unwrap();
+    insert(&data).into(users::table).execute(&connection).unwrap();
     connection
 }

@@ -1,6 +1,5 @@
 use super::schema::*;
 use diesel::*;
-use diesel::query_builder::insert;
 
 #[test]
 fn insert_records() {
@@ -12,7 +11,7 @@ fn insert_records() {
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
+    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -37,7 +36,7 @@ fn insert_with_defaults() {
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
+    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -62,7 +61,7 @@ fn insert_with_defaults_not_provided() {
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
+    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
@@ -87,8 +86,8 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let count = connection.insert_returning_count(&users, new_users).unwrap();
-    let second_count = connection.insert_returning_count(&users, &BaldUser { name: "Guy".to_string() }).unwrap();
+    let count = insert(new_users).into(users).execute(&connection).unwrap();
+    let second_count = insert(&BaldUser { name: "Guy".to_string() }).into(users).execute(&connection).unwrap();
 
     assert_eq!(2, count);
     assert_eq!(1, second_count);
@@ -113,7 +112,8 @@ fn insert_borrowed_content() {
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    let inserted_users: Vec<_> = insert(new_users).into(users).load(&connection).unwrap().collect();
+    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection)
+        .unwrap().collect();
 
     let expected_users = vec![
         User::new(1, "Sean"),

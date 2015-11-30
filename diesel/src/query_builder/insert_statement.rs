@@ -3,6 +3,8 @@ use expression::Expression;
 use query_builder::*;
 use query_source::Table;
 
+/// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
+/// is call `into`.
 pub struct IncompleteInsertStatement<T> {
     records: T,
 }
@@ -15,6 +17,7 @@ impl<T> IncompleteInsertStatement<T> {
         }
     }
 
+    /// Specify which table the data passed to `insert` should be added to.
     pub fn into<S>(self, target: S) -> InsertStatement<S, T> where
         InsertStatement<S, T>: QueryFragment,
     {

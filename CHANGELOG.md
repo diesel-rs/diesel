@@ -18,6 +18,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   like `create` and `update`. In the future, `get_result` may also check that
   only a single row was affected.
 
+* Added [`insert`][insert], which mirrors the pattern of `update` and `delete`.
+
 ### Changed
 
 * Added a hidden `__Nonexhaustive` variant to `result::Error`. This is not
@@ -29,6 +31,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   cases where you actually expect 0 or 1 rows to be returned, the `optional`
   method has been added to the result, in case having a `Result<Option<T>>` is
   more ideomatic than checking for `Err(NotFound)`.
+
+### Deprecated
+
+* `Connection#insert` and `Connection#insert_returning_count` have been
+  deprecated in favor of [`insert`][insert]
+
+[insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
 
 ## [0.1.0] - 2015-11-29
 

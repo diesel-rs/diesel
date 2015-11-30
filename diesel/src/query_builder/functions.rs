@@ -94,6 +94,9 @@ pub fn delete<T: UpdateTarget>(source: T) -> DeleteStatement<T> {
     DeleteStatement::new(source)
 }
 
+/// Creates an insert statement. Will add the given data to a table. This
+/// function is not exported by default. As with other commands, the resulting
+/// query can return the inserted rows if you choose.
 pub fn insert<T>(records: T) -> IncompleteInsertStatement<T> {
     IncompleteInsertStatement::new(records)
 }

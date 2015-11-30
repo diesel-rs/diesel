@@ -8,12 +8,16 @@ fn one_to_many_returns_query_source_for_association() {
 
     let sean: User = connection.find(users::table, 1).unwrap();
     let tess: User = connection.find(users::table, 2).unwrap();
-    let seans_posts: Vec<Post> = connection.insert(&posts::table, &vec![
-        sean.new_post("Hello", None), sean.new_post("World", None),
-    ]).unwrap().collect();
-    let tess_posts: Vec<Post> = connection.insert(&posts::table, &vec![
+    let seans_posts: Vec<Post> =  insert(&vec![
+        sean.new_post("Hello", None), sean.new_post("World", None)
+        ]).into(posts::table)
+        .get_results(&connection)
+        .unwrap().collect();
+    let tess_posts: Vec<Post> = insert(&vec![
         tess.new_post("Hello 2", None), tess.new_post("World 2", None),
-    ]).unwrap().collect();
+        ]).into(posts::table)
+        .get_results(&connection)
+        .unwrap().collect();
 
     let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap().collect();
     assert_eq!(seans_posts, found_posts);
