@@ -1,5 +1,6 @@
 use super::schema::*;
 use diesel::*;
+use diesel::query_builder::insert;
 
 #[test]
 fn insert_records() {
@@ -112,7 +113,7 @@ fn insert_borrowed_content() {
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    let inserted_users: Vec<_> = connection.insert(&users, new_users).unwrap().collect();
+    let inserted_users: Vec<_> = insert(new_users).into(users).load(&connection).unwrap().collect();
 
     let expected_users = vec![
         User::new(1, "Sean"),

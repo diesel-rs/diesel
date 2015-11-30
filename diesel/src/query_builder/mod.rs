@@ -2,20 +2,23 @@
 #[doc(hidden)]
 pub mod pg;
 
+mod delete_statement;
+mod functions;
 mod limit_clause;
 mod offset_clause;
 mod order_clause;
 mod select_statement;
 mod where_clause;
+pub mod insert_statement;
 pub mod update_statement;
-mod delete_statement;
-mod functions;
 
 pub use self::functions::*;
 #[doc(hidden)]
 pub use self::select_statement::SelectStatement;
 #[doc(inline)]
 pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
+#[doc(inline)]
+pub use self::insert_statement::IncompleteInsertStatement;
 
 use expression::Expression;
 use std::error::Error;
