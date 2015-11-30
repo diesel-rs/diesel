@@ -9,7 +9,7 @@ boilerplate needing to be written. It can be used through `rustc_plugin`, or
 Using on nightly
 ----------------
 
-To use with nightly, you'll want to turn off the default features. Add this
+Make sure you're on a nightly from 2015-11-27 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
 line to your dependencies section in `Cargo.toml`
 
 ```toml
