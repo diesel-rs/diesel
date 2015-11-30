@@ -8,6 +8,8 @@ description = "Annotations to remove boilerplate from Diesel"
 documentation = "https://github.com/sgrif/diesel/blob/master/diesel_codegen/README.md"
 homepage = "https://github.com/sgrif/diesel/tree/master/diesel_codegen"
 repository = "https://github.com/sgrif/diesel/tree/master/diesel_codegen"
+keywords = ["orm", "database", "postgres", "postgresql",
+            "sql", "query builder"]
 
 [build-dependencies]
 quasi_codegen = { verision = "^0.3.8", optional = true }

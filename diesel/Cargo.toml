@@ -7,6 +7,7 @@ description = "A safe, extensible ORM and Query builder"
 documentation = "http://sgrif.github.io/diesel/diesel/index.html"
 homepage = "https://github.com/sgrif/diesel"
 repository = "https://github.com/sgrif/diesel"
+keywords = ["orm", "database", "postgres", "postgresql", "sql", "query builder"]
 
 [dependencies]
 libc = "0.2.*"
