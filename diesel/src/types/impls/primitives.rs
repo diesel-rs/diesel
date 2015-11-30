@@ -122,6 +122,30 @@ impl<'a> ToSql<types::Binary> for &'a [u8] {
     }
 }
 
+use std::borrow::{Cow, ToOwned};
+impl<'a, T: ?Sized, ST> ToSql<ST> for Cow<'a, T> where
+    ST: NativeSqlType,
+    T: 'a + ToOwned + ToSql<ST>,
+    T::Owned: ToSql<ST>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        match self {
+            &Cow::Borrowed(ref t) => t.to_sql(out),
+            &Cow::Owned(ref t) => t.to_sql(out),
+        }
+    }
+}
+
+impl<'a, T: ?Sized, ST> FromSql<ST> for Cow<'a, T> where
+    ST: NativeSqlType,
+    T: 'a + ToOwned,
+    T::Owned: FromSql<ST>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+        T::Owned::from_sql(bytes).map(Cow::Owned)
+    }
+}
+
 #[test]
 fn bool_to_sql() {
     let mut bytes = vec![];

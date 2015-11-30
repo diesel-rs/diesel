@@ -20,8 +20,8 @@ pub fn expand_derive_queriable(
     push: &mut FnMut(Annotatable)
 ) {
     if let Annotatable::Item(ref item) = *annotatable {
-        let attrs = match Attr::from_item(cx, item) {
-            Some((_, attrs)) => attrs,
+        let (generics, attrs) = match Attr::from_item(cx, item) {
+            Some((generics, attrs)) => (generics, attrs),
             None => {
                 cx.span_err(span, "`#[derive(Queriable)]` can only be applied to structs or tuple structs");
                 return;
@@ -30,7 +30,7 @@ pub fn expand_derive_queriable(
         let builder = aster::AstBuilder::new().span(span);
 
         let ty = builder.ty().path()
-            .segment(item.ident).build()
+            .segment(item.ident).with_generics(generics.clone()).build()
             .build();
 
         let row_type = builder.ty().tuple()
@@ -42,9 +42,12 @@ pub fn expand_derive_queriable(
             &builder,
             &attrs,
         );
+        let display_generics = builder.from_generics(generics)
+            .ty_param_id("__ST")
+            .build();
 
         let impl_item = quote_item!(cx,
-            impl<__ST> ::diesel::Queriable<__ST> for $ty where
+            impl$display_generics ::diesel::Queriable<__ST> for $ty where
                 __ST: ::diesel::types::NativeSqlType,
                 $row_type: ::diesel::types::FromSqlRow<__ST>,
             {
