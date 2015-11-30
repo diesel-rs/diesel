@@ -62,8 +62,7 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
 /// let old_count = get_count();
-/// let command = delete(users.filter(id.eq(1)));
-/// connection.execute_returning_count(&command).unwrap();
+/// delete(users.filter(id.eq(1))).execute(&connection).unwrap();
 /// assert_eq!(old_count - 1, get_count());
 /// # }
 /// ```
@@ -86,7 +85,7 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// #     use diesel::query_builder::delete;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
-/// connection.execute_returning_count(&delete(users)).unwrap();
+/// delete(users).execute(&connection).unwrap();
 /// assert_eq!(0, get_count());
 /// # }
 /// ```

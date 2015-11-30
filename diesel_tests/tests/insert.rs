@@ -130,10 +130,9 @@ fn delete() {
     use diesel::query_builder::delete;
     let connection = connection_with_sean_and_tess_in_users_table();
 
-    let command = delete(users.filter(name.eq("Sean")));
-    let deleted_rows = connection.execute_returning_count(&command).unwrap();
+    let deleted_rows = delete(users.filter(name.eq("Sean"))).execute(&connection);
 
-    assert_eq!(1, deleted_rows);
+    assert_eq!(Ok(1), deleted_rows);
 
     let num_users = users.count().first(&connection);
 

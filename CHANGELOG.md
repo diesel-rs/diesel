@@ -6,6 +6,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added an `execute` method to `QueryFragment`, which is intended to replace
+  `Connection#execute_returning_count`. The old method still exists for use
+  under the hood, but has been hidden from docs and is not considered public
+  API.
+
 ### Changed
 
 * Added a hidden `__Nonexhaustive` variant to `result::Error`. This is not

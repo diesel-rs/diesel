@@ -164,8 +164,7 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
 
 As with [`insert`][insert], we can return any type which implements
 [`Queriable`][queriable] for the right types. If you do not want to use the
-returned record(s), you should call
-[`execute_returning_count`][execute_returning_count] instead of
+returned record(s), you should call [`execute`][execute] instead of
 [`query_one`][query_one] or [`query_all`][query_all].
 
 You can also use a struct to represent the changes, if it implements
@@ -217,8 +216,7 @@ fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
     use diesel::query_builder::delete;
     use users::dsl::*;
 
-    let command = delete(users.filter(id.eq(user.id)));
-    let deleted_rows = try!(connection.execute_returning_count(&command));
+    delete(users.filter(id.eq(user.id))).execute(&connection).unwrap();
     debug_assert!(deleted_rows == 1);
     Ok(())
 }
@@ -237,7 +235,7 @@ you can go about getting the data structures set up.
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
 [insert]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert
 [insert_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.insert_returning_count
-[execute_returning_count]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.execute_returning_count
+[execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute
 [query_one]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_one
 [query_all]: http://sgrif.github.io/diesel/diesel/struct.Connection.html#method.query_all
 [update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html

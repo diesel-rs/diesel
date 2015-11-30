@@ -1,5 +1,5 @@
 use connection::{Connection, Cursor};
-use query_builder::{Query, AsQuery};
+use query_builder::{Query, QueryFragment, AsQuery};
 use query_source::Queriable;
 use result::QueryResult;
 use super::LimitDsl;
@@ -25,4 +25,17 @@ pub trait LoadDsl: AsQuery + LimitDsl + Sized {
 }
 
 impl<T: AsQuery + LimitDsl> LoadDsl for T {
+}
+
+pub trait ExecuteDsl: QueryFragment + Sized {
+    /// Executes the given command, returning the number of rows affected. Used
+    /// in conjunction with
+    /// [`update`](../query_builder/fn.update.html) and
+    /// [`delete`](../query_builder/fn.delete.html)
+    fn execute(&self, conn: &Connection) -> QueryResult<usize> {
+        conn.execute_returning_count(self)
+    }
+}
+
+impl<T: QueryFragment> ExecuteDsl for T {
 }

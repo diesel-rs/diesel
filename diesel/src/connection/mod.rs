@@ -255,10 +255,7 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &Some(param_types)).map(|r| r.rows_affected())
     }
 
-    /// Executes the given command, returning the number of rows affected. Used
-    /// in conjunction with
-    /// [`update`](../query_builder/fn.update.html) and
-    /// [`delete`](../query_builder/fn.delete.html)
+    #[doc(hidden)]
     pub fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment,
     {
