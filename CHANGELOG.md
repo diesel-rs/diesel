@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
 
-## Unreleased
+## [0.2.0] - 2015-11-30
 
 ### Added
 

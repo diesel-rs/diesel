@@ -13,7 +13,7 @@ Make sure you're on a nightly from 2015-11-27 or later, we don't compile on earl
 line to your dependencies section in `Cargo.toml`
 
 ```toml
-diesel_codegen = { version = "^0.1.0", default-features = false, features = ["nightly"] }
+diesel_codegen = { version = "^0.2.0", default-features = false, features = ["nightly"] }
 ```
 
 Then you'll need to add two lines to the root of your crate.
@@ -33,7 +33,7 @@ build any modules using our annotations. Add the following to your
 build-dependencies.
 
 ```toml
-diesel_codegen = "^0.1.0"
+diesel_codegen = "^0.2.0"
 syntex = "^0.22.0"
 ```
 

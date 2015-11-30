@@ -15,8 +15,6 @@ you've found something difficult to accomplish, please open an issue.
 Getting Started
 ---------------
 
-### Note: This guide applies to the master branch. The guide for the latest released version can be found [here](https://github.com/sgrif/diesel/tree/v0.1.0#getting-started).
-
 Before you can do anything, you'll first need to set up your table. You'll want
 to specify the columns and tables that exist using the [`table!` macro][table]
 Once you've done that, you can already start using the query builder, and
