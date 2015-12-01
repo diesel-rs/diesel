@@ -15,6 +15,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   added to `Cargo.toml`, you'll gain `Arbitrary` implementations for everything
   in `diesel::data_types`.
 
+* Add `min` function that mirrors SQLs MIN.
+
 ## [0.2.0] - 2015-11-30
 
 ### Added
