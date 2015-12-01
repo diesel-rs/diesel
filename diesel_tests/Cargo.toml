@@ -11,7 +11,7 @@ syntex = { version = "^0.22.0", optional = true }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
 
 [dependencies]
-diesel = { path = "../diesel" }
+diesel = { path = "../diesel", features = ["quickcheck"] }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
 compiletest_rs = { version = "^0.0.10", optional = true }
 syntex = { version = "^0.22.0", optional = true }

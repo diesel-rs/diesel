@@ -10,6 +10,9 @@ use query_source::Queriable;
 use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 
+#[cfg(feature = "quickcheck")]
+mod quickcheck_impls;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Timestamps are represented in Postgres as a 32 bit signed integer representing the number of
 /// microseconds since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate
