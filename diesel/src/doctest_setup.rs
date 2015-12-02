@@ -1,11 +1,10 @@
 extern crate dotenv;
 
 use diesel::*;
+use self::dotenv::dotenv;
 
 fn connection_no_data() -> Connection {
-    let dotenv_path = ::std::env::current_dir()
-        .and_then(|a| Ok(a.join("../.env"))).unwrap();
-    dotenv::from_path(dotenv_path.as_path()).ok();
+    dotenv().ok();
 
     let connection_url = ::std::env::var("DATABASE_URL").ok()
         .expect("DATABASE_URL must be set in order to run tests");

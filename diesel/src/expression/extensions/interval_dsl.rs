@@ -244,6 +244,7 @@ mod tests {
     extern crate dotenv;
     extern crate quickcheck;
     use self::quickcheck::quickcheck;
+    use self::dotenv::dotenv;
     use super::*;
     use connection::Connection;
     use types;
@@ -252,9 +253,7 @@ mod tests {
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
             fn $test_name(val: $tpe) -> bool {
-                let dotenv_path = ::std::env::current_dir()
-                    .and_then(|a| Ok(a.join("../.env"))).unwrap();
-                dotenv::from_path(dotenv_path.as_path()).ok();
+                dotenv().ok();
 
                 let connection_url = ::std::env::var("DATABASE_URL").ok()
                     .expect("DATABASE_URL must be set in order to run tests");
