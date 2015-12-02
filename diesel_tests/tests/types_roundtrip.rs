@@ -8,13 +8,21 @@ pub use diesel::types::{NativeSqlType, ToSql, Nullable, Array};
 
 pub fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
     ST: NativeSqlType,
-    T: ToSql<ST> + Queriable<ST> + PartialEq,
+    T: ToSql<ST> + Queriable<ST> + PartialEq + ::std::fmt::Debug,
 {
     let connection = connection();
     let query = format!("SELECT $1::{}", type_name);
     let result = connection.query_sql_params::<ST, T, ST, T>(&query, &value);
     match result {
-        Ok(mut val) => value == val.nth(0).unwrap(),
+        Ok(mut val) => {
+            let res = val.nth(0).unwrap();
+            if value != res {
+                println!("{:?}, {:?}", value, res);
+                false
+            } else {
+                true
+            }
+        }
         Err(Error::DatabaseError(msg)) =>
             &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n",
         Err(e) => panic!("Query failed: {:?}", e),
@@ -73,10 +81,15 @@ mod unstable_types {
     use std::time::*;
 
     fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {
-        match time.duration_from_earlier(UNIX_EPOCH) {
+        let res = match time.duration_from_earlier(UNIX_EPOCH) {
             Ok(duration) => time - Duration::new(0, duration.subsec_nanos() % 1000),
             Err(e) => time + Duration::new(0, e.duration().subsec_nanos() % 1000),
-        }
+        };
+        work_around_rust_lang_30173(res)
+    }
+
+    fn work_around_rust_lang_30173(time: SystemTime) -> SystemTime {
+        time + Duration::new(0, 1) - Duration::new(0, 1)
     }
 
     test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision, "timestamp");
