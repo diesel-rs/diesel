@@ -21,19 +21,27 @@ pub fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
     }
 }
 
+pub fn id<A>(a: A) -> A { a }
+
 macro_rules! test_round_trip {
     ($test_name:ident, $sql_type:ident, $tpe:ty, $sql_type_name:expr) => {
+        test_round_trip!($test_name, $sql_type, $tpe, id, $sql_type_name);
+    };
+
+    ($test_name:ident, $sql_type:ident, $tpe:ty, $map_fn:ident, $sql_type_name:expr) => {
         #[test]
         fn $test_name() {
             fn round_trip(val: $tpe) -> bool {
-                test_type_round_trips::<types::$sql_type, _>(val, $sql_type_name)
+                test_type_round_trips::<types::$sql_type, _>($map_fn(val), $sql_type_name)
             }
 
             fn option_round_trip(val: Option<$tpe>) -> bool {
+                let val = val.map($map_fn);
                 test_type_round_trips::<Nullable<types::$sql_type>, _>(val, $sql_type_name)
             }
 
             fn vec_round_trip(val: Vec<$tpe>) -> bool {
+                let val: Vec<_> = val.into_iter().map($map_fn).collect();
                 test_type_round_trips::<Array<types::$sql_type>, _>(val, concat!($sql_type_name, "[]"))
             }
 
@@ -62,7 +70,14 @@ test_round_trip!(numeric_roundtrips, Numeric, PgNumeric, "numeric");
 #[cfg(feature = "unstable")]
 mod unstable_types {
     use super::*;
-    use std::time::SystemTime;
+    use std::time::*;
 
-    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, "timestamp");
+    fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {
+        match time.duration_from_earlier(UNIX_EPOCH) {
+            Ok(duration) => time - Duration::new(0, duration.subsec_nanos() % 1000),
+            Err(e) => time + Duration::new(0, e.duration().subsec_nanos() % 1000),
+        }
+    }
+
+    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision, "timestamp");
 }
