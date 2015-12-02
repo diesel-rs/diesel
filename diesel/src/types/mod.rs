@@ -89,26 +89,6 @@ pub trait ToSql<A: NativeSqlType> {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
 }
 
-/// Serializes multiple values to be sent to the database. This is automatically
-/// implemented for tuples of various sizes.
-pub trait ValuesToSql<A: NativeSqlType> {
-    fn values_to_sql(&self) -> Result<Vec<Option<Vec<u8>>>, Box<Error>>;
-}
-
-impl<A, T> ValuesToSql<A> for T where
-    A: NativeSqlType,
-    T: ToSql<A>,
-{
-    fn values_to_sql(&self) -> Result<Vec<Option<Vec<u8>>>, Box<Error>> {
-        let mut bytes = Vec::new();
-        let bytes = match try!(self.to_sql(&mut bytes)) {
-            IsNull::No => Some(bytes),
-            IsNull::Yes => None,
-        };
-        Ok(vec![bytes])
-    }
-}
-
 impl<'a, A, T> ToSql<A> for &'a T where
     A: NativeSqlType,
     T: ToSql<A>,

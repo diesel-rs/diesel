@@ -21,7 +21,7 @@ use self::pq_sys::*;
 use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::{str, ptr};
-use types::{NativeSqlType, ToSql, ValuesToSql};
+use types::{NativeSqlType, ToSql, IsNull};
 
 pub struct Connection {
     internal_connection: *mut PGconn,
@@ -137,10 +137,14 @@ impl Connection {
         T: NativeSqlType,
         U: Queriable<T>,
         PT: NativeSqlType,
-        P: ValuesToSql<PT>,
+        P: ToSql<PT>,
     {
-        let param_data = params.values_to_sql().unwrap();
-        let db_result = try!(self.exec_sql_params(query, &param_data, &None));
+        let mut param_data = Vec::new();
+        let p = match params.to_sql(&mut param_data).unwrap() {
+            IsNull::Yes => vec![None::<Vec<u8>>],
+            IsNull::No => vec![Some(param_data)],
+        };
+        let db_result = try!(self.exec_sql_params(query, &p, &None));
         Ok(Cursor::new(db_result))
     }
 

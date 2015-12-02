@@ -4,7 +4,7 @@ use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
 use query_source::QuerySource;
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow, ValuesToSql, Nullable};
+use types::{NativeSqlType, FromSqlRow, ToSql, Nullable};
 use {Queriable, Table, Column};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
@@ -48,16 +48,6 @@ macro_rules! tuple_impls {
                     } else {
                         Ok(Some(($(try!($T::build_from_row(row))),+)))
                     }
-                }
-            }
-
-            impl<$($T),+,$($ST),+> ValuesToSql<($($ST),+)> for ($($T),+) where
-                $($T: ValuesToSql<$ST>),+,
-                $($ST: NativeSqlType),+
-            {
-                fn values_to_sql(&self) -> Result<Vec<Option<Vec<u8>>>, Box<Error>> {
-                    let values = e!(vec![$(try!(self.$idx.values_to_sql())),*]);
-                    Ok(values.into_iter().flat_map(|v| v).collect())
                 }
             }
 
