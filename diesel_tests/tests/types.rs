@@ -263,6 +263,29 @@ fn pg_timestamp_to_sql_timestamp() {
     assert!(!query_to_sql_equality::<Timestamp, PgTimestamp>(expected_non_equal_value, value));
 }
 
+#[test]
+fn pg_numeric_from_sql() {
+    use diesel::data_types::PgNumeric;
+
+    let query = "SELECT 1.0::numeric";
+    let expected_value = PgNumeric::Positive {
+        digits: vec![1],
+        weight: 0,
+        scale: 1,
+    };
+    assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
+    let query = "SELECT -31.0::numeric";
+    let expected_value = PgNumeric::Negative {
+        digits: vec![31],
+        weight: 0,
+        scale: 1,
+    };
+    assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
+    let query = "SELECT 'NaN'::numeric";
+    let expected_value = PgNumeric::NaN;
+    assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
+}
+
 fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
     let connection = connection();
     let mut cursor = connection.query_sql::<T, U>(sql)

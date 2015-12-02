@@ -17,6 +17,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Add `min` function that mirrors SQLs MIN.
 
+* Added support for the `Numeric` data type. Since there is no Big Decimal type
+  in the standard library, a dumb struct has been provided which mirrors what
+  Postgres provides, which can be converted into whatever crate you are using.
+
 ## [0.2.0] - 2015-11-30
 
 ### Added

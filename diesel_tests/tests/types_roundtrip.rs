@@ -57,3 +57,4 @@ test_round_trip!(date_roundtrips, Date, PgDate, "date");
 test_round_trip!(time_roundtrips, Time, PgTime, "time");
 test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp, "timestamp");
 test_round_trip!(interval_roundtrips, Interval, PgInterval, "interval");
+test_round_trip!(numeric_roundtrips, Numeric, PgNumeric, "numeric");

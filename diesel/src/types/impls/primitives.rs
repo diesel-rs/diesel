@@ -1,7 +1,9 @@
-use expression::{Expression, AsExpression};
-use expression::bound::Bound;
 use std::error::Error;
 use std::io::Write;
+
+use data_types::PgNumeric;
+use expression::bound::Bound;
+use expression::{Expression, AsExpression};
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, IsNull};
 use {Queriable, types};
@@ -15,6 +17,7 @@ primitive_impls! {
 
     Float -> (f32, 700),
     Double -> (f64, 701),
+    Numeric -> (PgNumeric, 1700),
 
     VarChar -> (String, 1043),
     Text -> (String, 25),

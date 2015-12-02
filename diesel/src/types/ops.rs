@@ -50,7 +50,7 @@ macro_rules! numeric_type {
     }
 }
 
-numeric_type!(SmallInt, Integer, BigInt, Float, Double);
+numeric_type!(SmallInt, Integer, BigInt, Float, Double, Numeric);
 
 impl Add for super::Timestamp {
     type Rhs = super::Interval;

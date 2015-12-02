@@ -80,7 +80,7 @@ macro_rules! primitive_impls {
 
 mod array;
 pub mod date_and_time;
-mod floats;
+pub mod floats;
 mod integers;
 mod option;
 mod primitives;

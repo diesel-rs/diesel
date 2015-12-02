@@ -11,6 +11,7 @@ pub mod structs {
         //! there is no existing Rust primitive, or where using it would be
         //! confusing (such as date and time types)
         pub use super::super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
+        pub use super::super::impls::floats::PgNumeric;
     }
 }
 
@@ -33,6 +34,7 @@ pub type BigSerial = BigInt;
 
 #[derive(Clone, Copy, Default)] pub struct Float;
 #[derive(Clone, Copy, Default)] pub struct Double;
+#[derive(Clone, Copy, Default)] pub struct Numeric;
 
 #[derive(Clone, Copy, Default)] pub struct VarChar;
 #[derive(Clone, Copy, Default)] pub struct Text;
