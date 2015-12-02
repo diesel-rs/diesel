@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "unstable", feature(custom_derive, plugin, custom_attribute))]
+#![cfg_attr(feature = "unstable", feature(custom_derive, plugin, custom_attribute, time2))]
 #![cfg_attr(feature = "unstable", plugin(diesel_codegen))]
 
 extern crate quickcheck;

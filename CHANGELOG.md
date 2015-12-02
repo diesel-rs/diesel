@@ -21,6 +21,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   in the standard library, a dumb struct has been provided which mirrors what
   Postgres provides, which can be converted into whatever crate you are using.
 
+* Timestamp columns can now be used with `std::time::SystemTime` when compiled
+  with `--features unstable`
+
 ## [0.2.0] - 2015-11-30
 
 ### Added

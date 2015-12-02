@@ -13,10 +13,10 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 libc = "0.2.*"
 pq-sys = "0.2.*"
 byteorder = "0.3.*"
-quickcheck = { version = "^0.2.24", optional = true }
+quickcheck = { git = "https://github.com/sgrif/quickcheck.git", rev = "7020692b18196d9d29718b31d8b2c7d1c4df3190", optional = true }
 
 [dev-dependencies]
-quickcheck = "^0.2.24"
+quickcheck = { git = "https://github.com/sgrif/quickcheck.git", rev = "7020692b18196d9d29718b31d8b2c7d1c4df3190" }
 dotenv = "0.4.0"
 
 [features]

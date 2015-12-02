@@ -53,6 +53,18 @@ macro_rules! expression_impls {
     }
 }
 
+macro_rules! queriable_impls {
+    ($($Source:ident -> $Target:ty),+,) => {$(
+        impl Queriable<types::$Source> for $Target {
+            type Row = Self;
+
+            fn build(row: Self::Row) -> Self {
+                row
+            }
+        }
+    )+}
+}
+
 macro_rules! primitive_impls {
     ($($Source:ident -> ($Target:ty, $oid:expr)),+,) => {
         $(
@@ -65,15 +77,8 @@ macro_rules! primitive_impls {
                     types::$Source
                 }
             }
-
-            impl Queriable<types::$Source> for $Target {
-                type Row = Self;
-
-                fn build(row: Self::Row) -> Self {
-                    row
-                }
-            }
         )+
+        queriable_impls!($($Source -> $Target),+,);
         expression_impls!($($Source -> $Target),+,);
     }
 }

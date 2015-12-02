@@ -1,5 +1,3 @@
-extern crate byteorder;
-
 use std::error::Error;
 use std::io::Write;
 use std::ops::Add;
@@ -12,6 +10,8 @@ use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
+#[cfg(feature = "unstable")]
+mod std_time;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Timestamps are represented in Postgres as a 32 bit signed integer representing the number of

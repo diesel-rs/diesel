@@ -18,12 +18,12 @@ syntex = { version = "^0.22.0", optional = true }
 syntex_syntax = { version = "^0.22.0", optional = true }
 
 [dev-dependencies]
-quickcheck = "*"
+quickcheck = { git = "https://github.com/sgrif/quickcheck.git", rev = "7020692b18196d9d29718b31d8b2c7d1c4df3190" }
 dotenv = "0.4.0"
 
 [features]
 default = ["syntex", "syntex_syntax", "diesel_codegen/with-syntex"]
-unstable = ["compiletest_rs", "diesel_codegen/nightly"]
+unstable = ["compiletest_rs", "diesel_codegen/nightly", "diesel/unstable", "quickcheck/unstable"]
 
 [[test]]
 name = "compile_tests"

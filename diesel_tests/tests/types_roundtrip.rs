@@ -1,12 +1,12 @@
-use quickcheck::quickcheck;
+pub use quickcheck::quickcheck;
 
-use schema::connection;
-use diesel::*;
-use diesel::result::Error;
-use diesel::data_types::*;
-use diesel::types::{NativeSqlType, ToSql, Nullable, Array};
+pub use schema::connection;
+pub use diesel::*;
+pub use diesel::result::Error;
+pub use diesel::data_types::*;
+pub use diesel::types::{NativeSqlType, ToSql, Nullable, Array};
 
-fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
+pub fn test_type_round_trips<ST, T>(value: T, type_name: &str) -> bool where
     ST: NativeSqlType,
     T: ToSql<ST> + Queriable<ST> + PartialEq,
 {
@@ -58,3 +58,11 @@ test_round_trip!(time_roundtrips, Time, PgTime, "time");
 test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp, "timestamp");
 test_round_trip!(interval_roundtrips, Interval, PgInterval, "interval");
 test_round_trip!(numeric_roundtrips, Numeric, PgNumeric, "numeric");
+
+#[cfg(feature = "unstable")]
+mod unstable_types {
+    use super::*;
+    use std::time::SystemTime;
+
+    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, "timestamp");
+}
