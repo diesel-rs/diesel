@@ -15,7 +15,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   added to `Cargo.toml`, you'll gain `Arbitrary` implementations for everything
   in `diesel::data_types`.
 
-* Add `min` function that mirrors SQLs MIN.
+* Added support for the SQL `MIN` function.
 
 * Added support for the `Numeric` data type. Since there is no Big Decimal type
   in the standard library, a dumb struct has been provided which mirrors what
