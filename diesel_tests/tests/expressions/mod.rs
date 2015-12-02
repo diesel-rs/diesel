@@ -73,7 +73,7 @@ fn test_count_max() {
 }
 
 #[test]
-fn max_returns_same_type_as_expression_being_maxed() {
+fn max_returns_same_type_as_expression_being_maximized() {
     let connection = connection();
     setup_users_table(&connection);
     let source = users.select(max(name));
@@ -134,6 +134,65 @@ fn max_accepts_all_numeric_string_and_date_types() {
 
     let _ = users.select(max(arbitrary::<types::Nullable<types::VarChar>>()));
     let _ = users.select(max(arbitrary::<types::Nullable<types::Text>>()));
+}
+
+#[test]
+fn test_count_min() {
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE numbers (n integer)").unwrap();
+    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
+    let source = numbers.select(min(n));
+
+    assert_eq!(Ok(1), source.first(&connection));
+    connection.execute("DELETE FROM numbers WHERE n = 1").unwrap();
+    assert_eq!(Ok(2), source.first(&connection));
+}
+
+#[test]
+fn min_returns_same_type_as_expression_being_minimized() {
+    let connection = connection();
+    setup_users_table(&connection);
+    let source = users.select(min(name));
+
+    let data: &[_] = &[
+        NewUser::new("B", None),
+        NewUser::new("C", None),
+        NewUser::new("A", None),
+    ];
+    insert(data).into(users).execute(&connection).unwrap();
+    assert_eq!(Ok("A".to_string()), source.first(&connection));
+    connection.execute("DELETE FROM users WHERE name = 'A'").unwrap();
+    assert_eq!(Ok("B".to_string()), source.first(&connection));
+}
+
+#[test]
+fn min_accepts_all_numeric_string_and_date_types() {
+    let _ = users.select(min(arbitrary::<types::SmallSerial>()));
+    let _ = users.select(min(arbitrary::<types::Serial>()));
+    let _ = users.select(min(arbitrary::<types::BigSerial>()));
+    let _ = users.select(min(arbitrary::<types::SmallInt>()));
+    let _ = users.select(min(arbitrary::<types::Integer>()));
+    let _ = users.select(min(arbitrary::<types::BigInt>()));
+    let _ = users.select(min(arbitrary::<types::Float>()));
+    let _ = users.select(min(arbitrary::<types::Double>()));
+
+    let _ = users.select(min(arbitrary::<types::VarChar>()));
+    let _ = users.select(min(arbitrary::<types::Text>()));
+
+    let _ = users.select(min(arbitrary::<types::Nullable<types::SmallSerial>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::Serial>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::BigSerial>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::SmallInt>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::Integer>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::BigInt>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::Float>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::Double>>()));
+
+    let _ = users.select(min(arbitrary::<types::Nullable<types::VarChar>>()));
+    let _ = users.select(min(arbitrary::<types::Nullable<types::Text>>()));
 }
 
 sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);
