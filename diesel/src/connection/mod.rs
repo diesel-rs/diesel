@@ -28,6 +28,8 @@ pub struct Connection {
     transaction_depth: Cell<i32>,
 }
 
+unsafe impl Send for Connection {}
+
 type PrimaryKey<T> = <T as Table>::PrimaryKey;
 type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
 type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
