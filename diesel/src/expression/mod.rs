@@ -33,10 +33,6 @@ pub mod functions;
 pub mod grouped;
 pub mod helper_types;
 #[doc(hidden)]
-pub mod max;
-#[doc(hidden)]
-pub mod min;
-#[doc(hidden)]
 pub mod ordering;
 #[doc(hidden)]
 pub mod predicates;
@@ -53,9 +49,7 @@ pub mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
-    pub use super::max::max;
-    #[doc(inline)]
-    pub use super::min::min;
+    pub use super::functions::aggregate_ordering::*;
 
     pub use super::extensions::*;
 }
