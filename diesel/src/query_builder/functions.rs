@@ -29,9 +29,9 @@ use super::IncompleteInsertStatement;
 /// #     let connection = establish_connection();
 /// let command = update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"));
-/// let updated_row = connection.query_one(command).unwrap();
+/// let updated_row = connection.query_one(command);
 /// // When passed to `query_one`, the update statement will gain `RETURNING *`
-/// assert_eq!((1, "James".to_string()), updated_row);
+/// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
 /// ```
 pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
@@ -58,13 +58,18 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// # }
 /// #
 /// # fn main() {
+/// #     delete();
+/// # }
+/// #
+/// # fn delete() -> QueryResult<()> {
 /// #     use self::users::dsl::*;
 /// #     use diesel::query_builder::delete;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
 /// let old_count = get_count();
-/// delete(users.filter(id.eq(1))).execute(&connection).unwrap();
+/// try!(delete(users.filter(id.eq(1))).execute(&connection));
 /// assert_eq!(old_count - 1, get_count());
+/// # Ok(())
 /// # }
 /// ```
 ///
@@ -82,12 +87,17 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// # }
 /// #
 /// # fn main() {
+/// #     delete();
+/// # }
+/// #
+/// # fn delete() -> QueryResult<()> {
 /// #     use self::users::dsl::*;
 /// #     use diesel::query_builder::delete;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
-/// delete(users).execute(&connection).unwrap();
+/// try!(delete(users).execute(&connection));
 /// assert_eq!(0, get_count());
+/// # Ok(())
 /// # }
 /// ```
 pub fn delete<T: UpdateTarget>(source: T) -> DeleteStatement<T> {
