@@ -24,7 +24,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Timestamp columns can now be used with `std::time::SystemTime` when compiled
   with `--features unstable`
 
-* Implemented `Sync` on `Connection` (required for R2D2 support)
+* Implemented `Send` on `Connection` (required for R2D2 support)
 
 ## [0.2.0] - 2015-11-30
 
