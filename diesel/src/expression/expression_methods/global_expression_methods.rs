@@ -43,7 +43,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
-    /// assert_eq!(1, data.first(&connection).unwrap());
+    /// assert_eq!(Ok(1), data.first(&connection));
     /// # }
     /// ```
     fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
@@ -69,7 +69,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
-    /// assert_eq!(2, data.first(&connection).unwrap());
+    /// assert_eq!(Ok(2), data.first(&connection));
     /// # }
     /// ```
     fn ne<T: AsExpression<Self::SqlType>>(self, other: T) -> NotEq<Self, T::Expression> {

@@ -25,11 +25,11 @@ use types::Bool;
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let seans_id = users.filter(name.eq("Sean")).select(id)
-///     .first(&connection).unwrap();
-/// assert_eq!(1, seans_id);
+///     .first(&connection);
+/// assert_eq!(Ok(1), seans_id);
 /// let tess_id = users.filter(name.eq("Tess")).select(id)
-///     .first(&connection).unwrap();
-/// assert_eq!(2, tess_id);
+///     .first(&connection);
+/// assert_eq!(Ok(2), tess_id);
 /// # }
 /// ```
 pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {

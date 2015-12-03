@@ -38,7 +38,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// assert_eq!(Some(2), users.select(count_star()).first(&connection).unwrap());
+/// assert_eq!(Ok(Some(2)), users.select(count_star()).first(&connection));
 /// # }
 pub fn count_star() -> CountStar {
     CountStar

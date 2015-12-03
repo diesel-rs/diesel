@@ -39,13 +39,11 @@ table! {
 }
 
 fn users_with_name(connection: &Connection, target_name: &str)
-    -> Vec<(i32, String, Option<String>)>
+    -> QueryResult<Vec<(i32, String, Option<String>)>>
 {
     use self::users::dsl::*;
-    users.filter(name.eq(target_name))
-        .load(connection)
-        .unwrap()
-        .collect()
+    users.filter(name.eq(target_name)).load(connection)
+        .map(|x| x.collect())
 }
 ```
 
@@ -212,7 +210,7 @@ fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
     use diesel::query_builder::delete;
     use users::dsl::*;
 
-    delete(users.filter(id.eq(user.id))).execute(&connection).unwrap();
+    try!(delete(users.filter(id.eq(user.id))).execute(&connection));
     debug_assert!(deleted_rows == 1);
     Ok(())
 }
