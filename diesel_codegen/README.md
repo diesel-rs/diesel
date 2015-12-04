@@ -109,9 +109,10 @@ Any fields which are of the type `Option` will be skipped when their value is
 of the fields of a record on every request.
 
 If the struct has a field for the primary key, an additional function,
-`save_changes(&mut self, connection: &Connection) -> QueryResult<()>`, will be
-added to the model.  This will persist the model to the database and update it
-with any fields the database returns.
+`save_changes<T: Queriable<..>>(&self, connection: &Connection) ->
+QueryResult<T>`, will be added to the model. This will persist any changes made,
+and return the resulting record. It is intended to be a shorthand for filtering
+by the primary key.
 
 [queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
