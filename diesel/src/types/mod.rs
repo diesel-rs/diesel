@@ -29,16 +29,22 @@ pub type Serial = Integer;
 pub type BigSerial = BigInt;
 
 #[derive(Clone, Copy, Default)] pub struct SmallInt;
+#[doc(hidden)] pub type Int2 = SmallInt;
 #[derive(Clone, Copy, Default)] pub struct Integer;
+#[doc(hidden)] pub type Int4 = Integer;
 #[derive(Clone, Copy, Default)] pub struct BigInt;
+#[doc(hidden)] pub type Int8 = BigInt;
 
 #[derive(Clone, Copy, Default)] pub struct Float;
+#[doc(hidden)] pub type Float4 = Float;
 #[derive(Clone, Copy, Default)] pub struct Double;
+#[doc(hidden)] pub type Float8 = Double;
 #[derive(Clone, Copy, Default)] pub struct Numeric;
 
 #[derive(Clone, Copy, Default)] pub struct Oid;
 
 #[derive(Clone, Copy, Default)] pub struct VarChar;
+#[doc(hidden)] pub type Varchar = VarChar;
 #[derive(Clone, Copy, Default)] pub struct Text;
 
 #[derive(Clone, Copy, Default)] pub struct Binary;

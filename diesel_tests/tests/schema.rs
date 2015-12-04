@@ -57,32 +57,10 @@ pub struct Comment {
     text: String,
 }
 
-// Compiler plugin will automatically invoke this based on schema
-table! {
-    users {
-        id -> Serial,
-        name -> VarChar,
-        hair_color -> Nullable<VarChar>,
-    }
-}
+load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "users");
+load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "posts");
+load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "comments");
 numeric_expr!(users::id);
-
-table! {
-    posts {
-        id -> Serial,
-        user_id -> Integer,
-        title -> VarChar,
-        body -> Nullable<Text>,
-    }
-}
-
-table! {
-    comments {
-        id -> Serial,
-        post_id -> Integer,
-        text -> Text,
-    }
-}
 
 select_column_workaround!(users -> comments (id, name, hair_color));
 select_column_workaround!(comments -> users (id, post_id, text));

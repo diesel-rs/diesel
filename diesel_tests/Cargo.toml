@@ -9,6 +9,8 @@ build = "build.rs"
 syntex = { version = "^0.22.0", optional = true }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
 dotenv_codegen = { version = "^0.7.0", optional = true }
+diesel = { path = "../diesel" }
+dotenv = "^0.7.0"
 
 [dependencies]
 diesel = { path = "../diesel", features = ["quickcheck"] }

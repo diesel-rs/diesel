@@ -4,6 +4,7 @@
 
 extern crate aster;
 extern crate quasi;
+#[macro_use] extern crate diesel;
 
 #[cfg(feature = "with-syntex")]
 extern crate syntex;
@@ -33,6 +34,7 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_decorator("has_many", associations::expand_has_many);
     reg.add_decorator("belongs_to", associations::expand_belongs_to);
+    reg.add_macro("load_table_from_schema", schema_inference::expand_load_table);
 }
 
 #[cfg_attr(not(feature = "with-syntex"), plugin_registrar)]
@@ -60,4 +62,5 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
         intern("belongs_to"),
         MultiDecorator(Box::new(associations::expand_belongs_to))
     );
+    reg.register_macro("load_table_from_schema", schema_inference::expand_load_table);
 }
