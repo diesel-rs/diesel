@@ -15,6 +15,8 @@ primitive_impls! {
     Integer -> (i32, 23),
     BigInt -> (i64, 20),
 
+    Oid -> (u32, 26),
+
     Float -> (f32, 700),
     Double -> (f64, 701),
     Numeric -> (PgNumeric, 1700),

@@ -52,6 +52,21 @@ impl ToSql<types::BigInt> for i64 {
     }
 }
 
+impl FromSql<types::Oid> for u32 {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+        let mut bytes = not_none!(bytes);
+        bytes.read_u32::<BigEndian>().map_err(|e| e.into())
+    }
+}
+
+impl ToSql<types::Oid> for u32 {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        out.write_u32::<BigEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| e.into())
+    }
+}
+
 #[test]
 fn i16_to_sql() {
     let mut bytes = vec![];

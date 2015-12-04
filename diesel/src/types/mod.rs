@@ -36,6 +36,8 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Double;
 #[derive(Clone, Copy, Default)] pub struct Numeric;
 
+#[derive(Clone, Copy, Default)] pub struct Oid;
+
 #[derive(Clone, Copy, Default)] pub struct VarChar;
 #[derive(Clone, Copy, Default)] pub struct Text;
 
