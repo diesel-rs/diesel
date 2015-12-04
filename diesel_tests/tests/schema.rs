@@ -1,7 +1,4 @@
-extern crate dotenv;
-
 use diesel::*;
-use self::dotenv::dotenv;
 
 pub use diesel::query_builder::insert;
 
@@ -166,9 +163,8 @@ pub fn connection() -> Connection {
 }
 
 pub fn connection_without_transaction() -> Connection {
-    dotenv().ok();
-    let connection_url = ::std::env::var("DATABASE_URL").ok()
-        .expect("DATABASE_URL must be set in order to run tests");
+    let connection_url = dotenv!("DATABASE_URL",
+        "DATABASE_URL must be set in order to run tests");
     Connection::establish(&connection_url).unwrap()
 }
 

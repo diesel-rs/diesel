@@ -1,7 +1,6 @@
-extern crate diesel;
-
-use self::diesel::*;
-use self::diesel::types::*;
+use schema::connection;
+use diesel::*;
+use diesel::types::*;
 
 #[test]
 fn boolean_from_sql() {
@@ -301,12 +300,3 @@ fn query_to_sql_equality<T: NativeSqlType, U: ToSql<T> + Debug>(sql: &str, value
     connection.query_sql_params::<Bool, bool, T, U>(&query, &value)
         .expect(&format!("Error comparing {}, {:?}", sql, value)).nth(0).unwrap()
 }
-
-fn connection() -> Connection {
-    let connection_url = ::std::env::var("DATABASE_URL").ok()
-        .expect("DATABASE_URL must be set in order to run tests");
-    let result = Connection::establish(&connection_url).unwrap();
-    result.execute("BEGIN").unwrap();
-    result
-}
-
