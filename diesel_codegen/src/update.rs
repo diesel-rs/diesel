@@ -88,6 +88,10 @@ fn save_changes_impl(
 ) -> Option<P<ast::Item>> {
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
+    let sql_type = builder.path()
+        .segment(table).build()
+        .segment("SqlType").build()
+        .build();
     let table = builder.path()
         .segment(table).build()
         .segment("table").build()
@@ -96,14 +100,14 @@ fn save_changes_impl(
         let pk_field = pk.field_name.unwrap();
         quote_item!(cx,
             impl<'a> $struct_name {
-                pub fn save_changes(&mut self, connection: &::diesel::Connection) -> ::diesel::QueryResult<()> {
+                pub fn save_changes<T>(&self, connection: &::diesel::Connection)
+                    -> ::diesel::QueryResult<T> where
+                    T: Queriable<$sql_type>,
+                {
                     use ::diesel::query_builder::update;
-                    *self = {
-                        try!(update($table.filter($table.primary_key().eq(&self.$pk_field)))
-                            .set(&*self)
-                            .get_result(&connection))
-                    };
-                    Ok(())
+                    update($table.filter($table.primary_key().eq(&self.$pk_field)))
+                        .set(self)
+                        .get_result(&connection)
                 }
             }
         )

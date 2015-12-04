@@ -118,10 +118,9 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let mut user = User::with_hair_color(1, "Jim", "blue");
-    user.save_changes(&connection).unwrap();
+    let user = User::with_hair_color(1, "Jim", "blue").save_changes::<User>(&connection);
 
-    let user_in_db = connection.find(users, 1).unwrap();
+    let user_in_db = connection.find(users, 1);
 
     assert_eq!(user, user_in_db);
 }
@@ -134,11 +133,10 @@ fn option_fields_on_structs_are_not_assigned() {
     update(users.filter(id.eq(1)))
         .set(hair_color.eq("black"))
         .execute(&connection).unwrap();
-    let mut user = User::new(1, "Jim");
-    user.save_changes(&connection).unwrap();
+    let user = User::new(1, "Jim").save_changes(&connection);
 
     let expected_user = User::with_hair_color(1, "Jim", "black");
-    assert_eq!(expected_user, user);
+    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
