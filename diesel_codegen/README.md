@@ -102,11 +102,16 @@ additional configurations.
 Adds an implementation of the [`AsChangeset`][as_changeset] trait to the
 annotated item, targeting the given table. At this time, it only supports
 structs with named fields. Tuple structs and enums are not supported. See [field
-annotations][#field-annotations] for additional configurations. If the struct
-has a field for the primary key, an additional function, `save_changes(&mut
-self, connection: &Connection) -> QueryResult<()>`, will be added to the model.
-This will persist the model to the database and update it with any fields the
-database returns.
+annotations][#field-annotations] for additional configurations.
+
+Any fields which are of the type `Option` will be skipped when their value is
+`None`. This makes it easy to support APIs where you may not want to update all
+of the fields of a record on every request.
+
+If the struct has a field for the primary key, an additional function,
+`save_changes(&mut self, connection: &Connection) -> QueryResult<()>`, will be
+added to the model.  This will persist the model to the database and update it
+with any fields the database returns.
 
 [queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html

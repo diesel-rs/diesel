@@ -125,3 +125,35 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 
     assert_eq!(user, user_in_db);
 }
+
+#[test]
+fn option_fields_on_structs_are_not_assigned() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    update(users.filter(id.eq(1)))
+        .set(hair_color.eq("black"))
+        .execute(&connection).unwrap();
+    let mut user = User::new(1, "Jim");
+    user.save_changes(&connection).unwrap();
+
+    let expected_user = User::with_hair_color(1, "Jim", "black");
+    assert_eq!(expected_user, user);
+}
+
+#[test]
+fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
+    #[changeset_for(users)]
+    struct Changes {
+        hair_color: Option<String>,
+        name: String,
+    }
+
+    let changes = Changes { hair_color: None, name: "Jim".into() };
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let user = update(users::table.filter(users::id.eq(1))).set(&changes)
+        .get_result(&connection);
+
+    let expected_user = User::new(1, "Jim");
+    assert_eq!(Ok(expected_user), user);
+}

@@ -15,6 +15,7 @@ pub trait AsChangeset {
 pub trait Changeset {
     type Target: QuerySource;
 
+    fn is_noop(&self) -> bool;
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
@@ -28,24 +29,29 @@ impl<T> AsChangeset for T where
     }
 }
 
-impl<T: Changeset> Changeset for Vec<T> {
-    type Target = T::Target;
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        for (i, changeset) in self.iter().enumerate() {
-            if i != 0 {
-                out.push_sql(", ");
-            }
-            try!(changeset.to_sql(out))
-        }
-        Ok(())
-    }
-}
-
 impl<T: Changeset + ?Sized> Changeset for Box<T> {
     type Target = T::Target;
 
+    fn is_noop(&self) -> bool {
+        (&**self).is_noop()
+    }
+
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         (&**self).to_sql(out)
+    }
+}
+
+impl<T: Changeset> Changeset for Option<T> {
+    type Target = T::Target;
+
+    fn is_noop(&self) -> bool {
+        self.is_none()
+    }
+
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        match self {
+            &Some(ref c) => c.to_sql(out),
+            &None => Ok(()),
+        }
     }
 }

@@ -5,6 +5,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Changed
+
+* `#[changeset_for(table)]` now treats `Option` fields as an optional update.
+  Previously a field with `None` for the value would insert `NULL` into the
+  database field. It now does not update the field if the value is `None`.
+
 ### Fixed
 
 * `#[derive(Queriable)]` now allows generic parameters on the struct.

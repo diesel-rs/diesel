@@ -123,12 +123,21 @@ macro_rules! tuple_impls {
             {
                 type Target = Target;
 
+                fn is_noop(&self) -> bool {
+                    $(e!(self.$idx.is_noop()) &&)+ true
+                }
+
                 fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+                    let noop_element = true;
                     $(
-                        if e!($idx) != 0 {
-                            out.push_sql(", ");
+                        let needs_comma = !noop_element;
+                        let noop_element = e!(self.$idx.is_noop());
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            try!(e!(self.$idx.to_sql(out)));
                         }
-                        try!(e!(self.$idx.to_sql(out)));
                     )+
                     Ok(())
                 }

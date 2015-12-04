@@ -149,6 +149,10 @@ impl<T, U> Changeset for Eq<T, U> where
 {
     type Target = T::Table;
 
+    fn is_noop(&self) -> bool {
+        false
+    }
+
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");

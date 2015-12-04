@@ -1,9 +1,9 @@
 use aster;
-use syntax::ast::{self, MetaItem};
+use syntax::ast::{self, MetaItem, TyPath};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
-use syntax::parse::token::InternedString;
+use syntax::parse::token::{InternedString, intern_and_get_ident};
 
 use attr::Attr;
 use model::Model;
@@ -120,7 +120,19 @@ fn changeset_ty(
         .segment(table).build()
         .segment(attr.column_name).build()
         .build();
-    let field_ty = &attr.ty;
+    if let Some(ty) = ty_param_of_option(&attr.ty) {
+        let inner_ty = inner_changeset_ty(cx, column, &ty);
+        quote_ty!(cx, Option<$inner_ty>)
+    } else {
+        inner_changeset_ty(cx, column, &attr.ty)
+    }
+}
+
+fn inner_changeset_ty(
+    cx: &mut ExtCtxt,
+    column: ast::Path,
+    field_ty: &ast::Ty,
+) -> P<ast::Ty> {
     quote_ty!(cx,
         ::diesel::expression::predicates::Eq<
             $column,
@@ -143,5 +155,25 @@ fn changeset_expr(
         .segment(attr.column_name).build()
         .build();
     let field_name = &attr.field_name.unwrap();
-    quote_expr!(cx, $column.eq(&self.$field_name))
+    if is_option_ty(&attr.ty) {
+        quote_expr!(cx, self.$field_name.as_ref().map(|f| $column.eq(f)))
+    } else {
+        quote_expr!(cx, $column.eq(&self.$field_name))
+    }
+}
+
+fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
+    match ty.node {
+        TyPath(_, ref path) => {
+            path.segments.first().iter()
+                .filter(|s| s.identifier.name.as_str() == intern_and_get_ident("Option"))
+                .flat_map(|s| s.parameters.types().first().map(|p| *p))
+                .next()
+        }
+        _ => None,
+    }
+}
+
+fn is_option_ty(ty: &ast::Ty) -> bool {
+    ty_param_of_option(ty).is_some()
 }
