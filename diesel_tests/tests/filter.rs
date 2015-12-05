@@ -6,12 +6,15 @@ fn filter_by_int_equality() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
+    let sean_id = find_user_by_name("Sean", &connection).id;
+    let tess_id = find_user_by_name("Tess", &connection).id;
+    let unused_id = sean_id + tess_id;
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    assert_eq!(Ok(sean), users.filter(id.eq(1)).first(&connection));
-    assert_eq!(Ok(tess), users.filter(id.eq(2)).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(id.eq(3)).first::<User>(&connection));
+    let sean = User::new(sean_id, "Sean");
+    let tess = User::new(tess_id, "Tess");
+    assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(&connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(&connection));
+    assert_eq!(Err(NotFound), users.filter(id.eq(unused_id)).first::<User>(&connection));
 }
 
 #[test]

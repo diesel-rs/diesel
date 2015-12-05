@@ -6,8 +6,8 @@ fn one_to_many_returns_query_source_for_association() {
     let connection = connection_with_sean_and_tess_in_users_table();
     setup_posts_table(&connection);
 
-    let sean: User = connection.find(users::table, 1).unwrap();
-    let tess: User = connection.find(users::table, 2).unwrap();
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
     let seans_posts: Vec<Post> =  insert(&vec![
         sean.new_post("Hello", None), sean.new_post("World", None)
         ]).into(posts::table)
