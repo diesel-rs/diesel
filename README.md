@@ -52,6 +52,29 @@ only the users table, and not have to qualify everything. If we did not have
 this import, we'd need to put `users::` before each column, and reference the
 table as `users::table`.
 
+You can also use
+[diesel_codegen](https://github.com/sgrif/diesel/tree/master/diesel_codegen) to
+call [`table!`][table] for you automatically, based on your existing database
+schema. See the [diesel_codegen
+README](https://github.com/sgrif/diesel/tree/master/diesel_codegen) for details
+on how to get started. Here's the same code with Diesel Codegen.
+
+```rust
+#[macro_use] extern crate diesel;
+
+use diesel::*;
+
+infer_schema!(dotenv!("DATABASE_URL"));
+
+fn users_with_name(connection: &Connection, target_name: &str)
+    -> QueryResult<Vec<(i32, String, Option<String>)>>
+{
+    use self::users::dsl::*;
+    users.filter(name.eq(target_name)).load(connection)
+        .map(|x| x.collect())
+}
+```
+
 If you want to be able to query for a struct, you'll need to implement the
 [`Queriable` trait][queriable] Luckily,
 [diesel_codegen](https://github.com/sgrif/diesel/tree/master/diesel_codegen) can do

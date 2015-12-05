@@ -57,9 +57,7 @@ pub struct Comment {
     text: String,
 }
 
-load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "users");
-load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "posts");
-load_table_from_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"), "comments");
+infer_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"));
 numeric_expr!(users::id);
 
 select_column_workaround!(users -> comments (id, name, hair_color));

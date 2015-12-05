@@ -36,6 +36,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Implemented `Send` on `Connection` (required for R2D2 support)
 
+* Added `infer_schema!` and `infer_table_from_schema!`. Both macros take a
+  database URL, and will invoke `table!` for you automatically based on the
+  schema. `infer_schema!` queries for the table names, while
+  `infer_table_from_schema!` takes a table name as the second argument.
+
 ## [0.2.0] - 2015-11-30
 
 ### Added

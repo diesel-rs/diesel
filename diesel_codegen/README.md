@@ -125,3 +125,28 @@ Field annotations
 
 Any field can be annotated with `column_name=` to have it map to a column with a
 different name. This is required for all fields of tuple structs.
+
+Macros (Experimental)
+---------------------
+
+### `infer_schema!("database_url")`
+
+Queries the database for the names of all tables, and calls
+`infer_table_from_schema!` for each one. We recommend using with the
+[`dotenv`](https://github.com/slapresta/rust-dotenv) crate, and invoking this as
+`infer_schema!(dotenv!("DATABASE_URL"))`
+
+### `infer_table_from_schema!("database_url", "table_name")`
+
+Establishes a database connection at compile time, loads the schema information
+about a table's columns, and invokes
+[`table`](http://sgrif.github.io/diesel/diesel/macro.table!.html) for you
+automatically. We recommend using with the
+[`dotenv`](https://github.com/slapresta/rust-dotenv) crate, and invoking this as
+`infer_table_from_schema!(dotenv!("DATABASE_URL"), "table_name")`
+
+At this time, the schema inference macros do not support types from third party
+crates, and having any columns with a type not already supported will result in
+a compiler error (please open an issue if this happens unexpectedly for a type
+listed in [our
+docs](http://sgrif.github.io/diesel/diesel/types/index.html#structs).)

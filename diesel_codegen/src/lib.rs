@@ -34,7 +34,8 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_decorator("has_many", associations::expand_has_many);
     reg.add_decorator("belongs_to", associations::expand_belongs_to);
-    reg.add_macro("load_table_from_schema", schema_inference::expand_load_table);
+    reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
+    reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
 }
 
 #[cfg_attr(not(feature = "with-syntex"), plugin_registrar)]
@@ -62,5 +63,6 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
         intern("belongs_to"),
         MultiDecorator(Box::new(associations::expand_belongs_to))
     );
-    reg.register_macro("load_table_from_schema", schema_inference::expand_load_table);
+    reg.register_macro("infer_table_from_schema", schema_inference::expand_load_table);
+    reg.register_macro("infer_schema", schema_inference::expand_infer_schema);
 }
