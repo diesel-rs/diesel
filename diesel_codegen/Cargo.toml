@@ -20,7 +20,7 @@ quasi = { verision = "^0.3.8", default-features = false }
 quasi_macros = { version = "^0.3.9", optional = true}
 syntex = { version = "^0.22.0", optional = true }
 syntex_syntax = { version = "^0.22.0", optional = true }
-diesel = { version = "^0.3.0" }
+diesel = { path = "../diesel" }
 
 [features]
 default = ["with-syntex"]
