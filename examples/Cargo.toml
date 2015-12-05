@@ -1,0 +1,11 @@
+[package]
+name = "diesel_example"
+version = "0.1.0"
+authors = ["Michael Stock <mikeastock@gmail.com>"]
+
+[dependencies]
+diesel = { path = "../diesel", features = ["quickcheck"] }
+diesel_codegen = { path = "../diesel_codegen", default-features = false, features = ["nightly"] }
+dotenv = "^0.7.0"
+dotenv_codegen = { version = "^0.7.0", default-features = false }
+dotenv_macros = { version = "^0.7.0", default-features = false }
