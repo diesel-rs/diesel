@@ -11,6 +11,10 @@ impl<T: NativeSqlType> NativeSqlType for Nullable<T> {
         self.0.oid()
     }
 
+    fn array_oid(&self) -> u32 {
+        self.0.oid()
+    }
+
     fn new() -> Self {
         Nullable(T::new())
     }

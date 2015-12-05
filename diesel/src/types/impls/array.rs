@@ -6,24 +6,15 @@ use std::io::Write;
 
 use Queriable;
 use super::option::UnexpectedNullError;
-use types::{self, NativeSqlType, FromSql, ToSql, Array, IsNull};
+use types::{NativeSqlType, FromSql, ToSql, Array, IsNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
     fn oid(&self) -> u32 {
-        let oid = self.0.oid();
-        if oid == types::Bool.oid() { 1000 }
-        else if oid == types::SmallInt.oid() { 1005 }
-        else if oid == types::Integer.oid() { 1007 }
-        else if oid == types::BigInt.oid() { 1016 }
+        self.0.array_oid()
+    }
 
-        else if oid == types::Float.oid() { 1021 }
-        else if oid == types::Double.oid() { 1022 }
-
-        else if oid == types::VarChar.oid() { 1015 }
-        else if oid == types::Text.oid() { 1009 }
-
-        else if oid == types::Binary.oid() { 1001 }
-        else { 0 }
+    fn array_oid(&self) -> u32 {
+        0
     }
 
     fn new() -> Self {

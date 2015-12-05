@@ -59,6 +59,7 @@ pub type BigSerial = BigInt;
 
 pub trait NativeSqlType {
     fn oid(&self) -> u32;
+    fn array_oid(&self) -> u32;
     fn new() -> Self where Self: Sized;
 }
 

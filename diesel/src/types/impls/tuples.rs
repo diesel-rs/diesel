@@ -24,6 +24,10 @@ macro_rules! tuple_impls {
                     0
                 }
 
+                fn array_oid(&self) -> u32 {
+                    0
+                }
+
                 fn new() -> Self {
                     ($($T::new()),+)
                 }

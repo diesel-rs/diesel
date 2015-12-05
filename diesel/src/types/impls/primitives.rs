@@ -9,22 +9,22 @@ use types::{NativeSqlType, FromSql, ToSql, IsNull};
 use {Queriable, types};
 
 primitive_impls! {
-    Bool -> (bool, 16),
+    Bool -> (bool, 16, 1000),
 
-    SmallInt -> (i16, 21),
-    Integer -> (i32, 23),
-    BigInt -> (i64, 20),
+    SmallInt -> (i16, 21, 1005),
+    Integer -> (i32, 23, 1007),
+    BigInt -> (i64, 20, 1016),
 
-    Oid -> (u32, 26),
+    Oid -> (u32, 26, 1018),
 
-    Float -> (f32, 700),
-    Double -> (f64, 701),
-    Numeric -> (PgNumeric, 1700),
+    Float -> (f32, 700, 1021),
+    Double -> (f64, 701, 1022),
+    Numeric -> (PgNumeric, 1700, 1231),
 
-    VarChar -> (String, 1043),
-    Text -> (String, 25),
+    VarChar -> (String, 1043, 1015),
+    Text -> (String, 25, 1009),
 
-    Binary -> (Vec<u8>, 17),
+    Binary -> (Vec<u8>, 17, 1001),
 }
 
 expression_impls! {
@@ -36,6 +36,10 @@ expression_impls! {
 
 impl NativeSqlType for () {
     fn oid(&self) -> u32 {
+        0
+    }
+
+    fn array_oid(&self) -> u32 {
         0
     }
 

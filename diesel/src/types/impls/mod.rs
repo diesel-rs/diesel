@@ -66,11 +66,15 @@ macro_rules! queriable_impls {
 }
 
 macro_rules! primitive_impls {
-    ($($Source:ident -> ($Target:ty, $oid:expr)),+,) => {
+    ($($Source:ident -> ($Target:ty, $oid:expr, $array_oid:expr)),+,) => {
         $(
             impl NativeSqlType for types::$Source {
                 fn oid(&self) -> u32 {
                     $oid
+                }
+
+                fn array_oid(&self) -> u32 {
+                    $array_oid
                 }
 
                 fn new() -> Self {
