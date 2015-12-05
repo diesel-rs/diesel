@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT"
 description = "A safe, extensible ORM and Query builder"
