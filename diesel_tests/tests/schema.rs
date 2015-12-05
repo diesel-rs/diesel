@@ -153,8 +153,7 @@ pub fn connection_with_sean_and_tess_in_users_table() -> Connection {
 }
 
 pub fn find_user_by_name(name: &str, connection: &Connection) -> User {
-    let result: QueryResult<Vec<User>> = users::table.filter(users::name.eq(name))
-        .load(connection)
-        .map(|x| x.collect());
-    result.unwrap()[0].to_owned()
+    users::table.filter(users::name.eq(name))
+        .first(&connection)
+        .unwrap()
 }
