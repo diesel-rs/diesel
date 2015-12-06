@@ -3,6 +3,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* Add DebugQueryBuilder to build sql without requiring a connection.
+
+* Add print_sql! and debug_sql! macros to print out and return sql strings from
+  QueryFragments.
+
 ## [0.3.0] 2015-12-04
 
 ### Changed
