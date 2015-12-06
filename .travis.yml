@@ -16,7 +16,7 @@ script:
   (cd diesel && travis-cargo build) &&
   (cd diesel && travis-cargo doc) &&
   (cd diesel && travis-cargo test) &&
-  if test "$TRAVIS_RUST_VERSION" = nightly*; then
+  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features)
   else
     (cd diesel_tests && travis-cargo test)
