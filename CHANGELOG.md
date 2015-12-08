@@ -12,6 +12,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Add print_sql! and debug_sql! macros to print out and return sql strings from
   QueryFragments.
 
+* Add `sum` function that mirrors SQLs SUM.
+
 ## [0.3.0] 2015-12-04
 
 ### Changed

@@ -35,6 +35,8 @@ pub mod helper_types;
 #[doc(hidden)]
 pub mod ordering;
 #[doc(hidden)]
+pub mod sum;
+#[doc(hidden)]
 pub mod predicates;
 pub mod sql_literal;
 
@@ -50,6 +52,8 @@ pub mod dsl {
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
     pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)]
+    pub use super::sum::sum;
 
     pub use super::extensions::*;
 }
