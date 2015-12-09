@@ -1,10 +1,10 @@
 use query_builder::{QueryBuilder, BuildQueryResult};
 use super::{Expression, SelectableExpression};
-use types::{BigInt, NativeSqlType};
+use types::{Num, NativeSqlType};
 
 /// Represents a SQL `SUM` function.
 pub fn sum<ST, T>(t: T) -> Sum<T> where
-    ST: NativeSqlType,
+    ST: NativeSqlType + Num,
     T: Expression<SqlType=ST>,
 {
     Sum {
@@ -18,7 +18,7 @@ pub struct Sum<T: Expression> {
 }
 
 impl<T: Expression> Expression for Sum<T> {
-    type SqlType = BigInt;
+    type SqlType = T::SqlType;
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("SUM(");
