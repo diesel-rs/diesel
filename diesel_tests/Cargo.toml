@@ -8,7 +8,7 @@ build = "build.rs"
 [build-dependencies]
 syntex = { version = "^0.22.0", optional = true }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
-dotenv_codegen = { git = "https://github.com/mcasper/rust-dotenv", rev = "a12e8e097681ef5a398c652f8ff6f041502cd729",  optional = true }
+dotenv_codegen = { git = "https://github.com/slapresta/rust-dotenv",  optional = true }
 diesel = { path = "../diesel" }
 dotenv = "^0.7.0"
 
