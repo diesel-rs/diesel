@@ -346,3 +346,53 @@ macro_rules! join_through {
         }
     }
 }
+
+/// Takes a query QueryFragment expression as an argument and returns a string
+/// of SQL with placeholders for the dynamic values.
+///
+/// # Example
+///
+/// ### Returning SQL from a count statment:
+/// #
+/// # ```rust
+/// # // example requires setup for users table
+/// # use diesel::users::dsl::*;
+/// # use diesel::query_builder::QueryFragment;
+/// #
+/// # fn main() {
+/// let sql = debug_sql!(users.count());
+/// assert_eq!(sql, "SELECT COUNT(*) FROM users");
+/// # }
+/// # ```
+#[macro_export]
+macro_rules! debug_sql {
+    ($query:expr) => {{
+        use diesel::query_builder::QueryFragment;
+        let mut query_builder = DebugQueryBuilder::new();
+        QueryFragment::to_sql(&$query, &mut query_builder).unwrap();
+        query_builder.sql
+    }};
+}
+
+/// Takes takes a query QueryFragment expression as an argument and prints out
+/// the SQL with placeholders for the dynamic values.
+///
+/// # Example
+///
+/// ### Printing SQL from a count statment:
+/// #
+/// # ```rust
+/// # // example requires setup for users table
+/// # use diesel::users::dsl::*;
+/// # use diesel::query_builder::QueryFragment;
+/// #
+/// # fn main() {
+/// print_sql!(users.count());
+/// # }
+/// # ```
+#[macro_export]
+macro_rules! print_sql {
+    ($query:expr) => {
+        println!("{}", &debug_sql!($query));
+    };
+}

@@ -1,6 +1,7 @@
 //! Contains traits responsible for the actual construction of SQL statements
 #[doc(hidden)]
 pub mod pg;
+pub mod debug;
 
 mod delete_statement;
 mod functions;

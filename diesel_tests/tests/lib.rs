@@ -24,3 +24,4 @@ mod select;
 mod transactions;
 mod types;
 mod types_roundtrip;
+mod debug;
