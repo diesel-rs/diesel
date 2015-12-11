@@ -17,8 +17,10 @@ pub struct Sum<T: Expression> {
     target: T,
 }
 
-impl<T: Expression> Expression for Sum<T> {
-    type SqlType = T::SqlType;
+impl<T: Expression> Expression for Sum<T> where
+    T: Num,
+{
+    type SqlType = T::Output;
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("SUM(");
@@ -28,5 +30,8 @@ impl<T: Expression> Expression for Sum<T> {
     }
 }
 
-impl<T: Expression, QS> SelectableExpression<QS> for Sum<T> {
+impl<T: Expression, QS> SelectableExpression<QS> for Sum<T> where
+    T: Num,
+{
 }
+
