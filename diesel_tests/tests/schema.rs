@@ -57,7 +57,7 @@ pub struct Comment {
     text: String,
 }
 
-infer_schema!(dotenv!("DATABASE_URL_FOR_SCHEMA"));
+infer_schema!(dotenv!("DATABASE_URL"));
 numeric_expr!(users::id);
 
 select_column_workaround!(users -> comments (id, name, hair_color));
