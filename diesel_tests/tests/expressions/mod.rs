@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, setup_users_table};
+use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::query_builder::*;
@@ -10,7 +10,6 @@ use diesel::expression::dsl::*;
 #[test]
 fn test_count_counts_the_rows() {
     let connection = connection();
-    setup_users_table(&connection);
     let source = users.select(count(users.star()));
 
     assert_eq!(Ok(0), source.first(&connection));
@@ -21,7 +20,6 @@ fn test_count_counts_the_rows() {
 #[test]
 fn test_count_star() {
     let connection = connection();
-    setup_users_table(&connection);
     let source = users.count();
 
     assert_eq!(Ok(0), source.first(&connection));
@@ -75,7 +73,6 @@ fn test_count_max() {
 #[test]
 fn max_returns_same_type_as_expression_being_maximized() {
     let connection = connection();
-    setup_users_table(&connection);
     let source = users.select(max(name));
 
     let data: &[_] = &[
@@ -158,7 +155,6 @@ fn function_with_multiple_arguments() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     insert(&vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)])
         .into(users)
         .execute(&connection)

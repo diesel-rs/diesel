@@ -10,6 +10,7 @@ fn connection_no_data() -> Connection {
         .expect("DATABASE_URL must be set in order to run tests");
     let connection = Connection::establish(&connection_url).unwrap();
     connection.begin_test_transaction().unwrap();
+    connection.execute("DROP TABLE IF EXISTS users").unwrap();
 
     connection
 }

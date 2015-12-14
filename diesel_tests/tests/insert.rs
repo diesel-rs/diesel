@@ -5,17 +5,16 @@ use diesel::*;
 fn insert_records() {
     use schema::users::table as users;
     let connection = connection();
-    setup_users_table(&connection);
 
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
+    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
 
     let expected_users = vec![
-        User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
-        User { id: 2, name: "Tess".to_string(), hair_color: None },
+        User { id: inserted_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
+        User { id: inserted_users[1].id, name: "Tess".to_string(), hair_color: None },
     ];
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
@@ -27,6 +26,7 @@ fn insert_records() {
 fn insert_with_defaults() {
     use schema::users::table as users;
     let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
@@ -52,6 +52,7 @@ fn insert_with_defaults() {
 fn insert_with_defaults_not_provided() {
     use schema::users::table as users;
     let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
@@ -77,6 +78,7 @@ fn insert_with_defaults_not_provided() {
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use schema::users::table as users;
     let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
@@ -107,17 +109,16 @@ struct BorrowedUser<'a> {
 fn insert_borrowed_content() {
     use schema::users::table as users;
     let connection = connection();
-    setup_users_table(&connection);
     let new_users: &[_] = &[
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection)
+    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection)
         .unwrap().collect();
 
     let expected_users = vec![
-        User::new(1, "Sean"),
-        User::new(2, "Tess"),
+        User::new(inserted_users[0].id, "Sean"),
+        User::new(inserted_users[1].id, "Tess"),
     ];
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 

@@ -13,7 +13,6 @@ use diesel::*;
 #[bench]
 fn bench_selecting_0_rows_with_trivial_query(b: &mut Bencher) {
     let conn = connection();
-    setup_users_table(&conn);
 
     b.iter(|| {
         users::table.load(&conn).unwrap().collect::<Vec<User>>();
@@ -23,7 +22,6 @@ fn bench_selecting_0_rows_with_trivial_query(b: &mut Bencher) {
 #[bench]
 fn bench_selecting_10k_rows_with_trivial_query(b: &mut Bencher) {
     let conn = connection();
-    setup_users_table(&conn);
     let data: Vec<_> = (0..10_000).map(|i| {
         NewUser::new(&format!("User {}", i), None)
     }).collect();
@@ -37,8 +35,6 @@ fn bench_selecting_10k_rows_with_trivial_query(b: &mut Bencher) {
 #[bench]
 fn bench_selecting_0_rows_with_medium_complex_query(b: &mut Bencher) {
     let conn = connection();
-    setup_users_table(&conn);
-    setup_posts_table(&conn);
 
     b.iter(|| {
         use schema::users::dsl::*;
@@ -52,8 +48,6 @@ fn bench_selecting_0_rows_with_medium_complex_query(b: &mut Bencher) {
 #[bench]
 fn bench_selecting_10k_rows_with_medium_complex_query(b: &mut Bencher) {
     let conn = connection();
-    setup_users_table(&conn);
-    setup_posts_table(&conn);
 
     let data: Vec<_> = (0..10_000).map(|i| {
         let hair_color = if i % 2 == 0 { "black" } else { "brown" };

@@ -6,9 +6,8 @@ fn find() {
     use schema::users::table as users;
 
     let connection = connection();
-    setup_users_table(&connection);
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
 
     assert_eq!(Ok(User::new(1, "Sean")), connection.find(users, 1));

@@ -35,17 +35,17 @@ fn filter_by_equality_on_nullable_columns() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data = vec![
         NewUser::new("Sean", Some("black")),
         NewUser::new("Tess", Some("brown")),
         NewUser::new("Jim", Some("black")),
     ];
-    insert(&data).into(users).execute(&connection).unwrap();
+    let data: Vec<User> = insert(&data).into(users)
+        .get_results(&connection).unwrap().collect();;
+    let sean = data[0].clone();
+    let tess = data[1].clone();
+    let jim = data[2].clone();
 
-    let sean = User::with_hair_color(1, "Sean", "black");
-    let tess = User::with_hair_color(2, "Tess", "brown");
-    let jim = User::with_hair_color(3, "Jim", "black");
     let source = users.filter(hair_color.eq("black"));
     assert_eq!(vec![sean, jim], source.load(&connection).unwrap().collect::<Vec<_>>());
     let source = users.filter(hair_color.eq("brown"));
@@ -57,14 +57,14 @@ fn filter_by_is_not_null_on_nullable_columns() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data = vec![
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    insert(&data).into(users).execute(&connection).unwrap();
+    let data: Vec<User> = insert(&data).into(users)
+        .get_results(&connection).unwrap().collect();
+    let derek = data[0].clone();
 
-    let derek = User::with_hair_color(1, "Derek", "red");
     let source = users.filter(hair_color.is_not_null());
     assert_eq!(vec![derek], source.load(&connection).unwrap().collect::<Vec<_>>());
 }
@@ -74,14 +74,14 @@ fn filter_by_is_null_on_nullable_columns() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data = vec![
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    insert(&data).into(users).execute(&connection).unwrap();
+    let data: Vec<User> = insert(&data).into(users)
+        .get_results(&connection).unwrap().collect();
+    let gordon = data[1].clone();
 
-    let gordon = User::new(2, "Gordon");
     let source = users.filter(hair_color.is_null());
     assert_eq!(vec![gordon], source.load(&connection).unwrap().collect::<Vec<_>>());
 }
@@ -91,8 +91,8 @@ fn filter_after_joining() {
     use schema::users::name;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    setup_posts_table(&connection);
-    connection.execute("INSERT INTO POSTS (title, user_id) VALUES ('Hello', 1), ('World', 2)")
+    connection.execute("INSERT INTO POSTS (id, title, user_id) VALUES
+                       (1, 'Hello', 1), (2, 'World', 2)")
         .unwrap();
 
     let sean = User::new(1, "Sean");
@@ -127,7 +127,6 @@ fn filter_then_select() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
     insert(&data).into(users).execute(&connection).unwrap();
 
@@ -144,7 +143,6 @@ fn filter_on_multiple_columns() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data: &[_] = &[
         NewUser::new("Sean", Some("black")),
         NewUser::new("Sean", Some("brown")),
@@ -152,13 +150,12 @@ fn filter_on_multiple_columns() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    assert_eq!(5, insert(data).into(users).execute(&connection).unwrap());
-
-    let black_haired_sean = User::with_hair_color(1, "Sean", "black");
-    let brown_haired_sean = User::with_hair_color(2, "Sean", "brown");
-    let _bald_sean = User::new(3, "Sean");
-    let black_haired_tess = User::with_hair_color(4, "Tess", "black");
-    let brown_haired_tess = User::with_hair_color(5, "Tess", "brown");
+    let data: Vec<User> = insert(data).into(users)
+        .get_results(&connection).unwrap().collect();
+    let black_haired_sean = data[0].clone();
+    let brown_haired_sean = data[1].clone();
+    let black_haired_tess = data[3].clone();
+    let brown_haired_tess = data[4].clone();
 
     let source = users.filter(name.eq("Sean").and(hair_color.eq("black")));
     assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()
@@ -182,7 +179,6 @@ fn filter_called_twice_means_same_thing_as_and() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data: &[_] = &[
         NewUser::new("Sean", Some("black")),
         NewUser::new("Sean", Some("brown")),
@@ -190,13 +186,12 @@ fn filter_called_twice_means_same_thing_as_and() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    assert_eq!(5, insert(data).into(users).execute(&connection).unwrap());
-
-    let black_haired_sean = User::with_hair_color(1, "Sean", "black");
-    let brown_haired_sean = User::with_hair_color(2, "Sean", "brown");
-    let _bald_sean = User::new(3, "Sean");
-    let black_haired_tess = User::with_hair_color(4, "Tess", "black");
-    let brown_haired_tess = User::with_hair_color(5, "Tess", "brown");
+    let data: Vec<User> = insert(data).into(users)
+        .get_results(&connection).unwrap().collect();
+    let black_haired_sean = data[0].clone();
+    let brown_haired_sean = data[1].clone();
+    let black_haired_tess = data[3].clone();
+    let brown_haired_tess = data[4].clone();
 
     let source = users.filter(name.eq("Sean")).filter(hair_color.eq("black"));
     assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()

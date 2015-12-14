@@ -4,7 +4,6 @@ use diesel::*;
 #[test]
 fn one_to_many_returns_query_source_for_association() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    setup_posts_table(&connection);
 
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);

@@ -107,31 +107,6 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
-pub fn setup_users_table(connection: &Connection) {
-    connection.execute("CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR NOT NULL,
-        hair_color VARCHAR
-    )").unwrap();
-}
-
-pub fn setup_posts_table(connection: &Connection) {
-    connection.execute("CREATE TABLE posts (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        title VARCHAR NOT NULL,
-        body TEXT
-    )").unwrap();
-}
-
-pub fn setup_comments_table(connection: &Connection) {
-    connection.execute("CREATE TABLE comments (
-        id SERIAL PRIMARY KEY,
-        post_id INTEGER NOT NULL,
-        text TEXT NOT NULL
-    )").unwrap();
-}
-
 pub fn connection() -> Connection {
     let result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
@@ -146,9 +121,8 @@ pub fn connection_without_transaction() -> Connection {
 
 pub fn connection_with_sean_and_tess_in_users_table() -> Connection {
     let connection = connection();
-    setup_users_table(&connection);
-    let data: &[_] = &[NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    insert(data).into(users::table).execute(&connection).unwrap();
+    connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .unwrap();
     connection
 }
 

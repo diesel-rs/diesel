@@ -32,10 +32,8 @@ use dotenv::dotenv;
 
 fn main() {
     dotenv().ok();
-    let database_url = ::std::env::var("DATABASE_URL_FOR_SCHEMA")
-        .expect("DATABASE_URL_FOR_SCHEMA must be set and different \
-                from DATABASE_URL for integration tests, so we can \
-                test our schema inference code.");
+    let database_url = ::std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set to run tests");
     let connection = Connection::establish(&database_url).unwrap();
     setup_tables_for_schema(&connection);
     inner::main();

@@ -86,17 +86,17 @@ fn filter_by_like() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     let data = vec![
         NewUser::new("Sean Griffin", None),
         NewUser::new("Tess Griffin", None),
         NewUser::new("Jim", None),
     ];
-    insert(&data).into(users).execute(&connection).unwrap();
+    let data: Vec<User> = insert(&data).into(users)
+        .get_results(&connection).unwrap().collect();;
+    let sean = data[0].clone();
+    let tess = data[1].clone();
+    let jim = data[2].clone();
 
-    let sean = User::new(1, "Sean Griffin");
-    let tess = User::new(2, "Tess Griffin");
-    let jim = User::new(3, "Jim");
     assert_eq!(vec![sean, tess],
         users.filter(name.like("%Griffin")).load(&connection).as_vec());
     assert_eq!(vec![jim],
@@ -134,13 +134,7 @@ impl<ST, U> TestResultHelpers<U> for QueryResult<Cursor<ST, U>> where
 }
 
 fn connection_with_3_users() -> Connection {
-    let connection = connection();
-    setup_users_table(&connection);
-    let data = vec![
-        NewUser::new("Sean", None),
-        NewUser::new("Tess", None),
-        NewUser::new("Jim", None),
-    ];
-    insert(&data).into(users::table).execute(&connection).unwrap();
+    let connection = connection_with_sean_and_tess_in_users_table();
+    connection.execute("INSERT INTO users (id, name) VALUES (3, 'Jim')").unwrap();
     connection
 }

@@ -3,32 +3,37 @@ use diesel::*;
 
 #[test]
 fn selecting_basic_data() {
+    use schema::users::dsl::*;
+
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let expected_data = vec![
-        (1, "Sean".to_string(), None::<String>),
-        (2, "Tess".to_string(), None::<String>),
+        ("Sean".to_string(), None::<String>),
+        ("Tess".to_string(), None::<String>),
      ];
-    let actual_data: Vec<_> = users::table.load(&connection)
+    let actual_data: Vec<_> = users
+        .select((name, hair_color))
+        .load(&connection)
         .unwrap().collect();
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn selecting_a_struct() {
+    use schema::users::dsl::*;
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let expected_users = vec![
-        User::new(1, "Sean"),
-        User::new(2, "Tess"),
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
     ];
-    let actual_users: Vec<_> = users::table.load(&connection)
+    let actual_users: Vec<_> = users
+        .select((name, hair_color))
+        .load(&connection)
         .unwrap().collect();
     assert_eq!(expected_users, actual_users);
 }
@@ -38,65 +43,19 @@ fn with_safe_select() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    let select_id = users.select(id);
     let select_name = users.select(name);
-    let ids: Vec<_> = select_id.load(&connection)
-        .unwrap().collect();
     let names: Vec<String> = select_name.load(&connection)
         .unwrap().collect();
 
-    assert_eq!(vec![1, 2], ids);
     assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
-}
-
-#[test]
-fn selecting_multiple_columns() {
-    use schema::users::dsl::*;
-
-    let connection = connection();
-    setup_users_table(&connection);
-    connection.execute("INSERT INTO users (name, hair_color) VALUES ('Jim', 'Black'), ('Bob', 'Brown')")
-        .unwrap();
-
-    let source = users.select((name, hair_color));
-    let expected_data = vec![
-        ("Jim".to_string(), Some("Black".to_string())),
-        ("Bob".to_string(), Some("Brown".to_string())),
-    ];
-    let actual_data: Vec<_> = source.load(&connection)
-        .unwrap().collect();
-
-    assert_eq!(expected_data, actual_data);
-}
-
-#[test]
-fn selecting_multiple_columns_into_struct() {
-    use schema::users::dsl::*;
-
-    let connection = connection();
-    setup_users_table(&connection);
-    connection.execute("INSERT INTO users (name, hair_color) VALUES ('Jim', 'Black'), ('Bob', 'Brown')")
-        .unwrap();
-
-    let source = users.select((name, hair_color));
-    let expected_data = vec![
-        NewUser::new("Jim", Some("Black")),
-        NewUser::new("Bob", Some("Brown")),
-    ];
-    let actual_data: Vec<_> = source.load(&connection)
-        .unwrap().collect();
-
-    assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn with_select_sql() {
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
@@ -116,7 +75,6 @@ fn selecting_nullable_followed_by_non_null() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean')")
         .unwrap();
 
@@ -132,7 +90,6 @@ fn selecting_expression_with_bind_param() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    setup_users_table(&connection);
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
@@ -176,6 +133,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
 #[test]
 fn selecting_columns_with_different_definition_order() {
     let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
     connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, hair_color VARCHAR, name VARCHAR NOT NULL)")
         .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
@@ -192,9 +150,11 @@ fn selection_using_subselect() {
     use diesel::expression::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    setup_posts_table(&connection);
-    connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello'), (2, 'World')")
-        .unwrap();
+    let ids: Vec<i32> = users::table.select(users::id).load(&connection).unwrap().collect();
+    let query = format!(
+        "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
+        ids[0], ids[1]);
+    connection.execute(&query).unwrap();
 
     let users = users::table.filter(users::name.eq("Sean")).select(users::id);
     let data: Vec<String> = posts

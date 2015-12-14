@@ -3,15 +3,11 @@ use diesel::*;
 
 #[test]
 fn belongs_to() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
-    connection.execute("INSERT INTO posts (user_id, title, body) VALUES
-        (1, 'Hello', 'Content'),
-        (2, 'World', DEFAULT)
+    connection.execute("INSERT INTO posts (id, user_id, title, body) VALUES
+        (1, 1, 'Hello', 'Content'),
+        (2, 2, 'World', DEFAULT)
     ").unwrap();
 
     let sean = User::new(1, "Sean");
@@ -28,15 +24,11 @@ fn belongs_to() {
 
 #[test]
 fn select_single_from_join() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
-    connection.execute("INSERT INTO posts (user_id, title) VALUES
-        (1, 'Hello'),
-        (2, 'World')
+    connection.execute("INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 2, 'World')
     ").unwrap();
 
     let source = posts::table.inner_join(users::table);
@@ -56,15 +48,11 @@ fn select_single_from_join() {
 
 #[test]
 fn select_multiple_from_join() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
-    connection.execute("INSERT INTO posts (user_id, title) VALUES
-        (1, 'Hello'),
-        (2, 'World')
+    connection.execute("INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 2, 'World')
     ").unwrap();
 
     let source = posts::table.inner_join(users::table)
@@ -81,12 +69,8 @@ fn select_multiple_from_join() {
 
 #[test]
 fn select_only_one_side_of_join() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
     connection.execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
         .unwrap();
 
@@ -100,15 +84,11 @@ fn select_only_one_side_of_join() {
 
 #[test]
 fn left_outer_joins() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
-    connection.execute("INSERT INTO posts (user_id, title) VALUES
-        (1, 'Hello'),
-        (1, 'World')
+    connection.execute("INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 1, 'World')
     ").unwrap();
 
     let sean = User::new(1, "Sean");
@@ -129,12 +109,8 @@ fn left_outer_joins() {
 
 #[test]
 fn columns_on_right_side_of_left_outer_joins_are_nullable() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
     connection.execute("INSERT INTO posts (user_id, title) VALUES
         (1, 'Hello'),
         (1, 'World')
@@ -153,12 +129,8 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
 
 #[test]
 fn select_multiple_from_right_side_returns_optional_tuple() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', DEFAULT)
@@ -178,12 +150,8 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
 
 #[test]
 fn select_complex_from_left_join() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', DEFAULT)
@@ -205,12 +173,8 @@ fn select_complex_from_left_join() {
 
 #[test]
 fn select_right_side_with_nullable_column_first() {
-    let connection = connection();
-    setup_users_table(&connection);
-    setup_posts_table(&connection);
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-    connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', DEFAULT)
@@ -234,7 +198,6 @@ fn select_right_side_with_nullable_column_first() {
 fn select_then_join() {
     use schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
-    setup_posts_table(&connection);
 
     connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
         .unwrap();
@@ -255,19 +218,18 @@ fn select_then_join() {
 fn join_through_other() {
     use schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
-    setup_posts_table(&connection);
-    setup_comments_table(&connection);
 
     insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
-    insert(&vec![
+    let posts: Vec<Post> = insert(&vec![
         NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
         NewPost::new(1, "Hello again!", None),
         ]).into(posts::table)
-        .execute(&connection)
-        .unwrap();
+        .get_results(&connection)
+        .unwrap()
+        .collect();
     let comments: Vec<Comment> = insert(&vec![
-        NewComment(1, "OMG"), NewComment(2, "WTF"),
-        NewComment(3, "Best post ever!!!")
+        NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
+        NewComment(posts[2].id, "Best post ever!!!")
     ]).into(comments::table).get_results(&connection).unwrap().collect();
 
     let data: Vec<_> = users.inner_join(comments::table).load(&connection)
