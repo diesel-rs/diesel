@@ -28,6 +28,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `#[derive(Queriable)]` now allows generic parameters on the struct.
 
+* Table definitions can now support up to 26 columns. Because this increases our
+  compile time by 3x, `features = ["large-tables"]` is needed to support table
+  definitions above 16 columns.
+
 ### Added
 
 * Quickcheck is now an optional dependency. When `features = ["quickcheck"]` is

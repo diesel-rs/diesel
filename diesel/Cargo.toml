@@ -21,3 +21,4 @@ dotenv = "^0.6.0"
 
 [features]
 unstable = []
+large-tables = []
