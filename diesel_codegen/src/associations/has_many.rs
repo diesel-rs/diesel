@@ -97,7 +97,10 @@ fn join_to_impl(
             {
                 try!($foreign_table.from_clause(out));
                 out.push_sql(" ON ");
-                $foreign_key.eq($table.primary_key()).to_sql(out)
+                ::diesel::expression::Expression::to_sql(
+                    &$foreign_key.eq($table.primary_key()),
+                    out,
+                )
             }
         }
     ).unwrap()
