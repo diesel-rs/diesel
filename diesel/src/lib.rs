@@ -15,6 +15,7 @@ mod query_dsl;
 pub mod query_source;
 pub mod result;
 mod row;
+mod schema;
 
 pub mod helper_types {
     //! Provide helper types for concisely writing the return type of functions.
