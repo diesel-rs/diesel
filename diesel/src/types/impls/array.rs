@@ -90,6 +90,17 @@ impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
     }
 }
 
+impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
+    ST: NativeSqlType,
+    T: ToSql<ST>,
+{
+    type Expression = Bound<Array<ST>, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
 impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
     ST: NativeSqlType,
     T: ToSql<ST>,
