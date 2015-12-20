@@ -2,6 +2,7 @@
 //! them and Rust primitives. Additional types can be added by other crates.
 pub mod ops;
 mod ord;
+mod num;
 mod impls;
 
 #[doc(hidden)]
@@ -17,6 +18,8 @@ pub mod structs {
 
 /// Marker trait for types which can be compared for ordering.
 pub use self::ord::SqlOrd;
+/// Marker trait for types which can be summed.
+pub use self::num::Num;
 
 use row::Row;
 use std::error::Error;

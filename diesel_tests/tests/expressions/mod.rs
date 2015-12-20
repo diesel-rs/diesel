@@ -151,6 +151,21 @@ fn test_min() {
 sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);
 
 #[test]
+fn test_sum() {
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE numbers (n integer)").unwrap();
+    connection.execute("INSERT INTO numbers (n) VALUES (2), (4), (6)").unwrap();
+    let source = numbers.select(sum(n));
+
+    assert_eq!(Ok(12), source.first(&connection));
+    connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
+    assert_eq!(Ok(10), source.first(&connection));
+}
+
+#[test]
 fn function_with_multiple_arguments() {
     use schema::users::dsl::*;
 
