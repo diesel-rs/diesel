@@ -1,9 +1,13 @@
 mod migration;
 mod migration_error;
+mod schema;
 
 pub use self::migration_error::*;
 use self::migration::*;
 
+use ::query_dsl::*;
+use self::schema::NewMigration;
+use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
 
 use std::collections::HashSet;
@@ -29,9 +33,9 @@ fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<us
 }
 
 fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<String>> {
-    conn.query_sql::<::types::VarChar, String>(
-        "SELECT version FROM __diesel_schema_migrations"
-    ).map(|r| r.collect())
+    __diesel_schema_migrations.select(version)
+        .load(&conn)
+        .map(|r| r.collect())
 }
 
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
@@ -56,14 +60,14 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
     -> Result<(), RunMigrationsError> where
         T: Iterator<Item=Box<Migration>>
 {
+    use ::query_builder::insert;
+
     for migration in migrations {
         try!(migration.run(conn));
         // FIXME: This needs to be in a transaction
-        // and use bind params
-        try!(conn.execute(&format!(
-            "INSERT INTO __diesel_schema_migrations (version) VALUES ('{}')",
-            &migration.version()
-        )));
+        try!(insert(&NewMigration(migration.version()))
+             .into(__diesel_schema_migrations)
+             .execute(&conn));
     }
     Ok(())
 }

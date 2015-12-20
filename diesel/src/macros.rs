@@ -177,7 +177,10 @@ macro_rules! table_body {
         }
     ) => {
         pub mod $name {
-            use $crate::*;
+            use $crate::{
+                QuerySource,
+                Table,
+            };
             use $crate::query_builder::*;
             use $crate::types::*;
             pub use self::columns::*;

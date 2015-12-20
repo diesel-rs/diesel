@@ -1,12 +1,15 @@
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database
 //! interactions. [A getting started guide](https://github.com/sgrif/diesel#getting-started) can be
 //! found in the README.
-#![deny(warnings)]
+// #![deny(warnings)]
 #![cfg_attr(feature = "unstable", feature(time2))]
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;
 pub mod types;
+
+#[macro_use]
+mod macros;
 
 mod connection;
 mod db_result;
@@ -56,9 +59,6 @@ pub mod helper_types {
     /// Represents the return type of `.with(aliased_expr)`
     pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 }
-
-#[macro_use]
-mod macros;
 
 pub use connection::{Connection, Cursor};
 pub use expression::{Expression, SelectableExpression, BoxableExpression};

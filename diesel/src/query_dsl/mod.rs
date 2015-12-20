@@ -2,8 +2,10 @@ mod belonging_to_dsl;
 mod count_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
-mod load_dsl;
-mod select_dsl;
+#[doc(hidden)]
+pub mod load_dsl;
+#[doc(hidden)]
+pub mod select_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
 mod offset_dsl;
