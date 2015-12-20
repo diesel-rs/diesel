@@ -1,0 +1,18 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR NOT NULL,
+  hair_color VARCHAR
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  title VARCHAR NOT NULL,
+  body TEXT
+);
+
+CREATE TABLE comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL,
+  text TEXT NOT NULL
+);

@@ -35,28 +35,6 @@ fn main() {
     let database_url = ::std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set to run tests");
     let connection = Connection::establish(&database_url).unwrap();
-    setup_tables_for_schema(&connection);
+    migrations::run_pending_migrations(&connection).unwrap();
     inner::main();
-}
-
-fn setup_tables_for_schema(connection: &Connection) {
-    connection.execute("DROP TABLE IF EXISTS users").unwrap();
-    connection.execute("DROP TABLE IF EXISTS posts").unwrap();
-    connection.execute("DROP TABLE IF EXISTS comments").unwrap();
-    connection.execute("CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR NOT NULL,
-        hair_color VARCHAR
-    )").unwrap();
-    connection.execute("CREATE TABLE posts (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        title VARCHAR NOT NULL,
-        body TEXT
-    )").unwrap();
-    connection.execute("CREATE TABLE comments (
-        id SERIAL PRIMARY KEY,
-        post_id INTEGER NOT NULL,
-        text TEXT NOT NULL
-    )").unwrap();
 }

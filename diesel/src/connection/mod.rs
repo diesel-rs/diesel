@@ -110,6 +110,16 @@ impl Connection {
     }
 
     #[doc(hidden)]
+    pub fn batch_execute(&self, query: &str) -> QueryResult<()> {
+        let query = try!(CString::new(query));
+        let inner_result = unsafe {
+            PQexec(self.internal_connection, query.as_ptr())
+        };
+        try!(DbResult::new(self, inner_result));
+        Ok(())
+    }
+
+    #[doc(hidden)]
     pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
