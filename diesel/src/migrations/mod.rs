@@ -63,11 +63,13 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
     use ::query_builder::insert;
 
     for migration in migrations {
-        try!(migration.run(conn));
-        // FIXME: This needs to be in a transaction
-        try!(insert(&NewMigration(migration.version()))
-             .into(__diesel_schema_migrations)
-             .execute(&conn));
+        try!(conn.transaction(|| {
+            try!(migration.run(conn));
+            try!(insert(&NewMigration(migration.version()))
+                 .into(__diesel_schema_migrations)
+                 .execute(&conn));
+            Ok(())
+        }));
     }
     Ok(())
 }
