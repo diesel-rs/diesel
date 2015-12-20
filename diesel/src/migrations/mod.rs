@@ -64,6 +64,7 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
 
     for migration in migrations {
         try!(conn.transaction(|| {
+            println!("Running migration {}", migration.version());
             try!(migration.run(conn));
             try!(insert(&NewMigration(migration.version()))
                  .into(__diesel_schema_migrations)

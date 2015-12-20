@@ -43,12 +43,10 @@ impl Migration for SqlFileMigration {
     }
 
     fn run(&self, conn: &Connection) -> Result<(), RunMigrationsError> {
-        println!("Running migration {}", self.version());
         run_sql_from_file(conn, &self.0.join("up.sql"))
     }
 
     fn revert(&self, conn: &Connection) -> Result<(), RunMigrationsError> {
-        println!("Reverting migration {}", self.version());
         run_sql_from_file(conn, &self.0.join("down.sql"))
     }
 }
