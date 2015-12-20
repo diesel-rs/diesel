@@ -4,14 +4,15 @@ use super::{MigrationError, RunMigrationsError};
 use std::path::{Path, PathBuf};
 
 pub trait Migration {
-    fn version(&self) -> String;
+    fn version(&self) -> i64;
     fn run(&self, conn: &Connection) -> Result<(), RunMigrationsError>;
     fn revert(&self, conn: &Connection) -> Result<(), RunMigrationsError>;
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     if valid_sql_migration_directory(&path) {
-        Ok(Box::new(SqlFileMigration(path)))
+        let version = try!(version_from_path(&path));
+        Ok(Box::new(SqlFileMigration(path, version)))
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
     }
@@ -31,21 +32,28 @@ fn valid_sql_migration_directory(path: &Path) -> bool {
     }) && t!(path.read_dir()).count() == 2
 }
 
+fn version_from_path(path: &Path) -> Result<i64, MigrationError> {
+    path.file_name().unwrap()
+        .to_os_string()
+        .into_string()
+        .unwrap()
+        .split("_")
+        .nth(0)
+        .unwrap()
+        .parse()
+        .map_err(|_| {
+            MigrationError::UnknownMigrationFormat(path.to_path_buf())
+        })
+}
+
 use std::fs::File;
 use std::io::Read;
 
-struct SqlFileMigration(PathBuf);
+struct SqlFileMigration(PathBuf, i64);
 
 impl Migration for SqlFileMigration {
-    fn version(&self) -> String {
-        self.0.file_name().unwrap()
-            .to_os_string()
-            .into_string()
-            .unwrap()
-            .split("_")
-            .nth(0)
-            .unwrap()
-            .to_string()
+    fn version(&self) -> i64 {
+        self.1
     }
 
     fn run(&self, conn: &Connection) -> Result<(), RunMigrationsError> {
@@ -69,8 +77,8 @@ fn run_sql_from_file(conn: &Connection, path: &Path) -> Result<(), RunMigrations
 mod tests {
     extern crate tempdir;
 
-    use super::{SqlFileMigration, valid_sql_migration_directory};
-    use super::*;
+    use super::super::MigrationError;
+    use super::{version_from_path, valid_sql_migration_directory};
 
     use self::tempdir::TempDir;
     use std::fs;
@@ -133,18 +141,26 @@ mod tests {
     }
 
     #[test]
-    fn sql_file_migration_version_is_based_on_folder_name() {
+    fn migration_version_is_based_on_folder_name() {
         let path = PathBuf::new().join("migrations").join("12345");
-        let migration = SqlFileMigration(path);
 
-        assert_eq!("12345", migration.version());
+        assert_eq!(Ok(12345), version_from_path(&path));
     }
 
     #[test]
-    fn sql_file_migration_version_allows_additional_naming() {
+    fn migration_version_allows_additional_naming() {
         let path = PathBuf::new().join("migrations").join("54321_create_stuff");
-        let migration = SqlFileMigration(path);
 
-        assert_eq!("54321", migration.version());
+        assert_eq!(Ok(54321), version_from_path(&path));
+    }
+
+    #[test]
+    fn migration_version_when_dir_doesnt_start_with_num_is_error() {
+        let path = PathBuf::new().join("migrations").join("create_stuff_12345");
+
+        assert_eq!(Err(
+            MigrationError::UnknownMigrationFormat(path.clone())),
+            version_from_path(&path)
+        );
     }
 }

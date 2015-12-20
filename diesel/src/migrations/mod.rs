@@ -27,12 +27,12 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
 
 fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<usize> {
     conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
-        version VARCHAR PRIMARY KEY NOT NULL,
+        version INT8 PRIMARY KEY NOT NULL,
         run_on TIMESTAMP NOT NULL DEFAULT NOW()
     )")
 }
 
-fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<String>> {
+fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<i64>> {
     __diesel_schema_migrations.select(version)
         .load(&conn)
         .map(|r| r.collect())
