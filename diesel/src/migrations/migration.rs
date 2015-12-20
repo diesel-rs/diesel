@@ -10,22 +10,25 @@ pub trait Migration {
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
-    if try!(valid_sql_migration_directory(&path)) {
+    if valid_sql_migration_directory(&path) {
         Ok(Box::new(SqlFileMigration(path)))
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
     }
 }
 
-fn valid_sql_migration_directory(path: &Path) -> Result<bool, MigrationError> {
-    for entry in try!(path.read_dir()) {
-        let entry = try!(entry);
-        let file_name = entry.file_name();
-        if &file_name != "up.sql" && &file_name != "down.sql" {
-            return Ok(false);
+fn valid_sql_migration_directory(path: &Path) -> bool {
+    macro_rules! t { ($e:expr) => {
+        match $e {
+            Ok(e) => e, Err(_) => return false,
         }
-    }
-    Ok(true)
+    } }
+
+    t!(path.read_dir()).all(|e| {
+        let entry = t!(e);
+        let file_name = entry.file_name();
+        &file_name == "up.sql" || &file_name == "down.sql"
+    }) && t!(path.read_dir()).count() == 2
 }
 
 use std::fs::File;
@@ -64,10 +67,70 @@ fn run_sql_from_file(conn: &Connection, path: &Path) -> Result<(), RunMigrations
 
 #[cfg(test)]
 mod tests {
-    use super::SqlFileMigration;
+    extern crate tempdir;
+
+    use super::{SqlFileMigration, valid_sql_migration_directory};
     use super::*;
 
+    use self::tempdir::TempDir;
+    use std::fs;
     use std::path::PathBuf;
+
+    #[test]
+    fn files_are_not_valid_sql_file_migrations() {
+        let dir = TempDir::new("diesel").unwrap();
+        let file_path = dir.path().join("12345");
+
+        fs::File::create(&file_path).unwrap();
+
+        assert!(!valid_sql_migration_directory(&file_path));
+    }
+
+    #[test]
+    fn directory_containing_exactly_up_sql_and_down_sql_is_valid_migration_dir() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        let folder = tempdir.path().join("12345");
+
+        fs::create_dir(&folder).unwrap();
+        fs::File::create(folder.join("up.sql")).unwrap();
+        fs::File::create(folder.join("down.sql")).unwrap();
+
+        assert!(valid_sql_migration_directory(&folder));
+    }
+
+    #[test]
+    fn directory_containing_unknown_files_is_not_valid_migration_dir() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        let folder = tempdir.path().join("12345");
+
+        fs::create_dir(&folder).unwrap();
+        fs::File::create(folder.join("up.sql")).unwrap();
+        fs::File::create(folder.join("down.sql")).unwrap();
+        fs::File::create(folder.join("foo")).unwrap();
+
+        assert!(!valid_sql_migration_directory(&folder));
+    }
+
+    #[test]
+    fn empty_directory_is_not_valid_migration_dir() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        let folder = tempdir.path().join("12345");
+
+        fs::create_dir(&folder).unwrap();
+
+        assert!(!valid_sql_migration_directory(&folder));
+    }
+
+    #[test]
+    fn directory_with_only_up_sql_is_not_valid_migration_dir() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        let folder = tempdir.path().join("12345");
+
+        fs::create_dir(&folder).unwrap();
+        fs::File::create(folder.join("up.sql")).unwrap();
+
+        assert!(!valid_sql_migration_directory(&folder));
+    }
 
     #[test]
     fn sql_file_migration_version_is_based_on_folder_name() {
