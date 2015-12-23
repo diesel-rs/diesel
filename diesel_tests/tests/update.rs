@@ -165,3 +165,27 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     let expected_user = User::new(sean.id, "Jim");
     assert_eq!(Ok(expected_user), user);
 }
+
+#[test]
+fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
+    #[changeset_for(posts)]
+    struct Changes {
+        user_id: i32,
+        title: Option<String>,
+        body: String,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert(&new_post).into(posts::table).execute(&connection).unwrap();
+
+    let changes = Changes { user_id: 1, title: None, body: "earth".into() };
+    let post = update(posts::table)
+        .set(&changes)
+        .get_result::<Post>(&connection)
+        .unwrap();
+
+    let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
+    assert_eq!(expected_post, post);
+}

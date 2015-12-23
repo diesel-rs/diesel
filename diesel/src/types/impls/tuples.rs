@@ -131,16 +131,17 @@ macro_rules! tuple_impls {
                     $(e!(self.$idx.is_noop()) &&)+ true
                 }
 
+                #[allow(unused_assignments)]
                 fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-                    let noop_element = true;
+                    let mut needs_comma = false;
                     $(
-                        let needs_comma = !noop_element;
                         let noop_element = e!(self.$idx.is_noop());
                         if !noop_element {
                             if needs_comma {
                                 out.push_sql(", ");
                             }
                             try!(e!(self.$idx.to_sql(out)));
+                            needs_comma = true;
                         }
                     )+
                     Ok(())
