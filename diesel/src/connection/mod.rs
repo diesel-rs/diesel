@@ -207,6 +207,7 @@ impl Connection {
     /// assert_eq!(Err::<(i32, String), _>(NotFound), connection.find(users, 3));
     /// # }
     /// ```
+    #[doc(hidden)]
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
