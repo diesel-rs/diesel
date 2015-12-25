@@ -15,7 +15,7 @@ dotenv = "^0.7.1"
 [dependencies]
 diesel = { path = "../diesel", features = ["quickcheck"] }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
-compiletest_rs = { version = "^0.0.10", optional = true }
+compiletest_rs = { version = "^0.0.11", optional = true }
 dotenv_macros = { version = "^0.7.1", optional = true }
 
 [dev-dependencies]
