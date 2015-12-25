@@ -19,17 +19,18 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 }
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
-    macro_rules! t { ($e:expr) => {
-        match $e {
-            Ok(e) => e, Err(_) => return false,
-        }
-    } }
+    let mut files = file_names(path).unwrap_or(Vec::new());
+    files.sort();
+    files == ["down.sql".to_string(), "up.sql".to_string()]
+}
 
-    t!(path.read_dir()).all(|e| {
-        let entry = t!(e);
-        let file_name = entry.file_name();
-        &file_name == "up.sql" || &file_name == "down.sql"
-    }) && t!(path.read_dir()).count() == 2
+fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
+    try!(path.read_dir()).map(|e| {
+        Ok(try!(e).file_name().into_string().unwrap())
+    }).filter(|name| match name {
+        &Ok(ref n) => !n.starts_with("."),
+        _ => true
+    }).collect()
 }
 
 fn version_from_path(path: &Path) -> Result<String, MigrationError> {
@@ -115,6 +116,19 @@ mod tests {
         fs::File::create(folder.join("foo")).unwrap();
 
         assert!(!valid_sql_migration_directory(&folder));
+    }
+
+    #[test]
+    fn files_begining_with_dot_are_allowed() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        let folder = tempdir.path().join("12345");
+
+        fs::create_dir(&folder).unwrap();
+        fs::File::create(folder.join("up.sql")).unwrap();
+        fs::File::create(folder.join("down.sql")).unwrap();
+        fs::File::create(folder.join(".foo")).unwrap();
+
+        assert!(valid_sql_migration_directory(&folder));
     }
 
     #[test]

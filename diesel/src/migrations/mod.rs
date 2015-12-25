@@ -42,14 +42,13 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
     use self::migration::migration_from;
 
     try!(path.read_dir())
-        .map(|e| Ok(try!(e).path()))
         .filter_map(|entry| {
             let entry = match entry {
                 Ok(e) => e,
-                Err(e) => return Some(Err(e)),
+                Err(e) => return Some(Err(e.into())),
             };
-            if entry.is_dir() {
-                Some(migration_from(entry))
+            if !entry.file_name().to_string_lossy().starts_with(".") {
+                Some(migration_from(entry.path()))
             } else {
                 None
             }
