@@ -51,7 +51,8 @@ impl<ST, S, F, W, O, L, Of, Expr> OrderDsl<Expr>
     }
 }
 
-type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
+#[doc(hidden)]
+pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
 
 impl<ST, S, F, W, O, L, Of> LimitDsl for SelectStatement<ST, S, F, W, O, L, Of> where
     ST: NativeSqlType,
@@ -66,7 +67,8 @@ impl<ST, S, F, W, O, L, Of> LimitDsl for SelectStatement<ST, S, F, W, O, L, Of> 
     }
 }
 
-type Offset = Limit;
+#[doc(hidden)]
+pub type Offset = Limit;
 
 impl<ST, S, F, W, O, L, Of> OffsetDsl for SelectStatement<ST, S, F, W, O, L, Of> where
     ST: NativeSqlType,

@@ -30,9 +30,12 @@ pub struct Connection {
 
 unsafe impl Send for Connection {}
 
-type PrimaryKey<T> = <T as Table>::PrimaryKey;
-type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
-type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
+#[doc(hidden)]
+pub type PrimaryKey<T> = <T as Table>::PrimaryKey;
+#[doc(hidden)]
+pub type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
+#[doc(hidden)]
+pub type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
 
 impl Connection {
     /// Establishes a new connection to the database at the given URL. The URL

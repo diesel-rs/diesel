@@ -3,8 +3,8 @@ use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use expression::bound::Bound;
-use expression::{Expression, AsExpression};
-use types::{self, ToSql, FromSql, IsNull, Nullable, Timestamp, NativeSqlType};
+use expression::AsExpression;
+use types::{self, ToSql, FromSql, IsNull, NativeSqlType};
 use query_source::Queriable;
 
 expression_impls! {

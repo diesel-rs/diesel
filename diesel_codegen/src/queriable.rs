@@ -1,7 +1,6 @@
 use aster;
 use syntax::ast::{
     self,
-    Expr,
     Item,
     MetaItem,
 };
