@@ -20,19 +20,19 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
     let migrations_dir = try!(find_migrations_directory());
     let all_migrations = try!(migrations_in_directory(&migrations_dir));
     let pending_migrations = all_migrations.into_iter().filter(|m| {
-        !already_run.contains(&m.version())
+        !already_run.contains(m.version())
     });
     run_migrations(conn, pending_migrations)
 }
 
 fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<usize> {
     conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
-        version INT8 PRIMARY KEY NOT NULL,
+        version VARCHAR PRIMARY KEY NOT NULL,
         run_on TIMESTAMP NOT NULL DEFAULT NOW()
     )")
 }
 
-fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<i64>> {
+fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<String>> {
     __diesel_schema_migrations.select(version)
         .load(&conn)
         .map(|r| r.collect())
