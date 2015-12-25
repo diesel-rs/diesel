@@ -30,9 +30,9 @@ pub struct Connection {
 
 unsafe impl Send for Connection {}
 
-type PrimaryKey<T> = <T as Table>::PrimaryKey;
-type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
-type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
+pub type PrimaryKey<T> = <T as Table>::PrimaryKey;
+pub type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
+pub type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
 
 impl Connection {
     /// Establishes a new connection to the database at the given URL. The URL
@@ -207,6 +207,7 @@ impl Connection {
     /// assert_eq!(Err::<(i32, String), _>(NotFound), connection.find(users, 3));
     /// # }
     /// ```
+    #[doc(hidden)]
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,

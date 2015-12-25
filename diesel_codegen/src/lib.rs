@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, plugin, plugin_registrar))]
 #![cfg_attr(not(feature = "with-syntex"), plugin(quasi_macros))]
 #![deny(warnings)]
+#![allow(unused_imports)]
 
 extern crate aster;
 extern crate quasi;
