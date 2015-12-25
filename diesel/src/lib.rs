@@ -8,8 +8,12 @@ pub mod expression;
 pub mod persistable;
 pub mod types;
 
+#[macro_use]
+mod macros;
+
 mod connection;
 mod db_result;
+pub mod migrations;
 pub mod query_builder;
 mod query_dsl;
 pub mod query_source;
@@ -55,9 +59,6 @@ pub mod helper_types {
     /// Represents the return type of `.with(aliased_expr)`
     pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 }
-
-#[macro_use]
-mod macros;
 
 pub use connection::{Connection, Cursor};
 pub use expression::{Expression, SelectableExpression, BoxableExpression};

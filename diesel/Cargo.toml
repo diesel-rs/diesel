@@ -18,6 +18,7 @@ quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git", optional = 
 [dev-dependencies]
 quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git" }
 dotenv = "^0.6.0"
+tempdir = "^0.3.4"
 
 [features]
 unstable = []
