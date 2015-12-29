@@ -233,7 +233,7 @@ fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
     use diesel::query_builder::delete;
     use users::dsl::*;
 
-    try!(delete(users.filter(id.eq(user.id))).execute(&connection));
+    let deleted_rows = try!(delete(users.filter(id.eq(user.id))).execute(&connection));
     debug_assert!(deleted_rows == 1);
     Ok(())
 }
