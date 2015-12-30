@@ -6,3 +6,5 @@ pub mod connection;
 #[doc(hidden)]
 pub mod query_builder;
 
+pub mod types;
+pub mod extensions;

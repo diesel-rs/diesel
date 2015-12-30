@@ -1,6 +1,6 @@
 use postgresql::libc;
 
-use postgresql::connection::PGConnection;
+use postgresql::connection::PgConnection;
 use result::{Error, QueryResult};
 use row::DbRow;
 
@@ -11,17 +11,17 @@ use std::{str, slice, mem};
 use db_result::DbResult;
 use connection::Connection;
 
-pub struct PGDbResult {
+pub struct PgDbResult {
     internal_result: *mut PGresult,
 }
 
-impl PGDbResult {
+impl PgDbResult {
 
-    pub fn new(conn: &PGConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
+    pub fn new(conn: &PgConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
-                Ok(PGDbResult {
+                Ok(PgDbResult {
                     internal_result: internal_result,
                 })
             },
@@ -31,9 +31,9 @@ impl PGDbResult {
 
 }
 
-impl DbResult for PGDbResult {
+impl DbResult for PgDbResult {
 
-    type Connection = PGConnection;
+    type Connection = PgConnection;
 
     fn rows_affected(&self) -> usize {
         unsafe {
@@ -81,7 +81,7 @@ impl DbResult for PGDbResult {
     }
 }
 
-impl Drop for PGDbResult {
+impl Drop for PgDbResult {
     fn drop(&mut self) {
         unsafe { PQclear(self.internal_result) };
     }

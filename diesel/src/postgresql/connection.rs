@@ -1,38 +1,37 @@
 use postgresql::libc;
-use postgresql::db_result::PGDbResult;
+use postgresql::db_result::PgDbResult;
 use postgresql::query_builder::PgQueryBuilder;
+use postgresql::pq_sys::*;
 
 use expression::{AsExpression, Expression, NonAggregate};
 use expression::expression_methods::*;
+use expression::helper_types::AsExpr;
 use persistable::{Insertable, InsertableColumns};
 use helper_types::{FindBy, Limit};
-use expression::helper_types::AsExpr;
 use query_builder::{AsQuery, Query, QueryFragment};
 use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Column, Queriable};
 use result::*;
-use postgresql::pq_sys::*;
 use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::{str, ptr};
 use types::{NativeSqlType, ToSql, IsNull};
 
-use connection::{Cursor, Connection};
-use connection::{PrimaryKey, PkType, FindPredicate};
+use connection::{Cursor, Connection, PrimaryKey, PkType, FindPredicate};
 use db_result::DbResult;
 
-pub struct PGConnection {
+pub struct PgConnection {
     internal_connection: *mut PGconn,
     transaction_depth: Cell<i32>,
 }
 
-unsafe impl Send for PGConnection {}
+unsafe impl Send for PgConnection {}
 
-impl PGConnection {
+impl PgConnection {
 
     fn exec_sql_params(&self, query: &str, 
                        param_data: &Vec<Option<Vec<u8>>>, 
-                       param_types: &Option<Vec<u32>>) -> QueryResult<PGDbResult> {
+                       param_types: &Option<Vec<u32>>) -> QueryResult<PgDbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
@@ -60,7 +59,7 @@ impl PGConnection {
             )
         };
 
-        PGDbResult::new(self, internal_res)
+        PgDbResult::new(self, internal_res)
     }
 
     fn prepare_query<T: QueryFragment>(&self, source: &T)
@@ -71,7 +70,7 @@ impl PGConnection {
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
-    fn execute_inner(&self, query: &str) -> QueryResult<PGDbResult> {
+    fn execute_inner(&self, query: &str) -> QueryResult<PgDbResult> {
         self.exec_sql_params(query, &Vec::new(), &None)
     }
 
@@ -148,7 +147,7 @@ fn last_error_message(conn: *const PGconn) -> String {
     }
 }
 
-impl Drop for PGConnection {
+impl Drop for PgConnection {
     fn drop(&mut self) {
         unsafe { PQfinish(self.internal_connection) };
     }
@@ -186,21 +185,21 @@ impl Drop for PgString {
     }
 }
 
-impl Connection for PGConnection {
+impl Connection for PgConnection {
 
-    type DbResult = PGDbResult;
+    type DbResult = PgDbResult;
 
     fn last_error_message(&self) -> String {
         last_error_message(self.internal_connection)
     }
 
-    fn establish(database_url: &str) -> ConnectionResult<PGConnection> {
+    fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         let connection_string = try!(CString::new(database_url));
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };
         match connection_status {
             CONNECTION_OK => {
-                Ok(PGConnection {
+                Ok(PgConnection {
                     internal_connection: connection_ptr,
                     transaction_depth: Cell::new(0),
                 })
@@ -253,7 +252,7 @@ impl Connection for PGConnection {
         let inner_result = unsafe {
             PQexec(self.internal_connection, query.as_ptr())
         };
-        try!(PGDbResult::new(self, inner_result));
+        try!(PgDbResult::new(self, inner_result));
         Ok(())
     }
 
@@ -265,7 +264,7 @@ impl Connection for PGConnection {
             .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
     }
 
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U, PGDbResult>> where
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U, PgDbResult>> where
         T: AsQuery,
         U: Queriable<T::SqlType>,
     {
@@ -273,7 +272,7 @@ impl Connection for PGConnection {
         self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
     }
 
-    fn query_sql<T, U>(&self, query: &str) -> QueryResult<Cursor<T, U, PGDbResult>> where
+    fn query_sql<T, U>(&self, query: &str) -> QueryResult<Cursor<T, U, PgDbResult>> where
         T: NativeSqlType,
         U: Queriable<T>,
     {
@@ -282,7 +281,7 @@ impl Connection for PGConnection {
     }
 
     fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
-        -> QueryResult<Cursor<T, U, PGDbResult>> where
+        -> QueryResult<Cursor<T, U, PgDbResult>> where
         T: NativeSqlType,
         U: Queriable<T>,
         PT: NativeSqlType,
@@ -309,7 +308,7 @@ impl Connection for PGConnection {
     }
 
     fn insert<T, U, Out>(&self, _source: &T, records: U)
-        -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out, PGDbResult>> where
+        -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out, PgDbResult>> where
         T: Table,
         U: Insertable<T>,
         Out: Queriable<<T::AllColumns as Expression>::SqlType>,

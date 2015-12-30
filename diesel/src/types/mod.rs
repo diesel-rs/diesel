@@ -2,18 +2,6 @@
 //! them and Rust primitives. Additional types can be added by other crates.
 pub mod ops;
 mod ord;
-mod impls;
-
-#[doc(hidden)]
-pub mod structs {
-    pub mod data_types {
-        //! Structs to represent the primitive equivalent of SQL types where
-        //! there is no existing Rust primitive, or where using it would be
-        //! confusing (such as date and time types)
-        pub use super::super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
-        pub use super::super::impls::floats::PgNumeric;
-    }
-}
 
 /// Marker trait for types which can be compared for ordering.
 pub use self::ord::SqlOrd;
@@ -54,8 +42,8 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Time;
 #[derive(Clone, Copy, Default)] pub struct Timestamp;
 
-#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType>(T);
-#[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(T);
+#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType>(pub T);
+#[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(pub T);
 
 pub trait NativeSqlType {
     fn oid(&self) -> u32;

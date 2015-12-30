@@ -70,5 +70,10 @@ pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
 pub use persistable::Insertable;
 pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
 pub use result::Error::NotFound;
+
+// reexport postgresql types
 #[doc(inline)]
-pub use types::structs::data_types;
+pub use postgresql::types::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
+#[doc(inline)]
+pub use postgresql::types::floats::PgNumeric;
+
