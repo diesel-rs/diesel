@@ -11,13 +11,13 @@ repository = "https://github.com/sgrif/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [build-dependencies]
-quasi_codegen = { verision = "^0.3.10", optional = true }
+quasi_codegen = { verision = "^0.3.11", optional = true }
 syntex = { version = "^0.24.0", optional = true }
 
 [dependencies]
 aster = { version = "^0.9.0", default-features = false }
-quasi = { verision = "^0.3.10", default-features = false }
-quasi_macros = { version = "^0.3.10", optional = true}
+quasi = { verision = "^0.3.11", default-features = false }
+quasi_macros = { version = "^0.3.11", optional = true}
 syntex = { version = "^0.24.0", optional = true }
 syntex_syntax = { version = "^0.24.0", optional = true }
 diesel = { version = "^0.3.0" }
