@@ -26,7 +26,6 @@ pub mod bound;
 #[doc(hidden)]
 pub mod count;
 pub mod expression_methods;
-pub mod extensions;
 #[doc(hidden)]
 pub mod functions;
 #[doc(hidden)]
@@ -50,8 +49,6 @@ pub mod dsl {
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
     pub use super::functions::aggregate_ordering::*;
-
-    pub use super::extensions::*;
 }
 
 pub use self::dsl::*;

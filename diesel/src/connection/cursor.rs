@@ -6,15 +6,17 @@ use std::marker::PhantomData;
 
 /// The type returned by various [`Connection`](struct.Connection.html) methods.
 /// Acts as an iterator over `T`.
-pub struct Cursor<ST, T> {
+pub struct Cursor<ST, T, R> {
     current_row: usize,
-    db_result: DbResult,
+    db_result: R,
     _marker: PhantomData<(ST, T)>,
 }
 
-impl<ST, T> Cursor<ST, T> {
+impl<ST, T, R> Cursor<ST, T, R> where
+    R: DbResult,
+{
     #[doc(hidden)]
-    pub fn new(db_result: DbResult) -> Self {
+    pub fn new(db_result: R) -> Self {
         Cursor {
             current_row: 0,
             db_result: db_result,
@@ -23,9 +25,10 @@ impl<ST, T> Cursor<ST, T> {
     }
 }
 
-impl<ST, T> Iterator for Cursor<ST, T> where
+impl<ST, T, R> Iterator for Cursor<ST, T, R> where
     ST: NativeSqlType,
     T: Queriable<ST>,
+    R: DbResult,
 {
     type Item = T;
 

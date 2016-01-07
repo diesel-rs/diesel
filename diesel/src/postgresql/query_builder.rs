@@ -1,9 +1,9 @@
-use connection::Connection;
-use super::{QueryBuilder, Binds, BuildQueryResult};
+use postgresql::connection::PgConnection;
+use query_builder::{QueryBuilder, Binds, BuildQueryResult};
 use types::NativeSqlType;
 
 pub struct PgQueryBuilder<'a> {
-    conn: &'a Connection,
+    conn: &'a PgConnection,
     pub sql: String,
     pub binds: Binds,
     pub bind_types: Vec<u32>,
@@ -11,7 +11,7 @@ pub struct PgQueryBuilder<'a> {
 }
 
 impl<'a> PgQueryBuilder<'a> {
-    pub fn new(conn: &'a Connection) -> Self {
+    pub fn new(conn: &'a PgConnection) -> Self {
         PgQueryBuilder {
             conn: conn,
             sql: String::new(),

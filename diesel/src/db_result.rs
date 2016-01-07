@@ -1,79 +1,17 @@
-extern crate pq_sys;
-extern crate libc;
-
 use connection::Connection;
-use result::{Error, QueryResult};
 use row::DbRow;
 
-use self::pq_sys::*;
-use std::ffi::CStr;
-use std::{str, slice, mem};
+pub trait DbResult: Drop + Sized {
 
-pub struct DbResult {
-    internal_result: *mut PGresult,
-}
+    type Connection: Connection;
 
-impl DbResult {
-    pub fn new(conn: &Connection, internal_result: *mut PGresult) -> QueryResult<Self> {
-        let result_status = unsafe { PQresultStatus(internal_result) };
-        match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
-                Ok(DbResult {
-                    internal_result: internal_result,
-                })
-            },
-            _ => Err(Error::DatabaseError(conn.last_error_message())),
-        }
-    }
+    fn rows_affected(&self) -> usize; 
 
-    pub fn rows_affected(&self) -> usize {
-        unsafe {
-            let count_char_ptr = PQcmdTuples(self.internal_result);
-            let count_bytes = CStr::from_ptr(count_char_ptr).to_bytes();
-            let count_str = str::from_utf8_unchecked(count_bytes);
-            match count_str {
-                "" => 0,
-                _ => count_str.parse().unwrap()
-            }
-        }
-    }
+    fn num_rows(&self) -> usize; 
 
-    pub fn num_rows(&self) -> usize {
-        unsafe { PQntuples(self.internal_result) as usize }
-    }
+    fn get_row(&self, idx: usize) -> DbRow<Self>; 
 
-    pub fn get_row(&self, idx: usize) -> DbRow {
-        DbRow::new(self, idx)
-    }
+    fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]>; 
 
-    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
-        if self.is_null(row_idx, col_idx) {
-            None
-        } else {
-            let row_idx = row_idx as libc::c_int;
-            let col_idx = col_idx as libc::c_int;
-            unsafe {
-                let value_ptr = PQgetvalue(self.internal_result, row_idx, col_idx);
-                let value_ptr = mem::transmute::<_, *const u8>(value_ptr);
-                let num_bytes = PQgetlength(self.internal_result, row_idx, col_idx);
-                Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
-            }
-        }
-    }
-
-    pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
-        unsafe {
-            0 != PQgetisnull(
-                self.internal_result,
-                row_idx as libc::c_int,
-                col_idx as libc::c_int,
-            )
-        }
-    }
-}
-
-impl Drop for DbResult {
-    fn drop(&mut self) {
-        unsafe { PQclear(self.internal_result) };
-    }
+    fn is_null(&self, row_idx: usize, col_idx: usize) -> bool; 
 }

@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::env;
 use std::path::{PathBuf, Path};
 
-pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsError> {
+pub fn run_pending_migrations<C: Connection>(conn: &C) -> Result<(), RunMigrationsError> {
     try!(create_schema_migrations_table_if_needed(conn));
     let already_run = try!(previously_run_migration_versions(conn));
     let migrations_dir = try!(find_migrations_directory());
@@ -25,20 +25,20 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
     run_migrations(conn, pending_migrations)
 }
 
-fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<usize> {
+fn create_schema_migrations_table_if_needed<C: Connection>(conn: &C) -> QueryResult<usize> {
     conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
         version VARCHAR PRIMARY KEY NOT NULL,
         run_on TIMESTAMP NOT NULL DEFAULT NOW()
     )")
 }
 
-fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<String>> {
+fn previously_run_migration_versions<C: Connection>(conn: &C) -> QueryResult<HashSet<String>> {
     __diesel_schema_migrations.select(version)
-        .load(&conn)
+        .load(conn)
         .map(|r| r.collect())
 }
 
-fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
+fn migrations_in_directory<C: Connection>(path: &Path) -> Result<Vec<Box<Migration<C>>>, MigrationError> {
     use self::migration::migration_from;
 
     try!(path.read_dir())
@@ -55,9 +55,9 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
         }).collect()
 }
 
-fn run_migrations<T>(conn: &Connection, migrations: T)
+fn run_migrations<T, C: Connection>(conn: &C, migrations: T)
     -> Result<(), RunMigrationsError> where
-        T: Iterator<Item=Box<Migration>>
+        T: Iterator<Item=Box<Migration<C>>>
 {
     use ::query_builder::insert;
 
@@ -67,7 +67,7 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
             try!(migration.run(conn));
             try!(insert(&NewMigration(migration.version()))
                  .into(__diesel_schema_migrations)
-                 .execute(&conn));
+                 .execute(conn));
             Ok(())
         }));
     }

@@ -1,6 +1,6 @@
 use std::ops::Mul;
 
-use data_types::PgInterval;
+use postgresql::types::date_and_time::PgInterval;
 
 /// A DSL added to `i64` and `f64` to construct PostgreSQL intervals of less
 /// than 1 day.
@@ -247,8 +247,9 @@ mod tests {
     use self::dotenv::dotenv;
     use super::*;
     use connection::Connection;
+    use postgresql::connection::PgConnection;
+    use postgresql::types::date_and_time::PgInterval;
     use types;
-    use data_types::PgInterval;
 
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
@@ -257,7 +258,7 @@ mod tests {
 
                 let connection_url = ::std::env::var("DATABASE_URL").ok()
                     .expect("DATABASE_URL must be set in order to run tests");
-                let connection = Connection::establish(&connection_url).unwrap();
+                let connection: PgConnection = Connection::establish(&connection_url).unwrap();
 
                 let query = format!(concat!("SELECT '{} ", stringify!($units), "'::interval"), val);
                 let res: PgInterval = connection.query_sql::<types::Interval, _>(&query)
