@@ -27,6 +27,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[changeset_for]` can now be used with structs containing only a single field
   other than `id`. Fixes [#66](https://github.com/sgrif/diesel/issues/66).
 
+* `infer_schema!` properly works with array columns. Fixes
+  [#65](https://github.com/sgrif/diesel/issues/65).
+
 ## [0.3.0] 2015-12-04
 
 ### Changed

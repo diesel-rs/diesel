@@ -144,11 +144,24 @@ fn table_oid(conn: &Connection, table_name: &str) -> QueryResult<u32> {
 
 fn column_def_tokens(cx: &mut ExtCtxt, attr: &PgAttr) -> Vec<ast::TokenTree> {
     let column_name = str_to_ident(&attr.column_name);
-    let type_name = str_to_ident(&capitalize(&attr.type_name));
-    if attr.nullable {
-        quote_tokens!(cx, $column_name -> Nullable<$type_name>,)
+    let tpe = determine_column_type(cx, attr);
+    quote_tokens!(cx, $column_name -> $tpe,)
+}
+
+fn determine_column_type(cx: &mut ExtCtxt, attr: &PgAttr) -> P<ast::Ty> {
+    let tpe;
+    if attr.type_name.starts_with("_") {
+        let subtype = str_to_ident(&capitalize(&attr.type_name[1..]));
+        tpe = quote_ty!(cx, Array<$subtype>);
     } else {
-        quote_tokens!(cx, $column_name -> $type_name,)
+        let type_name = str_to_ident(&capitalize(&attr.type_name));
+        tpe = quote_ty!(cx, $type_name);
+    }
+
+    if attr.nullable {
+        quote_ty!(cx, Nullable<$tpe>)
+    } else {
+        tpe
     }
 }
 

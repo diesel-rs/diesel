@@ -37,6 +37,7 @@ pub struct Post {
     pub user_id: i32,
     pub title: String,
     pub body: Option<String>,
+    pub tags: Vec<String>,
 }
 
 impl Post {
@@ -46,6 +47,7 @@ impl Post {
             user_id: user_id,
             title: title.to_string(),
             body: body.map(|s| s.to_string()),
+            tags: Vec::new(),
         }
     }
 }
