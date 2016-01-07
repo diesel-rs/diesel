@@ -7,6 +7,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Add the ability for diesel to maintain your schema for you automatically. See
+  the [migrations](http://sgrif.github.io/diesel/diesel/migrations/index.html)
+  module for individual methods.
+
 * Add DebugQueryBuilder to build sql without requiring a connection.
 
 * Add print_sql! and debug_sql! macros to print out and return sql strings from

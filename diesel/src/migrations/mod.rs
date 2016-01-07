@@ -1,3 +1,60 @@
+//! Provides functions for maintaining database schema.
+//!
+//! A database migration always provides procedures to update the schema, as well as to revert
+//! itself. Diesel's migrations are versioned, and run in order. Diesel also takes care of tracking
+//! which migrations have already been run automatically. Your migrations don't need to be
+//! idempotent, as Diesel will ensure no migration is run twice unless it has been reverted.
+//!
+//! Migrations should be placed in a `/migrations` directory at the root of your project (the same
+//! directiry as `Cargo.toml`). When any of these functions are run, Diesel will search for the
+//! migrations directory in the current directory and its parents, stopping when it finds the
+//! directory containing `Cargo.toml`.
+//!
+//! Individual migrations should be a folder containing exactly two files, `up.sql` and `down.sql`.
+//! `up.sql` will be used to run the migration, while `down.sql` will be used for reverting it. The
+//! folder itself should have the structure `{version}_{migration_name}`. It is recommended that
+//! you use the timestamp of creation for the version.
+//!
+//! ## Example
+//!
+//! ```text
+//! # Directory Structure
+//! - 20151219180527_create_users
+//!     - up.sql
+//!     - down.sql
+//! - 20160107082941_create_posts
+//!     - up.sql
+//!     - down.sql
+//! ```
+//!
+//! ```sql
+//! -- 20151219180527_create_users/up.sql
+//! CREATE TABLE users (
+//!   id SERIAL PRIMARY KEY,
+//!   name VARCHAR NOT NULL,
+//!   hair_color VARCHAR
+//! );
+//! ```
+//!
+//! ```sql
+//! -- 20151219180527_create_users/down.sql
+//! DROP TABLE users;
+//! ```
+//!
+//! ```sql
+//! -- 20160107082941_create_posts/up.sql
+//! CREATE TABLE posts (
+//!   id SERIAL PRIMARY KEY,
+//!   user_id INTEGER NOT NULL,
+//!   title VARCHAR NOT NULL,
+//!   body TEXT
+//! );
+//! ```
+//!
+//! ```sql
+//! -- 20160107082941_create_posts/down.sql
+//! DROP TABLE posts;
+//! ```
 mod migration;
 mod migration_error;
 mod schema;
@@ -16,6 +73,19 @@ use std::collections::HashSet;
 use std::env;
 use std::path::{PathBuf, Path};
 
+/// Runs all migrations that have not yet been run. This function will print all progress to
+/// stdout. This function will return an `Err` if some error occurs reading the migrations, or if
+/// any migration fails to run. Each migration is run in its own transaction, so some migrations
+/// may be committed, even if a later migration fails to run.
+///
+/// It should be noted that this runs all migrations that have not already been run, regardless of
+/// whether or not their version is later than the latest run migration. This is generally not a
+/// problem, and eases the more common case of two developers generating independent migrations on
+/// a branch. Whoever created the second one will eventually need to run the first when both
+/// branches are merged.
+///
+/// See the [module level documentation](index.html) for information on how migrations should be
+/// structured, and where Diesel will look for them by default.
 pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsError> {
     try!(create_schema_migrations_table_if_needed(conn));
     let already_run = try!(previously_run_migration_versions(conn));
@@ -27,21 +97,32 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
     run_migrations(conn, pending_migrations)
 }
 
-pub fn rollback_latest_migration(conn: &Connection) -> Result<(), RunMigrationsError> {
+/// Reverts the last migration that was run. This function will return an `Err` if no migrations
+/// have ever been run.
+///
+/// See the [module level documentation](index.html) for information on how migrations should be
+/// structured, and where Diesel will look for them by default.
+pub fn revert_latest_migration(conn: &Connection) -> Result<(), RunMigrationsError> {
     try!(create_schema_migrations_table_if_needed(conn));
     let latest_migration_version = try!(latest_run_migration_version(conn));
-    rollback_migration_with_version(conn, latest_migration_version)
+    revert_migration_with_version(conn, latest_migration_version)
 }
 
-pub fn rollback_migration_with_version(conn: &Connection, ver: String) -> Result<(), RunMigrationsError> {
+/// Reverts the migration with the given version. This function will return an `Err` if a migration
+/// with that version cannot be found, an error occurs reading it, or if an error occurs when
+/// reverting it.
+///
+/// See the [module level documentation](index.html) for information on how migrations should be
+/// structured, and where Diesel will look for them by default.
+pub fn revert_migration_with_version(conn: &Connection, ver: String) -> Result<(), RunMigrationsError> {
     try!(create_schema_migrations_table_if_needed(conn));
     let migrations_dir = try!(find_migrations_directory());
     let all_migrations = try!(migrations_in_directory(&migrations_dir));
-    let migration_to_rollback = all_migrations.into_iter().find(|m| {
+    let migration_to_revert = all_migrations.into_iter().find(|m| {
         m.version() == ver
     });
-    match migration_to_rollback {
-        Some(m) => rollback_migration(&conn, m),
+    match migration_to_revert {
+        Some(m) => revert_migration(&conn, m),
         None => Err(UnknownMigrationVersion(ver).into()),
     }
 }
@@ -101,7 +182,7 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
     Ok(())
 }
 
-fn rollback_migration(conn: &Connection, migration: Box<Migration>)
+fn revert_migration(conn: &Connection, migration: Box<Migration>)
     -> Result<(), RunMigrationsError>
 {
     use ::query_builder::delete;
