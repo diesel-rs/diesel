@@ -184,3 +184,25 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
     assert_eq!(expected_post, post);
 }
+
+#[test]
+fn can_update_with_struct_containing_single_field() {
+    #[changeset_for(posts)]
+    struct SetBody {
+        body: String,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert(&new_post).into(posts::table).execute(&connection).unwrap();
+
+    let changes = SetBody { body: "earth".into() };
+    let post = update(posts::table)
+        .set(&changes)
+        .get_result::<Post>(&connection)
+        .unwrap();
+
+    let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
+    assert_eq!(expected_post, post);
+}

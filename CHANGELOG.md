@@ -24,6 +24,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * No longer generate invalid SQL when an optional update field is not the first
   field on a changeset. Fixes [#68](https://github.com/sgrif/diesel/issues/68).
 
+* `#[changeset_for]` can now be used with structs containing only a single field
+  other than `id`. Fixes [#66](https://github.com/sgrif/diesel/issues/66).
+
 ## [0.3.0] 2015-12-04
 
 ### Changed
