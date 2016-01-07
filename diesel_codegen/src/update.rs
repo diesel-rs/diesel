@@ -61,26 +61,19 @@ fn changeset_impl(
     let pk = model.primary_key_name();
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
-    let changeset_t;
-    let changeset_body;
-    if attrs_for_changeset.len() == 1 {
-        changeset_t = changeset_ty(cx, builder, table, attrs_for_changeset[0]);
-        changeset_body = changeset_expr(cx, builder, table, attrs_for_changeset[0]);
-    } else {
-        changeset_t = builder.ty().tuple()
-            .with_tys(attrs_for_changeset.iter()
-                      .map(|a| changeset_ty(cx, builder, table, a)))
-            .build();
-        changeset_body = builder.expr().tuple()
-            .with_exprs(attrs_for_changeset.iter()
-                        .map(|a| changeset_expr(cx, builder, table, a)))
-            .build();
-    }
+    let changeset_ty = builder.ty().tuple()
+        .with_tys(attrs_for_changeset.iter()
+                  .map(|a| changeset_ty(cx, builder, table, a)))
+        .build();
+    let changeset_body = builder.expr().tuple()
+        .with_exprs(attrs_for_changeset.iter()
+                    .map(|a| changeset_expr(cx, builder, table, a)))
+        .build();
     quote_item!(cx,
         impl<'a: 'update, 'update> ::diesel::query_builder::AsChangeset for
             &'update $struct_name
         {
-            type Changeset = $changeset_t;
+            type Changeset = $changeset_ty;
 
             fn as_changeset(self) -> Self::Changeset {
                 $changeset_body

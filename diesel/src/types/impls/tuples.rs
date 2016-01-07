@@ -29,20 +29,20 @@ macro_rules! tuple_impls {
                 }
 
                 fn new() -> Self {
-                    ($($T::new()),+)
+                    ($($T::new(),)+)
                 }
             }
 
-            impl<$($T),+,$($ST),+> FromSqlRow<($($ST),+)> for ($($T),+) where
+            impl<$($T),+,$($ST),+> FromSqlRow<($($ST,)+)> for ($($T,)+) where
                 $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
                 fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
-                    Ok(($(try!($T::build_from_row(row))),+))
+                    Ok(($(try!($T::build_from_row(row)),)+))
                 }
             }
 
-            impl<$($T),+,$($ST),+> FromSqlRow<Nullable<($($ST),+)>> for Option<($($T),+)> where
+            impl<$($T),+,$($ST),+> FromSqlRow<Nullable<($($ST,)+)>> for Option<($($T,)+)> where
                 $($T: FromSqlRow<$ST>),+,
                 $($ST: NativeSqlType),+
             {
@@ -50,23 +50,23 @@ macro_rules! tuple_impls {
                     if e!(row.next_is_null($Tuple)) {
                         Ok(None)
                     } else {
-                        Ok(Some(($(try!($T::build_from_row(row))),+)))
+                        Ok(Some(($(try!($T::build_from_row(row)),)+)))
                     }
                 }
             }
 
-            impl<$($T),+,$($ST),+> Queriable<($($ST),+)> for ($($T),+) where
+            impl<$($T),+,$($ST),+> Queriable<($($ST,)+)> for ($($T,)+) where
                 $($T: Queriable<$ST>),+,
                 $($ST: NativeSqlType),+
             {
-                type Row = ($($T::Row),+);
+                type Row = ($($T::Row,)+);
 
                 fn build(row: Self::Row) -> Self {
-                    ($($T::build(e!(row.$idx))),+)
+                    ($($T::build(e!(row.$idx)),)+)
                 }
             }
 
-            impl<$($T: Expression + NonAggregate),+> Expression for ($($T),+) {
+            impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn to_sql(&self, out: &mut QueryBuilder)
@@ -92,10 +92,10 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T),+) {
+            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
             }
 
-            impl<$($T: Column<Table=Tab>),+, Tab: Table> InsertableColumns<Tab> for ($($T),+) {
+            impl<$($T: Column<Table=Tab>),+, Tab: Table> InsertableColumns<Tab> for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
 
                 fn names(&self) -> String {
@@ -105,24 +105,24 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T),+, $($ST),+, QS>
-                SelectableExpression<QS, ($($ST),+)>
-                for ($($T),+) where
+                SelectableExpression<QS, ($($ST,)+)>
+                for ($($T,)+) where
                 $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, $ST>),+,
-                ($($T),+): Expression,
+                ($($T,)+): Expression,
             {
             }
 
             impl<$($T),+, $($ST),+, QS>
-                SelectableExpression<QS, Nullable<($($ST),+)>>
-                for ($($T),+) where
+                SelectableExpression<QS, Nullable<($($ST,)+)>>
+                for ($($T,)+) where
                 $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, Nullable<$ST>>),+,
-                ($($T),+): Expression,
+                ($($T,)+): Expression,
             {
             }
 
-            impl<Target, $($T: Changeset<Target=Target>),+> Changeset for ($($T),+) where
+            impl<Target, $($T: Changeset<Target=Target>),+> Changeset for ($($T,)+) where
                 Target: QuerySource,
             {
                 type Target = Target;
@@ -152,6 +152,9 @@ macro_rules! tuple_impls {
 }
 
 tuple_impls! {
+    1 {
+        (0) -> A, SA, TA,
+    }
     2 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,

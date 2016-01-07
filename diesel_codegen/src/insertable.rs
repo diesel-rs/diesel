@@ -163,14 +163,9 @@ fn tuple_ty_from<F: Fn(&Attr) -> P<ast::Ty>>(
     fields: &[Attr],
     f: F,
 ) -> P<ast::Ty> {
-    let tys: Vec<_> = fields.iter().map(f).collect();
-    if tys.len() == 1 {
-        tys[0].clone()
-    } else {
-        builder.ty().tuple()
-            .with_tys(tys)
-            .build()
-    }
+    builder.ty().tuple()
+        .with_tys(fields.iter().map(f))
+        .build()
 }
 
 fn tuple_expr_from<F: Fn((usize, &Attr)) -> P<ast::Expr>>(
@@ -178,12 +173,7 @@ fn tuple_expr_from<F: Fn((usize, &Attr)) -> P<ast::Expr>>(
     fields: &[Attr],
     f: F,
 ) -> P<ast::Expr> {
-    let exprs: Vec<_> = fields.iter().enumerate().map(f).collect();
-    if exprs.len() == 1 {
-        exprs[0].clone()
-    } else {
-        builder.expr().tuple()
-            .with_exprs(exprs)
-            .build()
-    }
+    builder.expr().tuple()
+        .with_exprs(fields.iter().enumerate().map(f))
+        .build()
 }
