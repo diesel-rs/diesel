@@ -1,0 +1,11 @@
+[package]
+name = "diesel_cli"
+version = "0.4.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[[bin]]
+name = "diesel"
+
+[dependencies]
+diesel = "^0.3.0"
+clap = "^1.5.5"

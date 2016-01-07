@@ -97,33 +97,41 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
     run_migrations(conn, pending_migrations)
 }
 
-/// Reverts the last migration that was run. This function will return an `Err` if no migrations
-/// have ever been run.
+/// Reverts the last migration that was run. Returns the version that was reverted. Returns an
+/// `Err` if no migrations have ever been run.
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn revert_latest_migration(conn: &Connection) -> Result<(), RunMigrationsError> {
+pub fn revert_latest_migration(conn: &Connection) -> Result<String, RunMigrationsError> {
     try!(create_schema_migrations_table_if_needed(conn));
     let latest_migration_version = try!(latest_run_migration_version(conn));
-    revert_migration_with_version(conn, latest_migration_version)
+    revert_migration_with_version(conn, &latest_migration_version)
+        .map(|_| latest_migration_version)
 }
 
-/// Reverts the migration with the given version. This function will return an `Err` if a migration
-/// with that version cannot be found, an error occurs reading it, or if an error occurs when
-/// reverting it.
-///
-/// See the [module level documentation](index.html) for information on how migrations should be
-/// structured, and where Diesel will look for them by default.
-pub fn revert_migration_with_version(conn: &Connection, ver: String) -> Result<(), RunMigrationsError> {
-    try!(create_schema_migrations_table_if_needed(conn));
+#[doc(hidden)]
+pub fn revert_migration_with_version(conn: &Connection, ver: &str) -> Result<(), RunMigrationsError> {
+    migration_with_version(ver)
+        .map_err(|e| e.into())
+        .and_then(|m| revert_migration(conn, m))
+}
+
+#[doc(hidden)]
+pub fn run_migration_with_version(conn: &Connection, ver: &str) -> Result<(), RunMigrationsError> {
+    migration_with_version(ver)
+        .map_err(|e| e.into())
+        .and_then(|m| run_migration(conn, m))
+}
+
+fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
     let migrations_dir = try!(find_migrations_directory());
     let all_migrations = try!(migrations_in_directory(&migrations_dir));
-    let migration_to_revert = all_migrations.into_iter().find(|m| {
+    let migration = all_migrations.into_iter().find(|m| {
         m.version() == ver
     });
-    match migration_to_revert {
-        Some(m) => revert_migration(&conn, m),
-        None => Err(UnknownMigrationVersion(ver).into()),
+    match migration {
+        Some(m) => Ok(m),
+        None => Err(UnknownMigrationVersion(ver.into())),
     }
 }
 
@@ -167,19 +175,25 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
     -> Result<(), RunMigrationsError> where
         T: Iterator<Item=Box<Migration>>
 {
-    use ::query_builder::insert;
-
     for migration in migrations {
-        try!(conn.transaction(|| {
-            println!("Running migration {}", migration.version());
-            try!(migration.run(conn));
-            try!(insert(&NewMigration(migration.version()))
-                 .into(__diesel_schema_migrations)
-                 .execute(&conn));
-            Ok(())
-        }));
+        try!(run_migration(conn, migration));
     }
     Ok(())
+}
+
+fn run_migration(conn: &Connection, migration: Box<Migration>)
+    -> Result<(), RunMigrationsError>
+{
+    use ::query_builder::insert;
+
+    conn.transaction(|| {
+        println!("Running migration {}", migration.version());
+        try!(migration.run(conn));
+        try!(insert(&NewMigration(migration.version()))
+             .into(__diesel_schema_migrations)
+             .execute(&conn));
+        Ok(())
+    }).map_err(|e| e.into())
 }
 
 fn revert_migration(conn: &Connection, migration: Box<Migration>)

@@ -1,3 +1,4 @@
 #!/bin/sh
 (cd diesel && cargo test --features unstable) &&
+  (cd diesel_cli && cargo test) &&
   (cd diesel_tests && cargo test --features unstable --no-default-features)

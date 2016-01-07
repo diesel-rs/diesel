@@ -1,0 +1,2 @@
+#!/bin/sh
+cd diesel_cli && cargo run -- $@
