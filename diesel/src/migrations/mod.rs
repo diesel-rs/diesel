@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn migration_directory_defaults_to_pwd_slash_migrations() {
         let dir = TempDir::new("diesel").unwrap();
-        let temp_path = dir.path();
+        let temp_path = dir.path().canonicalize().unwrap();
         let migrations_path = temp_path.join("migrations");
 
         env::set_current_dir(temp_path).unwrap();
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn migration_directory_checks_parents() {
         let dir = TempDir::new("diesel").unwrap();
-        let temp_path = dir.path();
+        let temp_path = dir.path().canonicalize().unwrap();
         let migrations_path = temp_path.join("migrations");
         let child_path = temp_path.join("child");
 
