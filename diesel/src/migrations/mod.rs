@@ -6,7 +6,7 @@
 //! idempotent, as Diesel will ensure no migration is run twice unless it has been reverted.
 //!
 //! Migrations should be placed in a `/migrations` directory at the root of your project (the same
-//! directiry as `Cargo.toml`). When any of these functions are run, Diesel will search for the
+//! directory as `Cargo.toml`). When any of these functions are run, Diesel will search for the
 //! migrations directory in the current directory and its parents, stopping when it finds the
 //! directory containing `Cargo.toml`.
 //!
