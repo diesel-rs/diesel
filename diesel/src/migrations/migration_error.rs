@@ -9,6 +9,7 @@ pub enum MigrationError {
     MigrationDirectoryNotFound,
     UnknownMigrationFormat(PathBuf),
     IoError(io::Error),
+    UnknownMigrationVersion(String),
 }
 
 impl PartialEq for MigrationError {

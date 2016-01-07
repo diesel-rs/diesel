@@ -3,9 +3,11 @@ mod migration_error;
 mod schema;
 
 pub use self::migration_error::*;
-use self::migration::*;
 
+use ::expression::expression_methods::*;
 use ::query_dsl::*;
+use self::migration::*;
+use self::migration_error::MigrationError::*;
 use self::schema::NewMigration;
 use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
@@ -25,6 +27,25 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), RunMigrationsErro
     run_migrations(conn, pending_migrations)
 }
 
+pub fn rollback_latest_migration(conn: &Connection) -> Result<(), RunMigrationsError> {
+    try!(create_schema_migrations_table_if_needed(conn));
+    let latest_migration_version = try!(latest_run_migration_version(conn));
+    rollback_migration_with_version(conn, latest_migration_version)
+}
+
+pub fn rollback_migration_with_version(conn: &Connection, ver: String) -> Result<(), RunMigrationsError> {
+    try!(create_schema_migrations_table_if_needed(conn));
+    let migrations_dir = try!(find_migrations_directory());
+    let all_migrations = try!(migrations_in_directory(&migrations_dir));
+    let migration_to_rollback = all_migrations.into_iter().find(|m| {
+        m.version() == ver
+    });
+    match migration_to_rollback {
+        Some(m) => rollback_migration(&conn, m),
+        None => Err(UnknownMigrationVersion(ver).into()),
+    }
+}
+
 fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<usize> {
     conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
         version VARCHAR PRIMARY KEY NOT NULL,
@@ -36,6 +57,12 @@ fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<S
     __diesel_schema_migrations.select(version)
         .load(&conn)
         .map(|r| r.collect())
+}
+
+fn latest_run_migration_version(conn: &Connection) -> QueryResult<String> {
+    use ::expression::dsl::max;
+    __diesel_schema_migrations.select(max(version))
+        .first(&conn)
 }
 
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
@@ -71,6 +98,21 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
             Ok(())
         }));
     }
+    Ok(())
+}
+
+fn rollback_migration(conn: &Connection, migration: Box<Migration>)
+    -> Result<(), RunMigrationsError>
+{
+    use ::query_builder::delete;
+
+    try!(conn.transaction(|| {
+        println!("Rolling back migration {}", migration.version());
+        try!(migration.revert(conn));
+        let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
+        try!(delete(target).execute(&conn));
+        Ok(())
+    }));
     Ok(())
 }
 
