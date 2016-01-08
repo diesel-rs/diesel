@@ -1,6 +1,6 @@
 [package]
 name = "diesel_codegen"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT"
 build = "build.rs"
@@ -20,7 +20,7 @@ quasi = { version = "^0.3.11", default-features = false }
 quasi_macros = { version = "^0.3.11", optional = true}
 syntex = { version = "^0.25.0", optional = true }
 syntex_syntax = { version = "^0.25.0", optional = true }
-diesel = { version = "^0.3.0" }
+diesel = { version = "^0.4.0" }
 
 [features]
 default = ["with-syntex"]

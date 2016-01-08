@@ -2,11 +2,17 @@
 name = "diesel_cli"
 version = "0.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT"
+description = "Provides the CLI for the Diesel crate"
+documentation = "http://sgrif.github.io/diesel/diesel/index.html"
+homepage = "https://github.com/sgrif/diesel"
+repository = "https://github.com/sgrif/diesel"
+keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [[bin]]
 name = "diesel"
 
 [dependencies]
-diesel = "^0.3.0"
+diesel = "^0.4.0"
 clap = "^1.5.5"
 chrono = "^0.2.17"

@@ -137,6 +137,9 @@ Alternatively, you can call
 [`diesel::migrations::run_pending_migrations`][pending-migrations] from
 `build.rs`.
 
+Diesel will automatically keep track of which migrations have already been run,
+ensuring that they're never run twice.
+
 [pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html
 
 If you ever need to revert or make changes to your migrations, the commands

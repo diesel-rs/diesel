@@ -3,9 +3,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.4.0] 2016-01-08
 
 ### Added
+
+* Added Diesel CLI, a tool for managing your schema.
+  See [the readme](https://github.com/sgrif/diesel/blob/v0.4.0/README.md#database-migrations)
+  for more information.
 
 * Add the ability for diesel to maintain your schema for you automatically. See
   the [migrations](http://sgrif.github.io/diesel/diesel/migrations/index.html)
