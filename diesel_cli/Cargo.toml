@@ -9,3 +9,4 @@ name = "diesel"
 [dependencies]
 diesel = "^0.3.0"
 clap = "^1.5.5"
+chrono = "^0.2.17"

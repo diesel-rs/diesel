@@ -1,10 +1,12 @@
+extern crate chrono;
 #[macro_use]
 extern crate clap;
 extern crate diesel;
 
+use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::migrations;
-use std::env;
+use std::{env, fs};
 
 fn main() {
     let database_arg = || Arg::with_name("DATABASE_URL")
@@ -70,7 +72,20 @@ fn run_migration_command(matches: &ArgMatches) {
             }).unwrap();
         }
         ("generate", Some(args)) => {
-            panic!("Migration generator is not implemented this pass")
+            let migration_name = args.value_of("MIGRATION_NAME").unwrap();
+            let timestamp = Local::now().format("%Y%m%d%H%M%S");
+            let versioned_name = format!("{}_{}", &timestamp, migration_name);
+            let migration_dir = migrations::find_migrations_directory()
+                .unwrap().join(versioned_name);
+            fs::create_dir(&migration_dir).unwrap();
+
+            // FIXME: It would be nice to print these as relative paths
+            let up_path = migration_dir.join("up.sql");
+            println!("Creating {}", up_path.display());
+            fs::File::create(up_path).unwrap();
+            let down_path = migration_dir.join("down.sql");
+            println!("Creating {}", down_path.display());
+            fs::File::create(down_path).unwrap();
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     }

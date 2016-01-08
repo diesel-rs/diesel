@@ -216,7 +216,7 @@ fn revert_migration(conn: &Connection, migration: Box<Migration>)
 /// of the current directory, until it reaches the directory containing
 /// `Cargo.toml`. Returns `MigrationError::MigrationDirectoryNotFound`
 /// if no directory is found.
-fn find_migrations_directory() -> Result<PathBuf, MigrationError> {
+pub fn find_migrations_directory() -> Result<PathBuf, MigrationError> {
     search_for_migrations_directory(&try!(env::current_dir()))
 }
 
