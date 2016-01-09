@@ -354,6 +354,23 @@ impl Connection {
             }
         }
     }
+
+    #[doc(hidden)]
+    pub fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
+        unsafe { PQsetNoticeProcessor(self.internal_connection, Some(noop_notice_processor), ptr::null_mut()) };
+        let result = f();
+        unsafe { PQsetNoticeProcessor(self.internal_connection, Some(default_notice_processor), ptr::null_mut()) };
+        result
+    }
+}
+
+extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {
+}
+
+extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const libc::c_char) {
+    use std::io::Write;
+    let c_str = unsafe { CStr::from_ptr(message) };
+    ::std::io::stderr().write(c_str.to_bytes()).unwrap();
 }
 
 fn last_error_message(conn: *const PGconn) -> String {

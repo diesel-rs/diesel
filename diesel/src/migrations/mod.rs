@@ -136,10 +136,12 @@ fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
 }
 
 fn create_schema_migrations_table_if_needed(conn: &Connection) -> QueryResult<usize> {
-    conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
-        version VARCHAR PRIMARY KEY NOT NULL,
-        run_on TIMESTAMP NOT NULL DEFAULT NOW()
-    )")
+    conn.silence_notices(|| {
+        conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
+            version VARCHAR PRIMARY KEY NOT NULL,
+            run_on TIMESTAMP NOT NULL DEFAULT NOW()
+        )")
+    })
 }
 
 fn previously_run_migration_versions(conn: &Connection) -> QueryResult<HashSet<String>> {
