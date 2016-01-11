@@ -2,7 +2,7 @@
 name = "diesel_cli"
 version = "0.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 documentation = "http://sgrif.github.io/diesel/diesel/index.html"
 homepage = "https://github.com/sgrif/diesel"

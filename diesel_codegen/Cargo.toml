@@ -2,7 +2,7 @@
 name = "diesel_codegen"
 version = "0.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 build = "build.rs"
 description = "Annotations to remove boilerplate from Diesel"
 documentation = "https://github.com/sgrif/diesel/blob/master/diesel_codegen/README.md"
