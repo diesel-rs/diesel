@@ -5,11 +5,13 @@ use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
 
 use attr::Attr;
+use util::str_value_of_attr_with_name;
 
 pub struct Model {
     pub ty: P<ast::Ty>,
     pub attrs: Vec<Attr>,
     pub name: ast::Ident,
+    table_name_from_annotation: Option<ast::Ident>,
 }
 
 impl Model {
@@ -19,6 +21,8 @@ impl Model {
         annotatable: &Annotatable,
     ) -> Option<Self> {
         if let Annotatable::Item(ref item) = *annotatable {
+            let table_name_from_annotation =
+                str_value_of_attr_with_name(cx, &item.attrs, "table_name");
             Attr::from_item(cx, item).map(|(generics, attrs)| {
                 let ty = builder.ty().path()
                     .segment(item.ident).with_generics(generics.clone())
@@ -27,6 +31,7 @@ impl Model {
                     ty: ty,
                     attrs: attrs,
                     name: item.ident,
+                    table_name_from_annotation: table_name_from_annotation,
                 }
             })
         } else {
@@ -39,7 +44,9 @@ impl Model {
     }
 
     pub fn table_name(&self) -> ast::Ident {
-        str_to_ident(&infer_table_name(&self.name.name.as_str()))
+        self.table_name_from_annotation.unwrap_or_else(|| {
+            str_to_ident(&infer_table_name(&self.name.name.as_str()))
+        })
     }
 
     pub fn attr_named(&self, name: ast::Ident) -> &Attr {
