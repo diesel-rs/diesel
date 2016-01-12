@@ -24,6 +24,8 @@ include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 #[cfg(not(feature = "with-syntex"))]
 include!("lib.in.rs");
 
+mod util;
+
 #[cfg(feature = "with-syntex")]
 pub fn register(reg: &mut syntex::Registry) {
     reg.add_attr("feature(custom_derive)");
@@ -36,6 +38,8 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_decorator("belongs_to", associations::expand_belongs_to);
     reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
+
+    reg.add_post_expansion_pass(util::strip_attributes);
 }
 
 #[cfg_attr(not(feature = "with-syntex"), plugin_registrar)]

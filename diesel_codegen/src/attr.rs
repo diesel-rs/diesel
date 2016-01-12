@@ -1,8 +1,8 @@
 use syntax::ast;
-use syntax::attr::AttrMetaMethods;
 use syntax::ext::base::ExtCtxt;
 use syntax::ptr::P;
-use syntax::parse::token::str_to_ident;
+
+use util::str_value_of_attr_with_name;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Attr {
@@ -14,19 +14,8 @@ pub struct Attr {
 impl Attr {
     pub fn from_struct_field(cx: &mut ExtCtxt, field: &ast::StructField) -> Option<Self> {
         let field_name = field.node.ident();
-        let column_name = field.node.attrs.iter().filter_map(|attr| {
-            if attr.check_name("column_name") {
-                attr.value_str().map(|name| {
-                    str_to_ident(&name)
-                }).or_else(|| {
-                    cx.span_err(attr.span(),
-                        r#"`column_name` must be in the form `#[column_name="something"]`"#);
-                    None
-                })
-            } else {
-                None
-            }
-        }).nth(0);
+        let column_name =
+            str_value_of_attr_with_name(cx, &field.node.attrs, "column_name");
         let ty = field.node.ty.clone();
 
         match (column_name, field_name) {
