@@ -39,8 +39,7 @@ impl Model {
     }
 
     pub fn table_name(&self) -> ast::Ident {
-        let pluralized = format!("{}s", self.name.name.as_str());
-        str_to_ident(&pluralized.to_lowercase())
+        str_to_ident(&infer_table_name(&self.name.name.as_str()))
     }
 
     pub fn attr_named(&self, name: ast::Ident) -> &Attr {
@@ -48,4 +47,33 @@ impl Model {
             attr.field_name == Some(name)
         }).expect(&format!("Couldn't find an attr named {}", name))
     }
+}
+
+fn infer_table_name(name: &str) -> String {
+    let mut result = String::with_capacity(name.len());
+    result.push_str(&name[..1].to_lowercase());
+    for character in name[1..].chars() {
+        if character.is_uppercase() {
+            result.push('_');
+            for lowercase in character.to_lowercase() {
+                result.push(lowercase);
+            }
+        } else {
+            result.push(character);
+        }
+    }
+    result.push('s');
+    result
+}
+
+#[test]
+fn infer_table_name_pluralizes_and_downcases() {
+    assert_eq!("foos", &infer_table_name("Foo"));
+    assert_eq!("bars", &infer_table_name("Bar"));
+}
+
+#[test]
+fn infer_table_name_properly_handles_underscores() {
+    assert_eq!("foo_bars", &infer_table_name("FooBar"));
+    assert_eq!("foo_bar_bazs", &infer_table_name("FooBarBaz"));
 }
