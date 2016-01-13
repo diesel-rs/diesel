@@ -232,18 +232,17 @@ mod tests {
     extern crate tempdir;
 
     use super::*;
+    use super::search_for_migrations_directory;
 
     use self::tempdir::TempDir;
-    use std::{env, fs};
+    use std::fs;
 
     #[test]
     fn migration_directory_not_found_if_no_migration_dir_exists() {
         let dir = TempDir::new("diesel").unwrap();
 
-        env::set_current_dir(dir.path()).unwrap();
-
         assert_eq!(Err(MigrationError::MigrationDirectoryNotFound),
-            find_migrations_directory());
+            search_for_migrations_directory(dir.path()));
     }
 
     #[test]
@@ -252,10 +251,9 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
         let migrations_path = temp_path.join("migrations");
 
-        env::set_current_dir(temp_path).unwrap();
         fs::create_dir(&migrations_path).unwrap();
 
-        assert_eq!(Ok(migrations_path), find_migrations_directory());
+        assert_eq!(Ok(migrations_path), search_for_migrations_directory(&temp_path));
     }
 
     #[test]
@@ -267,8 +265,7 @@ mod tests {
 
         fs::create_dir(&child_path).unwrap();
         fs::create_dir(&migrations_path).unwrap();
-        env::set_current_dir(child_path).unwrap();
 
-        assert_eq!(Ok(migrations_path), find_migrations_directory());
+        assert_eq!(Ok(migrations_path), search_for_migrations_directory(&child_path));
     }
 }
