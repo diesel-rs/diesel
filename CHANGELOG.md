@@ -3,6 +3,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Changed
+
+* Moved most of our top level trait exports into a prelude module, and
+  re-exported our CRUD functions from the top level.
+  `diesel::query_builder::update` and friends are now `diesel::update`, and you
+  will get them by default if you import `diesel::*`. For a less aggressive
+  glob, you can import `diesel::prelude::*`, which will only export our traits.
+
 ## [0.4.1] 2016-01-11
 
 ### Changed

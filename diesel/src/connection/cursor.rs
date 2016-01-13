@@ -1,4 +1,4 @@
-use Queriable;
+use query_source::Queriable;
 use db_result::DbResult;
 use types::{NativeSqlType, FromSqlRow};
 

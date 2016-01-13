@@ -106,7 +106,7 @@ fn save_changes_impl(
                     -> ::diesel::QueryResult<T> where
                     T: Queriable<$sql_type>,
                 {
-                    use ::diesel::query_builder::update;
+                    use ::diesel::update;
                     update($table.filter($table.primary_key().eq(&self.$pk_field)))
                         .set(self)
                         .get_result(&connection)

@@ -3,7 +3,6 @@ extern crate diesel;
 
 use diesel::*;
 use diesel::expression::AsExpression;
-use diesel::query_builder::update;
 
 table! {
     users {

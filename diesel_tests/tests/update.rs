@@ -1,6 +1,5 @@
 use schema::*;
 use diesel::*;
-use diesel::query_builder::update;
 
 #[test]
 fn test_updating_single_column() {

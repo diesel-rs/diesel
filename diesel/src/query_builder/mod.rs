@@ -4,7 +4,8 @@ pub mod pg;
 pub mod debug;
 
 mod delete_statement;
-mod functions;
+#[doc(hidden)]
+pub mod functions;
 mod limit_clause;
 mod offset_clause;
 mod order_clause;
@@ -13,7 +14,6 @@ mod where_clause;
 pub mod insert_statement;
 pub mod update_statement;
 
-pub use self::functions::*;
 #[doc(hidden)]
 pub use self::select_statement::SelectStatement;
 #[doc(inline)]

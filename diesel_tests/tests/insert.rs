@@ -127,9 +127,8 @@ fn insert_borrowed_content() {
 }
 
 #[test]
-fn delete() {
+fn delete_records() {
     use schema::users::dsl::*;
-    use diesel::query_builder::delete;
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let deleted_rows = delete(users.filter(name.eq("Sean"))).execute(&connection);

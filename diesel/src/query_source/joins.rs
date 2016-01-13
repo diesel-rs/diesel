@@ -1,4 +1,4 @@
-use {QuerySource, Table};
+use super::{QuerySource, Table};
 use query_builder::*;
 use expression::SelectableExpression;
 use types::Nullable;

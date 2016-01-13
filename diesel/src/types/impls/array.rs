@@ -4,7 +4,7 @@ use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use std::error::Error;
 use std::io::Write;
 
-use Queriable;
+use query_source::Queriable;
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, Array, IsNull};
 

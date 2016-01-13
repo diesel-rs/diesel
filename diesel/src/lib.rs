@@ -60,14 +60,21 @@ pub mod helper_types {
     pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 }
 
+pub mod prelude {
+    //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+    pub use expression::{Expression, SelectableExpression, BoxableExpression};
+    pub use expression::expression_methods::*;
+    #[doc(inline)]
+    pub use persistable::Insertable;
+    pub use query_dsl::*;
+    pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
+    pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+}
+
 pub use connection::{Connection, Cursor};
-pub use expression::{Expression, SelectableExpression, BoxableExpression};
-pub use expression::expression_methods::*;
-pub use query_dsl::*;
-pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
+pub use prelude::*;
 #[doc(inline)]
-pub use persistable::Insertable;
-pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+pub use query_builder::functions::{insert, update, delete};
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;

@@ -1,6 +1,6 @@
 use expression::*;
 use expression::aliased::Aliased;
-use query_builder::*;
+use query_builder::{Query, SelectStatement};
 use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
 use query_builder::order_clause::*;

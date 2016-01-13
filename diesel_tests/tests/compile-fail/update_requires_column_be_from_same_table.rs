@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::query_builder::update;
 
 table! {
     users {

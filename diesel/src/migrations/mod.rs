@@ -186,12 +186,10 @@ fn run_migrations<T>(conn: &Connection, migrations: T)
 fn run_migration(conn: &Connection, migration: Box<Migration>)
     -> Result<(), RunMigrationsError>
 {
-    use ::query_builder::insert;
-
     conn.transaction(|| {
         println!("Running migration {}", migration.version());
         try!(migration.run(conn));
-        try!(insert(&NewMigration(migration.version()))
+        try!(::insert(&NewMigration(migration.version()))
              .into(__diesel_schema_migrations)
              .execute(&conn));
         Ok(())
@@ -201,13 +199,11 @@ fn run_migration(conn: &Connection, migration: Box<Migration>)
 fn revert_migration(conn: &Connection, migration: Box<Migration>)
     -> Result<(), RunMigrationsError>
 {
-    use ::query_builder::delete;
-
     try!(conn.transaction(|| {
         println!("Rolling back migration {}", migration.version());
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
-        try!(delete(target).execute(&conn));
+        try!(::delete(target).execute(&conn));
         Ok(())
     }));
     Ok(())

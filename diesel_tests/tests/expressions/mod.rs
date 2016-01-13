@@ -4,7 +4,7 @@ mod ops;
 use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
-use diesel::query_builder::*;
+use diesel::query_builder::{QueryBuilder, BuildQueryResult, AsQuery};
 use diesel::expression::dsl::*;
 
 #[test]

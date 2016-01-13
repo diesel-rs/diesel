@@ -1,7 +1,5 @@
 use diesel::*;
 
-pub use diesel::query_builder::insert;
-
 #[derive(PartialEq, Eq, Debug, Clone, Queriable)]
 #[changeset_for(users)]
 #[has_many(posts)]

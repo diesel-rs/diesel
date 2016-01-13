@@ -21,8 +21,8 @@ Once you've done that, you can already start using the query builder, and
 pulling out primitives.
 
 Much of the behavior in diesel comes from traits, and it is recommended that you
-import `diesel::*`. We avoid exporting generic type names, or any bare functions
-at that level.
+import `diesel::prelude::*`. We avoid exporting generic type names, or any bare
+functions at that level.
 
 ```rust
 #[macro_use]
@@ -219,10 +219,9 @@ later pass to the [`Connection`][connection]. Here's a simple example.
 
 ```rust
 fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> QueryResult<User> {
-    use diesel::query_builder::update;
     use users::dsl::*;
 
-    update(users.filter(id.eq(target))).set(name.eq(new_name))
+    diesel::update(users.filter(id.eq(target))).set(name.eq(new_name))
         .get_result(&connection)
 }
 ```
@@ -278,10 +277,9 @@ support returning a record.
 
 ```rust
 fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
-    use diesel::query_builder::delete;
     use users::dsl::*;
 
-    let deleted_rows = try!(delete(users.filter(id.eq(user.id))).execute(&connection));
+    let deleted_rows = try!(diesel::delete(users.filter(id.eq(user.id))).execute(&connection));
     debug_assert!(deleted_rows == 1);
     Ok(())
 }

@@ -1,6 +1,5 @@
 use diesel::*;
 use diesel::query_builder::debug::DebugQueryBuilder;
-use diesel::query_builder::update;
 
 #[test]
 fn test_debug_count_output() {

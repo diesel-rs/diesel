@@ -1,11 +1,10 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::InsertableColumns;
 use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
-use query_source::QuerySource;
+use query_source::{QuerySource, Queriable, Table, Column};
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ToSql, Nullable};
-use {Queriable, Table, Column};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
