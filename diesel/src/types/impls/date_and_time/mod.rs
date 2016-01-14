@@ -14,7 +14,7 @@ mod quickcheck_impls;
 mod std_time;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-/// Timestamps are represented in Postgres as a 32 bit signed integer representing the number of
+/// Timestamps are represented in Postgres as a 64 bit signed integer representing the number of
 /// microseconds since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate
 /// the integer's meaning.
 pub struct PgTimestamp(pub i64);
