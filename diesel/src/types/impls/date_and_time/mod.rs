@@ -12,6 +12,8 @@ use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 mod quickcheck_impls;
 #[cfg(feature = "unstable")]
 mod std_time;
+#[cfg(feature = "chrono")]
+mod chrono;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Timestamps are represented in Postgres as a 64 bit signed integer representing the number of
