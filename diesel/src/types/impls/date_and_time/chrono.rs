@@ -104,10 +104,12 @@ fn utc_datetime_to_sql() {
     ToSql::<Timestamp>::to_sql(&UTC.ymd(2000, 1, 1).and_hms(0, 0, 0), &mut bytes).unwrap();
     ToSql::<Timestamp>::to_sql(&UTC.ymd(2010, 12, 4).and_hms(14, 39, 6), &mut bytes).unwrap();
     ToSql::<Timestamp>::to_sql(&UTC.ymd(2032, 2, 4).and_hms(12, 59, 59), &mut bytes).unwrap();
+    ToSql::<Timestamp>::to_sql(&UTC.ymd(1789, 7, 14).and_hms(17, 30, 22), &mut bytes).unwrap();
     assert_eq!(bytes,
                vec![
                0,0,0,0,0,0,0,0,
                0x00,0x01,0x39,0x95,0x62,0xba,0x56,0x80,
                0x00,0x03,0x99,0x29,0x4d,0x41,0xd1,0xc0,
+               0xff,0xe8,0x67,0x82,0x01,0x2b,0xc7,0x80,
                ]);
 }
