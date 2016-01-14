@@ -14,7 +14,7 @@ libc = "0.2.*"
 pq-sys = "0.2.*"
 byteorder = "0.3.*"
 quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git", optional = true }
-chrono = { version = "0.2.17", optional = true }
+chrono = { version = "^0.2.17", optional = true }
 
 [dev-dependencies]
 quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git" }
