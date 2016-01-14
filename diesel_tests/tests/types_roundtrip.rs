@@ -1,4 +1,7 @@
+extern crate chrono;
+
 pub use quickcheck::quickcheck;
+use self::chrono::NaiveDateTime;
 
 pub use schema::connection;
 pub use diesel::*;
@@ -74,6 +77,11 @@ test_round_trip!(time_roundtrips, Time, PgTime, "time");
 test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp, "timestamp");
 test_round_trip!(interval_roundtrips, Interval, PgInterval, "interval");
 test_round_trip!(numeric_roundtrips, Numeric, PgNumeric, "numeric");
+test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime, "timestamp");
+
+fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
+    NaiveDateTime::from_timestamp(data.0, data.1 / 1000)
+}
 
 #[cfg(feature = "unstable")]
 mod unstable_types {
