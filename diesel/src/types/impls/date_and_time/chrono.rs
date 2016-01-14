@@ -13,6 +13,7 @@ use self::chrono::{Duration, NaiveDate, NaiveDateTime, DateTime, UTC, Local, Fix
 use expression::{Expression, NonAggregate};
 use query_builder::{QueryBuilder, BuildQueryResult};
 use types::{FromSql, IsNull, Timestamp, ToSql};
+use types::impls::option::UnexpectedNullError;
 
 
 // Postgres timestamps start from January 1st 2000.
@@ -46,13 +47,9 @@ impl NonAggregate for DateTime<UTC> {}
 
 impl FromSql<Timestamp> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        if let Some(mut buf) = bytes {
-            let offset: i64 = try!(buf.read_i64::<BigEndian>());
-            Ok(base() + Duration::microseconds(offset))
-        } else {
-            let err: Box<Error + Send + Sync> = "Nothing to read!".into();
-            Err(err)
-        }
+        let mut bytes = not_none!(bytes);
+        let offset: i64 = try!(bytes.read_i64::<BigEndian>());
+        Ok(base() + Duration::microseconds(offset))
     }
 }
 
