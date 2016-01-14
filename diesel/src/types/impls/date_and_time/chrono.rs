@@ -4,11 +4,10 @@
 extern crate chrono;
 extern crate byteorder as localbyteorder; // conflicts otherwise
 
-use std::fmt::Display;
 use std::error::Error;
 use std::io::Write;
 use self::localbyteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
-use self::chrono::{Duration, NaiveDate, NaiveDateTime, DateTime, UTC, Local, FixedOffset, TimeZone};
+use self::chrono::{Duration, NaiveDate, NaiveDateTime, DateTime, UTC, Local, FixedOffset};
 
 use expression::{Expression, NonAggregate};
 use query_builder::{QueryBuilder, BuildQueryResult};
@@ -21,18 +20,6 @@ fn base() -> NaiveDateTime {
     NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0)
 }
 
-impl<Tz: TimeZone> Expression for DateTime<Tz>
-    where Tz::Offset: Display {
-    type SqlType = Timestamp;
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        let formatted_string = format!("{}", &self.format("%Y-%m-%d %H:%M:%S %:z"));
-        out.push_sql(&formatted_string);
-        Ok(())
-    }
-}
-
-
 impl Expression for NaiveDateTime {
     type SqlType = Timestamp;
 
@@ -43,7 +30,7 @@ impl Expression for NaiveDateTime {
     }
 }
 
-impl NonAggregate for DateTime<UTC> {}
+impl NonAggregate for NaiveDateTime {}
 
 impl FromSql<Timestamp> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
@@ -111,6 +98,8 @@ impl ToSql<Timestamp> for DateTime<Local> {
 
 #[test]
 fn utc_datetime_to_sql() {
+    use self::chrono::TimeZone;
+
     let mut bytes = vec![];
     ToSql::<Timestamp>::to_sql(&UTC.ymd(2000, 1, 1).and_hms(0, 0, 0), &mut bytes).unwrap();
     ToSql::<Timestamp>::to_sql(&UTC.ymd(2010, 12, 4).and_hms(14, 39, 6), &mut bytes).unwrap();
