@@ -13,7 +13,7 @@ table! {
     }
 }
 
-#[derive(Queriable)]
+#[derive(Queryable)]
 #[changeset_for(users)]
 pub struct User {
     name: String,

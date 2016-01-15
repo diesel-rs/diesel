@@ -31,7 +31,7 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_attr("feature(custom_derive)");
     reg.add_attr("feature(custom_attribute)");
 
-    reg.add_decorator("derive_Queriable", queriable::expand_derive_queriable);
+    reg.add_decorator("derive_Queryable", queryable::expand_derive_queryable);
     reg.add_decorator("insertable_into", insertable::expand_insert);
     reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_decorator("has_many", associations::expand_has_many);
@@ -48,8 +48,8 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
     use syntax::parse::token::intern;
     use syntax::ext::base::MultiDecorator;
     reg.register_syntax_extension(
-        intern("derive_Queriable"),
-        MultiDecorator(Box::new(queriable::expand_derive_queriable))
+        intern("derive_Queryable"),
+        MultiDecorator(Box::new(queryable::expand_derive_queryable))
     );
     reg.register_syntax_extension(
         intern("insertable_into"),

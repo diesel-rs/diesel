@@ -1,7 +1,7 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::InsertableColumns;
 use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
-use query_source::{QuerySource, Queriable, Table, Column};
+use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
 use types::{NativeSqlType, FromSqlRow, ToSql, Nullable};
@@ -54,8 +54,8 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+,$($ST),+> Queriable<($($ST,)+)> for ($($T,)+) where
-                $($T: Queriable<$ST>),+,
+            impl<$($T),+,$($ST),+> Queryable<($($ST,)+)> for ($($T,)+) where
+                $($T: Queryable<$ST>),+,
                 $($ST: NativeSqlType),+
             {
                 type Row = ($($T::Row,)+);

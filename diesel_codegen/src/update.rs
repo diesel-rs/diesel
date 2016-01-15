@@ -104,7 +104,7 @@ fn save_changes_impl(
             impl<'a> $struct_name {
                 pub fn save_changes<T>(&self, connection: &::diesel::Connection)
                     -> ::diesel::QueryResult<T> where
-                    T: Queriable<$sql_type>,
+                    T: Queryable<$sql_type>,
                 {
                     use ::diesel::update;
                     update($table.filter($table.primary_key().eq(&self.$pk_field)))

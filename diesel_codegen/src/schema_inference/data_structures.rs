@@ -37,7 +37,7 @@ pub struct PgAttr {
     pub nullable: bool,
 }
 
-impl<ST> Queriable<ST> for PgAttr where
+impl<ST> Queryable<ST> for PgAttr where
     ST: NativeSqlType,
     (String, String, bool): FromSqlRow<ST>,
 {

@@ -4,7 +4,7 @@ use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use std::error::Error;
 use std::io::Write;
 
-use query_source::Queriable;
+use query_source::Queryable;
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, Array, IsNull};
 
@@ -55,8 +55,8 @@ impl<T, ST> FromSql<Array<ST>> for Vec<T> where
     }
 }
 
-impl<T, ST> Queriable<Array<ST>> for Vec<T> where
-    T: FromSql<ST> + Queriable<ST>,
+impl<T, ST> Queryable<Array<ST>> for Vec<T> where
+    T: FromSql<ST> + Queryable<ST>,
     ST: NativeSqlType,
 {
     type Row = Self;

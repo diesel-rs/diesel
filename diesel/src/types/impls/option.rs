@@ -1,4 +1,4 @@
-use Queriable;
+use Queryable;
 use expression::*;
 use expression::bound::Bound;
 use std::error::Error;
@@ -32,8 +32,8 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
     }
 }
 
-impl<T, ST> Queriable<Nullable<ST>> for Option<T> where
-    T: Queriable<ST>,
+impl<T, ST> Queryable<Nullable<ST>> for Option<T> where
+    T: Queryable<ST>,
     Option<T::Row>: FromSqlRow<Nullable<ST>>,
     ST: NativeSqlType,
 {

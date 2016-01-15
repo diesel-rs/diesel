@@ -67,7 +67,7 @@ pub mod prelude {
     #[doc(inline)]
     pub use persistable::Insertable;
     pub use query_dsl::*;
-    pub use query_source::{QuerySource, Queriable, Table, Column, JoinTo};
+    pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
     pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
 }
 

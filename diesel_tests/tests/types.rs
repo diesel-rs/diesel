@@ -285,7 +285,7 @@ fn pg_numeric_from_sql() {
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
 }
 
-fn query_single_value<T: NativeSqlType, U: Queriable<T>>(sql: &str) -> U {
+fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql: &str) -> U {
     let connection = connection();
     let mut cursor = connection.query_sql::<T, U>(sql)
         .unwrap();

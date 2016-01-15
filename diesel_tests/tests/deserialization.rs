@@ -2,14 +2,14 @@ use schema::*;
 use diesel::*;
 use std::borrow::Cow;
 
-#[derive(Queriable, PartialEq, Debug)]
+#[derive(Queryable, PartialEq, Debug)]
 struct CowUser<'a> {
     id: i32,
     name: Cow<'a, str>,
 }
 
 #[test]
-fn generated_queriable_allows_lifetimes() {
+fn generated_queryable_allows_lifetimes() {
     use schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 

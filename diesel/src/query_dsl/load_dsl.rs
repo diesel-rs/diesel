@@ -1,6 +1,6 @@
 use connection::{Connection, Cursor};
 use query_builder::{Query, QueryFragment, AsQuery};
-use query_source::Queriable;
+use query_source::Queryable;
 use result::QueryResult;
 use super::LimitDsl;
 
@@ -10,7 +10,7 @@ pub trait LoadDsl: AsQuery + Sized {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
     fn load<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
-        U: Queriable<Self::SqlType>
+        U: Queryable<Self::SqlType>
     {
         conn.query_all(self)
     }
@@ -20,7 +20,7 @@ pub trait LoadDsl: AsQuery + Sized {
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Connection) -> QueryResult<U> where
-        U: Queriable<<<Self as LimitDsl>::Output as Query>::SqlType>,
+        U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType>,
         Self: LimitDsl,
     {
         conn.query_one(self.limit(1))
@@ -31,14 +31,14 @@ pub trait LoadDsl: AsQuery + Sized {
     /// result of this if the command was optional to get back a
     /// `Result<Option<U>>`
     fn get_result<U>(self, conn: &Connection) -> QueryResult<U> where
-        U: Queriable<Self::SqlType>,
+        U: Queryable<Self::SqlType>,
     {
         conn.query_one(self)
     }
 
     /// Runs the command, returning an `Iterator` over the affected rows.
     fn get_results<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
-        U: Queriable<Self::SqlType>
+        U: Queryable<Self::SqlType>
     {
         self.load(conn)
     }

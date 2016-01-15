@@ -48,7 +48,7 @@ include!(concat!(env!("OUT_DIR"), "/schema.rs"));
 `src/schema.in.rs`
 
 ```rust
-#[derive(Queriable)]
+#[derive(Queryable)]
 pub struct User {
     id -> i32,
     name -> String,
@@ -84,9 +84,9 @@ deploy or test on stable. You can see an example of how to do this by looking at
 Struct annotations
 ------------------
 
-### `#[derive(Queriable)]`
+### `#[derive(Queryable)]`
 
-Adds an implementation of the [`Queriable`][queriable] trait to the annotated
+Adds an implementation of the [`Queryable`][queryable] trait to the annotated
 item. At this time it only supports structs with named fields. Enums and tuple
 structs are not supported.
 
@@ -109,12 +109,12 @@ Any fields which are of the type `Option` will be skipped when their value is
 of the fields of a record on every request.
 
 If the struct has a field for the primary key, an additional function,
-`save_changes<T: Queriable<..>>(&self, connection: &Connection) ->
+`save_changes<T: Queryable<..>>(&self, connection: &Connection) ->
 QueryResult<T>`, will be added to the model. This will persist any changes made,
 and return the resulting record. It is intended to be a shorthand for filtering
 by the primary key.
 
-[queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
+[queryable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queryable.html
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
 [as_changeset]: http://sgrif.github.io/diesel/diesel/query_builder/trait.AsChangeset.html
 
