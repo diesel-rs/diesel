@@ -65,3 +65,57 @@ fn duration_to_usecs(duration: Duration) -> u64 {
     let subseconds = duration.subsec_nanos() / NANO_PER_USEC;
     seconds + subseconds as u64
 }
+
+#[cfg(test)]
+mod tests {
+    extern crate dotenv;
+
+    use connection::Connection;
+    use self::dotenv::dotenv;
+    use std::time::{SystemTime, Duration, UNIX_EPOCH};
+    use types::{Bool, Timestamp};
+
+    fn connection() -> Connection {
+        dotenv().ok();
+
+        let connection_url = ::std::env::var("DATABASE_URL").ok()
+            .expect("DATABASE_URL must be set in order to run tests");
+        Connection::establish(&connection_url).unwrap()
+    }
+
+    #[test]
+    fn unix_epoch_encodes_correctly() {
+        let connection = connection();
+        assert!(
+            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
+                "SELECT $1::timestamp = '1970-01-01'", &UNIX_EPOCH)
+            .unwrap().nth(0).unwrap()
+        );
+    }
+
+    #[test]
+    fn unix_epoch_decodes_correctly() {
+        let connection = connection();
+        let epoch_from_sql = connection.query_sql::<Timestamp, SystemTime>("SELECT '1970-01-01'::timestamp")
+            .unwrap().nth(0).unwrap();
+        assert_eq!(UNIX_EPOCH, epoch_from_sql);
+    }
+
+    #[test]
+    fn times_relative_to_now_encode_correctly() {
+        let connection = connection();
+        let time = SystemTime::now() + Duration::from_secs(60);
+        assert!(
+            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
+                "SELECT $1::timestamp > current_timestamp at time zone 'utc'", &time)
+            .unwrap().nth(0).unwrap()
+        );
+
+        let time = SystemTime::now() - Duration::from_secs(60);
+        assert!(
+            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
+                "SELECT $1::timestamp < current_timestamp at time zone 'utc'", &time)
+            .unwrap().nth(0).unwrap()
+        );
+    }
+}
