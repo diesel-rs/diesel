@@ -7,8 +7,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-* Added support for mapping `types::Timestamp`, `types::Date`, and `types::Time`
-  to/from `chrono::NaiveDateTime`, `chrono::NaiveDate`, and `chrono::NaiveTime`.
+* Added support for mapping `types::Timestamp` to/from `chrono::NaiveDateTime`.
   Add `features = ["chrono"]` to enable.
 
 ### Changed
