@@ -3,6 +3,7 @@
 pub mod pg;
 pub mod debug;
 
+mod bare_select_statement;
 mod delete_statement;
 #[doc(hidden)]
 pub mod functions;
@@ -14,6 +15,8 @@ mod where_clause;
 pub mod insert_statement;
 pub mod update_statement;
 
+#[doc(hidden)]
+pub use self::bare_select_statement::BareSelectStatement;
 #[doc(hidden)]
 pub use self::select_statement::SelectStatement;
 #[doc(inline)]

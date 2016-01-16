@@ -74,7 +74,7 @@ pub mod prelude {
 pub use connection::{Connection, Cursor};
 pub use prelude::*;
 #[doc(inline)]
-pub use query_builder::functions::{insert, update, delete};
+pub use query_builder::functions::{insert, update, delete, select};
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;

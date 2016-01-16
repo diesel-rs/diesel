@@ -50,10 +50,14 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use connection::Connection;
-    use self::dotenv::dotenv;
     use self::chrono::*;
-    use types::{Bool, Timestamp};
+    use self::dotenv::dotenv;
+
+    use ::select;
+    use connection::Connection;
+    use expression::dsl::{sql, now};
+    use prelude::*;
+    use types::Timestamp;
 
     fn connection() -> Connection {
         dotenv().ok();
@@ -67,37 +71,28 @@ mod tests {
     fn unix_epoch_encodes_correctly() {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, NaiveDateTime>(
-                "SELECT $1::timestamp = '1970-01-01'", &time)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(sql::<Timestamp>("'1970-01-01'").eq(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let epoch_from_sql = connection.query_sql::<Timestamp, NaiveDateTime>("SELECT '1970-01-01'::timestamp")
-            .unwrap().nth(0).unwrap();
-        assert_eq!(time, epoch_from_sql);
+        let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
+            .get_result(&connection);
+        assert_eq!(Ok(time), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = connection();
         let time = UTC::now().naive_utc() + Duration::seconds(60);
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, NaiveDateTime>(
-                "SELECT $1::timestamp > current_timestamp at time zone 'utc'", &time)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(now.at_time_zone("utc").lt(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
 
         let time = UTC::now().naive_utc() - Duration::seconds(60);
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, NaiveDateTime>(
-                "SELECT $1::timestamp < current_timestamp at time zone 'utc'", &time)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(now.at_time_zone("utc").gt(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 }

@@ -32,3 +32,7 @@ impl<ST: NativeSqlType> Expression for SqlLiteral<ST> {
 
 impl<QS, ST: NativeSqlType> SelectableExpression<QS> for SqlLiteral<ST> {
 }
+
+pub fn sql<ST: NativeSqlType>(sql: &str) -> SqlLiteral<ST> {
+    SqlLiteral::new(sql.into())
+}

@@ -1,5 +1,6 @@
 use super::{UpdateTarget, IncompleteUpdateStatement};
 use super::delete_statement::DeleteStatement;
+use super::BareSelectStatement;
 use super::IncompleteInsertStatement;
 
 /// Creates an update statement. Helpers for updating a single row can be
@@ -106,4 +107,15 @@ pub fn delete<T: UpdateTarget>(source: T) -> DeleteStatement<T> {
 /// query can return the inserted rows if you choose.
 pub fn insert<T>(records: T) -> IncompleteInsertStatement<T> {
     IncompleteInsertStatement::new(records)
+}
+
+/// Creates a bare select statement, with no from clause. Primarily used for
+/// testing diesel itself, but likely useful for third party crates as well. The
+/// given expressions must be selectable from anywhere.
+///
+/// Note: You must use `get_result` and not `first` to get a single value out of
+/// this, or you will get a vague compiler error (the reason being you cannot
+/// call `limit` on the type returned by this function).
+pub fn select<T>(expression: T) -> BareSelectStatement<T> {
+    BareSelectStatement::new(expression)
 }

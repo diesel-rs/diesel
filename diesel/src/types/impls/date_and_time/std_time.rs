@@ -70,10 +70,14 @@ fn duration_to_usecs(duration: Duration) -> u64 {
 mod tests {
     extern crate dotenv;
 
-    use connection::Connection;
     use self::dotenv::dotenv;
     use std::time::{SystemTime, Duration, UNIX_EPOCH};
-    use types::{Bool, Timestamp};
+
+    use ::select;
+    use connection::Connection;
+    use expression::dsl::{sql, now};
+    use prelude::*;
+    use types::Timestamp;
 
     fn connection() -> Connection {
         dotenv().ok();
@@ -86,36 +90,27 @@ mod tests {
     #[test]
     fn unix_epoch_encodes_correctly() {
         let connection = connection();
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
-                "SELECT $1::timestamp = '1970-01-01'", &UNIX_EPOCH)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(sql::<Timestamp>("'1970-01-01'").eq(UNIX_EPOCH));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
-        let epoch_from_sql = connection.query_sql::<Timestamp, SystemTime>("SELECT '1970-01-01'::timestamp")
-            .unwrap().nth(0).unwrap();
-        assert_eq!(UNIX_EPOCH, epoch_from_sql);
+        let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
+            .get_result::<SystemTime>(&connection);
+        assert_eq!(Ok(UNIX_EPOCH), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = connection();
         let time = SystemTime::now() + Duration::from_secs(60);
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
-                "SELECT $1::timestamp > current_timestamp at time zone 'utc'", &time)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(now.at_time_zone("utc").lt(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
 
         let time = SystemTime::now() - Duration::from_secs(60);
-        assert!(
-            connection.query_sql_params::<Bool, bool, Timestamp, SystemTime>(
-                "SELECT $1::timestamp < current_timestamp at time zone 'utc'", &time)
-            .unwrap().nth(0).unwrap()
-        );
+        let query = select(now.at_time_zone("utc").gt(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 }

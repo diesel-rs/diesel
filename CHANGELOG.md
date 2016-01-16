@@ -10,6 +10,19 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for mapping `types::Timestamp` to/from `chrono::NaiveDateTime`.
   Add `features = ["chrono"]` to enable.
 
+* Added a top level `select` function for select statements with no from clause.
+  This is primarily intended to be used for testing Diesel itself, but it has
+  been added to the public API as it will likely be useful for third party
+  crates in the future. `select(foo).from(bar)` might be a supported API in the
+  future as an alternative to `bar.select(foo)`.
+
+* Added `expression::dsl::sql` as a helper function for constructing
+  `SqlLiteral` nodes. This is primarily intended to be used for testing Diesel
+  itself, but is part of the public API as an escape hatch if our query builder
+  DSL proves inadequate for a specific case. Use of this function in any
+  production code is discouraged as it is inherently unsafe and avoids real type
+  checking.
+
 ### Changed
 
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to

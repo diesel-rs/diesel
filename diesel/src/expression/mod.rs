@@ -25,6 +25,8 @@ pub mod array_comparison;
 pub mod bound;
 #[doc(hidden)]
 pub mod count;
+#[doc(hidden)]
+pub mod date_and_time;
 pub mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
@@ -42,14 +44,11 @@ pub mod sql_literal;
 /// generic to export by default. This module exists to conveniently glob import
 /// in functions where you need them.
 pub mod dsl {
-    #[doc(inline)]
-    pub use super::array_comparison::any;
-    #[doc(inline)]
-    pub use super::count::{count, count_star};
-    #[doc(inline)]
-    pub use super::functions::date_and_time::*;
-    #[doc(inline)]
-    pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)] pub use super::array_comparison::any;
+    #[doc(inline)] pub use super::count::{count, count_star};
+    #[doc(inline)] pub use super::functions::date_and_time::*;
+    #[doc(inline)] pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)] pub use super::sql_literal::sql;
 
     pub use super::extensions::*;
 }
