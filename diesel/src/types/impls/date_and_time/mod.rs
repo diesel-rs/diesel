@@ -4,7 +4,7 @@ use std::ops::Add;
 
 use expression::*;
 use expression::bound::Bound;
-use query_source::Queriable;
+use query_source::Queryable;
 use super::option::UnexpectedNullError;
 use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
 

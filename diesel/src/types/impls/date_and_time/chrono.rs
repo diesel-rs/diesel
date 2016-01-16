@@ -8,7 +8,7 @@ use self::chrono::{Duration, NaiveDateTime, NaiveDate};
 
 use expression::AsExpression;
 use expression::bound::Bound;
-use query_source::Queriable;
+use query_source::Queryable;
 use super::PgTimestamp;
 use types::{self, FromSql, IsNull, Timestamp, ToSql};
 
@@ -16,7 +16,7 @@ expression_impls! {
     Timestamp -> NaiveDateTime,
 }
 
-queriable_impls! {
+queryable_impls! {
     Timestamp -> NaiveDateTime,
 }
 

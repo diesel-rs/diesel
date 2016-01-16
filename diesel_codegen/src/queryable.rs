@@ -11,7 +11,7 @@ use syntax::ptr::P;
 
 use attr::Attr;
 
-pub fn expand_derive_queriable(
+pub fn expand_derive_queryable(
     cx: &mut ExtCtxt,
     span: Span,
     meta_item: &MetaItem,
@@ -22,7 +22,7 @@ pub fn expand_derive_queriable(
         let (generics, attrs) = match Attr::from_item(cx, item) {
             Some((generics, attrs)) => (generics, attrs),
             None => {
-                cx.span_err(span, "`#[derive(Queriable)]` can only be applied to structs or tuple structs");
+                cx.span_err(span, "`#[derive(Queryable)]` can only be applied to structs or tuple structs");
                 return;
             }
         };
@@ -46,7 +46,7 @@ pub fn expand_derive_queriable(
             .build();
 
         let impl_item = quote_item!(cx,
-            impl$display_generics ::diesel::Queriable<__ST> for $ty where
+            impl$display_generics ::diesel::Queryable<__ST> for $ty where
                 __ST: ::diesel::types::NativeSqlType,
                 $row_type: ::diesel::types::FromSqlRow<__ST>,
             {

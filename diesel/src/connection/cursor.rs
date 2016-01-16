@@ -1,4 +1,4 @@
-use query_source::Queriable;
+use query_source::Queryable;
 use db_result::DbResult;
 use types::{NativeSqlType, FromSqlRow};
 
@@ -25,7 +25,7 @@ impl<ST, T> Cursor<ST, T> {
 
 impl<ST, T> Iterator for Cursor<ST, T> where
     ST: NativeSqlType,
-    T: Queriable<ST>,
+    T: Queryable<ST>,
 {
     type Item = T;
 

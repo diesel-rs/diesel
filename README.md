@@ -76,12 +76,12 @@ fn users_with_name(connection: &Connection, target_name: &str)
 ```
 
 If you want to be able to query for a struct, you'll need to implement the
-[`Queriable` trait][queriable] Luckily,
+[`Queryable` trait][queryable] Luckily,
 [diesel_codegen](https://github.com/sgrif/diesel/tree/master/diesel_codegen) can do
 this for us automatically.
 
 ```rust
-#[derive(Queriable, Debug)]
+#[derive(Queryable, Debug)]
 pub struct User {
     id: i32,
     name: String,
@@ -171,7 +171,7 @@ fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>
 ```
 
 [`insert`][insert] can return any struct which implements
-[`Queriable`][queriable] for the right type. If you don't actually want to use
+[`Queryable`][queryable] for the right type. If you don't actually want to use
 the results, you should call [`execute`][execute]
 instead, or the compiler will complain that it can't infer what type you meant
 to return. You can use the same struct for inserting and querying if you'd like,
@@ -185,7 +185,7 @@ records, and will insert them in a single query. For this reason,
 [`insert`][insert] will always return an `Iterator`. A helper for this common
 case will likely be added in the future.
 
-For both `#[derive(Queriable)]` and `#[insertable_into]`, you can annotate any
+For both `#[derive(Queryable)]` and `#[insertable_into]`, you can annotate any
 single field with `#[column_name="name"]`, if the name of your field differs
 from the name of the column. This annotation is required on all fields of tuple
 structs. This cannot be used, however, to work around name collisions with
@@ -227,7 +227,7 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
 ```
 
 As with [`insert`][insert], we can return any type which implements
-[`Queriable`][queriable] for the right types. If you do not want to use the
+[`Queryable`][queryable] for the right types. If you do not want to use the
 returned record(s), you should call [`execute`][execute] instead of
 [`run`][run] or [`run_all`][run_all].
 
@@ -294,7 +294,7 @@ https://github.com/sgrif/diesel/blob/master/diesel_tests/tests/schema.rs for how
 you can go about getting the data structures set up.
 
 [table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
-[queriable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queriable.html
+[queryable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queryable.html
 [insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
 [insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
 [execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute

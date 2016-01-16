@@ -6,7 +6,7 @@ use expression::bound::Bound;
 use expression::{Expression, AsExpression};
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, IsNull};
-use {Queriable, types};
+use {Queryable, types};
 
 primitive_impls! {
     Bool -> (bool, 16, 1000),

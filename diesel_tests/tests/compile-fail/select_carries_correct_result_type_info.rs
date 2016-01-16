@@ -18,9 +18,9 @@ fn main() {
     let select_name = users.select(name);
 
     let ids: Vec<i32> = select_name.load(&connection).unwrap().collect();
-    //~^ ERROR the trait `diesel::query_source::Queriable<diesel::types::VarChar>` is not implemented for the type `i32`
+    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::VarChar>` is not implemented for the type `i32`
     //~| ERROR E0277
     let names: Vec<String> = select_id.load(&connection).unwrap().collect();
-    //~^ ERROR the trait `diesel::query_source::Queriable<diesel::types::Integer>` is not implemented
+    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::Integer>` is not implemented
     //~| ERROR E0277
 }

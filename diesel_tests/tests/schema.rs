@@ -1,6 +1,6 @@
 use diesel::*;
 
-#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[changeset_for(users)]
 #[has_many(posts)]
 pub struct User {
@@ -27,7 +27,7 @@ impl User {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[has_many(comments)]
 #[belongs_to(user)]
 pub struct Post {
@@ -50,14 +50,14 @@ impl Post {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 pub struct Comment {
     id: i32,
     post_id: i32,
     text: String,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queriable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[belongs_to(post)]
 #[table_name="comments"]
 pub struct SpecialComment {
@@ -73,7 +73,7 @@ select_column_workaround!(comments -> users (id, post_id, text));
 
 join_through!(users -> posts -> comments);
 
-#[derive(Debug, PartialEq, Eq, Queriable)]
+#[derive(Debug, PartialEq, Eq, Queryable)]
 #[insertable_into(users)]
 #[changeset_for(users)]
 pub struct NewUser {

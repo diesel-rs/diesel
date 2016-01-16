@@ -15,9 +15,9 @@ pub use self::joins::JoinTo;
 
 /// Trait indicating that a record can be queried from the database. This trait
 /// can be derived automatically. See the [codegen
-/// documentation](https://github.com/sgrif/diesel/tree/master/diesel_codegen#derivequeriable)
+/// documentation](https://github.com/sgrif/diesel/tree/master/diesel_codegen#derivequeryable)
 /// for more.
-pub trait Queriable<ST: NativeSqlType> {
+pub trait Queryable<ST: NativeSqlType> {
     type Row: FromSqlRow<ST>;
 
     fn build(row: Self::Row) -> Self;

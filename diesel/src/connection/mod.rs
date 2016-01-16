@@ -15,7 +15,7 @@ use expression::helper_types::AsExpr;
 use query_builder::{AsQuery, Query, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
-use query_source::{Table, Column, Queriable};
+use query_source::{Table, Column, Queryable};
 use result::*;
 use self::pq_sys::*;
 use std::cell::Cell;
@@ -122,7 +122,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
-        U: Queriable<T::SqlType>,
+        U: Queryable<T::SqlType>,
     {
         self.query_all(source)
             .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
@@ -131,7 +131,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U>> where
         T: AsQuery,
-        U: Queriable<T::SqlType>,
+        U: Queryable<T::SqlType>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
@@ -140,7 +140,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_sql<T, U>(&self, query: &str) -> QueryResult<Cursor<T, U>> where
         T: NativeSqlType,
-        U: Queriable<T>,
+        U: Queryable<T>,
     {
         let result = try!(self.execute_inner(query));
         Ok(Cursor::new(result))
@@ -150,7 +150,7 @@ impl Connection {
     pub fn query_sql_params<T, U, PT, P>(&self, query: &str, params: &P)
         -> QueryResult<Cursor<T, U>> where
         T: NativeSqlType,
-        U: Queriable<T>,
+        U: Queryable<T>,
         PT: NativeSqlType,
         P: ToSql<PT>,
     {
@@ -223,7 +223,7 @@ impl Connection {
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
-        U: Queriable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
+        U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
         AsExpr<PK, T::PrimaryKey>: NonAggregate,
     {
@@ -236,7 +236,7 @@ impl Connection {
         -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
         T: Table,
         U: Insertable<T>,
-        Out: Queriable<<T::AllColumns as Expression>::SqlType>,
+        Out: Queryable<<T::AllColumns as Expression>::SqlType>,
     {
         let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
         let (returning, _, _) = self.prepare_query(&T::all_columns());
