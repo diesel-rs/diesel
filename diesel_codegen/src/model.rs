@@ -56,7 +56,7 @@ impl Model {
     }
 }
 
-fn infer_table_name(name: &str) -> String {
+pub fn infer_association_name(name: &str) -> String {
     let mut result = String::with_capacity(name.len());
     result.push_str(&name[..1].to_lowercase());
     for character in name[1..].chars() {
@@ -69,6 +69,11 @@ fn infer_table_name(name: &str) -> String {
             result.push(character);
         }
     }
+    result
+}
+
+fn infer_table_name(name: &str) -> String {
+    let mut result = infer_association_name(name);
     result.push('s');
     result
 }

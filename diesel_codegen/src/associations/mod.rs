@@ -4,7 +4,7 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
 
-use model::Model;
+use model::{infer_association_name, Model};
 
 mod has_many;
 mod belongs_to;
@@ -67,6 +67,12 @@ fn build_association_options(
 }
 
 fn to_foreign_key(model_name: &str) -> ast::Ident {
-    let lower_cased = model_name.to_lowercase();
+    let lower_cased = infer_association_name(model_name);
     str_to_ident(&format!("{}_id", &lower_cased))
+}
+
+#[test]
+fn to_foreign_key_properly_handles_underscores() {
+    assert_eq!("foo_bar_id", &to_foreign_key("FooBar"));
+    assert_eq!("foo_bar_baz_id", &to_foreign_key("FooBarBaz"));
 }
