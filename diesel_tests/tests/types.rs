@@ -293,10 +293,15 @@ fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql: &str) -> U {
 }
 
 use std::fmt::Debug;
+use diesel::expression::AsExpression;
 
-fn query_to_sql_equality<T: NativeSqlType, U: ToSql<T> + Debug>(sql: &str, value: U) -> bool {
+fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
+    T: NativeSqlType,
+    U: AsExpression<T> + Debug + Clone,
+    U::Expression: SelectableExpression<(), T>,
+{
+    use diesel::expression::dsl::sql;
     let connection = connection();
-    let query = format!("SELECT {} IS NOT DISTINCT FROM $1", sql);
-    connection.query_sql_params::<Bool, bool, T, U>(&query, &value)
-        .expect(&format!("Error comparing {}, {:?}", sql, value)).nth(0).unwrap()
+    let query = select(sql::<T>(sql_str).is_not_distinct_from(value.clone()));
+    query.get_result(&connection).expect(&format!("Error comparing {}, {:?}", sql_str, value))
 }

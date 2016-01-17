@@ -1,10 +1,13 @@
 use schema::*;
 use diesel::types::*;
+use diesel::expression::AsExpression;
+use diesel::expression::dsl::sql;
+use diesel::*;
 
 #[test]
 fn bind_params_are_passed_for_null_when_not_inserting() {
     let connection = connection();
-    let result = connection.query_sql_params::<Integer, i32, Nullable<Integer>, Option<i32>>(
-        "SELECT 1 WHERE $1::integer IS NULL", &None).unwrap().nth(0);
-    assert_eq!(Some(1), result);
+    let query = select(sql::<Integer>("1"))
+        .filter(AsExpression::<Nullable<Integer>>::as_expression(None::<i32>).is_null());
+    assert_eq!(Ok(1), query.first(&connection));
 }

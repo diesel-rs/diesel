@@ -125,6 +125,7 @@ macro_rules! postfix_predicate {
 infix_predicate!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
 infix_predicate!(Eq, " = ");
+infix_predicate!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ");
 infix_predicate!(Gt, " > ");
 infix_predicate!(GtEq, " >= ");
 infix_predicate!(Like, " LIKE ");
