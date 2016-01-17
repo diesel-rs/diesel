@@ -243,12 +243,16 @@ impl DayAndMonthIntervalDsl for f64 {
 mod tests {
     extern crate dotenv;
     extern crate quickcheck;
+
     use self::quickcheck::quickcheck;
     use self::dotenv::dotenv;
-    use super::*;
+
+    use ::{types, select};
     use connection::Connection;
-    use types;
     use data_types::PgInterval;
+    use expression::dsl::sql;
+    use prelude::*;
+    use super::*;
 
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
@@ -259,9 +263,9 @@ mod tests {
                     .expect("DATABASE_URL must be set in order to run tests");
                 let connection = Connection::establish(&connection_url).unwrap();
 
-                let query = format!(concat!("SELECT '{} ", stringify!($units), "'::interval"), val);
-                let res: PgInterval = connection.query_sql::<types::Interval, _>(&query)
-                    .unwrap().nth(0).unwrap();
+                let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
+                let query = select(sql::<types::Interval>(&sql_str));
+                let res = query.get_result::<PgInterval>(&connection).unwrap();
                 let val = val.$units();
                 val.months == res.months &&
                     val.days == res.days &&

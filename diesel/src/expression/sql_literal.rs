@@ -1,6 +1,6 @@
 use query_builder::{QueryBuilder, BuildQueryResult};
 use std::marker::PhantomData;
-use super::{Expression, SelectableExpression};
+use super::{Expression, SelectableExpression, NonAggregate};
 use types::NativeSqlType;
 
 #[derive(Debug, Clone)]
@@ -31,6 +31,9 @@ impl<ST: NativeSqlType> Expression for SqlLiteral<ST> {
 }
 
 impl<QS, ST: NativeSqlType> SelectableExpression<QS> for SqlLiteral<ST> {
+}
+
+impl<ST: NativeSqlType> NonAggregate for SqlLiteral<ST> {
 }
 
 pub fn sql<ST: NativeSqlType>(sql: &str) -> SqlLiteral<ST> {

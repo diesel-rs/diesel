@@ -174,11 +174,12 @@ fn load_table_names(
     sp: Span,
     connection: &Connection,
 ) -> Result<Vec<String>, Box<MacResult>> {
-    connection.query_sql::<types::VarChar, String>(
-        "SELECT table_name FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_name NOT LIKE '\\_\\_%'")
+    use diesel::prelude::*;
+    use diesel::expression::dsl::sql;
 
+    let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
+        .filter(sql::<types::Bool>("table_schema = 'public' AND table_name NOT LIKE '\\_\\_%'"));
+    query.load(&connection)
         .map(|r| r.collect())
         .map_err(|_| {
             cx.span_err(sp, "Error loading table names");

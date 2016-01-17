@@ -137,15 +137,6 @@ impl Connection {
         self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
     }
 
-    #[doc(hidden)]
-    pub fn query_sql<T, U>(&self, query: &str) -> QueryResult<Cursor<T, U>> where
-        T: NativeSqlType,
-        U: Queryable<T>,
-    {
-        let result = try!(self.execute_inner(query));
-        Ok(Cursor::new(result))
-    }
-
     fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<DbResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()

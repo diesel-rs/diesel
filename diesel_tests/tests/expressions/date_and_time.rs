@@ -83,12 +83,14 @@ fn time_is_deserialized_properly() {
 
 #[test]
 fn interval_is_deserialized_properly() {
+    use diesel::expression::dsl::sql;
     let connection = connection();
 
-    let data = connection.query_sql::
-        <(types::Interval, types::Interval, types::Interval, types::Interval), _>(
-            "SELECT '1 minute'::interval, '1 day'::interval, '1 month'::interval,
-                    '4 years 3 days 2 hours 1 minute'::interval").unwrap().nth(0).unwrap();
+    let data = select(sql::
+        <(types::Interval, types::Interval, types::Interval, types::Interval)>(
+            "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
+                    '4 years 3 days 2 hours 1 minute'::interval"))
+        .first(&connection).unwrap();
 
     let one_minute = 1.minute();
     let one_day = 1.day();
@@ -101,17 +103,17 @@ fn interval_is_deserialized_properly() {
 #[test]
 fn adding_interval_to_timestamp() {
     use self::has_timestamps::dsl::*;
+    use diesel::expression::dsl::sql;
 
     let connection = connection();
     setup_test_table(&connection);
     connection.execute("INSERT INTO has_timestamps (created_at, updated_at) VALUES
                        ('2015-11-15 06:07:41', '2015-11-15 20:07:41')").unwrap();
 
-    let expected_data = connection.query_sql::<types::Timestamp, PgTimestamp>("SELECT '2015-11-16 06:07:41'::timestamp")
-        .unwrap().nth(0).unwrap();
-    let actual_data: PgTimestamp = has_timestamps.select(created_at + 1.day())
-        .first(&connection)
-        .unwrap();
+    let expected_data = select(sql::<types::Timestamp>("'2015-11-16 06:07:41'::timestamp"))
+        .get_result::<PgTimestamp>(&connection);
+    let actual_data = has_timestamps.select(created_at + 1.day())
+        .first::<PgTimestamp>(&connection);
     assert_eq!(expected_data, actual_data);
 }
 

@@ -34,6 +34,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   will get them by default if you import `diesel::*`. For a less aggressive
   glob, you can import `diesel::prelude::*`, which will only export our traits.
 
+### Removed
+
+* `Connection#query_sql` and `Connection#query_sql_params` have been removed.
+  These methods were not part of the public API, and were only meant to be used
+  for testing Diesel itself. However, they were technically callable from any
+  crate, so the removal has been noted here. Their usage can be replaced with
+  bare `select` and `expression::dsl::sql`.
+
 ## [0.4.1] 2016-01-11
 
 ### Changed

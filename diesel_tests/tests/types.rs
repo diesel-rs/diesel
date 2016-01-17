@@ -4,8 +4,8 @@ use diesel::types::*;
 
 #[test]
 fn boolean_from_sql() {
-    assert_eq!(true, query_single_value::<Bool, bool>("SELECT 't'::bool"));
-    assert_eq!(false, query_single_value::<Bool, bool>("SELECT 'f'::bool"));
+    assert_eq!(true, query_single_value::<Bool, bool>("'t'::bool"));
+    assert_eq!(false, query_single_value::<Bool, bool>("'f'::bool"));
 }
 
 #[test]
@@ -18,9 +18,9 @@ fn boolean_to_sql() {
 
 #[test]
 fn i16_from_sql() {
-    assert_eq!(0, query_single_value::<SmallInt, i16>("SELECT 0::int2"));
-    assert_eq!(-1, query_single_value::<SmallInt, i16>("SELECT -1::int2"));
-    assert_eq!(1, query_single_value::<SmallInt, i16>("SELECT 1::int2"));
+    assert_eq!(0, query_single_value::<SmallInt, i16>("0::int2"));
+    assert_eq!(-1, query_single_value::<SmallInt, i16>("-1::int2"));
+    assert_eq!(1, query_single_value::<SmallInt, i16>("1::int2"));
 }
 
 #[test]
@@ -34,9 +34,9 @@ fn i16_to_sql_smallint() {
 
 #[test]
 fn i32_from_sql() {
-    assert_eq!(0, query_single_value::<Integer, i32>("SELECT 0"));
-    assert_eq!(-1, query_single_value::<Integer, i32>("SELECT -1"));
-    assert_eq!(70000, query_single_value::<Integer, i32>("SELECT 70000"));
+    assert_eq!(0, query_single_value::<Integer, i32>("0"));
+    assert_eq!(-1, query_single_value::<Integer, i32>("-1"));
+    assert_eq!(70000, query_single_value::<Integer, i32>("70000"));
 }
 
 #[test]
@@ -50,10 +50,10 @@ fn i32_to_sql_integer() {
 
 #[test]
 fn i64_from_sql() {
-    assert_eq!(0, query_single_value::<BigInt, i64>("SELECT 0::int8"));
-    assert_eq!(-1, query_single_value::<BigInt, i64>("SELECT -1::int8"));
+    assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));
+    assert_eq!(-1, query_single_value::<BigInt, i64>("-1::int8"));
     assert_eq!(283745982374,
-               query_single_value::<BigInt, i64>("SELECT 283745982374::int8"));
+               query_single_value::<BigInt, i64>("283745982374::int8"));
 }
 
 #[test]
@@ -69,14 +69,14 @@ use std::{f32, f64};
 
 #[test]
 fn f32_from_sql() {
-    assert_eq!(0.0, query_single_value::<Float, f32>("SELECT 0.0::real"));
-    assert_eq!(0.5, query_single_value::<Float, f32>("SELECT 0.5::real"));
-    let nan = query_single_value::<Float, f32>("SELECT 'NaN'::real");
+    assert_eq!(0.0, query_single_value::<Float, f32>("0.0::real"));
+    assert_eq!(0.5, query_single_value::<Float, f32>("0.5::real"));
+    let nan = query_single_value::<Float, f32>("'NaN'::real");
     assert!(nan.is_nan());
     assert_eq!(f32::INFINITY,
-               query_single_value::<Float, f32>("SELECT 'Infinity'::real"));
+               query_single_value::<Float, f32>("'Infinity'::real"));
     assert_eq!(-f32::INFINITY,
-               query_single_value::<Float, f32>("SELECT '-Infinity'::real"));
+               query_single_value::<Float, f32>("'-Infinity'::real"));
 }
 
 #[test]
@@ -94,14 +94,14 @@ fn f32_to_sql_float() {
 
 #[test]
 fn f64_from_sql() {
-    assert_eq!(0.0, query_single_value::<Double, f64>("SELECT 0.0::double precision"));
-    assert_eq!(0.5, query_single_value::<Double, f64>("SELECT 0.5::double precision"));
-    let nan = query_single_value::<Double, f64>("SELECT 'NaN'::double precision");
+    assert_eq!(0.0, query_single_value::<Double, f64>("0.0::double precision"));
+    assert_eq!(0.5, query_single_value::<Double, f64>("0.5::double precision"));
+    let nan = query_single_value::<Double, f64>("'NaN'::double precision");
     assert!(nan.is_nan());
     assert_eq!(f64::INFINITY,
-               query_single_value::<Double, f64>("SELECT 'Infinity'::double precision"));
+               query_single_value::<Double, f64>("'Infinity'::double precision"));
     assert_eq!(-f64::INFINITY,
-               query_single_value::<Double, f64>("SELECT '-Infinity'::double precision"));
+               query_single_value::<Double, f64>("'-Infinity'::double precision"));
 }
 
 #[test]
@@ -122,8 +122,8 @@ fn f64_to_sql_float() {
 
 #[test]
 fn string_from_sql() {
-    assert_eq!("hello", &query_single_value::<VarChar, String>("SELECT 'hello'"));
-    assert_eq!("world", &query_single_value::<VarChar, String>("SELECT 'world'"));
+    assert_eq!("hello", &query_single_value::<VarChar, String>("'hello'"));
+    assert_eq!("world", &query_single_value::<VarChar, String>("'world'"));
 }
 
 #[test]
@@ -144,11 +144,11 @@ fn string_to_sql_varchar() {
 fn binary_from_sql() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
     assert_eq!(invalid_utf8_bytes,
-               query_single_value::<Binary, Vec<u8>>("SELECT E'\\\\x1F8B'::bytea"));
+               query_single_value::<Binary, Vec<u8>>("E'\\\\x1F8B'::bytea"));
     assert_eq!(Vec::<u8>::new(),
-    query_single_value::<Binary, Vec<u8>>("SELECT ''::bytea"));
+    query_single_value::<Binary, Vec<u8>>("''::bytea"));
     assert_eq!(vec![0u8],
-               query_single_value::<Binary, Vec<u8>>("SELECT E'\\\\000'::bytea"));
+               query_single_value::<Binary, Vec<u8>>("E'\\\\000'::bytea"));
 }
 
 #[test]
@@ -167,19 +167,19 @@ fn bytes_to_sql_binary() {
 #[test]
 fn option_from_sql() {
     assert_eq!(Some(true),
-    query_single_value::<Nullable<Bool>, Option<bool>>("SELECT 't'::bool"));
+    query_single_value::<Nullable<Bool>, Option<bool>>("'t'::bool"));
     assert_eq!(None,
-               query_single_value::<Nullable<Bool>, Option<bool>>("SELECT NULL"));
+               query_single_value::<Nullable<Bool>, Option<bool>>("NULL"));
     assert_eq!(Some(1),
-    query_single_value::<Nullable<Integer>, Option<i32>>("SELECT 1"));
+    query_single_value::<Nullable<Integer>, Option<i32>>("1"));
     assert_eq!(None,
-               query_single_value::<Nullable<Integer>, Option<i32>>("SELECT NULL"));
+               query_single_value::<Nullable<Integer>, Option<i32>>("NULL"));
     assert_eq!(Some("Hello!".to_string()),
-    query_single_value::<Nullable<VarChar>, Option<String>>("SELECT 'Hello!'"));
+    query_single_value::<Nullable<VarChar>, Option<String>>("'Hello!'"));
     assert_eq!(Some("".to_string()),
-    query_single_value::<Nullable<VarChar>, Option<String>>("SELECT ''"));
+    query_single_value::<Nullable<VarChar>, Option<String>>("''"));
     assert_eq!(None,
-               query_single_value::<Nullable<VarChar>, Option<String>>("SELECT NULL"));
+               query_single_value::<Nullable<VarChar>, Option<String>>("NULL"));
 }
 
 #[test]
@@ -201,12 +201,12 @@ fn option_to_sql() {
 fn pg_array_from_sql() {
     assert_eq!(vec![true, false, true],
                query_single_value::<Array<Bool>, Vec<bool>>(
-                   "SELECT ARRAY['t', 'f', 't']::bool[]"));
+                   "ARRAY['t', 'f', 't']::bool[]"));
     assert_eq!(vec![1, 2, 3],
-               query_single_value::<Array<Integer>, Vec<i32>>("SELECT ARRAY[1, 2, 3]"));
+               query_single_value::<Array<Integer>, Vec<i32>>("ARRAY[1, 2, 3]"));
     assert_eq!(vec!["Hello".to_string(), "".to_string(), "world".to_string()],
     query_single_value::<Array<VarChar>, Vec<String>>(
-        "SELECT ARRAY['Hello', '', 'world']"));
+        "ARRAY['Hello', '', 'world']"));
 }
 
 #[test]
@@ -225,7 +225,7 @@ fn to_sql_array() {
 
 #[test]
 fn pg_array_containing_null() {
-    let query = "SELECT ARRAY['Hello', '', NULL, 'world']";
+    let query = "ARRAY['Hello', '', NULL, 'world']";
     let data = query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>(query);
     let expected = vec![
         Some("Hello".to_string()),
@@ -240,10 +240,10 @@ fn pg_array_containing_null() {
 fn timestamp_from_sql() {
     use diesel::data_types::PgTimestamp;
 
-    let query = "SELECT '2015-11-13 13:26:48.041057-07'::timestamp";
+    let query = "'2015-11-13 13:26:48.041057-07'::timestamp";
     let expected_value = PgTimestamp(500736408041057);
     assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
-    let query = "SELECT '2015-11-13 13:26:49.041057-07'::timestamp";
+    let query = "'2015-11-13 13:26:49.041057-07'::timestamp";
     let expected_value = PgTimestamp(500736409041057);
     assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
 }
@@ -266,30 +266,29 @@ fn pg_timestamp_to_sql_timestamp() {
 fn pg_numeric_from_sql() {
     use diesel::data_types::PgNumeric;
 
-    let query = "SELECT 1.0::numeric";
+    let query = "1.0::numeric";
     let expected_value = PgNumeric::Positive {
         digits: vec![1],
         weight: 0,
         scale: 1,
     };
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
-    let query = "SELECT -31.0::numeric";
+    let query = "-31.0::numeric";
     let expected_value = PgNumeric::Negative {
         digits: vec![31],
         weight: 0,
         scale: 1,
     };
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
-    let query = "SELECT 'NaN'::numeric";
+    let query = "'NaN'::numeric";
     let expected_value = PgNumeric::NaN;
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
 }
 
-fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql: &str) -> U {
+fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql_str: &str) -> U {
+    use diesel::expression::dsl::sql;
     let connection = connection();
-    let mut cursor = connection.query_sql::<T, U>(sql)
-        .unwrap();
-    cursor.nth(0).unwrap()
+    select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
 
 use std::fmt::Debug;

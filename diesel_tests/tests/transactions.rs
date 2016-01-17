@@ -120,7 +120,7 @@ fn drop_test_table(connection: &Connection, table_name: &str) {
 }
 
 fn count_test_table(connection: &Connection, table_name: &str) -> i64 {
-    let query = format!("SELECT COUNT(*) FROM {}", table_name);
-    let mut cursor = connection.query_sql::<types::BigInt, _>(&query).unwrap();
-    cursor.nth(0).unwrap()
+    use diesel::expression::dsl::sql;
+    select(sql::<types::BigInt>(&format!("COUNT(*) FROM {}", table_name)))
+        .first(&connection).unwrap()
 }
