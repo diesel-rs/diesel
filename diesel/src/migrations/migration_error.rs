@@ -1,8 +1,11 @@
 use result::{self, TransactionError};
 
 use std::convert::From;
-use std::io;
+use std::{fmt, io};
 use std::path::PathBuf;
+use std::error::Error;
+
+use self::MigrationError::*;
 
 #[derive(Debug)]
 pub enum MigrationError {
@@ -10,6 +13,23 @@ pub enum MigrationError {
     UnknownMigrationFormat(PathBuf),
     IoError(io::Error),
     UnknownMigrationVersion(String),
+}
+
+impl Error for MigrationError {
+    fn description(&self) -> &str {
+        match *self {
+            MigrationDirectoryNotFound => "Unable to find migrations directory in this directory or any parent directories.",
+            UnknownMigrationFormat(_) => "Invalid migration directory, the directory's name should be <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.",
+            IoError(ref error) => error.description(),
+            UnknownMigrationVersion(_) => "Unable to find migration version to revert in the migrations directory.",
+        }
+    }
+}
+
+impl fmt::Display for MigrationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        self.description().fmt(f)
+    }
 }
 
 impl PartialEq for MigrationError {
@@ -38,6 +58,21 @@ impl From<io::Error> for MigrationError {
 pub enum RunMigrationsError {
     MigrationError(MigrationError),
     QueryError(result::Error),
+}
+
+impl Error for RunMigrationsError {
+    fn description(&self) -> &str {
+        match *self {
+            RunMigrationsError::MigrationError(ref error) => error.description(),
+            RunMigrationsError::QueryError(ref error) => error.description(),
+        }
+    }
+}
+
+impl fmt::Display for RunMigrationsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        self.description().fmt(f)
+    }
 }
 
 impl From<MigrationError> for RunMigrationsError {
