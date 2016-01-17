@@ -98,6 +98,26 @@ impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of
     }
 }
 
+impl<ST, S, W, O, L, Of> Expression for SelectStatement<ST, S, (), W, O, L, Of> where
+    ST: NativeSqlType,
+    S: SelectableExpression<(), ST>,
+    W: QueryFragment,
+    O: QueryFragment,
+    L: QueryFragment,
+    Of: QueryFragment,
+{
+    type SqlType = types::Array<ST>;
+
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        try!(self.select.to_sql(out));
+        try!(self.where_clause.to_sql(out));
+        try!(self.order.to_sql(out));
+        try!(self.limit.to_sql(out));
+        self.offset.to_sql(out)
+    }
+}
+
 impl<ST, S, F, W, O, L, Of, QS> SelectableExpression<QS> for SelectStatement<ST, S, F, W, O, L, Of> where
     SelectStatement<ST, S, F, W, O, L, Of>: Expression,
 {
