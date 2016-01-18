@@ -6,7 +6,7 @@ use std::io::Write;
 
 use query_source::Queryable;
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql, ToSql, Array, IsNull};
+use types::{NativeSqlType, FromSql, ToSql, Array, IsNull, NotNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
     fn oid(&self) -> u32 {
@@ -20,6 +20,9 @@ impl<T: NativeSqlType> NativeSqlType for Array<T> {
     fn new() -> Self {
         Array(T::new())
     }
+}
+
+impl<T: NativeSqlType> NotNull for Array<T> {
 }
 
 impl<T, ST> FromSql<Array<ST>> for Vec<T> where

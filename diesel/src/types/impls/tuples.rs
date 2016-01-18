@@ -4,7 +4,7 @@ use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow, ToSql, Nullable};
+use types::{NativeSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -30,6 +30,9 @@ macro_rules! tuple_impls {
                 fn new() -> Self {
                     ($($T::new(),)+)
                 }
+            }
+
+            impl<$($T: NativeSqlType),+> NotNull for ($($T,)+) {
             }
 
             impl<$($T),+,$($ST),+> FromSqlRow<($($ST,)+)> for ($($T,)+) where
@@ -115,8 +118,8 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, QS>
                 SelectableExpression<QS, Nullable<($($ST,)+)>>
                 for ($($T,)+) where
-                $($ST: NativeSqlType),+,
-                $($T: SelectableExpression<QS, Nullable<$ST>>),+,
+                $($ST: NativeSqlType + IntoNullable),+,
+                $($T: SelectableExpression<QS, $ST::Nullable, SqlType=$ST>),+,
                 ($($T,)+): Expression,
             {
             }

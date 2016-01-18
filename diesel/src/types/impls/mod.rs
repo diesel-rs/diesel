@@ -81,6 +81,9 @@ macro_rules! primitive_impls {
                     types::$Source
                 }
             }
+
+            impl types::NotNull for types::$Source {
+            }
         )+
         queryable_impls!($($Source -> $Target),+,);
         expression_impls!($($Source -> $Target),+,);

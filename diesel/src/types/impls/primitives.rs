@@ -5,7 +5,7 @@ use data_types::PgNumeric;
 use expression::bound::Bound;
 use expression::{Expression, AsExpression};
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql, ToSql, IsNull};
+use types::{NativeSqlType, FromSql, ToSql, IsNull, NotNull};
 use {Queryable, types};
 
 primitive_impls! {
@@ -47,6 +47,8 @@ impl NativeSqlType for () {
         ()
     }
 }
+
+impl NotNull for () {}
 
 impl FromSql<types::Bool> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {

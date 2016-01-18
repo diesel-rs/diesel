@@ -143,7 +143,8 @@ fn selectable_column_impl(
     ).unwrap(), quote_item!(cx,
         impl ::diesel::expression::SelectableExpression<
             ::diesel::query_source::LeftOuterJoinSource<$foreign_table, $table>,
-            ::diesel::types::Nullable<<$column as ::diesel::Expression>::SqlType>,
+            <<$column as ::diesel::Expression>::SqlType
+                as ::diesel::types::IntoNullable>::Nullable,
         > for $column {}
     ).unwrap()].to_vec()
 }

@@ -4,9 +4,9 @@ use expression::bound::Bound;
 use std::error::Error;
 use std::fmt;
 use std::io::Write;
-use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull};
+use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 
-impl<T: NativeSqlType> NativeSqlType for Nullable<T> {
+impl<T: NativeSqlType + NotNull> NativeSqlType for Nullable<T> {
     fn oid(&self) -> u32 {
         self.0.oid()
     }
@@ -22,7 +22,7 @@ impl<T: NativeSqlType> NativeSqlType for Nullable<T> {
 
 impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
     T: FromSql<ST>,
-    ST: NativeSqlType,
+    ST: NativeSqlType + NotNull,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         match bytes {
@@ -35,7 +35,7 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
 impl<T, ST> Queryable<Nullable<ST>> for Option<T> where
     T: Queryable<ST>,
     Option<T::Row>: FromSqlRow<Nullable<ST>>,
-    ST: NativeSqlType,
+    ST: NativeSqlType + NotNull,
 {
     type Row = Option<T::Row>;
 
@@ -46,7 +46,7 @@ impl<T, ST> Queryable<Nullable<ST>> for Option<T> where
 
 impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
     T: ToSql<ST>,
-    ST: NativeSqlType,
+    ST: NativeSqlType + NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         if let &Some(ref value) = self {
@@ -59,7 +59,7 @@ impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
 
 impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
     Option<T>: ToSql<Nullable<ST>>,
-    ST: NativeSqlType,
+    ST: NativeSqlType + NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
 
@@ -70,7 +70,7 @@ impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
 
 impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T> where
     Option<T>: ToSql<Nullable<ST>>,
-    ST: NativeSqlType,
+    ST: NativeSqlType + NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
 

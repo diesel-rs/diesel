@@ -1,7 +1,7 @@
 use super::{QuerySource, Table};
 use query_builder::*;
 use expression::SelectableExpression;
-use types::Nullable;
+use types::IntoNullable;
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -80,14 +80,15 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right>,
     Right: Table,
+    Right::SqlType: IntoNullable,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    LeftOuterJoinSource<Left, Right>,
-                                   (Left::SqlType, Nullable<Right::SqlType>),
+                                   (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable),
                                >,
 {
-    type SqlType = (Left::SqlType, Nullable<Right::SqlType>);
+    type SqlType = (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
     type Query = SelectStatement<
-        (Left::SqlType, Nullable<Right::SqlType>),
+        Self::SqlType,
         (Left::AllColumns, Right::AllColumns),
         Self,
     >;

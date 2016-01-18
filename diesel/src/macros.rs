@@ -320,8 +320,8 @@ macro_rules! select_column_inner {
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-            $crate::types::Nullable<
-                <$parent::$column_name as $crate::Expression>::SqlType>,
+            <<$parent::$column_name as $crate::Expression>::SqlType
+                as $crate::types::IntoNullable>::Nullable,
         > for $parent::$column_name
         {
         }

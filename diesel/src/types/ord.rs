@@ -1,4 +1,4 @@
-use types::{self, NativeSqlType};
+use types::{self, NativeSqlType, NotNull};
 
 pub trait SqlOrd {}
 
@@ -13,4 +13,4 @@ impl SqlOrd for types::Date {}
 impl SqlOrd for types::Interval {}
 impl SqlOrd for types::Time {}
 impl SqlOrd for types::Timestamp {}
-impl<T: SqlOrd + NativeSqlType> SqlOrd for types::Nullable<T> {}
+impl<T: SqlOrd + NativeSqlType + NotNull> SqlOrd for types::Nullable<T> {}

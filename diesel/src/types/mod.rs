@@ -54,13 +54,28 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Time;
 #[derive(Clone, Copy, Default)] pub struct Timestamp;
 
-#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType>(T);
+#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType + NotNull>(T);
 #[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(T);
 
 pub trait NativeSqlType {
     fn oid(&self) -> u32;
     fn array_oid(&self) -> u32;
     fn new() -> Self where Self: Sized;
+}
+
+pub trait NotNull {
+}
+
+pub trait IntoNullable {
+    type Nullable: NativeSqlType;
+}
+
+impl<T: NativeSqlType + NotNull> IntoNullable for T {
+    type Nullable = Nullable<T>;
+}
+
+impl<T: NativeSqlType + NotNull> IntoNullable for Nullable<T> {
+    type Nullable = Nullable<T>;
 }
 
 /// How to deserialize a single field of a given type. The input will always be
