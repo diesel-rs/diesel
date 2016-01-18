@@ -50,8 +50,10 @@ impl NativeSqlType for () {
 
 impl FromSql<types::Bool> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let bytes = not_none!(bytes);
-        Ok(bytes[0] != 0)
+        match bytes {
+            Some(bytes) => Ok(bytes[0] != 0),
+            None => Ok(false),
+        }
     }
 }
 
@@ -161,4 +163,10 @@ fn bool_to_sql() {
     ToSql::<types::Bool>::to_sql(&true, &mut bytes).unwrap();
     ToSql::<types::Bool>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(bytes, vec![1u8, 0u8]);
+}
+
+#[test]
+fn bool_from_sql_treats_null_as_false() {
+    let result = <bool as FromSql<types::Bool>>::from_sql(None).unwrap();
+    assert!(!result);
 }

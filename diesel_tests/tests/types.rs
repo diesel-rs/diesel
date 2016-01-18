@@ -9,6 +9,14 @@ fn boolean_from_sql() {
 }
 
 #[test]
+fn boolean_treats_null_as_false_when_predicates_return_null() {
+    let connection = connection();
+    let one = AsExpression::<Nullable<Integer>>::as_expression(Some(1));
+    let query = select(one.eq(None::<i32>));
+    assert_eq!(Ok(false), query.first(&connection));
+}
+
+#[test]
 fn boolean_to_sql() {
     assert!(query_to_sql_equality::<Bool, bool>("'t'::bool", true));
     assert!(query_to_sql_equality::<Bool, bool>("'f'::bool", false));
