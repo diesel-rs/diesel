@@ -20,7 +20,7 @@ quasi = { version = "^0.4.0", default-features = false }
 quasi_macros = { version = "^0.4.0", optional = true}
 syntex = { version = "^0.26.0", optional = true }
 syntex_syntax = { version = "^0.26.0", optional = true }
-diesel = { version = "^0.4.0" }
+diesel = { git = "https://github.com/sgrif/diesel.git" }
 
 [features]
 default = ["with-syntex"]
