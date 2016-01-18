@@ -43,7 +43,7 @@ struct BelongsToAssociationBuilder {
 impl BelongsToAssociationBuilder {
     fn parent_struct_name(&self) -> ast::Ident {
         let association_name = self.options.name.name.as_str();
-        let struct_name = association_name[..1].to_uppercase() + &association_name[1..];
+        let struct_name = capitalize_from_association_name(association_name.to_string());
         str_to_ident(&struct_name)
     }
 
@@ -93,6 +93,18 @@ impl BelongsToAssociationBuilder {
     fn primary_key_name(&self) -> ast::Ident {
         str_to_ident("id")
     }
+}
+
+fn capitalize_from_association_name(name: String) -> String {
+    let mut result = String::with_capacity(name.len());
+    let words = name.split("_");
+
+    for word in words {
+        result.push_str(&word[..1].to_uppercase());
+        result.push_str(&word[1..]);
+    }
+
+    result
 }
 
 impl ::std::ops::Deref for BelongsToAssociationBuilder {

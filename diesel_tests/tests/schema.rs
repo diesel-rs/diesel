@@ -57,14 +57,6 @@ pub struct Comment {
     text: String,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
-#[belongs_to(post)]
-#[table_name="comments"]
-pub struct SpecialComment {
-    id: i32,
-    post_id: i32,
-}
-
 infer_schema!(dotenv!("DATABASE_URL"));
 numeric_expr!(users::id);
 
