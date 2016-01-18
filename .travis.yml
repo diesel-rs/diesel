@@ -39,11 +39,10 @@ branches:
   only:
     - master
     - ಠ_ಠ
-
 notifications:
   webhooks:
     urls:
-      - https://webhooks.gitter.im/e/3dd6d91862cd46616592
+      - https://webhooks.gitter.im/e/1d32e0ad32841bd56b02
     on_success: change
     on_failure: always
     on_start: never
