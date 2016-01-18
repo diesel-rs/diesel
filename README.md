@@ -30,7 +30,7 @@ functions at that level.
 #[macro_use]
 extern crate diesel;
 
-use diesel::*;
+use diesel::prelude::*;
 
 table! {
     users {
@@ -64,7 +64,7 @@ on how to get started. Here's the same code with Diesel Codegen.
 ```rust
 #[macro_use] extern crate diesel;
 
-use diesel::*;
+use diesel::prelude::*;
 
 infer_schema!(dotenv!("DATABASE_URL"));
 
@@ -144,14 +144,15 @@ ensuring that they're never run twice.
 
 [pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html
 
-If you ever need to revert or make changes to your migrations, the commands
-`diesel migration revert` and `diesel migration redo`. Type `diesel migration
---help` for more information.
+If you ever need to revert or make changes to your migrations, `diesel
+migration revert` will revert the last migration run, and `diesel migration
+redo` will revert and then rerun the last migration run. Type `diesel
+migration --help` for more information.
 
 Insert
 ------
 
-Inserting data requires implementing the [`Insertable` trait][insertable] Once
+Inserting data requires implementing the [`Insertable` trait][insertable]. Once
 again, we can have this be automatically implemented for us by the compiler.
 
 ```rust
@@ -168,7 +169,7 @@ fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>
         name: name,
         favorite_color: favorite_color,
     };
-    insert(&new_user).into(users::table).get_result(connection)
+    diesel::insert(&new_user).into(users::table).get_result(connection)
 }
 ```
 
@@ -207,17 +208,15 @@ fn create_user(connection: &Connection, name: &str, favorite_color: Option<&str>
   -> QueryResult<User>
 {
     let new_user = NewUser(name, favorite_color);
-    insert(&new_user).into(users::table).get_result(connection)
+    diesel::insert(&new_user).into(users::table).get_result(connection)
 }
 ```
 
 Update
 ------
 
-To update a record, you'll need to call the [`update`][update] function. Unlike
-[`insert`][insert] (which may change to use this pattern in the future),
-[`update`][update] is a top level function which creates a query that you'll
-later pass to the [`Connection`][connection]. Here's a simple example.
+To update a record, you'll need to call the [`update`][update] function.
+Here's a simple example.
 
 ```rust
 fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> QueryResult<User> {
@@ -231,7 +230,7 @@ fn change_users_name(connection: &Connection, target: i32, new_name: &str) -> Qu
 As with [`insert`][insert], we can return any type which implements
 [`Queryable`][queryable] for the right types. If you do not want to use the
 returned record(s), you should call [`execute`][execute] instead of
-[`run`][run] or [`run_all`][run_all].
+[`get_result`][get_result] or [`get_results`][get_results].
 
 You can also use a struct to represent the changes, if it implements
 [`AsChangeset`][as_changeset]. Again, `diesel_codegen` can generate this for us
@@ -245,8 +244,8 @@ pub struct UserChanges {
 }
 
 fn save_user(connection: &Connection, id: i32, changes: &UserChanges) -> QueryResult<User> {
-    update(users::table.filter(users::id.eq(id))).set(changes)
-        .get_result(&connection)
+    diesel::update(users::table.filter(users::id.eq(id))).set(changes)
+        .get_result(connection)
 }
 ```
 
@@ -281,7 +280,7 @@ support returning a record.
 fn delete_user(connection: &Connection, user: User) -> QueryResult<()> {
     use users::dsl::*;
 
-    let deleted_rows = try!(diesel::delete(users.filter(id.eq(user.id))).execute(&connection));
+    let deleted_rows = try!(diesel::delete(users.filter(id.eq(user.id))).execute(connection));
     debug_assert!(deleted_rows == 1);
     Ok(())
 }
@@ -295,17 +294,17 @@ https://github.com/sgrif/diesel/tree/master/diesel_tests/tests. See
 https://github.com/sgrif/diesel/blob/master/diesel_tests/tests/schema.rs for how
 you can go about getting the data structures set up.
 
-[table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
-[queryable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queryable.html
-[insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
-[insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
-[execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute
-[run]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run
-[run_all]: http://sgrif.github.io/diesel/diesel/trait.LoadDsl.html#method.run_all
-[update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html
-[delete]: http://sgrif.github.io/diesel/diesel/query_builder/fn.delete.html
-[connection]: http://sgrif.github.io/diesel/diesel/struct.Connection.html
 [as_changeset]: http://sgrif.github.io/diesel/diesel/query_builder/trait.AsChangeset.html
+[connection]: http://sgrif.github.io/diesel/diesel/struct.Connection.html
+[delete]: http://sgrif.github.io/diesel/diesel/query_builder/fn.delete.html
+[execute]: http://sgrif.github.io/diesel/diesel/trait.ExecuteDsl.html#method.execute
+[get_result]: http://sgrif.github.io/diesel/diesel/prelude/trait.LoadDsl.html#method.get_result
+[get_results]: http://sgrif.github.io/diesel/diesel/prelude/trait.LoadDsl.html#method.get_results
+[insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
+[insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
+[queryable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queryable.html
+[table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
+[update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html
 
 ## License
 
