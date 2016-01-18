@@ -21,6 +21,11 @@ script:
     (cd diesel && travis-cargo test -- --features chrono)
   fi &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
+    (cd diesel_codegen && travis-cargo test -- --no-default-features --features nightly)
+  else
+    (cd diesel_codegen && travis-cargo test)
+  fi &&
+  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features unstable)
   else
     (cd diesel_tests && travis-cargo test)
