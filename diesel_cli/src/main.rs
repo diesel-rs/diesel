@@ -7,6 +7,7 @@ use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::migrations;
 use std::{env, fs};
+use std::error::Error;
 
 fn main() {
     let database_arg = || Arg::with_name("DATABASE_URL")
@@ -53,30 +54,29 @@ fn main() {
     }
 }
 
-// FIXME: We can improve the error handling instead of `unwrap` here.
 fn run_migration_command(matches: &ArgMatches) {
     match matches.subcommand() {
         ("run", Some(args)) => {
             migrations::run_pending_migrations(&connection(&database_url(args)))
-                .unwrap();
+                .map_err(handle_error).unwrap();
         }
         ("revert", Some(args)) => {
             migrations::revert_latest_migration(&connection(&database_url(args)))
-                .unwrap();
+                .map_err(handle_error).unwrap();
         }
         ("redo", Some(args)) => {
             let connection = connection(&database_url(args));
             connection.transaction(|| {
                 let reverted_version = try!(migrations::revert_latest_migration(&connection));
                 migrations::run_migration_with_version(&connection, &reverted_version)
-            }).unwrap();
+            }).unwrap_or_else(handle_error);
         }
         ("generate", Some(args)) => {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let timestamp = Local::now().format("%Y%m%d%H%M%S");
             let versioned_name = format!("{}_{}", &timestamp, migration_name);
             let migration_dir = migrations::find_migrations_directory()
-                .unwrap().join(versioned_name);
+                .map_err(handle_error).unwrap().join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
             // FIXME: It would be nice to print these as relative paths
@@ -89,6 +89,11 @@ fn run_migration_command(matches: &ArgMatches) {
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
+}
+
+fn handle_error<E: Error>(error: E) {
+    println!("{}", error);
+    std::process::exit(1);
 }
 
 fn database_url(matches: &ArgMatches) -> String {
