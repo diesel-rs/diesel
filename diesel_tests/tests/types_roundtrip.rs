@@ -1,7 +1,8 @@
 extern crate chrono;
 
 pub use quickcheck::quickcheck;
-use self::chrono::{NaiveDateTime, NaiveTime};
+use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
+use self::chrono::naive::date;
 
 pub use schema::connection;
 pub use diesel::*;
@@ -81,6 +82,7 @@ test_round_trip!(interval_roundtrips, Interval, PgInterval);
 test_round_trip!(numeric_roundtrips, Numeric, PgNumeric);
 test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
 test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
 
 fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
     NaiveDateTime::from_timestamp(data.0, data.1 / 1000)
@@ -88,6 +90,13 @@ fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
 
 fn mk_naive_time(data: (u32, u32)) -> NaiveTime {
     NaiveTime::from_num_seconds_from_midnight(data.0, data.1 / 1000)
+}
+
+fn mk_naive_date(days: u32) -> NaiveDate {
+    let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
+    let latest_chrono_date = date::MAX;
+    let num_days_representable = (latest_chrono_date - earliest_pg_date).num_days();
+    earliest_pg_date + Duration::days(days as i64 % num_days_representable)
 }
 
 #[cfg(feature = "unstable")]
