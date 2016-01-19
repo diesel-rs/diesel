@@ -2,7 +2,6 @@
 #![cfg_attr(not(feature = "with-syntex"), plugin(quasi_macros))]
 #![deny(warnings)]
 
-extern crate aster;
 extern crate quasi;
 #[macro_use] extern crate diesel;
 

@@ -1,4 +1,3 @@
-use aster;
 use syntax::ast::{
     self,
     Item,
@@ -9,9 +8,10 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
-use syntax::parse::token::InternedString;
+use syntax::parse::token::{InternedString, str_to_ident};
 
 use attr::Attr;
+use util::struct_ty;
 
 pub fn expand_insert(
     cx: &mut ExtCtxt,
@@ -22,8 +22,7 @@ pub fn expand_insert(
 ) {
     if let Annotatable::Item(ref item) = *annotatable {
         let tables = insertable_tables(cx, meta_item);
-        let builder = aster::AstBuilder::new().span(span);
-        for body in tables.into_iter().filter_map(|t| insertable_impl(cx, &builder, t, item)) {
+        for body in tables.into_iter().filter_map(|t| insertable_impl(cx, span, t, item)) {
             push(Annotatable::Item(body));
         }
     } else {
@@ -56,7 +55,7 @@ fn usage_error(cx: &mut ExtCtxt, meta_item: &MetaItem) -> ! {
 
 fn insertable_impl(
     cx: &mut ExtCtxt,
-    builder: &aster::AstBuilder,
+    span: Span,
     table: InternedString,
     item: &Item,
 ) -> Option<P<ast::Item>> {
@@ -68,13 +67,12 @@ fn insertable_impl(
             return None;
         }
     };
-    let ty = builder.ty().path()
-        .segment(item.ident).with_generics(generics.clone()).build().build();
-    let table_mod = builder.id(&*table);
-    let columns_ty = columns_ty(&builder, &table_mod, &fields);
-    let values_ty = values_ty(cx, &builder, &table_mod, &fields);
-    let columns_expr = columns_expr(&builder, &table_mod, &fields);
-    let values_expr = values_expr(cx, &builder, &table_mod, &fields);
+    let ty = struct_ty(cx, span, item.ident, &generics);
+    let table_mod = str_to_ident(&table);
+    let columns_ty = columns_ty(cx, span, table_mod, &fields);
+    let values_ty = values_ty(cx, span, table_mod, &fields);
+    let columns_expr = columns_expr(cx, span, table_mod, &fields);
+    let values_expr = values_expr(cx, span, table_mod, &fields);
 
     quote_item!(cx,
         impl<'a: 'insert, 'insert> ::diesel::persistable::Insertable<$table_mod::table> for
@@ -98,82 +96,80 @@ fn insertable_impl(
 }
 
 fn columns_ty(
-    builder: &aster::AstBuilder,
-    table_mod: &ast::Ident,
+    cx: &ExtCtxt,
+    span: Span,
+    table_mod: ast::Ident,
     fields: &[Attr],
 ) -> P<ast::Ty> {
-    tuple_ty_from(builder, fields,
-                  |f| builder.ty().build_path(column_field_ty(builder, table_mod, f)))
+    tuple_ty_from(cx, span, fields,
+                  |f| cx.ty_path(column_field_ty(cx, span, table_mod, f)))
 }
 
 fn values_ty(
     cx: &ExtCtxt,
-    builder: &aster::AstBuilder,
-    table_mod: &ast::Ident,
+    span: Span,
+    table_mod: ast::Ident,
     fields: &[Attr],
 ) -> P<ast::Ty> {
-    tuple_ty_from(builder, fields, |f| {
+    tuple_ty_from(cx, span, fields, |f| {
         let ref field_ty = f.ty;
-        let column_field_ty = column_field_ty(builder, table_mod, f);
+        let column_field_ty = column_field_ty(cx, span, table_mod, f);
         quote_ty!(cx,
             ::diesel::expression::helper_types::AsExpr<&'insert $field_ty, $column_field_ty>)
     })
 }
 
 fn column_field_ty(
-    builder: &aster::AstBuilder,
-    table_mod: &ast::Ident,
+    cx: &ExtCtxt,
+    span: Span,
+    table_mod: ast::Ident,
     field: &Attr,
 ) -> ast::Path {
-    builder.path()
-        .segment(table_mod).build()
-        .segment(field.column_name).build()
-        .build()
+    cx.path(span, vec![table_mod, field.column_name])
 }
 
 fn columns_expr(
-    builder: &aster::AstBuilder,
-    table_mod: &ast::Ident,
+    cx: &ExtCtxt,
+    span: Span,
+    table_mod: ast::Ident,
     fields: &[Attr],
 ) -> P<ast::Expr> {
-    tuple_expr_from(builder, fields, |(_, f)|
-        builder.expr().build_path(column_field_ty(builder, table_mod, f)))
+    tuple_expr_from(cx, span, fields, |(_, f)|
+        cx.expr_path(column_field_ty(cx, span, table_mod, f)))
 }
 
 fn values_expr(
     cx: &ExtCtxt,
-    builder: &aster::AstBuilder,
-    table_mod: &ast::Ident,
+    span: Span,
+    table_mod: ast::Ident,
     fields: &[Attr],
 ) -> P<ast::Expr> {
-    tuple_expr_from(builder, fields, |(i, f)| {
-        let self_ = builder.expr().self_();
+    tuple_expr_from(cx, span, fields, |(i, f)| {
+        let self_ = cx.expr_self(span);
         let field_access = match f.field_name {
-            Some(i) => builder.expr().field(i).build(self_),
-            None => builder.expr().tup_field(i).build(self_),
+            Some(i) => cx.expr_field_access(span, self_, i),
+            None => cx.expr_tup_field_access(span, self_, i),
         };
-        let field_ty = column_field_ty(builder, table_mod, f);
+        let field_ty = column_field_ty(cx, span, table_mod, f);
         quote_expr!(cx,
             AsExpression::<<$field_ty as Expression>::SqlType>::as_expression(&$field_access))
     })
 }
 
 fn tuple_ty_from<F: Fn(&Attr) -> P<ast::Ty>>(
-    builder: &aster::AstBuilder,
+    cx: &ExtCtxt,
+    span: Span,
     fields: &[Attr],
     f: F,
 ) -> P<ast::Ty> {
-    builder.ty().tuple()
-        .with_tys(fields.iter().map(f))
-        .build()
+    cx.ty(span, ast::TyTup(fields.iter().map(f).collect()))
 }
 
 fn tuple_expr_from<F: Fn((usize, &Attr)) -> P<ast::Expr>>(
-    builder: &aster::AstBuilder,
+    cx: &ExtCtxt,
+    span: Span,
     fields: &[Attr],
     f: F,
 ) -> P<ast::Expr> {
-    builder.expr().tuple()
-        .with_exprs(fields.iter().enumerate().map(f))
-        .build()
+    cx.expr_tuple(span, fields.iter().enumerate().map(f).collect())
 }
