@@ -1,4 +1,3 @@
-use aster;
 use syntax::ast::{
     self,
     Item,
@@ -7,6 +6,7 @@ use syntax::ast::{
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
+use syntax::parse::token::*;
 use syntax::ptr::P;
 
 use attr::Attr;
@@ -19,34 +19,26 @@ pub fn expand_derive_queryable(
     push: &mut FnMut(Annotatable)
 ) {
     if let Annotatable::Item(ref item) = *annotatable {
-        let (generics, attrs) = match Attr::from_item(cx, item) {
+        let (mut generics, attrs) = match Attr::from_item(cx, item) {
             Some((generics, attrs)) => (generics, attrs),
             None => {
                 cx.span_err(span, "`#[derive(Queryable)]` can only be applied to structs or tuple structs");
                 return;
             }
         };
-        let builder = aster::AstBuilder::new().span(span);
 
-        let ty = builder.ty().path()
-            .segment(item.ident).with_generics(generics.clone()).build()
-            .build();
+        let ty = struct_ty(cx, span, item.ident, &generics);
 
-        let row_type = builder.ty().tuple()
-            .with_tys(attrs.iter().map(|f| f.ty.clone()))
-            .build();
+        let row_type = cx.ty(span, ast::TyTup(attrs.iter().map(|f| f.ty.clone()).collect()));
 
         let build_impl = struct_literal_with_fields_assigned_to_row_elements(
-            &item,
-            &builder,
-            &attrs,
-        );
-        let display_generics = builder.from_generics(generics)
-            .ty_param_id("__ST")
-            .build();
+            span, &item, cx, &attrs);
+        let mut params = generics.ty_params.into_vec();
+        params.push(ty_param_with_name(cx, span, "__ST"));
+        generics.ty_params = params.into();
 
         let impl_item = quote_item!(cx,
-            impl$display_generics ::diesel::Queryable<__ST> for $ty where
+            impl$generics ::diesel::Queryable<__ST> for $ty where
                 __ST: ::diesel::types::NativeSqlType,
                 $row_type: ::diesel::types::FromSqlRow<__ST>,
             {
@@ -65,17 +57,36 @@ pub fn expand_derive_queryable(
     };
 }
 
+fn ty_param_with_name(cx: &mut ExtCtxt, span: Span, name: &str) -> ast::TyParam {
+    cx.typaram(span, str_to_ident(name), P::empty(), None)
+}
+
+fn struct_ty(
+    cx: &mut ExtCtxt,
+    span: Span,
+    name: ast::Ident,
+    generics: &ast::Generics,
+) -> P<ast::Ty> {
+    let lifetimes = generics.lifetimes.iter().map(|lt| lt.lifetime).collect();
+    let ty_params = generics.ty_params.iter()
+        .map(|param| cx.ty_ident(span, param.ident))
+        .collect();
+    cx.ty_path(cx.path_all(span, false, vec![name], lifetimes, ty_params, Vec::new()))
+}
+
 fn struct_literal_with_fields_assigned_to_row_elements(
+    span: Span,
     item: &Item,
-    builder: &aster::AstBuilder,
+    cx: &mut ExtCtxt,
     fields: &[Attr],
 ) -> P<ast::Expr> {
-    let mut build_impl_builder = builder.expr().struct_path(item.ident);
-    for (i, field) in fields.iter().enumerate() {
-        build_impl_builder = build_impl_builder
-            .field(field.field_name.unwrap())
-            .tup_field(i)
-            .id("row");
-    }
-    build_impl_builder.build()
+    let tup = cx.expr_ident(span, str_to_ident("row"));
+    let fields = fields.iter().enumerate().map(|(i, field)| {
+        cx.field_imm(
+            span,
+            field.field_name.unwrap(),
+            cx.expr_tup_field_access(span, tup.clone(), i),
+        )
+    }).collect();
+    cx.expr_struct_ident(span, item.ident, fields)
 }
