@@ -1,9 +1,10 @@
 use aster;
 use syntax::ast::{self, MetaItem, TyPath};
+use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
-use syntax::parse::token::{InternedString, intern_and_get_ident};
+use syntax::parse::token::{InternedString, intern_and_get_ident, str_to_ident};
 
 use attr::Attr;
 use model::Model;
@@ -18,9 +19,9 @@ pub fn expand_changeset_for(
     let builder = aster::AstBuilder::new().span(span);
 
     if let Some(model) = Model::from_annotable(cx, &builder, annotatable) {
-        let table = changeset_tables(cx, meta_item).unwrap();
-        push(Annotatable::Item(changeset_impl(cx, builder, &table, &model).unwrap()));
-        if let Some(item) = save_changes_impl(cx, builder, &table, &model) {
+        let options = changeset_options(cx, meta_item).unwrap();
+        push(Annotatable::Item(changeset_impl(cx, builder, &options, &model).unwrap()));
+        if let Some(item) = save_changes_impl(cx, builder, &options, &model) {
             push(Annotatable::Item(item));
         }
     } else {
@@ -29,34 +30,65 @@ pub fn expand_changeset_for(
     }
 }
 
-fn changeset_tables(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Option<InternedString> {
+struct ChangesetOptions {
+    table_name: ast::Ident,
+    skip_visibility: bool,
+}
+
+fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<ChangesetOptions, ()> {
     match meta_item.node {
         ast::MetaList(_, ref meta_items) => {
-            meta_items.iter().filter_map(|i| table_name(cx, i)).nth(0)
+            let table_name = try!(table_name(cx, &meta_items[0]));
+            let skip_visibility = try!(boolean_option(cx, &meta_items[1..], "__skip_visibility"))
+                .unwrap_or(false);
+            Ok(ChangesetOptions {
+                table_name: str_to_ident(&table_name),
+                skip_visibility: skip_visibility,
+            })
         }
         _ => usage_error(cx, meta_item),
     }
 }
 
-fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Option<InternedString> {
+fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<InternedString, ()> {
     match meta_item.node {
-        ast::MetaWord(ref word) => Some(word.clone()),
+        ast::MetaWord(ref word) => Ok(word.clone()),
         _ => usage_error(cx, meta_item),
     }
 }
 
-fn usage_error<T>(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Option<T> {
+fn boolean_option(cx: &mut ExtCtxt, meta_items: &[P<MetaItem>], option_name: &str)
+    -> Result<Option<bool>, ()>
+{
+    if let Some(item) = meta_items.iter().find(|item| item.name() == option_name) {
+        match item.value_str() {
+            Some(ref s) if *s == "true" => Ok(Some(true)),
+            Some(ref s) if *s == "false" => Ok(Some(false)),
+            _ => {
+                cx.span_err(item.span,
+                    &format!("Expected {} to be in the form `option=\"true\"` or \
+                            option=\"false\"", option_name));
+                Err(())
+            }
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+fn usage_error<T>(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<T, ()> {
     cx.span_err(meta_item.span,
         "`changeset_for` must be used in the form `#[changeset_for(table1)]`");
-    None
+    Err(())
 }
 
 fn changeset_impl(
     cx: &mut ExtCtxt,
     builder: aster::AstBuilder,
-    table: &str,
+    options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
+    let table: &str = &options.table_name.name.as_str();
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
@@ -82,27 +114,33 @@ fn changeset_impl(
     )
 }
 
+#[allow(unused_mut)]
 fn save_changes_impl(
     cx: &mut ExtCtxt,
     builder: aster::AstBuilder,
-    table: &str,
+    options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
     let sql_type = builder.path()
-        .segment(table).build()
+        .segment(&options.table_name).build()
         .segment("SqlType").build()
         .build();
     let table = builder.path()
-        .segment(table).build()
+        .segment(&options.table_name).build()
         .segment("table").build()
         .build();
+    let _pub = if options.skip_visibility {
+        quote_tokens!(cx, )
+    } else {
+        quote_tokens!(cx, pub)
+    };
     model.attrs.iter().find(|a| a.column_name == pk).and_then(|pk| {
         let pk_field = pk.field_name.unwrap();
         quote_item!(cx,
             impl<'a> $struct_name {
-                pub fn save_changes<T>(&self, connection: &::diesel::Connection)
+                $_pub fn save_changes<T>(&self, connection: &::diesel::Connection)
                     -> ::diesel::QueryResult<T> where
                     T: Queryable<$sql_type>,
                 {
