@@ -1,4 +1,3 @@
-use aster;
 use syntax::ast::{self, MetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
@@ -19,8 +18,7 @@ fn parse_association_options(
     meta_item: &MetaItem,
     annotatable: &Annotatable,
 ) -> Option<(Model, AssociationOptions)> {
-    let builder = aster::AstBuilder::new().span(span);
-    let model = match Model::from_annotable(cx, &builder, annotatable) {
+    let model = match Model::from_annotable(cx, span, annotatable) {
         Some(model) => model,
         None => {
             cx.span_err(span,

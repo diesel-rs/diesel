@@ -18,7 +18,7 @@ pub fn expand_changeset_for(
 ) {
     let builder = aster::AstBuilder::new().span(span);
 
-    if let Some(model) = Model::from_annotable(cx, &builder, annotatable) {
+    if let Some(model) = Model::from_annotable(cx, span, annotatable) {
         let options = changeset_options(cx, meta_item).unwrap();
         push(Annotatable::Item(changeset_impl(cx, builder, &options, &model).unwrap()));
         if let Some(item) = save_changes_impl(cx, builder, &options, &model) {

@@ -1,7 +1,10 @@
 use syntax::ast;
 use syntax::attr::AttrMetaMethods;
+use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
+use syntax::ext::build::AstBuilder;
 use syntax::parse::token::str_to_ident;
+use syntax::ptr::P;
 
 fn str_value_of_attr(
     cx: &mut ExtCtxt,
@@ -48,4 +51,17 @@ pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
     }
 
     fold::Folder::fold_crate(&mut StripAttributeFolder, krate)
+}
+
+pub fn struct_ty(
+    cx: &mut ExtCtxt,
+    span: Span,
+    name: ast::Ident,
+    generics: &ast::Generics,
+) -> P<ast::Ty> {
+    let lifetimes = generics.lifetimes.iter().map(|lt| lt.lifetime).collect();
+    let ty_params = generics.ty_params.iter()
+        .map(|param| cx.ty_ident(span, param.ident))
+        .collect();
+    cx.ty_path(cx.path_all(span, false, vec![name], lifetimes, ty_params, Vec::new()))
 }

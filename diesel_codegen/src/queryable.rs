@@ -10,6 +10,7 @@ use syntax::parse::token::*;
 use syntax::ptr::P;
 
 use attr::Attr;
+use util::struct_ty;
 
 pub fn expand_derive_queryable(
     cx: &mut ExtCtxt,
@@ -59,19 +60,6 @@ pub fn expand_derive_queryable(
 
 fn ty_param_with_name(cx: &mut ExtCtxt, span: Span, name: &str) -> ast::TyParam {
     cx.typaram(span, str_to_ident(name), P::empty(), None)
-}
-
-fn struct_ty(
-    cx: &mut ExtCtxt,
-    span: Span,
-    name: ast::Ident,
-    generics: &ast::Generics,
-) -> P<ast::Ty> {
-    let lifetimes = generics.lifetimes.iter().map(|lt| lt.lifetime).collect();
-    let ty_params = generics.ty_params.iter()
-        .map(|param| cx.ty_ident(span, param.ident))
-        .collect();
-    cx.ty_path(cx.path_all(span, false, vec![name], lifetimes, ty_params, Vec::new()))
 }
 
 fn struct_literal_with_fields_assigned_to_row_elements(

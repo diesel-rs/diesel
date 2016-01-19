@@ -1,11 +1,11 @@
-use aster;
 use syntax::ast;
+use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
 
 use attr::Attr;
-use util::str_value_of_attr_with_name;
+use util::{str_value_of_attr_with_name, struct_ty};
 
 pub struct Model {
     pub ty: P<ast::Ty>,
@@ -17,16 +17,14 @@ pub struct Model {
 impl Model {
     pub fn from_annotable(
         cx: &mut ExtCtxt,
-        builder: &aster::AstBuilder,
+        span: Span,
         annotatable: &Annotatable,
     ) -> Option<Self> {
         if let Annotatable::Item(ref item) = *annotatable {
             let table_name_from_annotation =
                 str_value_of_attr_with_name(cx, &item.attrs, "table_name");
             Attr::from_item(cx, item).map(|(generics, attrs)| {
-                let ty = builder.ty().path()
-                    .segment(item.ident).with_generics(generics.clone())
-                    .build().build();
+                let ty = struct_ty(cx, span, item.ident, &generics);
                 Model {
                     ty: ty,
                     attrs: attrs,
