@@ -115,7 +115,7 @@ fn changeset_impl(
     )
 }
 
-#[allow(unused_mut)]
+#[allow(unused_imports)]
 fn save_changes_impl(
     cx: &mut ExtCtxt,
     span: Span,
@@ -127,7 +127,7 @@ fn save_changes_impl(
     let sql_type = cx.path(span, vec![options.table_name, str_to_ident("SqlType")]);
     let table = cx.path(span, vec![options.table_name, str_to_ident("table")]);
     let _pub = if options.skip_visibility {
-        quote_tokens!(cx, )
+        Vec::new()
     } else {
         quote_tokens!(cx, pub)
     };

@@ -1,8 +1,6 @@
-#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, plugin, plugin_registrar))]
-#![cfg_attr(not(feature = "with-syntex"), plugin(quasi_macros))]
+#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, plugin_registrar, quote))]
 #![deny(warnings)]
 
-extern crate quasi;
 #[macro_use] extern crate diesel;
 
 #[cfg(feature = "with-syntex")]
