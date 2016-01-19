@@ -1,8 +1,8 @@
-use aster;
 use syntax::ast::{self, MetaItem, TyPath};
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
+use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
 use syntax::parse::token::{InternedString, intern_and_get_ident, str_to_ident};
 
@@ -16,12 +16,10 @@ pub fn expand_changeset_for(
     annotatable: &Annotatable,
     push: &mut FnMut(Annotatable),
 ) {
-    let builder = aster::AstBuilder::new().span(span);
-
     if let Some(model) = Model::from_annotable(cx, span, annotatable) {
         let options = changeset_options(cx, meta_item).unwrap();
-        push(Annotatable::Item(changeset_impl(cx, builder, &options, &model).unwrap()));
-        if let Some(item) = save_changes_impl(cx, builder, &options, &model) {
+        push(Annotatable::Item(changeset_impl(cx, span, &options, &model).unwrap()));
+        if let Some(item) = save_changes_impl(cx, span, &options, &model) {
             push(Annotatable::Item(item));
         }
     } else {
@@ -88,7 +86,7 @@ fn usage_error<T>(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<T, ()> {
 
 fn changeset_impl(
     cx: &mut ExtCtxt,
-    builder: aster::AstBuilder,
+    span: Span,
     options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
@@ -96,14 +94,14 @@ fn changeset_impl(
     let pk = model.primary_key_name();
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
-    let changeset_ty = builder.ty().tuple()
-        .with_tys(attrs_for_changeset.iter()
-                  .map(|a| changeset_ty(cx, builder, &options, a)))
-        .build();
-    let changeset_body = builder.expr().tuple()
-        .with_exprs(attrs_for_changeset.iter()
-                    .map(|a| changeset_expr(cx, builder, &options, a)))
-        .build();
+    let changeset_ty = cx.ty(span, ast::TyTup(
+        attrs_for_changeset.iter()
+              .map(|a| changeset_ty(cx, span, &options, a))
+              .collect()
+    ));
+    let changeset_body = cx.expr_tuple(span, attrs_for_changeset.iter()
+        .map(|a| changeset_expr(cx, span, &options, a))
+        .collect());
     quote_item!(cx,
         impl<'a: 'update, 'update> ::diesel::query_builder::AsChangeset for
             &'update $struct_name
@@ -120,20 +118,14 @@ fn changeset_impl(
 #[allow(unused_mut)]
 fn save_changes_impl(
     cx: &mut ExtCtxt,
-    builder: aster::AstBuilder,
+    span: Span,
     options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
-    let sql_type = builder.path()
-        .segment(&options.table_name).build()
-        .segment("SqlType").build()
-        .build();
-    let table = builder.path()
-        .segment(&options.table_name).build()
-        .segment("table").build()
-        .build();
+    let sql_type = cx.path(span, vec![options.table_name, str_to_ident("SqlType")]);
+    let table = cx.path(span, vec![options.table_name, str_to_ident("table")]);
     let _pub = if options.skip_visibility {
         quote_tokens!(cx, )
     } else {
@@ -158,15 +150,12 @@ fn save_changes_impl(
 }
 
 fn changeset_ty(
-    cx: &mut ExtCtxt,
-    builder: aster::AstBuilder,
+    cx: &ExtCtxt,
+    span: Span,
     options: &ChangesetOptions,
     attr: &Attr,
 ) -> P<ast::Ty> {
-    let column = builder.path()
-        .segment(options.table_name).build()
-        .segment(attr.column_name).build()
-        .build();
+    let column = cx.path(span, vec![options.table_name, attr.column_name]);
     match (options.treat_none_as_null, ty_param_of_option(&attr.ty)) {
         (false, Some(ty)) => {
             let inner_ty = inner_changeset_ty(cx, column, &ty);
@@ -177,7 +166,7 @@ fn changeset_ty(
 }
 
 fn inner_changeset_ty(
-    cx: &mut ExtCtxt,
+    cx: &ExtCtxt,
     column: ast::Path,
     field_ty: &ast::Ty,
 ) -> P<ast::Ty> {
@@ -193,15 +182,12 @@ fn inner_changeset_ty(
 }
 
 fn changeset_expr(
-    cx: &mut ExtCtxt,
-    builder: aster::AstBuilder,
+    cx: &ExtCtxt,
+    span: Span,
     options: &ChangesetOptions,
     attr: &Attr,
 ) -> P<ast::Expr> {
-    let column = builder.path()
-        .segment(options.table_name).build()
-        .segment(attr.column_name).build()
-        .build();
+    let column = cx.path(span, vec![options.table_name, attr.column_name]);
     let field_name = &attr.field_name.unwrap();
     if !options.treat_none_as_null && is_option_ty(&attr.ty) {
         quote_expr!(cx, self.$field_name.as_ref().map(|f| $column.eq(f)))
