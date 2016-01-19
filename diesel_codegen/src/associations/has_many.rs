@@ -1,10 +1,10 @@
-use aster;
 use syntax::ast::{
     self,
     MetaItem,
 };
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
+use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
 
@@ -19,35 +19,34 @@ pub fn expand_has_many(
     push: &mut FnMut(Annotatable)
 ) {
     let options = parse_association_options("has_many", cx, span, meta_item, annotatable);
-    if let Some((builder, model, options)) = options {
+    if let Some((model, options)) = options {
         let builder = HasManyAssociationBuilder {
             options: options,
             model: model,
-            builder: builder,
+            cx: cx,
+            span: span,
         };
-        push(Annotatable::Item(join_to_impl(cx, &builder)));
-        for item in selectable_column_hack(cx, &builder).into_iter() {
+        push(Annotatable::Item(join_to_impl(&builder)));
+        for item in selectable_column_hack(&builder).into_iter() {
             push(Annotatable::Item(item));
         }
     }
 }
 
-struct HasManyAssociationBuilder {
+struct HasManyAssociationBuilder<'a, 'b: 'a> {
     pub options: AssociationOptions,
     pub model: Model,
-    builder: aster::AstBuilder,
+    pub cx: &'a mut ExtCtxt<'b>,
+    pub span: Span,
 }
 
-impl HasManyAssociationBuilder {
+impl<'a, 'b> HasManyAssociationBuilder<'a, 'b> {
     fn association_name(&self) -> ast::Ident {
         self.options.name
     }
 
     fn foreign_table(&self) -> ast::Path {
-        self.builder.path()
-            .segment(self.association_name()).build()
-            .segment("table").build()
-            .build()
+        self.cx.path(self.span, vec![self.association_name(), str_to_ident("table")])
     }
 
     fn table_name(&self) -> ast::Ident {
@@ -55,10 +54,7 @@ impl HasManyAssociationBuilder {
     }
 
     fn table(&self) -> ast::Path {
-        self.builder.path()
-            .segment(self.table_name()).build()
-            .segment("table").build()
-            .build()
+        self.cx.path(self.span, vec![self.table_name(), str_to_ident("table")])
     }
 
     fn foreign_key_name(&self) -> ast::Ident {
@@ -66,30 +62,20 @@ impl HasManyAssociationBuilder {
     }
 
     fn foreign_key(&self) -> ast::Path {
-        self.builder.path()
-            .segment(self.association_name()).build()
-            .segment(self.foreign_key_name()).build()
-            .build()
+        self.cx.path(self.span, vec![self.association_name(), self.foreign_key_name()])
+    }
+
+    fn column_path(&self, column_name: ast::Ident) -> ast::Path {
+        self.cx.path(self.span, vec![self.table_name(), column_name])
     }
 }
 
-impl ::std::ops::Deref for HasManyAssociationBuilder {
-    type Target = aster::AstBuilder;
-
-    fn deref(&self) -> &Self::Target {
-        &self.builder
-    }
-}
-
-fn join_to_impl(
-    cx: &mut ExtCtxt,
-    builder: &HasManyAssociationBuilder,
-) -> P<ast::Item> {
+fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
     let foreign_table = builder.foreign_table();
     let table = builder.table();
     let foreign_key = builder.foreign_key();
 
-    quote_item!(cx,
+    quote_item!(builder.cx,
         impl ::diesel::JoinTo<$foreign_table> for $table {
             fn join_sql(&self, out: &mut ::diesel::query_builder::QueryBuilder)
                 -> ::diesel::query_builder::BuildQueryResult
@@ -105,42 +91,35 @@ fn join_to_impl(
     ).unwrap()
 }
 
-fn selectable_column_hack(
-    cx: &mut ExtCtxt,
-    builder: &HasManyAssociationBuilder,
-) -> Vec<P<ast::Item>> {
+fn selectable_column_hack(builder: &HasManyAssociationBuilder) -> Vec<P<ast::Item>> {
     let mut result = builder.model.attrs.iter().flat_map(|attr| {
-        selectable_column_impl(cx, builder, attr.column_name)
+        selectable_column_impl(builder, attr.column_name)
     }).collect::<Vec<_>>();
-    result.append(&mut selectable_column_impl(cx, builder, str_to_ident("star")));
+    result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
     result
 }
 
 fn selectable_column_impl(
-    cx: &mut ExtCtxt,
     builder: &HasManyAssociationBuilder,
     column_name: ast::Ident,
 ) -> Vec<P<ast::Item>> {
     let table = builder.table();
     let foreign_table = builder.foreign_table();
-    let column = builder.path()
-        .segment(builder.table_name()).build()
-        .segment(column_name).build()
-        .build();
+    let column = builder.column_path(column_name);
 
-    [quote_item!(cx,
+    [quote_item!(builder.cx,
         impl ::diesel::expression::SelectableExpression<
             ::diesel::query_source::InnerJoinSource<$table, $foreign_table>
         > for $column {}
-    ).unwrap(), quote_item!(cx,
+    ).unwrap(), quote_item!(builder.cx,
         impl ::diesel::expression::SelectableExpression<
             ::diesel::query_source::InnerJoinSource<$foreign_table, $table>
         > for $column {}
-    ).unwrap(), quote_item!(cx,
+    ).unwrap(), quote_item!(builder.cx,
         impl ::diesel::expression::SelectableExpression<
             ::diesel::query_source::LeftOuterJoinSource<$table, $foreign_table>,
         > for $column {}
-    ).unwrap(), quote_item!(cx,
+    ).unwrap(), quote_item!(builder.cx,
         impl ::diesel::expression::SelectableExpression<
             ::diesel::query_source::LeftOuterJoinSource<$foreign_table, $table>,
             <<$column as ::diesel::Expression>::SqlType

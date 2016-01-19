@@ -18,7 +18,7 @@ fn parse_association_options(
     span: Span,
     meta_item: &MetaItem,
     annotatable: &Annotatable,
-) -> Option<(aster::AstBuilder, Model, AssociationOptions)> {
+) -> Option<(Model, AssociationOptions)> {
     let builder = aster::AstBuilder::new().span(span);
     let model = match Model::from_annotable(cx, &builder, annotatable) {
         Some(model) => model,
@@ -31,7 +31,7 @@ fn parse_association_options(
     };
 
     build_association_options(association_kind, cx, span, meta_item).map(|options| {
-        (builder, model, options)
+        (model, options)
     })
 }
 
