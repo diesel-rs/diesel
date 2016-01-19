@@ -108,6 +108,10 @@ Any fields which are of the type `Option` will be skipped when their value is
 `None`. This makes it easy to support APIs where you may not want to update all
 of the fields of a record on every request.
 
+If you'd like `None` to change a field to `NULL`, instead of skipping it, you
+can pass the `treat_none_as_null` option like so: `#[changeset_for(posts,
+treat_none_as_null="true")]`
+
 If the struct has a field for the primary key, an additional function,
 `save_changes<T: Queryable<..>>(&self, connection: &Connection) ->
 QueryResult<T>`, will be added to the model. This will persist any changes made,

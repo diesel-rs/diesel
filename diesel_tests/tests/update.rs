@@ -205,3 +205,27 @@ fn can_update_with_struct_containing_single_field() {
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
     assert_eq!(expected_post, post);
 }
+
+#[test]
+fn struct_with_option_fields_treated_as_null() {
+    #[changeset_for(posts, treat_none_as_null="true", __skip_visibility="true")]
+    struct UpdatePost {
+        id: i32,
+        title: String,
+        body: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    let post = insert(&new_post).into(posts::table)
+        .get_result::<Post>(&connection).unwrap();
+
+    let changes = UpdatePost { id: post.id, title: "Hello again".into(), body: None };
+    let expected_post = Post::new(post.id, sean.id, "Hello again".into(), None);
+    let updated_post = changes.save_changes(&connection);
+    let post_in_database = connection.find(posts::table, post.id);
+
+    assert_eq!(Ok(&expected_post), updated_post.as_ref());
+    assert_eq!(Ok(&expected_post), post_in_database.as_ref());
+}

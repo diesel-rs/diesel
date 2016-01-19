@@ -24,6 +24,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   production code is discouraged as it is inherently unsafe and avoids real type
   checking.
 
+* Added a `treat_none_as_null` option to `changeset_for`. When set to `true`,
+  a model will set a field to `Null` when an optional struct field is `None`,
+  instead of skipping the field entirely. The default value of the option is
+  `false`, as we think the current behavior is a much more common use case.
+
 ### Changed
 
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to

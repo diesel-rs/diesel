@@ -33,6 +33,7 @@ pub fn expand_changeset_for(
 struct ChangesetOptions {
     table_name: ast::Ident,
     skip_visibility: bool,
+    treat_none_as_null: bool,
 }
 
 fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<ChangesetOptions, ()> {
@@ -41,9 +42,12 @@ fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<Changeset
             let table_name = try!(table_name(cx, &meta_items[0]));
             let skip_visibility = try!(boolean_option(cx, &meta_items[1..], "__skip_visibility"))
                 .unwrap_or(false);
+            let treat_none_as_null = try!(boolean_option(cx, &meta_items[1..], "treat_none_as_null"))
+                .unwrap_or(false);
             Ok(ChangesetOptions {
                 table_name: str_to_ident(&table_name),
                 skip_visibility: skip_visibility,
+                treat_none_as_null: treat_none_as_null,
             })
         }
         _ => usage_error(cx, meta_item),
@@ -88,18 +92,17 @@ fn changeset_impl(
     options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
-    let table: &str = &options.table_name.name.as_str();
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
     let changeset_ty = builder.ty().tuple()
         .with_tys(attrs_for_changeset.iter()
-                  .map(|a| changeset_ty(cx, builder, table, a)))
+                  .map(|a| changeset_ty(cx, builder, &options, a)))
         .build();
     let changeset_body = builder.expr().tuple()
         .with_exprs(attrs_for_changeset.iter()
-                    .map(|a| changeset_expr(cx, builder, table, a)))
+                    .map(|a| changeset_expr(cx, builder, &options, a)))
         .build();
     quote_item!(cx,
         impl<'a: 'update, 'update> ::diesel::query_builder::AsChangeset for
@@ -157,18 +160,19 @@ fn save_changes_impl(
 fn changeset_ty(
     cx: &mut ExtCtxt,
     builder: aster::AstBuilder,
-    table: &str,
+    options: &ChangesetOptions,
     attr: &Attr,
 ) -> P<ast::Ty> {
     let column = builder.path()
-        .segment(table).build()
+        .segment(options.table_name).build()
         .segment(attr.column_name).build()
         .build();
-    if let Some(ty) = ty_param_of_option(&attr.ty) {
-        let inner_ty = inner_changeset_ty(cx, column, &ty);
-        quote_ty!(cx, Option<$inner_ty>)
-    } else {
-        inner_changeset_ty(cx, column, &attr.ty)
+    match (options.treat_none_as_null, ty_param_of_option(&attr.ty)) {
+        (false, Some(ty)) => {
+            let inner_ty = inner_changeset_ty(cx, column, &ty);
+            quote_ty!(cx, Option<$inner_ty>)
+        }
+        _ => inner_changeset_ty(cx, column, &attr.ty),
     }
 }
 
@@ -191,15 +195,15 @@ fn inner_changeset_ty(
 fn changeset_expr(
     cx: &mut ExtCtxt,
     builder: aster::AstBuilder,
-    table: &str,
+    options: &ChangesetOptions,
     attr: &Attr,
 ) -> P<ast::Expr> {
     let column = builder.path()
-        .segment(table).build()
+        .segment(options.table_name).build()
         .segment(attr.column_name).build()
         .build();
     let field_name = &attr.field_name.unwrap();
-    if is_option_ty(&attr.ty) {
+    if !options.treat_none_as_null && is_option_ty(&attr.ty) {
         quote_expr!(cx, self.$field_name.as_ref().map(|f| $column.eq(f)))
     } else {
         quote_expr!(cx, $column.eq(&self.$field_name))
