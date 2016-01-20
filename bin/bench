@@ -1,0 +1,3 @@
+#!/bin/sh
+
+(cd diesel_tests && cargo bench --no-default-features --features unstable)
