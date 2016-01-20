@@ -1,7 +1,6 @@
-use expression::{Expression, AsExpression};
+use expression::{Expression, AsExpression, ordering, nullable};
 use expression::aliased::Aliased;
 use expression::predicates::*;
-use expression::ordering;
 
 pub trait ExpressionMethods: Expression + Sized {
     /// Alias an expression for use alongside
@@ -248,6 +247,63 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn asc(self) -> ordering::Asc<Self> {
         ordering::Asc::new(self)
+    }
+
+    /// Converts this potentially non-null expression into one which is treated
+    /// as nullable. This method has no impact on the generated SQL, and is only
+    /// used to allow certain comparisons that would otherwise fail to compile.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// # use self::diesel::types::*;
+    /// #
+    /// table! {
+    ///     users {
+    ///         id -> Serial,
+    ///         name -> VarChar,
+    ///     }
+    /// }
+    ///
+    /// table! {
+    ///     posts {
+    ///         id -> Serial,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    /// #
+    /// #  pub struct User {
+    /// #      id: i32,
+    /// #      name: VarChar,
+    /// #  }
+    /// #
+    /// #  pub struct Post {
+    /// #      id: i32,
+    /// #      user_id: i32,
+    /// #      author_name: Option<VarChar>,
+    /// #  }
+    /// #
+    /// #  joinable!(posts -> users (user_id = id));
+    /// #  select_column_workaround!(posts -> users (id, user_id, author_name));
+    /// #  select_column_workaround!(users -> posts (id, name));
+    ///
+    /// fn main() {
+    ///     use self::users::dsl::*;
+    ///     use self::posts::dsl::{posts, author_name};
+    ///     let connection = establish_connection();
+    ///
+    ///     let data = users.inner_join(posts)
+    ///         .filter(name.nullable().eq(author_name))
+    ///         .select(name)
+    ///         .load(&connection).unwrap()
+    ///         .collect::<Vec<String>>();
+    ///     println!("{:?}", data);
+    /// }
+    fn nullable(self) -> nullable::Nullable<Self> {
+        nullable::Nullable::new(self)
     }
 }
 

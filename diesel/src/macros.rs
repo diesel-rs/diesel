@@ -287,7 +287,7 @@ macro_rules! joinable_inner {
                 try!($parent::table.from_clause(out));
                 out.push_sql(" ON ");
 
-                $child::$source.eq($parent::$target).to_sql(out)
+                $child::$source.nullable().eq($parent::$target.nullable()).to_sql(out)
             }
         }
     }
