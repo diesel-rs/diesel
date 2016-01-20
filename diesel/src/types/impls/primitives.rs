@@ -3,7 +3,7 @@ use std::io::Write;
 
 use data_types::PgNumeric;
 use expression::bound::Bound;
-use expression::{Expression, AsExpression};
+use expression::AsExpression;
 use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, IsNull, NotNull};
 use {Queryable, types};

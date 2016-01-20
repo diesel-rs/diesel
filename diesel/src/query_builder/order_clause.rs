@@ -1,4 +1,3 @@
-use expression::Expression;
 use super::{QueryFragment, QueryBuilder, BuildQueryResult};
 
 #[derive(Debug, Clone, Copy)]
@@ -13,7 +12,7 @@ impl QueryFragment for NoOrderClause {
 #[derive(Debug, Clone, Copy)]
 pub struct OrderClause<Expr>(pub Expr);
 
-impl<Expr: Expression> QueryFragment for OrderClause<Expr> {
+impl<Expr: QueryFragment> QueryFragment for OrderClause<Expr> {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql(" ORDER BY ");
         self.0.to_sql(out)

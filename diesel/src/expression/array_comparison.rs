@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use super::{AsExpression, Expression, SelectableExpression, NonAggregate};
 use types::{Array, NativeSqlType};
 
@@ -61,7 +61,11 @@ impl<Expr, ST> Expression for Any<Expr, ST> where
     Expr: Expression<SqlType=Array<ST>>,
 {
     type SqlType = ST;
+}
 
+impl<Expr, ST> QueryFragment for Any<Expr, ST> where
+    Expr: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("ANY(");
         try!(self.expr.to_sql(out));

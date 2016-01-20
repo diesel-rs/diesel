@@ -301,11 +301,12 @@ fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql_str: &str) -> U {
 
 use std::fmt::Debug;
 use diesel::expression::AsExpression;
+use diesel::query_builder::QueryFragment;
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
     T: NativeSqlType,
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), T>,
+    U::Expression: SelectableExpression<(), T> + QueryFragment,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();

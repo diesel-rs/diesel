@@ -1,5 +1,5 @@
 use expression::{Expression, SelectableExpression};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use types::{SqlOrd, NativeSqlType};
 
 macro_rules! ord_function {
@@ -15,13 +15,15 @@ macro_rules! ord_function {
         }
 
         #[derive(Debug, Clone, Copy)]
-        pub struct $type_name<T: Expression> {
+        pub struct $type_name<T> {
             target: T,
         }
 
         impl<T: Expression> Expression for $type_name<T> {
             type SqlType = T::SqlType;
+        }
 
+        impl<T: QueryFragment> QueryFragment for $type_name<T> {
             fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                 out.push_sql(concat!($operator, "("));
                 try!(self.target.to_sql(out));

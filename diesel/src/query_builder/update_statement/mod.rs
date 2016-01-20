@@ -75,7 +75,7 @@ impl<T, U> QueryFragment for UpdateQuery<T, U> where
         out.push_context(Context::Update);
         try!(self.0.to_sql(out));
         out.push_sql(" RETURNING ");
-        try!(Expression::to_sql(&T::Table::all_columns(), out));
+        try!(T::Table::all_columns().to_sql(out));
         out.pop_context();
         Ok(())
     }

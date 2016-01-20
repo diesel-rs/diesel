@@ -45,7 +45,7 @@ impl<T, U> QueryFragment for InsertStatement<T, U> where
         out.push_sql(" (");
         out.push_sql(&U::columns().names());
         out.push_sql(") VALUES ");
-        try!(Expression::to_sql(&self.records.values(), out));
+        try!(QueryFragment::to_sql(&self.records.values(), out));
         out.pop_context();
         Ok(())
     }
@@ -80,7 +80,7 @@ impl<T, U> Query for InsertQuery<T, U> where
 }
 
 impl<T, U> QueryFragment for InsertQuery<T, U> where
-    T: Expression,
+    T: QueryFragment,
     U: QueryFragment,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {

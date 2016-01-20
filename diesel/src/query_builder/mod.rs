@@ -21,7 +21,6 @@ pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changes
 #[doc(inline)]
 pub use self::insert_statement::IncompleteInsertStatement;
 
-use expression::Expression;
 use std::error::Error;
 use types::NativeSqlType;
 
@@ -33,7 +32,6 @@ pub type BuildQueryResult = Result<(), Box<Error>>;
 ///
 /// This is the trait used to actually construct a SQL query. You will take one
 /// of these as an argument if you're implementing
-/// [`Expression`](../expression/trait.Expression.html) or
 /// [`QueryFragment`](trait.QueryFragment.html) manually.
 pub trait QueryBuilder {
     fn push_sql(&mut self, sql: &str);
@@ -75,9 +73,15 @@ pub trait QueryFragment {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
-impl<T: Expression> QueryFragment for T {
+impl<T: QueryFragment + ?Sized> QueryFragment for Box<T> {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        Expression::to_sql(self, out)
+        QueryFragment::to_sql(&**self, out)
+    }
+}
+
+impl<'a, T: QueryFragment + ?Sized> QueryFragment for &'a T {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        QueryFragment::to_sql(&**self, out)
     }
 }
 

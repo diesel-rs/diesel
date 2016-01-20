@@ -1,5 +1,5 @@
 use expression::{Expression, SelectableExpression};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use types::{Timestamp, VarChar};
 
 pub struct AtTimeZone<Ts, Tz> {
@@ -22,7 +22,12 @@ impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz> where
 {
     // FIXME: This should be Timestamptz when we support that type
     type SqlType = Timestamp;
+}
 
+impl<Ts, Tz> QueryFragment for AtTimeZone<Ts, Tz> where
+    Ts: QueryFragment,
+    Tz: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.timestamp.to_sql(out));
         out.push_sql(" AT TIME ZONE ");
@@ -32,4 +37,6 @@ impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz> where
 
 impl<Ts, Tz, Qs> SelectableExpression<Qs> for AtTimeZone<Ts, Tz> where
     AtTimeZone<Ts, Tz>: Expression,
+    Ts: SelectableExpression<Qs>,
+    Tz: SelectableExpression<Tz>,
 {}

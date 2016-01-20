@@ -1,5 +1,5 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use types::IntoNullable;
 
 pub struct Nullable<T>(T);
@@ -15,7 +15,11 @@ impl<T> Expression for Nullable<T> where
     <T as Expression>::SqlType: IntoNullable,
 {
     type SqlType = <<T as Expression>::SqlType as IntoNullable>::Nullable;
+}
 
+impl<T> QueryFragment for Nullable<T> where
+    T: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
     }

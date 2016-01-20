@@ -1,6 +1,6 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::InsertableColumns;
-use query_builder::{Changeset, QueryBuilder, BuildQueryResult};
+use query_builder::{Changeset, QueryBuilder, BuildQueryResult, QueryFragment};
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
@@ -70,7 +70,9 @@ macro_rules! tuple_impls {
 
             impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
+            }
 
+            impl<$($T: QueryFragment),+> QueryFragment for ($($T,)+) {
                 fn to_sql(&self, out: &mut QueryBuilder)
                 -> BuildQueryResult {
                     $(

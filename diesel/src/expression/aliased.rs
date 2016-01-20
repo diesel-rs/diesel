@@ -19,9 +19,15 @@ impl<'a, Expr> Aliased<'a, Expr> {
 
 pub struct FromEverywhere;
 
-impl<'a, T> Expression for Aliased<'a, T> where T: Expression {
+impl<'a, T> Expression for Aliased<'a, T> where
+    T: Expression,
+{
     type SqlType = T::SqlType;
+}
 
+impl<'a, T> QueryFragment for Aliased<'a, T> where
+    T: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_identifier(&self.alias)
     }
@@ -33,7 +39,7 @@ impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where
 {
 }
 
-impl<'a, T: Expression> QuerySource for Aliased<'a, T> {
+impl<'a, T: Expression + QueryFragment> QuerySource for Aliased<'a, T> {
     fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.expr.to_sql(out));
         out.push_sql(" ");

@@ -16,10 +16,14 @@ impl<T: NativeSqlType, U> Bound<T, U> {
 
 impl<T, U> Expression for Bound<T, U> where
     T: NativeSqlType,
-    U: ToSql<T>,
 {
     type SqlType = T;
+}
 
+impl<T, U> QueryFragment for Bound<T, U> where
+    T: NativeSqlType,
+    U: ToSql<T>,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         let mut bytes = Vec::new();
         match try!(self.item.to_sql(&mut bytes)) {
