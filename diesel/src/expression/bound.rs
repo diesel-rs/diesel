@@ -33,20 +33,6 @@ impl<T, U> Expression for Bound<T, U> where
             }
         }
     }
-
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        let mut bytes = Vec::new();
-        match try!(self.item.to_sql(&mut bytes)) {
-            IsNull::Yes => {
-                out.push_sql("DEFAULT");
-                Ok(())
-            }
-            IsNull::No => {
-                out.push_bound_value(&self.tpe, Some(bytes));
-                Ok(())
-            }
-        }
-    }
 }
 
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where

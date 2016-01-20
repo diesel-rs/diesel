@@ -19,10 +19,6 @@ impl<T> Expression for Nullable<T> where
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
     }
-
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        self.0.to_insert_sql(out)
-    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Nullable<T> where

@@ -71,11 +71,6 @@ pub trait Expression {
     type SqlType: NativeSqlType;
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
-
-    #[doc(hidden)]
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        self.to_sql(out)
-    }
 }
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
@@ -84,10 +79,6 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         Expression::to_sql(&**self, out)
     }
-
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        Expression::to_insert_sql(&**self, out)
-    }
 }
 
 impl<'a, T: Expression + ?Sized> Expression for &'a T {
@@ -95,10 +86,6 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         Expression::to_sql(&**self, out)
-    }
-
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        Expression::to_insert_sql(&**self, out)
     }
 }
 

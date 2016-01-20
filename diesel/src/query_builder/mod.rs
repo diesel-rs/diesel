@@ -39,6 +39,19 @@ pub trait QueryBuilder {
     fn push_sql(&mut self, sql: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
     fn push_bound_value(&mut self, tpe: &NativeSqlType, binds: Option<Vec<u8>>);
+    fn push_context(&mut self, context: Context);
+    fn pop_context(&mut self);
+}
+
+/// Represents the current overall type of query being constructed. Used for
+/// example, to place the keyword `DEFAULT` instead of a bind param when a null
+/// bind param is pushed on insert.
+#[derive(Debug, Clone, Copy)]
+pub enum Context {
+    Select,
+    Insert,
+    Update,
+    Delete,
 }
 
 /// A complete SQL query with a return type. This can be a select statement, or

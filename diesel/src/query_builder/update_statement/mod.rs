@@ -5,7 +5,7 @@ pub use self::changeset::{Changeset, AsChangeset};
 pub use self::target::UpdateTarget;
 
 use expression::Expression;
-use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult, Context};
 use query_source::Table;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
@@ -42,11 +42,14 @@ impl<T, U> QueryFragment for UpdateStatement<T, U> where
     U: changeset::Changeset<Target=T::Table>,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_context(Context::Update);
         out.push_sql("UPDATE ");
         try!(self.target.from_clause(out));
         out.push_sql(" SET ");
         try!(self.values.to_sql(out));
-        self.target.where_clause(out)
+        try!(self.target.where_clause(out));
+        out.pop_context();
+        Ok(())
     }
 }
 
@@ -69,9 +72,12 @@ impl<T, U> QueryFragment for UpdateQuery<T, U> where
     UpdateStatement<T, U>: QueryFragment,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_context(Context::Update);
         try!(self.0.to_sql(out));
         out.push_sql(" RETURNING ");
-        Expression::to_sql(&T::Table::all_columns(), out)
+        try!(Expression::to_sql(&T::Table::all_columns(), out));
+        out.pop_context();
+        Ok(())
     }
 }
 

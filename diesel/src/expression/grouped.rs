@@ -12,13 +12,6 @@ impl<T: Expression> Expression for Grouped<T> {
         out.push_sql(")");
         Ok(())
     }
-
-    fn to_insert_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        out.push_sql("(");
-        try!(self.0.to_insert_sql(out));
-        out.push_sql(")");
-        Ok(())
-    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Grouped<T> where

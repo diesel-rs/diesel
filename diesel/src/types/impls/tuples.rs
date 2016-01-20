@@ -81,17 +81,6 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
-
-                fn to_insert_sql(&self, out: &mut QueryBuilder)
-                -> BuildQueryResult {
-                    $(
-                        if e!($idx) != 0 {
-                            out.push_sql(", ");
-                        }
-                        try!(e!(self.$idx.to_insert_sql(out)));
-                    )+
-                    Ok(())
-                }
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {

@@ -39,12 +39,15 @@ impl<T, U> QueryFragment for InsertStatement<T, U> where
     U: Insertable<T> + Copy,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_context(Context::Insert);
         out.push_sql("INSERT INTO ");
         try!(self.target.from_clause(out));
         out.push_sql(" (");
         out.push_sql(&U::columns().names());
         out.push_sql(") VALUES ");
-        self.records.values().to_insert_sql(out)
+        try!(Expression::to_sql(&self.records.values(), out));
+        out.pop_context();
+        Ok(())
     }
 }
 
@@ -81,8 +84,11 @@ impl<T, U> QueryFragment for InsertQuery<T, U> where
     U: QueryFragment,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_context(Context::Insert);
         try!(self.statement.to_sql(out));
         out.push_sql(" RETURNING ");
-        self.returning.to_sql(out)
+        try!(self.returning.to_sql(out));
+        out.pop_context();
+        Ok(())
     }
 }
