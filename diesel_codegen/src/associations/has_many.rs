@@ -83,7 +83,7 @@ fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
                 try!($foreign_table.from_clause(out));
                 out.push_sql(" ON ");
                 ::diesel::expression::Expression::to_sql(
-                    &$foreign_key.eq($table.primary_key()),
+                    &$foreign_key.nullable().eq($table.primary_key().nullable()),
                     out,
                 )
             }

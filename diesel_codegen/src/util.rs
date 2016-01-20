@@ -3,7 +3,7 @@ use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::build::AstBuilder;
-use syntax::parse::token::str_to_ident;
+use syntax::parse::token::{str_to_ident, intern_and_get_ident};
 use syntax::ptr::P;
 
 fn str_value_of_attr(
@@ -64,4 +64,16 @@ pub fn struct_ty(
         .map(|param| cx.ty_ident(span, param.ident))
         .collect();
     cx.ty_path(cx.path_all(span, false, vec![name], lifetimes, ty_params, Vec::new()))
+}
+
+pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
+    match ty.node {
+        ast::TyPath(_, ref path) => {
+            path.segments.first().iter()
+                .filter(|s| s.identifier.name.as_str() == intern_and_get_ident("Option"))
+                .flat_map(|s| s.parameters.types().first().map(|p| *p))
+                .next()
+        }
+        _ => None,
+    }
 }

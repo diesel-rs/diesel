@@ -1,13 +1,14 @@
-use syntax::ast::{self, MetaItem, TyPath};
+use syntax::ast::{self, MetaItem};
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
-use syntax::parse::token::{InternedString, intern_and_get_ident, str_to_ident};
+use syntax::parse::token::{InternedString, str_to_ident};
 
 use attr::Attr;
 use model::Model;
+use util::ty_param_of_option;
 
 pub fn expand_changeset_for(
     cx: &mut ExtCtxt,
@@ -193,18 +194,6 @@ fn changeset_expr(
         quote_expr!(cx, self.$field_name.as_ref().map(|f| $column.eq(f)))
     } else {
         quote_expr!(cx, $column.eq(&self.$field_name))
-    }
-}
-
-fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
-    match ty.node {
-        TyPath(_, ref path) => {
-            path.segments.first().iter()
-                .filter(|s| s.identifier.name.as_str() == intern_and_get_ident("Option"))
-                .flat_map(|s| s.parameters.types().first().map(|p| *p))
-                .next()
-        }
-        _ => None,
     }
 }
 

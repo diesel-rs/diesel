@@ -10,6 +10,7 @@ use syntax::ptr::P;
 
 use model::Model;
 use super::{parse_association_options, AssociationOptions, to_foreign_key};
+use util::ty_param_of_option;
 
 pub fn expand_belongs_to(
     cx: &mut ExtCtxt,
@@ -87,6 +88,12 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
         str_to_ident("id")
     }
 
+    fn primary_key_type(&self) -> P<ast::Ty> {
+        let ty = self.foreign_key_type();
+        ty_param_of_option(&ty).map(|t| t.clone())
+            .unwrap_or(ty)
+    }
+
     fn column_path(&self, column_name: ast::Ident) -> ast::Path {
         self.cx.path(self.span, vec![self.child_table_name(), column_name])
     }
@@ -109,7 +116,7 @@ fn belonging_to_dsl_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> 
     let child_struct_name = builder.child_struct_name();
     let child_table = builder.child_table();
     let foreign_key = builder.foreign_key();
-    let foreign_key_type = builder.foreign_key_type();
+    let primary_key_type = builder.primary_key_type();
     let primary_key_name = builder.primary_key_name();
 
     quote_item!(builder.cx,
@@ -117,7 +124,7 @@ fn belonging_to_dsl_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> 
             type Output = ::diesel::helper_types::FindBy<
                 $child_table,
                 $foreign_key,
-                $foreign_key_type,
+                $primary_key_type,
             >;
 
             fn belonging_to(model: &$parent_struct_name) -> Self::Output {
@@ -139,7 +146,7 @@ fn join_to_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> {
             {
                 try!($parent_table.from_clause(out));
                 out.push_sql(" ON ");
-                $foreign_key.eq($parent_table.primary_key()).to_sql(out)
+                $foreign_key.nullable().eq($parent_table.primary_key().nullable()).to_sql(out)
             }
         }
     ).unwrap()

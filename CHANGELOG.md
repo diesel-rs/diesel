@@ -29,6 +29,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   instead of skipping the field entirely. The default value of the option is
   `false`, as we think the current behavior is a much more common use case.
 
+* Added `Expression#nullable()`, to allow comparisons of not null columns with
+  nullable ones when required.
+
 ### Changed
 
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to

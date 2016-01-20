@@ -86,3 +86,33 @@ fn association_where_parent_and_child_have_underscores() {
 
     assert_eq!(special_post.id, comment.special_post_id);
 }
+
+// This module has no test functions, as it's only to test compilation.
+mod associations_can_have_nullable_foreign_keys {
+    #![allow(dead_code)]
+    use diesel::prelude::*;
+
+    table! {
+        foos{
+            id -> Serial,
+        }
+    }
+
+    table! {
+        bars {
+            id -> Serial,
+            foo_id -> Nullable<Integer>,
+        }
+    }
+    // This test has no assertions, as it is for compilation purposes only.
+    #[has_many(bars)]
+    pub struct Foo {
+        id: i32,
+    }
+
+    #[belongs_to(foo)]
+    pub struct Bar {
+        id: i32,
+        foo_id: Option<i32>,
+    }
+}
