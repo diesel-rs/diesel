@@ -137,11 +137,12 @@ fn selecting_columns_with_different_definition_order() {
     connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, hair_color VARCHAR, name VARCHAR NOT NULL)")
         .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
-    let user_from_insert = connection.insert(&users::table, &NewUser::new("Sean", Some("black"))).unwrap().nth(0);
+    let user_from_insert = insert(&NewUser::new("Sean", Some("black"))).into(users::table)
+        .get_result(&connection);
     let user_from_select = users::table.first(&connection);
 
-    assert_eq!(Some(expected_user.clone()), user_from_insert);
-    assert_eq!(Ok(expected_user), user_from_select);
+    assert_eq!(Ok(&expected_user), user_from_insert.as_ref());
+    assert_eq!(Ok(&expected_user), user_from_select.as_ref());
 }
 
 #[test]

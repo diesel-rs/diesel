@@ -9,13 +9,12 @@ use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
 use expression::expression_methods::*;
 use expression::predicates::Eq;
-use persistable::{Insertable, InsertableColumns};
 use helper_types::{FindBy, Limit};
 use expression::helper_types::AsExpr;
 use query_builder::{AsQuery, Query, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
-use query_source::{Table, Column, Queryable};
+use query_source::{Table, Queryable};
 use result::*;
 use self::pq_sys::*;
 use std::cell::Cell;
@@ -206,41 +205,6 @@ impl Connection {
     }
 
     #[doc(hidden)]
-    pub fn insert<T, U, Out>(&self, _source: &T, records: U)
-        -> QueryResult<Cursor<<T::AllColumns as Expression>::SqlType, Out>> where
-        T: Table,
-        U: Insertable<T>,
-        Out: Queryable<<T::AllColumns as Expression>::SqlType>,
-    {
-        let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
-        let (returning, _, _) = self.prepare_query(&T::all_columns());
-        let sql = format!(
-            "INSERT INTO {} ({}) VALUES {} RETURNING {}",
-            T::name(),
-            U::columns().names(),
-            param_placeholders,
-            returning,
-        );
-        self.exec_sql_params(&sql, &params, &Some(param_types)).map(Cursor::new)
-    }
-
-    #[doc(hidden)]
-    pub fn insert_returning_count<T, U>(&self, _source: &T, records: U)
-        -> QueryResult<usize> where
-        T: Table,
-        U: Insertable<T>,
-    {
-        let (param_placeholders, params, param_types) = self.placeholders_for_insert(records);
-        let sql = format!(
-            "INSERT INTO {} ({}) VALUES {}",
-            T::name(),
-            U::columns().names(),
-            &param_placeholders,
-        );
-        self.exec_sql_params(&sql, &params, &Some(param_types)).map(|r| r.rows_affected())
-    }
-
-    #[doc(hidden)]
     pub fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment,
     {
@@ -264,16 +228,6 @@ impl Connection {
     #[doc(hidden)]
     pub fn last_error_message(&self) -> String {
         last_error_message(self.internal_connection)
-    }
-
-    fn placeholders_for_insert<T, U>(&self, records: U)
-        -> (String, Vec<Option<Vec<u8>>>, Vec<u32>) where
-        T: Table,
-        U: Insertable<T>,
-    {
-        let mut query_builder = PgQueryBuilder::new(self);
-        records.values().to_insert_sql(&mut query_builder).unwrap();
-        (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
     fn begin_transaction(&self) -> QueryResult<usize> {
