@@ -15,5 +15,4 @@ pub trait UpdateTarget: QuerySource {
     type Table: Table;
 
     fn where_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult;
-    fn table(&self) -> &Self::Table;
 }

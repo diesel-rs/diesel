@@ -67,8 +67,4 @@ impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> 
         out.push_sql(" WHERE ");
         self.predicate.to_sql(out)
     }
-
-    fn table(&self) -> &Self::Table {
-        self.source.table()
-    }
 }
