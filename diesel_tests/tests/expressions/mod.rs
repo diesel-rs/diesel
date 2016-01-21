@@ -4,7 +4,7 @@ mod ops;
 use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
-use diesel::query_builder::{QueryBuilder, BuildQueryResult, AsQuery};
+use diesel::query_builder::*;
 use diesel::expression::dsl::*;
 
 #[test]
@@ -28,7 +28,7 @@ fn test_count_star() {
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     let mut query_builder = ::diesel::query_builder::pg::PgQueryBuilder::new(&connection);
-    Expression::to_sql(&source.as_query(), &mut query_builder).unwrap();
+    QueryFragment::to_sql(&source.as_query(), &mut query_builder).unwrap();
     assert!(query_builder.sql.starts_with("SELECT COUNT(*) FROM"));
 }
 
@@ -42,7 +42,7 @@ fn test_with_expression_aliased() {
     let mut query_builder = ::diesel::query_builder::pg::PgQueryBuilder::new(&connection);
     let n = lower("sean").aliased("n");
     let source = users.with(n).filter(n.eq("Jim")).select(id);
-    Expression::to_sql(&source.as_query(), &mut query_builder).unwrap();
+    QueryFragment::to_sql(&source.as_query(), &mut query_builder).unwrap();
     assert_eq!(
         r#"SELECT "users"."id" FROM "users", lower($1) "n" WHERE "n" = $2"#,
         &query_builder.sql
@@ -94,7 +94,9 @@ struct Arbitrary<T: types::NativeSqlType> {
 
 impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
     type SqlType = T;
+}
 
+impl<T: types::NativeSqlType> QueryFragment for Arbitrary<T> {
     fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
         Ok(())
     }

@@ -1,5 +1,5 @@
 use expression::{Expression, SelectableExpression, NonAggregate};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use types;
 
 macro_rules! numeric_operation {
@@ -24,7 +24,12 @@ macro_rules! numeric_operation {
             Rhs: Expression,
         {
             type SqlType = <Lhs::SqlType as types::ops::$name>::Output;
+        }
 
+        impl<Lhs, Rhs> QueryFragment for $name<Lhs, Rhs> where
+            Lhs: QueryFragment,
+            Rhs: QueryFragment,
+        {
             fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                 try!(self.lhs.to_sql(out));
                 out.push_sql($op);

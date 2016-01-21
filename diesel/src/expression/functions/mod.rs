@@ -31,11 +31,16 @@ macro_rules! sql_function_body {
             for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
         {
             type SqlType = $return_type;
+        }
 
+        #[allow(non_camel_case_types)]
+        impl<$($arg_name),*> $crate::query_builder::QueryFragment for $struct_name<$($arg_name),*> where
+            for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment,
+        {
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
                     out.push_sql(concat!(stringify!($fn_name), "("));
-                    try!($crate::expression::Expression::to_sql(
+                    try!($crate::query_builder::QueryFragment::to_sql(
                         &($(&self.$arg_name),*), out));
                     out.push_sql(")");
                     Ok(())
@@ -107,7 +112,9 @@ macro_rules! no_arg_sql_function_body {
 
         impl $crate::expression::Expression for $type_name {
             type SqlType = $return_type;
+        }
 
+        impl $crate::query_builder::QueryFragment for $type_name {
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult {
                     out.push_sql(concat!(stringify!($type_name), "()"));

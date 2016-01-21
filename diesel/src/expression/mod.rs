@@ -58,7 +58,6 @@ pub mod dsl {
 pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
-use query_builder::{QueryBuilder, BuildQueryResult};
 use types::NativeSqlType;
 
 /// Represents a typed fragment of SQL. Apps should not need to implement this
@@ -69,24 +68,14 @@ use types::NativeSqlType;
 /// implementing this directly.
 pub trait Expression {
     type SqlType: NativeSqlType;
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
     type SqlType = T::SqlType;
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        Expression::to_sql(&**self, out)
-    }
 }
 
 impl<'a, T: Expression + ?Sized> Expression for &'a T {
     type SqlType = T::SqlType;
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        Expression::to_sql(&**self, out)
-    }
 }
 
 /// Describes how a type can be represented as an expression for a given type.
@@ -152,14 +141,16 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
 }
 
+use query_builder::QueryFragment;
+
 /// Helper trait used when boxing expressions. This exists to work around the
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
-pub trait BoxableExpression<QS, ST: NativeSqlType>: Expression + SelectableExpression<QS, ST> + NonAggregate {
+pub trait BoxableExpression<QS, ST: NativeSqlType>: Expression + SelectableExpression<QS, ST> + NonAggregate + QueryFragment {
 }
 
 impl<QS, T, ST> BoxableExpression<QS, ST> for T where
     ST: NativeSqlType,
-    T: Expression + SelectableExpression<QS, ST> + NonAggregate,
+    T: Expression + SelectableExpression<QS, ST> + NonAggregate + QueryFragment,
 {
 }

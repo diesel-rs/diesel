@@ -1,4 +1,4 @@
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{SelectableExpression, NonAggregate};
 use expression::expression_methods::*;
 use expression::predicates::And;
 use helper_types::Filter;
@@ -59,7 +59,7 @@ impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> w
 
 impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> where
     Source: UpdateTarget,
-    Predicate: SelectableExpression<Source, SqlType=Bool>,
+    Predicate: SelectableExpression<Source, SqlType=Bool> + QueryFragment,
 {
     type Table = Source::Table;
 

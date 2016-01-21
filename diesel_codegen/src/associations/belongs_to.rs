@@ -146,7 +146,8 @@ fn join_to_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> {
             {
                 try!($parent_table.from_clause(out));
                 out.push_sql(" ON ");
-                $foreign_key.nullable().eq($parent_table.primary_key().nullable()).to_sql(out)
+                ::diesel::query_builder::QueryFragment::to_sql(
+                    &$foreign_key.nullable().eq($parent_table.primary_key().nullable()), out)
             }
         }
     ).unwrap()

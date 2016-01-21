@@ -1,4 +1,4 @@
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use super::{Expression, SelectableExpression, NonAggregate};
 
 pub struct Desc<T> {
@@ -17,7 +17,11 @@ impl<T> Expression for Desc<T> where
     T: Expression,
 {
     type SqlType = ();
+}
 
+impl<T> QueryFragment for Desc<T> where
+    T: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.expr.to_sql(out));
         out.push_sql(" DESC");
@@ -49,7 +53,11 @@ impl<T> Expression for Asc<T> where
     T: Expression,
 {
     type SqlType = ();
+}
 
+impl<T> QueryFragment for Asc<T> where
+    T: QueryFragment,
+{
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(self.expr.to_sql(out));
         out.push_sql(" ASC");

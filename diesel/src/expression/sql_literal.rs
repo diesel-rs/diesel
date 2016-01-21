@@ -1,4 +1,4 @@
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use std::marker::PhantomData;
 use super::{Expression, SelectableExpression, NonAggregate};
 use types::NativeSqlType;
@@ -23,7 +23,9 @@ impl<ST> SqlLiteral<ST> {
 
 impl<ST: NativeSqlType> Expression for SqlLiteral<ST> {
     type SqlType = ST;
+}
 
+impl<ST> QueryFragment for SqlLiteral<ST> {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql(&self.sql);
         Ok(())

@@ -70,6 +70,7 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
 
 impl<ST, S, F, W, O, L, Of> Query for SelectStatement<ST, S, F, W, O, L, Of> where
     ST: NativeSqlType,
+    S: SelectableExpression<F, ST>,
     SelectStatement<ST, S, F, W, O, L, Of>: QueryFragment
 {
     type SqlType = ST;
@@ -77,15 +78,19 @@ impl<ST, S, F, W, O, L, Of> Query for SelectStatement<ST, S, F, W, O, L, Of> whe
 
 impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of> where
     ST: NativeSqlType,
-    F: QuerySource,
     S: SelectableExpression<F, ST>,
+{
+    type SqlType = types::Array<ST>;
+}
+
+impl<ST, S, F, W, O, L, Of> QueryFragment for SelectStatement<ST, S, F, W, O, L, Of> where
+    S: QueryFragment,
+    F: QuerySource,
     W: QueryFragment,
     O: QueryFragment,
     L: QueryFragment,
     Of: QueryFragment,
 {
-    type SqlType = types::Array<ST>;
-
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Select);
         out.push_sql("SELECT ");
@@ -101,16 +106,13 @@ impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of
     }
 }
 
-impl<ST, S, W, O, L, Of> Expression for SelectStatement<ST, S, (), W, O, L, Of> where
-    ST: NativeSqlType,
-    S: SelectableExpression<(), ST>,
+impl<ST, S, W, O, L, Of> QueryFragment for SelectStatement<ST, S, (), W, O, L, Of> where
+    S: QueryFragment,
     W: QueryFragment,
     O: QueryFragment,
     L: QueryFragment,
     Of: QueryFragment,
 {
-    type SqlType = types::Array<ST>;
-
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Select);
         out.push_sql("SELECT ");

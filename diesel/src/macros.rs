@@ -15,7 +15,9 @@ macro_rules! column {
 
         impl $crate::expression::Expression for $column_name {
             type SqlType = $Type;
+        }
 
+        impl $crate::query_builder::QueryFragment for $column_name {
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(out.push_identifier($($table)::*::name()));
                 out.push_sql(".");
@@ -241,7 +243,7 @@ macro_rules! table_body {
             pub mod columns {
                 use super::table;
                 use $crate::{Table, Column, Expression, SelectableExpression};
-                use $crate::query_builder::{QueryBuilder, BuildQueryResult};
+                use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::types::*;
 
                 #[allow(non_camel_case_types, dead_code)]
@@ -250,7 +252,9 @@ macro_rules! table_body {
 
                 impl Expression for star {
                     type SqlType = ();
+                }
 
+                impl QueryFragment for star {
                     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
                         out.push_sql(".*");
@@ -284,6 +288,7 @@ macro_rules! joinable_inner {
             fn join_sql(&self, out: &mut $crate::query_builder::QueryBuilder)
                 -> $crate::query_builder::BuildQueryResult
             {
+                use $crate::query_builder::QueryFragment;
                 try!($parent::table.from_clause(out));
                 out.push_sql(" ON ");
 

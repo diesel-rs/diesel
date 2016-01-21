@@ -1,4 +1,4 @@
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use super::{Expression, SelectableExpression};
 use types::BigInt;
 
@@ -46,13 +46,15 @@ pub fn count_star() -> CountStar {
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
-pub struct Count<T: Expression> {
+pub struct Count<T> {
     target: T,
 }
 
 impl<T: Expression> Expression for Count<T> {
     type SqlType = BigInt;
+}
 
+impl<T: QueryFragment> QueryFragment for Count<T> {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("COUNT(");
         try!(self.target.to_sql(out));
@@ -70,7 +72,9 @@ pub struct CountStar;
 
 impl Expression for CountStar {
     type SqlType = BigInt;
+}
 
+impl QueryFragment for CountStar {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_sql("COUNT(*)");
         Ok(())

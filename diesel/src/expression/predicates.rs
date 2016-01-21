@@ -22,7 +22,12 @@ macro_rules! infix_predicate_body {
             U: $crate::expression::Expression,
         {
             type SqlType = $return_type;
+        }
 
+        impl<T, U> $crate::query_builder::QueryFragment for $name<T, U> where
+            T: $crate::query_builder::QueryFragment,
+            U: $crate::query_builder::QueryFragment,
+        {
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(self.left.to_sql(out));
                 out.push_sql($operator);
@@ -89,7 +94,11 @@ macro_rules! postfix_predicate_body {
             T: $crate::expression::Expression,
         {
             type SqlType = $return_type;
+        }
 
+        impl<T> $crate::query_builder::QueryFragment for $name<T> where
+            T: $crate::query_builder::QueryFragment,
+        {
             fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(self.expr.to_sql(out));
                 out.push_sql($operator);
@@ -141,12 +150,11 @@ postfix_predicate!(IsNotNull, " IS NOT NULL");
 
 use query_source::Column;
 use query_builder::*;
-use super::{Expression, SelectableExpression};
+use super::SelectableExpression;
 
 impl<T, U> Changeset for Eq<T, U> where
-    T: Column,
-    U: SelectableExpression<T::Table>,
-    Eq<T, U>: Expression,
+    T: Column + QueryFragment,
+    U: SelectableExpression<T::Table> + QueryFragment,
 {
     type Target = T::Table;
 
@@ -157,6 +165,6 @@ impl<T, U> Changeset for Eq<T, U> where
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
-        Expression::to_sql(&self.right, out)
+        QueryFragment::to_sql(&self.right, out)
     }
 }
