@@ -74,6 +74,7 @@ pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
 impl<T, U> QueryFragment for UpdateQuery<T, U> where
     T: UpdateTarget,
+    <T::Table as Table>::AllColumns: QueryFragment,
     UpdateStatement<T, U>: QueryFragment,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
@@ -87,7 +88,6 @@ impl<T, U> QueryFragment for UpdateQuery<T, U> where
 }
 
 impl<T, U> Query for UpdateQuery<T, U> where
-    UpdateQuery<T, U>: QueryFragment,
     T: UpdateTarget,
 {
     type SqlType = <<T::Table as Table>::AllColumns as Expression>::SqlType;

@@ -54,9 +54,9 @@ impl<T, U> QueryFragment for InsertStatement<T, U> where
 
 impl<T, U> AsQuery for InsertStatement<T, U> where
     T: Table,
-    InsertStatement<T, U>: QueryFragment,
+    InsertQuery<T::AllColumns, InsertStatement<T, U>>: Query,
 {
-    type SqlType = <T::AllColumns as Expression>::SqlType;
+    type SqlType = <Self::Query as Query>::SqlType;
     type Query = InsertQuery<T::AllColumns, InsertStatement<T, U>>;
 
     fn as_query(self) -> Self::Query {

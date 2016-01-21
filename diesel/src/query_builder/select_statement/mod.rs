@@ -71,7 +71,6 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
 impl<ST, S, F, W, O, L, Of> Query for SelectStatement<ST, S, F, W, O, L, Of> where
     ST: NativeSqlType,
     S: SelectableExpression<F, ST>,
-    SelectStatement<ST, S, F, W, O, L, Of>: QueryFragment
 {
     type SqlType = ST;
 }
