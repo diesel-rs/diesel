@@ -1,5 +1,6 @@
 use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
+use query_builder::nodes::{Identifier, InfixNode};
 use query_source::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -39,11 +40,11 @@ impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where
 {
 }
 
-impl<'a, T: Expression + QueryFragment> QuerySource for Aliased<'a, T> {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        try!(self.expr.to_sql(out));
-        out.push_sql(" ");
-        out.push_identifier(&self.alias)
+impl<'a, T: Expression + Copy> QuerySource for Aliased<'a, T> {
+    type FromClause = InfixNode<'static, T, Identifier<'a>>;
+
+    fn from_clause(&self) -> Self::FromClause {
+        InfixNode::new(self.expr, Identifier(self.alias), " ")
     }
 }
 

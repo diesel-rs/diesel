@@ -25,8 +25,9 @@ pub trait Queryable<ST: NativeSqlType> {
 }
 
 #[doc(hidden)]
-pub trait QuerySource: Sized {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+pub trait QuerySource {
+    type FromClause;
+    fn from_clause(&self) -> Self::FromClause;
 }
 
 /// A column on a database table. Types which implement this trait should have

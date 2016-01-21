@@ -86,6 +86,7 @@ impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of
 impl<ST, S, F, W, O, L, Of> QueryFragment for SelectStatement<ST, S, F, W, O, L, Of> where
     S: QueryFragment,
     F: QuerySource,
+    F::FromClause: QueryFragment,
     W: QueryFragment,
     O: QueryFragment,
     L: QueryFragment,
@@ -96,7 +97,7 @@ impl<ST, S, F, W, O, L, Of> QueryFragment for SelectStatement<ST, S, F, W, O, L,
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
-        try!(self.from.from_clause(out));
+        try!(self.from.from_clause().to_sql(out));
         try!(self.where_clause.to_sql(out));
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));

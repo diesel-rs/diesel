@@ -40,12 +40,13 @@ pub struct UpdateStatement<T, U> {
 impl<T, U> QueryFragment for UpdateStatement<T, U> where
     T: UpdateTarget,
     T::WhereClause: QueryFragment,
+    T::FromClause: QueryFragment,
     U: changeset::Changeset<Target=T::Table>,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Update);
         out.push_sql("UPDATE ");
-        try!(self.target.from_clause(out));
+        try!(self.target.from_clause().to_sql(out));
         out.push_sql(" SET ");
         try!(self.values.to_sql(out));
         if let Some(clause) = self.target.where_clause() {

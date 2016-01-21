@@ -61,3 +61,31 @@ impl<T, U, V, W> QueryFragment for Join<T, U, V, W> where
         Ok(())
     }
 }
+
+pub struct InfixNode<'a, T, U> {
+    lhs: T,
+    rhs: U,
+    middle: &'a str,
+}
+
+impl<'a, T, U> InfixNode<'a, T, U> {
+    pub fn new(lhs: T, rhs: U, middle: &'a str) -> Self {
+        InfixNode {
+            lhs: lhs,
+            rhs: rhs,
+            middle: middle,
+        }
+    }
+}
+
+impl<'a, T, U> QueryFragment for InfixNode<'a, T, U> where
+    T: QueryFragment,
+    U: QueryFragment,
+{
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        try!(self.lhs.to_sql(out));
+        out.push_sql(self.middle);
+        try!(self.rhs.to_sql(out));
+        Ok(())
+    }
+}

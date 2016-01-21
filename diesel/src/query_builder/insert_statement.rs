@@ -36,12 +36,13 @@ pub struct InsertStatement<T, U> {
 
 impl<T, U> QueryFragment for InsertStatement<T, U> where
     T: Table,
+    T::FromClause: QueryFragment,
     U: Insertable<T> + Copy,
 {
     fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Insert);
         out.push_sql("INSERT INTO ");
-        try!(self.target.from_clause(out));
+        try!(self.target.from_clause().to_sql(out));
         out.push_sql(" (");
         out.push_sql(&U::columns().names());
         out.push_sql(") VALUES ");

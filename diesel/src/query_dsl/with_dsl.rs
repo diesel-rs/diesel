@@ -45,9 +45,9 @@ impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right> where
     Left: QuerySource,
     Aliased<'a, Right>: QuerySource + Expression,
 {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        try!(self.left.from_clause(out));
-        out.push_sql(", ");
-        self.right.from_clause(out)
+    type FromClause = (Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause);
+
+    fn from_clause(&self) -> Self::FromClause {
+        (self.left.from_clause(), self.right.from_clause())
     }
 }

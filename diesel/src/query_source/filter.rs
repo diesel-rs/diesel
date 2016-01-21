@@ -52,8 +52,10 @@ impl<Source, Predicate, NewPredicate> FilterDsl<NewPredicate>
 impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> where
     Source: QuerySource,
 {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        self.source.from_clause(out)
+    type FromClause = Source::FromClause;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.source.from_clause()
     }
 }
 

@@ -21,11 +21,12 @@ impl<Left, Right> InnerJoinSource<Left, Right> {
 
 impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
-    <Left as JoinTo<Right, Inner>>::JoinClause: QueryFragment,
     Right: Table,
 {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        self.left.join_clause(Inner).to_sql(out)
+    type FromClause = <Left as JoinTo<Right, Inner>>::JoinClause;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.left.join_clause(Inner)
     }
 }
 
@@ -68,11 +69,12 @@ impl<Left, Right> LeftOuterJoinSource<Left, Right> {
 
 impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
-    <Left as JoinTo<Right, LeftOuter>>::JoinClause: QueryFragment,
     Right: Table,
 {
-    fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        self.left.join_clause(LeftOuter).to_sql(out)
+    type FromClause = <Left as JoinTo<Right, LeftOuter>>::JoinClause;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.left.join_clause(LeftOuter)
     }
 }
 

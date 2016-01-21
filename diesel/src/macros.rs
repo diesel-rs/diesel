@@ -184,6 +184,7 @@ macro_rules! table_body {
                 Table,
             };
             use $crate::query_builder::*;
+            use $crate::query_builder::nodes::Identifier;
             use $crate::types::*;
             pub use self::columns::*;
 
@@ -209,8 +210,10 @@ macro_rules! table_body {
             pub type SqlType = ($($Type),+);
 
             impl QuerySource for table {
-                fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-                    out.push_identifier(stringify!($name))
+                type FromClause = Identifier<'static>;
+
+                fn from_clause(&self) -> Self::FromClause {
+                    Identifier(stringify!($name))
                 }
             }
 
@@ -286,8 +289,8 @@ macro_rules! joinable_inner {
     ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
         impl<JoinType> $crate::JoinTo<$right_table, JoinType> for $left_table {
             type JoinClause = $crate::query_builder::nodes::Join<
-                $crate::query_builder::nodes::Identifier<'static>,
-                $crate::query_builder::nodes::Identifier<'static>,
+                <$left_table as $crate::QuerySource>::FromClause,
+                <$right_table as $crate::QuerySource>::FromClause,
                 $crate::expression::helper_types::Eq<
                     $crate::expression::nullable::Nullable<$foreign_key>,
                     $crate::expression::nullable::Nullable<
@@ -297,10 +300,11 @@ macro_rules! joinable_inner {
             >;
 
             fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
+                use $crate::QuerySource;
+
                 $crate::query_builder::nodes::Join::new(
-                    $crate::query_builder::nodes::Identifier(Self::name()),
-                    $crate::query_builder::nodes::Identifier(
-                        <$right_table as $crate::query_source::Table>::name()),
+                    self.from_clause(),
+                    $right_table.from_clause(),
                     $foreign_key.nullable().eq($parent_table.primary_key().nullable()),
                     join_type,
                 )
