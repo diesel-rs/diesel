@@ -1,3 +1,4 @@
+use backend::Backend;
 use persistable::{Insertable, InsertableColumns};
 use expression::Expression;
 use query_builder::*;
@@ -19,7 +20,7 @@ impl<T> IncompleteInsertStatement<T> {
 
     /// Specify which table the data passed to `insert` should be added to.
     pub fn into<S>(self, target: S) -> InsertStatement<S, T> where
-        InsertStatement<S, T>: QueryFragment,
+        InsertStatement<S, T>: AsQuery,
     {
         InsertStatement {
             target: target,
@@ -34,12 +35,14 @@ pub struct InsertStatement<T, U> {
     records: U,
 }
 
-impl<T, U> QueryFragment for InsertStatement<T, U> where
+impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
+    DB: Backend,
     T: Table,
-    T::FromClause: QueryFragment,
+    T::FromClause: QueryFragment<DB>,
     U: Insertable<T> + Copy,
+    U::Values: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Insert);
         out.push_sql("INSERT INTO ");
         try!(self.target.from_clause().to_sql(out));
@@ -75,16 +78,16 @@ pub struct InsertQuery<T, U> {
 
 impl<T, U> Query for InsertQuery<T, U> where
     T: Expression,
-    InsertQuery<T, U>: QueryFragment,
 {
     type SqlType = T::SqlType;
 }
 
-impl<T, U> QueryFragment for InsertQuery<T, U> where
-    T: QueryFragment,
-    U: QueryFragment,
+impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
+    DB: Backend,
+    T: QueryFragment<DB>,
+    U: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Insert);
         try!(self.statement.to_sql(out));
         out.push_sql(" RETURNING ");

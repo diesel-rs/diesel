@@ -1,3 +1,4 @@
+use backend::Backend;
 use query_builder::*;
 
 pub struct DeleteStatement<T>(T);
@@ -9,12 +10,13 @@ impl<T> DeleteStatement<T> {
     }
 }
 
-impl<T> QueryFragment for DeleteStatement<T> where
+impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
+    DB: Backend,
     T: UpdateTarget,
-    T::WhereClause: QueryFragment,
-    T::FromClause: QueryFragment,
+    T::WhereClause: QueryFragment<DB>,
+    T::FromClause: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Delete);
         out.push_sql("DELETE FROM ");
         try!(self.0.from_clause().to_sql(out));

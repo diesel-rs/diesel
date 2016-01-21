@@ -1,5 +1,5 @@
 use expression::Expression;
-use super::{UpdateTarget, IncompleteUpdateStatement, IncompleteInsertStatement, SelectStatement, QueryFragment};
+use super::{UpdateTarget, IncompleteUpdateStatement, IncompleteInsertStatement, SelectStatement};
 use super::delete_statement::DeleteStatement;
 
 /// Creates an update statement. Helpers for updating a single row can be
@@ -26,9 +26,9 @@ use super::delete_statement::DeleteStatement;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let command = diesel::update(users.filter(id.eq(1)))
-///     .set(name.eq("James"));
-/// let updated_row = connection.query_one(command);
+/// let updated_row = diesel::update(users.filter(id.eq(1)))
+///     .set(name.eq("James"))
+///     .get_result(&connection);
 /// // When passed to `query_one`, the update statement will gain `RETURNING *`
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
@@ -112,7 +112,7 @@ pub fn insert<T>(records: T) -> IncompleteInsertStatement<T> {
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
 pub fn select<T>(expression: T) -> SelectStatement<T::SqlType, T, ()> where
-    T: Expression + QueryFragment,
+    T: Expression,
 {
     SelectStatement::simple(expression, ())
 }

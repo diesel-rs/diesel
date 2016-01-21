@@ -1,3 +1,4 @@
+use backend::Pg;
 use connection::{Connection, Cursor};
 use query_builder::{Query, QueryFragment, AsQuery};
 use query_source::Queryable;
@@ -7,7 +8,7 @@ use super::LimitDsl;
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
 pub trait LoadDsl: AsQuery + Sized where
-    Self::Query: QueryFragment,
+    Self::Query: QueryFragment<Pg>,
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
@@ -24,7 +25,7 @@ pub trait LoadDsl: AsQuery + Sized where
     fn first<U>(self, conn: &Connection) -> QueryResult<U> where
         U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType>,
         Self: LimitDsl,
-        <Self as LimitDsl>::Output: QueryFragment,
+        <Self as LimitDsl>::Output: QueryFragment<Pg>,
     {
         conn.query_one(self.limit(1))
     }
@@ -48,11 +49,11 @@ pub trait LoadDsl: AsQuery + Sized where
 }
 
 impl<T: AsQuery> LoadDsl for T where
-    T::Query: QueryFragment,
+    T::Query: QueryFragment<Pg>,
 {
 }
 
-pub trait ExecuteDsl: QueryFragment + Sized {
+pub trait ExecuteDsl: Sized + QueryFragment<Pg> {
     /// Executes the given command, returning the number of rows affected. Used
     /// in conjunction with
     /// [`update`](../query_builder/fn.update.html) and
@@ -62,5 +63,5 @@ pub trait ExecuteDsl: QueryFragment + Sized {
     }
 }
 
-impl<T: QueryFragment> ExecuteDsl for T {
+impl<T: QueryFragment<Pg>> ExecuteDsl for T {
 }

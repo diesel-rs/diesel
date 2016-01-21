@@ -17,8 +17,10 @@ macro_rules! column {
             type SqlType = $Type;
         }
 
-        impl $crate::query_builder::QueryFragment for $column_name {
-            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+        impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
+            DB: $crate::backend::Backend,
+        {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(out.push_identifier($($table)::*::name()));
                 out.push_sql(".");
                 out.push_identifier(stringify!($column_name))
@@ -246,6 +248,7 @@ macro_rules! table_body {
             pub mod columns {
                 use super::table;
                 use $crate::{Table, Column, Expression, SelectableExpression};
+                use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::types::*;
 
@@ -257,8 +260,8 @@ macro_rules! table_body {
                     type SqlType = ();
                 }
 
-                impl QueryFragment for star {
-                    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+                impl<DB: Backend> QueryFragment<DB> for star {
+                    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
                         out.push_sql(".*");
                         Ok(())
@@ -400,7 +403,7 @@ macro_rules! debug_sql {
         use $crate::query_builder::QueryFragment;
         use $crate::query_builder::debug::DebugQueryBuilder;
         let mut query_builder = DebugQueryBuilder::new();
-        QueryFragment::to_sql(&$query, &mut query_builder).unwrap();
+        QueryFragment::<$crate::backend::Debug>::to_sql(&$query, &mut query_builder).unwrap();
         query_builder.sql
     }};
 }

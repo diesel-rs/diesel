@@ -93,6 +93,7 @@ fn changeset_impl(
 ) -> Option<P<ast::Item>> {
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
+    let table_name = options.table_name;
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
     let changeset_ty = cx.ty(span, ast::TyTup(
@@ -107,6 +108,7 @@ fn changeset_impl(
         impl<'a: 'update, 'update> ::diesel::query_builder::AsChangeset for
             &'update $struct_name
         {
+            type Target = $table_name::table;
             type Changeset = $changeset_ty;
 
             fn as_changeset(self) -> Self::Changeset {

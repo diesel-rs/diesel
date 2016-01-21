@@ -1,3 +1,4 @@
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 
@@ -7,8 +8,8 @@ impl<T: Expression> Expression for Grouped<T> {
     type SqlType = T::SqlType;
 }
 
-impl<T: QueryFragment> QueryFragment for Grouped<T> {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("(");
         try!(self.0.to_sql(out));
         out.push_sql(")");

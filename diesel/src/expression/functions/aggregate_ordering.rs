@@ -1,3 +1,4 @@
+use backend::Backend;
 use expression::{Expression, SelectableExpression};
 use query_builder::*;
 use types::{SqlOrd, NativeSqlType};
@@ -23,8 +24,8 @@ macro_rules! ord_function {
             type SqlType = T::SqlType;
         }
 
-        impl<T: QueryFragment> QueryFragment for $type_name<T> {
-            fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for $type_name<T> {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                 out.push_sql(concat!($operator, "("));
                 try!(self.target.to_sql(out));
                 out.push_sql(")");

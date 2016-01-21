@@ -1,6 +1,7 @@
 extern crate dotenv;
 
 use diesel::prelude::*;
+use diesel::backend;
 use self::dotenv::dotenv;
 
 fn connection_no_data() -> diesel::Connection {

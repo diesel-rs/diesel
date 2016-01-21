@@ -56,6 +56,7 @@ pub mod dsl {
 pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
+use backend::Backend;
 use types::NativeSqlType;
 
 /// Represents a typed fragment of SQL. Apps should not need to implement this
@@ -144,11 +145,21 @@ use query_builder::QueryFragment;
 /// Helper trait used when boxing expressions. This exists to work around the
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
-pub trait BoxableExpression<QS, ST: NativeSqlType>: Expression + SelectableExpression<QS, ST> + NonAggregate + QueryFragment {
-}
-
-impl<QS, T, ST> BoxableExpression<QS, ST> for T where
+pub trait BoxableExpression<QS, ST, DB> where
     ST: NativeSqlType,
-    T: Expression + SelectableExpression<QS, ST> + NonAggregate + QueryFragment,
+    DB: Backend,
+    Self: Expression,
+    Self: SelectableExpression<QS, ST>,
+    Self: NonAggregate,
+    Self: QueryFragment<DB>,
+{}
+
+impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
+    ST: NativeSqlType,
+    DB: Backend,
+    T: Expression,
+    T: SelectableExpression<QS, ST>,
+    T: NonAggregate,
+    T: QueryFragment<DB>,
 {
 }

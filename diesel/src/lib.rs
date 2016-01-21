@@ -3,6 +3,7 @@
 //! found in the README.
 #![deny(warnings)]
 #![cfg_attr(feature = "unstable", feature(time2))]
+pub mod backend;
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;

@@ -26,6 +26,8 @@ pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changes
 pub use self::insert_statement::IncompleteInsertStatement;
 
 use std::error::Error;
+
+use backend::Backend;
 use types::NativeSqlType;
 
 #[doc(hidden)]
@@ -73,24 +75,30 @@ impl<'a, T: Query> Query for &'a T {
 /// our internal types used to represent a `WHERE` clause). All methods on
 /// [`Connection`](../struct.Connection.html) that execute a query require this
 /// trait to be implemented.
-pub trait QueryFragment {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+pub trait QueryFragment<DB: Backend> {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
 }
 
-impl<T: QueryFragment + ?Sized> QueryFragment for Box<T> {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)
     }
 }
 
-impl<'a, T: QueryFragment + ?Sized> QueryFragment for &'a T {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)
     }
 }
 
-impl QueryFragment for () {
-    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
+impl<DB: Backend> QueryFragment<DB> for () {
+    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 }

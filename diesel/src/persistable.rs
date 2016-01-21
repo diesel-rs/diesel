@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use backend::Backend;
 use expression::Expression;
 use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
 use query_source::{Table, Column};
@@ -12,7 +13,7 @@ use types::NativeSqlType;
 /// one record.
 pub trait Insertable<T: Table> {
     type Columns: InsertableColumns<T>;
-    type Values: Expression<SqlType=<Self::Columns as InsertableColumns<T>>::SqlType> + QueryFragment;
+    type Values: Expression<SqlType=<Self::Columns as InsertableColumns<T>>::SqlType>;
 
     fn columns() -> Self::Columns;
 
@@ -76,11 +77,13 @@ impl<'a, T, U> Expression for InsertValues<'a, T, U> where
     type SqlType = <<&'a U as Insertable<T>>::Columns as InsertableColumns<T>>::SqlType;
 }
 
-impl<'a, T, U> QueryFragment for InsertValues<'a, T, U> where
+impl<'a, T, U, DB> QueryFragment<DB> for InsertValues<'a, T, U> where
+    DB: Backend,
     T: Table,
     &'a U: Insertable<T>,
+    <&'a U as Insertable<T>>::Values: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         for (i, record) in self.values.into_iter().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
