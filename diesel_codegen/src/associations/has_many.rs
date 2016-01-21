@@ -76,18 +76,7 @@ fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
     let foreign_key = builder.foreign_key();
 
     quote_item!(builder.cx,
-        impl ::diesel::JoinTo<$foreign_table> for $table {
-            fn join_sql(&self, out: &mut ::diesel::query_builder::QueryBuilder)
-                -> ::diesel::query_builder::BuildQueryResult
-            {
-                try!($foreign_table.from_clause(out));
-                out.push_sql(" ON ");
-                ::diesel::query_builder::QueryFragment::to_sql(
-                    &$foreign_key.nullable().eq($table.primary_key().nullable()),
-                    out,
-                )
-            }
-        }
+        joinable_inner!($table => $foreign_table : ($foreign_key = $table));
     ).unwrap()
 }
 

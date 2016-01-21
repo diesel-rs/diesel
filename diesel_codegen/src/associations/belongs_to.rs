@@ -140,16 +140,7 @@ fn join_to_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> {
     let foreign_key = builder.foreign_key();
 
     quote_item!(builder.cx,
-        impl ::diesel::JoinTo<$parent_table> for $child_table {
-            fn join_sql(&self, out: &mut ::diesel::query_builder::QueryBuilder)
-                -> ::diesel::query_builder::BuildQueryResult
-            {
-                try!($parent_table.from_clause(out));
-                out.push_sql(" ON ");
-                ::diesel::query_builder::QueryFragment::to_sql(
-                    &$foreign_key.nullable().eq($parent_table.primary_key().nullable()), out)
-            }
-        }
+        joinable_inner!($child_table => $parent_table : ($foreign_key = $parent_table));
     ).unwrap()
 }
 

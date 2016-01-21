@@ -20,18 +20,18 @@ impl<Left, Right> InnerJoinSource<Left, Right> {
 }
 
 impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right>,
+    Left: Table + JoinTo<Right, Inner>,
+    <Left as JoinTo<Right, Inner>>::JoinClause: QueryFragment,
     Right: Table,
 {
     fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        try!(self.left.from_clause(out));
-        out.push_sql(" INNER JOIN ");
-        self.left.join_sql(out)
+        self.left.join_clause(Inner).to_sql(out)
     }
 }
 
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right>,
+    Left: Table + JoinTo<Right, Inner>,
+    <Left as JoinTo<Right, Inner>>::JoinClause: QueryFragment,
     Right: Table,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    InnerJoinSource<Left, Right>,
@@ -67,18 +67,18 @@ impl<Left, Right> LeftOuterJoinSource<Left, Right> {
 }
 
 impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right>,
+    Left: Table + JoinTo<Right, LeftOuter>,
+    <Left as JoinTo<Right, LeftOuter>>::JoinClause: QueryFragment,
     Right: Table,
 {
     fn from_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        try!(self.left.from_clause(out));
-        out.push_sql(" LEFT OUTER JOIN ");
-        self.left.join_sql(out)
+        self.left.join_clause(LeftOuter).to_sql(out)
     }
 }
 
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right>,
+    Left: Table + JoinTo<Right, LeftOuter>,
+    <Left as JoinTo<Right, LeftOuter>>::JoinClause: QueryFragment,
     Right: Table,
     Right::SqlType: IntoNullable,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
@@ -101,7 +101,31 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
 /// Indicates that two tables can be used together in a JOIN clause.
 /// Implementations of this trait will be generated for you automatically by
 /// the [association annotations](FIXME: Add link) from codegen.
-pub trait JoinTo<T: Table>: Table {
+pub trait JoinTo<T: Table, JoinType>: Table {
     #[doc(hidden)]
-    fn join_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+    type JoinClause;
+    #[doc(hidden)]
+    fn join_clause(&self, join_type: JoinType) -> Self::JoinClause;
+}
+
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug)]
+pub struct Inner;
+
+impl QueryFragment for Inner {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_sql(" INNER");
+        Ok(())
+    }
+}
+
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug)]
+pub struct LeftOuter;
+
+impl QueryFragment for LeftOuter {
+    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        out.push_sql(" LEFT OUTER");
+        Ok(())
+    }
 }

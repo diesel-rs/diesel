@@ -286,7 +286,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #      author_name: Option<VarChar>,
     /// #  }
     /// #
-    /// #  joinable!(posts -> users (user_id = id));
+    /// #  joinable!(posts -> users (user_id));
     /// #  select_column_workaround!(posts -> users (id, user_id, author_name));
     /// #  select_column_workaround!(users -> posts (id, name));
     ///

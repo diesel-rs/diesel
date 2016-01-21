@@ -3,7 +3,8 @@
 //! the methods on [`Table`](trait.Table.html)
 #[doc(hidden)]
 pub mod filter;
-mod joins;
+#[doc(hidden)]
+pub mod joins;
 
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
@@ -48,14 +49,14 @@ pub trait Table: QuerySource + AsQuery + Sized {
 
     fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
         T: Table,
-        Self: JoinTo<T>,
+        Self: JoinTo<T, joins::Inner>,
     {
         InnerJoinSource::new(self, other)
     }
 
     fn left_outer_join<T>(self, other: T) -> LeftOuterJoinSource<Self, T> where
         T: Table,
-        Self: JoinTo<T>,
+        Self: JoinTo<T, joins::LeftOuter>,
     {
         LeftOuterJoinSource::new(self, other)
     }

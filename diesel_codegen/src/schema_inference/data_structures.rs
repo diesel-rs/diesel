@@ -19,7 +19,7 @@ table! {
     }
 }
 
-joinable!(pg_attribute -> pg_type (atttypid = oid));
+joinable!(pg_attribute -> pg_type (atttypid));
 select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
 select_column_workaround!(pg_type -> pg_attribute (oid, typname));
 

@@ -6,6 +6,8 @@ pub mod debug;
 mod delete_statement;
 #[doc(hidden)]
 pub mod functions;
+#[doc(hidden)]
+pub mod nodes;
 #[macro_use]
 mod clause_macro;
 mod limit_clause;

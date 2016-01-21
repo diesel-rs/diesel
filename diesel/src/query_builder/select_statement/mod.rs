@@ -1,7 +1,7 @@
 mod dsl_impls;
 
 use expression::*;
-use query_source::{QuerySource, Table, LeftOuterJoinSource, InnerJoinSource, JoinTo};
+use query_source::*;
 use std::marker::PhantomData;
 use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult, Context};
 use super::limit_clause::NoLimitClause;
@@ -46,7 +46,7 @@ impl<ST, S, F, W, O, L, Of> SelectStatement<ST, S, F, W, O, L, Of> {
     pub fn inner_join<T>(self, other: T)
         -> SelectStatement<ST, S, InnerJoinSource<F, T>, W, O, L, Of> where
             T: Table,
-            F: Table + JoinTo<T>,
+            F: Table + JoinTo<T, joins::Inner>,
     {
         SelectStatement::new(self.select, self.from.inner_join(other),
             self.where_clause, self.order, self.limit, self.offset)
@@ -55,7 +55,7 @@ impl<ST, S, F, W, O, L, Of> SelectStatement<ST, S, F, W, O, L, Of> {
     pub fn left_outer_join<T>(self, other: T)
         -> SelectStatement<ST, S, LeftOuterJoinSource<F, T>, W, O, L, Of> where
             T: Table,
-            F: Table + JoinTo<T>,
+            F: Table + JoinTo<T, joins::LeftOuter>,
     {
         SelectStatement::new(self.select, self.from.left_outer_join(other),
             self.where_clause, self.order, self.limit, self.offset)
