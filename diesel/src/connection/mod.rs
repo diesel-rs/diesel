@@ -115,6 +115,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
+        T::Query: QueryFragment,
         U: Queryable<T::SqlType>,
     {
         self.query_all(source)
@@ -124,6 +125,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U>> where
         T: AsQuery,
+        T::Query: QueryFragment,
         U: Queryable<T::SqlType>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
@@ -189,6 +191,7 @@ impl Connection {
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
+        Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment,
         U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
         AsExpr<PK, T::PrimaryKey>: NonAggregate,

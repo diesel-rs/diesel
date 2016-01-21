@@ -60,11 +60,11 @@ pub enum Context {
 /// a command such as `update` or `insert` with a `RETURNING` clause. Unlike
 /// [`Expression`](../expression/trait.Expression.html), types implementing this
 /// trait are guaranteed to be executable on their own.
-pub trait Query: QueryFragment {
+pub trait Query {
     type SqlType: NativeSqlType;
 }
 
-impl<'a, T: Query> Query for &'a T where &'a T: QueryFragment {
+impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
 }
 

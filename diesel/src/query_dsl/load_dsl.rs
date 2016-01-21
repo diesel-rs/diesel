@@ -6,7 +6,9 @@ use super::LimitDsl;
 
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
-pub trait LoadDsl: AsQuery + Sized {
+pub trait LoadDsl: AsQuery + Sized where
+    Self::Query: QueryFragment,
+{
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
     fn load<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
@@ -22,6 +24,7 @@ pub trait LoadDsl: AsQuery + Sized {
     fn first<U>(self, conn: &Connection) -> QueryResult<U> where
         U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType>,
         Self: LimitDsl,
+        <Self as LimitDsl>::Output: QueryFragment,
     {
         conn.query_one(self.limit(1))
     }
@@ -44,7 +47,9 @@ pub trait LoadDsl: AsQuery + Sized {
     }
 }
 
-impl<T: AsQuery> LoadDsl for T {
+impl<T: AsQuery> LoadDsl for T where
+    T::Query: QueryFragment,
+{
 }
 
 pub trait ExecuteDsl: QueryFragment + Sized {
