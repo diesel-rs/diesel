@@ -1,4 +1,4 @@
-use expression::{Expression, AsExpression, ordering, nullable};
+use expression::{Expression, AsExpression, nullable};
 use expression::aliased::Aliased;
 use expression::predicates::*;
 
@@ -210,8 +210,8 @@ pub trait ExpressionMethods: Expression + Sized {
 
     /// Creates a SQL `DESC` expression, representing this expression in
     /// descending order.
-    fn desc(self) -> ordering::Desc<Self> {
-        ordering::Desc::new(self)
+    fn desc(self) -> Desc<Self> {
+        Desc::new(self)
     }
 
     /// Creates a SQL `ASC` expression, representing this expression in
@@ -245,8 +245,8 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     };
     /// # }
     /// ```
-    fn asc(self) -> ordering::Asc<Self> {
-        ordering::Asc::new(self)
+    fn asc(self) -> Asc<Self> {
+        Asc::new(self)
     }
 
     /// Converts this potentially non-null expression into one which is treated

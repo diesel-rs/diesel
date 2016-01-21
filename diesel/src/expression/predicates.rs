@@ -123,9 +123,12 @@ macro_rules! postfix_predicate_body {
 /// need to call this.
 macro_rules! postfix_predicate {
     ($name:ident, $operator:expr) => {
-        postfix_predicate!($name, $operator, $crate::types::Bool);
+        postfix_expression!($name, $operator, $crate::types::Bool);
     };
+}
 
+#[macro_export]
+macro_rules! postfix_expression {
     ($name:ident, $operator:expr, $return_type:ty) => {
         postfix_predicate_body!($name, $operator, $return_type);
     }
@@ -147,6 +150,8 @@ infix_predicate!(Or, " OR ");
 
 postfix_predicate!(IsNull, " IS NULL");
 postfix_predicate!(IsNotNull, " IS NOT NULL");
+postfix_expression!(Asc, " ASC", ());
+postfix_expression!(Desc, " DESC", ());
 
 use query_source::Column;
 use query_builder::*;

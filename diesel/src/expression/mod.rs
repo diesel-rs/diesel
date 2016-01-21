@@ -37,8 +37,6 @@ pub mod helper_types;
 #[doc(hidden)]
 pub mod nullable;
 #[doc(hidden)]
-pub mod ordering;
-#[doc(hidden)]
 pub mod predicates;
 pub mod sql_literal;
 

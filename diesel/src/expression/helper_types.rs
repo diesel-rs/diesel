@@ -36,5 +36,4 @@ pub type Between<Lhs, Rhs> = super::predicates::Between<Lhs,
 pub type NotBetween<Lhs, Rhs> = super::predicates::NotBetween<Lhs,
     super::predicates::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
 
-pub use super::ordering::{Desc, Asc};
-pub use super::predicates::{IsNull, IsNotNull};
+pub use super::predicates::{IsNull, IsNotNull, Asc, Desc};
