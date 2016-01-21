@@ -63,8 +63,9 @@ pub trait Table: QuerySource + AsQuery + Sized {
 
 impl<T: Table> UpdateTarget for T {
     type Table = Self;
+    type WhereClause = ();
 
-    fn where_clause(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
-        Ok(())
+    fn where_clause(&self) -> Option<&Self::WhereClause> {
+        None
     }
 }

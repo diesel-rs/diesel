@@ -62,9 +62,9 @@ impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> 
     Predicate: SelectableExpression<Source, SqlType=Bool> + QueryFragment,
 {
     type Table = Source::Table;
+    type WhereClause = Predicate;
 
-    fn where_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        out.push_sql(" WHERE ");
-        self.predicate.to_sql(out)
+    fn where_clause(&self) -> Option<&Self::WhereClause> {
+        Some(&self.predicate)
     }
 }

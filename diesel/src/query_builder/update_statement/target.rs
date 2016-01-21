@@ -1,4 +1,3 @@
-use query_builder::{QueryBuilder, BuildQueryResult};
 use query_source::{QuerySource, Table};
 
 /// You should not need to implement this trait.
@@ -13,6 +12,7 @@ use query_source::{QuerySource, Table};
 /// the context of an `update` or `delete` operation.
 pub trait UpdateTarget: QuerySource {
     type Table: Table;
+    type WhereClause;
 
-    fn where_clause(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+    fn where_clause(&self) -> Option<&Self::WhereClause>;
 }

@@ -87,6 +87,12 @@ impl<'a, T: QueryFragment + ?Sized> QueryFragment for &'a T {
     }
 }
 
+impl QueryFragment for () {
+    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
+        Ok(())
+    }
+}
+
 /// Types that can be converted into a complete, typed SQL query. This is used
 /// internally to automatically add the right select clause when none is
 /// specified, or to automatically add `RETURNING *` in certain contexts
