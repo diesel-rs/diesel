@@ -80,7 +80,6 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
-    Right::SqlType: IntoNullable,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    LeftOuterJoinSource<Left, Right>,
                                    (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable),

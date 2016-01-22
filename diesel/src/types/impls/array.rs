@@ -9,16 +9,12 @@ use super::option::UnexpectedNullError;
 use types::{NativeSqlType, FromSql, ToSql, Array, IsNull, NotNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
-    fn oid(&self) -> u32 {
-        self.0.array_oid()
+    fn oid() -> u32 {
+        T::array_oid()
     }
 
-    fn array_oid(&self) -> u32 {
-        0
-    }
-
-    fn new() -> Self {
-        Array(T::new())
+    fn array_oid() -> u32 {
+        panic!("Multidimensional arrays are unsupported");
     }
 }
 
@@ -113,7 +109,7 @@ impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
         try!(out.write_i32::<BigEndian>(num_dimensions));
         let flags = 0;
         try!(out.write_i32::<BigEndian>(flags));
-        try!(out.write_u32::<BigEndian>(ST::new().oid()));
+        try!(out.write_u32::<BigEndian>(ST::oid()));
         try!(out.write_i32::<BigEndian>(self.len() as i32));
         let lower_bound = 1;
         try!(out.write_i32::<BigEndian>(lower_bound));

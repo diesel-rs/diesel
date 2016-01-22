@@ -44,7 +44,7 @@ impl QueryBuilder for PgQueryBuilder {
                 let sql = format!("${}", self.bind_idx);
                 self.push_sql(&sql);
                 self.binds.push(bind);
-                self.bind_types.push(T::new().oid());
+                self.bind_types.push(T::oid());
             }
         }
     }

@@ -35,16 +35,12 @@ expression_impls! {
 }
 
 impl NativeSqlType for () {
-    fn oid(&self) -> u32 {
+    fn oid() -> u32 {
         0
     }
 
-    fn array_oid(&self) -> u32 {
+    fn array_oid() -> u32 {
         0
-    }
-
-    fn new() -> Self {
-        ()
     }
 }
 

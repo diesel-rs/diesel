@@ -4,7 +4,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use expression::bound::Bound;
 use expression::AsExpression;
-use types::{self, ToSql, FromSql, IsNull, NativeSqlType};
+use types::{self, ToSql, FromSql, IsNull};
 use query_source::Queryable;
 
 expression_impls! {

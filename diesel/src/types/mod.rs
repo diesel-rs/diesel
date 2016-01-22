@@ -57,10 +57,9 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType + NotNull>(T);
 #[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(T);
 
-pub trait NativeSqlType: 'static {
-    fn oid(&self) -> u32;
-    fn array_oid(&self) -> u32;
-    fn new() -> Self where Self: Sized;
+pub trait NativeSqlType: IntoNullable + 'static {
+    fn oid() -> u32;
+    fn array_oid() -> u32;
 }
 
 pub trait NotNull {

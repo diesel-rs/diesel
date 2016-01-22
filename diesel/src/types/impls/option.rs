@@ -7,16 +7,12 @@ use std::io::Write;
 use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 
 impl<T: NativeSqlType + NotNull> NativeSqlType for Nullable<T> {
-    fn oid(&self) -> u32 {
-        self.0.oid()
+    fn oid() -> u32 {
+        T::oid()
     }
 
-    fn array_oid(&self) -> u32 {
-        self.0.oid()
-    }
-
-    fn new() -> Self {
-        Nullable(T::new())
+    fn array_oid() -> u32 {
+        panic!("Arrays containing null are not supported");
     }
 }
 

@@ -18,7 +18,7 @@ use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use super::{SimpleConnection, Connection};
-use types::{NativeSqlType, ToSql};
+use types::ToSql;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at

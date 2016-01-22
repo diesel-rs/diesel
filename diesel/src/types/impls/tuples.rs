@@ -5,7 +5,7 @@ use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, Quer
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
+use types::{NativeSqlType, FromSqlRow, ToSql, Nullable, NotNull};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -20,16 +20,12 @@ macro_rules! tuple_impls {
     )+) => {
         $(
             impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {
-                fn oid(&self) -> u32 {
+                fn oid() -> u32 {
                     0
                 }
 
-                fn array_oid(&self) -> u32 {
+                fn array_oid() -> u32 {
                     0
-                }
-
-                fn new() -> Self {
-                    ($($T::new(),)+)
                 }
             }
 
@@ -110,7 +106,7 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, QS>
                 SelectableExpression<QS, Nullable<($($ST,)+)>>
                 for ($($T,)+) where
-                $($ST: NativeSqlType + IntoNullable),+,
+                $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, $ST::Nullable, SqlType=$ST>),+,
                 ($($T,)+): Expression,
             {
