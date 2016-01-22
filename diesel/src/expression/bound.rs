@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use backend::Backend;
 use query_builder::*;
 use super::{Expression, SelectableExpression, NonAggregate};
@@ -5,13 +7,16 @@ use types::{NativeSqlType, ToSql, IsNull};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {
-    tpe: T,
     item: U,
+    _marker: PhantomData<T>,
 }
 
-impl<T: NativeSqlType, U> Bound<T, U> {
+impl<T, U> Bound<T, U> {
     pub fn new(item: U) -> Self {
-        Bound { tpe: T::new(), item: item }
+        Bound {
+            item: item,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -30,11 +35,11 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
         let mut bytes = Vec::new();
         match try!(self.item.to_sql(&mut bytes)) {
             IsNull::Yes => {
-                out.push_bound_value(&self.tpe, None);
+                out.push_bound_value::<T>(None);
                 Ok(())
             }
             IsNull::No => {
-                out.push_bound_value(&self.tpe, Some(bytes));
+                out.push_bound_value::<T>(Some(bytes));
                 Ok(())
             }
         }

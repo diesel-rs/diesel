@@ -30,7 +30,7 @@ impl QueryBuilder for DebugQueryBuilder {
         Ok(())
     }
 
-    fn push_bound_value(&mut self, _tpe: &NativeSqlType, bind: Option<Vec<u8>>) {
+    fn push_bound_value<T: NativeSqlType>(&mut self, bind: Option<Vec<u8>>) {
         match (self.context_stack.first(), bind) {
             (Some(&Context::Insert), None) => self.push_sql("DEFAULT"),
             _ => self.push_sql("?"),

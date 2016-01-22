@@ -36,7 +36,7 @@ impl QueryBuilder for PgQueryBuilder {
         Ok(self.push_sql(&escaped_identifier))
     }
 
-    fn push_bound_value(&mut self, tpe: &NativeSqlType, bind: Option<Vec<u8>>) {
+    fn push_bound_value<T: NativeSqlType>(&mut self, bind: Option<Vec<u8>>) {
         match (self.context_stack.first(), bind) {
             (Some(&Context::Insert), None) => self.push_sql("DEFAULT"),
             (_, bind) => {
@@ -44,7 +44,7 @@ impl QueryBuilder for PgQueryBuilder {
                 let sql = format!("${}", self.bind_idx);
                 self.push_sql(&sql);
                 self.binds.push(bind);
-                self.bind_types.push(tpe.oid());
+                self.bind_types.push(T::new().oid());
             }
         }
     }
