@@ -1,9 +1,15 @@
-extern crate pq_sys;
 extern crate libc;
 
 mod cursor;
+#[doc(hidden)]
+pub mod raw;
 
 pub use self::cursor::Cursor;
+
+use std::cell::Cell;
+use std::ffi::{CString, CStr};
+use std::rc::Rc;
+use std::ptr;
 
 use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
@@ -16,14 +22,11 @@ use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Queryable};
 use result::*;
-use self::pq_sys::*;
-use std::cell::Cell;
-use std::ffi::{CString, CStr};
-use std::{str, ptr};
+use self::raw::RawConnection;
 use types::{NativeSqlType, ToSql};
 
 pub struct Connection {
-    internal_connection: *mut PGconn,
+    raw_connection: Rc<RawConnection>,
     transaction_depth: Cell<i32>,
 }
 
@@ -41,21 +44,12 @@ impl Connection {
     /// should be a PostgreSQL connection string, as documented at
     /// http://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING
     pub fn establish(database_url: &str) -> ConnectionResult<Connection> {
-        let connection_string = try!(CString::new(database_url));
-        let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
-        let connection_status = unsafe { PQstatus(connection_ptr) };
-        match connection_status {
-            CONNECTION_OK => {
-                Ok(Connection {
-                    internal_connection: connection_ptr,
-                    transaction_depth: Cell::new(0),
-                })
-            },
-            _ => {
-                let message = last_error_message(connection_ptr);
-                Err(ConnectionError::BadConnection(message))
+        RawConnection::establish(database_url).map(|raw_conn| {
+            Connection {
+                raw_connection: Rc::new(raw_conn),
+                transaction_depth: Cell::new(0),
             }
-        }
+        })
     }
 
     /// Executes the given function inside of a database transaction. When
@@ -112,7 +106,7 @@ impl Connection {
     pub fn batch_execute(&self, query: &str) -> QueryResult<()> {
         let query = try!(CString::new(query));
         let inner_result = unsafe {
-            PQexec(self.internal_connection, query.as_ptr())
+            self.raw_connection.exec(query.as_ptr())
         };
         try!(DbResult::new(self, inner_result));
         Ok(())
@@ -152,8 +146,7 @@ impl Connection {
         let param_formats = vec![1; param_data.len()];
 
         let internal_res = unsafe {
-            PQexecParams(
-                self.internal_connection,
+            self.raw_connection.exec_params(
                 query.as_ptr(),
                 params_pointer.len() as libc::c_int,
                 param_types_ptr,
@@ -216,7 +209,7 @@ impl Connection {
     fn prepare_query<T: QueryFragment>(&self, source: &T)
         -> (String, Vec<Option<Vec<u8>>>, Vec<u32>)
     {
-        let mut query_builder = PgQueryBuilder::new(self);
+        let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
         source.to_sql(&mut query_builder).unwrap();
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
@@ -227,7 +220,7 @@ impl Connection {
 
     #[doc(hidden)]
     pub fn last_error_message(&self) -> String {
-        last_error_message(self.internal_connection)
+        self.raw_connection.last_error_message()
     }
 
     fn begin_transaction(&self) -> QueryResult<usize> {
@@ -267,27 +260,10 @@ impl Connection {
     }
 
     #[doc(hidden)]
-    pub fn escape_identifier(&self, identifier: &str) -> QueryResult<PgString> {
-        let result_ptr = unsafe { PQescapeIdentifier(
-            self.internal_connection,
-            identifier.as_ptr() as *const libc::c_char,
-            identifier.len() as libc::size_t,
-        ) };
-
-        if result_ptr.is_null() {
-            Err(Error::DatabaseError(last_error_message(self.internal_connection)))
-        } else {
-            unsafe {
-                Ok(PgString::new(result_ptr))
-            }
-        }
-    }
-
-    #[doc(hidden)]
     pub fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
-        unsafe { PQsetNoticeProcessor(self.internal_connection, Some(noop_notice_processor), ptr::null_mut()) };
+        self.raw_connection.set_notice_processor(noop_notice_processor);
         let result = f();
-        unsafe { PQsetNoticeProcessor(self.internal_connection, Some(default_notice_processor), ptr::null_mut()) };
+        self.raw_connection.set_notice_processor(default_notice_processor);
         result
     }
 }
@@ -299,50 +275,4 @@ extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const lib
     use std::io::Write;
     let c_str = unsafe { CStr::from_ptr(message) };
     ::std::io::stderr().write(c_str.to_bytes()).unwrap();
-}
-
-fn last_error_message(conn: *const PGconn) -> String {
-    unsafe {
-        let error_ptr = PQerrorMessage(conn);
-        let bytes = CStr::from_ptr(error_ptr).to_bytes();
-        str::from_utf8_unchecked(bytes).to_string()
-    }
-}
-
-impl Drop for Connection {
-    fn drop(&mut self) {
-        unsafe { PQfinish(self.internal_connection) };
-    }
-}
-
-#[doc(hidden)]
-pub struct PgString {
-    pg_str: *mut libc::c_char,
-}
-
-impl PgString {
-    unsafe fn new(ptr: *mut libc::c_char) -> Self {
-        PgString {
-            pg_str: ptr,
-        }
-    }
-}
-
-impl ::std::ops::Deref for PgString {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        unsafe {
-            let c_string = CStr::from_ptr(self.pg_str);
-            str::from_utf8_unchecked(c_string.to_bytes())
-        }
-    }
-}
-
-impl Drop for PgString {
-    fn drop(&mut self) {
-        unsafe {
-            PQfreemem(self.pg_str as *mut libc::c_void)
-        }
-    }
 }

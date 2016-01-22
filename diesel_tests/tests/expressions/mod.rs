@@ -27,9 +27,7 @@ fn test_count_star() {
     assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
-    let mut query_builder = ::diesel::query_builder::pg::PgQueryBuilder::new(&connection);
-    QueryFragment::to_sql(&source.as_query(), &mut query_builder).unwrap();
-    assert!(query_builder.sql.starts_with("SELECT COUNT(*) FROM"));
+    assert!(debug_sql!(source).starts_with("SELECT COUNT(*) FROM"));
 }
 
 use diesel::types::VarChar;

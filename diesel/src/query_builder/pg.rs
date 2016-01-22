@@ -1,9 +1,11 @@
-use connection::Connection;
+use std::rc::Rc;
+
+use connection::raw::RawConnection;
 use super::{QueryBuilder, Binds, BuildQueryResult, Context};
 use types::NativeSqlType;
 
-pub struct PgQueryBuilder<'a> {
-    conn: &'a Connection,
+pub struct PgQueryBuilder {
+    conn: Rc<RawConnection>,
     pub sql: String,
     pub binds: Binds,
     pub bind_types: Vec<u32>,
@@ -11,10 +13,10 @@ pub struct PgQueryBuilder<'a> {
     context_stack: Vec<Context>,
 }
 
-impl<'a> PgQueryBuilder<'a> {
-    pub fn new(conn: &'a Connection) -> Self {
+impl PgQueryBuilder {
+    pub fn new(conn: &Rc<RawConnection>) -> Self {
         PgQueryBuilder {
-            conn: conn,
+            conn: conn.clone(),
             sql: String::new(),
             binds: Vec::new(),
             bind_types: Vec::new(),
@@ -24,7 +26,7 @@ impl<'a> PgQueryBuilder<'a> {
     }
 }
 
-impl<'a> QueryBuilder for PgQueryBuilder<'a> {
+impl QueryBuilder for PgQueryBuilder {
     fn push_sql(&mut self, sql: &str) {
         self.sql.push_str(sql);
     }
