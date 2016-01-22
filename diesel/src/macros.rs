@@ -397,7 +397,8 @@ macro_rules! join_through {
 #[macro_export]
 macro_rules! debug_sql {
     ($query:expr) => {{
-        use diesel::query_builder::QueryFragment;
+        use $crate::query_builder::QueryFragment;
+        use $crate::query_builder::debug::DebugQueryBuilder;
         let mut query_builder = DebugQueryBuilder::new();
         QueryFragment::to_sql(&$query, &mut query_builder).unwrap();
         query_builder.sql

@@ -37,15 +37,10 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn test_with_expression_aliased() {
-    let connection = connection();
-
-    let mut query_builder = ::diesel::query_builder::pg::PgQueryBuilder::new(&connection);
     let n = lower("sean").aliased("n");
-    let source = users.with(n).filter(n.eq("Jim")).select(id);
-    QueryFragment::to_sql(&source.as_query(), &mut query_builder).unwrap();
     assert_eq!(
-        r#"SELECT "users"."id" FROM "users", lower($1) "n" WHERE "n" = $2"#,
-        &query_builder.sql
+        "SELECT `users`.`id` FROM `users`, lower(?) `n` WHERE `n` = ?",
+        debug_sql!(users.with(n).filter(n.eq("Jim")).select(id))
     );
 }
 

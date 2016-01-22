@@ -24,7 +24,10 @@ impl QueryBuilder for DebugQueryBuilder {
     }
 
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult {
-        Ok(self.push_sql(&identifier))
+        self.push_sql("`");
+        self.push_sql(&identifier);
+        self.push_sql("`");
+        Ok(())
     }
 
     fn push_bound_value(&mut self, _tpe: &NativeSqlType, bind: Option<Vec<u8>>) {

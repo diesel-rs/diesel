@@ -43,6 +43,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   will get them by default if you import `diesel::*`. For a less aggressive
   glob, you can import `diesel::prelude::*`, which will only export our traits.
 
+* The `debug_sql!` macro now uses `\`` for identifier quoting, and `?` for bind
+  parameters, which is closer to a "generic" backend. The previous behavior had
+  no identifier quoting, and used PG specific bind params.
+
 ### Removed
 
 * `Connection#query_sql` and `Connection#query_sql_params` have been removed.
