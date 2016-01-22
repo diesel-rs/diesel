@@ -3,11 +3,16 @@ extern crate chrono;
 extern crate clap;
 extern crate diesel;
 
+mod setup_error;
+
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::{migrations, Connection};
+use diesel::connection::PgConnection;
+use self::setup_error::SetupError;
 use std::{env, fs};
 use std::error::Error;
+use std::path::{PathBuf, Path};
 
 fn main() {
     let database_arg = || Arg::with_name("DATABASE_URL")
@@ -41,15 +46,22 @@ fn main() {
                  )
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
+    let setup_subcommand = SubCommand::with_name("setup")
+        .about("Creates the migrations directory, creates the database \
+                specified in your DATABASE_URL, and runs existing migrations.")
+        .arg(database_arg());
+
     let matches = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(migration_subcommand)
+        .subcommand(setup_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .get_matches();
 
     match matches.subcommand() {
         ("migration", Some(matches)) => run_migration_command(matches),
+        ("setup", Some(matches)) => run_setup_command(matches),
         _ => unreachable!(),
     }
 }
@@ -91,6 +103,74 @@ fn run_migration_command(matches: &ArgMatches) {
     }
 }
 
+fn run_setup_command(matches: &ArgMatches) {
+    migrations::find_migrations_directory()
+        .unwrap_or_else(|_|
+                        create_migrations_directory()
+                        .map_err(handle_error).unwrap()
+                       );
+
+    if PgConnection::establish(&database_url(matches)).is_err() {
+        create_database(database_url(matches)).unwrap_or_else(handle_error);
+    }
+
+    let connection = connection(&database_url(matches));
+
+    if !schema_table_exists(&connection).map_err(handle_error).unwrap() {
+        migrations::create_schema_migrations_table_if_needed(&connection)
+            .map_err(handle_error).unwrap();
+        migrations::run_pending_migrations(&connection)
+            .map_err(handle_error).unwrap();
+    }
+}
+
+/// Creates the database specified in the connection url. It returns a
+/// `SetupError::ConnectionError` if it can't connect to the postgres
+/// connection url, and returns a `SetupError::QueryError` if it is unable
+/// to create the database.
+fn create_database(database_url: String) -> Result<(), SetupError> {
+    let mut split: Vec<&str> = database_url.split("/").collect();
+    let database = split.pop().unwrap();
+    let postgres_url = split.join("/");
+    let connection = try!(PgConnection::establish(&postgres_url));
+    try!(connection.execute(&format!("CREATE DATABASE {};", database)));
+    Ok(())
+}
+
+/// Looks for a migrations directory in the current path and all parent paths,
+/// and creates one in the same directory as the Cargo.toml if it can't find
+/// one. It also sticks a .gitkeep in the directory so git will pick it up.
+/// Returns a `SetupError::CargoTomlNotFound` if no Cargo.toml is found.
+fn create_migrations_directory() -> Result<PathBuf, SetupError> {
+    let project_root = try!(find_project_root());
+    try!(fs::create_dir(project_root.join("migrations")));
+    try!(fs::File::create(project_root.join("migrations/.gitkeep")));
+    Ok(project_root)
+}
+
+fn find_project_root() -> Result<PathBuf, SetupError> {
+    search_for_cargo_toml_directory(&try!(env::current_dir()))
+}
+
+fn search_for_cargo_toml_directory(path: &Path) -> Result<PathBuf, SetupError> {
+    let toml_path = path.join("Cargo.toml");
+    if toml_path.is_file() {
+        Ok(path.to_owned())
+    } else {
+        path.parent().map(search_for_cargo_toml_directory)
+            .unwrap_or(Err(SetupError::CargoTomlNotFound))
+    }
+}
+
+/// Returns true if the '__diesel_schema_migrations' table exists in the
+/// database we connect to, returns false if it does not.
+pub fn schema_table_exists(connection: &PgConnection) -> Result<bool, SetupError> {
+    let result = try!(connection.execute("SELECT 1
+        FROM information_schema.tables
+        WHERE table_name = '__diesel_schema_migrations';"));
+    Ok(result != 0)
+}
+
 fn handle_error<E: Error>(error: E) {
     println!("{}", error);
     std::process::exit(1);
@@ -104,7 +184,71 @@ fn database_url(matches: &ArgMatches) -> String {
                 or the DATABASE_URL environment variable must be set.")
 }
 
-fn connection(database_url: &str) -> diesel::connection::PgConnection {
-    diesel::connection::PgConnection::establish(database_url)
+fn connection(database_url: &str) -> PgConnection {
+    PgConnection::establish(database_url)
         .expect(&format!("Error connecting to {}", database_url))
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate diesel;
+    extern crate dotenv;
+    extern crate tempdir;
+
+    use self::tempdir::TempDir;
+    use self::diesel::Connection;
+
+    use setup_error::SetupError;
+
+    use super::{schema_table_exists, search_for_cargo_toml_directory};
+
+    use std::{env, fs};
+
+    fn connection() -> diesel::connection::PgConnection {
+        dotenv::dotenv().ok();
+        let database_url = env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set in order to run diesel_cli tests");
+        diesel::connection::PgConnection::establish(&database_url).unwrap()
+    }
+
+    #[test]
+    fn toml_directory_find_cargo_toml() {
+        let dir = TempDir::new("diesel").unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let toml_path = temp_path.join("Cargo.toml");
+
+        fs::File::create(&toml_path).unwrap();
+
+        assert_eq!(Ok(temp_path.clone()), search_for_cargo_toml_directory(&temp_path));
+    }
+
+    #[test]
+    fn cargo_toml_not_found_if_no_cargo_toml() {
+        let dir = TempDir::new("diesel").unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+
+        assert_eq!(Err(SetupError::CargoTomlNotFound),
+            search_for_cargo_toml_directory(&temp_path));
+    }
+
+    #[test]
+    fn schema_table_exists_finds_table() {
+        let connection = connection();
+        connection.silence_notices(|| {
+            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
+            connection.execute("CREATE TABLE __diesel_schema_migrations ()").unwrap();
+        });
+
+        assert!(schema_table_exists(&connection).unwrap());
+    }
+
+    #[test]
+    fn schema_table_exists_doesnt_find_table() {
+        let connection = connection();
+        connection.silence_notices(|| {
+            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
+        });
+
+        assert!(!schema_table_exists(&connection).unwrap());
+    }
 }
