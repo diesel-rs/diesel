@@ -40,6 +40,7 @@ fn insert_records_using_returning_clause() {
 }
 
 #[test]
+#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn insert_with_defaults() {
     use schema::users::table as users;
     let connection = connection();
@@ -65,6 +66,63 @@ fn insert_with_defaults() {
 }
 
 #[test]
+#[should_panic] // FIXME: SQLite has no DEFAULT keyword. We need to work around this.
+#[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
+fn insert_with_defaults() {
+    use schema::users::table as users;
+    use diesel::expression::dsl::sql;
+    let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
+    connection.execute("CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR NOT NULL,
+        hair_color VARCHAR NOT NULL DEFAULT 'Green'
+    )").unwrap();
+
+    let new_users: &[_] = &[
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+    insert(new_users).into(users).execute(&connection).unwrap();
+
+    let expected_users = vec![
+        User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
+        User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+    ];
+    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
+
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
+#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
+fn insert_with_defaults_not_provided() {
+    use schema::users::table as users;
+    let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
+    connection.execute("CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR NOT NULL,
+        hair_color VARCHAR NOT NULL DEFAULT 'Green'
+    )").unwrap();
+    let new_users: &[_] = &[
+        BaldUser { name: "Sean".to_string() },
+        BaldUser { name: "Tess".to_string() },
+    ];
+    insert(new_users).into(users).execute(&connection).unwrap();
+
+    let expected_users = vec![
+        User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
+        User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+    ];
+    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
+
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
+#[should_panic] // FIXME: SQLite has no DEFAULT keyword. We need to work around this.
+#[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn insert_with_defaults_not_provided() {
     use schema::users::table as users;
     let connection = connection();

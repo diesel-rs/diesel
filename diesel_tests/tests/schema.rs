@@ -1,5 +1,4 @@
 use diesel::*;
-pub use diesel::connection::PgConnection;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[changeset_for(users)]
@@ -108,26 +107,41 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
-pub fn connection() -> PgConnection {
+#[cfg(feature = "postgres")]
+pub type TestConnection = ::diesel::connection::PgConnection;
+#[cfg(feature = "sqlite")]
+pub type TestConnection = ::diesel::connection::SqliteConnection;
+
+pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
     result
 }
 
-pub fn connection_without_transaction() -> PgConnection {
+#[cfg(feature = "postgres")]
+pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    PgConnection::establish(&connection_url).unwrap()
+    ::diesel::connection::PgConnection::establish(&connection_url).unwrap()
 }
 
-pub fn connection_with_sean_and_tess_in_users_table() -> PgConnection {
+#[cfg(feature = "sqlite")]
+pub fn connection_without_transaction() -> TestConnection {
+    let connection = ::diesel::connection::SqliteConnection::establish(":memory:").unwrap();
+    let migrations_dir = migrations::find_migrations_directory().unwrap().join("sqlite");
+    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir).unwrap();
+    connection
+}
+
+
+pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let connection = connection();
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     connection
 }
 
-pub fn find_user_by_name(name: &str, connection: &PgConnection) -> User {
+pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
     users::table.filter(users::name.eq(name))
         .first(connection)
         .unwrap()

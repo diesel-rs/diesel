@@ -27,11 +27,14 @@ script:
     (cd diesel_codegen && travis-cargo test)
   fi &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features unstable)
+    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
-    (cd diesel_tests && travis-cargo test)
+    (cd diesel_tests && travis-cargo test -- --features $BACKEND)
   fi
 env:
+  matrix:
+    - BACKEND=sqlite
+    - BACKEND=postgres
   global:
     - DATABASE_URL=postgres://postgres@localhost/
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""

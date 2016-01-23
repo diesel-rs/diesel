@@ -12,6 +12,7 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 [dependencies]
 libc = "0.2.*"
 pq-sys = "0.2.*"
+libsqlite3-sys = "^0.4.0"
 byteorder = "0.3.*"
 quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git", optional = true }
 chrono = { version = "^0.2.17", optional = true }

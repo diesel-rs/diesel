@@ -75,7 +75,7 @@ mod tests {
     use std::time::{SystemTime, Duration, UNIX_EPOCH};
 
     use ::select;
-    use connection::{Connection, PgConnection};
+    use connection::PgConnection;
     use expression::dsl::{sql, now};
     use prelude::*;
     use types::Timestamp;

@@ -248,7 +248,7 @@ mod tests {
     use self::dotenv::dotenv;
 
     use ::{types, select};
-    use connection::{Connection, PgConnection};
+    use connection::PgConnection;
     use data_types::PgInterval;
     use expression::dsl::sql;
     use prelude::*;

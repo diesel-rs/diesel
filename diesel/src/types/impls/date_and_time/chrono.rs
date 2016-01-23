@@ -108,7 +108,7 @@ mod tests {
     use self::dotenv::dotenv;
 
     use ::select;
-    use connection::{Connection, PgConnection};
+    use connection::PgConnection;
     use expression::dsl::{sql, now};
     use prelude::*;
     use types::{Date, Time, Timestamp};

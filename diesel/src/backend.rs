@@ -1,6 +1,8 @@
+use connection::sqlite::SqliteValue;
 use query_builder::QueryBuilder;
-use query_builder::pg::PgQueryBuilder;
 use query_builder::debug::DebugQueryBuilder;
+use query_builder::pg::PgQueryBuilder;
+use query_builder::sqlite::SqliteQueryBuilder;
 use types::{self, HasSqlType};
 
 pub trait Backend where
@@ -43,7 +45,7 @@ impl SupportsReturningClause for Debug {}
 
 pub struct Pg;
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct PgTypeMetadata {
     pub oid: u32,
     pub array_oid: u32,
@@ -59,3 +61,24 @@ impl TypeMetadata for Pg {
 }
 
 impl SupportsReturningClause for Pg {}
+
+pub struct Sqlite;
+
+pub enum SqliteType {
+    Binary,
+    Text,
+    Float,
+    Double,
+    SmallInt,
+    Integer,
+    Long,
+}
+
+impl Backend for Sqlite {
+    type QueryBuilder = SqliteQueryBuilder;
+    type RawValue = SqliteValue;
+}
+
+impl TypeMetadata for Sqlite {
+    type TypeMetadata = SqliteType;
+}

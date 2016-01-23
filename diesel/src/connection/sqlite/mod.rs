@@ -1,0 +1,140 @@
+extern crate libsqlite3_sys as ffi;
+extern crate libc;
+
+#[doc(hidden)]
+pub mod raw;
+mod stmt;
+mod statement_iterator;
+mod sqlite_value;
+
+pub use self::sqlite_value::SqliteValue;
+
+use std::cell::Cell;
+use std::ffi::CStr;
+
+use backend::Sqlite;
+use query_builder::*;
+use query_builder::sqlite::SqliteQueryBuilder;
+use query_source::*;
+use result::*;
+use result::Error::QueryBuilderError;
+use self::raw::*;
+use self::stmt::*;
+use self::statement_iterator::StatementIterator;
+use super::{SimpleConnection, Connection};
+use types::HasSqlType;
+
+pub struct SqliteConnection {
+    raw_connection: RawConnection,
+    transaction_depth: Cell<i32>,
+}
+
+impl SimpleConnection for SqliteConnection {
+    fn batch_execute(&self, query: &str) -> QueryResult<()> {
+        self.raw_connection.exec(query)
+    }
+}
+
+impl Connection for SqliteConnection {
+    type Backend = Sqlite;
+
+    fn establish(database_url: &str) -> ConnectionResult<Self> {
+        RawConnection::establish(database_url).map(|conn| {
+            SqliteConnection {
+                raw_connection: conn,
+                transaction_depth: Cell::new(0),
+            }
+        })
+    }
+
+    fn execute(&self, query: &str) -> QueryResult<usize> {
+        try!(self.batch_execute(query));
+        Ok(self.raw_connection.rows_affected_by_last_query())
+    }
+
+    fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+        T: AsQuery,
+        T::Query: QueryFragment<Self::Backend>,
+        T::SqlType: 'a,
+        Self::Backend: HasSqlType<T::SqlType>,
+        U: Queryable<T::SqlType, Self::Backend>,
+    {
+        self.prepare_query(&source.as_query()).map(|stmt| {
+            Box::new(StatementIterator::new(stmt)) as Box<Iterator<Item=U>>
+        })
+    }
+
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+        T: QueryFragment<Self::Backend>,
+    {
+        let stmt = try!(self.prepare_query(source));
+        try!(stmt.run());
+        Ok(self.raw_connection.rows_affected_by_last_query())
+    }
+
+    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
+        f()
+    }
+
+    fn begin_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(1, if transaction_depth == 0 {
+            self.execute("BEGIN")
+        } else {
+            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+        })
+    }
+
+    fn rollback_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth == 1 {
+            self.execute("ROLLBACK")
+        } else {
+            self.execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn commit_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth <= 1 {
+            self.execute("COMMIT")
+        } else {
+            self.execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn get_transaction_depth(&self) -> i32 {
+        self.transaction_depth.get()
+    }
+}
+
+impl SqliteConnection {
+    fn prepare_query<T: QueryFragment<Sqlite>>(&self, source: &T) -> QueryResult<Statement> {
+        let mut query_builder = SqliteQueryBuilder::new();
+        try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
+        let mut result = try!(Statement::prepare(&self.raw_connection, &query_builder.sql));
+
+        for (tpe, value) in query_builder.bind_params.into_iter() {
+            try!(result.bind(tpe, value));
+        }
+
+        Ok(result)
+    }
+
+    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
+        if query.is_ok() {
+            self.transaction_depth.set(self.transaction_depth.get() + by);
+        }
+        query.map(|_| ())
+    }
+}
+
+fn error_message(err_code: libc::c_int) -> &'static str {
+    unsafe {
+        let message_ptr = ffi::sqlite3_errstr(err_code);
+        let result = CStr::from_ptr(message_ptr);
+        result.to_str().unwrap()
+    }
+}

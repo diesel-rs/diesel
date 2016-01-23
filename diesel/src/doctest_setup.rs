@@ -2,7 +2,6 @@ extern crate dotenv;
 
 use diesel::prelude::*;
 use diesel::backend;
-use diesel::Connection;
 use self::dotenv::dotenv;
 
 fn connection_no_data() -> diesel::connection::PgConnection {

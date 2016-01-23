@@ -64,6 +64,7 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+    pub use connection::Connection;
     pub use expression::{Expression, SelectableExpression, BoxableExpression};
     pub use expression::expression_methods::*;
     #[doc(inline)]
@@ -73,7 +74,6 @@ pub mod prelude {
     pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
 }
 
-pub use connection::Connection;
 pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::functions::{insert, update, delete, select};
