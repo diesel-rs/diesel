@@ -2,6 +2,7 @@ use std::error::Error;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use backend::Pg;
 use expression::bound::Bound;
 use expression::AsExpression;
 use types::{self, ToSql, FromSql, IsNull};
@@ -20,7 +21,7 @@ fn pg_epoch() -> SystemTime {
     UNIX_EPOCH + thirty_years
 }
 
-impl ToSql<types::Timestamp> for SystemTime {
+impl ToSql<types::Timestamp, Pg> for SystemTime {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let (before_epoch, duration) = match self.duration_from_earlier(pg_epoch()) {
             Ok(duration) => (false, duration),
@@ -31,13 +32,13 @@ impl ToSql<types::Timestamp> for SystemTime {
         } else {
             duration_to_usecs(duration) as i64
         };
-        ToSql::<types::BigInt>::to_sql(&time_since_epoch, out)
+        ToSql::<types::BigInt, Pg>::to_sql(&time_since_epoch, out)
     }
 }
 
-impl FromSql<types::Timestamp> for SystemTime {
+impl FromSql<types::Timestamp, Pg> for SystemTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let usecs_passed = try!(<i64 as FromSql<types::BigInt>>::from_sql(bytes));
+        let usecs_passed = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);
 

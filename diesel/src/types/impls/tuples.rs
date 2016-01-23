@@ -32,8 +32,9 @@ macro_rules! tuple_impls {
             impl<$($T: NativeSqlType),+> NotNull for ($($T,)+) {
             }
 
-            impl<$($T),+,$($ST),+> FromSqlRow<($($ST,)+)> for ($($T,)+) where
-                $($T: FromSqlRow<$ST>),+,
+            impl<$($T),+, $($ST),+, DB> FromSqlRow<($($ST,)+), DB> for ($($T,)+) where
+                DB: Backend,
+                $($T: FromSqlRow<$ST, DB>),+,
                 $($ST: NativeSqlType),+
             {
                 fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
@@ -41,8 +42,9 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+,$($ST),+> FromSqlRow<Nullable<($($ST,)+)>> for Option<($($T,)+)> where
-                $($T: FromSqlRow<$ST>),+,
+            impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
+                DB: Backend,
+                $($T: FromSqlRow<$ST, DB>),+,
                 $($ST: NativeSqlType),+
             {
                 fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
@@ -54,8 +56,9 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+,$($ST),+> Queryable<($($ST,)+)> for ($($T,)+) where
-                $($T: Queryable<$ST>),+,
+            impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
+                DB: Backend,
+                $($T: Queryable<$ST, DB>),+,
                 $($ST: NativeSqlType),+
             {
                 type Row = ($($T::Row,)+);

@@ -18,6 +18,7 @@ pub mod structs {
 /// Marker trait for types which can be compared for ordering.
 pub use self::ord::SqlOrd;
 
+use backend::Backend;
 use row::Row;
 use std::error::Error;
 use std::io::Write;
@@ -79,23 +80,14 @@ impl<T: NativeSqlType + NotNull> IntoNullable for Nullable<T> {
 
 /// How to deserialize a single field of a given type. The input will always be
 /// the binary representation, not the text.
-pub trait FromSql<A: NativeSqlType>: Sized {
+pub trait FromSql<A: NativeSqlType, DB: Backend>: Sized {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>>;
 }
 
 /// How to deserialize multiple fields, with a known type. This type is
 /// implemented for tuples of various sizes.
-pub trait FromSqlRow<A: NativeSqlType>: Sized {
+pub trait FromSqlRow<A: NativeSqlType, DB>: Sized {
     fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
-}
-
-impl<A, T> FromSqlRow<A> for T where
-    A: NativeSqlType,
-    T: FromSql<A>,
-{
-    fn build_from_row<R: Row>(row: &mut R) -> Result<Self, Box<Error>> {
-        Self::from_sql(row.take())
-    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -108,13 +100,14 @@ pub enum IsNull {
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
-pub trait ToSql<A: NativeSqlType> {
+pub trait ToSql<A: NativeSqlType, DB: Backend> {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
 }
 
-impl<'a, A, T> ToSql<A> for &'a T where
+impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
     A: NativeSqlType,
-    T: ToSql<A>,
+    DB: Backend,
+    T: ToSql<A, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         (*self).to_sql(out)

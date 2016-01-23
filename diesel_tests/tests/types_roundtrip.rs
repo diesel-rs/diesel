@@ -16,7 +16,7 @@ use diesel::query_builder::QueryFragment;
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool where
     ST: NativeSqlType,
-    T: AsExpression<ST> + Queryable<ST> + PartialEq + Clone + ::std::fmt::Debug,
+    T: AsExpression<ST> + Queryable<ST, Pg> + PartialEq + Clone + ::std::fmt::Debug,
     <T as AsExpression<ST>>::Expression: SelectableExpression<()> + QueryFragment<Pg>,
 {
     let connection = connection();

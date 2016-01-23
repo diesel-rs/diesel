@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
+use backend::{Backend, Pg};
 use data_types::PgNumeric;
 use expression::bound::Bound;
 use expression::AsExpression;
@@ -46,7 +47,7 @@ impl NativeSqlType for () {
 
 impl NotNull for () {}
 
-impl FromSql<types::Bool> for bool {
+impl FromSql<types::Bool, Pg> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         match bytes {
             Some(bytes) => Ok(bytes[0] != 0),
@@ -55,7 +56,7 @@ impl FromSql<types::Bool> for bool {
     }
 }
 
-impl ToSql<types::Bool> for bool {
+impl ToSql<types::Bool, Pg> for bool {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let write_result = if *self {
             out.write_all(&[1])
@@ -68,14 +69,23 @@ impl ToSql<types::Bool> for bool {
     }
 }
 
-impl FromSql<types::VarChar> for String {
+impl<DB: Backend> FromSql<types::VarChar, DB> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let bytes = not_none!(bytes);
         String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
-impl ToSql<types::VarChar> for String {
+impl<DB> ToSql<types::VarChar, DB> for String where
+    DB: Backend,
+    for<'a> &'a str: ToSql<types::VarChar, DB>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        (&self as &str).to_sql(out)
+    }
+}
+
+impl<'a, DB: Backend> ToSql<types::VarChar, DB> for &'a str {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
@@ -83,47 +93,49 @@ impl ToSql<types::VarChar> for String {
     }
 }
 
-impl<'a> ToSql<types::VarChar> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        out.write_all(self.as_bytes())
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
-
-impl FromSql<types::Text> for String {
+impl<DB> FromSql<types::Text, DB> for String where
+    DB: Backend,
+    String: FromSql<types::VarChar, DB>,
+{
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        <Self as FromSql<types::VarChar>>::from_sql(bytes)
+        <Self as FromSql<types::VarChar, DB>>::from_sql(bytes)
     }
 }
 
-impl ToSql<types::Text> for String {
+impl<DB> ToSql<types::Text, DB> for String where
+    DB: Backend,
+    for<'a> &'a str: ToSql<types::Text, DB>,
+{
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        ToSql::<types::VarChar>::to_sql(self, out)
+        (&self as &str).to_sql(out)
     }
 }
 
-impl<'a> ToSql<types::Text> for &'a str {
+impl<'a, DB> ToSql<types::Text, DB> for &'a str where
+    DB: Backend,
+    &'a str: ToSql<types::VarChar, DB>,
+{
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        ToSql::<types::VarChar>::to_sql(self, out)
+        ToSql::<types::VarChar, DB>::to_sql(self, out)
     }
 }
 
-impl FromSql<types::Binary> for Vec<u8> {
+impl<DB: Backend> FromSql<types::Binary, DB> for Vec<u8> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         Ok(not_none!(bytes).into())
     }
 }
 
-impl ToSql<types::Binary> for Vec<u8> {
+impl<DB> ToSql<types::Binary, DB> for Vec<u8> where
+    DB: Backend,
+    for<'a> &'a [u8]: ToSql<types::Binary, DB>,
+{
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        out.write_all(&self)
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error>)
+        (&self as &[u8]).to_sql(out)
     }
 }
 
-impl<'a> ToSql<types::Binary> for &'a [u8] {
+impl<'a, DB: Backend> ToSql<types::Binary, DB> for &'a [u8] {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_all(self)
             .map(|_| IsNull::No)
@@ -132,10 +144,11 @@ impl<'a> ToSql<types::Binary> for &'a [u8] {
 }
 
 use std::borrow::{Cow, ToOwned};
-impl<'a, T: ?Sized, ST> ToSql<ST> for Cow<'a, T> where
+impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T> where
     ST: NativeSqlType,
-    T: 'a + ToOwned + ToSql<ST>,
-    T::Owned: ToSql<ST>,
+    T: 'a + ToOwned + ToSql<ST, DB>,
+    DB: Backend,
+    T::Owned: ToSql<ST, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         match self {
@@ -145,26 +158,38 @@ impl<'a, T: ?Sized, ST> ToSql<ST> for Cow<'a, T> where
     }
 }
 
-impl<'a, T: ?Sized, ST> FromSql<ST> for Cow<'a, T> where
+impl<'a, T: ?Sized, ST, DB> FromSql<ST, DB> for Cow<'a, T> where
     ST: NativeSqlType,
     T: 'a + ToOwned,
-    T::Owned: FromSql<ST>,
+    DB: Backend,
+    T::Owned: FromSql<ST, DB>,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }
 
+impl <'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T> where
+    ST: NativeSqlType,
+    T: 'a + ToOwned,
+    DB: Backend,
+    Cow<'a, T>: FromSql<ST, DB>,
+{
+    fn build_from_row<R: ::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+        FromSql::<ST, DB>::from_sql(row.take())
+    }
+}
+
 #[test]
 fn bool_to_sql() {
     let mut bytes = vec![];
-    ToSql::<types::Bool>::to_sql(&true, &mut bytes).unwrap();
-    ToSql::<types::Bool>::to_sql(&false, &mut bytes).unwrap();
+    ToSql::<types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
+    ToSql::<types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(bytes, vec![1u8, 0u8]);
 }
 
 #[test]
 fn bool_from_sql_treats_null_as_false() {
-    let result = <bool as FromSql<types::Bool>>::from_sql(None).unwrap();
+    let result = <bool as FromSql<types::Bool, Pg>>::from_sql(None).unwrap();
     assert!(!result);
 }

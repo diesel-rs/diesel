@@ -4,9 +4,11 @@ use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use std::error::Error;
 use std::io::Write;
 
+use backend::Pg;
 use query_source::Queryable;
+use row::Row;
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql, ToSql, Array, IsNull, NotNull};
+use types::{NativeSqlType, FromSql, FromSqlRow, ToSql, Array, IsNull, NotNull};
 
 impl<T: NativeSqlType> NativeSqlType for Array<T> {
     fn oid() -> u32 {
@@ -21,8 +23,8 @@ impl<T: NativeSqlType> NativeSqlType for Array<T> {
 impl<T: NativeSqlType> NotNull for Array<T> {
 }
 
-impl<T, ST> FromSql<Array<ST>> for Vec<T> where
-    T: FromSql<ST>,
+impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
+    T: FromSql<ST, Pg>,
     ST: NativeSqlType,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
@@ -54,8 +56,17 @@ impl<T, ST> FromSql<Array<ST>> for Vec<T> where
     }
 }
 
-impl<T, ST> Queryable<Array<ST>> for Vec<T> where
-    T: FromSql<ST> + Queryable<ST>,
+impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
+    ST: NativeSqlType,
+    Vec<T>: FromSql<Array<ST>, Pg>,
+{
+    fn build_from_row<R: Row>(row: &mut R) -> Result<Self, Box<Error>> {
+        FromSql::<Array<ST>, Pg>::from_sql(row.take())
+    }
+}
+
+impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
+    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
     ST: NativeSqlType,
 {
     type Row = Self;
@@ -69,7 +80,6 @@ use expression::bound::Bound;
 
 impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
     ST: NativeSqlType,
-    T: ToSql<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -80,7 +90,6 @@ impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
 
 impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
     ST: NativeSqlType,
-    T: ToSql<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -91,7 +100,6 @@ impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
 
 impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
     ST: NativeSqlType,
-    T: ToSql<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -100,9 +108,9 @@ impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
     }
 }
 
-impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
+impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     ST: NativeSqlType,
-    T: ToSql<ST>,
+    T: ToSql<ST, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let num_dimensions = 1;
@@ -127,9 +135,9 @@ impl<'a, ST, T> ToSql<Array<ST>> for &'a [T] where
     }
 }
 
-impl<ST, T> ToSql<Array<ST>> for Vec<T> where
+impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     ST: NativeSqlType,
-    T: ToSql<ST>,
+    for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         (&self as &[T]).to_sql(out)

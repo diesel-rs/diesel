@@ -294,7 +294,7 @@ fn pg_numeric_from_sql() {
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
 }
 
-fn query_single_value<T: NativeSqlType, U: Queryable<T>>(sql_str: &str) -> U {
+fn query_single_value<T: NativeSqlType, U: Queryable<T, Pg>>(sql_str: &str) -> U {
     use diesel::expression::dsl::sql;
     let connection = connection();
     select(sql::<T>(sql_str)).first(&connection).unwrap()

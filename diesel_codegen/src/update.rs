@@ -140,7 +140,7 @@ fn save_changes_impl(
             impl<'a> $struct_name {
                 $_pub fn save_changes<T, Conn>(&self, connection: &Conn)
                     -> ::diesel::QueryResult<T> where
-                    T: Queryable<$sql_type>,
+                    T: Queryable<$sql_type, Conn::Backend>,
                     Conn: Connection,
                 {
                     use ::diesel::update;

@@ -12,7 +12,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
     fn load<'a, U>(self, conn: &Conn) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
-        U: Queryable<Self::SqlType> + 'a,
+        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         conn.query_all(self)
     }
@@ -22,7 +22,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType>,
+        U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType, Conn::Backend>,
         Self: LimitDsl,
         <Self as LimitDsl>::Output: QueryFragment<Conn::Backend>,
     {
@@ -34,14 +34,14 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// result of this if the command was optional to get back a
     /// `Result<Option<U>>`
     fn get_result<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<Self::SqlType>,
+        U: Queryable<Self::SqlType, Conn::Backend>,
     {
         conn.query_one(self)
     }
 
     /// Runs the command, returning an `Iterator` over the affected rows.
     fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
-        U: Queryable<Self::SqlType> + 'a,
+        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         self.load(conn)
     }

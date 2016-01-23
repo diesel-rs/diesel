@@ -36,12 +36,13 @@ pub fn expand_derive_queryable(
             span, &item, cx, &attrs);
         let mut params = generics.ty_params.into_vec();
         params.push(ty_param_with_name(cx, span, "__ST"));
+        params.push(ty_param_with_name(cx, span, "__DB"));
         generics.ty_params = params.into();
 
         let impl_item = quote_item!(cx,
-            impl$generics ::diesel::Queryable<__ST> for $ty where
+            impl$generics ::diesel::Queryable<__ST, __DB> for $ty where
                 __ST: ::diesel::types::NativeSqlType,
-                $row_type: ::diesel::types::FromSqlRow<__ST>,
+                $row_type: ::diesel::types::FromSqlRow<__ST, __DB>,
             {
                 type Row = $row_type;
 

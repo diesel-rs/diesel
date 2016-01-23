@@ -29,7 +29,7 @@ impl<T, U> Expression for Bound<T, U> where
 impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
     DB: Backend,
     T: NativeSqlType,
-    U: ToSql<T>,
+    U: ToSql<T, DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let mut bytes = Vec::new();

@@ -1,3 +1,4 @@
+use backend::Pg;
 use query_source::Queryable;
 use db_result::DbResult;
 use types::{NativeSqlType, FromSqlRow};
@@ -25,7 +26,7 @@ impl<ST, T> Cursor<ST, T> {
 
 impl<ST, T> Iterator for Cursor<ST, T> where
     ST: NativeSqlType,
-    T: Queryable<ST>,
+    T: Queryable<ST, Pg>,
 {
     type Item = T;
 

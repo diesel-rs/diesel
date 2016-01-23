@@ -1,9 +1,11 @@
-use Queryable;
-use expression::*;
-use expression::bound::Bound;
 use std::error::Error;
 use std::fmt;
 use std::io::Write;
+
+use backend::Backend;
+use expression::*;
+use expression::bound::Bound;
+use query_source::Queryable;
 use types::{NativeSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 
 impl<T: NativeSqlType + NotNull> NativeSqlType for Nullable<T> {
@@ -16,8 +18,9 @@ impl<T: NativeSqlType + NotNull> NativeSqlType for Nullable<T> {
     }
 }
 
-impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
-    T: FromSql<ST>,
+impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
+    T: FromSql<ST, DB>,
+    DB: Backend,
     ST: NativeSqlType + NotNull,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
@@ -28,9 +31,10 @@ impl<T, ST> FromSql<Nullable<ST>> for Option<T> where
     }
 }
 
-impl<T, ST> Queryable<Nullable<ST>> for Option<T> where
-    T: Queryable<ST>,
-    Option<T::Row>: FromSqlRow<Nullable<ST>>,
+impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T> where
+    T: Queryable<ST, DB>,
+    DB: Backend,
+    Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
     ST: NativeSqlType + NotNull,
 {
     type Row = Option<T::Row>;
@@ -40,8 +44,9 @@ impl<T, ST> Queryable<Nullable<ST>> for Option<T> where
     }
 }
 
-impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
-    T: ToSql<ST>,
+impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
+    T: ToSql<ST, DB>,
+    DB: Backend,
     ST: NativeSqlType + NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
@@ -54,7 +59,6 @@ impl<T, ST> ToSql<Nullable<ST>> for Option<T> where
 }
 
 impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
-    Option<T>: ToSql<Nullable<ST>>,
     ST: NativeSqlType + NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
@@ -65,7 +69,6 @@ impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
 }
 
 impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T> where
-    Option<T>: ToSql<Nullable<ST>>,
     ST: NativeSqlType + NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
@@ -94,21 +97,23 @@ impl Error for UnexpectedNullError {
 
 #[cfg(test)]
 use types;
+#[cfg(test)]
+use backend::Pg;
 
 #[test]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
     let mut bytes = Vec::<u8>::new();
 
-    let is_null = ToSql::<Type>::to_sql(&None::<String>, &mut bytes).unwrap();
+    let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
     assert_eq!(IsNull::Yes, is_null);
     assert!(bytes.is_empty());
 
-    let is_null = ToSql::<Type>::to_sql(&Some(""), &mut bytes).unwrap();
+    let is_null = ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap();
     assert_eq!(IsNull::No, is_null);
     assert!(bytes.is_empty());
 
-    let is_null = ToSql::<Type>::to_sql(&Some("Sean"), &mut bytes).unwrap();
+    let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
     let expectd_bytes: Vec<_> = "Sean".as_bytes().into();
     assert_eq!(IsNull::No, is_null);
     assert_eq!(expectd_bytes, bytes);

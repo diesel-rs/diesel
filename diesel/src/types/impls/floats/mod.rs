@@ -1,23 +1,24 @@
 extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
-use super::option::UnexpectedNullError;
-use types::{FromSql, ToSql, IsNull};
-use types;
 use std::error::Error;
 use std::io::Write;
+
+use backend::Backend;
+use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use super::option::UnexpectedNullError;
+use types::{self, FromSql, ToSql, IsNull};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 
-impl FromSql<types::Float> for f32 {
+impl<DB: Backend> FromSql<types::Float, DB> for f32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         bytes.read_f32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
-impl ToSql<types::Float> for f32 {
+impl<DB: Backend> ToSql<types::Float, DB> for f32 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_f32::<BigEndian>(*self)
             .map(|_| IsNull::No)
@@ -25,14 +26,14 @@ impl ToSql<types::Float> for f32 {
     }
 }
 
-impl FromSql<types::Double> for f64 {
+impl<DB: Backend> FromSql<types::Double, DB> for f64 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         bytes.read_f64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 
-impl ToSql<types::Double> for f64 {
+impl<DB: Backend> ToSql<types::Double, DB> for f64 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_f64::<BigEndian>(*self)
             .map(|_| IsNull::No)
@@ -70,7 +71,9 @@ impl Error for InvalidNumericSign {
     }
 }
 
-impl FromSql<types::Numeric> for PgNumeric {
+use backend::Pg;
+
+impl FromSql<types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         let ndigits = try!(bytes.read_u16::<BigEndian>());
@@ -99,7 +102,7 @@ impl FromSql<types::Numeric> for PgNumeric {
     }
 }
 
-impl ToSql<types::Numeric> for PgNumeric {
+impl ToSql<types::Numeric, Pg> for PgNumeric {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let sign = match self {
             &PgNumeric::Positive { .. } => 0,

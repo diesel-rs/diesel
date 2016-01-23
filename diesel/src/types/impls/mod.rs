@@ -44,9 +44,12 @@ macro_rules! expression_impls {
                 }
             }
 
-            impl<'a> ToSql<types::Nullable<types::$Source>> for $Target {
+            impl<'a, DB> ToSql<types::Nullable<types::$Source>, DB> for $Target where
+                DB: $crate::backend::Backend,
+                $Target: ToSql<types::$Source, DB>,
+            {
                 fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-                    <Self as ToSql<types::$Source>>::to_sql(self, out)
+                    ToSql::<types::$Source, DB>::to_sql(self, out)
                 }
             }
         )+
@@ -55,7 +58,30 @@ macro_rules! expression_impls {
 
 macro_rules! queryable_impls {
     ($($Source:ident -> $Target:ty),+,) => {$(
-        impl Queryable<types::$Source> for $Target {
+        //FIXME: This can be made generic w/ specialization by making FromSql imply FromSqlRow
+        impl<DB> $crate::types::FromSqlRow<types::$Source, DB> for $Target where
+            DB: $crate::backend::Backend,
+            $Target: $crate::types::FromSql<types::$Source, DB>,
+        {
+            fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+                $crate::types::FromSql::<types::$Source, DB>::from_sql(row.take())
+            }
+        }
+
+        //FIXME: This can be made generic w/ specialization by making FromSql imply FromSqlRow
+        impl<DB> $crate::types::FromSqlRow<types::Nullable<types::$Source>, DB> for Option<$Target> where
+            DB: $crate::backend::Backend,
+            Option<$Target>: $crate::types::FromSql<types::Nullable<types::$Source>, DB>,
+        {
+            fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+                $crate::types::FromSql::<types::Nullable<types::$Source>, DB>::from_sql(row.take())
+            }
+        }
+
+        impl<DB> Queryable<types::$Source, DB> for $Target where
+            DB: $crate::backend::Backend,
+            $Target: $crate::types::FromSqlRow<types::$Source, DB>,
+        {
             type Row = Self;
 
             fn build(row: Self::Row) -> Self {

@@ -7,6 +7,7 @@ use std::io::Write;
 use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime};
 use self::chrono::naive::date;
 
+use backend::Pg;
 use expression::AsExpression;
 use expression::bound::Bound;
 use query_source::Queryable;
@@ -30,14 +31,14 @@ fn pg_epoch() -> NaiveDateTime {
     NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0)
 }
 
-impl FromSql<Timestamp> for NaiveDateTime {
+impl FromSql<Timestamp, Pg> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let PgTimestamp(offset) = try!(FromSql::<Timestamp>::from_sql(bytes));
+        let PgTimestamp(offset) = try!(FromSql::<Timestamp, Pg>::from_sql(bytes));
         Ok(pg_epoch() + Duration::microseconds(offset))
     }
 }
 
-impl ToSql<Timestamp> for NaiveDateTime {
+impl ToSql<Timestamp, Pg> for NaiveDateTime {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let time = match (*self - pg_epoch()).num_microseconds() {
             Some(time) => time,
@@ -46,7 +47,7 @@ impl ToSql<Timestamp> for NaiveDateTime {
                 return Err(Box::<Error + Send + Sync>::from(error_message));
             }
         };
-        ToSql::<Timestamp>::to_sql(&PgTimestamp(time), out)
+        ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(time), out)
     }
 }
 
@@ -54,19 +55,19 @@ fn midnight() -> NaiveTime {
     NaiveTime::from_hms(0, 0, 0)
 }
 
-impl ToSql<Time> for NaiveTime {
+impl ToSql<Time, Pg> for NaiveTime {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let duration = *self - midnight();
         match duration.num_microseconds() {
-            Some(offset) => ToSql::<Time>::to_sql(&PgTime(offset), out),
+            Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
             None => unreachable!()
         }
     }
 }
 
-impl FromSql<Time> for NaiveTime {
+impl FromSql<Time, Pg> for NaiveTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let PgTime(offset) = try!(FromSql::<Time>::from_sql(bytes));
+        let PgTime(offset) = try!(FromSql::<Time, Pg>::from_sql(bytes));
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
     }
@@ -76,16 +77,16 @@ fn pg_epoch_date() -> NaiveDate {
     NaiveDate::from_ymd(2000, 1, 1)
 }
 
-impl ToSql<Date> for NaiveDate {
+impl ToSql<Date, Pg> for NaiveDate {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let days_since_epoch = (*self - pg_epoch_date()).num_days();
-        ToSql::<Date>::to_sql(&PgDate(days_since_epoch as i32), out)
+        ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }
 }
 
-impl FromSql<Date> for NaiveDate {
+impl FromSql<Date, Pg> for NaiveDate {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        let PgDate(offset) = try!(FromSql::<Date>::from_sql(bytes));
+        let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
         match pg_epoch_date().checked_add(Duration::days(offset as i64)) {
             Some(date) => Ok(date),
             None => {

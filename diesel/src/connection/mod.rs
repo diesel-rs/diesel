@@ -86,7 +86,7 @@ pub trait Connection: SimpleConnection + Sized {
     fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
-        U: Queryable<T::SqlType>,
+        U: Queryable<T::SqlType, Self::Backend>,
     {
         self.query_all(source)
             .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
@@ -96,7 +96,7 @@ pub trait Connection: SimpleConnection + Sized {
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
-        U: Queryable<T::SqlType>;
+        U: Queryable<T::SqlType, Self::Backend>;
 
     /// Attempts to find a single record from the given table by primary key.
     ///
@@ -128,7 +128,7 @@ pub trait Connection: SimpleConnection + Sized {
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
         Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Self::Backend>,
-        U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
+        U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType, Self::Backend>,
         PK: AsExpression<PkType<T>>,
         AsExpr<PK, T::PrimaryKey>: NonAggregate,
     {

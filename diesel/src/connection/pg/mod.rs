@@ -60,7 +60,7 @@ impl Connection for PgConnection {
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
         T::Query: QueryFragment<Pg>,
-        U: Queryable<T::SqlType>,
+        U: Queryable<T::SqlType, Pg>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types))

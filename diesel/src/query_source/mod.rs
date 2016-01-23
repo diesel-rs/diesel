@@ -18,8 +18,8 @@ pub use self::joins::JoinTo;
 /// can be derived automatically. See the [codegen
 /// documentation](https://github.com/sgrif/diesel/tree/master/diesel_codegen#derivequeryable)
 /// for more.
-pub trait Queryable<ST: NativeSqlType> {
-    type Row: FromSqlRow<ST>;
+pub trait Queryable<ST: NativeSqlType, DB> {
+    type Row: FromSqlRow<ST, DB>;
 
     fn build(row: Self::Row) -> Self;
 }
