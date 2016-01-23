@@ -1,12 +1,13 @@
 macro_rules! simple_clause {
     ($no_clause:ident, $clause:ident, $sql:expr) => {
+        use backend::Backend;
         use super::{QueryFragment, QueryBuilder, BuildQueryResult};
 
         #[derive(Debug, Clone, Copy)]
         pub struct $no_clause;
 
-        impl QueryFragment for $no_clause {
-            fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
+        impl<DB: Backend> QueryFragment<DB> for $no_clause {
+            fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
                 Ok(())
             }
         }
@@ -14,10 +15,11 @@ macro_rules! simple_clause {
         #[derive(Debug, Clone, Copy)]
         pub struct $clause<Expr>(pub Expr);
 
-        impl<Expr> QueryFragment for $clause<Expr> where
-            Expr: QueryFragment,
+        impl<Expr, DB> QueryFragment<DB> for $clause<Expr> where
+            DB: Backend,
+            Expr: QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                 out.push_sql($sql);
                 self.0.to_sql(out)
             }

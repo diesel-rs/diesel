@@ -61,7 +61,7 @@ impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> w
 
 impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> where
     Source: UpdateTarget,
-    Predicate: SelectableExpression<Source, SqlType=Bool> + QueryFragment,
+    Predicate: SelectableExpression<Source, SqlType=Bool>,
 {
     type Table = Source::Table;
     type WhereClause = Predicate;

@@ -1,3 +1,4 @@
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 use types;
@@ -26,11 +27,12 @@ macro_rules! numeric_operation {
             type SqlType = <Lhs::SqlType as types::ops::$name>::Output;
         }
 
-        impl<Lhs, Rhs> QueryFragment for $name<Lhs, Rhs> where
-            Lhs: QueryFragment,
-            Rhs: QueryFragment,
+        impl<Lhs, Rhs, DB> QueryFragment<DB> for $name<Lhs, Rhs> where
+            DB: Backend,
+            Lhs: QueryFragment<DB>,
+            Rhs: QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                 try!(self.lhs.to_sql(out));
                 out.push_sql($op);
                 self.rhs.to_sql(out)

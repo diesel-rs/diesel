@@ -10,13 +10,14 @@ pub use diesel::result::Error;
 pub use diesel::data_types::*;
 pub use diesel::types::{NativeSqlType, ToSql, Nullable, Array};
 
+use diesel::backend::Pg;
 use diesel::expression::AsExpression;
 use diesel::query_builder::QueryFragment;
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool where
     ST: NativeSqlType,
     T: AsExpression<ST> + Queryable<ST> + PartialEq + Clone + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<()> + QueryFragment,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<()> + QueryFragment<Pg>,
 {
     let connection = connection();
     let query = select(AsExpression::<ST>::as_expression(value.clone()));

@@ -1,4 +1,5 @@
-use query_builder::{QueryBuilder, BuildQueryResult};
+use backend::Backend;
+use query_builder::BuildQueryResult;
 use query_source::QuerySource;
 
 /// Types which can be passed to
@@ -6,49 +7,33 @@ use query_source::QuerySource;
 /// be automatically generated for structs by
 /// [`#[changeset_for]`](https://github.com/sgrif/diesel/tree/master/diesel_codegen#changeset_fortable_name).
 pub trait AsChangeset {
-    type Changeset: Changeset;
+    type Target: QuerySource;
+    type Changeset;
 
     fn as_changeset(self) -> Self::Changeset;
 }
 
 /// Apps should not need to concern themselves with this trait.
-pub trait Changeset {
-    type Target: QuerySource;
-
+pub trait Changeset<DB: Backend> {
     fn is_noop(&self) -> bool;
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
 }
 
-impl<T> AsChangeset for T where
-    T: Changeset,
-{
-    type Changeset = Self;
+impl<T: AsChangeset> AsChangeset for Option<T> {
+    type Target = T::Target;
+    type Changeset = Option<T::Changeset>;
 
     fn as_changeset(self) -> Self::Changeset {
-        self
+        self.map(|v| v.as_changeset())
     }
 }
 
-impl<T: Changeset + ?Sized> Changeset for Box<T> {
-    type Target = T::Target;
-
-    fn is_noop(&self) -> bool {
-        (&**self).is_noop()
-    }
-
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        (&**self).to_sql(out)
-    }
-}
-
-impl<T: Changeset> Changeset for Option<T> {
-    type Target = T::Target;
-
+impl<T: Changeset<DB>, DB: Backend> Changeset<DB> for Option<T> {
     fn is_noop(&self) -> bool {
         self.is_none()
     }
 
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         match self {
             &Some(ref c) => c.to_sql(out),
             &None => Ok(()),

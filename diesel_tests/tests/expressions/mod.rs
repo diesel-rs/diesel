@@ -4,6 +4,7 @@ mod ops;
 use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
+use diesel::backend::Backend;
 use diesel::query_builder::*;
 use diesel::expression::dsl::*;
 
@@ -89,8 +90,11 @@ impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
     type SqlType = T;
 }
 
-impl<T: types::NativeSqlType> QueryFragment for Arbitrary<T> {
-    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
+impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
+    T: types::NativeSqlType,
+    DB: Backend,
+{
+    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 }

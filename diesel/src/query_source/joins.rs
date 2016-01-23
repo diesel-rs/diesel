@@ -32,7 +32,6 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
-    <Left as JoinTo<Right, Inner>>::JoinClause: QueryFragment,
     Right: Table,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
                                    InnerJoinSource<Left, Right>,
@@ -80,7 +79,6 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
 
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
-    <Left as JoinTo<Right, LeftOuter>>::JoinClause: QueryFragment,
     Right: Table,
     Right::SqlType: IntoNullable,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
@@ -110,12 +108,14 @@ pub trait JoinTo<T: Table, JoinType>: Table {
     fn join_clause(&self, join_type: JoinType) -> Self::JoinClause;
 }
 
+use backend::Backend;
+
 #[doc(hidden)]
 #[derive(Clone, Copy, Debug)]
 pub struct Inner;
 
-impl QueryFragment for Inner {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<DB: Backend> QueryFragment<DB> for Inner {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" INNER");
         Ok(())
     }
@@ -125,8 +125,8 @@ impl QueryFragment for Inner {
 #[derive(Clone, Copy, Debug)]
 pub struct LeftOuter;
 
-impl QueryFragment for LeftOuter {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<DB: Backend> QueryFragment<DB> for LeftOuter {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" LEFT OUTER");
         Ok(())
     }

@@ -1,5 +1,6 @@
 use schema::connection;
 use diesel::*;
+use diesel::backend::Pg;
 use diesel::types::*;
 
 #[test]
@@ -306,7 +307,7 @@ use diesel::query_builder::QueryFragment;
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
     T: NativeSqlType,
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), T> + QueryFragment,
+    U::Expression: SelectableExpression<(), T> + QueryFragment<Pg>,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();

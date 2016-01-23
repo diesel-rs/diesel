@@ -9,6 +9,7 @@ use std::ffi::{CString, CStr};
 use std::rc::Rc;
 use std::ptr;
 
+use backend::Pg;
 use db_result::DbResult;
 use expression::{AsExpression, Expression, NonAggregate};
 use expression::expression_methods::*;
@@ -114,7 +115,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
-        T::Query: QueryFragment,
+        T::Query: QueryFragment<Pg>,
         U: Queryable<T::SqlType>,
     {
         self.query_all(source)
@@ -124,7 +125,7 @@ impl Connection {
     #[doc(hidden)]
     pub fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
-        T::Query: QueryFragment,
+        T::Query: QueryFragment<Pg>,
         U: Queryable<T::SqlType>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
@@ -191,7 +192,7 @@ impl Connection {
     pub fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
         T: Table + FilterDsl<FindPredicate<T, PK>>,
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
-        Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment,
+        Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Pg>,
         U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
         AsExpr<PK, T::PrimaryKey>: NonAggregate,
@@ -202,14 +203,14 @@ impl Connection {
 
     #[doc(hidden)]
     pub fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment,
+        T: QueryFragment<Pg>,
     {
         let (sql, params, param_types) = self.prepare_query(source);
         self.exec_sql_params(&sql, &params, &Some(param_types))
             .map(|r| r.rows_affected())
     }
 
-    fn prepare_query<T: QueryFragment>(&self, source: &T)
+    fn prepare_query<T: QueryFragment<Pg>>(&self, source: &T)
         -> (String, Vec<Option<Vec<u8>>>, Vec<u32>)
     {
         let mut query_builder = PgQueryBuilder::new(&self.raw_connection);

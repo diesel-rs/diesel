@@ -1,3 +1,4 @@
+use backend::Backend;
 use query_builder::*;
 use super::{Expression, SelectableExpression, NonAggregate};
 use types::{NativeSqlType, ToSql, IsNull};
@@ -20,11 +21,12 @@ impl<T, U> Expression for Bound<T, U> where
     type SqlType = T;
 }
 
-impl<T, U> QueryFragment for Bound<T, U> where
+impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
+    DB: Backend,
     T: NativeSqlType,
     U: ToSql<T>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let mut bytes = Vec::new();
         match try!(self.item.to_sql(&mut bytes)) {
             IsNull::Yes => {

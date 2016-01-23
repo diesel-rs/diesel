@@ -24,11 +24,12 @@ macro_rules! infix_predicate_body {
             type SqlType = $return_type;
         }
 
-        impl<T, U> $crate::query_builder::QueryFragment for $name<T, U> where
-            T: $crate::query_builder::QueryFragment,
-            U: $crate::query_builder::QueryFragment,
+        impl<T, U, DB> $crate::query_builder::QueryFragment<DB> for $name<T, U> where
+            DB: $crate::backend::Backend,
+            T: $crate::query_builder::QueryFragment<DB>,
+            U: $crate::query_builder::QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(self.left.to_sql(out));
                 out.push_sql($operator);
                 self.right.to_sql(out)
@@ -96,10 +97,11 @@ macro_rules! postfix_predicate_body {
             type SqlType = $return_type;
         }
 
-        impl<T> $crate::query_builder::QueryFragment for $name<T> where
-            T: $crate::query_builder::QueryFragment,
+        impl<T, DB> $crate::query_builder::QueryFragment<DB> for $name<T> where
+            DB: $crate::backend::Backend,
+            T: $crate::query_builder::QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut $crate::query_builder::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(self.expr.to_sql(out));
                 out.push_sql($operator);
                 Ok(())
@@ -153,23 +155,35 @@ postfix_predicate!(IsNotNull, " IS NOT NULL");
 postfix_expression!(Asc, " ASC", ());
 postfix_expression!(Desc, " DESC", ());
 
+use backend::Backend;
 use query_source::Column;
 use query_builder::*;
 use super::SelectableExpression;
 
-impl<T, U> Changeset for Eq<T, U> where
-    T: Column + QueryFragment,
-    U: SelectableExpression<T::Table> + QueryFragment,
+impl<T, U, DB> Changeset<DB> for Eq<T, U> where
+    DB: Backend,
+    T: Column,
+    U: SelectableExpression<T::Table> + QueryFragment<DB>,
 {
-    type Target = T::Table;
-
     fn is_noop(&self) -> bool {
         false
     }
 
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
         QueryFragment::to_sql(&self.right, out)
+    }
+}
+
+impl<T, U> AsChangeset for Eq<T, U> where
+    T: Column,
+    U: SelectableExpression<T::Table>,
+{
+    type Target = T::Table;
+    type Changeset = Self;
+
+    fn as_changeset(self) -> Self {
+        self
     }
 }

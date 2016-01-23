@@ -1,3 +1,4 @@
+use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::nodes::{Identifier, InfixNode};
@@ -26,10 +27,11 @@ impl<'a, T> Expression for Aliased<'a, T> where
     type SqlType = T::SqlType;
 }
 
-impl<'a, T> QueryFragment for Aliased<'a, T> where
-    T: QueryFragment,
+impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
+    DB: Backend,
+    T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_identifier(&self.alias)
     }
 }

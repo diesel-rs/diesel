@@ -1,6 +1,7 @@
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::InsertableColumns;
-use query_builder::{Changeset, QueryBuilder, BuildQueryResult, QueryFragment};
+use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
@@ -72,8 +73,8 @@ macro_rules! tuple_impls {
                 type SqlType = ($(<$T as Expression>::SqlType),+);
             }
 
-            impl<$($T: QueryFragment),+> QueryFragment for ($($T,)+) {
-                fn to_sql(&self, out: &mut QueryBuilder)
+            impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
+                fn to_sql(&self, out: &mut DB::QueryBuilder)
                 -> BuildQueryResult {
                     $(
                         if e!($idx) != 0 {
@@ -115,17 +116,28 @@ macro_rules! tuple_impls {
             {
             }
 
-            impl<Target, $($T: Changeset<Target=Target>),+> Changeset for ($($T,)+) where
+            impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
+                $($T: AsChangeset<Target=Target>,)+
                 Target: QuerySource,
             {
                 type Target = Target;
+                type Changeset = ($($T::Changeset,)+);
 
+                fn as_changeset(self) -> Self::Changeset {
+                    ($(e!(self.$idx.as_changeset()),)+)
+                }
+            }
+
+            impl<DB, $($T,)+> Changeset<DB> for ($($T,)+) where
+                DB: Backend,
+                $($T: Changeset<DB>,)+
+            {
                 fn is_noop(&self) -> bool {
                     $(e!(self.$idx.is_noop()) &&)+ true
                 }
 
                 #[allow(unused_assignments)]
-                fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+                fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     let mut needs_comma = false;
                     $(
                         let noop_element = e!(self.$idx.is_noop());

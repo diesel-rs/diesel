@@ -1,3 +1,4 @@
+use backend::Backend;
 use expression::*;
 use expression::expression_methods::*;
 use expression::predicates::And;
@@ -5,7 +6,7 @@ use super::{QueryFragment, QueryBuilder, BuildQueryResult};
 use types::Bool;
 
 pub trait WhereAnd<Predicate> {
-    type Output: QueryFragment;
+    type Output;
 
     fn and(self, predicate: Predicate) -> Self::Output;
 }
@@ -13,14 +14,14 @@ pub trait WhereAnd<Predicate> {
 #[derive(Debug, Clone, Copy)]
 pub struct NoWhereClause;
 
-impl QueryFragment for NoWhereClause {
-    fn to_sql(&self, _out: &mut QueryBuilder) -> BuildQueryResult {
+impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
+    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 }
 
 impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
-    WhereClause<Predicate>: QueryFragment,
+    Predicate: Expression<SqlType=Bool>,
 {
     type Output = WhereClause<Predicate>;
 
@@ -32,15 +33,17 @@ impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
 #[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
 
-impl<Expr: QueryFragment> QueryFragment for WhereClause<Expr> {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
+    DB: Backend,
+    Expr: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" WHERE ");
         self.0.to_sql(out)
     }
 }
 
 impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
-    WhereClause<And<Expr, Predicate>>: QueryFragment,
     Expr: Expression<SqlType=Bool>,
     Predicate: Expression<SqlType=Bool>,
 {

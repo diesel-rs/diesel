@@ -1,5 +1,6 @@
 mod dsl_impls;
 
+use backend::Backend;
 use expression::*;
 use query_source::*;
 use std::marker::PhantomData;
@@ -82,16 +83,17 @@ impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of
     type SqlType = types::Array<ST>;
 }
 
-impl<ST, S, F, W, O, L, Of> QueryFragment for SelectStatement<ST, S, F, W, O, L, Of> where
-    S: QueryFragment,
+impl<ST, S, F, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, F, W, O, L, Of> where
+    DB: Backend,
+    S: QueryFragment<DB>,
     F: QuerySource,
-    F::FromClause: QueryFragment,
-    W: QueryFragment,
-    O: QueryFragment,
-    L: QueryFragment,
-    Of: QueryFragment,
+    F::FromClause: QueryFragment<DB>,
+    W: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    L: QueryFragment<DB>,
+    Of: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Select);
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
@@ -106,14 +108,15 @@ impl<ST, S, F, W, O, L, Of> QueryFragment for SelectStatement<ST, S, F, W, O, L,
     }
 }
 
-impl<ST, S, W, O, L, Of> QueryFragment for SelectStatement<ST, S, (), W, O, L, Of> where
-    S: QueryFragment,
-    W: QueryFragment,
-    O: QueryFragment,
-    L: QueryFragment,
-    Of: QueryFragment,
+impl<ST, S, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, (), W, O, L, Of> where
+    DB: Backend,
+    S: QueryFragment<DB>,
+    W: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    L: QueryFragment<DB>,
+    Of: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Select);
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));

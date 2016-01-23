@@ -4,6 +4,7 @@ pub mod target;
 pub use self::changeset::{Changeset, AsChangeset};
 pub use self::target::UpdateTarget;
 
+use backend::Backend;
 use expression::Expression;
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult, Context};
 use query_source::Table;
@@ -19,10 +20,10 @@ impl<T> IncompleteUpdateStatement<T> {
     }
 }
 
-impl<T> IncompleteUpdateStatement<T> {
+impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
     pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where
-        U: changeset::AsChangeset,
-        UpdateStatement<T, U::Changeset>: QueryFragment,
+        U: changeset::AsChangeset<Target=T::Table>,
+        UpdateQuery<T, U::Changeset>: Query,
     {
         UpdateStatement {
             target: self.0,
@@ -37,13 +38,14 @@ pub struct UpdateStatement<T, U> {
     values: U,
 }
 
-impl<T, U> QueryFragment for UpdateStatement<T, U> where
+impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
+    DB: Backend,
     T: UpdateTarget,
-    T::WhereClause: QueryFragment,
-    T::FromClause: QueryFragment,
-    U: changeset::Changeset<Target=T::Table>,
+    T::WhereClause: QueryFragment<DB>,
+    T::FromClause: QueryFragment<DB>,
+    U: changeset::Changeset<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Update);
         out.push_sql("UPDATE ");
         try!(self.target.from_clause().to_sql(out));
@@ -72,12 +74,13 @@ impl<T, U> AsQuery for UpdateStatement<T, U> where
 #[doc(hidden)]
 pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
-impl<T, U> QueryFragment for UpdateQuery<T, U> where
+impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
+    DB: Backend,
     T: UpdateTarget,
-    <T::Table as Table>::AllColumns: QueryFragment,
-    UpdateStatement<T, U>: QueryFragment,
+    <T::Table as Table>::AllColumns: QueryFragment<DB>,
+    UpdateStatement<T, U>: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_context(Context::Update);
         try!(self.0.to_sql(out));
         out.push_sql(" RETURNING ");
