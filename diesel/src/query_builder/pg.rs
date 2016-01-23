@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use connection::raw::RawConnection;
+use connection::pg::raw::RawConnection;
 use super::{QueryBuilder, Binds, BuildQueryResult, Context};
 use types::NativeSqlType;
 

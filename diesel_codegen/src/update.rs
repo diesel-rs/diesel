@@ -138,14 +138,15 @@ fn save_changes_impl(
         let pk_field = pk.field_name.unwrap();
         quote_item!(cx,
             impl<'a> $struct_name {
-                $_pub fn save_changes<T>(&self, connection: &::diesel::Connection)
+                $_pub fn save_changes<T, Conn>(&self, connection: &Conn)
                     -> ::diesel::QueryResult<T> where
                     T: Queryable<$sql_type>,
+                    Conn: Connection,
                 {
                     use ::diesel::update;
                     update($table.filter($table.primary_key().eq(&self.$pk_field)))
                         .set(self)
-                        .get_result(&connection)
+                        .get_result(connection)
                 }
             }
         )

@@ -4,6 +4,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 
 table! {
     users {
@@ -21,7 +22,7 @@ pub struct User {
 }
 
 fn main() {
-    let connection = Connection::establish("").unwrap();
+    let connection = PgConnection::establish("").unwrap();
     let mut user = User {
         name: "Sean".to_string(),
         hair_color: "black".to_string(),

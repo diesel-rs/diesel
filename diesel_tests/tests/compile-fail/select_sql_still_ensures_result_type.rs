@@ -2,6 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 
 table! {
     users {
@@ -11,7 +12,7 @@ table! {
 }
 
 fn main() {
-    let connection = Connection::establish("").unwrap();
+    let connection = PgConnection::establish("").unwrap();
     let select_count = users::table.select_sql::<types::BigInt>("COUNT(*)");
     let count = select_count.get_result::<String>(&connection).unwrap();
     //~^ ERROR E0277

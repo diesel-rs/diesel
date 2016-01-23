@@ -2,6 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 
 table! {
     users {
@@ -18,7 +19,7 @@ table! {
 }
 
 fn main() {
-    let connection = Connection::establish("").unwrap();
+    let connection = PgConnection::establish("").unwrap();
     let select_id = users::table.select(posts::id);
     //~^ ERROR SelectableExpression
     //~| ERROR E0277

@@ -120,7 +120,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User>(&connection);
+    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User, _>(&connection);
 
     let user_in_db = connection.find(users, sean.id);
 

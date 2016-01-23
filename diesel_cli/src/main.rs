@@ -5,7 +5,7 @@ extern crate diesel;
 
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use diesel::migrations;
+use diesel::{migrations, Connection};
 use std::{env, fs};
 use std::error::Error;
 
@@ -104,7 +104,7 @@ fn database_url(matches: &ArgMatches) -> String {
                 or the DATABASE_URL environment variable must be set.")
 }
 
-fn connection(database_url: &str) -> diesel::Connection {
-    diesel::Connection::establish(database_url)
+fn connection(database_url: &str) -> diesel::connection::PgConnection {
+    diesel::connection::PgConnection::establish(database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }

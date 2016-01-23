@@ -1,6 +1,7 @@
 mod data_structures;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::*;
@@ -76,8 +77,8 @@ fn establish_connection(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
-) -> Result<Connection, Box<MacResult>> {
-    Connection::establish(database_url).map_err(|_| {
+) -> Result<PgConnection, Box<MacResult>> {
+    PgConnection::establish(database_url).map_err(|_| {
         cx.span_err(sp, "failed to establish a database connection");
         DummyResult::any(sp)
     })
@@ -86,10 +87,10 @@ fn establish_connection(
 fn table_macro_call(
     cx: &mut ExtCtxt,
     sp: Span,
-    connection: &Connection,
+    connection: &PgConnection,
     table_name: &str,
 ) -> Result<P<ast::Item>, Box<MacResult>> {
-    match get_table_data(&connection, table_name) {
+    match get_table_data(connection, table_name) {
         Err(NotFound) => {
             cx.span_err(sp, &format!("no table exists named {}", table_name));
             Err(DummyResult::any(sp))
@@ -123,7 +124,7 @@ fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
     }
 }
 
-fn get_table_data(conn: &Connection, table_name: &str) -> QueryResult<Vec<PgAttr>> {
+fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<PgAttr>> {
     use self::data_structures::pg_attribute::dsl::*;
     use self::data_structures::pg_type::dsl::{pg_type, typname};
     let t_oid = try!(table_oid(conn, table_name));
@@ -133,13 +134,13 @@ fn get_table_data(conn: &Connection, table_name: &str) -> QueryResult<Vec<PgAttr
         .filter(attrelid.eq(t_oid))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
-        .load(&conn)
+        .load(conn)
         .map(|r| r.collect::<Vec<_>>())
 }
 
-fn table_oid(conn: &Connection, table_name: &str) -> QueryResult<u32> {
+fn table_oid(conn: &PgConnection, table_name: &str) -> QueryResult<u32> {
     use self::data_structures::pg_class::dsl::*;
-    pg_class.select(oid).filter(relname.eq(table_name)).first(&conn)
+    pg_class.select(oid).filter(relname.eq(table_name)).first(conn)
 }
 
 fn column_def_tokens(cx: &mut ExtCtxt, attr: &PgAttr) -> Vec<ast::TokenTree> {
@@ -172,14 +173,14 @@ fn capitalize(name: &str) -> String {
 fn load_table_names(
     cx: &mut ExtCtxt,
     sp: Span,
-    connection: &Connection,
+    connection: &PgConnection,
 ) -> Result<Vec<String>, Box<MacResult>> {
     use diesel::prelude::*;
     use diesel::expression::dsl::sql;
 
     let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
         .filter(sql::<types::Bool>("table_schema = 'public' AND table_name NOT LIKE '\\_\\_%'"));
-    query.load(&connection)
+    query.load(connection)
         .map(|r| r.collect())
         .map_err(|_| {
             cx.span_err(sp, "Error loading table names");
