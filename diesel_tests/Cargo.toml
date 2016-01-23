@@ -26,6 +26,8 @@ quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git" }
 default = ["syntex", "diesel_codegen/with-syntex", "dotenv_codegen"]
 unstable = ["compiletest_rs", "diesel_codegen/nightly", "diesel/unstable",
   "quickcheck/unstable", "dotenv_macros"]
+postgres = []
+sqlite = []
 
 [[test]]
 name = "compile_tests"

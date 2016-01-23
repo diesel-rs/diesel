@@ -9,24 +9,22 @@ use super::option::UnexpectedNullError;
 use types::{HasSqlType, FromSql, ToSql, IsNull, NotNull};
 use {Queryable, types};
 
-primitive_impls! {
-    Bool -> (bool, 16, 1000),
+primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer)));
 
-    SmallInt -> (i16, 21, 1005),
-    Integer -> (i32, 23, 1007),
-    BigInt -> (i64, 20, 1016),
+primitive_impls!(SmallInt -> (i16, pg: (21, 1005), sqlite: (SmallInt)));
+primitive_impls!(Integer -> (i32, pg: (23, 1007), sqlite: (Integer)));
+primitive_impls!(BigInt -> (i64, pg: (20, 1016), sqlite: (Long)));
 
-    Oid -> (u32, 26, 1018),
+primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 
-    Float -> (f32, 700, 1021),
-    Double -> (f64, 701, 1022),
-    Numeric -> (PgNumeric, 1700, 1231),
+primitive_impls!(Float -> (f32, pg: (700, 1021), sqlite: (Float)));
+primitive_impls!(Double -> (f64, pg: (701, 1022), sqlite: (Double)));
+primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231), sqlite: (Text)));
 
-    VarChar -> (String, 1043, 1015),
-    Text -> (String, 25, 1009),
+primitive_impls!(VarChar -> (String, pg: (1043, 1015), sqlite: (Text)));
+primitive_impls!(Text -> (String, pg: (25, 1009), sqlite: (Text)));
 
-    Binary -> (Vec<u8>, 17, 1001),
-}
+primitive_impls!(Binary -> (Vec<u8>, pg: (17, 1001), sqlite: (Binary)));
 
 expression_impls! {
     VarChar -> &'a str,

@@ -91,10 +91,19 @@ pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsErro
     Conn: Connection,
     String: FromSql<VarChar, Conn::Backend>,
 {
+    let migrations_dir = try!(find_migrations_directory());
+    run_pending_migrations_in_directory(conn, &migrations_dir)
+}
+
+#[doc(hidden)]
+pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path)
+    -> Result<(), RunMigrationsError> where
+        Conn: Connection,
+        String: FromSql<VarChar, Conn::Backend>,
+{
     try!(create_schema_migrations_table_if_needed(conn));
     let already_run = try!(previously_run_migration_versions(conn));
-    let migrations_dir = try!(find_migrations_directory());
-    let all_migrations = try!(migrations_in_directory(&migrations_dir));
+    let all_migrations = try!(migrations_in_directory(migrations_dir));
     let pending_migrations = all_migrations.into_iter().filter(|m| {
         !already_run.contains(m.version())
     });
@@ -147,7 +156,7 @@ pub fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -
     conn.silence_notices(|| {
         conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
             version VARCHAR PRIMARY KEY NOT NULL,
-            run_on TIMESTAMP NOT NULL DEFAULT NOW()
+            run_on TIMESTAMP NOT NULL DEFAULT 'now'
         )")
     })
 }

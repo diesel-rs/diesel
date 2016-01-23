@@ -3,7 +3,7 @@ use std::error::Error as StdError;
 use std::fmt::{self, Display, Write};
 use std::ffi::NulError;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 /// The generic "things can fail in a myriad of ways" enum. This type is not
 /// indended to be exhaustively matched, and new variants may be added in the
 /// future without a major version bump.
@@ -11,6 +11,7 @@ pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),
     NotFound,
+    QueryBuilderError(Box<StdError>),
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -78,6 +79,7 @@ impl Display for Error {
             &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
             &Error::DatabaseError(ref s) => write!(f, "{}", &s),
             &Error::NotFound => f.write_str("NotFound"),
+            &Error::QueryBuilderError(ref e) => e.fmt(f),
             &Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -89,6 +91,7 @@ impl StdError for Error {
             &Error::InvalidCString(ref nul_err) => nul_err.description(),
             &Error::DatabaseError(ref s) => &s,
             &Error::NotFound => "Record not found",
+            &Error::QueryBuilderError(ref e) => e.description(),
             &Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -126,6 +129,17 @@ impl<E: StdError> StdError for TransactionError<E> {
         match self {
             &TransactionError::CouldntCreateTransaction(ref e) => e.description(),
             &TransactionError::UserReturnedError(ref e) => e.description(),
+        }
+    }
+}
+
+impl PartialEq for Error {
+    fn eq(&self, other: &Error) -> bool {
+        match (self, other) {
+            (&Error::InvalidCString(ref a), &Error::InvalidCString(ref b)) => a == b,
+            (&Error::DatabaseError(ref a), &Error::DatabaseError(ref b)) => a == b,
+            (&Error::NotFound, &Error::NotFound) => true,
+            _ => false,
         }
     }
 }

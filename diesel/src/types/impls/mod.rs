@@ -92,28 +92,35 @@ macro_rules! queryable_impls {
 }
 
 macro_rules! primitive_impls {
-    ($($Source:ident -> ($Target:ty, $oid:expr, $array_oid:expr)),+,) => {
-        $(
-            impl types::HasSqlType<types::$Source> for $crate::backend::Pg {
-                fn metadata() -> $crate::backend::PgTypeMetadata {
-                    $crate::backend::PgTypeMetadata {
-                        oid: $oid,
-                        array_oid: $array_oid,
-                    }
+    ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr), sqlite: ($tpe:ident))) => {
+        impl types::HasSqlType<types::$Source> for $crate::backend::Sqlite {
+            fn metadata() -> $crate::backend::SqliteType {
+                $crate::backend::SqliteType::$tpe
+            }
+        }
+
+        primitive_impls!($Source -> ($Target, pg: ($oid, $array_oid)));
+    };
+
+    ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr))) => {
+        impl types::HasSqlType<types::$Source> for $crate::backend::Pg {
+            fn metadata() -> $crate::backend::PgTypeMetadata {
+                $crate::backend::PgTypeMetadata {
+                    oid: $oid,
+                    array_oid: $array_oid,
                 }
             }
+        }
 
-            impl types::HasSqlType<types::$Source> for $crate::backend::Debug {
-                fn metadata() {
-                    ()
-                }
-            }
+        impl types::HasSqlType<types::$Source> for $crate::backend::Debug {
+            fn metadata() {}
+        }
 
-            impl types::NotNull for types::$Source {
-            }
-        )+
-        queryable_impls!($($Source -> $Target),+,);
-        expression_impls!($($Source -> $Target),+,);
+        impl types::NotNull for types::$Source {
+        }
+
+        queryable_impls!($Source -> $Target,);
+        expression_impls!($Source -> $Target,);
     }
 }
 
@@ -123,4 +130,5 @@ pub mod floats;
 mod integers;
 mod option;
 mod primitives;
+mod sqlite;
 mod tuples;

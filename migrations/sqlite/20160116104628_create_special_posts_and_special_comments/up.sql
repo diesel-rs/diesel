@@ -1,0 +1,10 @@
+CREATE TABLE special_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title VARCHAR NOT NULL
+);
+
+CREATE TABLE special_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  special_post_id INTEGER NOT NULL
+);

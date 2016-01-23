@@ -22,10 +22,9 @@ macro_rules! tuple_impls {
             impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
                 $(DB: HasSqlType<$T>),+,
                 DB: Backend,
-                DB::TypeMetadata: Default,
             {
                 fn metadata() -> DB::TypeMetadata {
-                    Default::default()
+                    unreachable!("Tuples should never implement `ToSql` directly");
                 }
             }
 

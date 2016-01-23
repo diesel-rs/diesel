@@ -36,6 +36,7 @@ fn main() {
     let database_url = ::std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set to run tests");
     let connection = PgConnection::establish(&database_url).unwrap();
-    migrations::run_pending_migrations(&connection).unwrap();
+    let migrations_dir = migrations::find_migrations_directory().unwrap().join("postgresql");
+    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir).unwrap();
     inner::main();
 }

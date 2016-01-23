@@ -1,8 +1,10 @@
 extern crate libc;
 
 pub mod pg;
+pub mod sqlite;
 
 pub use self::pg::PgConnection;
+pub use self::sqlite::SqliteConnection;
 
 use backend::Backend;
 use query_builder::{AsQuery, QueryFragment};
