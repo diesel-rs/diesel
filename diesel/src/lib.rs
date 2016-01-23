@@ -71,7 +71,7 @@ pub mod prelude {
     pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
 }
 
-pub use connection::{Connection, Cursor};
+pub use connection::Connection;
 pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::functions::{insert, update, delete, select};

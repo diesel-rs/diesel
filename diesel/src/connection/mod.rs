@@ -4,8 +4,6 @@ mod cursor;
 #[doc(hidden)]
 pub mod raw;
 
-pub use self::cursor::Cursor;
-
 use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::rc::Rc;
@@ -22,6 +20,7 @@ use query_builder::pg::PgQueryBuilder;
 use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Queryable};
 use result::*;
+use self::cursor::Cursor;
 use self::raw::RawConnection;
 use types::{NativeSqlType, ToSql};
 
@@ -123,13 +122,14 @@ impl Connection {
     }
 
     #[doc(hidden)]
-    pub fn query_all<T, U>(&self, source: T) -> QueryResult<Cursor<T::SqlType, U>> where
+    pub fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
         T::Query: QueryFragment,
         U: Queryable<T::SqlType>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
-        self.exec_sql_params(&sql, &params, &Some(types)).map(Cursor::new)
+        self.exec_sql_params(&sql, &params, &Some(types))
+            .map(|r| Box::new(Cursor::new(r)) as Box<Iterator<Item=U>>)
     }
 
     fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<DbResult> {

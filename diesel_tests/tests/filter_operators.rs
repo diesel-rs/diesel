@@ -125,9 +125,7 @@ trait TestResultHelpers<U> {
     fn as_vec(self) -> Vec<U>;
 }
 
-impl<ST, U> TestResultHelpers<U> for QueryResult<Cursor<ST, U>> where
-    Cursor<ST, U>: Iterator<Item=U>,
-{
+impl<U> TestResultHelpers<U> for QueryResult<Box<Iterator<Item=U>>> {
     fn as_vec(self) -> Vec<U> {
         self.unwrap().collect()
     }

@@ -1,4 +1,4 @@
-use connection::{Connection, Cursor};
+use connection::Connection;
 use query_builder::{Query, QueryFragment, AsQuery};
 use query_source::Queryable;
 use result::QueryResult;
@@ -11,8 +11,8 @@ pub trait LoadDsl: AsQuery + Sized where
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
-    fn load<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
-        U: Queryable<Self::SqlType>
+    fn load<'a, U>(self, conn: &Connection) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+        U: Queryable<Self::SqlType> + 'a,
     {
         conn.query_all(self)
     }
@@ -40,8 +40,8 @@ pub trait LoadDsl: AsQuery + Sized where
     }
 
     /// Runs the command, returning an `Iterator` over the affected rows.
-    fn get_results<U>(self, conn: &Connection) -> QueryResult<Cursor<Self::SqlType, U>> where
-        U: Queryable<Self::SqlType>
+    fn get_results<'a, U>(self, conn: &Connection) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+        U: Queryable<Self::SqlType> + 'a,
     {
         self.load(conn)
     }
