@@ -11,18 +11,13 @@ use std::ptr;
 
 use backend::Pg;
 use db_result::DbResult;
-use expression::{AsExpression, NonAggregate};
-use expression::expression_methods::*;
-use helper_types::{FindBy, Limit};
-use expression::helper_types::AsExpr;
-use query_builder::{AsQuery, Query, QueryFragment};
+use query_builder::{AsQuery, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
-use query_dsl::{FilterDsl, LimitDsl};
-use query_source::{Table, Queryable};
+use query_source::Queryable;
 use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
-use super::{SimpleConnection, Connection, PkType, FindPredicate};
+use super::{SimpleConnection, Connection};
 use types::{NativeSqlType, ToSql};
 
 /// The connection string expected by `PgConnection::establish`
@@ -58,49 +53,8 @@ impl Connection for PgConnection {
         })
     }
 
-    fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
-        F: FnOnce() -> Result<T, E>,
-    {
-        try!(self.begin_transaction());
-        match f() {
-            Ok(value) => {
-                try!(self.commit_transaction());
-                Ok(value)
-            },
-            Err(e) => {
-                try!(self.rollback_transaction());
-                Err(TransactionError::UserReturnedError(e))
-            },
-        }
-    }
-
-    fn begin_test_transaction(&self) -> QueryResult<usize> {
-        assert_eq!(self.transaction_depth.get(), 0);
-        self.begin_transaction()
-    }
-
-    fn test_transaction<T, E, F>(&self, f: F) -> T where
-        F: FnOnce() -> Result<T, E>,
-    {
-        let mut user_result = None;
-        let _ = self.transaction::<(), _, _>(|| {
-            user_result = f().ok();
-            Err(())
-        });
-        user_result.expect("Transaction did not succeed")
-    }
-
     fn execute(&self, query: &str) -> QueryResult<usize> {
         self.execute_inner(query).map(|res| res.rows_affected())
-    }
-
-    fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
-        T: AsQuery,
-        T::Query: QueryFragment<Pg>,
-        U: Queryable<T::SqlType>,
-    {
-        self.query_all(source)
-            .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
     }
 
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
@@ -111,18 +65,6 @@ impl Connection for PgConnection {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types))
             .map(|r| Box::new(Cursor::new(r)) as Box<Iterator<Item=U>>)
-    }
-
-    fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
-        T: Table + FilterDsl<FindPredicate<T, PK>>,
-        FindBy<T, T::PrimaryKey, PK>: LimitDsl,
-        Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Pg>,
-        U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
-        PK: AsExpression<PkType<T>>,
-        AsExpr<PK, T::PrimaryKey>: NonAggregate,
-    {
-        let pk = source.primary_key();
-        self.query_one(source.filter(pk.eq(id)).limit(1))
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
@@ -138,6 +80,39 @@ impl Connection for PgConnection {
         let result = f();
         self.raw_connection.set_notice_processor(default_notice_processor);
         result
+    }
+
+    fn begin_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(1, if transaction_depth == 0 {
+            self.execute("BEGIN")
+        } else {
+            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+        })
+    }
+
+    fn rollback_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth == 1 {
+            self.execute("ROLLBACK")
+        } else {
+            self.execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn commit_transaction(&self) -> QueryResult<()> {
+        let transaction_depth = self.transaction_depth.get();
+        self.change_transaction_depth(-1, if transaction_depth <= 1 {
+            self.execute("COMMIT")
+        } else {
+            self.execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
+                                  transaction_depth - 1))
+        })
+    }
+
+    fn get_transaction_depth(&self) -> i32 {
+        self.transaction_depth.get()
     }
 }
 
@@ -189,40 +164,11 @@ impl PgConnection {
         self.raw_connection.last_error_message()
     }
 
-    fn begin_transaction(&self) -> QueryResult<usize> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            self.execute("BEGIN")
-        } else {
-            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
-    }
-
-    fn rollback_transaction(&self) -> QueryResult<usize> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth == 1 {
-            self.execute("ROLLBACK")
-        } else {
-            self.execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    fn commit_transaction(&self) -> QueryResult<usize> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth <= 1 {
-            self.execute("COMMIT")
-        } else {
-            self.execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<usize> {
+    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
         if query.is_ok() {
             self.transaction_depth.set(self.transaction_depth.get() + by);
         }
-        query
+        query.map(|_| ())
     }
 }
 

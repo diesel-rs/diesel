@@ -6,6 +6,7 @@ pub use self::pg::PgConnection;
 
 use backend::Backend;
 use expression::{AsExpression, Expression, NonAggregate};
+use expression::expression_methods::*;
 use expression::predicates::Eq;
 use helper_types::{FindBy, Limit};
 use expression::helper_types::AsExpr;
@@ -43,16 +44,40 @@ pub trait Connection: SimpleConnection + Sized {
     /// [`TransactionError::UserReturnedError`](result/enum.TransactionError.html#variant.UserReturnedError)
     /// will be returned wrapping that value.
     fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
-        F: FnOnce() -> Result<T, E>;
+        F: FnOnce() -> Result<T, E>,
+    {
+        try!(self.begin_transaction());
+        match f() {
+            Ok(value) => {
+                try!(self.commit_transaction());
+                Ok(value)
+            },
+            Err(e) => {
+                try!(self.rollback_transaction());
+                Err(TransactionError::UserReturnedError(e))
+            },
+        }
+    }
 
     /// Creates a transaction that will never be committed. This is useful for
     /// tests. Panics if called while inside of a transaction.
-    fn begin_test_transaction(&self) -> QueryResult<usize>;
+    fn begin_test_transaction(&self) -> QueryResult<()> {
+        assert_eq!(self.get_transaction_depth(), 0);
+        self.begin_transaction()
+    }
 
     /// Executes the given function inside a transaction, but does not commit
     /// it. Panics if the given function returns an `Err`.
     fn test_transaction<T, E, F>(&self, f: F) -> T where
-        F: FnOnce() -> Result<T, E>;
+        F: FnOnce() -> Result<T, E>,
+    {
+        let mut user_result = None;
+        let _ = self.transaction::<(), _, _>(|| {
+            user_result = f().ok();
+            Err(())
+        });
+        user_result.expect("Transaction did not succeed")
+    }
 
     #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize>;
@@ -61,7 +86,11 @@ pub trait Connection: SimpleConnection + Sized {
     fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
-        U: Queryable<T::SqlType>;
+        U: Queryable<T::SqlType>,
+    {
+        self.query_all(source)
+            .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
+    }
 
     #[doc(hidden)]
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
@@ -101,12 +130,19 @@ pub trait Connection: SimpleConnection + Sized {
         Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Self::Backend>,
         U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
-        AsExpr<PK, T::PrimaryKey>: NonAggregate;
+        AsExpr<PK, T::PrimaryKey>: NonAggregate,
+    {
+        let pk = source.primary_key();
+        self.query_one(source.filter(pk.eq(id)).limit(1))
+    }
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend>;
 
-    #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
+    #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
+    #[doc(hidden)] fn begin_transaction(&self) -> QueryResult<()>;
+    #[doc(hidden)] fn rollback_transaction(&self) -> QueryResult<()>;
+    #[doc(hidden)] fn commit_transaction(&self) -> QueryResult<()>;
+    #[doc(hidden)] fn get_transaction_depth(&self) -> i32;
 }
