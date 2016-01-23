@@ -2,6 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 
 table! {
     int_primary_key {
@@ -16,7 +17,7 @@ table! {
 }
 
 fn main() {
-    let connection = Connection::establish("").unwrap();
+    let connection = PgConnection::establish("").unwrap();
     let one = connection.find(int_primary_key::table, "1".to_string()).unwrap();
     //~^ ERROR E0277
     //~| ERROR E0277

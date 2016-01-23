@@ -2,6 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::connection::PgConnection;
 
 table! {
     users {
@@ -13,7 +14,7 @@ table! {
 fn main() {
     use self::users::dsl::*;
 
-    let connection = Connection::establish("").unwrap();
+    let connection = PgConnection::establish("").unwrap();
     let select_id = users.select(id);
     let select_name = users.select(name);
 

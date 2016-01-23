@@ -1,4 +1,5 @@
 use diesel::*;
+pub use diesel::connection::PgConnection;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[changeset_for(users)]
@@ -107,27 +108,27 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
-pub fn connection() -> Connection {
+pub fn connection() -> PgConnection {
     let result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
     result
 }
 
-pub fn connection_without_transaction() -> Connection {
+pub fn connection_without_transaction() -> PgConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    Connection::establish(&connection_url).unwrap()
+    PgConnection::establish(&connection_url).unwrap()
 }
 
-pub fn connection_with_sean_and_tess_in_users_table() -> Connection {
+pub fn connection_with_sean_and_tess_in_users_table() -> PgConnection {
     let connection = connection();
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     connection
 }
 
-pub fn find_user_by_name(name: &str, connection: &Connection) -> User {
+pub fn find_user_by_name(name: &str, connection: &PgConnection) -> User {
     users::table.filter(users::name.eq(name))
-        .first(&connection)
+        .first(connection)
         .unwrap()
 }

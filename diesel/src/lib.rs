@@ -4,6 +4,7 @@
 #![deny(warnings)]
 #![cfg_attr(feature = "unstable", feature(time2))]
 pub mod backend;
+pub mod connection;
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;
@@ -12,7 +13,6 @@ pub mod types;
 #[macro_use]
 mod macros;
 
-mod connection;
 mod db_result;
 pub mod migrations;
 pub mod query_builder;

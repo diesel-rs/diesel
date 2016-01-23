@@ -131,7 +131,7 @@ impl<U> TestResultHelpers<U> for QueryResult<Box<Iterator<Item=U>>> {
     }
 }
 
-fn connection_with_3_users() -> Connection {
+fn connection_with_3_users() -> PgConnection {
     let connection = connection_with_sean_and_tess_in_users_table();
     connection.execute("INSERT INTO users (id, name) VALUES (3, 'Jim')").unwrap();
     connection

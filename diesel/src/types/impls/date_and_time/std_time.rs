@@ -74,17 +74,17 @@ mod tests {
     use std::time::{SystemTime, Duration, UNIX_EPOCH};
 
     use ::select;
-    use connection::Connection;
+    use connection::{Connection, PgConnection};
     use expression::dsl::{sql, now};
     use prelude::*;
     use types::Timestamp;
 
-    fn connection() -> Connection {
+    fn connection() -> PgConnection {
         dotenv().ok();
 
         let connection_url = ::std::env::var("DATABASE_URL").ok()
             .expect("DATABASE_URL must be set in order to run tests");
-        Connection::establish(&connection_url).unwrap()
+        PgConnection::establish(&connection_url).unwrap()
     }
 
     #[test]

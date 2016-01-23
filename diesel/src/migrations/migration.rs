@@ -1,12 +1,12 @@
-use connection::Connection;
+use connection::SimpleConnection;
 use super::{MigrationError, RunMigrationsError};
 
 use std::path::{Path, PathBuf};
 
 pub trait Migration {
     fn version(&self) -> &str;
-    fn run(&self, conn: &Connection) -> Result<(), RunMigrationsError>;
-    fn revert(&self, conn: &Connection) -> Result<(), RunMigrationsError>;
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
@@ -56,16 +56,16 @@ impl Migration for SqlFileMigration {
         &self.1
     }
 
-    fn run(&self, conn: &Connection) -> Result<(), RunMigrationsError> {
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
         run_sql_from_file(conn, &self.0.join("up.sql"))
     }
 
-    fn revert(&self, conn: &Connection) -> Result<(), RunMigrationsError> {
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
         run_sql_from_file(conn, &self.0.join("down.sql"))
     }
 }
 
-fn run_sql_from_file(conn: &Connection, path: &Path) -> Result<(), RunMigrationsError> {
+fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigrationsError> {
     let mut sql = String::new();
     let mut file = try!(File::open(path));
     try!(file.read_to_string(&mut sql));

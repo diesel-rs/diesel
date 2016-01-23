@@ -1,7 +1,7 @@
 extern crate pq_sys;
 extern crate libc;
 
-use connection::Connection;
+use connection::pg::PgConnection;
 use result::{Error, QueryResult};
 use row::DbRow;
 
@@ -14,7 +14,7 @@ pub struct DbResult {
 }
 
 impl DbResult {
-    pub fn new(conn: &Connection, internal_result: *mut PGresult) -> QueryResult<Self> {
+    pub fn new(conn: &PgConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {

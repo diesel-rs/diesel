@@ -111,16 +111,16 @@ fn test_transaction_panics_on_error() {
     });
 }
 
-fn setup_test_table(connection: &Connection, table_name: &str) {
+fn setup_test_table(connection: &PgConnection, table_name: &str) {
     connection.execute(&format!("CREATE TABLE {} (id SERIAL PRIMARY KEY)", table_name)).unwrap();
 }
 
-fn drop_test_table(connection: &Connection, table_name: &str) {
+fn drop_test_table(connection: &PgConnection, table_name: &str) {
     connection.execute(&format!("DROP TABLE {}", table_name)).unwrap();
 }
 
-fn count_test_table(connection: &Connection, table_name: &str) -> i64 {
+fn count_test_table(connection: &PgConnection, table_name: &str) -> i64 {
     use diesel::expression::dsl::sql;
     select(sql::<types::BigInt>(&format!("COUNT(*) FROM {}", table_name)))
-        .first(&connection).unwrap()
+        .first(connection).unwrap()
 }

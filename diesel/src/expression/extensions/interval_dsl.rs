@@ -248,7 +248,7 @@ mod tests {
     use self::dotenv::dotenv;
 
     use ::{types, select};
-    use connection::Connection;
+    use connection::{Connection, PgConnection};
     use data_types::PgInterval;
     use expression::dsl::sql;
     use prelude::*;
@@ -261,7 +261,7 @@ mod tests {
 
                 let connection_url = ::std::env::var("DATABASE_URL").ok()
                     .expect("DATABASE_URL must be set in order to run tests");
-                let connection = Connection::establish(&connection_url).unwrap();
+                let connection = PgConnection::establish(&connection_url).unwrap();
 
                 let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
                 let query = select(sql::<types::Interval>(&sql_str));
