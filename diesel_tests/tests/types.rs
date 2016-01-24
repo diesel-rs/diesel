@@ -298,7 +298,6 @@ fn pg_numeric_from_sql() {
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
     use std::io::prelude::*;
-    use diesel::backend::TypeMetadata;
 
     struct MyInt;
 
