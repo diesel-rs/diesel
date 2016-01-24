@@ -6,13 +6,12 @@ use query_builder::offset_clause::*;
 use query_builder::order_clause::*;
 use query_builder::where_clause::*;
 use query_dsl::*;
-use types::{self, Bool, NativeSqlType};
+use types::{self, Bool};
 
 impl<ST, S, F, W, O, L, Of, Selection, Type> SelectDsl<Selection, Type>
     for SelectStatement<ST, S, F, W, O, L, Of> where
     Selection: Expression,
     SelectStatement<Type, Selection, F, W, O, L, Of>: Query<SqlType=Type>,
-    Type: NativeSqlType,
 {
     type Output = SelectStatement<Type, Selection, F, W, O, L, Of>;
 
@@ -38,7 +37,6 @@ impl<ST, S, F, W, O, L, Of, Predicate> FilterDsl<Predicate>
 
 impl<ST, S, F, W, O, L, Of, Expr> OrderDsl<Expr>
     for SelectStatement<ST, S, F, W, O, L, Of> where
-    ST: NativeSqlType,
     Expr: SelectableExpression<F>,
     SelectStatement<ST, S, F, W, OrderClause<Expr>, L, Of>: Query<SqlType=ST>,
 {
@@ -55,7 +53,6 @@ impl<ST, S, F, W, O, L, Of, Expr> OrderDsl<Expr>
 pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
 
 impl<ST, S, F, W, O, L, Of> LimitDsl for SelectStatement<ST, S, F, W, O, L, Of> where
-    ST: NativeSqlType,
     SelectStatement<ST, S, F, W, O, LimitClause<Limit>, Of>: Query<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, W, O, LimitClause<Limit>, Of>;
@@ -71,7 +68,6 @@ impl<ST, S, F, W, O, L, Of> LimitDsl for SelectStatement<ST, S, F, W, O, L, Of> 
 pub type Offset = Limit;
 
 impl<ST, S, F, W, O, L, Of> OffsetDsl for SelectStatement<ST, S, F, W, O, L, Of> where
-    ST: NativeSqlType,
     SelectStatement<ST, S, F, W, O, L, OffsetClause<Offset>>: Query<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, W, O, L, OffsetClause<Offset>>;

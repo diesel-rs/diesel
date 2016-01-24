@@ -294,7 +294,48 @@ fn pg_numeric_from_sql() {
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
 }
 
-fn query_single_value<T: NativeSqlType, U: Queryable<T, Pg>>(sql_str: &str) -> U {
+#[test]
+fn third_party_crates_can_add_new_types() {
+    use std::error::Error;
+    use std::io::prelude::*;
+    use diesel::backend::TypeMetadata;
+
+    struct MyInt;
+
+    impl HasSqlType<MyInt> for Pg {
+        fn metadata() -> Self::TypeMetadata {
+            <Pg as HasSqlType<Integer>>::metadata()
+        }
+    }
+
+    impl FromSql<MyInt, Pg> for i32 {
+        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+            FromSql::<Integer, Pg>::from_sql(bytes)
+        }
+    }
+
+    impl FromSqlRow<MyInt, Pg> for i32 {
+        fn build_from_row<R: ::diesel::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+            FromSql::<MyInt, Pg>::from_sql(row.take())
+        }
+    }
+
+    impl Queryable<MyInt, Pg> for i32 {
+        type Row = Self;
+
+        fn build(row: Self) -> Self {
+            row
+        }
+    }
+
+    assert_eq!(0, query_single_value::<MyInt, i32>("0"));
+    assert_eq!(-1, query_single_value::<MyInt, i32>("-1"));
+    assert_eq!(70000, query_single_value::<MyInt, i32>("70000"));
+}
+
+fn query_single_value<T, U: Queryable<T, Pg>>(sql_str: &str) -> U where
+    Pg: HasSqlType<T>,
+{
     use diesel::expression::dsl::sql;
     let connection = connection();
     select(sql::<T>(sql_str)).first(&connection).unwrap()
@@ -305,7 +346,7 @@ use diesel::expression::AsExpression;
 use diesel::query_builder::QueryFragment;
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
-    T: NativeSqlType,
+    Pg: HasSqlType<T>,
     U: AsExpression<T> + Debug + Clone,
     U::Expression: SelectableExpression<(), T> + QueryFragment<Pg>,
 {

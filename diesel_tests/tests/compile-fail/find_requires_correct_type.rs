@@ -26,8 +26,10 @@ fn main() {
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
+    //~| ERROR E0277
     let string = connection.find(string_primary_key::table, 1).unwrap();
     //~^ ERROR E0277
+    //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277

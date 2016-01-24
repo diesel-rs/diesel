@@ -31,7 +31,6 @@ macro_rules! column {
 
         impl<'a, ST, Left, Right> SelectableExpression<
             $crate::WithQuerySource<'a, Left, Right>, ST> for $column_name where
-            ST: NativeSqlType,
             $column_name: SelectableExpression<Left, ST>
         {
         }

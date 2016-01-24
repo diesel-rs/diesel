@@ -1,13 +1,13 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression};
 use query_builder::*;
-use types::{SqlOrd, NativeSqlType};
+use types::{SqlOrd, HasSqlType};
 
 macro_rules! ord_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {
         #[doc=$docs]
         pub fn $fn_name<ST, T>(t: T) -> $type_name<T> where
-            ST: NativeSqlType + SqlOrd,
+            ST: SqlOrd,
             T: Expression<SqlType=ST>,
         {
             $type_name {
@@ -24,7 +24,10 @@ macro_rules! ord_function {
             type SqlType = T::SqlType;
         }
 
-        impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for $type_name<T> {
+        impl<T, DB> QueryFragment<DB> for $type_name<T> where
+            T: Expression + QueryFragment<DB>,
+            DB: Backend + HasSqlType<T::SqlType>,
+        {
             fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                 out.push_sql(concat!($operator, "("));
                 try!(self.target.to_sql(out));

@@ -57,7 +57,7 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;
-use types::NativeSqlType;
+use types::HasSqlType;
 
 /// Represents a typed fragment of SQL. Apps should not need to implement this
 /// type directly, but it may be common to use this as type boundaries.
@@ -66,7 +66,7 @@ use types::NativeSqlType;
 /// [`postfix_predicate!`](../macro.postfix_predicate!.html) instead of
 /// implementing this directly.
 pub trait Expression {
-    type SqlType: NativeSqlType;
+    type SqlType;
 }
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
@@ -86,7 +86,7 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///
 /// This trait allows us to use primitives on the right hand side of various
 /// expressions. For example `name.eq("Sean")`
-pub trait AsExpression<T: NativeSqlType> {
+pub trait AsExpression<T> {
     type Expression: Expression<SqlType=T>;
 
     fn as_expression(self) -> Self::Expression;
@@ -109,20 +109,18 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// all sources. All other expressions will inherit this from their children.
 pub trait SelectableExpression<
     QS,
-    Type: NativeSqlType = <Self as Expression>::SqlType,
+    Type = <Self as Expression>::SqlType,
 >: Expression {
 }
 
 impl<T: ?Sized, ST, QS> SelectableExpression<QS, ST> for Box<T> where
     T: SelectableExpression<QS, ST>,
-    ST: NativeSqlType,
     Box<T>: Expression,
 {
 }
 
 impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
     T: SelectableExpression<QS, ST>,
-    ST: NativeSqlType,
     &'a T: Expression,
 {
 }
@@ -146,8 +144,7 @@ use query_builder::QueryFragment;
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
 pub trait BoxableExpression<QS, ST, DB> where
-    ST: NativeSqlType,
-    DB: Backend,
+    DB: Backend + HasSqlType<ST>,
     Self: Expression,
     Self: SelectableExpression<QS, ST>,
     Self: NonAggregate,
@@ -155,8 +152,7 @@ pub trait BoxableExpression<QS, ST, DB> where
 {}
 
 impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
-    ST: NativeSqlType,
-    DB: Backend,
+    DB: Backend + HasSqlType<ST>,
     T: Expression,
     T: SelectableExpression<QS, ST>,
     T: NonAggregate,

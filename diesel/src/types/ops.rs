@@ -2,26 +2,24 @@
 //!
 //! Crates which add new types which allow numeric operators should implement these traits to
 //! specify what the output is for a given right hand side
-use super::NativeSqlType;
-
-pub trait Add: NativeSqlType {
-    type Rhs: NativeSqlType;
-    type Output: NativeSqlType;
+pub trait Add {
+    type Rhs;
+    type Output;
 }
 
-pub trait Sub: NativeSqlType {
-    type Rhs: NativeSqlType;
-    type Output: NativeSqlType;
+pub trait Sub {
+    type Rhs;
+    type Output;
 }
 
-pub trait Mul: NativeSqlType {
-    type Rhs: NativeSqlType;
-    type Output: NativeSqlType;
+pub trait Mul {
+    type Rhs;
+    type Output;
 }
 
-pub trait Div: NativeSqlType {
-    type Rhs: NativeSqlType;
-    type Output: NativeSqlType;
+pub trait Div {
+    type Rhs;
+    type Output;
 }
 
 macro_rules! numeric_type {

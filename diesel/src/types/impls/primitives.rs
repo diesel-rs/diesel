@@ -6,7 +6,7 @@ use data_types::PgNumeric;
 use expression::bound::Bound;
 use expression::AsExpression;
 use super::option::UnexpectedNullError;
-use types::{NativeSqlType, FromSql, ToSql, IsNull, NotNull};
+use types::{HasSqlType, FromSql, ToSql, IsNull, NotNull};
 use {Queryable, types};
 
 primitive_impls! {
@@ -35,13 +35,12 @@ expression_impls! {
     Binary -> &'a [u8],
 }
 
-impl NativeSqlType for () {
-    fn oid() -> u32 {
-        0
-    }
-
-    fn array_oid() -> u32 {
-        0
+impl<DB> HasSqlType<()> for DB where
+    DB: Backend,
+    DB::TypeMetadata: Default,
+{
+    fn metadata() -> DB::TypeMetadata {
+        Default::default()
     }
 }
 
@@ -145,9 +144,8 @@ impl<'a, DB: Backend> ToSql<types::Binary, DB> for &'a [u8] {
 
 use std::borrow::{Cow, ToOwned};
 impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T> where
-    ST: NativeSqlType,
     T: 'a + ToOwned + ToSql<ST, DB>,
-    DB: Backend,
+    DB: Backend + HasSqlType<ST>,
     T::Owned: ToSql<ST, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
@@ -159,9 +157,8 @@ impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T> where
 }
 
 impl<'a, T: ?Sized, ST, DB> FromSql<ST, DB> for Cow<'a, T> where
-    ST: NativeSqlType,
     T: 'a + ToOwned,
-    DB: Backend,
+    DB: Backend + HasSqlType<ST>,
     T::Owned: FromSql<ST, DB>,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
@@ -170,9 +167,8 @@ impl<'a, T: ?Sized, ST, DB> FromSql<ST, DB> for Cow<'a, T> where
 }
 
 impl <'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T> where
-    ST: NativeSqlType,
     T: 'a + ToOwned,
-    DB: Backend,
+    DB: Backend + HasSqlType<ST>,
     Cow<'a, T>: FromSql<ST, DB>,
 {
     fn build_from_row<R: ::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {

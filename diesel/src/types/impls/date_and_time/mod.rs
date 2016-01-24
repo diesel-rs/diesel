@@ -7,7 +7,7 @@ use expression::*;
 use expression::bound::Bound;
 use query_source::Queryable;
 use super::option::UnexpectedNullError;
-use types::{self, NativeSqlType, FromSql, ToSql, IsNull};
+use types::{self, FromSql, ToSql, IsNull};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;

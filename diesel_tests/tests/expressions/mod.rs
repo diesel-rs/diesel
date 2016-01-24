@@ -82,16 +82,15 @@ fn max_returns_same_type_as_expression_being_maximized() {
 
 use std::marker::PhantomData;
 
-struct Arbitrary<T: types::NativeSqlType> {
+struct Arbitrary<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T: types::NativeSqlType> Expression for Arbitrary<T> {
+impl<T> Expression for Arbitrary<T> {
     type SqlType = T;
 }
 
 impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
-    T: types::NativeSqlType,
     DB: Backend,
 {
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
@@ -99,9 +98,9 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     }
 }
 
-impl<T: types::NativeSqlType, QS> SelectableExpression<QS> for Arbitrary<T> {}
+impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}
 
-fn arbitrary<T: types::NativeSqlType>() -> Arbitrary<T> {
+fn arbitrary<T>() -> Arbitrary<T> {
     Arbitrary { _marker: PhantomData }
 }
 

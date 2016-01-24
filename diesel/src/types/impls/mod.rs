@@ -45,7 +45,7 @@ macro_rules! expression_impls {
             }
 
             impl<'a, DB> ToSql<types::Nullable<types::$Source>, DB> for $Target where
-                DB: $crate::backend::Backend,
+                DB: $crate::backend::Backend + types::HasSqlType<types::$Source>,
                 $Target: ToSql<types::$Source, DB>,
             {
                 fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
@@ -60,7 +60,7 @@ macro_rules! queryable_impls {
     ($($Source:ident -> $Target:ty),+,) => {$(
         //FIXME: This can be made generic w/ specialization by making FromSql imply FromSqlRow
         impl<DB> $crate::types::FromSqlRow<types::$Source, DB> for $Target where
-            DB: $crate::backend::Backend,
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSql<types::$Source, DB>,
         {
             fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
@@ -70,7 +70,7 @@ macro_rules! queryable_impls {
 
         //FIXME: This can be made generic w/ specialization by making FromSql imply FromSqlRow
         impl<DB> $crate::types::FromSqlRow<types::Nullable<types::$Source>, DB> for Option<$Target> where
-            DB: $crate::backend::Backend,
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             Option<$Target>: $crate::types::FromSql<types::Nullable<types::$Source>, DB>,
         {
             fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
@@ -79,7 +79,7 @@ macro_rules! queryable_impls {
         }
 
         impl<DB> Queryable<types::$Source, DB> for $Target where
-            DB: $crate::backend::Backend,
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSqlRow<types::$Source, DB>,
         {
             type Row = Self;
@@ -94,13 +94,18 @@ macro_rules! queryable_impls {
 macro_rules! primitive_impls {
     ($($Source:ident -> ($Target:ty, $oid:expr, $array_oid:expr)),+,) => {
         $(
-            impl NativeSqlType for types::$Source {
-                fn oid() -> u32 {
-                    $oid
+            impl types::HasSqlType<types::$Source> for $crate::backend::Pg {
+                fn metadata() -> $crate::backend::PgTypeMetadata {
+                    $crate::backend::PgTypeMetadata {
+                        oid: $oid,
+                        array_oid: $array_oid,
+                    }
                 }
+            }
 
-                fn array_oid() -> u32 {
-                    $array_oid
+            impl types::HasSqlType<types::$Source> for $crate::backend::Debug {
+                fn metadata() {
+                    ()
                 }
             }
 

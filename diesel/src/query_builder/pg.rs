@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
+use backend::Pg;
 use connection::pg::raw::RawConnection;
 use super::{QueryBuilder, Binds, BuildQueryResult, Context};
-use types::NativeSqlType;
+use types::HasSqlType;
 
 pub struct PgQueryBuilder {
     conn: Rc<RawConnection>,
@@ -26,7 +27,7 @@ impl PgQueryBuilder {
     }
 }
 
-impl QueryBuilder for PgQueryBuilder {
+impl QueryBuilder<Pg> for PgQueryBuilder {
     fn push_sql(&mut self, sql: &str) {
         self.sql.push_str(sql);
     }
@@ -36,7 +37,9 @@ impl QueryBuilder for PgQueryBuilder {
         Ok(self.push_sql(&escaped_identifier))
     }
 
-    fn push_bound_value<T: NativeSqlType>(&mut self, bind: Option<Vec<u8>>) {
+    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
+        Pg: HasSqlType<T>,
+    {
         match (self.context_stack.first(), bind) {
             (Some(&Context::Insert), None) => self.push_sql("DEFAULT"),
             (_, bind) => {
@@ -44,7 +47,7 @@ impl QueryBuilder for PgQueryBuilder {
                 let sql = format!("${}", self.bind_idx);
                 self.push_sql(&sql);
                 self.binds.push(bind);
-                self.bind_types.push(T::oid());
+                self.bind_types.push(Pg::metadata().oid);
             }
         }
     }

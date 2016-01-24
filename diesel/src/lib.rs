@@ -19,7 +19,8 @@ pub mod query_builder;
 mod query_dsl;
 pub mod query_source;
 pub mod result;
-mod row;
+#[doc(hidden)]
+pub mod row;
 
 pub mod helper_types {
     //! Provide helper types for concisely writing the return type of functions.

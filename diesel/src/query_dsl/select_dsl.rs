@@ -1,7 +1,6 @@
 use expression::*;
 use query_builder::{Query, AsQuery};
 use query_source::QuerySource;
-use types::NativeSqlType;
 
 /// Sets the select clause of a query. If there was already a select clause, it
 /// will be overridden. The expression passed to `select` must actually be valid
@@ -9,7 +8,7 @@ use types::NativeSqlType;
 /// aggregate + non-aggregate expressions, etc).
 pub trait SelectDsl<
     Selection: Expression,
-    Type: NativeSqlType = <Selection as Expression>::SqlType,
+    Type = <Selection as Expression>::SqlType,
 > {
     type Output: Query<SqlType=Type>;
 
@@ -18,7 +17,6 @@ pub trait SelectDsl<
 
 impl<T, Selection, Type> SelectDsl<Selection, Type> for T where
     Selection: Expression,
-    Type: NativeSqlType,
     T: QuerySource + AsQuery,
     T::Query: SelectDsl<Selection, Type>,
 {
@@ -33,7 +31,6 @@ impl<T, Selection, Type> SelectDsl<Selection, Type> for T where
 pub trait SelectSqlDsl: Sized {
     fn select_sql<A>(self, columns: &str)
         -> <Self as SelectDsl<SqlLiteral<A>>>::Output where
-        A: NativeSqlType,
         Self: SelectDsl<SqlLiteral<A>>,
     {
         self.select_sql_inner(columns)
@@ -41,7 +38,6 @@ pub trait SelectSqlDsl: Sized {
 
     fn select_sql_inner<A, S>(self, columns: S)
         -> <Self as SelectDsl<SqlLiteral<A>>>::Output where
-        A: NativeSqlType,
         S: Into<String>,
         Self: SelectDsl<SqlLiteral<A>>,
     {

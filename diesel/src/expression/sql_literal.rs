@@ -2,7 +2,7 @@ use backend::Backend;
 use query_builder::*;
 use std::marker::PhantomData;
 use super::{Expression, SelectableExpression, NonAggregate};
-use types::NativeSqlType;
+use types::HasSqlType;
 
 #[derive(Debug, Clone)]
 /// Available for when you truly cannot represent something using the expression
@@ -22,23 +22,25 @@ impl<ST> SqlLiteral<ST> {
     }
 }
 
-impl<ST: NativeSqlType> Expression for SqlLiteral<ST> {
+impl<ST> Expression for SqlLiteral<ST> {
     type SqlType = ST;
 }
 
-impl<ST, DB: Backend> QueryFragment<DB> for SqlLiteral<ST> {
+impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
+    DB: Backend + HasSqlType<ST>,
+{
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(&self.sql);
         Ok(())
     }
 }
 
-impl<QS, ST: NativeSqlType> SelectableExpression<QS> for SqlLiteral<ST> {
+impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
 }
 
-impl<ST: NativeSqlType> NonAggregate for SqlLiteral<ST> {
+impl<ST> NonAggregate for SqlLiteral<ST> {
 }
 
-pub fn sql<ST: NativeSqlType>(sql: &str) -> SqlLiteral<ST> {
+pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
     SqlLiteral::new(sql.into())
 }

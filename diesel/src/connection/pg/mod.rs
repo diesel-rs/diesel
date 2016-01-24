@@ -18,7 +18,7 @@ use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use super::{SimpleConnection, Connection};
-use types::ToSql;
+use types::{ToSql, HasSqlType};
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -60,6 +60,8 @@ impl Connection for PgConnection {
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
         T::Query: QueryFragment<Pg>,
+        T::SqlType: 'static,
+        Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());

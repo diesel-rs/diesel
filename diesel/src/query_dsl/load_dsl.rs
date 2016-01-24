@@ -1,13 +1,16 @@
 use connection::Connection;
+use helper_types::Limit;
 use query_builder::{Query, QueryFragment, AsQuery};
 use query_source::Queryable;
 use result::QueryResult;
 use super::LimitDsl;
+use types::HasSqlType;
 
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
 pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     Self::Query: QueryFragment<Conn::Backend>,
+    Conn::Backend: HasSqlType<Self::SqlType>,
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
@@ -22,9 +25,10 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<<<Self as LimitDsl>::Output as Query>::SqlType, Conn::Backend>,
         Self: LimitDsl,
-        <Self as LimitDsl>::Output: QueryFragment<Conn::Backend>,
+        U: Queryable<<Limit<Self> as Query>::SqlType, Conn::Backend>,
+        Limit<Self>: QueryFragment<Conn::Backend>,
+        Conn::Backend: HasSqlType<<Limit<Self> as Query>::SqlType>,
     {
         conn.query_one(self.limit(1))
     }
@@ -49,6 +53,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
 
 impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
     T::Query: QueryFragment<Conn::Backend>,
+    Conn::Backend: HasSqlType<T::SqlType>,
 {
 }
 

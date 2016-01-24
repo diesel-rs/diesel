@@ -41,7 +41,7 @@ pub fn expand_derive_queryable(
 
         let impl_item = quote_item!(cx,
             impl$generics ::diesel::Queryable<__ST, __DB> for $ty where
-                __ST: ::diesel::types::NativeSqlType,
+                __DB: ::diesel::backend::Backend + ::diesel::types::HasSqlType<__ST>,
                 $row_type: ::diesel::types::FromSqlRow<__ST, __DB>,
             {
                 type Row = $row_type;

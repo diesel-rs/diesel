@@ -5,7 +5,7 @@ use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, Quer
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
-use types::{NativeSqlType, FromSqlRow, ToSql, Nullable, NotNull};
+use types::{HasSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
@@ -19,23 +19,24 @@ macro_rules! tuple_impls {
         }
     )+) => {
         $(
-            impl<$($T:NativeSqlType),+> NativeSqlType for ($($T,)+) {
-                fn oid() -> u32 {
-                    0
-                }
-
-                fn array_oid() -> u32 {
-                    0
+            impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
+                $(DB: HasSqlType<$T>),+,
+                DB: Backend,
+                DB::TypeMetadata: Default,
+            {
+                fn metadata() -> DB::TypeMetadata {
+                    Default::default()
                 }
             }
 
-            impl<$($T: NativeSqlType),+> NotNull for ($($T,)+) {
+            impl<$($T),+> NotNull for ($($T,)+) {
             }
 
             impl<$($T),+, $($ST),+, DB> FromSqlRow<($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: FromSqlRow<$ST, DB>),+,
-                $($ST: NativeSqlType),+
+                $(DB: HasSqlType<$ST>),+,
+                DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
@@ -45,7 +46,8 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
                 DB: Backend,
                 $($T: FromSqlRow<$ST, DB>),+,
-                $($ST: NativeSqlType),+
+                $(DB: HasSqlType<$ST>),+,
+                DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     if e!(row.next_is_null($Tuple)) {
@@ -59,7 +61,8 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: Queryable<$ST, DB>),+,
-                $($ST: NativeSqlType),+
+                $(DB: HasSqlType<$ST>),+,
+                DB: HasSqlType<($($ST,)+)>,
             {
                 type Row = ($($T::Row,)+);
 
@@ -100,7 +103,6 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, QS>
                 SelectableExpression<QS, ($($ST,)+)>
                 for ($($T,)+) where
-                $($ST: NativeSqlType),+,
                 $($T: SelectableExpression<QS, $ST>),+,
                 ($($T,)+): Expression,
             {
@@ -109,7 +111,7 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, QS>
                 SelectableExpression<QS, Nullable<($($ST,)+)>>
                 for ($($T,)+) where
-                $($ST: NativeSqlType),+,
+                $($ST: IntoNullable,)+
                 $($T: SelectableExpression<QS, $ST::Nullable, SqlType=$ST>),+,
                 ($($T,)+): Expression,
             {

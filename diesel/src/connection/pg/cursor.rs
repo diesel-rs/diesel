@@ -1,7 +1,7 @@
 use backend::Pg;
 use query_source::Queryable;
 use db_result::DbResult;
-use types::{NativeSqlType, FromSqlRow};
+use types::{HasSqlType, FromSqlRow};
 
 use std::marker::PhantomData;
 
@@ -25,7 +25,7 @@ impl<ST, T> Cursor<ST, T> {
 }
 
 impl<ST, T> Iterator for Cursor<ST, T> where
-    ST: NativeSqlType,
+    Pg: HasSqlType<ST>,
     T: Queryable<ST, Pg>,
 {
     type Item = T;

@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
+use backend::{Backend, Pg};
 use query_builder::*;
 use super::{AsExpression, Expression, SelectableExpression, NonAggregate};
-use types::{Array, NativeSqlType};
+use types::{Array, HasSqlType};
 
 /// Creates a PostgreSQL `ANY` expression.
 ///
@@ -36,7 +36,7 @@ use types::{Array, NativeSqlType};
 /// # }
 /// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
-    ST: NativeSqlType,
+    Pg: HasSqlType<ST>,
     T: AsExpression<Array<ST>>,
 {
     Any::new(vals.as_expression())
@@ -58,7 +58,7 @@ impl<Expr, ST> Any<Expr, ST> {
 }
 
 impl<Expr, ST> Expression for Any<Expr, ST> where
-    ST: NativeSqlType,
+    Pg: HasSqlType<ST>,
     Expr: Expression<SqlType=Array<ST>>,
 {
     type SqlType = ST;
@@ -77,7 +77,7 @@ impl<Expr, ST, DB> QueryFragment<DB> for Any<Expr, ST> where
 }
 
 impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST> where
-    ST: NativeSqlType,
+    Pg: HasSqlType<ST>,
     Any<Expr, ST>: Expression,
     Expr: SelectableExpression<QS>,
 {

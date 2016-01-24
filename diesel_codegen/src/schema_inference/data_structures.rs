@@ -1,6 +1,6 @@
 use diesel::*;
 use diesel::backend::Pg;
-use diesel::types::{NativeSqlType, FromSqlRow};
+use diesel::types::{HasSqlType, FromSqlRow};
 
 table! {
     pg_attribute (attrelid) {
@@ -39,7 +39,7 @@ pub struct PgAttr {
 }
 
 impl<ST> Queryable<ST, Pg> for PgAttr where
-    ST: NativeSqlType,
+    Pg: HasSqlType<ST>,
     (String, String, bool): FromSqlRow<ST, Pg>,
 {
     type Row = (String, String, bool);

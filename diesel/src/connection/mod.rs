@@ -14,6 +14,7 @@ use query_builder::{AsQuery, Query, QueryFragment};
 use query_dsl::{FilterDsl, LimitDsl};
 use query_source::{Table, Queryable};
 use result::*;
+use types::HasSqlType;
 
 #[doc(hidden)]
 pub type PrimaryKey<T> = <T as Table>::PrimaryKey;
@@ -86,6 +87,7 @@ pub trait Connection: SimpleConnection + Sized {
     fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
+        Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
         self.query_all(source)
@@ -96,6 +98,7 @@ pub trait Connection: SimpleConnection + Sized {
     fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
+        Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>;
 
     /// Attempts to find a single record from the given table by primary key.
@@ -129,6 +132,7 @@ pub trait Connection: SimpleConnection + Sized {
         FindBy<T, T::PrimaryKey, PK>: LimitDsl,
         Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Self::Backend>,
         U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType, Self::Backend>,
+        Self::Backend: HasSqlType<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
         PK: AsExpression<PkType<T>>,
         AsExpr<PK, T::PrimaryKey>: NonAggregate,
     {

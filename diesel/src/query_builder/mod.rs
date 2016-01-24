@@ -28,7 +28,7 @@ pub use self::insert_statement::IncompleteInsertStatement;
 use std::error::Error;
 
 use backend::Backend;
-use types::NativeSqlType;
+use types::HasSqlType;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -39,10 +39,11 @@ pub type BuildQueryResult = Result<(), Box<Error>>;
 /// This is the trait used to actually construct a SQL query. You will take one
 /// of these as an argument if you're implementing
 /// [`QueryFragment`](trait.QueryFragment.html) manually.
-pub trait QueryBuilder {
+pub trait QueryBuilder<DB: Backend> {
     fn push_sql(&mut self, sql: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
-    fn push_bound_value<T: NativeSqlType>(&mut self, binds: Option<Vec<u8>>);
+    fn push_bound_value<T>(&mut self, binds: Option<Vec<u8>>) where
+        DB: HasSqlType<T>;
     fn push_context(&mut self, context: Context);
     fn pop_context(&mut self);
 }
@@ -63,7 +64,7 @@ pub enum Context {
 /// [`Expression`](../expression/trait.Expression.html), types implementing this
 /// trait are guaranteed to be executable on their own.
 pub trait Query {
-    type SqlType: NativeSqlType;
+    type SqlType;
 }
 
 impl<'a, T: Query> Query for &'a T {
@@ -107,7 +108,7 @@ impl<DB: Backend> QueryFragment<DB> for () {
 /// internally to automatically add the right select clause when none is
 /// specified, or to automatically add `RETURNING *` in certain contexts
 pub trait AsQuery {
-    type SqlType: NativeSqlType;
+    type SqlType;
     type Query: Query<SqlType=Self::SqlType>;
 
     fn as_query(self) -> Self::Query;

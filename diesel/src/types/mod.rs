@@ -18,7 +18,7 @@ pub mod structs {
 /// Marker trait for types which can be compared for ordering.
 pub use self::ord::SqlOrd;
 
-use backend::Backend;
+use backend::{Backend, TypeMetadata};
 use row::Row;
 use std::error::Error;
 use std::io::Write;
@@ -55,38 +55,37 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Time;
 #[derive(Clone, Copy, Default)] pub struct Timestamp;
 
-#[derive(Clone, Copy, Default)] pub struct Nullable<T: NativeSqlType + NotNull>(T);
-#[derive(Clone, Copy, Default)] pub struct Array<T: NativeSqlType>(T);
+#[derive(Clone, Copy, Default)] pub struct Nullable<T: NotNull>(T);
+#[derive(Clone, Copy, Default)] pub struct Array<T>(T);
 
-pub trait NativeSqlType: IntoNullable + 'static {
-    fn oid() -> u32;
-    fn array_oid() -> u32;
+pub trait HasSqlType<ST>: TypeMetadata {
+    fn metadata() -> Self::TypeMetadata;
 }
 
 pub trait NotNull {
 }
 
 pub trait IntoNullable {
-    type Nullable: NativeSqlType;
+    type Nullable;
 }
 
-impl<T: NativeSqlType + NotNull> IntoNullable for T {
+impl<T: NotNull> IntoNullable for T {
     type Nullable = Nullable<T>;
 }
 
-impl<T: NativeSqlType + NotNull> IntoNullable for Nullable<T> {
+impl<T: NotNull> IntoNullable for Nullable<T> {
     type Nullable = Nullable<T>;
 }
 
 /// How to deserialize a single field of a given type. The input will always be
 /// the binary representation, not the text.
-pub trait FromSql<A: NativeSqlType, DB: Backend>: Sized {
+pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>>;
 }
 
 /// How to deserialize multiple fields, with a known type. This type is
 /// implemented for tuples of various sizes.
-pub trait FromSqlRow<A: NativeSqlType, DB>: Sized {
+pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
 }
 
@@ -100,13 +99,12 @@ pub enum IsNull {
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
-pub trait ToSql<A: NativeSqlType, DB: Backend> {
+pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
-    A: NativeSqlType,
-    DB: Backend,
+    DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {

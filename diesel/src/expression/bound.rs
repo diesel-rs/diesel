@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use query_builder::*;
 use super::{Expression, SelectableExpression, NonAggregate};
-use types::{NativeSqlType, ToSql, IsNull};
+use types::{HasSqlType, ToSql, IsNull};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {
@@ -20,15 +20,12 @@ impl<T, U> Bound<T, U> {
     }
 }
 
-impl<T, U> Expression for Bound<T, U> where
-    T: NativeSqlType,
-{
+impl<T, U> Expression for Bound<T, U> {
     type SqlType = T;
 }
 
 impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
-    DB: Backend,
-    T: NativeSqlType,
+    DB: Backend + HasSqlType<T>,
     U: ToSql<T, DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {

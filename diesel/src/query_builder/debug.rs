@@ -1,5 +1,6 @@
+use backend::Debug;
 use super::{QueryBuilder, BuildQueryResult, Context};
-use types::NativeSqlType;
+use types::HasSqlType;
 
 #[doc(hidden)]
 pub struct DebugQueryBuilder {
@@ -18,7 +19,7 @@ impl DebugQueryBuilder {
     }
 }
 
-impl QueryBuilder for DebugQueryBuilder {
+impl QueryBuilder<Debug> for DebugQueryBuilder {
     fn push_sql(&mut self, sql: &str) {
         self.sql.push_str(sql);
     }
@@ -30,7 +31,9 @@ impl QueryBuilder for DebugQueryBuilder {
         Ok(())
     }
 
-    fn push_bound_value<T: NativeSqlType>(&mut self, bind: Option<Vec<u8>>) {
+    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
+        Debug: HasSqlType<T>,
+    {
         match (self.context_stack.first(), bind) {
             (Some(&Context::Insert), None) => self.push_sql("DEFAULT"),
             _ => self.push_sql("?"),

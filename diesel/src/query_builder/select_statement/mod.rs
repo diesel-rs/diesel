@@ -9,7 +9,7 @@ use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::where_clause::NoWhereClause;
-use types::{self, NativeSqlType};
+use types;
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -70,14 +70,12 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
 }
 
 impl<ST, S, F, W, O, L, Of> Query for SelectStatement<ST, S, F, W, O, L, Of> where
-    ST: NativeSqlType,
     S: SelectableExpression<F, ST>,
 {
     type SqlType = ST;
 }
 
 impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of> where
-    ST: NativeSqlType,
     S: SelectableExpression<F, ST>,
 {
     type SqlType = types::Array<ST>;

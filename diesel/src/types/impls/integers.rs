@@ -3,7 +3,7 @@ extern crate byteorder;
 use std::error::Error;
 use std::io::Write;
 
-use backend::Backend;
+use backend::{Backend, Pg};
 use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use super::option::UnexpectedNullError;
 use types::{self, FromSql, ToSql, IsNull};
@@ -53,23 +53,20 @@ impl<DB: Backend> ToSql<types::BigInt, DB> for i64 {
     }
 }
 
-impl<DB: Backend> FromSql<types::Oid, DB> for u32 {
+impl FromSql<types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         bytes.read_u32::<BigEndian>().map_err(|e| e.into())
     }
 }
 
-impl<DB: Backend> ToSql<types::Oid, DB> for u32 {
+impl ToSql<types::Oid, Pg> for u32 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_u32::<BigEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())
     }
 }
-
-#[cfg(test)]
-use backend::Pg;
 
 #[test]
 fn i16_to_sql() {

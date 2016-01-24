@@ -138,8 +138,14 @@ fn save_changes_impl(
         let pk_field = pk.field_name.unwrap();
         quote_item!(cx,
             impl<'a> $struct_name {
-                $_pub fn save_changes<T, Conn>(&self, connection: &Conn)
+                $_pub fn save_changes<'update, T, Conn>(&'update self, connection: &Conn)
                     -> ::diesel::QueryResult<T> where
+                    Conn::Backend: ::diesel::types::HasSqlType<$sql_type> +
+                        ::diesel::types::HasSqlType<
+                            <<$table as ::diesel::query_source::Table>::PrimaryKey
+                            as ::diesel::expression::Expression>::SqlType>,
+                    <&'update Self as ::diesel::query_builder::AsChangeset>::Changeset:
+                        ::diesel::query_builder::Changeset<Conn::Backend>,
                     T: Queryable<$sql_type, Conn::Backend>,
                     Conn: Connection,
                 {

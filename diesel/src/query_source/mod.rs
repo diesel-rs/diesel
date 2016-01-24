@@ -6,11 +6,12 @@ pub mod filter;
 #[doc(hidden)]
 pub mod joins;
 
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 #[doc(hidden)]
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
-use types::{FromSqlRow, NativeSqlType};
+use types::{FromSqlRow, HasSqlType};
 
 pub use self::joins::JoinTo;
 
@@ -18,7 +19,9 @@ pub use self::joins::JoinTo;
 /// can be derived automatically. See the [codegen
 /// documentation](https://github.com/sgrif/diesel/tree/master/diesel_codegen#derivequeryable)
 /// for more.
-pub trait Queryable<ST: NativeSqlType, DB> {
+pub trait Queryable<ST, DB> where
+    DB: Backend + HasSqlType<ST>,
+{
     type Row: FromSqlRow<ST, DB>;
 
     fn build(row: Self::Row) -> Self;
