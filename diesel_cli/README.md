@@ -9,7 +9,7 @@ Getting Started
 
 ```shell
 cargo install diesel_cli
-mkdir migrations
+diesel setup --database-url='postgres://localhost/my_db'
 diesel migration generate create_users_table
 ```
 
@@ -42,8 +42,29 @@ Alternatively, you can call
 Diesel will automatically keep track of which migrations have already been run,
 ensuring that they're never run twice.
 
-[pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html
+### Commands
+#### `setup`
+Searches for a `migrations/` directory, and if it can't find one, creates one
+in the same directory as the first `Cargo.toml` it finds.  It then tries to
+connect to the provided DATABASE_URL, and will create the given database if it
+cannot connect to it. Finally it will create diesel's internal table for
+tracking which migrations have been run, and run any existing migrations if the
+internal table did not previously exist.
 
-If you ever need to revert or make changes to your migrations, the commands
-`diesel migration revert` and `diesel migration redo`. Type `diesel migration
---help` for more information.
+#### `migration generate`
+Takes the name of your migration as an argument, and will create a migration
+directory with `migrations/` in the format of
+`migrations/{current_timestamp}_{migration_name}`.  It will also generate
+`up.sql` and `down.sql` files, for running your migration up and down
+respectively.
+
+#### `migration run`
+Runs all pending migrations, as determined by diesel's internal schema table.
+
+#### `migration revert`
+Runs the `down.sql` for the most recent migration.
+
+#### `migration redo`
+Runs the `down.sql` and then the `up.sql` for the most recent migration.
+
+[pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html

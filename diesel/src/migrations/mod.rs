@@ -135,7 +135,8 @@ fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
     }
 }
 
-fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
+#[doc(hidden)]
+pub fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
     conn.silence_notices(|| {
         conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
             version VARCHAR PRIMARY KEY NOT NULL,
