@@ -197,6 +197,7 @@ mod tests {
 
     use self::tempdir::TempDir;
     use self::diesel::Connection;
+    use self::diesel::connection::PgConnection;
 
     use setup_error::SetupError;
 
@@ -204,11 +205,13 @@ mod tests {
 
     use std::{env, fs};
 
-    fn connection() -> diesel::connection::PgConnection {
+    fn connection() -> PgConnection {
         dotenv::dotenv().ok();
         let database_url = env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set in order to run diesel_cli tests");
-        diesel::connection::PgConnection::establish(&database_url).unwrap()
+        let connection = PgConnection::establish(&database_url).unwrap();
+        connection.begin_test_transaction().unwrap();
+        connection
     }
 
     #[test]
@@ -235,8 +238,8 @@ mod tests {
     fn schema_table_exists_finds_table() {
         let connection = connection();
         connection.silence_notices(|| {
-            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
-            connection.execute("CREATE TABLE __diesel_schema_migrations ()").unwrap();
+            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations;").unwrap();
+            connection.execute("CREATE TABLE __diesel_schema_migrations ();").unwrap();
         });
 
         assert!(schema_table_exists(&connection).unwrap());
@@ -246,9 +249,8 @@ mod tests {
     fn schema_table_exists_doesnt_find_table() {
         let connection = connection();
         connection.silence_notices(|| {
-            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
+            connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations;").unwrap();
         });
-
         assert!(!schema_table_exists(&connection).unwrap());
     }
 }
