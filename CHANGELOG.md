@@ -37,6 +37,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to
   use the correct spelling `Queryable`.
 
+* Replaced `Connection#find(source, id)` with
+  `source.find(id).first(&connection)`.
+
 * Moved most of our top level trait exports into a prelude module, and
   re-exported our CRUD functions from the top level.
   `diesel::query_builder::update` and friends are now `diesel::update`, and you
