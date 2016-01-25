@@ -5,23 +5,10 @@ pub mod pg;
 pub use self::pg::PgConnection;
 
 use backend::Backend;
-use expression::{AsExpression, Expression, NonAggregate};
-use expression::expression_methods::*;
-use expression::predicates::Eq;
-use helper_types::{FindBy, Limit};
-use expression::helper_types::AsExpr;
-use query_builder::{AsQuery, Query, QueryFragment};
-use query_dsl::{FilterDsl, LimitDsl};
-use query_source::{Table, Queryable};
+use query_builder::{AsQuery, QueryFragment};
+use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
-
-#[doc(hidden)]
-pub type PrimaryKey<T> = <T as Table>::PrimaryKey;
-#[doc(hidden)]
-pub type PkType<T> = <PrimaryKey<T> as Expression>::SqlType;
-#[doc(hidden)]
-pub type FindPredicate<T, PK> = Eq<PrimaryKey<T>, <PK as AsExpression<PkType<T>>>::Expression>;
 
 pub trait SimpleConnection {
     #[doc(hidden)]
@@ -100,45 +87,6 @@ pub trait Connection: SimpleConnection + Sized {
         T::Query: QueryFragment<Self::Backend>,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>;
-
-    /// Attempts to find a single record from the given table by primary key.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// #     use diesel::result::Error::NotFound;
-    /// #     let connection = establish_connection();
-    /// let sean = (1, "Sean".to_string());
-    /// let tess = (2, "Tess".to_string());
-    /// assert_eq!(Ok(sean), connection.find(users, 1));
-    /// assert_eq!(Ok(tess), connection.find(users, 2));
-    /// assert_eq!(Err::<(i32, String), _>(NotFound), connection.find(users, 3));
-    /// # }
-    /// ```
-    fn find<T, U, PK>(&self, source: T, id: PK) -> QueryResult<U> where
-        T: Table + FilterDsl<FindPredicate<T, PK>>,
-        FindBy<T, T::PrimaryKey, PK>: LimitDsl,
-        Limit<FindBy<T, T::PrimaryKey, PK>>: QueryFragment<Self::Backend>,
-        U: Queryable<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType, Self::Backend>,
-        Self::Backend: HasSqlType<<Limit<FindBy<T, T::PrimaryKey, PK>> as Query>::SqlType>,
-        PK: AsExpression<PkType<T>>,
-        AsExpr<PK, T::PrimaryKey>: NonAggregate,
-    {
-        let pk = source.primary_key();
-        self.query_one(source.filter(pk.eq(id)).limit(1))
-    }
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where

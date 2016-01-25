@@ -56,3 +56,51 @@ impl<T, Predicate> FilterDsl<Predicate> for T where
 impl<T: Table> NotFiltered for T {}
 impl<Left, Right> NotFiltered for InnerJoinSource<Left, Right> {}
 impl<Left, Right> NotFiltered for LeftOuterJoinSource<Left, Right> {}
+
+use expression::{AsExpression, SelectableExpression};
+use expression::expression_methods::*;
+use expression::helper_types::Eq;
+use helper_types::FindBy;
+
+/// Attempts to find a single record from the given table by primary key.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Serial,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     use diesel::result::Error::NotFound;
+/// #     let connection = establish_connection();
+/// let sean = (1, "Sean".to_string());
+/// let tess = (2, "Tess".to_string());
+/// assert_eq!(Ok(sean), users.find(1).first(&connection));
+/// assert_eq!(Ok(tess), users.find(2).first(&connection));
+/// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
+/// # }
+/// ```
+pub trait FindDsl<PK> where
+    Self: Table + FilterDsl<Eq<<Self as Table>::PrimaryKey, PK>>,
+    PK: AsExpression<<Self::PrimaryKey as Expression>::SqlType>,
+    Eq<Self::PrimaryKey, PK>: SelectableExpression<Self, SqlType=Bool> + NonAggregate,
+{
+    fn find(self, id: PK) -> FindBy<Self, Self::PrimaryKey, PK> {
+        let primary_key = self.primary_key();
+        self.filter(primary_key.eq(id))
+    }
+}
+
+impl<T, PK> FindDsl<PK> for T where
+    T: Table + FilterDsl<Eq<<T as Table>::PrimaryKey, PK>>,
+    PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
+    Eq<T::PrimaryKey, PK>: SelectableExpression<T, SqlType=Bool> + NonAggregate,
+{}

@@ -18,21 +18,12 @@ table! {
 
 fn main() {
     let connection = PgConnection::establish("").unwrap();
-    let one = connection.find(int_primary_key::table, "1".to_string()).unwrap();
-    //~^ ERROR E0277
+    int_primary_key::table.find("1").first(&connection).unwrap();
+    //~^ ERROR no method named `first` found for type `diesel::query_source::filter::FilteredQuerySource<int_primary_key::table, diesel::expression::predicates::Eq<int_primary_key::columns::id, &str>>` in the current scope
     //~| ERROR E0277
     //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    let string = connection.find(string_primary_key::table, 1).unwrap();
-    //~^ ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
+    string_primary_key::table.find(1).first(&connection).unwrap();
+    //~^ ERROR no method named `first` found for type `diesel::query_source::filter::FilteredQuerySource<string_primary_key::table, diesel::expression::predicates::Eq<string_primary_key::columns::id, _>>` in the current scope
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
