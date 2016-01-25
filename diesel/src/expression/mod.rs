@@ -57,7 +57,6 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;
-use types::HasSqlType;
 
 /// Represents a typed fragment of SQL. Apps should not need to implement this
 /// type directly, but it may be common to use this as type boundaries.
@@ -144,7 +143,7 @@ use query_builder::QueryFragment;
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
 pub trait BoxableExpression<QS, ST, DB> where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS, ST>,
     Self: NonAggregate,
@@ -152,7 +151,7 @@ pub trait BoxableExpression<QS, ST, DB> where
 {}
 
 impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     T: Expression,
     T: SelectableExpression<QS, ST>,
     T: NonAggregate,

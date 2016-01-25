@@ -17,7 +17,6 @@ pub trait Backend where
     Self: HasSqlType<types::Date>,
     Self: HasSqlType<types::Time>,
     Self: HasSqlType<types::Timestamp>,
-    Self: HasSqlType<()>,
 {
     type QueryBuilder: QueryBuilder<Self>;
 }

@@ -35,15 +35,6 @@ expression_impls! {
     Binary -> &'a [u8],
 }
 
-impl<DB> HasSqlType<()> for DB where
-    DB: Backend,
-    DB::TypeMetadata: Default,
-{
-    fn metadata() -> DB::TypeMetadata {
-        Default::default()
-    }
-}
-
 impl NotNull for () {}
 
 impl FromSql<types::Bool, Pg> for bool {
