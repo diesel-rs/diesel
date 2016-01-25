@@ -3,7 +3,7 @@ sudo: false
 rust:
   - stable
   - beta
-  - nightly-2016-01-15
+  - nightly-2016-01-23
   - nightly
 addons:
   postgresql: '9.4'
