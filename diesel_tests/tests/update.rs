@@ -66,7 +66,7 @@ fn test_updating_multiple_columns() {
     )).execute(&connection).unwrap();
 
     let expected_user = User::with_hair_color(sean.id, "Jim", "black");
-    let user = connection.find(users, sean.id);
+    let user = users.find(sean.id).first(&connection);
     assert_eq!(Ok(expected_user), user);
 }
 
@@ -122,7 +122,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     let sean = find_user_by_name("Sean", &connection);
     let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User, _>(&connection);
 
-    let user_in_db = connection.find(users, sean.id);
+    let user_in_db = users.find(sean.id).first(&connection);
 
     assert_eq!(user, user_in_db);
 }
@@ -224,7 +224,7 @@ fn struct_with_option_fields_treated_as_null() {
     let changes = UpdatePost { id: post.id, title: "Hello again".into(), body: None };
     let expected_post = Post::new(post.id, sean.id, "Hello again".into(), None);
     let updated_post = changes.save_changes(&connection);
-    let post_in_database = connection.find(posts::table, post.id);
+    let post_in_database = posts::table.find(post.id).first(&connection);
 
     assert_eq!(Ok(&expected_post), updated_post.as_ref());
     assert_eq!(Ok(&expected_post), post_in_database.as_ref());

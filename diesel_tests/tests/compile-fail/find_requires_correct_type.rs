@@ -18,7 +18,7 @@ table! {
 
 fn main() {
     let connection = PgConnection::establish("").unwrap();
-    let one = connection.find(int_primary_key::table, "1".to_string()).unwrap();
+    int_primary_key::table.find("1").first(&connection).unwrap();
     //~^ ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
@@ -27,8 +27,12 @@ fn main() {
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
-    let string = connection.find(string_primary_key::table, 1).unwrap();
+    //~| ERROR E0277
+    //~| ERROR E0277
+    string_primary_key::table.find(1).first(&connection).unwrap();
     //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
