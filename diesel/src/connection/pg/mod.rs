@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::ptr;
 
 use backend::Pg;
-use db_result::DbResult;
+use db_result::PgResult;
 use query_builder::{AsQuery, QueryFragment};
 use query_builder::pg::PgQueryBuilder;
 use query_source::Queryable;
@@ -36,7 +36,7 @@ impl SimpleConnection for PgConnection {
         let inner_result = unsafe {
             self.raw_connection.exec(query.as_ptr())
         };
-        try!(DbResult::new(self, inner_result));
+        try!(PgResult::new(self, inner_result));
         Ok(())
     }
 }
@@ -119,7 +119,7 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
-    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<DbResult> {
+    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<PgResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
@@ -146,7 +146,7 @@ impl PgConnection {
             )
         };
 
-        DbResult::new(self, internal_res)
+        PgResult::new(self, internal_res)
     }
 
     fn prepare_query<T: QueryFragment<Pg>>(&self, source: &T)
@@ -157,7 +157,7 @@ impl PgConnection {
         (query_builder.sql, query_builder.binds, query_builder.bind_types)
     }
 
-    fn execute_inner(&self, query: &str) -> QueryResult<DbResult> {
+    fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
         self.exec_sql_params(query, &Vec::new(), &None)
     }
 

@@ -1,19 +1,19 @@
-use db_result::DbResult;
+use db_result::PgResult;
 
 pub trait Row {
     fn take(&mut self) -> Option<&[u8]>;
     fn next_is_null(&self, count: usize) -> bool;
 }
 
-pub struct DbRow<'a> {
-    db_result: &'a DbResult,
+pub struct PgRow<'a> {
+    db_result: &'a PgResult,
     row_idx: usize,
     col_idx: usize,
 }
 
-impl<'a> DbRow<'a> {
-    pub fn new(db_result: &'a DbResult, row_idx: usize) -> Self {
-        DbRow {
+impl<'a> PgRow<'a> {
+    pub fn new(db_result: &'a PgResult, row_idx: usize) -> Self {
+        PgRow {
             db_result: db_result,
             row_idx: row_idx,
             col_idx: 0,
@@ -21,7 +21,7 @@ impl<'a> DbRow<'a> {
     }
 }
 
-impl<'a> Row for DbRow<'a> {
+impl<'a> Row for PgRow<'a> {
     fn take(&mut self) -> Option<&[u8]> {
         let current_idx = self.col_idx;
         self.col_idx += 1;

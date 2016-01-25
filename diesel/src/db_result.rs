@@ -3,22 +3,22 @@ extern crate libc;
 
 use connection::pg::PgConnection;
 use result::{Error, QueryResult};
-use row::DbRow;
+use row::PgRow;
 
 use self::pq_sys::*;
 use std::ffi::CStr;
 use std::{str, slice, mem};
 
-pub struct DbResult {
+pub struct PgResult {
     internal_result: *mut PGresult,
 }
 
-impl DbResult {
+impl PgResult {
     pub fn new(conn: &PgConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
-                Ok(DbResult {
+                Ok(PgResult {
                     internal_result: internal_result,
                 })
             },
@@ -42,8 +42,8 @@ impl DbResult {
         unsafe { PQntuples(self.internal_result) as usize }
     }
 
-    pub fn get_row(&self, idx: usize) -> DbRow {
-        DbRow::new(self, idx)
+    pub fn get_row(&self, idx: usize) -> PgRow {
+        PgRow::new(self, idx)
     }
 
     pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
@@ -72,7 +72,7 @@ impl DbResult {
     }
 }
 
-impl Drop for DbResult {
+impl Drop for PgResult {
     fn drop(&mut self) {
         unsafe { PQclear(self.internal_result) };
     }

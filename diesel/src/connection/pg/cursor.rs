@@ -1,6 +1,6 @@
 use backend::Pg;
 use query_source::Queryable;
-use db_result::DbResult;
+use db_result::PgResult;
 use types::{HasSqlType, FromSqlRow};
 
 use std::marker::PhantomData;
@@ -9,13 +9,13 @@ use std::marker::PhantomData;
 /// Acts as an iterator over `T`.
 pub struct Cursor<ST, T> {
     current_row: usize,
-    db_result: DbResult,
+    db_result: PgResult,
     _marker: PhantomData<(ST, T)>,
 }
 
 impl<ST, T> Cursor<ST, T> {
     #[doc(hidden)]
-    pub fn new(db_result: DbResult) -> Self {
+    pub fn new(db_result: PgResult) -> Self {
         Cursor {
             current_row: 0,
             db_result: db_result,
