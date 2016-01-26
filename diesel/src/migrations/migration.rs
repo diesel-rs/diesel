@@ -19,9 +19,9 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 }
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
-    let mut files = file_names(path).unwrap_or(Vec::new());
-    files.sort();
-    files == ["down.sql".to_string(), "up.sql".to_string()]
+    file_names(path).map(|files| {
+        files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
+    }).unwrap_or(false)
 }
 
 fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn directory_containing_unknown_files_is_not_valid_migration_dir() {
+    fn directory_containing_unknown_files_is_valid_migration_dir() {
         let tempdir = TempDir::new("diesel").unwrap();
         let folder = tempdir.path().join("12345");
 
@@ -115,7 +115,7 @@ mod tests {
         fs::File::create(folder.join("down.sql")).unwrap();
         fs::File::create(folder.join("foo")).unwrap();
 
-        assert!(!valid_sql_migration_directory(&folder));
+        assert!(valid_sql_migration_directory(&folder));
     }
 
     #[test]
