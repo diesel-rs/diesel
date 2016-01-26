@@ -32,7 +32,7 @@ use types::{Array, HasSqlType};
 /// let sean = (1, "Sean".to_string());
 /// let jim = (3, "Jim".to_string());
 /// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));
-/// assert_eq!(vec![sean, jim], data.load(&connection).unwrap().collect::<Vec<_>>());
+/// assert_eq!(Ok(vec![sean, jim]), data.load(&connection).map(Iterator::collect));
 /// # }
 /// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where

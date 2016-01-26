@@ -30,16 +30,16 @@ fn now_executes_sql_function_now() {
                        (NOW() - '1 day'::interval), (NOW() + '1 day'::interval)")
         .unwrap();
 
-    let before_today: Vec<i32> = has_timestamps.select(id)
+    let before_today: QueryResult<Vec<i32>> = has_timestamps.select(id)
         .filter(created_at.lt(now))
         .load(&connection)
-        .unwrap().collect();
-    let after_today: Vec<i32> = has_timestamps.select(id)
+        .map(Iterator::collect);
+    let after_today: QueryResult<Vec<i32>> = has_timestamps.select(id)
         .filter(created_at.gt(now))
         .load(&connection)
-        .unwrap().collect();
-    assert_eq!(vec![1], before_today);
-    assert_eq!(vec![2], after_today);
+        .map(Iterator::collect);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
 }
 
 #[test]
@@ -55,11 +55,11 @@ fn date_uses_sql_function_date() {
                        ").unwrap();
 
     let expected_data = vec![1, 3];
-    let actual_data: Vec<_> = has_timestamps.select(id)
+    let actual_data: QueryResult<Vec<_>> = has_timestamps.select(id)
         .filter(date(created_at).eq(date(updated_at)))
         .load(&connection)
-        .unwrap().collect();
-    assert_eq!(expected_data, actual_data);
+        .map(Iterator::collect);
+    assert_eq!(Ok(expected_data), actual_data);
 }
 
 #[test]
@@ -76,10 +76,10 @@ fn time_is_deserialized_properly() {
     let three_hours = PgTime(10_800_000_000);
     let expected_data = vec![one_second, two_minutes, three_hours];
 
-    let actual_data: Vec<_> = has_time.select(time)
+    let actual_data: QueryResult<Vec<_>> = has_time.select(time)
         .load(&connection)
-        .unwrap().collect();
-    assert_eq!(expected_data, actual_data);
+        .map(Iterator::collect);
+    assert_eq!(Ok(expected_data), actual_data);
 }
 
 #[test]
@@ -91,14 +91,14 @@ fn interval_is_deserialized_properly() {
         <(types::Interval, types::Interval, types::Interval, types::Interval)>(
             "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval"))
-        .first(&connection).unwrap();
+        .first(&connection);
 
     let one_minute = 1.minute();
     let one_day = 1.day();
     let one_month = 1.month();
     let long_time = 4.years() + 3.days() + 2.hours() + 1.minute();
     let expected_data = (one_minute, one_day, one_month, long_time);
-    assert_eq!(expected_data, data);
+    assert_eq!(Ok(expected_data), data);
 }
 
 #[test]

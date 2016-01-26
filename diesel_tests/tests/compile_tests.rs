@@ -7,7 +7,7 @@ use std::env::var;
 fn run_mode(mode: &'static str) {
     let mut config = compiletest::default_config();
 
-    let cfg_mode = mode.parse().ok().expect("Invalid mode");
+    let cfg_mode = mode.parse().expect("Invalid mode");
 
     config.target_rustcflags = Some("-L target/debug/ -L target/debug/deps/".to_owned());
     if let Ok(name) = var::<&str>("TESTNAME") {
