@@ -306,6 +306,11 @@ you can go about getting the data structures set up.
 [table]: http://sgrif.github.io/diesel/diesel/macro.table!.html
 [update]: http://sgrif.github.io/diesel/diesel/query_builder/fn.update.html
 
+## Code of conduct
+
+Anyone who interacts with Diesel in any space including but not limited to
+this GitHub repository is expected to follow our [code of conduct](https://github.com/sgrif/diesel/blob/master/code_of_conduct.md)
+
 ## License
 
 Licensed under either of
