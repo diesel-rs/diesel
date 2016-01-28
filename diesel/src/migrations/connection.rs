@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::iter::FromIterator;
 
 use prelude::*;
 use super::schema::NewMigration;
@@ -23,7 +24,7 @@ impl<T> MigrationConnection for T where
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations.select(version)
             .load(self)
-            .map(|r| r.collect())
+            .map(FromIterator::from_iter)
     }
 
     fn latest_run_migration_version(&self) -> QueryResult<String> {

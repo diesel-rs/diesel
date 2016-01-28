@@ -32,13 +32,13 @@ use data_types::PgInterval;
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 minutes'::interval),
 ///     ('Jim', NOW() - '10 minutes'::interval)").unwrap();
 ///
-/// let mut data = users
+/// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.minutes()))
 ///     .load(&connection).unwrap();
-/// assert_eq!(Some("Sean".to_string()), data.next());
-/// assert_eq!(Some("Tess".to_string()), data.next());
-/// assert_eq!(None, data.next());
+/// assert_eq!(2, data.len());
+/// assert_eq!("Sean".to_string(), data[0]);
+/// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
 pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
@@ -123,13 +123,13 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 days'::interval),
 ///     ('Jim', NOW() - '10 days'::interval)").unwrap();
 ///
-/// let mut data = users
+/// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.days()))
 ///     .load(&connection).unwrap();
-/// assert_eq!(Some("Sean".to_string()), data.next());
-/// assert_eq!(Some("Tess".to_string()), data.next());
-/// assert_eq!(None, data.next());
+/// assert_eq!(2, data.len());
+/// assert_eq!("Sean".to_string(), data[0]);
+/// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
 pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {

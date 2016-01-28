@@ -41,15 +41,16 @@ fn filter_by_equality_on_nullable_columns() {
         NewUser::new("Jim", Some("black")),
     ];
     batch_insert(&data, users, &connection);
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
+
+    let data = users.load::<User>(&connection).unwrap();
     let sean = data[0].clone();
     let tess = data[1].clone();
     let jim = data[2].clone();
 
     let source = users.filter(hair_color.eq("black"));
-    assert_eq!(vec![sean, jim], source.load(&connection).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![sean, jim], source.load(&connection).unwrap());
     let source = users.filter(hair_color.eq("brown"));
-    assert_eq!(vec![tess], source.load(&connection).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![tess], source.load(&connection).unwrap());
 }
 
 #[test]
@@ -62,11 +63,11 @@ fn filter_by_is_not_null_on_nullable_columns() {
         NewUser::new("Gordon", None),
     ];
     batch_insert(&data, users, &connection);
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
+    let data = users.load::<User>(&connection).unwrap();
     let derek = data[0].clone();
 
     let source = users.filter(hair_color.is_not_null());
-    assert_eq!(vec![derek], source.load(&connection).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![derek], source.load(&connection).unwrap());
 }
 
 #[test]
@@ -79,11 +80,11 @@ fn filter_by_is_null_on_nullable_columns() {
         NewUser::new("Gordon", None),
     ];
     batch_insert(&data, users, &connection);
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
+    let data = users.load::<User>(&connection).unwrap();
     let gordon = data[1].clone();
 
     let source = users.filter(hair_color.is_null());
-    assert_eq!(vec![gordon], source.load(&connection).unwrap().collect::<Vec<_>>());
+    assert_eq!(vec![gordon], source.load(&connection).unwrap());
 }
 
 #[test]
@@ -152,27 +153,23 @@ fn filter_on_multiple_columns() {
         NewUser::new("Tess", Some("brown")),
     ];
     batch_insert(data, users, &connection);
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
+    let data = users.load::<User>(&connection).unwrap();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
     let black_haired_tess = data[3].clone();
     let brown_haired_tess = data[4].clone();
 
     let source = users.filter(name.eq("Sean").and(hair_color.eq("black")));
-    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Sean").and(hair_color.eq("brown")));
-    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Tess").and(hair_color.eq("black")));
-    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Tess").and(hair_color.eq("brown")));
-    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap());
 }
 
 #[test]
@@ -188,27 +185,23 @@ fn filter_called_twice_means_same_thing_as_and() {
         NewUser::new("Tess", Some("brown")),
     ];
     batch_insert(data, users, &connection);
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
+    let data = users.load::<User>(&connection).unwrap();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
     let black_haired_tess = data[3].clone();
     let brown_haired_tess = data[4].clone();
 
     let source = users.filter(name.eq("Sean")).filter(hair_color.eq("black"));
-    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![black_haired_sean], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Sean")).filter(hair_color.eq("brown"));
-    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![brown_haired_sean], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Tess")).filter(hair_color.eq("black"));
-    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![black_haired_tess], source.load(&connection).unwrap());
 
     let source = users.filter(name.eq("Tess")).filter(hair_color.eq("brown"));
-    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap()
-        .collect::<Vec<_>>());
+    assert_eq!(vec![brown_haired_tess], source.load(&connection).unwrap());
 }
 
 table! {
@@ -228,7 +221,7 @@ fn filter_on_column_equality() {
 
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.filter(x.eq(y));
-    let data: Vec<_> = query.load(&connection).unwrap().collect();
+    let data: Vec<_> = query.load(&connection).unwrap();
     assert_eq!(expected_data, data);
 }
 
@@ -241,7 +234,7 @@ fn filter_with_or() {
 
     let expected_users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
     let data: Vec<_> = users.filter(name.eq("Sean").or(name.eq("Tess")))
-        .load(&connection).unwrap().collect();
+        .load(&connection).unwrap();
 
     assert_eq!(expected_users, data);
 }

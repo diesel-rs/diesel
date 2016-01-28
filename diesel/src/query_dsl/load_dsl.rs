@@ -14,7 +14,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
-    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
         U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         conn.query_all(self)
@@ -44,7 +44,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     }
 
     /// Runs the command, returning an `Iterator` over the affected rows.
-    fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+    fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
         U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         self.load(conn)

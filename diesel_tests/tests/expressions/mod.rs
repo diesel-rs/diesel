@@ -157,8 +157,8 @@ fn function_with_multiple_arguments() {
     batch_insert(&new_users, users, &connection);
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
-    let data: QueryResult<Vec<String>> = users.select(coalesce(hair_color, name))
-        .load(&connection).map(Iterator::collect);
+    let data = users.select(coalesce(hair_color, name))
+        .load::<String>(&connection);
 
     assert_eq!(Ok(expected_data), data);
 }
