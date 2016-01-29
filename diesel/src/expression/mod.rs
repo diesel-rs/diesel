@@ -48,6 +48,7 @@ pub mod dsl {
     #[doc(inline)] pub use super::count::{count, count_star};
     #[doc(inline)] pub use super::functions::date_and_time::*;
     #[doc(inline)] pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)] pub use super::functions::aggregate_folding::*;
     #[doc(inline)] pub use super::sql_literal::sql;
 
     pub use super::extensions::*;

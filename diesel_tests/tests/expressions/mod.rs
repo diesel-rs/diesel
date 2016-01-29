@@ -164,3 +164,145 @@ fn function_with_multiple_arguments() {
 
     assert_eq!(expected_data, data);
 }
+
+#[test]
+fn test_sum() {
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE numbers (n INTEGER)").unwrap();
+    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
+    let source = numbers.select(sum(n));
+
+    assert_eq!(Ok(8), source.first(&connection));
+    connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
+    assert_eq!(Ok(6), source.first(&connection));
+}
+
+table! {
+    precision_numbers (n) {
+        n -> Double,
+    }
+}
+
+#[test]
+fn test_sum_for_double() {
+    use self::precision_numbers::columns::*;
+    use self::precision_numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE precision_numbers (n DOUBLE PRECISION)").unwrap();
+    connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)").unwrap();
+    let source = numbers.select(sum(n));
+
+    assert_eq!(Ok(8.5f64), source.first(&connection));
+    connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
+    assert_eq!(Ok(6.5f64), source.first(&connection));
+}
+
+table! {
+    nullable_doubles {
+        id -> Serial,
+        n -> Nullable<Double>,
+    }
+}
+
+#[test]
+fn test_sum_for_nullable() {
+    use self::nullable_doubles::columns::*;
+    use self::nullable_doubles::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE nullable_doubles (n DOUBLE PRECISION)").unwrap();
+    connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)").unwrap();
+    let source = numbers.select(sum(n));
+
+    assert_eq!(Ok(Some(5.5f64)), source.first(&connection));
+    connection.execute("DELETE FROM nullable_doubles WHERE n = 5.5").unwrap();
+    assert_eq!(Ok(None), source.first::<Option<f64>>(&connection));
+}
+
+#[test]
+fn test_avg() {
+    use self::precision_numbers::columns::*;
+    use self::precision_numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE precision_numbers (n DOUBLE PRECISION)").unwrap();
+    connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)").unwrap();
+    let source = numbers.select(avg(n));
+
+    assert_eq!(Ok(3f64), source.first(&connection));
+    connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
+    assert_eq!(Ok(3.5f64), source.first(&connection));
+}
+
+
+#[test]
+fn test_avg_for_nullable() {
+    use self::nullable_doubles::columns::*;
+    use self::nullable_doubles::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE nullable_doubles (n DOUBLE PRECISION)").unwrap();
+    connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)").unwrap();
+    let source = numbers.select(avg(n));
+
+    assert_eq!(Ok(Some(6f64)), source.first(&connection));
+    connection.execute("DELETE FROM nullable_doubles WHERE n = 6").unwrap();
+    assert_eq!(Ok(None), source.first::<Option<f64>>(&connection));
+}
+
+#[test]
+fn test_avg_for_integer() {
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE numbers (n INTEGER)").unwrap();
+    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (6)").unwrap();
+    let source = numbers.select(avg(n));
+
+    let result = source.first::<data_types::PgNumeric>(&connection);
+    let expected_result = data_types::PgNumeric::Positive {
+        digits: vec![3],
+        weight: 0,
+        scale: 16,
+    };
+    assert_eq!(Ok(expected_result), result);
+
+    connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
+    let result = source.first::<data_types::PgNumeric>(&connection);
+    let expected_result = data_types::PgNumeric::Positive {
+        digits: vec![3, 5000],
+        weight: 0,
+        scale: 16,
+    };
+    assert_eq!(Ok(expected_result), result);
+}
+
+table! {
+    numeric (n) {
+        n -> Numeric,
+    }
+}
+
+#[test]
+fn test_avg_for_numeric() {
+    use self::numeric::columns::*;
+    use self::numeric::table as numeric;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE numeric (n NUMERIC(8,2))").unwrap();
+    connection.execute("INSERT INTO numeric (n) VALUES (2), (1), (6)").unwrap();
+    let source = numeric.select(avg(n));
+
+    let result = source.first::<data_types::PgNumeric>(&connection);
+    let expected_result = data_types::PgNumeric::Positive {
+        digits: vec![3],
+        weight: 0,
+        scale: 16,
+    };
+    assert_eq!(Ok(expected_result), result);
+}
