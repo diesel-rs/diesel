@@ -6,6 +6,10 @@ Provides various macros and annotations for
 boilerplate needing to be written. It can be used through `rustc_plugin`, or
 `syntex` on stable.
 
+## Note: This README is for `master`, not the latest released version. You can find the readme for the latest release [here][latest-release-readme].
+
+[latest-release-readme]: https://github.com/sgrif/diesel/blob/v0.4.1/diesel_codegen/README.md
+
 Using on nightly
 ----------------
 
