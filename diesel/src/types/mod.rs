@@ -3,6 +3,7 @@
 pub mod ops;
 mod ord;
 mod impls;
+mod fold;
 
 #[doc(hidden)]
 pub mod structs {
@@ -17,6 +18,9 @@ pub mod structs {
 
 /// Marker trait for types which can be compared for ordering.
 pub use self::ord::SqlOrd;
+
+/// Marker trait for types which can be folded for a sum.
+pub use self::fold::Foldable;
 
 use backend::{Backend, TypeMetadata};
 use row::Row;

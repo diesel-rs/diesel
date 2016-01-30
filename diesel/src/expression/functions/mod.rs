@@ -158,4 +158,5 @@ macro_rules! no_arg_sql_function {
 }
 
 pub mod aggregate_ordering;
+pub mod aggregate_folding;
 pub mod date_and_time;
