@@ -63,10 +63,10 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// # fn delete() -> QueryResult<()> {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
+/// #     let get_count = || users.count().first::<i64>(&connection);
 /// let old_count = get_count();
 /// try!(diesel::delete(users.filter(id.eq(1))).execute(&connection));
-/// assert_eq!(old_count - 1, get_count());
+/// assert_eq!(old_count.map(|count| count - 1), get_count());
 /// # Ok(())
 /// # }
 /// ```
@@ -91,9 +91,9 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// # fn delete() -> QueryResult<()> {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// #     let get_count = || users.count().first::<i64>(&connection).unwrap();
+/// #     let get_count = || users.count().first::<i64>(&connection);
 /// try!(diesel::delete(users).execute(&connection));
-/// assert_eq!(0, get_count());
+/// assert_eq!(Ok(0), get_count());
 /// # Ok(())
 /// # }
 /// ```

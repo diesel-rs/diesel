@@ -83,7 +83,7 @@ mod tests {
     fn connection() -> PgConnection {
         dotenv().ok();
 
-        let connection_url = ::std::env::var("DATABASE_URL").ok()
+        let connection_url = ::std::env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set in order to run tests");
         PgConnection::establish(&connection_url).unwrap()
     }

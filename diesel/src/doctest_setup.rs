@@ -8,7 +8,7 @@ use self::dotenv::dotenv;
 fn connection_no_data() -> diesel::connection::PgConnection {
     dotenv().ok();
 
-    let connection_url = ::std::env::var("DATABASE_URL").ok()
+    let connection_url = ::std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set in order to run tests");
     let connection = diesel::connection::PgConnection::establish(&connection_url).unwrap();
     connection.begin_test_transaction().unwrap();

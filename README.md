@@ -49,7 +49,7 @@ fn users_with_name(connection: &Connection, target_name: &str)
 {
     use self::users::dsl::*;
     users.filter(name.eq(target_name)).load(connection)
-        .map(|x| x.collect())
+        .map(Iterator::collect)
 }
 ```
 
@@ -77,7 +77,7 @@ fn users_with_name(connection: &Connection, target_name: &str)
 {
     use self::users::dsl::*;
     users.filter(name.eq(target_name)).load(connection)
-        .map(|x| x.collect())
+        .map(Iterator::collect)
 }
 ```
 
@@ -97,8 +97,8 @@ pub struct User {
 fn main() {
     let connection = Connection::establish(env!("DATABASE_URL"))
         .unwrap();
-    let users: Vec<User> = users::table.load(&connection)
-        .unwrap().collect();
+    let users: QueryResult<Vec<User>> = users::table.load(&connection)
+        .map(Iterator::collect);
 
     println!("Here are all the users in our database: {:?}", users);
 }

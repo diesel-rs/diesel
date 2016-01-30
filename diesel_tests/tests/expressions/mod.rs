@@ -159,10 +159,10 @@ fn function_with_multiple_arguments() {
         .unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
-    let data: Vec<String> = users.select(coalesce(hair_color, name))
-        .load(&connection).unwrap().collect();
+    let data: QueryResult<Vec<String>> = users.select(coalesce(hair_color, name))
+        .load(&connection).map(Iterator::collect);
 
-    assert_eq!(expected_data, data);
+    assert_eq!(Ok(expected_data), data);
 }
 
 #[test]
