@@ -32,6 +32,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `Expression#nullable()`, to allow comparisons of not null columns with
   nullable ones when required.
 
+* Added `sum` and `avg` functions.
+
 ### Changed
 
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to
