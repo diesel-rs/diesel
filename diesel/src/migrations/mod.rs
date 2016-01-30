@@ -94,7 +94,7 @@ pub fn run_pending_migrations<Conn: Connection>(conn: &Conn) -> Result<(), RunMi
     let pending_migrations = all_migrations.into_iter().filter(|m| {
         !already_run.contains(m.version())
     });
-    run_migrations(conn, pending_migrations)
+    run_migrations(conn, pending_migrations.collect())
 }
 
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
@@ -174,10 +174,10 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
         }).collect()
 }
 
-fn run_migrations<T, Conn: Connection>(conn: &Conn, migrations: T)
-    -> Result<(), RunMigrationsError> where
-        T: Iterator<Item=Box<Migration>>
+fn run_migrations<Conn: Connection>(conn: &Conn, mut migrations: Vec<Box<Migration>>)
+    -> Result<(), RunMigrationsError>
 {
+    migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in migrations {
         try!(run_migration(conn, migration));
     }
