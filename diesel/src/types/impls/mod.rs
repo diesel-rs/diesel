@@ -63,7 +63,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSql<types::$Source, DB>,
         {
-            fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
                 $crate::types::FromSql::<types::$Source, DB>::from_sql(row.take())
             }
         }
@@ -73,7 +73,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             Option<$Target>: $crate::types::FromSql<types::Nullable<types::$Source>, DB>,
         {
-            fn build_from_row<R: $crate::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
                 $crate::types::FromSql::<types::Nullable<types::$Source>, DB>::from_sql(row.take())
             }
         }

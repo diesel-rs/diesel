@@ -19,6 +19,7 @@ pub trait Backend where
     Self: HasSqlType<types::Timestamp>,
 {
     type QueryBuilder: QueryBuilder<Self>;
+    type RawValue: ?Sized;
 }
 
 pub trait TypeMetadata {
@@ -29,6 +30,7 @@ pub struct Debug;
 
 impl Backend for Debug {
     type QueryBuilder = DebugQueryBuilder;
+    type RawValue = ();
 }
 
 impl TypeMetadata for Debug {
@@ -45,6 +47,7 @@ pub struct PgTypeMetadata {
 
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
+    type RawValue = [u8];
 }
 
 impl TypeMetadata for Pg {

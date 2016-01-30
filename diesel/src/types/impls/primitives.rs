@@ -59,7 +59,7 @@ impl ToSql<types::Bool, Pg> for bool {
     }
 }
 
-impl<DB: Backend> FromSql<types::VarChar, DB> for String {
+impl<DB: Backend<RawValue=[u8]>> FromSql<types::VarChar, DB> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let bytes = not_none!(bytes);
         String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error>)
@@ -87,7 +87,7 @@ impl<DB> FromSql<types::Text, DB> for String where
     DB: Backend,
     String: FromSql<types::VarChar, DB>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
         <Self as FromSql<types::VarChar, DB>>::from_sql(bytes)
     }
 }
@@ -110,8 +110,8 @@ impl<'a, DB> ToSql<types::Text, DB> for &'a str where
     }
 }
 
-impl<DB: Backend> FromSql<types::Binary, DB> for Vec<u8> {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+impl<DB: Backend<RawValue=[u8]>> FromSql<types::Binary, DB> for Vec<u8> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
         Ok(not_none!(bytes).into())
     }
 }
@@ -152,7 +152,7 @@ impl<'a, T: ?Sized, ST, DB> FromSql<ST, DB> for Cow<'a, T> where
     DB: Backend + HasSqlType<ST>,
     T::Owned: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }
@@ -162,7 +162,7 @@ impl <'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T> where
     DB: Backend + HasSqlType<ST>,
     Cow<'a, T>: FromSql<ST, DB>,
 {
-    fn build_from_row<R: ::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
         FromSql::<ST, DB>::from_sql(row.take())
     }
 }

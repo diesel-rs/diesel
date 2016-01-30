@@ -20,7 +20,7 @@ impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
     T: FromSql<ST, DB>,
     DB: Backend + HasSqlType<ST>, ST: NotNull,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None)

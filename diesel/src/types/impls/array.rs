@@ -67,7 +67,7 @@ impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     Vec<T>: FromSql<Array<ST>, Pg>,
 {
-    fn build_from_row<R: Row>(row: &mut R) -> Result<Self, Box<Error>> {
+    fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error>> {
         FromSql::<Array<ST>, Pg>::from_sql(row.take())
     }
 }

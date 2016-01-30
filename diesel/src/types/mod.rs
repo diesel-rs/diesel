@@ -84,13 +84,13 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 /// How to deserialize a single field of a given type. The input will always be
 /// the binary representation, not the text.
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>>;
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>>;
 }
 
 /// How to deserialize multiple fields, with a known type. This type is
 /// implemented for tuples of various sizes.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn build_from_row<T: Row>(row: &mut T) -> Result<Self, Box<Error>>;
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error>>;
 }
 
 #[derive(Debug, PartialEq, Eq)]

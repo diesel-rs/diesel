@@ -67,6 +67,7 @@ use self::migration::*;
 use self::migration_error::MigrationError::*;
 use self::schema::NewMigration;
 use self::schema::__diesel_schema_migrations::dsl::*;
+use types::{FromSql, VarChar};
 use {Connection, QueryResult};
 
 use std::collections::HashSet;
@@ -86,7 +87,10 @@ use std::path::{PathBuf, Path};
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn run_pending_migrations<Conn: Connection>(conn: &Conn) -> Result<(), RunMigrationsError> {
+pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsError> where
+    Conn: Connection,
+    String: FromSql<VarChar, Conn::Backend>,
+{
     try!(create_schema_migrations_table_if_needed(conn));
     let already_run = try!(previously_run_migration_versions(conn));
     let migrations_dir = try!(find_migrations_directory());
@@ -102,7 +106,10 @@ pub fn run_pending_migrations<Conn: Connection>(conn: &Conn) -> Result<(), RunMi
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn revert_latest_migration<Conn: Connection>(conn: &Conn) -> Result<String, RunMigrationsError> {
+pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError> where
+    Conn: Connection,
+    String: FromSql<VarChar, Conn::Backend>,
+{
     try!(create_schema_migrations_table_if_needed(conn));
     let latest_migration_version = try!(latest_run_migration_version(conn));
     revert_migration_with_version(conn, &latest_migration_version)
@@ -145,13 +152,19 @@ pub fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -
     })
 }
 
-fn previously_run_migration_versions<Conn: Connection>(conn: &Conn) -> QueryResult<HashSet<String>> {
+fn previously_run_migration_versions<Conn>(conn: &Conn) -> QueryResult<HashSet<String>> where
+    Conn: Connection,
+    String: FromSql<VarChar, Conn::Backend>,
+{
     __diesel_schema_migrations.select(version)
         .load(conn)
         .map(|r| r.collect())
 }
 
-fn latest_run_migration_version<Conn: Connection>(conn: &Conn) -> QueryResult<String> {
+fn latest_run_migration_version<Conn>(conn: &Conn) -> QueryResult<String> where
+    Conn: Connection,
+    String: FromSql<VarChar, Conn::Backend>,
+{
     use ::expression::dsl::max;
     __diesel_schema_migrations.select(max(version))
         .first(conn)

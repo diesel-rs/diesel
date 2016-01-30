@@ -1,7 +1,8 @@
+use backend::{Backend, Pg};
 use db_result::PgResult;
 
-pub trait Row {
-    fn take(&mut self) -> Option<&[u8]>;
+pub trait Row<DB: Backend> {
+    fn take(&mut self) -> Option<&DB::RawValue>;
     fn next_is_null(&self, count: usize) -> bool;
 }
 
@@ -21,7 +22,7 @@ impl<'a> PgRow<'a> {
     }
 }
 
-impl<'a> Row for PgRow<'a> {
+impl<'a> Row<Pg> for PgRow<'a> {
     fn take(&mut self) -> Option<&[u8]> {
         let current_idx = self.col_idx;
         self.col_idx += 1;

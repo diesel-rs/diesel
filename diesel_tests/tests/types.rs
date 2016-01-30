@@ -314,7 +314,7 @@ fn third_party_crates_can_add_new_types() {
     }
 
     impl FromSqlRow<MyInt, Pg> for i32 {
-        fn build_from_row<R: ::diesel::row::Row>(row: &mut R) -> Result<Self, Box<Error>> {
+        fn build_from_row<R: ::diesel::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error>> {
             FromSql::<MyInt, Pg>::from_sql(row.take())
         }
     }

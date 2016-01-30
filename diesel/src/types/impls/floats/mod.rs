@@ -1,7 +1,7 @@
 extern crate byteorder;
 
 use std::error::Error;
-use std::io::Write;
+use std::io::prelude::*;
 
 use backend::Backend;
 use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
@@ -11,7 +11,7 @@ use types::{self, FromSql, ToSql, IsNull};
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 
-impl<DB: Backend> FromSql<types::Float, DB> for f32 {
+impl<DB: Backend<RawValue=[u8]>> FromSql<types::Float, DB> for f32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         bytes.read_f32::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)
@@ -26,7 +26,7 @@ impl<DB: Backend> ToSql<types::Float, DB> for f32 {
     }
 }
 
-impl<DB: Backend> FromSql<types::Double, DB> for f64 {
+impl<DB: Backend<RawValue=[u8]>> FromSql<types::Double, DB> for f64 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
         bytes.read_f64::<BigEndian>().map_err(|e| Box::new(e) as Box<Error>)

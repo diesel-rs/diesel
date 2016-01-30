@@ -38,7 +38,7 @@ macro_rules! tuple_impls {
                 $(DB: HasSqlType<$ST>),+,
                 DB: HasSqlType<($($ST,)+)>,
             {
-                fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
+                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
             }
@@ -49,7 +49,7 @@ macro_rules! tuple_impls {
                 $(DB: HasSqlType<$ST>),+,
                 DB: HasSqlType<($($ST,)+)>,
             {
-                fn build_from_row<RowT: Row>(row: &mut RowT) -> Result<Self, Box<Error>> {
+                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error>> {
                     if e!(row.next_is_null($Tuple)) {
                         Ok(None)
                     } else {
