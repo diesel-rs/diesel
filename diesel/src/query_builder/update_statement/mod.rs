@@ -4,7 +4,7 @@ pub mod target;
 pub use self::changeset::{Changeset, AsChangeset};
 pub use self::target::UpdateTarget;
 
-use backend::Backend;
+use backend::{Backend, SupportsReturningClause};
 use expression::Expression;
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult, Context};
 use query_source::Table;
@@ -75,7 +75,7 @@ impl<T, U> AsQuery for UpdateStatement<T, U> where
 pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
 impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
-    DB: Backend,
+    DB: Backend + SupportsReturningClause,
     T: UpdateTarget,
     <T::Table as Table>::AllColumns: QueryFragment<DB>,
     UpdateStatement<T, U>: QueryFragment<DB>,

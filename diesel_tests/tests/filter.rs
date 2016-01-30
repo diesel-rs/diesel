@@ -41,8 +41,8 @@ fn filter_by_equality_on_nullable_columns() {
         NewUser::new("Tess", Some("brown")),
         NewUser::new("Jim", Some("black")),
     ];
-    let data: Vec<User> = insert(&data).into(users)
-        .get_results(&connection).unwrap().collect();;
+    insert(&data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let sean = data[0].clone();
     let tess = data[1].clone();
     let jim = data[2].clone();
@@ -62,8 +62,8 @@ fn filter_by_is_not_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    let data: Vec<User> = insert(&data).into(users)
-        .get_results(&connection).unwrap().collect();
+    insert(&data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let derek = data[0].clone();
 
     let source = users.filter(hair_color.is_not_null());
@@ -79,8 +79,8 @@ fn filter_by_is_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    let data: Vec<User> = insert(&data).into(users)
-        .get_results(&connection).unwrap().collect();
+    insert(&data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let gordon = data[1].clone();
 
     let source = users.filter(hair_color.is_null());
@@ -151,8 +151,8 @@ fn filter_on_multiple_columns() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    let data: Vec<User> = insert(data).into(users)
-        .get_results(&connection).unwrap().collect();
+    insert(data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
     let black_haired_tess = data[3].clone();
@@ -187,8 +187,8 @@ fn filter_called_twice_means_same_thing_as_and() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    let data: Vec<User> = insert(data).into(users)
-        .get_results(&connection).unwrap().collect();
+    insert(data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
     let black_haired_tess = data[3].clone();

@@ -1,4 +1,4 @@
-use backend::Backend;
+use backend::{Backend, SupportsReturningClause};
 use persistable::{Insertable, InsertableColumns};
 use expression::Expression;
 use query_builder::*;
@@ -83,7 +83,7 @@ impl<T, U> Query for InsertQuery<T, U> where
 }
 
 impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
-    DB: Backend,
+    DB: Backend + SupportsReturningClause,
     T: QueryFragment<DB>,
     U: QueryFragment<DB>,
 {

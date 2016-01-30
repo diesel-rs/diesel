@@ -26,6 +26,8 @@ pub trait TypeMetadata {
     type TypeMetadata;
 }
 
+pub trait SupportsReturningClause {}
+
 pub struct Debug;
 
 impl Backend for Debug {
@@ -36,6 +38,8 @@ impl Backend for Debug {
 impl TypeMetadata for Debug {
     type TypeMetadata = ();
 }
+
+impl SupportsReturningClause for Debug {}
 
 pub struct Pg;
 
@@ -53,3 +57,5 @@ impl Backend for Pg {
 impl TypeMetadata for Pg {
     type TypeMetadata = PgTypeMetadata;
 }
+
+impl SupportsReturningClause for Pg {}

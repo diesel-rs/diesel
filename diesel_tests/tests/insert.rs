@@ -5,20 +5,37 @@ use diesel::*;
 fn insert_records() {
     use schema::users::table as users;
     let connection = connection();
-
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
 
+    insert(new_users).into(users).execute(&connection).unwrap();
+    let actual_users = users.load(&connection).unwrap().collect::<Vec<User>>();
+
+    let expected_users = vec![
+        User { id: actual_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
+        User { id: actual_users[1].id, name: "Tess".to_string(), hair_color: None },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
+#[cfg(not(feature = "sqlite"))]
+fn insert_records_using_returning_clause() {
+    use schema::users::table as users;
+    let connection = connection();
+    let new_users: &[_] = &[
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+
+    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
     let expected_users = vec![
         User { id: inserted_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: inserted_users[1].id, name: "Tess".to_string(), hair_color: None },
     ];
-    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
-    assert_eq!(expected_users, actual_users);
     assert_eq!(expected_users, inserted_users);
 }
 
@@ -36,7 +53,7 @@ fn insert_with_defaults() {
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
+    insert(new_users).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -45,7 +62,6 @@ fn insert_with_defaults() {
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
-    assert_eq!(expected_users, inserted_users);
 }
 
 #[test]
@@ -62,7 +78,7 @@ fn insert_with_defaults_not_provided() {
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let inserted_users: Vec<_> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
+    insert(new_users).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
@@ -71,7 +87,6 @@ fn insert_with_defaults_not_provided() {
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
-    assert_eq!(expected_users, inserted_users);
 }
 
 #[test]
@@ -113,17 +128,15 @@ fn insert_borrowed_content() {
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection)
-        .unwrap().collect();
+    insert(new_users).into(users).execute(&connection).unwrap();
 
+    let actual_users: Vec<User> = users.load(&connection).unwrap().collect();
     let expected_users = vec![
-        User::new(inserted_users[0].id, "Sean"),
-        User::new(inserted_users[1].id, "Tess"),
+        User::new(actual_users[0].id, "Sean"),
+        User::new(actual_users[1].id, "Tess"),
     ];
-    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
     assert_eq!(expected_users, actual_users);
-    assert_eq!(expected_users, inserted_users);
 }
 
 #[test]

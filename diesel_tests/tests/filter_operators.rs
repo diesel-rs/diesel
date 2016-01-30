@@ -91,8 +91,8 @@ fn filter_by_like() {
         NewUser::new("Tess Griffin", None),
         NewUser::new("Jim", None),
     ];
-    let data: Vec<User> = insert(&data).into(users)
-        .get_results(&connection).unwrap().collect();;
+    insert(&data).into(users).execute(&connection).unwrap();
+    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
     let sean = data[0].clone();
     let tess = data[1].clone();
     let jim = data[2].clone();

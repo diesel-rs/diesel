@@ -141,6 +141,7 @@ fn save_changes_impl(
                 $_pub fn save_changes<'update, T, Conn>(&'update self, connection: &Conn)
                     -> ::diesel::QueryResult<T> where
                     Conn::Backend: ::diesel::types::HasSqlType<$sql_type> +
+                        ::diesel::backend::SupportsReturningClause +
                         ::diesel::types::HasSqlType<
                             <<$table as ::diesel::query_source::Table>::PrimaryKey
                             as ::diesel::expression::Expression>::SqlType>,
