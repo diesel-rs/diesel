@@ -7,7 +7,7 @@ use types::{self, FromSql};
 
 impl FromSql<types::VarChar, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error>> {
-        let text = try!(not_none!(value).read_text());
+        let text = not_none!(value).read_text();
         Ok(text.into())
     }
 }

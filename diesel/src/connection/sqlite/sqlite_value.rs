@@ -1,7 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 extern crate libc;
 
-use std::ffi::CStr;
 use std::{slice, str};
 
 use backend::Sqlite;
@@ -25,10 +24,12 @@ impl SqliteValue {
         }
     }
 
-    pub fn read_text(&self) -> Result<&str, str::Utf8Error> {
+    pub fn read_text(&self) -> &str {
         unsafe {
             let ptr = ffi::sqlite3_column_text(self.inner_statement, self.col_index);
-            CStr::from_ptr(ptr as *const libc::c_char).to_str()
+            let len = ffi::sqlite3_column_bytes(self.inner_statement, self.col_index);
+            let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            str::from_utf8_unchecked(bytes)
         }
     }
 
