@@ -12,6 +12,7 @@ use diesel::{migrations, Connection};
 use diesel::connection::PgConnection;
 use diesel::types::{FromSql, VarChar};
 use std::{env, fs};
+use std::io::stdout;
 use std::error::Error;
 use std::path::{PathBuf, Path};
 
@@ -99,7 +100,7 @@ fn run_migration_command(matches: &ArgMatches) {
             let connection = connection(&database_url(args));
             connection.transaction(|| {
                 let reverted_version = try!(migrations::revert_latest_migration(&connection));
-                migrations::run_migration_with_version(&connection, &reverted_version)
+                migrations::run_migration_with_version(&connection, &reverted_version, &mut stdout())
             }).unwrap_or_else(handle_error);
         }
         ("generate", Some(args)) => {
