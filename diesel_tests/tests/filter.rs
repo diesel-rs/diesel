@@ -32,47 +32,6 @@ fn filter_by_string_equality() {
 }
 
 #[test]
-fn sqlite_empty() {
-    use diesel::connection::SqliteConnection;
-    use schema::users::dsl::*;
-
-    let connection = SqliteConnection::establish(":memory:").unwrap();
-    connection.execute("
-        CREATE TABLE users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name VARCHAR NOT NULL,
-          hair_color VARCHAR
-        )").unwrap();
-
-    assert_eq!(Vec::<User>::new(), users.load(&connection).unwrap().collect::<Vec<User>>());
-}
-
-#[test]
-fn zomg_sqlite() {
-    use diesel::connection::SqliteConnection;
-    use schema::users::dsl::*;
-
-    let connection = SqliteConnection::establish(":memory:").unwrap();
-    connection.execute("
-        CREATE TABLE users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name VARCHAR NOT NULL,
-          hair_color VARCHAR
-        )").unwrap();
-    insert(&vec![NewUser::new("Sean", None), NewUser::new("Tess", None)])
-        .into(users)
-        .execute(&connection)
-        .unwrap();
-    let data = users.load(&connection).unwrap().collect::<Vec<User>>();
-    let sean = &data[0];
-    let tess = &data[1];
-
-    assert_eq!(Ok(sean), users.filter(name.eq("Sean")).first(&connection).as_ref());
-    assert_eq!(Ok(tess), users.filter(name.eq("Tess")).first(&connection).as_ref());
-    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).first::<User>(&connection));
-}
-
-#[test]
 fn filter_by_equality_on_nullable_columns() {
     use schema::users::dsl::*;
 
