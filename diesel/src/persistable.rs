@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
+use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
 use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
 use query_source::{Table, Column};
@@ -10,7 +10,7 @@ use query_source::{Table, Column};
 /// [`#[insertable_into]`](https://github.com/sgrif/diesel/tree/master/diesel_codegen#insertable_intotable_name).
 /// This is automatically implemented for `&[T]`, `Vec<T>` and `&Vec<T>` for inserting more than
 /// one record.
-pub trait Insertable<T: Table> {
+pub trait Insertable<T: Table, DB> {
     type Columns: InsertableColumns<T>;
     type Values: Expression<SqlType=<Self::Columns as InsertableColumns<T>>::SqlType>;
 
@@ -25,12 +25,13 @@ pub trait InsertableColumns<T: Table> {
     fn names(&self) -> String;
 }
 
-impl<'a, T, U> Insertable<T> for &'a [U] where
+impl<'a, T, U, DB> Insertable<T, DB> for &'a [U] where
     T: Table,
-    &'a U: Insertable<T>,
+    &'a U: Insertable<T, DB>,
+    DB: SupportsDefaultKeyword,
 {
-    type Columns = <&'a U as Insertable<T>>::Columns;
-    type Values = InsertValues<'a, T, U>;
+    type Columns = <&'a U as Insertable<T, DB>>::Columns;
+    type Values = InsertValues<'a, T, U, DB>;
 
     fn columns() -> Self::Columns {
         <&'a U>::columns()
@@ -44,43 +45,40 @@ impl<'a, T, U> Insertable<T> for &'a [U] where
     }
 }
 
-impl<'a, T, U> Insertable<T> for &'a Vec<U> where
+impl<'a, T, U, DB> Insertable<T, DB> for &'a Vec<U> where
     T: Table,
-    &'a U: Insertable<T>,
+    &'a [U]: Insertable<T, DB>,
 {
-    type Columns = <&'a U as Insertable<T>>::Columns;
-    type Values = InsertValues<'a, T, U>;
+    type Columns = <&'a [U] as Insertable<T, DB>>::Columns;
+    type Values = <&'a [U] as Insertable<T, DB>>::Values;
 
     fn columns() -> Self::Columns {
-        <&'a U>::columns()
+        <&'a [U]>::columns()
     }
 
     fn values(self) -> Self::Values {
-        InsertValues {
-            values: &*self,
-            _marker: PhantomData,
-        }
+        (self as &'a [U]).values()
     }
 }
 
 
-pub struct InsertValues<'a, T, U: 'a> {
+pub struct InsertValues<'a, T, U: 'a, DB> {
     values: &'a [U],
-    _marker: PhantomData<T>,
+    _marker: PhantomData<(T, DB)>,
 }
 
-impl<'a, T, U> Expression for InsertValues<'a, T, U> where
+impl<'a, T, U, DB> Expression for InsertValues<'a, T, U, DB> where
     T: Table,
-    &'a U: Insertable<T>,
+    &'a U: Insertable<T, DB>,
 {
-    type SqlType = <<&'a U as Insertable<T>>::Columns as InsertableColumns<T>>::SqlType;
+    type SqlType = <<&'a U as Insertable<T, DB>>::Columns as InsertableColumns<T>>::SqlType;
 }
 
-impl<'a, T, U, DB> QueryFragment<DB> for InsertValues<'a, T, U> where
+impl<'a, T, U, DB> QueryFragment<DB> for InsertValues<'a, T, U, DB> where
     DB: Backend,
     T: Table,
-    &'a U: Insertable<T>,
-    <&'a U as Insertable<T>>::Values: QueryFragment<DB>,
+    &'a U: Insertable<T, DB>,
+    <&'a U as Insertable<T, DB>>::Values: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         for (i, record) in self.values.into_iter().enumerate() {

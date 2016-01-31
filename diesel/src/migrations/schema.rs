@@ -12,7 +12,7 @@ use expression::grouped::Grouped;
 use expression::helper_types::AsExpr;
 use {Insertable, types};
 
-impl<'update: 'a, 'a> Insertable<__diesel_schema_migrations::table>
+impl<'update: 'a, 'a, DB> Insertable<__diesel_schema_migrations::table, DB>
 for &'update NewMigration<'a> {
     type Columns = __diesel_schema_migrations::version;
     type Values = Grouped<AsExpr<&'a str, Self::Columns>>;

@@ -29,6 +29,7 @@ pub trait TypeMetadata {
 }
 
 pub trait SupportsReturningClause {}
+pub trait SupportsDefaultKeyword {}
 
 pub struct Debug;
 
@@ -42,6 +43,7 @@ impl TypeMetadata for Debug {
 }
 
 impl SupportsReturningClause for Debug {}
+impl SupportsDefaultKeyword for Debug {}
 
 pub struct Pg;
 
@@ -61,6 +63,7 @@ impl TypeMetadata for Pg {
 }
 
 impl SupportsReturningClause for Pg {}
+impl SupportsDefaultKeyword for Pg {}
 
 pub struct Sqlite;
 

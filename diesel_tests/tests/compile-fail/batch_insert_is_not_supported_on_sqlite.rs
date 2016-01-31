@@ -56,8 +56,12 @@ impl<'a> Insertable<users::table, Sqlite> for &'a NewUser {
 fn main() {
     let connection = SqliteConnection::establish(":memory:").unwrap();
 
-    insert(&NewUser("Hello".into()))
+    let new_users = vec![
+        NewUser("Hello".into()),
+        NewUser("World".into()),
+    ];
+    insert(&new_users)
         .into(users::table)
-        .get_result::<User>(&connection);
-    //~^ ERROR: SupportsReturningClause
+        .execute(&connection);
+    //~^ ERROR: SupportsDefaultKeyword
 }

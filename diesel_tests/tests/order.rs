@@ -11,7 +11,7 @@ fn order_by_column() {
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert(&data).into(users).execute(&conn).unwrap();
+    batch_insert(&data, users, &conn);
     let data = users.load(&conn).unwrap().collect::<Vec<User>>();
     let sean = &data[0];
     let tess = &data[1];
@@ -48,7 +48,7 @@ fn order_by_descending_column() {
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert(&data).into(users).execute(&conn).unwrap();
+    batch_insert(&data, users, &conn);
     let data = users.load(&conn).unwrap().collect::<Vec<User>>();
     let sean = &data[0];
     let tess = &data[1];

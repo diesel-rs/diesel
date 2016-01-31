@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser};
+use schema::{connection, NewUser, batch_insert};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -74,7 +74,7 @@ fn max_returns_same_type_as_expression_being_maximized() {
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    insert(data).into(users).execute(&connection).unwrap();
+    batch_insert(data, users, &connection);
     assert_eq!(Ok("C".to_string()), source.first(&connection));
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
     assert_eq!(Ok("B".to_string()), source.first(&connection));
