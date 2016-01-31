@@ -61,6 +61,8 @@ mod schema;
 
 pub use self::migration_error::*;
 
+use std::io::{stdout, Write};
+
 use ::expression::expression_methods::*;
 use ::query_dsl::*;
 use self::migration::*;
@@ -92,11 +94,11 @@ pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsErro
     String: FromSql<VarChar, Conn::Backend>,
 {
     let migrations_dir = try!(find_migrations_directory());
-    run_pending_migrations_in_directory(conn, &migrations_dir)
+    run_pending_migrations_in_directory(conn, &migrations_dir, &mut stdout())
 }
 
 #[doc(hidden)]
-pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path)
+pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path, output: &mut Write)
     -> Result<(), RunMigrationsError> where
         Conn: Connection,
         String: FromSql<VarChar, Conn::Backend>,
@@ -107,7 +109,7 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
     let pending_migrations = all_migrations.into_iter().filter(|m| {
         !already_run.contains(m.version())
     });
-    run_migrations(conn, pending_migrations.collect())
+    run_migrations(conn, pending_migrations.collect(), output)
 }
 
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
@@ -121,22 +123,26 @@ pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigration
 {
     try!(create_schema_migrations_table_if_needed(conn));
     let latest_migration_version = try!(latest_run_migration_version(conn));
-    revert_migration_with_version(conn, &latest_migration_version)
+    revert_migration_with_version(conn, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }
 
 #[doc(hidden)]
-pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str) -> Result<(), RunMigrationsError> {
+pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, output: &mut Write)
+    -> Result<(), RunMigrationsError>
+{
     migration_with_version(ver)
         .map_err(|e| e.into())
-        .and_then(|m| revert_migration(conn, m))
+        .and_then(|m| revert_migration(conn, m, output))
 }
 
 #[doc(hidden)]
-pub fn run_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str) -> Result<(), RunMigrationsError> {
+pub fn run_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, output: &mut Write)
+    -> Result<(), RunMigrationsError>
+{
     migration_with_version(ver)
         .map_err(|e| e.into())
-        .and_then(|m| run_migration(conn, m))
+        .and_then(|m| run_migration(conn, m, output))
 }
 
 fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
@@ -196,21 +202,21 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
         }).collect()
 }
 
-fn run_migrations<Conn: Connection>(conn: &Conn, mut migrations: Vec<Box<Migration>>)
+fn run_migrations<Conn: Connection>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
     migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in migrations {
-        try!(run_migration(conn, migration));
+        try!(run_migration(conn, migration, output));
     }
     Ok(())
 }
 
-fn run_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>)
+fn run_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
     conn.transaction(|| {
-        println!("Running migration {}", migration.version());
+        try!(writeln!(output, "Running migration {}", migration.version()));
         try!(migration.run(conn));
         try!(::insert(&NewMigration(migration.version()))
              .into(__diesel_schema_migrations)
@@ -219,11 +225,11 @@ fn run_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>)
     }).map_err(|e| e.into())
 }
 
-fn revert_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>)
+fn revert_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
     try!(conn.transaction(|| {
-        println!("Rolling back migration {}", migration.version());
+        try!(writeln!(output, "Rolling back migration {}", migration.version()));
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
         try!(::delete(target).execute(conn));

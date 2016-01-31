@@ -30,6 +30,7 @@ extern crate dotenv;
 use diesel::*;
 use diesel::connection::PgConnection;
 use dotenv::dotenv;
+use std::io;
 
 fn main() {
     dotenv().ok();
@@ -37,6 +38,6 @@ fn main() {
         .expect("DATABASE_URL must be set to run tests");
     let connection = PgConnection::establish(&database_url).unwrap();
     let migrations_dir = migrations::find_migrations_directory().unwrap().join("postgresql");
-    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir).unwrap();
+    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
     inner::main();
 }
