@@ -135,6 +135,33 @@ pub fn connection_without_transaction() -> TestConnection {
     connection
 }
 
+use diesel::query_builder::insert_statement::InsertStatement;
+use diesel::query_builder::QueryFragment;
+
+#[cfg(not(feature = "sqlite"))]
+pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
+    -> usize where
+        T: Table,
+        Conn: Connection,
+        &'a [U]: Insertable<T, Conn::Backend>,
+        InsertStatement<T, &'a [U]>: QueryFragment<Conn::Backend>,
+{
+    insert(records).into(table).execute(connection).unwrap()
+}
+
+#[cfg(feature = "sqlite")]
+pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
+    -> usize where
+        T: Table + Copy,
+        Conn: Connection,
+        &'a U: Insertable<T, Conn::Backend>,
+        InsertStatement<T, &'a U>: QueryFragment<Conn::Backend>,
+{
+    for record in records {
+        insert(record).into(table).execute(connection).unwrap();
+    }
+    records.len()
+}
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let connection = connection();

@@ -39,7 +39,7 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
-    U: Insertable<T> + Copy,
+    U: Insertable<T, DB> + Copy,
     U::Values: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {

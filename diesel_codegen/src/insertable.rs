@@ -75,7 +75,7 @@ fn insertable_impl(
     let values_expr = values_expr(cx, span, table_mod, &fields);
 
     quote_item!(cx,
-        impl<'a: 'insert, 'insert> ::diesel::persistable::Insertable<$table_mod::table> for
+        impl<'a: 'insert, 'insert, DB> ::diesel::persistable::Insertable<$table_mod::table, DB> for
             &'insert $ty
         {
             type Columns = $columns_ty;

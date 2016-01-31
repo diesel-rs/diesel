@@ -10,7 +10,7 @@ fn insert_records() {
         NewUser::new("Tess", None),
     ];
 
-    insert(new_users).into(users).execute(&connection).unwrap();
+    batch_insert(new_users, users, &connection);
     let actual_users = users.load(&connection).unwrap().collect::<Vec<User>>();
 
     let expected_users = vec![
@@ -40,8 +40,8 @@ fn insert_records_using_returning_clause() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
-fn insert_with_defaults() {
+#[cfg(not(feature = "sqlite"))]
+fn batch_insert_with_defaults() {
     use schema::users::table as users;
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
@@ -59,6 +59,27 @@ fn insert_with_defaults() {
     let expected_users = vec![
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+    ];
+    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
+
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
+#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
+fn insert_with_defaults() {
+    use schema::users::table as users;
+    let connection = connection();
+    connection.execute("DROP TABLE users").unwrap();
+    connection.execute("CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR NOT NULL,
+        hair_color VARCHAR NOT NULL DEFAULT 'Green'
+    )").unwrap();
+    insert(&NewUser::new("Tess", None)).into(users).execute(&connection).unwrap();
+
+    let expected_users = vec![
+        User { id: 1, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
@@ -78,16 +99,10 @@ fn insert_with_defaults() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )").unwrap();
-
-    let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
-    ];
-    insert(new_users).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Tess", None)).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
-        User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
-        User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+        User { id: 1, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
     let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
 
@@ -96,33 +111,6 @@ fn insert_with_defaults() {
 
 #[test]
 #[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
-fn insert_with_defaults_not_provided() {
-    use schema::users::table as users;
-    let connection = connection();
-    connection.execute("DROP TABLE users").unwrap();
-    connection.execute("CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR NOT NULL,
-        hair_color VARCHAR NOT NULL DEFAULT 'Green'
-    )").unwrap();
-    let new_users: &[_] = &[
-        BaldUser { name: "Sean".to_string() },
-        BaldUser { name: "Tess".to_string() },
-    ];
-    insert(new_users).into(users).execute(&connection).unwrap();
-
-    let expected_users = vec![
-        User { id: 1, name: "Sean".to_string(), hair_color: Some("Green".to_string()) },
-        User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
-    ];
-    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
-
-    assert_eq!(expected_users, actual_users);
-}
-
-#[test]
-#[should_panic] // FIXME: SQLite has no DEFAULT keyword. We need to work around this.
-#[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn insert_with_defaults_not_provided() {
     use schema::users::table as users;
     let connection = connection();
@@ -161,7 +149,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let count = insert(new_users).into(users).execute(&connection).unwrap();
+    let count = batch_insert(new_users, users, &connection);
     let second_count = insert(&BaldUser { name: "Guy".to_string() }).into(users).execute(&connection).unwrap();
 
     assert_eq!(2, count);
@@ -186,7 +174,7 @@ fn insert_borrowed_content() {
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    insert(new_users).into(users).execute(&connection).unwrap();
+    batch_insert(new_users, users, &connection);
 
     let actual_users: Vec<User> = users.load(&connection).unwrap().collect();
     let expected_users = vec![

@@ -25,7 +25,7 @@ fn bench_selecting_10k_rows_with_trivial_query(b: &mut Bencher) {
     let data: Vec<_> = (0..10_000).map(|i| {
         NewUser::new(&format!("User {}", i), None)
     }).collect();
-    insert(&data).into(users::table).execute(&conn).unwrap();
+    batch_insert(&data, users::table, &conn);
 
     b.iter(|| {
         users::table.load(&conn).unwrap().collect::<Vec<User>>()
@@ -53,7 +53,7 @@ fn bench_selecting_10k_rows_with_medium_complex_query(b: &mut Bencher) {
         let hair_color = if i % 2 == 0 { "black" } else { "brown" };
         NewUser::new(&format!("User {}", i), Some(hair_color))
     }).collect();
-    insert(&data).into(users::table).execute(&conn).unwrap();
+    batch_insert(&data, users::table, &conn);
 
     b.iter(|| {
         use schema::users::dsl::*;
