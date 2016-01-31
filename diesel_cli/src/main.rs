@@ -2,6 +2,7 @@ extern crate chrono;
 #[macro_use]
 extern crate clap;
 extern crate diesel;
+extern crate dotenv;
 
 mod database_error;
 
@@ -247,6 +248,8 @@ fn handle_error<E: Error>(error: E) {
 }
 
 fn database_url(matches: &ArgMatches) -> String {
+    dotenv::dotenv().ok();
+
     matches.value_of("DATABASE_URL")
         .map(|s| s.into())
         .or(env::var("DATABASE_URL").ok())
@@ -262,8 +265,9 @@ fn connection(database_url: &str) -> PgConnection {
 #[cfg(test)]
 mod tests {
     extern crate diesel;
-    extern crate dotenv;
     extern crate tempdir;
+
+    use dotenv::dotenv;
 
     use self::tempdir::TempDir;
     use self::diesel::Connection;
@@ -278,7 +282,7 @@ mod tests {
     use std::{env, fs};
 
     fn database_url() -> String {
-        dotenv::dotenv().ok();
+        dotenv().ok();
         env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set in order to run diesel_cli tests")
     }
