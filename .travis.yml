@@ -1,5 +1,5 @@
 language: rust
-sudo: false
+dist: trusty
 rust:
   - stable
   - beta
@@ -48,6 +48,7 @@ branches:
   only:
     - master
     - ಠ_ಠ
+    - diesel-sqlite-support
 notifications:
   webhooks:
     urls:
