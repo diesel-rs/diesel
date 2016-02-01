@@ -11,6 +11,7 @@ macro_rules! try_no_coerce {
 }
 
 #[test]
+#[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
 fn transaction_executes_fn_in_a_sql_transaction() {
     let conn1 = connection_without_transaction();
     let conn2 = connection_without_transaction();
@@ -112,7 +113,10 @@ fn test_transaction_panics_on_error() {
 }
 
 fn setup_test_table(connection: &TestConnection, table_name: &str) {
-    connection.execute(&format!("CREATE TABLE {} (id SERIAL PRIMARY KEY)", table_name)).unwrap();
+    use schema_dsl::*;
+    create_table(table_name, (
+        integer("id").primary_key().auto_increment(),
+    )).execute(connection).unwrap();
 }
 
 fn drop_test_table(connection: &TestConnection, table_name: &str) {
