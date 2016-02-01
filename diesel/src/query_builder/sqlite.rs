@@ -1,5 +1,5 @@
 use backend::{Sqlite, SqliteType};
-use super::{QueryBuilder, BuildQueryResult, Context};
+use super::{QueryBuilder, BuildQueryResult};
 use types::HasSqlType;
 
 #[doc(hidden)]
@@ -34,11 +34,5 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
     {
         self.push_sql("?");
         self.bind_params.push((Sqlite::metadata(), bind));
-    }
-
-    fn push_context(&mut self, _context: Context) {
-    }
-
-    fn pop_context(&mut self) {
     }
 }

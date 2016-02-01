@@ -17,14 +17,12 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
     T::FromClause: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_context(Context::Delete);
         out.push_sql("DELETE FROM ");
         try!(self.0.from_clause().to_sql(out));
         if let Some(clause) = self.0.where_clause() {
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
         }
-        out.pop_context();
         Ok(())
     }
 }

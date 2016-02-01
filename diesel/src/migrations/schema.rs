@@ -7,21 +7,28 @@ table! {
 
 pub struct NewMigration<'a>(pub &'a str);
 
+use backend::Backend;
 use expression::AsExpression;
-use expression::grouped::Grouped;
 use expression::helper_types::AsExpr;
-use {Insertable, types};
+use persistable::{Insertable, ColumnInsertValue, InsertValues};
 
 impl<'update: 'a, 'a, DB> Insertable<__diesel_schema_migrations::table, DB>
-for &'update NewMigration<'a> {
-    type Columns = __diesel_schema_migrations::version;
-    type Values = Grouped<AsExpr<&'a str, Self::Columns>>;
-
-    fn columns() -> Self::Columns {
-        __diesel_schema_migrations::version
-    }
+    for &'update NewMigration<'a> where
+        DB: Backend,
+        (ColumnInsertValue<
+            __diesel_schema_migrations::version,
+            AsExpr<&'a str, __diesel_schema_migrations::version>,
+        >,): InsertValues<DB>,
+{
+    type Values = (ColumnInsertValue<
+        __diesel_schema_migrations::version,
+        AsExpr<&'a str, __diesel_schema_migrations::version>,
+    >,);
 
     fn values(self) -> Self::Values {
-        Grouped(AsExpression::<types::VarChar>::as_expression(self.0))
+        (ColumnInsertValue::Expression(
+            __diesel_schema_migrations::version,
+            AsExpression::<::types::VarChar>::as_expression(self.0),
+        ),)
     }
 }

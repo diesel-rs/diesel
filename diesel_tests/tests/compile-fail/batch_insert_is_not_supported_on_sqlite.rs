@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::backend::Backend;
 use diesel::connection::SqliteConnection;
 use diesel::types::{Integer, VarChar};
 
@@ -13,43 +12,31 @@ table! {
     }
 }
 
-pub struct User {
-    id: i32,
-    name: String,
-}
-
-use diesel::types::FromSqlRow;
-
-impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
-    (i32, String): FromSqlRow<(Integer, VarChar), DB>,
-{
-    type Row = (i32, String);
-
-    fn build(row: Self::Row) -> Self {
-        User {
-            id: row.0,
-            name: row.1,
-        }
-    }
-}
-
 pub struct NewUser(String);
 
 use diesel::backend::Sqlite;
-use diesel::expression::AsExpression;
-use diesel::expression::grouped::Grouped;
-use diesel::expression::helper_types::AsExpr;
+use diesel::persistable::InsertValues;
+use diesel::query_builder::BuildQueryResult;
+use diesel::query_builder::sqlite::SqliteQueryBuilder;
 
-impl<'a> Insertable<users::table, Sqlite> for &'a NewUser {
-    type Columns = users::name;
-    type Values = Grouped<AsExpr<&'a String, users::name>>;
-
-    fn columns() -> Self::Columns {
-        users::name
+// It doesn't actually matter if this would work. We're testing that insert fails
+// to compile here.
+pub struct MyValues;
+impl InsertValues<Sqlite> for MyValues {
+    fn column_names(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+        Ok(())
     }
 
+    fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+        Ok(())
+    }
+}
+
+impl<'a> Insertable<users::table, Sqlite> for &'a NewUser {
+    type Values = MyValues;
+
     fn values(self) -> Self::Values {
-        Grouped(<&'a String as AsExpression<VarChar>>::as_expression(&self.0))
+        MyValues
     }
 }
 

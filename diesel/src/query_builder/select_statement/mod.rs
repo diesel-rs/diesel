@@ -4,7 +4,7 @@ use backend::Backend;
 use expression::*;
 use query_source::*;
 use std::marker::PhantomData;
-use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult, Context};
+use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
@@ -92,7 +92,6 @@ impl<ST, S, F, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, F, 
     Of: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_context(Context::Select);
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
@@ -101,7 +100,6 @@ impl<ST, S, F, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, F, 
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
-        out.pop_context();
         Ok(())
     }
 }
@@ -115,14 +113,12 @@ impl<ST, S, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, (), W,
     Of: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_context(Context::Select);
         out.push_sql("SELECT ");
         try!(self.select.to_sql(out));
         try!(self.where_clause.to_sql(out));
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
-        out.pop_context();
         Ok(())
     }
 }

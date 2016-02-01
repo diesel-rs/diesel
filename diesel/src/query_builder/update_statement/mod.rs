@@ -6,7 +6,7 @@ pub use self::target::UpdateTarget;
 
 use backend::{Backend, SupportsReturningClause};
 use expression::Expression;
-use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult, Context};
+use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
 use query_source::Table;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
@@ -46,7 +46,6 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
     U: changeset::Changeset<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_context(Context::Update);
         out.push_sql("UPDATE ");
         try!(self.target.from_clause().to_sql(out));
         out.push_sql(" SET ");
@@ -55,7 +54,6 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
         }
-        out.pop_context();
         Ok(())
     }
 }
@@ -81,11 +79,9 @@ impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
     UpdateStatement<T, U>: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_context(Context::Update);
         try!(self.0.to_sql(out));
         out.push_sql(" RETURNING ");
         try!(T::Table::all_columns().to_sql(out));
-        out.pop_context();
         Ok(())
     }
 }
