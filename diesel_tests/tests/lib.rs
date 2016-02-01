@@ -12,6 +12,7 @@ include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
 mod associations;
 mod expressions;
+mod connection;
 mod filter;
 mod filter_operators;
 mod find;

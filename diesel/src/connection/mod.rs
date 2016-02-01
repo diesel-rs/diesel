@@ -93,4 +93,6 @@ pub trait Connection: SimpleConnection + Sized {
     #[doc(hidden)] fn rollback_transaction(&self) -> QueryResult<()>;
     #[doc(hidden)] fn commit_transaction(&self) -> QueryResult<()>;
     #[doc(hidden)] fn get_transaction_depth(&self) -> i32;
+
+    #[doc(hidden)] fn setup_helper_functions(&self);
 }

@@ -130,7 +130,7 @@ fn create_schema_table_and_run_migrations_if_needed(database_url: &String)
     -> DatabaseResult<()>
 {
     if !schema_table_exists(database_url).map_err(handle_error).unwrap() {
-        try!(call_with_conn!(database_url, migrations::create_schema_migrations_table_if_needed));
+        try!(call_with_conn!(database_url, migrations::setup_database));
         call_with_conn!(database_url, migrations::run_pending_migrations).unwrap_or_else(handle_error);
     };
     Ok(())
