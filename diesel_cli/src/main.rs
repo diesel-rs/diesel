@@ -103,16 +103,20 @@ fn run_migration_command(matches: &ArgMatches) {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let timestamp = Local::now().format("%Y%m%d%H%M%S");
             let versioned_name = format!("{}_{}", &timestamp, migration_name);
-            let migration_dir = migrations::find_migrations_directory()
+            let mut migration_dir = migrations::find_migrations_directory()
                 .map_err(handle_error).unwrap().join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
-            // FIXME: It would be nice to print these as relative paths
+            let migration_dir_relative = convert_absolute_path_to_relative(
+                &mut migration_dir,
+                &mut env::current_dir().unwrap()
+            );
+
             let up_path = migration_dir.join("up.sql");
-            println!("Creating {}", up_path.display());
+            println!("Creating {}", migration_dir_relative.join("up.sql").display());
             fs::File::create(up_path).unwrap();
             let down_path = migration_dir.join("down.sql");
-            println!("Creating {}", down_path.display());
+            println!("Creating {}", migration_dir_relative.join("down.sql").display());
             fs::File::create(down_path).unwrap();
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
@@ -259,6 +263,52 @@ fn connection(database_url: &str) -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
+// Converts an absolute path to a relative path, with the restriction that the
+// target path must be in the same directory or above the current path.
+fn convert_absolute_path_to_relative(target_path: &mut PathBuf, current_path: &mut PathBuf)
+    -> PathBuf
+{
+    let mut result = PathBuf::new();
+    let target_path = target_path.as_path();
+    let mut current_path = current_path.as_path();
+
+    while !target_path.starts_with(current_path) {
+        result.push("..");
+        current_path = current_path.parent().unwrap();
+    }
+
+    result.join(strip_prefix(target_path, current_path))
+}
+
+// FIXME: Remove all of this when 1.7 is stable
+fn strip_prefix<'a>(target: &'a Path, base: &'a Path)
+-> &'a Path {
+    iter_after(target.components(), base.components())
+        .map(|c| c.as_path()).unwrap()
+}
+
+fn iter_after<A, I, J>(mut iter: I, mut prefix: J) -> Option<I>
+where I: Iterator<Item = A> + Clone,
+      J: Iterator<Item = A>,
+      A: PartialEq
+{
+    loop {
+        let mut iter_next = iter.clone();
+        match (iter_next.next(), prefix.next()) {
+            (Some(x), Some(y)) => {
+                if x != y {
+                    return None;
+                }
+            }
+            (Some(_), None) => return Some(iter),
+            (None, None) => return Some(iter),
+            (None, Some(_)) => return None,
+        }
+        iter = iter_next;
+    }
+}
+// End FIXME
+
 #[cfg(test)]
 mod tests {
     extern crate diesel;
@@ -273,9 +323,10 @@ mod tests {
 
     use super::create_schema_table_and_run_migrations_if_needed;
     use super::{drop_database, create_database, split_pg_connection_string};
-    use super::{schema_table_exists, search_for_cargo_toml_directory};
+    use super::{schema_table_exists, search_for_cargo_toml_directory, convert_absolute_path_to_relative};
 
     use std::{env, fs};
+    use std::path::PathBuf;
 
     fn database_url() -> String {
         dotenv::dotenv().ok();
@@ -374,5 +425,24 @@ mod tests {
         let postgres_url = "postgresql://localhost:5432".to_owned();
         let database_url = format!("{}/{}", postgres_url, database);
         assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
+    }
+
+    #[test]
+    fn convert_absolute_path_to_relative_works() {
+        assert_eq!(PathBuf::from("migrations/12345_create_user"),
+                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &mut PathBuf::from("projects/foo")));
+        assert_eq!(PathBuf::from("../migrations/12345_create_user"),
+                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &mut PathBuf::from("projects/foo/src")));
+        assert_eq!(PathBuf::from("../../../migrations/12345_create_user"),
+                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &mut PathBuf::from("projects/foo/src/controllers/errors")));
+        assert_eq!(PathBuf::from("12345_create_user"),
+                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &mut PathBuf::from("projects/foo/migrations")));
+        assert_eq!(PathBuf::from("../12345_create_user"),
+                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &mut PathBuf::from("projects/foo/migrations/67890_create_post")));
     }
 }
