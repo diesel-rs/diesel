@@ -8,7 +8,7 @@ use syntax::parse::token::{InternedString, str_to_ident};
 
 use attr::Attr;
 use model::Model;
-use util::ty_param_of_option;
+use util::{ty_param_of_option, is_option_ty};
 
 pub fn expand_changeset_for(
     cx: &mut ExtCtxt,
@@ -205,8 +205,4 @@ fn changeset_expr(
     } else {
         quote_expr!(cx, $column.eq(&self.$field_name))
     }
-}
-
-fn is_option_ty(ty: &ast::Ty) -> bool {
-    ty_param_of_option(ty).is_some()
 }

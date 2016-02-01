@@ -87,7 +87,6 @@ fn insert_with_defaults() {
 }
 
 #[test]
-#[should_panic] // FIXME: SQLite has no DEFAULT keyword. We need to work around this.
 #[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn insert_with_defaults() {
     use schema::users::table as users;

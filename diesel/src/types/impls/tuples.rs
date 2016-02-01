@@ -1,7 +1,8 @@
-use backend::Backend;
+use backend::{Backend, Sqlite, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
-use persistable::InsertableColumns;
+use persistable::{ColumnInsertValue, InsertValues};
 use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
+use query_builder::sqlite::SqliteQueryBuilder;
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
@@ -90,12 +91,83 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
             }
 
-            impl<$($T: Column<Table=Tab>),+, Tab: Table> InsertableColumns<Tab> for ($($T,)+) {
-                type SqlType = ($(<$T as Expression>::SqlType),+);
+            impl<$($T,)+ $($ST,)+ Tab, DB> InsertValues<DB>
+                for ($(ColumnInsertValue<$T, $ST>,)+) where
+                    DB: Backend + SupportsDefaultKeyword,
+                    Tab: Table,
+                    $($T: Column<Table=Tab>,)+
+                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<DB>,)+
+            {
+                fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                    $(
+                        if e!($idx) != 0 {
+                            out.push_sql(", ");
+                        }
+                        try!(out.push_identifier($T::name()));
+                    )+
+                    Ok(())
+                }
 
-                fn names(&self) -> String {
-                    let parts: &[&str] = &[$($T::name()),*];
-                    parts.join(", ")
+                fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                    out.push_sql("(");
+                    $(
+                        if e!($idx) != 0 {
+                            out.push_sql(", ");
+                        }
+                        match e!(&self.$idx) {
+                            &ColumnInsertValue::Expression(_, ref value) => {
+                                try!(value.to_sql(out));
+                            }
+                            _ => out.push_sql("DEFAULT"),
+                        }
+                    )+
+                    out.push_sql(")");
+                    Ok(())
+                }
+            }
+
+            impl<$($T,)+ $($ST,)+ Tab> InsertValues<Sqlite>
+                for ($(ColumnInsertValue<$T, $ST>,)+) where
+                    Tab: Table,
+                    $($T: Column<Table=Tab>,)+
+                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<Sqlite>,)+
+            {
+                #[allow(unused_assignments)]
+                fn column_names(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+                    let mut columns_present = false;
+                    $(
+                        match e!(&self.$idx) {
+                            &ColumnInsertValue::Expression(..) => {
+                                if columns_present {
+                                    out.push_sql(", ");
+                                }
+                                try!(out.push_identifier($T::name()));
+                                columns_present = true;
+                            }
+                            _ => {}
+                        }
+                    )+
+                    Ok(())
+                }
+
+                #[allow(unused_assignments)]
+                fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+                    out.push_sql("(");
+                    let mut columns_present = false;
+                    $(
+                        match e!(&self.$idx) {
+                            &ColumnInsertValue::Expression(_, ref value) => {
+                                if columns_present {
+                                    out.push_sql(", ");
+                                }
+                                try!(value.to_sql(out));
+                                columns_present = true;
+                            }
+                            _ => {}
+                        }
+                    )+
+                    out.push_sql(")");
+                    Ok(())
                 }
             }
 

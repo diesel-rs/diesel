@@ -11,7 +11,7 @@ use syntax::ptr::P;
 use syntax::parse::token::{InternedString, str_to_ident};
 
 use attr::Attr;
-use util::struct_ty;
+use util::{struct_ty, is_option_ty};
 
 pub fn expand_insert(
     cx: &mut ExtCtxt,
@@ -69,40 +69,23 @@ fn insertable_impl(
     };
     let ty = struct_ty(cx, span, item.ident, &generics);
     let table_mod = str_to_ident(&table);
-    let columns_ty = columns_ty(cx, span, table_mod, &fields);
     let values_ty = values_ty(cx, span, table_mod, &fields);
-    let columns_expr = columns_expr(cx, span, table_mod, &fields);
     let values_expr = values_expr(cx, span, table_mod, &fields);
 
     quote_item!(cx,
-        impl<'a: 'insert, 'insert, DB> ::diesel::persistable::Insertable<$table_mod::table, DB> for
-            &'insert $ty
+        impl<'a: 'insert, 'insert, DB> ::diesel::persistable::Insertable<$table_mod::table, DB>
+            for &'insert $ty where
+                DB: ::diesel::backend::Backend,
+                $values_ty: ::diesel::persistable::InsertValues<DB>,
         {
-            type Columns = $columns_ty;
-
-            type Values = ::diesel::expression::grouped::Grouped<$values_ty>;
-
-            fn columns() -> Self::Columns {
-                $columns_expr
-            }
+            type Values = $values_ty;
 
             fn values(self) -> Self::Values {
                 use ::diesel::expression::{AsExpression, Expression};
-                use ::diesel::expression::grouped::Grouped;
-                Grouped($values_expr)
+                $values_expr
             }
         }
     )
-}
-
-fn columns_ty(
-    cx: &ExtCtxt,
-    span: Span,
-    table_mod: ast::Ident,
-    fields: &[Attr],
-) -> P<ast::Ty> {
-    tuple_ty_from(cx, span, fields,
-                  |f| cx.ty_path(column_field_ty(cx, span, table_mod, f)))
 }
 
 fn values_ty(
@@ -114,8 +97,13 @@ fn values_ty(
     tuple_ty_from(cx, span, fields, |f| {
         let ref field_ty = f.ty;
         let column_field_ty = column_field_ty(cx, span, table_mod, f);
-        quote_ty!(cx,
-            ::diesel::expression::helper_types::AsExpr<&'insert $field_ty, $column_field_ty>)
+        quote_ty!(cx, ::diesel::persistable::ColumnInsertValue<
+            $column_field_ty,
+            ::diesel::expression::bound::Bound<
+                <$column_field_ty as ::diesel::expression::Expression>::SqlType,
+                &'insert $field_ty,
+            >,
+        >)
     })
 }
 
@@ -126,16 +114,6 @@ fn column_field_ty(
     field: &Attr,
 ) -> ast::Path {
     cx.path(span, vec![table_mod, field.column_name])
-}
-
-fn columns_expr(
-    cx: &ExtCtxt,
-    span: Span,
-    table_mod: ast::Ident,
-    fields: &[Attr],
-) -> P<ast::Expr> {
-    tuple_expr_from(cx, span, fields, |(_, f)|
-        cx.expr_path(column_field_ty(cx, span, table_mod, f)))
 }
 
 fn values_expr(
@@ -151,9 +129,25 @@ fn values_expr(
             None => cx.expr_tup_field_access(span, self_, i),
         };
         let field_ty = column_field_ty(cx, span, table_mod, f);
-        quote_expr!(cx,
-            AsExpression::<<$field_ty as Expression>::SqlType>::as_expression(&$field_access))
+        let not_none_expr = quote_expr!(cx,
+            ::diesel::persistable::ColumnInsertValue::Expression(
+                $field_ty,
+                AsExpression::<<$field_ty as Expression>::SqlType>::as_expression(&$field_access),
+            )
+        );
+        if is_option_ty(&f.ty) {
+            quote_expr!(cx,
+                if $field_access.is_none() {
+                    ::diesel::persistable::ColumnInsertValue::Default($field_ty)
+                } else {
+                    $not_none_expr
+                }
+            )
+        } else {
+            not_none_expr
+        }
     })
+
 }
 
 fn tuple_ty_from<F: Fn(&Attr) -> P<ast::Ty>>(

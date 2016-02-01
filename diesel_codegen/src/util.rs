@@ -77,3 +77,7 @@ pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
         _ => None,
     }
 }
+
+pub fn is_option_ty(ty: &ast::Ty) -> bool {
+    ty_param_of_option(ty).is_some()
+}
