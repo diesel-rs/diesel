@@ -1,5 +1,6 @@
 use super::schema::*;
 use diesel::*;
+use schema_dsl::*;
 
 #[test]
 fn selecting_basic_data() {
@@ -108,15 +109,14 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
     let connection = connection();
-    connection.execute("CREATE TABLE \"select\" (
-        id SERIAL PRIMARY KEY,
-        \"join\" INTEGER NOT NULL
-    )").unwrap();
+    create_table("select", (
+        integer("id").primary_key().auto_increment(),
+        integer("join").not_null(),
+    )).execute(&connection).unwrap();
     connection.execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
         .unwrap();
 
@@ -132,51 +132,14 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[test]
-#[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
-fn selecting_columns_and_tables_with_reserved_names() {
-    use self::select::dsl::*;
-
-    let connection = connection();
-    connection.execute("CREATE TABLE \"select\" (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        \"join\" INTEGER NOT NULL
-    )").unwrap();
-    connection.execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
-        .unwrap();
-
-    let expected_data = vec![(1, 1), (2, 2), (3, 3)];
-    let actual_data: Vec<(i32, i32)> = select.load(&connection)
-        .unwrap().collect();
-    assert_eq!(expected_data, actual_data);
-
-    let expected_data = vec![1, 2, 3];
-    let actual_data: Vec<i32> = select.select(join).load(&connection)
-        .unwrap().collect();
-    assert_eq!(expected_data, actual_data);
-}
-
-#[test]
-#[cfg(feature = "postgres")] // FIXME: This test should run on everything, the only difference is create table syntax.
 fn selecting_columns_with_different_definition_order() {
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    connection.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, hair_color VARCHAR, name VARCHAR NOT NULL)")
-        .unwrap();
-    let expected_user = User::with_hair_color(1, "Sean", "black");
-    insert(&NewUser::new("Sean", Some("black"))).into(users::table)
-        .execute(&connection).unwrap();
-    let user_from_select = users::table.first(&connection);
-
-    assert_eq!(Ok(&expected_user), user_from_select.as_ref());
-}
-
-#[test]
-#[cfg(feature = "sqlite")] // FIXME: This test should run on everything, the only difference is create table syntax.
-fn selecting_columns_with_different_definition_order() {
-    let connection = connection();
-    connection.execute("DROP TABLE users").unwrap();
-    connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, hair_color VARCHAR, name VARCHAR NOT NULL)")
-        .unwrap();
+    create_table("users", (
+        integer("id").primary_key().auto_increment(),
+        string("hair_color"),
+        string("name").not_null(),
+    )).execute(&connection).unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
     insert(&NewUser::new("Sean", Some("black"))).into(users::table)
         .execute(&connection).unwrap();

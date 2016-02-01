@@ -23,6 +23,7 @@ mod joins;
 mod macros;
 mod order;
 mod perf_details;
+mod schema_dsl;
 mod select;
 #[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 mod transactions;
