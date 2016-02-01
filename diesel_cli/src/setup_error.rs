@@ -10,6 +10,7 @@ use self::SetupError::*;
 pub enum SetupError {
     #[allow(dead_code)]
     CargoTomlNotFound,
+    SeedsSqlNotFound,
     IoError(io::Error),
     QueryError(result::Error),
     ConnectionError(result::ConnectionError),
@@ -37,6 +38,7 @@ impl Error for SetupError {
     fn description(&self) -> &str {
         match *self {
             CargoTomlNotFound => "Unable to find Cargo.toml in this directory or any parent directories.",
+            SeedsSqlNotFound => "Unable to find seeds.sql in migrations directory.",
             IoError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
             QueryError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
             ConnectionError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
@@ -57,7 +59,11 @@ impl PartialEq for SetupError {
                 &CargoTomlNotFound,
                 &CargoTomlNotFound,
             ) => true,
-            _ => false
+            (
+                &SeedsSqlNotFound,
+                &SeedsSqlNotFound,
+            ) => true,
+            _ => false,
         }
     }
 }

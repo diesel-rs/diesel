@@ -11,6 +11,7 @@ use diesel::{migrations, Connection};
 use diesel::connection::PgConnection;
 use self::setup_error::SetupError;
 use std::{env, fs};
+use std::io::Read;
 use std::error::Error;
 use std::path::{PathBuf, Path};
 
@@ -50,18 +51,24 @@ fn main() {
         .about("Creates the migrations directory, creates the database \
                 specified in your DATABASE_URL, and runs existing migrations.")
         .arg(database_arg());
+        
+    let seed_subcommand = SubCommand::with_name("seed")
+        .about("Adding initial data after database is created.")
+        .arg(database_arg());
 
     let matches = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
+        .subcommand(seed_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .get_matches();
 
     match matches.subcommand() {
         ("migration", Some(matches)) => run_migration_command(matches),
         ("setup", Some(matches)) => run_setup_command(matches),
+        ("seed", Some(matches)) => run_seed_command(matches),
         _ => unreachable!(),
     }
 }
@@ -122,6 +129,31 @@ fn run_setup_command(matches: &ArgMatches) {
         migrations::run_pending_migrations(&connection)
             .map_err(handle_error).unwrap();
     }
+}
+
+fn run_seed_command(matches: &ArgMatches) {
+    let migration_dir = migrations::find_migrations_directory()
+        .map_err(handle_error).unwrap();
+    if !seeds_file_exists(migration_dir.as_path()) {
+        handle_error(SetupError::SeedsSqlNotFound);
+    }
+    let connection = connection(&database_url(matches));
+    run_sql_from_file(&connection, migration_dir.join("seeds.sql").as_path())
+        .map_err(handle_error).unwrap();
+    
+}
+
+/// Indicates if seeds file exist
+fn seeds_file_exists(path: &Path) -> bool {
+    path.join("seeds.sql").is_file()
+}
+
+fn run_sql_from_file(conn: &PgConnection, path: &Path) -> Result<(), SetupError> {
+    let mut sql = String::new();
+    let mut file = try!(fs::File::open(path));
+    try!(file.read_to_string(&mut sql));
+    try!(conn.execute(&sql));
+    Ok(())
 }
 
 /// Creates the database specified in the connection url. It returns a
