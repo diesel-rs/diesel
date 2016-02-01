@@ -28,36 +28,24 @@ impl User {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
-#[has_many(comments)]
-#[belongs_to(user)]
-pub struct Post {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub body: Option<String>,
-    pub tags: Vec<String>,
-}
-
-impl Post {
-    pub fn new(id: i32, user_id: i32, title: &str, body: Option<&str>) -> Self {
-        Post {
-            id: id,
-            user_id: user_id,
-            title: title.to_string(),
-            body: body.map(|s| s.to_string()),
-            tags: Vec::new(),
-        }
-    }
-}
-
-#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 pub struct Comment {
     id: i32,
     post_id: i32,
     text: String,
 }
 
-infer_schema!(dotenv!("DATABASE_URL"));
+#[cfg(feature = "postgres")]
+mod backend_specifics {
+    include!("postgres_specific_schema.rs");
+}
+
+#[cfg(feature = "sqlite")]
+mod backend_specifics {
+    include!("sqlite_specific_schema.rs");
+}
+
+pub use self::backend_specifics::*;
+
 numeric_expr!(users::id);
 
 select_column_workaround!(users -> comments (id, name, hair_color));
@@ -111,6 +99,8 @@ pub struct NewComment<'a>(
 pub type TestConnection = ::diesel::connection::PgConnection;
 #[cfg(feature = "sqlite")]
 pub type TestConnection = ::diesel::connection::SqliteConnection;
+
+pub type TestBackend = <TestConnection as Connection>::Backend;
 
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();

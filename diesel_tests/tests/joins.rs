@@ -7,7 +7,7 @@ fn belongs_to() {
 
     connection.execute("INSERT INTO posts (id, user_id, title, body) VALUES
         (1, 1, 'Hello', 'Content'),
-        (2, 2, 'World', DEFAULT)
+        (2, 2, 'World', NULL)
     ").unwrap();
 
     let sean = User::new(1, "Sean");
@@ -133,7 +133,7 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
-        (1, 'World', DEFAULT)
+        (1, 'World', NULL)
     ").unwrap();
 
     let expected_data = vec![
@@ -154,7 +154,7 @@ fn select_complex_from_left_join() {
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
-        (1, 'World', DEFAULT)
+        (1, 'World', NULL)
     ").unwrap();
 
     let sean = User::new(1, "Sean");
@@ -177,7 +177,7 @@ fn select_right_side_with_nullable_column_first() {
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
-        (1, 'World', DEFAULT)
+        (1, 'World', NULL)
     ").unwrap();
 
     let sean = User::new(1, "Sean");
@@ -220,17 +220,16 @@ fn join_through_other() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
-    let posts: Vec<Post> = insert(&vec![
+    batch_insert(&vec![
         NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
         NewPost::new(1, "Hello again!", None),
-        ]).into(posts::table)
-        .get_results(&connection)
-        .unwrap()
-        .collect();
-    let comments: Vec<Comment> = insert(&vec![
+    ], posts::table, &connection);
+    let posts = posts::table.load(&connection).unwrap().collect::<Vec<Post>>();
+    batch_insert(&vec![
         NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
         NewComment(posts[2].id, "Best post ever!!!")
-    ]).into(comments::table).get_results(&connection).unwrap().collect();
+    ], comments::table, &connection);
+    let comments = comments::table.load(&connection).unwrap().collect::<Vec<Comment>>();
 
     let data: Vec<_> = users.inner_join(comments::table).load(&connection)
         .unwrap().collect();

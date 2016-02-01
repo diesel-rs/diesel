@@ -1,3 +1,4 @@
+#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
 mod date_and_time;
 mod ops;
 
@@ -11,7 +12,7 @@ use diesel::expression::dsl::*;
 #[test]
 fn test_count_counts_the_rows() {
     let connection = connection();
-    let source = users.select(count(users.star()));
+    let source = users.select(count(id));
 
     assert_eq!(Ok(0), source.first(&connection));
     insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
@@ -153,10 +154,8 @@ fn function_with_multiple_arguments() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    insert(&vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)])
-        .into(users)
-        .execute(&connection)
-        .unwrap();
+    let new_users = vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)];
+    batch_insert(&new_users, users, &connection);
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
     let data: QueryResult<Vec<String>> = users.select(coalesce(hair_color, name))
@@ -255,6 +254,7 @@ fn test_avg_for_nullable() {
 }
 
 #[test]
+#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
 fn test_avg_for_integer() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -289,6 +289,7 @@ table! {
 }
 
 #[test]
+#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite
 fn test_avg_for_numeric() {
     use self::numeric::columns::*;
     use self::numeric::table as numeric;

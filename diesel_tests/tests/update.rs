@@ -71,6 +71,7 @@ fn test_updating_multiple_columns() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))]
 fn update_returning_struct() {
     use schema::users::dsl::*;
 
@@ -84,6 +85,7 @@ fn update_returning_struct() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn update_with_struct_as_changes() {
     use schema::users::dsl::*;
 
@@ -99,6 +101,7 @@ fn update_with_struct_as_changes() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn update_with_struct_does_not_set_primary_key() {
     use schema::users::dsl::*;
 
@@ -115,6 +118,7 @@ fn update_with_struct_does_not_set_primary_key() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: `save_changes` is still useful on SQLite, we need to support it
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use schema::users::dsl::*;
 
@@ -128,6 +132,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: `save_changes` is still useful on SQLite, we need to support it
 fn option_fields_on_structs_are_not_assigned() {
     use schema::users::dsl::*;
 
@@ -143,6 +148,7 @@ fn option_fields_on_structs_are_not_assigned() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     #[changeset_for(users)]
     struct Changes {
@@ -161,6 +167,7 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     #[changeset_for(posts)]
     struct Changes {
@@ -185,6 +192,7 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn can_update_with_struct_containing_single_field() {
     #[changeset_for(posts)]
     struct SetBody {
@@ -207,6 +215,7 @@ fn can_update_with_struct_containing_single_field() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn struct_with_option_fields_treated_as_null() {
     #[changeset_for(posts, treat_none_as_null="true", __skip_visibility="true")]
     struct UpdatePost {

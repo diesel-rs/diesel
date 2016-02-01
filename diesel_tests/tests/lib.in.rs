@@ -1,7 +1,6 @@
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
+#[cfg(not(feature = "sqlite"))]
 mod annotations;
 mod deserialization;
 mod insert;
 mod schema;
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 mod update;
