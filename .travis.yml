@@ -1,5 +1,5 @@
 language: rust
-dist: trusty
+dist: precise
 rust:
   - stable
   - beta
@@ -7,6 +7,11 @@ rust:
   - nightly
 addons:
   postgresql: '9.4'
+before_install:
+  - sudo apt-get autoremove -y sqlite3
+  - sudo apt-add-repository -y ppa:travis-ci/sqlite3
+  - sudo apt-get -y update
+  - sudo apt-get install -y sqlite3=3.7.15.1-1~travis1
 before_script:
   - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
