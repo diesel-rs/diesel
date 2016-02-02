@@ -1,8 +1,5 @@
-use connection::sqlite::SqliteValue;
 use query_builder::QueryBuilder;
 use query_builder::debug::DebugQueryBuilder;
-use query_builder::pg::PgQueryBuilder;
-use query_builder::sqlite::SqliteQueryBuilder;
 use types::{self, HasSqlType};
 
 pub trait Backend where
@@ -12,7 +9,6 @@ pub trait Backend where
     Self: HasSqlType<types::BigInt>,
     Self: HasSqlType<types::Float>,
     Self: HasSqlType<types::Double>,
-    Self: HasSqlType<types::Numeric>,
     Self: HasSqlType<types::VarChar>,
     Self: HasSqlType<types::Text>,
     Self: HasSqlType<types::Binary>,
@@ -44,44 +40,3 @@ impl TypeMetadata for Debug {
 
 impl SupportsReturningClause for Debug {}
 impl SupportsDefaultKeyword for Debug {}
-
-pub struct Pg;
-
-#[derive(Debug, Clone, Copy)]
-pub struct PgTypeMetadata {
-    pub oid: u32,
-    pub array_oid: u32,
-}
-
-impl Backend for Pg {
-    type QueryBuilder = PgQueryBuilder;
-    type RawValue = [u8];
-}
-
-impl TypeMetadata for Pg {
-    type TypeMetadata = PgTypeMetadata;
-}
-
-impl SupportsReturningClause for Pg {}
-impl SupportsDefaultKeyword for Pg {}
-
-pub struct Sqlite;
-
-pub enum SqliteType {
-    Binary,
-    Text,
-    Float,
-    Double,
-    SmallInt,
-    Integer,
-    Long,
-}
-
-impl Backend for Sqlite {
-    type QueryBuilder = SqliteQueryBuilder;
-    type RawValue = SqliteValue;
-}
-
-impl TypeMetadata for Sqlite {
-    type TypeMetadata = SqliteType;
-}

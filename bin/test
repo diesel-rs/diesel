@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-(cd diesel && cargo test --features "unstable chrono")
+(cd diesel && cargo test --features "unstable chrono sqlite")
 (cd diesel_cli && cargo test)
 (cd diesel_codegen && cargo test --no-default-features --features nightly)
 (cd diesel_tests && cargo test --features "unstable postgres" --no-default-features)

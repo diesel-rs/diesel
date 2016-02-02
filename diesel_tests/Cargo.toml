@@ -13,7 +13,7 @@ diesel = { path = "../diesel" }
 dotenv = { git = "https://github.com/slapresta/rust-dotenv.git" }
 
 [dependencies]
-diesel = { path = "../diesel", features = ["quickcheck", "chrono"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono"] }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
 compiletest_rs = { version = "^0.0.11", optional = true }
 dotenv_macros = { git = "https://github.com/slapresta/rust-dotenv.git", optional = true }
@@ -26,8 +26,8 @@ quickcheck = { git = "https://github.com/BurntSushi/quickcheck.git" }
 default = ["syntex", "diesel_codegen/with-syntex", "dotenv_codegen"]
 unstable = ["compiletest_rs", "diesel_codegen/nightly", "diesel/unstable",
   "quickcheck/unstable", "dotenv_macros"]
-postgres = []
-sqlite = []
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
 
 [[test]]
 name = "compile_tests"

@@ -8,7 +8,7 @@ mod setup_error;
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::{migrations, Connection};
-use diesel::connection::PgConnection;
+use diesel::pg::PgConnection;
 use self::setup_error::SetupError;
 use std::{env, fs};
 use std::io::stdout;
@@ -192,13 +192,12 @@ fn connection(database_url: &str) -> PgConnection {
 
 #[cfg(test)]
 mod tests {
-    extern crate diesel;
     extern crate dotenv;
     extern crate tempdir;
 
+    use diesel::Connection;
+    use diesel::pg::PgConnection;
     use self::tempdir::TempDir;
-    use self::diesel::Connection;
-    use self::diesel::connection::PgConnection;
 
     use setup_error::SetupError;
 

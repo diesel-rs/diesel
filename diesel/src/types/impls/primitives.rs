@@ -1,11 +1,9 @@
 use std::error::Error;
 use std::io::Write;
 
-use backend::{Backend, Pg};
-use data_types::PgNumeric;
+use backend::Backend;
 use expression::bound::Bound;
 use expression::AsExpression;
-use super::option::UnexpectedNullError;
 use types::{HasSqlType, FromSql, ToSql, IsNull, NotNull};
 use {Queryable, types};
 
@@ -15,16 +13,17 @@ primitive_impls!(SmallInt -> (i16, pg: (21, 1005), sqlite: (SmallInt)));
 primitive_impls!(Integer -> (i32, pg: (23, 1007), sqlite: (Integer)));
 primitive_impls!(BigInt -> (i64, pg: (20, 1016), sqlite: (Long)));
 
-primitive_impls!(Oid -> (u32, pg: (26, 1018)));
-
 primitive_impls!(Float -> (f32, pg: (700, 1021), sqlite: (Float)));
 primitive_impls!(Double -> (f64, pg: (701, 1022), sqlite: (Double)));
-primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231), sqlite: (Text)));
 
 primitive_impls!(VarChar -> (String, pg: (1043, 1015), sqlite: (Text)));
 primitive_impls!(Text -> (String, pg: (25, 1009), sqlite: (Text)));
 
 primitive_impls!(Binary -> (Vec<u8>, pg: (17, 1001), sqlite: (Binary)));
+
+primitive_impls!(Date);
+primitive_impls!(Time);
+primitive_impls!(Timestamp);
 
 expression_impls! {
     VarChar -> &'a str,
@@ -34,28 +33,6 @@ expression_impls! {
 }
 
 impl NotNull for () {}
-
-impl FromSql<types::Bool, Pg> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        match bytes {
-            Some(bytes) => Ok(bytes[0] != 0),
-            None => Ok(false),
-        }
-    }
-}
-
-impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        let write_result = if *self {
-            out.write_all(&[1])
-        } else {
-            out.write_all(&[0])
-        };
-        write_result
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error>)
-    }
-}
 
 impl<DB: Backend<RawValue=[u8]>> FromSql<types::VarChar, DB> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
@@ -163,18 +140,4 @@ impl <'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T> where
     fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
         FromSql::<ST, DB>::from_sql(row.take())
     }
-}
-
-#[test]
-fn bool_to_sql() {
-    let mut bytes = vec![];
-    ToSql::<types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
-    ToSql::<types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
-    assert_eq!(bytes, vec![1u8, 0u8]);
-}
-
-#[test]
-fn bool_from_sql_treats_null_as_false() {
-    let result = <bool as FromSql<types::Bool, Pg>>::from_sql(None).unwrap();
-    assert!(!result);
 }

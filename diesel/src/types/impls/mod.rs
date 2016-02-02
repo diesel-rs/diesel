@@ -2,7 +2,7 @@ macro_rules! not_none {
     ($bytes:expr) => {
         match $bytes {
             Some(bytes) => bytes,
-            None => return Err(Box::new(UnexpectedNullError {
+            None => return Err(Box::new($crate::types::impls::option::UnexpectedNullError {
                 msg: "Unexpected null for non-null column".to_string(),
             })),
         }
@@ -48,7 +48,7 @@ macro_rules! expression_impls {
                 DB: $crate::backend::Backend + types::HasSqlType<types::$Source>,
                 $Target: ToSql<types::$Source, DB>,
             {
-                fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<IsNull, Box<::std::error::Error>> {
                     ToSql::<types::$Source, DB>::to_sql(self, out)
                 }
             }
@@ -63,7 +63,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSql<types::$Source, DB>,
         {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error>> {
                 $crate::types::FromSql::<types::$Source, DB>::from_sql(row.take())
             }
         }
@@ -73,7 +73,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             Option<$Target>: $crate::types::FromSql<types::Nullable<types::$Source>, DB>,
         {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error>> {
                 $crate::types::FromSql::<types::Nullable<types::$Source>, DB>::from_sql(row.take())
             }
         }
@@ -93,9 +93,10 @@ macro_rules! queryable_impls {
 
 macro_rules! primitive_impls {
     ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr), sqlite: ($tpe:ident))) => {
-        impl types::HasSqlType<types::$Source> for $crate::backend::Sqlite {
-            fn metadata() -> $crate::backend::SqliteType {
-                $crate::backend::SqliteType::$tpe
+        #[cfg(feature = "sqlite")]
+        impl types::HasSqlType<types::$Source> for $crate::sqlite::Sqlite {
+            fn metadata() -> $crate::sqlite::SqliteType {
+                $crate::sqlite::SqliteType::$tpe
             }
         }
 
@@ -103,32 +104,37 @@ macro_rules! primitive_impls {
     };
 
     ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr))) => {
-        impl types::HasSqlType<types::$Source> for $crate::backend::Pg {
-            fn metadata() -> $crate::backend::PgTypeMetadata {
-                $crate::backend::PgTypeMetadata {
+        #[cfg(feature = "postgres")]
+        impl types::HasSqlType<types::$Source> for $crate::pg::Pg {
+            fn metadata() -> $crate::pg::PgTypeMetadata {
+                $crate::pg::PgTypeMetadata {
                     oid: $oid,
                     array_oid: $array_oid,
                 }
             }
         }
 
+        primitive_impls!($Source -> $Target);
+    };
+
+    ($Source:ident -> $Target:ty) => {
+        primitive_impls!($Source);
+        queryable_impls!($Source -> $Target,);
+        expression_impls!($Source -> $Target,);
+    };
+
+    ($Source:ident) => {
         impl types::HasSqlType<types::$Source> for $crate::backend::Debug {
             fn metadata() {}
         }
 
         impl types::NotNull for types::$Source {
         }
-
-        queryable_impls!($Source -> $Target,);
-        expression_impls!($Source -> $Target,);
     }
 }
 
-mod array;
-pub mod date_and_time;
 pub mod floats;
 mod integers;
-mod option;
+pub mod option;
 mod primitives;
-mod sqlite;
 mod tuples;

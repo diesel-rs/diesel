@@ -12,7 +12,7 @@ use super::SelectDsl;
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }

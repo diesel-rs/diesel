@@ -1,8 +1,7 @@
-use backend::{Backend, Sqlite, SupportsDefaultKeyword};
+use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{ColumnInsertValue, InsertValues};
 use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
-use query_builder::sqlite::SqliteQueryBuilder;
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
@@ -126,14 +125,15 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T,)+ $($ST,)+ Tab> InsertValues<Sqlite>
+            #[cfg(feature = "sqlite")]
+            impl<$($T,)+ $($ST,)+ Tab> InsertValues<::sqlite::Sqlite>
                 for ($(ColumnInsertValue<$T, $ST>,)+) where
                     Tab: Table,
                     $($T: Column<Table=Tab>,)+
-                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<Sqlite>,)+
+                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<::sqlite::Sqlite>,)+
             {
                 #[allow(unused_assignments)]
-                fn column_names(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+                fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
                     let mut columns_present = false;
                     $(
                         match e!(&self.$idx) {
@@ -151,7 +151,7 @@ macro_rules! tuple_impls {
                 }
 
                 #[allow(unused_assignments)]
-                fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+                fn values_clause(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
                     out.push_sql("(");
                     let mut columns_present = false;
                     $(

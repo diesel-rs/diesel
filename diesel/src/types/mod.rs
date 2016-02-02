@@ -2,7 +2,9 @@
 //! them and Rust primitives. Additional types can be added by other crates.
 pub mod ops;
 mod ord;
-mod impls;
+#[macro_use]
+#[doc(hidden)]
+pub mod impls;
 mod fold;
 
 #[doc(hidden)]
@@ -10,9 +12,11 @@ pub mod structs {
     pub mod data_types {
         //! Structs to represent the primitive equivalent of SQL types where
         //! there is no existing Rust primitive, or where using it would be
-        //! confusing (such as date and time types)
-        pub use super::super::impls::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
-        pub use super::super::impls::floats::PgNumeric;
+        //! confusing (such as date and time types). This module will re-export
+        //! all backend specific data structures when compiled against that
+        //! backend.
+        #[cfg(feature = "postgres")]
+        pub use pg::data_types::*;
     }
 }
 
@@ -29,10 +33,6 @@ use std::io::Write;
 
 #[derive(Clone, Copy, Default)] pub struct Bool;
 
-pub type SmallSerial = SmallInt;
-pub type Serial = Integer;
-pub type BigSerial = BigInt;
-
 #[derive(Clone, Copy, Default)] pub struct SmallInt;
 #[doc(hidden)] pub type Int2 = SmallInt;
 #[derive(Clone, Copy, Default)] pub struct Integer;
@@ -46,8 +46,6 @@ pub type BigSerial = BigInt;
 #[doc(hidden)] pub type Float8 = Double;
 #[derive(Clone, Copy, Default)] pub struct Numeric;
 
-#[derive(Clone, Copy, Default)] pub struct Oid;
-
 #[derive(Clone, Copy, Default)] pub struct VarChar;
 #[doc(hidden)] pub type Varchar = VarChar;
 #[derive(Clone, Copy, Default)] pub struct Text;
@@ -60,7 +58,10 @@ pub type BigSerial = BigInt;
 #[derive(Clone, Copy, Default)] pub struct Timestamp;
 
 #[derive(Clone, Copy, Default)] pub struct Nullable<T: NotNull>(T);
-#[derive(Clone, Copy, Default)] pub struct Array<T>(T);
+
+#[cfg(feature = "postgres")]
+#[doc(inline)]
+pub use pg::types::sql_types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata() -> Self::TypeMetadata;

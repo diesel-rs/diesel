@@ -16,7 +16,7 @@ use types::Bool;
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }
@@ -72,7 +72,7 @@ use helper_types::FindBy;
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }

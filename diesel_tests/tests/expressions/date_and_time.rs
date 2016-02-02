@@ -1,6 +1,6 @@
 use schema::connection;
 use diesel::*;
-use diesel::connection::PgConnection;
+use diesel::pg::PgConnection;
 use diesel::data_types::*;
 use diesel::expression::dsl::*;
 
