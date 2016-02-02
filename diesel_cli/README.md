@@ -33,17 +33,24 @@ CREATE TABLE users (
 DROP TABLE USERS;
 ```
 
-You can then run your new migration by running `diesel migration run`. Make
-sure that you set the `DATABASE_URL` environment variable first, or pass it
-directly by doing `diesel migration run
---database-url="postgres://localhost/your_database"` Alternatively, you can
-call [`diesel::migrations::run_pending_migrations`][pending-migrations] from
+You can then run your new migration by running `diesel migration run`. Your
+DATABASE_URL must be set in order to run this command, and there are serveral
+ways that you can set it:
+
+* Set it as an environment variable manually
+* Set it as an environment variable using [rust-dotenv][rust-dotenv]
+* Pass it directly by adding the `--database-url` flag
+
+As an alternative to running migrations with the CLI, you can call
+[`diesel::migrations::run_pending_migrations`][pending-migrations] from
 `build.rs`.
 
 Diesel will automatically keep track of which migrations have already been run,
 ensuring that they're never run twice.
 
-## Commands
+Commands
+--------
+
 ## `diesel setup`
 Searches for a `migrations/` directory, and if it can't find one, creates one
 in the same directory as the first `Cargo.toml` it finds.  It then tries to
@@ -81,3 +88,4 @@ Runs the `down.sql` for the most recent migration.
 Runs the `down.sql` and then the `up.sql` for the most recent migration.
 
 [pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html
+[rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
