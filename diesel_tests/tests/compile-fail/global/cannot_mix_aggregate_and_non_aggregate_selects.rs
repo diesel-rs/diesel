@@ -6,7 +6,7 @@ use diesel::expression::count;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
     }
 }
 

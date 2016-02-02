@@ -5,7 +5,7 @@ use diesel::*;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
     }
 }

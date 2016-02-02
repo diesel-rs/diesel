@@ -107,9 +107,6 @@ fn arbitrary<T>() -> Arbitrary<T> {
 
 #[test]
 fn max_accepts_all_numeric_string_and_date_types() {
-    let _ = users.select(max(arbitrary::<types::SmallSerial>()));
-    let _ = users.select(max(arbitrary::<types::Serial>()));
-    let _ = users.select(max(arbitrary::<types::BigSerial>()));
     let _ = users.select(max(arbitrary::<types::SmallInt>()));
     let _ = users.select(max(arbitrary::<types::Integer>()));
     let _ = users.select(max(arbitrary::<types::BigInt>()));
@@ -119,9 +116,6 @@ fn max_accepts_all_numeric_string_and_date_types() {
     let _ = users.select(max(arbitrary::<types::VarChar>()));
     let _ = users.select(max(arbitrary::<types::Text>()));
 
-    let _ = users.select(max(arbitrary::<types::Nullable<types::SmallSerial>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::Serial>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::BigSerial>>()));
     let _ = users.select(max(arbitrary::<types::Nullable<types::SmallInt>>()));
     let _ = users.select(max(arbitrary::<types::Nullable<types::Integer>>()));
     let _ = users.select(max(arbitrary::<types::Nullable<types::BigInt>>()));
@@ -202,7 +196,7 @@ fn test_sum_for_double() {
 
 table! {
     nullable_doubles {
-        id -> Serial,
+        id -> Integer,
         n -> Nullable<Double>,
     }
 }

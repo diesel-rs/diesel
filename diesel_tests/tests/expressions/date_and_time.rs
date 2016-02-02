@@ -6,7 +6,7 @@ use diesel::expression::dsl::*;
 
 table! {
     has_timestamps {
-        id -> Serial,
+        id -> Integer,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -15,7 +15,7 @@ operator_allowed!(has_timestamps::created_at, Add, add);
 
 table! {
     has_time {
-        id -> Serial,
+        id -> Integer,
         time -> Time,
     }
 }

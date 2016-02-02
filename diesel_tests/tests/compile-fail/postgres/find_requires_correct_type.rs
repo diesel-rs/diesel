@@ -6,7 +6,7 @@ use diesel::pg::PgConnection;
 
 table! {
     int_primary_key {
-        id -> Serial,
+        id -> Integer,
     }
 }
 

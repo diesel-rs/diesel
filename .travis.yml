@@ -43,7 +43,7 @@ matrix:
   allow_failures:
     - rust: nightly
 after_success:
-  - "(cd diesel && travis-cargo --only stable doc-upload -- --features \"postgres sqlite\")"
+  - "(cd diesel && travis-cargo --only stable doc-upload)"
 branches:
   only:
     - master

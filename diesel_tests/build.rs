@@ -25,19 +25,33 @@ mod inner {
     pub fn main() {}
 }
 
-extern crate diesel;
-extern crate dotenv;
-use diesel::*;
-use diesel::pg::PgConnection;
-use dotenv::dotenv;
-use std::io;
+#[cfg(feature = "postgres")]
+mod outer {
+    extern crate diesel;
+    extern crate dotenv;
+    use self::diesel::*;
+    use self::diesel::pg::PgConnection;
+    use self::dotenv::dotenv;
+    use std::io;
+
+    pub fn main() {
+        dotenv().ok();
+        let database_url = ::std::env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set to run tests");
+        let connection = PgConnection::establish(&database_url).unwrap();
+        let migrations_dir = migrations::find_migrations_directory().unwrap().join("postgresql");
+        migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
+        ::inner::main();
+    }
+}
+
+#[cfg(not(feature = "postgres"))]
+mod outer {
+    pub fn main() {
+        ::inner::main();
+    }
+}
 
 fn main() {
-    dotenv().ok();
-    let database_url = ::std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set to run tests");
-    let connection = PgConnection::establish(&database_url).unwrap();
-    let migrations_dir = migrations::find_migrations_directory().unwrap().join("postgresql");
-    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
-    inner::main();
+    outer::main();
 }

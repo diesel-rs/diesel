@@ -8,7 +8,7 @@ pub use schema::{connection, TestConnection};
 pub use diesel::*;
 pub use diesel::result::Error;
 pub use diesel::data_types::*;
-pub use diesel::types::{HasSqlType, ToSql, Nullable, Array};
+pub use diesel::types::{HasSqlType, ToSql, Nullable};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::QueryFragment;
@@ -58,7 +58,7 @@ macro_rules! test_round_trip {
             #[cfg(feature = "postgres")]
             fn vec_round_trip(val: Vec<$tpe>) -> bool {
                 let val: Vec<_> = val.into_iter().map($map_fn).collect();
-                test_type_round_trips::<Array<types::$sql_type>, _>(val)
+                test_type_round_trips::<types::Array<types::$sql_type>, _>(val)
             }
 
             #[cfg(not(feature = "postgres"))]

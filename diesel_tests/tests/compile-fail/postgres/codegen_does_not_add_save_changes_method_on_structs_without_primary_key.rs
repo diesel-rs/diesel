@@ -8,7 +8,7 @@ use diesel::pg::PgConnection;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
         hair_color -> VarChar,
     }
