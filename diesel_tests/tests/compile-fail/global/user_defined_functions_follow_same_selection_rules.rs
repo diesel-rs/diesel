@@ -6,14 +6,14 @@ use diesel::types::*;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
     }
 }
 
 table! {
     posts {
-        id -> Serial,
+        id -> Integer,
         title -> VarChar,
     }
 }

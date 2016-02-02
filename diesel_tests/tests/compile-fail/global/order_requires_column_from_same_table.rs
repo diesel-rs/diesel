@@ -5,13 +5,13 @@ use diesel::*;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
     }
 }
 
 table! {
     posts {
-        id -> Serial,
+        id -> Integer,
     }
 }
 

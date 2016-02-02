@@ -7,7 +7,7 @@ use diesel::types::{Integer, VarChar};
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
     }
 }

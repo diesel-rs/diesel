@@ -94,13 +94,13 @@ mod associations_can_have_nullable_foreign_keys {
 
     table! {
         foos{
-            id -> Serial,
+            id -> Integer,
         }
     }
 
     table! {
         bars {
-            id -> Serial,
+            id -> Integer,
             foo_id -> Nullable<Integer>,
         }
     }

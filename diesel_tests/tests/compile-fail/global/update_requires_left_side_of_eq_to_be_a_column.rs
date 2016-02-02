@@ -6,7 +6,7 @@ use diesel::expression::AsExpression;
 
 table! {
     users {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
     }
 }

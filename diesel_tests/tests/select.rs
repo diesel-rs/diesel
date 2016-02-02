@@ -103,7 +103,7 @@ fn selecting_expression_with_bind_param() {
 
 table! {
     select {
-        id -> Serial,
+        id -> Integer,
         join -> Integer,
     }
 }

@@ -35,14 +35,12 @@ pub struct Comment {
 }
 
 #[cfg(feature = "postgres")]
-mod backend_specifics {
-    include!("postgres_specific_schema.rs");
-}
+#[path="postgres_specific_schema.rs"]
+mod backend_specifics;
 
 #[cfg(feature = "sqlite")]
-mod backend_specifics {
-    include!("sqlite_specific_schema.rs");
-}
+#[path="sqlite_specific_schema.rs"]
+mod backend_specifics;
 
 pub use self::backend_specifics::*;
 

@@ -6,7 +6,7 @@ use diesel::expression::dsl::*;
 
 table! {
     stuff {
-        id -> Serial,
+        id -> Integer,
         name -> VarChar,
     }
 }
