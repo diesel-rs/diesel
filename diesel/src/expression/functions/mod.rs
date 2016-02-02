@@ -82,7 +82,7 @@ macro_rules! sql_function_body {
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::*;
 /// #
-/// # table! { crates { id -> Serial, name -> VarChar, } }
+/// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
 /// sql_function!(canon_crate_name, canon_crate_name_t, (a: types::VarChar) -> types::VarChar);
 ///

@@ -2,18 +2,23 @@
 //! interactions. [A getting started guide](https://github.com/sgrif/diesel#getting-started) can be
 //! found in the README.
 #![deny(warnings)]
-#![cfg_attr(feature = "unstable", feature(time2))]
+#![cfg_attr(all(feature = "unstable", feature = "postgres"), feature(time2))]
 pub mod backend;
 pub mod connection;
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;
+#[macro_use]
 pub mod types;
+
+#[cfg(feature = "postgres")]
+pub mod pg;
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
 
 #[macro_use]
 mod macros;
 
-mod db_result;
 pub mod migrations;
 pub mod query_builder;
 mod query_dsl;

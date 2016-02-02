@@ -1,6 +1,5 @@
 use schema::*;
 use diesel::*;
-use diesel::backend::Pg;
 
 #[test]
 fn filter_by_int_equality() {
@@ -272,7 +271,7 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 #[test]
 #[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 fn filter_by_boxed_predicate() {
-    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, Pg, SqlType=types::Bool>> {
+    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, pg::Pg, SqlType=types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

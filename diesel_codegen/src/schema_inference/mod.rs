@@ -1,7 +1,7 @@
 mod data_structures;
 
 use diesel::*;
-use diesel::connection::PgConnection;
+use diesel::pg::PgConnection;
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::*;

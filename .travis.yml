@@ -14,12 +14,11 @@ before_script:
   - psql -c 'create database diesel_schema;' -U postgres
 script:
 - |
-  (cd diesel && travis-cargo build) &&
-  (cd diesel && travis-cargo doc) &&
+  (cd diesel && travis-cargo doc -- --features "postgres sqlite") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && travis-cargo test -- --features "unstable chrono")
+    (cd diesel && travis-cargo test -- --no-default-features --features "unstable chrono $BACKEND")
   else
-    (cd diesel && travis-cargo test -- --features chrono)
+    (cd diesel && travis-cargo test -- --no-default-features --features "chrono $BACKEND")
   fi &&
   (cd diesel_cli && travis-cargo test) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
@@ -44,7 +43,7 @@ matrix:
   allow_failures:
     - rust: nightly
 after_success:
-- "(cd diesel && travis-cargo --only stable doc-upload)"
+  - "(cd diesel && travis-cargo --only stable doc-upload -- --features \"postgres sqlite\")"
 branches:
   only:
     - master

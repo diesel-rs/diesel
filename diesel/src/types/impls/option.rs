@@ -92,12 +92,13 @@ impl Error for UnexpectedNullError {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "postgres"))]
 use types;
-#[cfg(test)]
-use backend::Pg;
+#[cfg(all(test, feature = "postgres"))]
+use pg::Pg;
 
 #[test]
+#[cfg(feature = "postgres")]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
     let mut bytes = Vec::<u8>::new();

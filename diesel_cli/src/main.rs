@@ -9,8 +9,7 @@ mod database_error;
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::{migrations, Connection};
-use diesel::connection::PgConnection;
-use diesel::types::{FromSql, VarChar};
+use diesel::pg::PgConnection;
 use std::{env, fs};
 use std::io::stdout;
 use std::error::Error;
@@ -318,14 +317,20 @@ where I: Iterator<Item = A> + Clone,
 
 #[cfg(test)]
 mod tests {
+<<<<<<< baf952efb64a879e3388a1ae0cb4e76ea534dc80
     extern crate diesel;
     extern crate tempdir;
 
     use dotenv::dotenv;
 
+=======
+    extern crate dotenv;
+    extern crate tempdir;
+
+    use diesel::Connection;
+    use diesel::pg::PgConnection;
+>>>>>>> Remove hard dependencies on `libpq` and `libsqlite3`
     use self::tempdir::TempDir;
-    use self::diesel::Connection;
-    use self::diesel::connection::PgConnection;
 
     use database_error::DatabaseError;
 

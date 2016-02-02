@@ -28,7 +28,7 @@ mod inner {
 extern crate diesel;
 extern crate dotenv;
 use diesel::*;
-use diesel::connection::PgConnection;
+use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use std::io;
 

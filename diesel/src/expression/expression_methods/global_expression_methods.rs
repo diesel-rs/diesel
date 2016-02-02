@@ -33,7 +33,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -67,7 +67,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -103,7 +103,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -129,7 +129,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -155,7 +155,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -181,7 +181,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -229,7 +229,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # table! {
     /// #     users {
-    /// #         id -> Serial,
+    /// #         id -> Integer,
     /// #         name -> VarChar,
     /// #     }
     /// # }
@@ -237,7 +237,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let order = "name";
-    /// let ordering: Box<BoxableExpression<users, (), backend::Pg, SqlType=()>> =
+    /// let ordering: Box<BoxableExpression<users, (), DB, SqlType=()>> =
     ///     if order == "name" {
     ///         Box::new(name.desc())
     ///     } else {
@@ -262,14 +262,14 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// table! {
     ///     users {
-    ///         id -> Serial,
+    ///         id -> Integer,
     ///         name -> VarChar,
     ///     }
     /// }
     ///
     /// table! {
     ///     posts {
-    ///         id -> Serial,
+    ///         id -> Integer,
     ///         user_id -> Integer,
     ///         author_name -> Nullable<VarChar>,
     ///     }

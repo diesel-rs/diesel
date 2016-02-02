@@ -9,7 +9,6 @@ use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::where_clause::NoWhereClause;
-use types;
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -75,10 +74,18 @@ impl<ST, S, F, W, O, L, Of> Query for SelectStatement<ST, S, F, W, O, L, Of> whe
     type SqlType = ST;
 }
 
+#[cfg(feature = "postgres")]
 impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of> where
     S: SelectableExpression<F, ST>,
 {
-    type SqlType = types::Array<ST>;
+    type SqlType = ::types::Array<ST>;
+}
+
+#[cfg(not(feature = "postgres"))]
+impl<ST, S, F, W, O, L, Of> Expression for SelectStatement<ST, S, F, W, O, L, Of> where
+    S: SelectableExpression<F, ST>,
+{
+    type SqlType = ST;
 }
 
 impl<ST, S, F, W, O, L, Of, DB> QueryFragment<DB> for SelectStatement<ST, S, F, W, O, L, Of> where

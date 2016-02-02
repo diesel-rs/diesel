@@ -1,5 +1,5 @@
 use diesel::*;
-use diesel::backend::Pg;
+use diesel::pg::Pg;
 use diesel::types::{HasSqlType, FromSqlRow};
 
 table! {

@@ -18,20 +18,24 @@ use super::delete_statement::DeleteStatement;
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }
 /// #
+/// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
 ///     .get_result(&connection);
-/// // When passed to `query_one`, the update statement will gain `RETURNING *`
+/// // On backends that support it, you can call `get_result` instead of `execute`
+/// // to have `RETURNING *` automatically appended to the query.
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
 /// ```
 pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
     IncompleteUpdateStatement::new(source)
@@ -51,7 +55,7 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }
@@ -79,7 +83,7 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }

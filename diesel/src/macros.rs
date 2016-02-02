@@ -61,7 +61,7 @@ macro_rules! column {
 /// # #[macro_use] extern crate diesel;
 /// table! {
 ///     users {
-///         id -> Serial,
+///         id -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     }
@@ -75,7 +75,7 @@ macro_rules! column {
 /// # #[macro_use] extern crate diesel;
 /// table! {
 ///     users (non_standard_primary_key) {
-///         non_standard_primary_key -> Serial,
+///         non_standard_primary_key -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     } no select {

@@ -65,6 +65,10 @@ pub struct Default<'a, Col> {
 use diesel::backend::*;
 use diesel::query_builder::*;
 use diesel::types::Integer;
+#[cfg(feature = "postgres")]
+use diesel::pg::Pg;
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::Sqlite;
 
 impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
     DB: Backend,
@@ -102,6 +106,7 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
     }
 }
 
+#[cfg(feature = "sqlite")]
 impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
     Col: QueryFragment<Sqlite>,
 {
@@ -112,6 +117,7 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
     }
 }
 
+#[cfg(feature = "postgres")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier((self.0).0.name));

@@ -39,6 +39,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Changed
 
+* `Connection` is now a trait instead of a struct. The struct that was
+  previously known as `Connection` can be found at `diesel::pg::PgConnection`.
+
 * Rename both the `#[derive(Queriable)]` attribute and the `Queriable` trait to
   use the correct spelling `Queryable`.
 

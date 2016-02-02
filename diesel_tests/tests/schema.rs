@@ -96,9 +96,9 @@ pub struct NewComment<'a>(
 );
 
 #[cfg(feature = "postgres")]
-pub type TestConnection = ::diesel::connection::PgConnection;
+pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
-pub type TestConnection = ::diesel::connection::SqliteConnection;
+pub type TestConnection = ::diesel::sqlite::SqliteConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -112,14 +112,14 @@ pub fn connection() -> TestConnection {
 pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    ::diesel::connection::PgConnection::establish(&connection_url).unwrap()
+    ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
 pub fn connection_without_transaction() -> TestConnection {
     use std::io;
 
-    let connection = ::diesel::connection::SqliteConnection::establish(":memory:").unwrap();
+    let connection = ::diesel::sqlite::SqliteConnection::establish(":memory:").unwrap();
     let migrations_dir = migrations::find_migrations_directory().unwrap().join("sqlite");
     migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
     connection

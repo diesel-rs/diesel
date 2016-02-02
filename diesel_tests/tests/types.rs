@@ -2,7 +2,8 @@
 
 use schema::{connection, TestBackend};
 use diesel::*;
-use diesel::backend::Pg;
+#[cfg(feature="postgres")]
+use diesel::pg::Pg;
 use diesel::types::*;
 
 #[test]
