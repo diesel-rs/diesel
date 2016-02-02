@@ -10,10 +10,12 @@ use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use diesel::{migrations, Connection};
 use diesel::connection::PgConnection;
-use self::database_error::DatabaseError;
+use diesel::types::{FromSql, VarChar};
 use std::{env, fs};
 use std::error::Error;
 use std::path::{PathBuf, Path};
+
+use self::database_error::DatabaseError;
 
 fn main() {
     let database_arg = || Arg::with_name("DATABASE_URL")
@@ -165,7 +167,8 @@ fn setup_database(args: &ArgMatches) -> Result<(), DatabaseError> {
 /// `DatabaseError::ConnectionError` if it can't create the table, and exits
 /// with a migration error if it can't run migrations.
 fn create_schema_table_and_run_migrations_if_needed<Conn: Connection>(conn: &Conn)
-    -> Result<(), DatabaseError>
+    -> Result<(), DatabaseError> where
+        String: FromSql<VarChar, Conn::Backend>,
 {
     if !schema_table_exists(conn).map_err(handle_error).unwrap() {
         try!(migrations::create_schema_migrations_table_if_needed(conn));
