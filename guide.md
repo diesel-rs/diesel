@@ -14,22 +14,11 @@ cargo new diesel_demo
 cd diesel_demo
 ```
 
-We're going to use a [`.env`][dotenv-rust] file to manage our environment
-variables for us, and [`diesel_cli`][diesel-cli] to help set up the database.
+First, let's add Diesel to our dependencies. We're also going to use a tool
+called [`.env`][dotenv-rust] to manage our environment variables for us. We'll
+add it to our dependencies as well.
 
 [dotenv-rust]: https://github.com/slapresta/rust-dotenv
-[diesel-cli]: https://github.com/sgrif/diesel/tree/master/diesel_cli
-
-```shell
-echo DATABASE_URL=postgres://localhost/diesel_demo > .env
-cargo install diesel_cli
-diesel setup
-```
-
-This will create our database for us (if it didn't already exist), and create an
-empty migrations directory that we can use to manage our schema. More on that
-later. Let's add Diesel to our `Cargo.toml`. We'll also add `dotenv` so we can
-use that same `.env` file for our environment variables.
 
 ```toml
 [dependencies]
@@ -39,13 +28,34 @@ dotenv = "0.8.0"
 dotenv_macros = "0.8.0"
 ```
 
-We'll also add this to the top of `src/lib.rs`, which will allow us to use
-features from `diesel_codegen`.
+Diesel provides a separate [CLI][diesel-cli] tool to help manage your project.
+Since it's a standalone binary, and doesn't affect your project's code directly,
+we don't add it to `Cargo.toml`. Instead, we just install it on our system.
 
-```rust
-#![feature(custom_derive, custom_attribute, plugin)]
-#![plugin(diesel_codegen, dotenv_macros)]
+[diesel-cli]: https://github.com/sgrif/diesel/tree/master/diesel_cli
+
+```shell
+cargo install diesel_cli
 ```
+
+We need to tell Diesel where to find our database. We do this by setting the
+`DATABASE_URL` environment variable. On our development machines, we'll likely
+have multiple projects going, and we don't want to pollute our environment. We
+can put the url in a `.env` file instead.
+
+```shell
+echo DATABASE_URL=postgres://localhost/diesel_demo > .env
+```
+
+Now Diesel CLI can set everything up for us.
+
+```shell
+diesel setup
+```
+
+This will create our database for us (if it didn't already exist), and create an
+empty migrations directory that we can use to manage our schema (more on that
+later).
 
 Now we're going to write a small CLI that lets us manage a blog (ignoring the
 fact that we can only access the database from this CLI...). The first thing
@@ -113,14 +123,20 @@ We'll also want to create a `Post` struct that we can read our data into, and
 have diesel generate the names we'll use to reference our tables and columns in
 our queries.
 
-We'll add the following two lines to `src/lib.rs`
+We'll add the following two lines to the top of `src/lib.rs`
 
 ```rust
+#![feature(custom_derive, custom_attribute, plugin)]
+#![plugin(diesel_codegen, dotenv_macros)]
+
 pub mod schema;
 pub mod models;
 ```
 
-and then create those modules.
+The first two lines tell Rust that we want to use some special compiler plugins
+provided by Diesel and Dotenv. These will add various useful class annotations
+that we can use, as well as the `infer_schema!` macro which we'll see in just a
+moment. Next we need to create the two modules that we just declared.
 
 ```rust
 // src/models.rs
