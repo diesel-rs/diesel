@@ -254,8 +254,7 @@ pub fn schema_table_exists<Conn: Connection>(conn: &Conn) -> Result<bool, Databa
 }
 
 fn handle_error<E: Error>(error: E) {
-    println!("{}", error);
-    std::process::exit(1);
+    panic!("{}", error);
 }
 
 fn database_url(matches: &ArgMatches) -> String {
@@ -419,6 +418,10 @@ mod tests {
     }
 
     #[test]
+    #[should_panic] // FIXME: Our migration structure is non-standard
+    // we need to test this against a clean env with a normal structure
+    // once we get integration test coverage (we can't change cwd in the test
+    // process)
     fn create_schema_table_creates_diesel_table() {
         let connection = connection_with_transaction(&database_url());
         connection.silence_notices(|| {
