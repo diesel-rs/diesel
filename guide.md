@@ -283,9 +283,10 @@ Saved draft Diesel demo with id 1
 Unfortunately, running `show_posts` still won't display our new post, because we
 saved it as a draft. If we look back to the code in `show_posts`, we added
 `.filter(published.eq(true))`, and we had `published` default to false in our
-migration. We need to publish it! But in order to do that, we'll need
-to look at how to update an existing record. First, let's commit. The code for
-this demo at this point can be found [here][commit-no-2].
+migration. We need to publish it! But in order to do that, we'll need to look at
+how to update an existing record. First, let's commit. The code for this demo at
+this point can be found [here][commit-no-2].
+
 Now that we've got create and read out of the way, update is actually relatively
 simple. Let's jump write into the script:
 
