@@ -49,14 +49,6 @@ pub trait ExpressionMethods: Expression + Sized {
         Eq::new(self, other.as_expression())
     }
 
-    #[doc(hidden)]
-    fn is_not_distinct_from<T>(self, other: T)
-        -> IsNotDistinctFrom<Self, T::Expression> where
-            T: AsExpression<Self::SqlType>,
-    {
-        IsNotDistinctFrom::new(self, other.as_expression())
-    }
-
     /// Creates a SQL `!=` expression.
     ///
     /// # Example

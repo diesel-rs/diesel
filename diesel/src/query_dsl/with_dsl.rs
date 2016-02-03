@@ -45,9 +45,30 @@ impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right> where
     Left: QuerySource,
     Aliased<'a, Right>: QuerySource + Expression,
 {
-    type FromClause = (Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause);
+    type FromClause = PgOnly<(Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause)>;
 
     fn from_clause(&self) -> Self::FromClause {
-        (self.left.from_clause(), self.right.from_clause())
+        PgOnly((self.left.from_clause(), self.right.from_clause()))
+    }
+}
+
+#[doc(hidden)]
+pub struct PgOnly<T>(T);
+
+#[cfg(feature = "postgres")]
+use pg::{Pg, PgQueryBuilder};
+
+#[cfg(feature = "postgres")]
+impl<T: QueryFragment<Pg>> QueryFragment<Pg> for PgOnly<T> {
+    fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
+        self.0.to_sql(out)
+    }
+}
+
+use backend::*;
+
+impl<T: QueryFragment<Debug>> QueryFragment<Debug> for PgOnly<T> {
+    fn to_sql(&self, out: &mut <Debug as Backend>::QueryBuilder) -> BuildQueryResult {
+        self.0.to_sql(out)
     }
 }

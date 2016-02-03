@@ -1,5 +1,6 @@
-use backend::Backend;
-use expression::{Expression, SelectableExpression};
+use backend::*;
+use expression::{Expression, SelectableExpression, NonAggregate};
+use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use types::{Timestamp, VarChar};
 
@@ -25,12 +26,27 @@ impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz> where
     type SqlType = Timestamp;
 }
 
-impl<Ts, Tz, DB> QueryFragment<DB> for AtTimeZone<Ts, Tz> where
-    DB: Backend,
-    Ts: QueryFragment<DB>,
-    Tz: QueryFragment<DB>,
+impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz> where
+    AtTimeZone<Ts, Tz>: Expression,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+}
+
+impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
+    Ts: QueryFragment<Pg>,
+    Tz: QueryFragment<Pg>,
+{
+    fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
+        try!(self.timestamp.to_sql(out));
+        out.push_sql(" AT TIME ZONE ");
+        self.timezone.to_sql(out)
+    }
+}
+
+impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
+    Ts: QueryFragment<Debug>,
+    Tz: QueryFragment<Debug>,
+{
+    fn to_sql(&self, out: &mut <Debug as Backend>::QueryBuilder) -> BuildQueryResult {
         try!(self.timestamp.to_sql(out));
         out.push_sql(" AT TIME ZONE ");
         self.timezone.to_sql(out)

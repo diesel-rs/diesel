@@ -26,6 +26,7 @@ pub trait TypeMetadata {
 
 pub trait SupportsReturningClause {}
 pub trait SupportsDefaultKeyword {}
+pub trait SupportsNowFunction {}
 
 pub struct Debug;
 
@@ -40,3 +41,4 @@ impl TypeMetadata for Debug {
 
 impl SupportsReturningClause for Debug {}
 impl SupportsDefaultKeyword for Debug {}
+impl SupportsNowFunction for Debug {}

@@ -24,6 +24,24 @@ macro_rules! infix_predicate_body {
             type SqlType = $return_type;
         }
 
+        impl<T, U, QS> $crate::expression::SelectableExpression<QS> for $name<T, U> where
+            T: $crate::expression::SelectableExpression<QS>,
+            U: $crate::expression::SelectableExpression<QS>,
+        {
+        }
+
+        impl<T, U> $crate::expression::NonAggregate for $name<T, U> where
+            T: $crate::expression::NonAggregate,
+            U: $crate::expression::NonAggregate,
+        {
+        }
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! global_infix_predicate_to_sql {
+    ($name:ident, $operator:expr) => {
         impl<T, U, DB> $crate::query_builder::QueryFragment<DB> for $name<T, U> where
             DB: $crate::backend::Backend,
             T: $crate::query_builder::QueryFragment<DB>,
@@ -35,17 +53,41 @@ macro_rules! infix_predicate_body {
                 self.right.to_sql(out)
             }
         }
+    }
+}
 
-        impl<T, U, QS> $crate::expression::SelectableExpression<QS> for $name<T, U> where
-            T: $crate::expression::SelectableExpression<QS>,
-            U: $crate::expression::SelectableExpression<QS>,
+#[macro_export]
+#[doc(hidden)]
+macro_rules! backend_specific_infix_predicate_to_sql {
+    ($name:ident, $operator:expr, $backend:ty) => {
+        impl<T, U> $crate::query_builder::QueryFragment<$backend> for $name<T, U> where
+            T: $crate::query_builder::QueryFragment<$backend>,
+            U: $crate::query_builder::QueryFragment<$backend>,
         {
+            fn to_sql(&self, out: &mut <$backend as $crate::backend::Backend>::QueryBuilder)
+                -> $crate::query_builder::BuildQueryResult
+            {
+                use $crate::query_builder::QueryBuilder;
+                try!(self.left.to_sql(out));
+                out.push_sql($operator);
+                self.right.to_sql(out)
+            }
         }
 
-        impl<T, U> $crate::expression::NonAggregate for $name<T, U> where
-            T: $crate::expression::NonAggregate,
-            U: $crate::expression::NonAggregate,
+        impl<T, U> $crate::query_builder::QueryFragment<$crate::backend::Debug>
+            for $name<T, U> where
+                T: $crate::query_builder::QueryFragment<$crate::backend::Debug>,
+                U: $crate::query_builder::QueryFragment<$crate::backend::Debug>,
         {
+            fn to_sql(
+                &self,
+                out: &mut <$crate::backend::Debug as $crate::backend::Backend>::QueryBuilder,
+            ) -> $crate::query_builder::BuildQueryResult {
+                use $crate::query_builder::QueryBuilder;
+                try!(self.left.to_sql(out));
+                out.push_sql($operator);
+                self.right.to_sql(out)
+            }
         }
     }
 }
@@ -70,6 +112,16 @@ macro_rules! infix_predicate {
     };
 
     ($name:ident, $operator:expr, $return_type:ty) => {
+        global_infix_predicate_to_sql!($name, $operator);
+        infix_predicate_body!($name, $operator, $return_type);
+    };
+
+    ($name:ident, $operator:expr, backend: $backend:ty) => {
+        infix_predicate!($name, $operator, $backend, $crate::types::Bool);
+    };
+
+    ($name:ident, $operator:expr, $backend:ty, $return_type:ty) => {
+        backend_specific_infix_predicate_to_sql!($name, $operator, $backend);
         infix_predicate_body!($name, $operator, $return_type);
     };
 }
@@ -139,7 +191,6 @@ macro_rules! postfix_expression {
 infix_predicate!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
 infix_predicate!(Eq, " = ");
-infix_predicate!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ");
 infix_predicate!(Gt, " > ");
 infix_predicate!(GtEq, " >= ");
 infix_predicate!(Like, " LIKE ");

@@ -23,8 +23,6 @@ pub mod aliased;
 pub mod bound;
 #[doc(hidden)]
 pub mod count;
-#[doc(hidden)]
-pub mod date_and_time;
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod functions;
@@ -34,6 +32,7 @@ pub mod helper_types;
 #[doc(hidden)]
 pub mod nullable;
 #[doc(hidden)]
+#[macro_use]
 pub mod predicates;
 pub mod sql_literal;
 
