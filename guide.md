@@ -14,8 +14,8 @@ cargo new diesel_demo
 cd diesel_demo
 ```
 
-We're going to use a [`.env`][dotenv-rust] to manage our environment variables
-for us, and [`diesel_cli`][diesel-cli] to help set up the database.
+We're going to use a [`.env`][dotenv-rust] file to manage our environment
+variables for us, and [`diesel_cli`][diesel-cli] to help set up the database.
 
 [dotenv-rust]: https://github.com/slapresta/rust-dotenv
 [diesel-cli]: https://github.com/sgrif/diesel/diesel_cli
