@@ -33,10 +33,10 @@ use that same `.env` file for our environment variables.
 
 ```toml
 [dependencies]
-diesel = "^0.5.0"
-diesel_codegen = { version = "^0.5.0", default-features = false, features = ["nightly", "postgres"] }
-dotenv = "^0.8.0"
-dotenv_macros = "^0.8.0"
+diesel = "0.5.0"
+diesel_codegen = { version = "0.5.0", default-features = false, features = ["nightly", "postgres"] }
+dotenv = "0.8.0"
+dotenv_macros = "0.8.0"
 ```
 
 We'll also add this to the top of `src/lib.rs`, which will allow us to use
@@ -63,9 +63,9 @@ Creating migrations/20160202154039_create_posts/up.sql
 Creating migrations/20160202154039_create_posts/down.sql
 ```
 
-Every migration consists of a way to run it, and a way to undo it. `down.sql`
-should always leave your database in the state it was in before running `up.sql`
-when possible. We'll edit our migration to contain the following:
+Migrations allow us to evolve the database schema over time. Each migration can
+be applied (`up.sql`) or reverted (`down.sql`). Applying and immediately
+reverting a migration should leave your database schema unchanged.
 
 ```sql
 -- up.sql
@@ -80,9 +80,9 @@ CREATE TABLE posts (
 DROP TABLE posts
 ```
 
-We can run our new migration with `diesel migration run`. It's usually a good
-idea to make sure that `down.sql` is correct. You can do a quick sanity check by
-doing `diesel migration redo`.
+We can apply our new migration with `diesel migration run`. It's a good idea to
+make sure that `down.sql` is correct. You can do a quick sanity check by doing
+`diesel migration redo`, which will revert and reapply the latest migration.
 
 OK enough SQL, let's write some Rust. We'll start by writing some code to show
 us the last 5 published posts. The first thing we need to do is establish a
