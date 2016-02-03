@@ -8,12 +8,14 @@ mod database_error;
 
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use diesel::{migrations, Connection};
+use diesel::migrations::schema::*;
 use diesel::pg::PgConnection;
-use std::{env, fs};
-use std::io::stdout;
+use diesel::types::{FromSql, VarChar};
+use diesel::{migrations, Connection, Insertable};
 use std::error::Error;
+use std::io::stdout;
 use std::path::{PathBuf, Path};
+use std::{env, fs};
 
 use self::database_error::DatabaseError;
 
@@ -169,6 +171,8 @@ fn setup_database(args: &ArgMatches) -> Result<(), DatabaseError> {
 fn create_schema_table_and_run_migrations_if_needed<Conn: Connection>(conn: &Conn)
     -> Result<(), DatabaseError> where
         String: FromSql<VarChar, Conn::Backend>,
+        for<'a> &'a NewMigration<'a>:
+            Insertable<__diesel_schema_migrations::table, Conn::Backend>,
 {
     if !schema_table_exists(conn).map_err(handle_error).unwrap() {
         try!(migrations::create_schema_migrations_table_if_needed(conn));
@@ -321,6 +325,7 @@ mod tests {
 
     use diesel::Connection;
     use diesel::pg::PgConnection;
+    use dotenv::dotenv;
     use self::tempdir::TempDir;
 
     use database_error::DatabaseError;

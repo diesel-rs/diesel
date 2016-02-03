@@ -57,7 +57,8 @@
 //! ```
 mod migration;
 mod migration_error;
-mod schema;
+#[doc(hidden)]
+pub mod schema;
 
 pub use self::migration_error::*;
 
