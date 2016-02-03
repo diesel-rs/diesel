@@ -7,6 +7,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for SQLite. Diesel still uses postgres by default. To use SQLite
+  instead, add `default-features = false, features = ["sqlite"]` to your
+  Cargo.toml. You'll also want to add `default-features = false` to `codegen`.
+  Since SQLite is a much more limited database, it does not support our full set
+  of features. You can use SQLite and PostgreSQL in the same project if you
+  desire.
+
 * Added support for mapping `types::Timestamp`, `types::Date`, and `types::Time`
   to/from `chrono::NaiveDateTime`, `chrono::NaiveDate`, and `chrono::NaiveTime`.
   Add `features = ["chrono"]` to enable.
