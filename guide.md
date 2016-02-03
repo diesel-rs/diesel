@@ -18,7 +18,7 @@ We're going to use a [`.env`][dotenv-rust] file to manage our environment
 variables for us, and [`diesel_cli`][diesel-cli] to help set up the database.
 
 [dotenv-rust]: https://github.com/slapresta/rust-dotenv
-[diesel-cli]: https://github.com/sgrif/diesel/diesel_cli
+[diesel-cli]: https://github.com/sgrif/diesel/tree/master/diesel_cli
 
 ```shell
 echo DATABASE_URL=postgres://localhost/diesel_demo > .env
