@@ -6,3 +6,4 @@ set -e
 (cd diesel_codegen && cargo test --no-default-features --features nightly)
 (cd diesel_tests && cargo test --features "unstable postgres" --no-default-features)
 (cd diesel_tests && cargo test --features "unstable sqlite" --no-default-features)
+(cd diesel_compile_tests && cargo test)

@@ -1,4 +1,4 @@
-#![cfg(all(feature = "unstable", not(windows)))]
+#![cfg(not(windows))]
 extern crate compiletest_rs as compiletest;
 
 use std::path::PathBuf;
@@ -7,7 +7,7 @@ use std::env::var;
 fn run_mode(mode: &'static str) {
     let mut config = compiletest::default_config();
 
-    let cfg_mode = "compile-fail".parse().expect("Invalid mode");
+    let cfg_mode = mode.parse().expect("Invalid mode");
 
     config.target_rustcflags = Some("-L target/debug/ -L target/debug/deps/".to_owned());
     if let Ok(name) = var::<&str>("TESTNAME") {
@@ -15,18 +15,12 @@ fn run_mode(mode: &'static str) {
         config.filter = Some(s)
     }
     config.mode = cfg_mode;
-    config.src_base = PathBuf::from(format!("tests/compile-fail/{}", mode));
+    config.src_base = PathBuf::from(format!("tests/{}", mode));
 
     compiletest::run_tests(&config);
 }
 
 #[test]
 fn compile_test() {
-    run_mode("global");
-    if cfg!(feature = "postgres") {
-        run_mode("postgres")
-    }
-    if cfg!(feature = "sqlite") {
-        run_mode("sqlite")
-    }
+    run_mode("compile-fail");
 }

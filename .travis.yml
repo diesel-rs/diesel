@@ -30,6 +30,9 @@ script:
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
     (cd diesel_tests && travis-cargo test -- --features $BACKEND)
+  fi &&
+  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
+    (cd diesel_compile_tests && travis-cargo test)
   fi
 env:
   matrix:
