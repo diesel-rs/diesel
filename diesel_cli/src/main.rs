@@ -317,19 +317,10 @@ where I: Iterator<Item = A> + Clone,
 
 #[cfg(test)]
 mod tests {
-<<<<<<< baf952efb64a879e3388a1ae0cb4e76ea534dc80
-    extern crate diesel;
-    extern crate tempdir;
-
-    use dotenv::dotenv;
-
-=======
-    extern crate dotenv;
     extern crate tempdir;
 
     use diesel::Connection;
     use diesel::pg::PgConnection;
->>>>>>> Remove hard dependencies on `libpq` and `libsqlite3`
     use self::tempdir::TempDir;
 
     use database_error::DatabaseError;
