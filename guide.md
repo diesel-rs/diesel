@@ -4,8 +4,8 @@ Getting Started 2.0
 For this guide, we're going to walk through some simple examples for each of the
 pieces of CRUD. Each step in this guide will build on the previous, and is meant
 to be followed along. This guide assumes that you're using PostgreSQL on
-nightly. We'll talk about how to use Diesel on stable in the final chapter.
-Before we start, make sure you have PostgreSQL installed and running.
+Rust nightly. We'll talk about how to use Diesel on stable Rust in the final
+chapter. Before we start, make sure you have PostgreSQL installed and running.
 
 The first thing we need to do is generate our project.
 
