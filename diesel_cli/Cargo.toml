@@ -15,8 +15,12 @@ name = "diesel"
 [dependencies]
 chrono = "^0.2.17"
 clap = "^1.5.5"
-diesel = "^0.4.0"
+diesel = { path = "../diesel", features = ["postgres", "sqlite"] }
 dotenv = "^0.8.0"
 
 [dev-dependencies]
 tempdir = "^0.3.4"
+
+[features]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
