@@ -56,25 +56,25 @@
 //! DROP TABLE posts;
 //! ```
 mod migration;
+#[doc(hidden)]
+pub mod connection;
 mod migration_error;
 #[doc(hidden)]
 pub mod schema;
 
 pub use self::migration_error::*;
+#[doc(inline)]
+pub use self::connection::MigrationConnection;
 
 use std::io::{stdout, Write};
 
 use expression::expression_methods::*;
-use persistable::Insertable;
 use query_dsl::*;
 use self::migration::*;
 use self::migration_error::MigrationError::*;
-use self::schema::NewMigration;
 use self::schema::__diesel_schema_migrations::dsl::*;
-use types::{FromSql, VarChar};
 use {Connection, QueryResult};
 
-use std::collections::HashSet;
 use std::env;
 use std::path::{PathBuf, Path};
 
@@ -92,9 +92,7 @@ use std::path::{PathBuf, Path};
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
 pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsError> where
-    Conn: Connection,
-    String: FromSql<VarChar, Conn::Backend>,
-    for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, Conn::Backend>,
+    Conn: MigrationConnection,
 {
     let migrations_dir = try!(find_migrations_directory());
     run_pending_migrations_in_directory(conn, &migrations_dir, &mut stdout())
@@ -103,12 +101,10 @@ pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsErro
 #[doc(hidden)]
 pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path, output: &mut Write)
     -> Result<(), RunMigrationsError> where
-        Conn: Connection,
-        String: FromSql<VarChar, Conn::Backend>,
-        for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, Conn::Backend>,
+        Conn: MigrationConnection,
 {
     try!(create_schema_migrations_table_if_needed(conn));
-    let already_run = try!(previously_run_migration_versions(conn));
+    let already_run = try!(conn.previously_run_migration_versions());
     let all_migrations = try!(migrations_in_directory(migrations_dir));
     let pending_migrations = all_migrations.into_iter().filter(|m| {
         !already_run.contains(m.version())
@@ -122,11 +118,10 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
 pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError> where
-    Conn: Connection,
-    String: FromSql<VarChar, Conn::Backend>,
+    Conn: MigrationConnection,
 {
     try!(create_schema_migrations_table_if_needed(conn));
-    let latest_migration_version = try!(latest_run_migration_version(conn));
+    let latest_migration_version = try!(conn.latest_run_migration_version());
     revert_migration_with_version(conn, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }
@@ -141,9 +136,9 @@ pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, o
 }
 
 #[doc(hidden)]
-pub fn run_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, output: &mut Write)
+pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Write)
     -> Result<(), RunMigrationsError> where
-        for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, Conn::Backend>,
+        Conn: MigrationConnection,
 {
     migration_with_version(ver)
         .map_err(|e| e.into())
@@ -172,24 +167,6 @@ pub fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -
     })
 }
 
-fn previously_run_migration_versions<Conn>(conn: &Conn) -> QueryResult<HashSet<String>> where
-    Conn: Connection,
-    String: FromSql<VarChar, Conn::Backend>,
-{
-    __diesel_schema_migrations.select(version)
-        .load(conn)
-        .map(|r| r.collect())
-}
-
-fn latest_run_migration_version<Conn>(conn: &Conn) -> QueryResult<String> where
-    Conn: Connection,
-    String: FromSql<VarChar, Conn::Backend>,
-{
-    use ::expression::dsl::max;
-    __diesel_schema_migrations.select(max(version))
-        .first(conn)
-}
-
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
     use self::migration::migration_from;
 
@@ -207,9 +184,9 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
         }).collect()
 }
 
-fn run_migrations<Conn: Connection>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
+fn run_migrations<Conn>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
     -> Result<(), RunMigrationsError> where
-        for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, Conn::Backend>,
+        Conn: MigrationConnection,
 {
     migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in migrations {
@@ -218,16 +195,14 @@ fn run_migrations<Conn: Connection>(conn: &Conn, mut migrations: Vec<Box<Migrati
     Ok(())
 }
 
-fn run_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
+fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError> where
-        for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, Conn::Backend>,
+        Conn: MigrationConnection,
 {
     conn.transaction(|| {
         try!(writeln!(output, "Running migration {}", migration.version()));
         try!(migration.run(conn));
-        try!(::insert(&NewMigration(migration.version()))
-             .into(__diesel_schema_migrations)
-             .execute(conn));
+        try!(conn.insert_new_migration(migration.version()));
         Ok(())
     }).map_err(|e| e.into())
 }
