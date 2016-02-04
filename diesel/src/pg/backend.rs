@@ -20,3 +20,4 @@ impl TypeMetadata for Pg {
 
 impl SupportsReturningClause for Pg {}
 impl SupportsDefaultKeyword for Pg {}
+impl SupportsNowFunction for Pg {}

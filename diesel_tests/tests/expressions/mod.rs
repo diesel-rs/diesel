@@ -2,7 +2,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, batch_insert};
+use schema::{connection, NewUser, batch_insert, connection_with_sean_and_tess_in_users_table};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -36,12 +36,17 @@ use diesel::types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
+#[cfg(feature = "postgres")]
 fn test_with_expression_aliased() {
     let n = lower("sean").aliased("n");
     assert_eq!(
         "SELECT `users`.`id` FROM `users`, lower(?) `n` WHERE `n` = ?",
-        debug_sql!(users.with(n).filter(n.eq("Jim")).select(id))
+        debug_sql!(users.with(n).filter(n.eq("Sean")).select(id))
     );
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let result = users.with(n).filter(n.eq("sean")).select(name)
+        .first::<String>(&connection);
+    assert_eq!(Ok("Sean".into()), result);
 }
 
 table! {

@@ -7,11 +7,10 @@
 pub mod global_expression_methods;
 pub mod bool_expression_methods;
 pub mod text_expression_methods;
-#[doc(hidden)]
-pub mod timestamp_expression_methods;
 
 pub use self::global_expression_methods::ExpressionMethods;
 pub use self::bool_expression_methods::BoolExpressionMethods;
 pub use self::text_expression_methods::{TextExpressionMethods, VarCharExpressionMethods};
-#[doc(hidden)]
-pub use self::timestamp_expression_methods::TimestampExpressionMethods;
+
+#[cfg(feature = "postgres")]
+pub use pg::expression::expression_methods::*;

@@ -5,6 +5,7 @@
 #![cfg_attr(all(feature = "unstable", feature = "postgres"), feature(time2))]
 pub mod backend;
 pub mod connection;
+#[macro_use]
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;
