@@ -5,8 +5,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
 description = "Annotations to remove boilerplate from Diesel"
-documentation = "https://github.com/sgrif/diesel/blob/master/diesel_codegen/README.md"
-homepage = "https://github.com/sgrif/diesel/tree/master/diesel_codegen"
+documentation = "https://github.com/sgrif/diesel/blob/master/diesel_codegen"
+homepage = "http://diesel.rs"
 repository = "https://github.com/sgrif/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 

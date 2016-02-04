@@ -4,8 +4,8 @@ version = "0.4.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
-documentation = "http://sgrif.github.io/diesel/diesel/index.html"
-homepage = "https://github.com/sgrif/diesel"
+documentation = "http://docs.diesel.rs"
+homepage = "http://diesel.rs"
 repository = "https://github.com/sgrif/diesel"
 keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
