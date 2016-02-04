@@ -133,9 +133,15 @@ fn ensure_sqlite_ok(code: libc::c_int) -> QueryResult<()> {
 
 impl Drop for Statement {
     fn drop(&mut self) {
+        use std::thread::panicking;
+
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
         if let Err(e) = ensure_sqlite_ok(finalize_result) {
-            write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
+            if panicking() {
+                write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
+            } else {
+                panic!("Error finalizing SQLite prepared statement: {:?}", e);
+            }
         }
     }
 }
