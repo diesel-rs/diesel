@@ -61,10 +61,16 @@ impl RawConnection {
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
+        use std::thread::panicking;
+
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection) };
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
-            write!(stderr(), "Error closing SQLite connection: {}", error_message).unwrap();
+            if panicking() {
+                write!(stderr(), "Error closing SQLite connection: {}", error_message).unwrap();
+            } else {
+                panic!("Error closing SQLite connection: {}", error_message);
+            }
         }
     }
 }
