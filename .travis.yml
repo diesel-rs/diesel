@@ -20,7 +20,7 @@ script:
   else
     (cd diesel && travis-cargo test -- --no-default-features --features "chrono $BACKEND")
   fi &&
-  (cd diesel_cli && travis-cargo test) &&
+  (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_codegen && travis-cargo test -- --no-default-features --features nightly)
   else
