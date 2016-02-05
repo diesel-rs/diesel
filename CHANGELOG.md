@@ -3,7 +3,7 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## [0.5.0] 2016-02-05
+## Unreleased
 
 ### Added
 
@@ -66,7 +66,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Replaced `Connection#find(source, id)` with
   `source.find(id).first(&connection)`.
 
-* The `debug_sql!` macro now uses `\`` for identifier quoting, and `?` for bind
+* The `debug_sql!` macro now uses \` for identifier quoting, and `?` for bind
   parameters, which is closer to a "generic" backend. The previous behavior had
   no identifier quoting, and used PG specific bind params.
 
