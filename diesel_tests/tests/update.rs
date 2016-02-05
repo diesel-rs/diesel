@@ -9,7 +9,7 @@ fn test_updating_single_column() {
     update(users).set(name.eq("Jim")).execute(&connection).unwrap();
 
     let expected_data = vec!["Jim".to_string(); 2];
-    let data: Vec<String> = users.select(name).load(&connection).unwrap().collect();
+    let data: Vec<String> = users.select(name).load(&connection).unwrap();
     assert_eq!(expected_data, data);
 }
 
@@ -24,7 +24,7 @@ fn test_updating_single_column_of_single_row() {
         .execute(&connection).unwrap();
 
     let expected_data = vec!["Jim".to_string(), "Tess".to_string()];
-    let data: Vec<String> = users.select(name).order(id).load(&connection).unwrap().collect();
+    let data: Vec<String> = users.select(name).order(id).load(&connection).unwrap();
     assert_eq!(expected_data, data);
 }
 

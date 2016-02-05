@@ -21,7 +21,7 @@ fn test_sql_function() {
     let tess = User::new(2, "Tess");
 
     assert_eq!(vec![sean], users.filter(my_lower(name).eq("sean"))
-        .load(&connection).unwrap().collect::<Vec<_>>());
+        .load(&connection).unwrap());
     assert_eq!(vec![tess], users.filter(my_lower(name).eq("tess"))
-        .load(&connection).unwrap().collect::<Vec<_>>());
+        .load(&connection).unwrap());
 }

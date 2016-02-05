@@ -56,16 +56,15 @@ impl Connection for PgConnection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Pg>,
-        T::SqlType: 'static,
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types))
-            .map(|r| Box::new(Cursor::new(r)) as Box<Iterator<Item=U>>)
+            .and_then(|r| Cursor::new(r).collect())
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where

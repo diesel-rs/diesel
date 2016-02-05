@@ -11,7 +11,7 @@ fn insert_records() {
     ];
 
     batch_insert(new_users, users, &connection);
-    let actual_users = users.load(&connection).unwrap().collect::<Vec<User>>();
+    let actual_users = users.load::<User>(&connection).unwrap();
 
     let expected_users = vec![
         User { id: actual_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
@@ -30,7 +30,7 @@ fn insert_records_using_returning_clause() {
         NewUser::new("Tess", None),
     ];
 
-    let inserted_users: Vec<User> = insert(new_users).into(users).get_results(&connection).unwrap().collect();
+    let inserted_users = insert(new_users).into(users).get_results::<User>(&connection).unwrap();
     let expected_users = vec![
         User { id: inserted_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: inserted_users[1].id, name: "Tess".to_string(), hair_color: None },
@@ -60,7 +60,7 @@ fn batch_insert_with_defaults() {
         User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
         User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
-    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
+    let actual_users = users.load(&connection).unwrap();
 
     assert_eq!(expected_users, actual_users);
 }
@@ -82,7 +82,7 @@ fn insert_with_defaults() {
     let expected_users = vec![
         User { id: 1, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
     ];
-    let actual_users: Vec<_> = users.load(&connection).unwrap().collect();
+    let actual_users = users.load(&connection).unwrap();
 
     assert_eq!(expected_users, actual_users);
 }
@@ -128,7 +128,7 @@ fn insert_borrowed_content() {
     ];
     batch_insert(new_users, users, &connection);
 
-    let actual_users: Vec<User> = users.load(&connection).unwrap().collect();
+    let actual_users = users.load::<User>(&connection).unwrap();
     let expected_users = vec![
         User::new(actual_users[0].id, "Sean"),
         User::new(actual_users[1].id, "Tess"),

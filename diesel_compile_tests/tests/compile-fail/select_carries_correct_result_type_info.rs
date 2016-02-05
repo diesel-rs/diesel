@@ -18,8 +18,8 @@ fn main() {
     let select_id = users.select(id);
     let select_name = users.select(name);
 
-    let ids: QueryResult<Vec<i32>> = select_name.load(&connection).map(Iterator::collect);
-    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::VarChar, diesel::pg::backend::Pg>` is not implemented for the type `i32`
-    let names: QueryResult<Vec<String>> = select_id.load(&connection).map(Iterator::collect);
-    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::Integer, diesel::pg::backend::Pg>` is not implemented
+    let ids = select_name.load::<i32>(&connection);
+    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::VarChar, _>` is not implemented for the type `i32`
+    let names = select_id.load::<String>(&connection);
+    //~^ ERROR the trait `diesel::query_source::Queryable<diesel::types::Integer, _>` is not implemented
 }

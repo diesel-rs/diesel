@@ -30,14 +30,12 @@ fn now_executes_sql_function_now() {
                        (NOW() - '1 day'::interval), (NOW() + '1 day'::interval)")
         .unwrap();
 
-    let before_today: QueryResult<Vec<i32>> = has_timestamps.select(id)
+    let before_today = has_timestamps.select(id)
         .filter(created_at.lt(now))
-        .load(&connection)
-        .map(Iterator::collect);
-    let after_today: QueryResult<Vec<i32>> = has_timestamps.select(id)
+        .load::<i32>(&connection);
+    let after_today = has_timestamps.select(id)
         .filter(created_at.gt(now))
-        .load(&connection)
-        .map(Iterator::collect);
+        .load::<i32>(&connection);
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
@@ -55,10 +53,9 @@ fn date_uses_sql_function_date() {
                        ").unwrap();
 
     let expected_data = vec![1, 3];
-    let actual_data: QueryResult<Vec<_>> = has_timestamps.select(id)
+    let actual_data = has_timestamps.select(id)
         .filter(date(created_at).eq(date(updated_at)))
-        .load(&connection)
-        .map(Iterator::collect);
+        .load(&connection);
     assert_eq!(Ok(expected_data), actual_data);
 }
 
@@ -76,9 +73,7 @@ fn time_is_deserialized_properly() {
     let three_hours = PgTime(10_800_000_000);
     let expected_data = vec![one_second, two_minutes, three_hours];
 
-    let actual_data: QueryResult<Vec<_>> = has_time.select(time)
-        .load(&connection)
-        .map(Iterator::collect);
+    let actual_data = has_time.select(time).load(&connection);
     assert_eq!(Ok(expected_data), actual_data);
 }
 

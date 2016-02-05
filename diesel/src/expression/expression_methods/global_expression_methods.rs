@@ -287,11 +287,10 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     use self::posts::dsl::{posts, author_name};
     ///     let connection = establish_connection();
     ///
-    ///     let data: QueryResult<Vec<String>> = users.inner_join(posts)
+    ///     let data = users.inner_join(posts)
     ///         .filter(name.nullable().eq(author_name))
     ///         .select(name)
-    ///         .load(&connection)
-    ///         .map(Iterator::collect);
+    ///         .load::<String>(&connection);
     ///     println!("{:?}", data);
     /// }
     fn nullable(self) -> nullable::Nullable<Self> {

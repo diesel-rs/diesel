@@ -74,11 +74,11 @@ pub trait Connection: SimpleConnection + Sized {
         U: Queryable<T::SqlType, Self::Backend>,
     {
         self.query_all(source)
-            .and_then(|mut e| e.nth(0).map(Ok).unwrap_or(Err(Error::NotFound)))
+            .and_then(|e: Vec<U>| e.into_iter().next().ok_or(Error::NotFound))
     }
 
     #[doc(hidden)]
-    fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
         Self::Backend: HasSqlType<T::SqlType>,

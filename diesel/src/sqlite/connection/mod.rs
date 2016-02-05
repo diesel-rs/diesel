@@ -52,16 +52,15 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    fn query_all<'a, T, U: 'a>(&self, source: T) -> QueryResult<Box<Iterator<Item=U> + 'a>> where
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend>,
-        T::SqlType: 'a,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        self.prepare_query(&source.as_query()).map(|stmt| {
-            Box::new(StatementIterator::new(stmt)) as Box<Iterator<Item=U>>
-        })
+        self.prepare_query(&source.as_query())
+            .map(StatementIterator::new)
+            .and_then(Iterator::collect)
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where

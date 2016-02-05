@@ -107,7 +107,7 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
     let already_run = try!(conn.previously_run_migration_versions());
     let all_migrations = try!(migrations_in_directory(migrations_dir));
     let pending_migrations = all_migrations.into_iter().filter(|m| {
-        !already_run.contains(m.version())
+        !already_run.contains(&m.version().to_string())
     });
     run_migrations(conn, pending_migrations.collect(), output)
 }

@@ -66,7 +66,7 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
 ) -> Result<Box<MacResult>, Box<MacResult>> {
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
-    let table_names = try!(load_table_names(cx, sp, &connection));
+    let table_names = load_table_names(cx, sp, &connection).unwrap();
     let impls = table_names.into_iter()
         .map(|n| table_macro_call(cx, sp, &connection, &n))
         .collect();
@@ -135,7 +135,6 @@ fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<PgAt
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
         .load(conn)
-        .map(|r| r.collect::<Vec<_>>())
 }
 
 fn table_oid(conn: &PgConnection, table_name: &str) -> QueryResult<u32> {
@@ -171,19 +170,14 @@ fn capitalize(name: &str) -> String {
 }
 
 fn load_table_names(
-    cx: &mut ExtCtxt,
-    sp: Span,
+    _cx: &mut ExtCtxt,
+    _sp: Span,
     connection: &PgConnection,
-) -> Result<Vec<String>, Box<MacResult>> {
+) -> Result<Vec<String>, result::Error> {
     use diesel::prelude::*;
     use diesel::expression::dsl::sql;
 
     let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
         .filter(sql::<types::Bool>("table_schema = 'public' AND table_name NOT LIKE '\\_\\_%'"));
     query.load(connection)
-        .map(|r| r.collect())
-        .map_err(|_| {
-            cx.span_err(sp, "Error loading table names");
-            DummyResult::any(sp)
-        })
 }

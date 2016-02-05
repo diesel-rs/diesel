@@ -11,16 +11,16 @@ fn one_to_many_returns_query_source_for_association() {
         sean.new_post("Hello", None), sean.new_post("World", None)
         ]).into(posts::table)
         .get_results(&connection)
-        .unwrap().collect();
+        .unwrap();
     let tess_posts: Vec<Post> = insert(&vec![
         tess.new_post("Hello 2", None), tess.new_post("World 2", None),
         ]).into(posts::table)
         .get_results(&connection)
-        .unwrap().collect();
+        .unwrap();
 
-    let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap().collect();
+    let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap();
     assert_eq!(seans_posts, found_posts);
 
-    let found_posts: Vec<_> = Post::belonging_to(&tess).load(&connection).unwrap().collect();
+    let found_posts: Vec<_> = Post::belonging_to(&tess).load(&connection).unwrap();
     assert_eq!(tess_posts, found_posts);
 }
