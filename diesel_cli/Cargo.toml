@@ -13,14 +13,14 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 name = "diesel"
 
 [dependencies]
-chrono = "^0.2.17"
-clap = "^1.5.5"
+chrono = "0.2.17"
+clap = "1.5.5"
 diesel = { version = "0.5.0", features = ["postgres", "sqlite"] }
-dotenv = "^0.8.0"
+dotenv = "0.8.0"
 
 [dev-dependencies]
-tempdir = "^0.3.4"
+diesel_test_helpers = { path = "../diesel_test_helpers" }
 
 [features]
-postgres = ["diesel/postgres"]
-sqlite = ["diesel/sqlite"]
+postgres = ["diesel_test_helpers/postgres"]
+sqlite = ["diesel_test_helpers/sqlite"]

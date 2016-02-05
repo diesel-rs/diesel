@@ -1,0 +1,19 @@
+[package]
+name = "diesel_test_helpers"
+version = "0.1.0"
+authors = ["Matt Casper <matthewvcasper@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Provide test helpers for diesel integration tests."
+documentation = "http://diesel.rs/guides/getting-started"
+homepage = "http://diesel.rs"
+repository = "https://github.com/sgrif/diesel"
+
+[dependencies]
+tempdir = "0.3.4"
+rand = "0.3.13"
+diesel = { version = "0.5.0", features = ["postgres", "sqlite"] }
+dotenv = "0.8.0"
+
+[features]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
