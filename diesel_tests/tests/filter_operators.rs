@@ -122,6 +122,23 @@ fn filter_by_any() {
         users.filter(name.eq(any(borrowed_names))).load(&connection).unwrap());
 }
 
+#[test]
+fn filter_by_in() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_3_users();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let jim = User::new(3, "Jim");
+
+    let owned_names = vec!["Sean", "Tess"];
+    let borrowed_names: &[_] = &["Sean", "Jim"];
+    assert_eq!(vec![sean.clone(), tess],
+        users.filter(name.eq_any(owned_names)).load(&connection).unwrap());
+    assert_eq!(vec![sean, jim],
+        users.filter(name.eq_any(borrowed_names)).load(&connection).unwrap());
+}
+
 fn connection_with_3_users() -> TestConnection {
     let connection = connection_with_sean_and_tess_in_users_table();
     connection.execute("INSERT INTO users (id, name) VALUES (3, 'Jim')").unwrap();

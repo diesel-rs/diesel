@@ -20,6 +20,8 @@ pub mod ops;
 #[doc(hidden)]
 pub mod aliased;
 #[doc(hidden)]
+pub mod array_comparison;
+#[doc(hidden)]
 pub mod bound;
 #[doc(hidden)]
 pub mod count;

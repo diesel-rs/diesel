@@ -1,5 +1,6 @@
 use expression::{Expression, AsExpression, nullable};
 use expression::aliased::Aliased;
+use expression::array_comparison::In;
 use expression::predicates::*;
 
 pub trait ExpressionMethods: Expression + Sized {
@@ -73,6 +74,42 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn ne<T: AsExpression<Self::SqlType>>(self, other: T) -> NotEq<Self, T::Expression> {
         NotEq::new(self, other.as_expression())
+    }
+
+    /// Creates a SQL `IN` statement. Queries using this method will not be
+    /// placed in the prepared statement cache. On PostgreSQL, you should use
+    /// `eq(any())` instead. This method may change in the future to
+    /// automatically perform `= ANY` on PostgreSQL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("INSERT INTO users (name) VALUES
+    /// #         ('Jim')").unwrap();
+    /// let data = users.select(id).filter(name.eq_any(vec!["Sean", "Jim"]));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// # }
+    /// ```
+    fn eq_any<I, T>(self, values: I) -> In<Self, T::Expression> where
+        I: IntoIterator<Item=T>,
+        T: AsExpression<Self::SqlType>,
+    {
+        let expressions = values.into_iter()
+            .map(AsExpression::as_expression).collect();
+        In::new(self, expressions)
     }
 
     /// Creates a SQL `IS NULL` expression.
