@@ -1,6 +1,6 @@
 use expression::{Expression, AsExpression, nullable};
 use expression::aliased::Aliased;
-use expression::array_comparison::In;
+use expression::array_comparison::{In, AsInExpression};
 use expression::predicates::*;
 
 pub trait ExpressionMethods: Expression + Sized {
@@ -103,13 +103,10 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
     /// # }
     /// ```
-    fn eq_any<I, T>(self, values: I) -> In<Self, T::Expression> where
-        I: IntoIterator<Item=T>,
-        T: AsExpression<Self::SqlType>,
+    fn eq_any<T>(self, values: T) -> In<Self, T::InExpression> where
+        T: AsInExpression<Self::SqlType>,
     {
-        let expressions = values.into_iter()
-            .map(AsExpression::as_expression).collect();
-        In::new(self, expressions)
+        In::new(self, values.as_in_expression())
     }
 
     /// Creates a SQL `IS NULL` expression.

@@ -145,7 +145,6 @@ fn selecting_columns_with_different_definition_order() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: This test is valid for SQLite, but currently relies on `= ANY` which is PG specific
 fn selection_using_subselect() {
     use schema::posts::dsl::*;
     use diesel::expression::dsl::*;
@@ -160,7 +159,7 @@ fn selection_using_subselect() {
     let users = users::table.filter(users::name.eq("Sean")).select(users::id);
     let data: Vec<String> = posts
         .select(title)
-        .filter(user_id.eq(any(users)))
+        .filter(user_id.eq_any(users))
         .load(&connection).unwrap();
 
     assert_eq!(vec!["Hello".to_string()], data);
