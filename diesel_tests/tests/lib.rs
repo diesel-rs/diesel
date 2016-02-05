@@ -10,7 +10,6 @@ include!("lib.in.rs");
 #[cfg(not(feature = "unstable"))]
 include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 mod associations;
 mod expressions;
 mod filter;

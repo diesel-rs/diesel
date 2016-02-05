@@ -88,7 +88,6 @@ fn filter_by_is_null_on_nullable_columns() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 fn filter_after_joining() {
     use schema::users::name;
 
@@ -240,7 +239,6 @@ fn filter_with_or() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 fn or_doesnt_mess_with_precidence_of_previous_statements() {
     use schema::users::dsl::*;
     use diesel::expression::AsExpression;
@@ -262,9 +260,8 @@ use diesel::types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: There are valuable tests for SQLite here
 fn filter_by_boxed_predicate() {
-    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, pg::Pg, SqlType=types::Bool>> {
+    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, TestBackend, SqlType=types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

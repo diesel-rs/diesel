@@ -1,10 +1,11 @@
 mod date_and_time;
 
+use std::io::prelude::*;
 use std::error::Error;
 
 use super::Sqlite;
 use super::connection::SqliteValue;
-use types::{self, FromSql};
+use types::{self, FromSql, ToSql, IsNull};
 
 impl FromSql<types::VarChar, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error>> {
@@ -53,5 +54,16 @@ impl FromSql<types::Float, Sqlite> for f32 {
 impl FromSql<types::Double, Sqlite> for f64 {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error>> {
         Ok(not_none!(value).read_double())
+    }
+}
+
+impl ToSql<types::Bool, Sqlite> for bool {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+        let int_value = if *self {
+            1
+        } else {
+            0
+        };
+        <i32 as ToSql<types::Integer, Sqlite>>::to_sql(&int_value, out)
     }
 }

@@ -26,7 +26,7 @@ default = ["syntex", "diesel_codegen/with-syntex", "dotenv_codegen"]
 unstable = ["diesel_codegen/nightly", "diesel/unstable",
   "quickcheck/unstable", "dotenv_macros"]
 postgres = ["diesel/postgres", "diesel_codegen/postgres"]
-sqlite = ["diesel/sqlite"]
+sqlite = ["diesel/sqlite", "diesel_codegen/sqlite"]
 
 [[test]]
 name = "integration_tests"

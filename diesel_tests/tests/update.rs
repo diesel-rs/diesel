@@ -85,7 +85,6 @@ fn update_returning_struct() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn update_with_struct_as_changes() {
     use schema::users::dsl::*;
 
@@ -93,15 +92,15 @@ fn update_with_struct_as_changes() {
     let sean = find_user_by_name("Sean", &connection);
     let changes = NewUser::new("Jim", Some("blue"));
 
-    let user = update(users.filter(id.eq(sean.id))).set(&changes)
-        .get_result(&connection);
+    update(users.filter(id.eq(sean.id))).set(&changes)
+        .execute(&connection).unwrap();
+    let user = users.find(sean.id).first(&connection);
     let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
 
     assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn update_with_struct_does_not_set_primary_key() {
     use schema::users::dsl::*;
 
@@ -110,21 +109,21 @@ fn update_with_struct_does_not_set_primary_key() {
     let other_id = sean.id + 1;
     let changes = User::with_hair_color(other_id, "Jim", "blue");
 
-    let user = update(users.filter(id.eq(sean.id))).set(&changes)
-        .get_result(&connection);
+    update(users.filter(id.eq(sean.id))).set(&changes)
+        .execute(&connection).unwrap();
+    let user = users.find(sean.id).first(&connection);
     let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
 
     assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: `save_changes` is still useful on SQLite, we need to support it
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User, _>(&connection);
+    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User>(&connection);
 
     let user_in_db = users.find(sean.id).first(&connection);
 
@@ -132,7 +131,6 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: `save_changes` is still useful on SQLite, we need to support it
 fn option_fields_on_structs_are_not_assigned() {
     use schema::users::dsl::*;
 
@@ -148,7 +146,6 @@ fn option_fields_on_structs_are_not_assigned() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     #[changeset_for(users)]
     struct Changes {
@@ -159,15 +156,15 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     let changes = Changes { hair_color: None, name: "Jim".into() };
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let user = update(users::table.filter(users::id.eq(sean.id))).set(&changes)
-        .get_result(&connection);
+    update(users::table.filter(users::id.eq(sean.id))).set(&changes)
+        .execute(&connection).unwrap();
+    let user = users::table.find(sean.id).first(&connection);
 
     let expected_user = User::new(sean.id, "Jim");
     assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     #[changeset_for(posts)]
     struct Changes {
@@ -182,17 +179,17 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     insert(&new_post).into(posts::table).execute(&connection).unwrap();
 
     let changes = Changes { user_id: 1, title: None, body: "earth".into() };
-    let post = update(posts::table)
+    update(posts::table)
         .set(&changes)
-        .get_result::<Post>(&connection)
+        .execute(&connection)
         .unwrap();
+    let post = posts::table.order(posts::id.desc()).first::<Post>(&connection).unwrap();
 
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
     assert_eq!(expected_post, post);
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn can_update_with_struct_containing_single_field() {
     #[changeset_for(posts)]
     struct SetBody {
@@ -205,19 +202,19 @@ fn can_update_with_struct_containing_single_field() {
     insert(&new_post).into(posts::table).execute(&connection).unwrap();
 
     let changes = SetBody { body: "earth".into() };
-    let post = update(posts::table)
+    update(posts::table)
         .set(&changes)
-        .get_result::<Post>(&connection)
+        .execute(&connection)
         .unwrap();
+    let post = posts::table.order(posts::id.desc()).first::<Post>(&connection).unwrap();
 
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
     assert_eq!(expected_post, post);
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: This test is probably still valid without using RETURNING
 fn struct_with_option_fields_treated_as_null() {
-    #[changeset_for(posts, treat_none_as_null="true", __skip_visibility="true")]
+    #[changeset_for(posts, treat_none_as_null="true")]
     struct UpdatePost {
         id: i32,
         title: String,
@@ -227,8 +224,9 @@ fn struct_with_option_fields_treated_as_null() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let new_post = sean.new_post("Hello", Some("world"));
-    let post = insert(&new_post).into(posts::table)
-        .get_result::<Post>(&connection).unwrap();
+    insert(&new_post).into(posts::table)
+        .execute(&connection).unwrap();
+    let post = posts::table.order(posts::id.desc()).first::<Post>(&connection).unwrap();
 
     let changes = UpdatePost { id: post.id, title: "Hello again".into(), body: None };
     let expected_post = Post::new(post.id, sean.id, "Hello again".into(), None);

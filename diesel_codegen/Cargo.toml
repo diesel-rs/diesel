@@ -24,6 +24,7 @@ default = ["with-syntex", "postgres"]
 nightly = []
 with-syntex = ["syntex", "syntex_syntax"]
 postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
 
 [lib]
 name = "diesel_codegen"

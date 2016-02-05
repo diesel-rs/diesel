@@ -7,15 +7,15 @@ fn one_to_many_returns_query_source_for_association() {
 
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
-    let seans_posts: Vec<Post> =  insert(&vec![
-        sean.new_post("Hello", None), sean.new_post("World", None)
-        ]).into(posts::table)
-        .get_results(&connection)
+    let new_posts = vec![sean.new_post("Hello", None), sean.new_post("World", None)];
+    batch_insert(&new_posts, posts::table, &connection);
+    let new_posts = vec![tess.new_post("Hello 2", None), tess.new_post("World 2", None)];
+    batch_insert(&new_posts, posts::table, &connection);
+    let seans_posts = posts::table.filter(posts::user_id.eq(sean.id))
+        .load::<Post>(&connection)
         .unwrap();
-    let tess_posts: Vec<Post> = insert(&vec![
-        tess.new_post("Hello 2", None), tess.new_post("World 2", None),
-        ]).into(posts::table)
-        .get_results(&connection)
+    let tess_posts = posts::table.filter(posts::user_id.eq(tess.id))
+        .load::<Post>(&connection)
         .unwrap();
 
     let found_posts: Vec<_> = Post::belonging_to(&sean).load(&connection).unwrap();
