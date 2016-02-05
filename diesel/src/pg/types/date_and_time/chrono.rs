@@ -34,7 +34,13 @@ fn pg_epoch() -> NaiveDateTime {
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let PgTimestamp(offset) = try!(FromSql::<Timestamp, Pg>::from_sql(bytes));
-        Ok(pg_epoch() + Duration::microseconds(offset))
+        match pg_epoch().checked_add(Duration::microseconds(offset)) {
+            Some(v) => Ok(v),
+            None => {
+                let message = "Tried to deserialize a timestamp that is too large for Chrono";
+                Err(message.into())
+            }
+        }
     }
 }
 

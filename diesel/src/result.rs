@@ -12,6 +12,7 @@ pub enum Error {
     DatabaseError(String),
     NotFound,
     QueryBuilderError(Box<StdError>),
+    DeserializationError(Box<StdError>),
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -80,6 +81,7 @@ impl Display for Error {
             &Error::DatabaseError(ref s) => write!(f, "{}", &s),
             &Error::NotFound => f.write_str("NotFound"),
             &Error::QueryBuilderError(ref e) => e.fmt(f),
+            &Error::DeserializationError(ref e) => e.fmt(f),
             &Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -92,6 +94,7 @@ impl StdError for Error {
             &Error::DatabaseError(ref s) => &s,
             &Error::NotFound => "Record not found",
             &Error::QueryBuilderError(ref e) => e.description(),
+            &Error::DeserializationError(ref e) => e.description(),
             &Error::__Nonexhaustive => unreachable!(),
         }
     }

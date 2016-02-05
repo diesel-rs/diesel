@@ -64,7 +64,7 @@ impl Connection for PgConnection {
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types))
-            .map(|r| Cursor::new(r).collect())
+            .and_then(|r| Cursor::new(r).collect())
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where

@@ -60,7 +60,7 @@ impl Connection for SqliteConnection {
     {
         self.prepare_query(&source.as_query())
             .map(StatementIterator::new)
-            .map(Iterator::collect)
+            .and_then(Iterator::collect)
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where

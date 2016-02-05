@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
+use query_source::Queryable;
+use result::Error::DeserializationError;
+use result::QueryResult;
 use sqlite::Sqlite;
 use super::stmt::Statement;
-use query_source::Queryable;
 use types::{HasSqlType, FromSqlRow};
 
 pub struct StatementIterator<ST, T> {
@@ -23,15 +25,13 @@ impl<ST, T> Iterator for StatementIterator<ST, T> where
     Sqlite: HasSqlType<ST>,
     T: Queryable<ST, Sqlite>,
 {
-    type Item = T;
+    type Item = QueryResult<T>;
 
-    fn next(&mut self) -> Option<T> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.stmt.step().map(|mut row| {
-            let values = match T::Row::build_from_row(&mut row) {
-                Ok(value) => value,
-                Err(reason) => panic!("Error reading values {}", reason.description()),
-            };
-            T::build(values)
+            T::Row::build_from_row(&mut row)
+                .map(T::build)
+                .map_err(DeserializationError)
         })
     }
 }

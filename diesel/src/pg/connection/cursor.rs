@@ -1,5 +1,7 @@
 use pg::Pg;
 use query_source::Queryable;
+use result::QueryResult;
+use result::Error::DeserializationError;
 use super::result::PgResult;
 use types::{HasSqlType, FromSqlRow};
 
@@ -28,20 +30,18 @@ impl<ST, T> Iterator for Cursor<ST, T> where
     Pg: HasSqlType<ST>,
     T: Queryable<ST, Pg>,
 {
-    type Item = T;
+    type Item = QueryResult<T>;
 
-    fn next(&mut self) -> Option<T> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.current_row >= self.db_result.num_rows() {
             None
         } else {
             let mut row = self.db_result.get_row(self.current_row);
             self.current_row += 1;
-            let values = match T::Row::build_from_row(&mut row) {
-                Ok(value) => value,
-                Err(reason) => panic!("Error reading values {}", reason.description()),
-            };
-            let result = T::build(values);
-            Some(result)
+            let value = T::Row::build_from_row(&mut row)
+                .map(T::build)
+                .map_err(DeserializationError);
+            Some(value)
         }
     }
 }

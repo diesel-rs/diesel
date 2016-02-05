@@ -1,10 +1,41 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
+extern crate chrono;
 
 use schema::{connection, TestBackend};
 use diesel::*;
 #[cfg(feature="postgres")]
 use diesel::pg::Pg;
 use diesel::types::*;
+
+table! {
+    has_timestamps {
+        id -> Integer,
+        ts -> Timestamp,
+    }
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn errors_during_deserialization_do_not_panic() {
+    use self::chrono::NaiveDateTime;
+    use self::has_timestamps::dsl::*;
+    use diesel::result::Error::DeserializationError;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE has_timestamps (
+        id SERIAL PRIMARY KEY,
+        ts TIMESTAMP NOT NULL
+    )").unwrap();
+    let valid_pg_date_too_large_for_chrono = "'294276/01/01'";
+    connection.execute(&format!("INSERT INTO has_timestamps (ts) VALUES ({})",
+        valid_pg_date_too_large_for_chrono)).unwrap();
+    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+
+    match values {
+        Err(DeserializationError(_)) => {}
+        v => panic!("Expected a deserialization error, got {:?}", v),
+    }
+}
 
 #[test]
 #[cfg(feature = "postgres")]
