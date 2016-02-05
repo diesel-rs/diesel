@@ -4,10 +4,6 @@ Diesel - A safe, extensible ORM and Query Builder for Rust
 [![Build Status](https://travis-ci.org/sgrif/diesel.svg)](https://travis-ci.org/sgrif/diesel)
 [![Gitter](https://badges.gitter.im/sgrif/diesel.svg)](https://gitter.im/sgrif/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-## Note: This README is for `master`, not the latest released version. You can find the readme for the latest release [here][latest-release-readme].
-
-[latest-release-readme]: https://github.com/sgrif/diesel/blob/v0.4.1/README.md
-
 [Documentation](http://docs.diesel.rs)
 
 Diesel gets rid of the boilerplate for database interaction and eliminates

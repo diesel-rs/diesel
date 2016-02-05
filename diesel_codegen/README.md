@@ -6,18 +6,14 @@ Provides various macros and annotations for
 boilerplate needing to be written. It can be used through `rustc_plugin`, or
 `syntex` on stable.
 
-## Note: This README is for `master`, not the latest released version. You can find the readme for the latest release [here][latest-release-readme].
-
-[latest-release-readme]: https://github.com/sgrif/diesel/blob/v0.4.1/diesel_codegen/README.md
-
 Using on nightly
 ----------------
 
-Make sure you're on a nightly from 2015-11-27 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
+Make sure you're on a nightly from 2016-01-23 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
 line to your dependencies section in `Cargo.toml`
 
 ```toml
-diesel_codegen = { version = "^0.4.0", default-features = false, features = ["nightly"] }
+diesel_codegen = { version = "0.5.0", default-features = false, features = ["nightly"] }
 ```
 
 Then you'll need to add two lines to the root of your crate.
@@ -37,8 +33,8 @@ build any modules using our annotations. Add the following to your
 build-dependencies.
 
 ```toml
-diesel_codegen = "^0.4.0"
-syntex = "^0.26.0"
+diesel_codegen = "0.5.0"
+syntex = "0.26.0"
 ```
 
 You'll need to move any code using annotations into a different file.
