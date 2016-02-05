@@ -3,13 +3,14 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.5.0] 2016-02-05
 
 ### Added
 
 * Added support for SQLite. Diesel still uses postgres by default. To use SQLite
   instead, add `default-features = false, features = ["sqlite"]` to your
-  Cargo.toml. You'll also want to add `default-features = false` to `codegen`.
+  Cargo.toml. You'll also want to add `default-features = false, features =
+  ["sqlite"]` to `diesel_codegen`.
   Since SQLite is a much more limited database, it does not support our full set
   of features. You can use SQLite and PostgreSQL in the same project if you
   desire.
@@ -17,19 +18,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for mapping `types::Timestamp`, `types::Date`, and `types::Time`
   to/from `chrono::NaiveDateTime`, `chrono::NaiveDate`, and `chrono::NaiveTime`.
   Add `features = ["chrono"]` to enable.
-
-* Added a top level `select` function for select statements with no from clause.
-  This is primarily intended to be used for testing Diesel itself, but it has
-  been added to the public API as it will likely be useful for third party
-  crates in the future. `select(foo).from(bar)` might be a supported API in the
-  future as an alternative to `bar.select(foo)`.
-
-* Added `expression::dsl::sql` as a helper function for constructing
-  `SqlLiteral` nodes. This is primarily intended to be used for testing Diesel
-  itself, but is part of the public API as an escape hatch if our query builder
-  DSL proves inadequate for a specific case. Use of this function in any
-  production code is discouraged as it is inherently unsafe and avoids real type
-  checking.
 
 * Added a `treat_none_as_null` option to `changeset_for`. When set to `true`,
   a model will set a field to `Null` when an optional struct field is `None`,
@@ -45,6 +33,19 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   reset` commands to the CLI.
 
 * Added support for SQL `IN` statements through the `eq_any` method.
+
+* Added a top level `select` function for select statements with no from clause.
+  This is primarily intended to be used for testing Diesel itself, but it has
+  been added to the public API as it will likely be useful for third party
+  crates in the future. `select(foo).from(bar)` might be a supported API in the
+  future as an alternative to `bar.select(foo)`.
+
+* Added `expression::dsl::sql` as a helper function for constructing
+  `SqlLiteral` nodes. This is primarily intended to be used for testing Diesel
+  itself, but is part of the public API as an escape hatch if our query builder
+  DSL proves inadequate for a specific case. Use of this function in any
+  production code is discouraged as it is inherently unsafe and avoids real type
+  checking.
 
 ### Changed
 
