@@ -2,8 +2,8 @@ extern crate pq_sys;
 extern crate libc;
 
 use self::pq_sys::*;
-use std::ffi::{CString, CStr};
-use std::{str, ptr};
+use std::ffi::{CStr, CString};
+use std::{ptr, str};
 
 use result::*;
 
@@ -18,15 +18,11 @@ impl RawConnection {
         let connection_status = unsafe { PQstatus(connection_ptr) };
 
         match connection_status {
-            CONNECTION_OK => {
-                Ok(RawConnection {
-                    internal_connection: connection_ptr,
-                })
-            }
+            CONNECTION_OK => Ok(RawConnection { internal_connection: connection_ptr }),
             _ => {
                 let message = last_error_message(connection_ptr);
                 Err(ConnectionError::BadConnection(message))
-            }
+            },
         }
     }
 
@@ -35,24 +31,24 @@ impl RawConnection {
     }
 
     pub fn escape_identifier(&self, identifier: &str) -> QueryResult<PgString> {
-        let result_ptr = unsafe { PQescapeIdentifier(
-            self.internal_connection,
-            identifier.as_ptr() as *const libc::c_char,
-            identifier.len() as libc::size_t,
-        ) };
+        let result_ptr = unsafe {
+            PQescapeIdentifier(self.internal_connection,
+                               identifier.as_ptr() as *const libc::c_char,
+                               identifier.len() as libc::size_t)
+        };
 
         if result_ptr.is_null() {
             Err(Error::DatabaseError(last_error_message(self.internal_connection)))
         } else {
-            unsafe {
-                Ok(PgString::new(result_ptr))
-            }
+            unsafe { Ok(PgString::new(result_ptr)) }
         }
     }
 
     pub fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
-            PQsetNoticeProcessor(self.internal_connection, Some(notice_processor), ptr::null_mut());
+            PQsetNoticeProcessor(self.internal_connection,
+                                 Some(notice_processor),
+                                 ptr::null_mut());
         }
     }
 
@@ -60,26 +56,23 @@ impl RawConnection {
         PQexec(self.internal_connection, query)
     }
 
-    pub unsafe fn exec_params(
-        &self,
-        query: *const libc::c_char,
-        param_count: libc::c_int,
-        param_types: *const Oid,
-        param_values: *const *const libc::c_char,
-        param_lengths: *const libc::c_int,
-        param_formats: *const libc::c_int,
-        result_format: libc::c_int,
-    ) -> *mut PGresult {
-        PQexecParams(
-            self.internal_connection,
-            query,
-            param_count,
-            param_types,
-            param_values,
-            param_lengths,
-            param_formats,
-            result_format,
-        )
+    pub unsafe fn exec_params(&self,
+                              query: *const libc::c_char,
+                              param_count: libc::c_int,
+                              param_types: *const Oid,
+                              param_values: *const *const libc::c_char,
+                              param_lengths: *const libc::c_int,
+                              param_formats: *const libc::c_int,
+                              result_format: libc::c_int)
+                              -> *mut PGresult {
+        PQexecParams(self.internal_connection,
+                     query,
+                     param_count,
+                     param_types,
+                     param_values,
+                     param_lengths,
+                     param_formats,
+                     result_format)
     }
 }
 
@@ -105,9 +98,7 @@ pub struct PgString {
 
 impl PgString {
     unsafe fn new(ptr: *mut libc::c_char) -> Self {
-        PgString {
-            pg_str: ptr,
-        }
+        PgString { pg_str: ptr }
     }
 }
 
@@ -124,8 +115,6 @@ impl ::std::ops::Deref for PgString {
 
 impl Drop for PgString {
     fn drop(&mut self) {
-        unsafe {
-            PQfreemem(self.pg_str as *mut libc::c_void)
-        }
+        unsafe { PQfreemem(self.pg_str as *mut libc::c_void) }
     }
 }

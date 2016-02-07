@@ -1,6 +1,6 @@
 extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::Write;
 
@@ -8,10 +8,10 @@ use backend::Debug;
 use pg::{Pg, PgTypeMetadata};
 use query_source::Queryable;
 use row::Row;
-use types::{HasSqlType, FromSql, FromSqlRow, ToSql, Array, IsNull, NotNull};
+use types::{Array, FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, ToSql};
 
-impl<T> HasSqlType<Array<T>> for Pg where
-    Pg: HasSqlType<T>,
+impl<T> HasSqlType<Array<T>> for Pg
+    where Pg: HasSqlType<T>,
 {
     fn metadata() -> PgTypeMetadata {
         PgTypeMetadata {
@@ -21,18 +21,17 @@ impl<T> HasSqlType<Array<T>> for Pg where
     }
 }
 
-impl<T> HasSqlType<Array<T>> for Debug where
-    Debug: HasSqlType<T>,
+impl<T> HasSqlType<Array<T>> for Debug
+    where Debug: HasSqlType<T>,
 {
     fn metadata() {}
 }
 
-impl<T> NotNull for Array<T> {
-}
+impl<T> NotNull for Array<T> {}
 
-impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
-    T: FromSql<ST, Pg>,
-    Pg: HasSqlType<ST>,
+impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
+    where T: FromSql<ST, Pg>,
+          Pg: HasSqlType<ST>,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
         let mut bytes = not_none!(bytes);
@@ -41,13 +40,14 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
         let _oid = try!(bytes.read_i32::<BigEndian>());
 
         if num_dimensions == 0 {
-            return Ok(Vec::new())
+            return Ok(Vec::new());
         }
 
         let num_elements = try!(bytes.read_i32::<BigEndian>());
         let lower_bound = try!(bytes.read_i32::<BigEndian>());
 
-        assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
+        assert!(num_dimensions == 1,
+                "multi-dimensional arrays are not supported");
         assert!(lower_bound == 1, "lower bound must be 1");
 
         (0..num_elements).map(|_| {
@@ -63,18 +63,18 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
     }
 }
 
-impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
-    Pg: HasSqlType<ST>,
-    Vec<T>: FromSql<Array<ST>, Pg>,
+impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T>
+    where Pg: HasSqlType<ST>,
+          Vec<T>: FromSql<Array<ST>, Pg>,
 {
     fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error>> {
         FromSql::<Array<ST>, Pg>::from_sql(row.take())
     }
 }
 
-impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
-    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
-    Pg: HasSqlType<ST>,
+impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T>
+    where T: FromSql<ST, Pg> + Queryable<ST, Pg>,
+          Pg: HasSqlType<ST>,
 {
     type Row = Self;
     fn build(row: Self) -> Self {
@@ -85,8 +85,8 @@ impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
 use expression::AsExpression;
 use expression::bound::Bound;
 
-impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
-    Pg: HasSqlType<ST>,
+impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T]
+    where Pg: HasSqlType<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -95,8 +95,8 @@ impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
     }
 }
 
-impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
-    Pg: HasSqlType<ST>,
+impl<ST, T> AsExpression<Array<ST>> for Vec<T>
+    where Pg: HasSqlType<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -105,8 +105,8 @@ impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
     }
 }
 
-impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
-    Pg: HasSqlType<ST>,
+impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T>
+    where Pg: HasSqlType<ST>,
 {
     type Expression = Bound<Array<ST>, Self>;
 
@@ -115,9 +115,9 @@ impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
     }
 }
 
-impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
-    Pg: HasSqlType<ST>,
-    T: ToSql<ST, Pg>,
+impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T]
+    where Pg: HasSqlType<ST>,
+          T: ToSql<ST, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         let num_dimensions = 1;
@@ -132,7 +132,8 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
         let mut buffer = Vec::new();
         for elem in self.iter() {
             let is_null = try!(elem.to_sql(&mut buffer));
-            assert!(is_null == IsNull::No, "Arrays containing null are not supported");
+            assert!(is_null == IsNull::No,
+                    "Arrays containing null are not supported");
             try!(out.write_i32::<BigEndian>(buffer.len() as i32));
             try!(out.write_all(&buffer));
             buffer.clear();
@@ -142,9 +143,9 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     }
 }
 
-impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
-    Pg: HasSqlType<ST>,
-    for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
+impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
+    where Pg: HasSqlType<ST>,
+          for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         (&self as &[T]).to_sql(out)

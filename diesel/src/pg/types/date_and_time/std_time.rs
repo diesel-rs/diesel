@@ -6,7 +6,7 @@ use expression::AsExpression;
 use expression::bound::Bound;
 use pg::Pg;
 use query_source::Queryable;
-use types::{self, ToSql, FromSql, IsNull};
+use types::{self, FromSql, IsNull, ToSql};
 
 expression_impls! {
     Timestamp -> SystemTime,
@@ -72,10 +72,10 @@ mod tests {
     extern crate dotenv;
 
     use self::dotenv::dotenv;
-    use std::time::{SystemTime, Duration, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    use ::select;
-    use expression::dsl::{sql, now};
+    use select;
+    use expression::dsl::{now, sql};
     use pg::PgConnection;
     use prelude::*;
     use types::Timestamp;

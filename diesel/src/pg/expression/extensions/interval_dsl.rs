@@ -247,7 +247,7 @@ mod tests {
     use self::quickcheck::quickcheck;
     use self::dotenv::dotenv;
 
-    use ::{types, select};
+    use {select, types};
     use data_types::PgInterval;
     use expression::dsl::sql;
     use pg::PgConnection;

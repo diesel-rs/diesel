@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use super::backend::Pg;
 use super::connection::raw::RawConnection;
-use query_builder::{QueryBuilder, Binds, BuildQueryResult};
+use query_builder::{Binds, BuildQueryResult, QueryBuilder};
 use types::HasSqlType;
 
 pub struct PgQueryBuilder {
@@ -35,8 +35,8 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
         Ok(self.push_sql(&escaped_identifier))
     }
 
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
-        Pg: HasSqlType<T>,
+    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>)
+        where Pg: HasSqlType<T>,
     {
         self.bind_idx += 1;
         let sql = format!("${}", self.bind_idx);

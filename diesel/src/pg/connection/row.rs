@@ -26,8 +26,6 @@ impl<'a> Row<Pg> for PgRow<'a> {
     }
 
     fn next_is_null(&self, count: usize) -> bool {
-        (0..count).all(|i| {
-            self.db_result.is_null(self.row_idx, self.col_idx + i)
-        })
+        (0..count).all(|i| self.db_result.is_null(self.row_idx, self.col_idx + i))
     }
 }

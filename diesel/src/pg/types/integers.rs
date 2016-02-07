@@ -1,6 +1,6 @@
 extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
@@ -8,7 +8,7 @@ use expression::AsExpression;
 use expression::bound::Bound;
 use pg::Pg;
 use query_source::Queryable;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, FromSql, IsNull, ToSql};
 
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 
@@ -22,8 +22,8 @@ impl FromSql<types::Oid, Pg> for u32 {
 impl ToSql<types::Oid, Pg> for u32 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         out.write_u32::<BigEndian>(*self)
-            .map(|_| IsNull::No)
-            .map_err(|e| e.into())
+           .map(|_| IsNull::No)
+           .map_err(|e| e.into())
     }
 }
 
@@ -51,8 +51,7 @@ fn i64_to_sql() {
     ToSql::<types::BigInt, Pg>::to_sql(&1i64, &mut bytes).unwrap();
     ToSql::<types::BigInt, Pg>::to_sql(&0i64, &mut bytes).unwrap();
     ToSql::<types::BigInt, Pg>::to_sql(&-1i64, &mut bytes).unwrap();
-    assert_eq!(bytes, vec![
-               0, 0, 0, 0, 0, 0, 0, 1,
-               0, 0, 0, 0, 0, 0, 0, 0,
-               255, 255, 255, 255, 255, 255, 255, 255]);
+    assert_eq!(bytes,
+               vec![0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255,
+                    255, 255]);
 }

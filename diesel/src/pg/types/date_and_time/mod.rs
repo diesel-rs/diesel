@@ -6,7 +6,7 @@ use expression::*;
 use expression::bound::Bound;
 use pg::{Pg, PgTypeMetadata};
 use query_source::Queryable;
-use types::{self, FromSql, ToSql, IsNull};
+use types::{self, FromSql, IsNull, ToSql};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -112,8 +112,7 @@ impl ToSql<types::Timestamp, Pg> for PgTimestamp {
 
 impl FromSql<types::Timestamp, Pg> for PgTimestamp {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        FromSql::<types::BigInt, Pg>::from_sql(bytes)
-            .map(PgTimestamp)
+        FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgTimestamp)
     }
 }
 
@@ -125,8 +124,7 @@ impl ToSql<types::Date, Pg> for PgDate {
 
 impl FromSql<types::Date, Pg> for PgDate {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        FromSql::<types::Integer, Pg>::from_sql(bytes)
-            .map(PgDate)
+        FromSql::<types::Integer, Pg>::from_sql(bytes).map(PgDate)
     }
 }
 
@@ -138,8 +136,7 @@ impl ToSql<types::Time, Pg> for PgTime {
 
 impl FromSql<types::Time, Pg> for PgTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
-        FromSql::<types::BigInt, Pg>::from_sql(bytes)
-            .map(PgTime)
+        FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgTime)
     }
 }
 

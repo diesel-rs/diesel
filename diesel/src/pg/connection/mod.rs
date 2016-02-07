@@ -5,7 +5,7 @@ pub mod raw;
 mod row;
 mod result;
 
-use connection::{SimpleConnection, Connection};
+use connection::{Connection, SimpleConnection};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::{AsQuery, QueryFragment};
 use query_source::Queryable;
@@ -14,10 +14,10 @@ use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use std::cell::Cell;
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use std::ptr;
 use std::rc::Rc;
-use types::{ToSql, HasSqlType};
+use types::{HasSqlType, ToSql};
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -32,9 +32,7 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         let query = try!(CString::new(query));
-        let inner_result = unsafe {
-            self.raw_connection.exec(query.as_ptr())
-        };
+        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
         try!(PgResult::new(self, inner_result));
         Ok(())
     }
@@ -56,19 +54,19 @@ impl Connection for PgConnection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
-        T: AsQuery,
-        T::Query: QueryFragment<Pg>,
-        Pg: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Pg>,
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+        where T: AsQuery,
+              T::Query: QueryFragment<Pg>,
+              Pg: HasSqlType<T::SqlType>,
+              U: Queryable<T::SqlType, Pg>,
     {
         let (sql, params, types) = self.prepare_query(&source.as_query());
         self.exec_sql_params(&sql, &params, &Some(types))
             .and_then(|r| Cursor::new(r).collect())
     }
 
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Pg>,
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+        where T: QueryFragment<Pg>,
     {
         let (sql, params, param_types) = self.prepare_query(source);
         self.exec_sql_params(&sql, &params, &Some(param_types))
@@ -84,11 +82,13 @@ impl Connection for PgConnection {
 
     fn begin_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            self.execute("BEGIN")
-        } else {
-            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
+        self.change_transaction_depth(1,
+                                      if transaction_depth == 0 {
+                                          self.execute("BEGIN")
+                                      } else {
+                                          self.execute(&format!("SAVEPOINT diesel_savepoint_{}",
+                                                                transaction_depth))
+                                      })
     }
 
     fn rollback_transaction(&self) -> QueryResult<()> {
@@ -117,7 +117,11 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
-    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<PgResult> {
+    fn exec_sql_params(&self,
+                       query: &str,
+                       param_data: &Vec<Option<Vec<u8>>>,
+                       param_types: &Option<Vec<u32>>)
+                       -> QueryResult<PgResult> {
         let query = try!(CString::new(query));
         let params_pointer = param_data.iter()
             .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
@@ -133,26 +137,26 @@ impl PgConnection {
         let param_formats = vec![1; param_data.len()];
 
         let internal_res = unsafe {
-            self.raw_connection.exec_params(
-                query.as_ptr(),
-                params_pointer.len() as libc::c_int,
-                param_types_ptr,
-                params_pointer.as_ptr(),
-                param_lengths.as_ptr(),
-                param_formats.as_ptr(),
-                1,
-            )
+            self.raw_connection.exec_params(query.as_ptr(),
+                                            params_pointer.len() as libc::c_int,
+                                            param_types_ptr,
+                                            params_pointer.as_ptr(),
+                                            param_lengths.as_ptr(),
+                                            param_formats.as_ptr(),
+                                            1)
         };
 
         PgResult::new(self, internal_res)
     }
 
-    fn prepare_query<T: QueryFragment<Pg>>(&self, source: &T)
-        -> (String, Vec<Option<Vec<u8>>>, Vec<u32>)
-    {
+    fn prepare_query<T: QueryFragment<Pg>>(&self,
+                                           source: &T)
+                                           -> (String, Vec<Option<Vec<u8>>>, Vec<u32>) {
         let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
         source.to_sql(&mut query_builder).unwrap();
-        (query_builder.sql, query_builder.binds, query_builder.bind_types)
+        (query_builder.sql,
+         query_builder.binds,
+         query_builder.bind_types)
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
@@ -172,8 +176,7 @@ impl PgConnection {
     }
 }
 
-extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {
-}
+extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
 
 extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const libc::c_char) {
     use std::io::Write;

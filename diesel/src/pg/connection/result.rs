@@ -7,7 +7,7 @@ use super::row::PgRow;
 
 use self::pq_sys::*;
 use std::ffi::CStr;
-use std::{str, slice, mem};
+use std::{mem, slice, str};
 
 pub struct PgResult {
     internal_result: *mut PGresult,
@@ -17,11 +17,7 @@ impl PgResult {
     pub fn new(conn: &PgConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result) };
         match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
-                Ok(PgResult {
-                    internal_result: internal_result,
-                })
-            },
+            PGRES_COMMAND_OK | PGRES_TUPLES_OK => Ok(PgResult { internal_result: internal_result }),
             _ => Err(Error::DatabaseError(conn.last_error_message())),
         }
     }
@@ -33,7 +29,7 @@ impl PgResult {
             let count_str = str::from_utf8_unchecked(count_bytes);
             match count_str {
                 "" => 0,
-                _ => count_str.parse().unwrap()
+                _ => count_str.parse().unwrap(),
             }
         }
     }
@@ -63,11 +59,10 @@ impl PgResult {
 
     pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
-            0 != PQgetisnull(
-                self.internal_result,
-                row_idx as libc::c_int,
-                col_idx as libc::c_int,
-            )
+            0 !=
+            PQgetisnull(self.internal_result,
+                        row_idx as libc::c_int,
+                        col_idx as libc::c_int)
         }
     }
 }

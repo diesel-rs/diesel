@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use backend::*;
-use expression::{AsExpression, Expression, SelectableExpression, NonAggregate};
+use expression::{AsExpression, Expression, NonAggregate, SelectableExpression};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use query_builder::debug::DebugQueryBuilder;
@@ -37,9 +37,9 @@ use types::{Array, HasSqlType};
 /// assert_eq!(Ok(vec![sean, jim]), data.load(&connection));
 /// # }
 /// ```
-pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
-    Pg: HasSqlType<ST>,
-    T: AsExpression<Array<ST>>,
+pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST>
+    where Pg: HasSqlType<ST>,
+          T: AsExpression<Array<ST>>,
 {
     Any::new(vals.as_expression())
 }
@@ -59,15 +59,15 @@ impl<Expr, ST> Any<Expr, ST> {
     }
 }
 
-impl<Expr, ST> Expression for Any<Expr, ST> where
-    Pg: HasSqlType<ST>,
-    Expr: Expression<SqlType=Array<ST>>,
+impl<Expr, ST> Expression for Any<Expr, ST>
+    where Pg: HasSqlType<ST>,
+          Expr: Expression<SqlType = Array<ST>>,
 {
     type SqlType = ST;
 }
 
-impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
-    Expr: QueryFragment<Pg>,
+impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST>
+    where Expr: QueryFragment<Pg>,
 {
     fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
         out.push_sql("ANY(");
@@ -77,8 +77,8 @@ impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
     }
 }
 
-impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
-    Expr: QueryFragment<Debug>,
+impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST>
+    where Expr: QueryFragment<Debug>,
 {
     fn to_sql(&self, out: &mut DebugQueryBuilder) -> BuildQueryResult {
         out.push_sql("ANY(");
@@ -88,15 +88,15 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
     }
 }
 
-impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST> where
-    Pg: HasSqlType<ST>,
-    Any<Expr, ST>: Expression,
-    Expr: SelectableExpression<QS>,
+impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST>
+    where Pg: HasSqlType<ST>,
+          Any<Expr, ST>: Expression,
+          Expr: SelectableExpression<QS>,
 {
 }
 
-impl<Expr, ST> NonAggregate for Any<Expr, ST> where
-    Expr: NonAggregate,
-    Any<Expr, ST>: Expression,
+impl<Expr, ST> NonAggregate for Any<Expr, ST>
+    where Expr: NonAggregate,
+          Any<Expr, ST>: Expression,
 {
 }
