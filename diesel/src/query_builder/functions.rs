@@ -1,5 +1,5 @@
 use expression::Expression;
-use super::{UpdateTarget, IncompleteUpdateStatement, IncompleteInsertStatement, SelectStatement};
+use super::{IncompleteInsertStatement, IncompleteUpdateStatement, SelectStatement, UpdateTarget};
 use super::delete_statement::DeleteStatement;
 
 /// Creates an update statement. Helpers for updating a single row can be
@@ -115,8 +115,8 @@ pub fn insert<T>(records: T) -> IncompleteInsertStatement<T> {
 /// Creates a bare select statement, with no from clause. Primarily used for
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
-pub fn select<T>(expression: T) -> SelectStatement<T::SqlType, T, ()> where
-    T: Expression,
+pub fn select<T>(expression: T) -> SelectStatement<T::SqlType, T, ()>
+    where T: Expression,
 {
     SelectStatement::simple(expression, ())
 }

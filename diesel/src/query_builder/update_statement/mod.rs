@@ -1,12 +1,12 @@
 pub mod changeset;
 pub mod target;
 
-pub use self::changeset::{Changeset, AsChangeset};
+pub use self::changeset::{AsChangeset, Changeset};
 pub use self::target::UpdateTarget;
 
 use backend::{Backend, SupportsReturningClause};
 use expression::Expression;
-use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::{AsQuery, BuildQueryResult, Query, QueryBuilder, QueryFragment};
 use query_source::Table;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
@@ -21,9 +21,9 @@ impl<T> IncompleteUpdateStatement<T> {
 }
 
 impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
-    pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where
-        U: changeset::AsChangeset<Target=T::Table>,
-        UpdateQuery<T, U::Changeset>: Query,
+    pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset>
+        where U: changeset::AsChangeset<Target = T::Table>,
+              UpdateQuery<T, U::Changeset>: Query,
     {
         UpdateStatement {
             target: self.0,
@@ -38,12 +38,12 @@ pub struct UpdateStatement<T, U> {
     values: U,
 }
 
-impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
-    DB: Backend,
-    T: UpdateTarget,
-    T::WhereClause: QueryFragment<DB>,
-    T::FromClause: QueryFragment<DB>,
-    U: changeset::Changeset<DB>,
+impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U>
+    where DB: Backend,
+          T: UpdateTarget,
+          T::WhereClause: QueryFragment<DB>,
+          T::FromClause: QueryFragment<DB>,
+          U: changeset::Changeset<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("UPDATE ");
@@ -58,8 +58,8 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
     }
 }
 
-impl<T, U> AsQuery for UpdateStatement<T, U> where
-    UpdateQuery<T, U>: Query,
+impl<T, U> AsQuery for UpdateStatement<T, U>
+    where UpdateQuery<T, U>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = UpdateQuery<T, U>;
@@ -72,11 +72,11 @@ impl<T, U> AsQuery for UpdateStatement<T, U> where
 #[doc(hidden)]
 pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
 
-impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
-    DB: Backend + SupportsReturningClause,
-    T: UpdateTarget,
-    <T::Table as Table>::AllColumns: QueryFragment<DB>,
-    UpdateStatement<T, U>: QueryFragment<DB>,
+impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U>
+    where DB: Backend + SupportsReturningClause,
+          T: UpdateTarget,
+          <T::Table as Table>::AllColumns: QueryFragment<DB>,
+          UpdateStatement<T, U>: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.0.to_sql(out));
@@ -86,8 +86,8 @@ impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
     }
 }
 
-impl<T, U> Query for UpdateQuery<T, U> where
-    T: UpdateTarget,
+impl<T, U> Query for UpdateQuery<T, U>
+    where T: UpdateTarget,
 {
     type SqlType = <<T::Table as Table>::AllColumns as Expression>::SqlType;
 }

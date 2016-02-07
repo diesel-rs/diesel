@@ -1,5 +1,5 @@
 use backend::Backend;
-use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+use query_builder::{BuildQueryResult, QueryBuilder, QueryFragment};
 
 pub struct Identifier<'a>(pub &'a str);
 
@@ -46,12 +46,12 @@ impl<T, U, UU, V, VV, W, WW> CombinedJoin<Join<U, UU, VV, WW>> for Join<T, U, V,
     }
 }
 
-impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
-    DB: Backend,
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
-    V: QueryFragment<DB>,
-    W: QueryFragment<DB>,
+impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W>
+    where DB: Backend,
+          T: QueryFragment<DB>,
+          U: QueryFragment<DB>,
+          V: QueryFragment<DB>,
+          W: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.lhs.to_sql(out));
@@ -80,10 +80,10 @@ impl<'a, T, U> InfixNode<'a, T, U> {
     }
 }
 
-impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
-    DB: Backend,
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
+impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U>
+    where DB: Backend,
+          T: QueryFragment<DB>,
+          U: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.lhs.to_sql(out));

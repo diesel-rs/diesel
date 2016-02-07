@@ -19,7 +19,7 @@ pub mod update_statement;
 #[doc(hidden)]
 pub use self::select_statement::SelectStatement;
 #[doc(inline)]
-pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
+pub use self::update_statement::{AsChangeset, Changeset, IncompleteUpdateStatement, UpdateTarget};
 #[doc(inline)]
 pub use self::insert_statement::IncompleteInsertStatement;
 
@@ -40,8 +40,7 @@ pub type BuildQueryResult = Result<(), Box<Error>>;
 pub trait QueryBuilder<DB: Backend> {
     fn push_sql(&mut self, sql: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
-    fn push_bound_value<T>(&mut self, binds: Option<Vec<u8>>) where
-        DB: HasSqlType<T>;
+    fn push_bound_value<T>(&mut self, binds: Option<Vec<u8>>) where DB: HasSqlType<T>;
 }
 
 /// A complete SQL query with a return type. This can be a select statement, or
@@ -65,18 +64,18 @@ pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
 }
 
-impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
-    DB: Backend,
-    T: QueryFragment<DB>,
+impl<T: ?Sized, DB> QueryFragment<DB> for Box<T>
+    where DB: Backend,
+          T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
-    DB: Backend,
-    T: QueryFragment<DB>,
+impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+    where DB: Backend,
+          T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)

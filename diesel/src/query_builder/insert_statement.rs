@@ -1,5 +1,5 @@
 use backend::{Backend, SupportsReturningClause};
-use persistable::{Insertable, InsertValues};
+use persistable::{InsertValues, Insertable};
 use expression::Expression;
 use query_builder::*;
 use query_source::Table;
@@ -13,14 +13,12 @@ pub struct IncompleteInsertStatement<T> {
 impl<T> IncompleteInsertStatement<T> {
     #[doc(hidden)]
     pub fn new(records: T) -> Self {
-        IncompleteInsertStatement {
-            records: records,
-        }
+        IncompleteInsertStatement { records: records }
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> InsertStatement<S, T> where
-        InsertStatement<S, T>: AsQuery,
+    pub fn into<S>(self, target: S) -> InsertStatement<S, T>
+        where InsertStatement<S, T>: AsQuery,
     {
         InsertStatement {
             target: target,
@@ -35,11 +33,11 @@ pub struct InsertStatement<T, U> {
     records: U,
 }
 
-impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
-    DB: Backend,
-    T: Table,
-    T::FromClause: QueryFragment<DB>,
-    U: Insertable<T, DB> + Copy,
+impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U>
+    where DB: Backend,
+          T: Table,
+          T::FromClause: QueryFragment<DB>,
+          U: Insertable<T, DB> + Copy,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let values = self.records.values();
@@ -53,9 +51,9 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
     }
 }
 
-impl<T, U> AsQuery for InsertStatement<T, U> where
-    T: Table,
-    InsertQuery<T::AllColumns, InsertStatement<T, U>>: Query,
+impl<T, U> AsQuery for InsertStatement<T, U>
+    where T: Table,
+          InsertQuery<T::AllColumns, InsertStatement<T, U>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = InsertQuery<T::AllColumns, InsertStatement<T, U>>;
@@ -74,16 +72,16 @@ pub struct InsertQuery<T, U> {
     statement: U,
 }
 
-impl<T, U> Query for InsertQuery<T, U> where
-    T: Expression,
+impl<T, U> Query for InsertQuery<T, U>
+    where T: Expression,
 {
     type SqlType = T::SqlType;
 }
 
-impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
-    DB: Backend + SupportsReturningClause,
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
+impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U>
+    where DB: Backend + SupportsReturningClause,
+          T: QueryFragment<DB>,
+          U: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.statement.to_sql(out));

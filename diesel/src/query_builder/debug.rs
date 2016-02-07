@@ -1,5 +1,5 @@
 use backend::Debug;
-use super::{QueryBuilder, BuildQueryResult};
+use super::{BuildQueryResult, QueryBuilder};
 use types::HasSqlType;
 
 #[doc(hidden)]
@@ -30,8 +30,8 @@ impl QueryBuilder<Debug> for DebugQueryBuilder {
     }
 
     #[allow(unused_variables)]
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
-        Debug: HasSqlType<T>,
+    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>)
+        where Debug: HasSqlType<T>,
     {
         self.push_sql("?");
     }
