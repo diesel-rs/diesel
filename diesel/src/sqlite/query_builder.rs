@@ -1,5 +1,5 @@
 use super::backend::{Sqlite, SqliteType};
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::{BuildQueryResult, QueryBuilder};
 use types::HasSqlType;
 
 pub struct SqliteQueryBuilder {
@@ -28,8 +28,8 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
         Ok(())
     }
 
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
-        Sqlite: HasSqlType<T>,
+    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>)
+        where Sqlite: HasSqlType<T>,
     {
         self.push_sql("?");
         self.bind_params.push((Sqlite::metadata(), bind));

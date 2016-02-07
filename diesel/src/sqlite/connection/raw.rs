@@ -1,8 +1,8 @@
 extern crate libsqlite3_sys as ffi;
 extern crate libc;
 
-use std::ffi::{CString, CStr};
-use std::io::{stderr, Write};
+use std::ffi::{CStr, CString};
+use std::io::{Write, stderr};
 use std::{ptr, str};
 
 use result::*;
@@ -21,13 +21,11 @@ impl RawConnection {
         };
 
         match connection_status {
-            ffi::SQLITE_OK => Ok(RawConnection {
-                internal_connection: conn_pointer,
-            }),
+            ffi::SQLITE_OK => Ok(RawConnection { internal_connection: conn_pointer }),
             err_code => {
                 let message = super::error_message(err_code);
                 Err(ConnectionError::BadConnection(message.into()))
-            }
+            },
         }
     }
 
@@ -37,13 +35,11 @@ impl RawConnection {
         let callback_fn = None;
         let callback_arg = ptr::null_mut();
         unsafe {
-            ffi::sqlite3_exec(
-                self.internal_connection,
-                query.as_ptr(),
-                callback_fn,
-                callback_arg,
-                &mut err_msg,
-            );
+            ffi::sqlite3_exec(self.internal_connection,
+                              query.as_ptr(),
+                              callback_fn,
+                              callback_arg,
+                              &mut err_msg);
         }
 
         if !err_msg.is_null() {
@@ -67,7 +63,10 @@ impl Drop for RawConnection {
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {
-                write!(stderr(), "Error closing SQLite connection: {}", error_message).unwrap();
+                write!(stderr(),
+                       "Error closing SQLite connection: {}",
+                       error_message)
+                    .unwrap();
             } else {
                 panic!("Error closing SQLite connection: {}", error_message);
             }
