@@ -7,7 +7,7 @@ pub mod filter;
 pub mod joins;
 
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 #[doc(hidden)]
 pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
@@ -51,16 +51,16 @@ pub trait Table: QuerySource + AsQuery + Sized {
     fn primary_key(&self) -> Self::PrimaryKey;
     fn all_columns() -> Self::AllColumns;
 
-    fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
-        T: Table,
-        Self: JoinTo<T, joins::Inner>,
+    fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T>
+        where T: Table,
+              Self: JoinTo<T, joins::Inner>,
     {
         InnerJoinSource::new(self, other)
     }
 
-    fn left_outer_join<T>(self, other: T) -> LeftOuterJoinSource<Self, T> where
-        T: Table,
-        Self: JoinTo<T, joins::LeftOuter>,
+    fn left_outer_join<T>(self, other: T) -> LeftOuterJoinSource<Self, T>
+        where T: Table,
+              Self: JoinTo<T, joins::LeftOuter>,
     {
         LeftOuterJoinSource::new(self, other)
     }
