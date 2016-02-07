@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::*;
 use expression::expression_methods::*;
 use expression::predicates::And;
-use super::{QueryFragment, QueryBuilder, BuildQueryResult};
+use super::{BuildQueryResult, QueryBuilder, QueryFragment};
 use types::Bool;
 
 pub trait WhereAnd<Predicate> {
@@ -20,8 +20,8 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     }
 }
 
-impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
-    Predicate: Expression<SqlType=Bool>,
+impl<Predicate> WhereAnd<Predicate> for NoWhereClause
+    where Predicate: Expression<SqlType = Bool>,
 {
     type Output = WhereClause<Predicate>;
 
@@ -33,9 +33,9 @@ impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
 #[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
 
-impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
-    DB: Backend,
-    Expr: QueryFragment<DB>,
+impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr>
+    where DB: Backend,
+          Expr: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" WHERE ");
@@ -43,9 +43,9 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
     }
 }
 
-impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
-    Expr: Expression<SqlType=Bool>,
-    Predicate: Expression<SqlType=Bool>,
+impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr>
+    where Expr: Expression<SqlType = Bool>,
+          Predicate: Expression<SqlType = Bool>,
 {
     type Output = WhereClause<And<Expr, Predicate>>;
 

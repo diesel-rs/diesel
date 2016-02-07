@@ -1,6 +1,6 @@
 use connection::Connection;
 use helper_types::Limit;
-use query_builder::{Query, QueryFragment, AsQuery};
+use query_builder::{AsQuery, Query, QueryFragment};
 use query_source::Queryable;
 use result::QueryResult;
 use super::LimitDsl;
@@ -14,8 +14,8 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
-    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
+    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+        where U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         conn.query_all(self)
     }
@@ -24,11 +24,11 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// `Err(NotFound)` if no results are returned. If the query truly is
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
-    fn first<U>(self, conn: &Conn) -> QueryResult<U> where
-        Self: LimitDsl,
-        U: Queryable<<Limit<Self> as Query>::SqlType, Conn::Backend>,
-        Limit<Self>: QueryFragment<Conn::Backend>,
-        Conn::Backend: HasSqlType<<Limit<Self> as Query>::SqlType>,
+    fn first<U>(self, conn: &Conn) -> QueryResult<U>
+        where Self: LimitDsl,
+              U: Queryable<<Limit<Self> as Query>::SqlType, Conn::Backend>,
+              Limit<Self>: QueryFragment<Conn::Backend>,
+              Conn::Backend: HasSqlType<<Limit<Self> as Query>::SqlType>,
     {
         conn.query_one(self.limit(1))
     }
@@ -37,23 +37,23 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// returned if the query affected 0 rows. You can call `.optional()` on the
     /// result of this if the command was optional to get back a
     /// `Result<Option<U>>`
-    fn get_result<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<Self::SqlType, Conn::Backend>,
+    fn get_result<U>(self, conn: &Conn) -> QueryResult<U>
+        where U: Queryable<Self::SqlType, Conn::Backend>,
     {
         conn.query_one(self)
     }
 
     /// Runs the command, returning an `Iterator` over the affected rows.
-    fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
+    fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+        where U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
         self.load(conn)
     }
 }
 
-impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
-    T::Query: QueryFragment<Conn::Backend>,
-    Conn::Backend: HasSqlType<T::SqlType>,
+impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T
+    where T::Query: QueryFragment<Conn::Backend>,
+          Conn::Backend: HasSqlType<T::SqlType>,
 {
 }
 
@@ -67,8 +67,8 @@ pub trait ExecuteDsl<Conn: Connection>: Sized + QueryFragment<Conn::Backend> {
     }
 }
 
-impl<Conn, T> ExecuteDsl<Conn> for T where
-    Conn: Connection,
-    T: QueryFragment<Conn::Backend>
+impl<Conn, T> ExecuteDsl<Conn> for T
+    where Conn: Connection,
+          T: QueryFragment<Conn::Backend>,
 {
 }

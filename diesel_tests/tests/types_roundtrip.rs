@@ -4,11 +4,11 @@ pub use quickcheck::quickcheck;
 use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
 use self::chrono::naive::date;
 
-pub use schema::{connection, TestConnection};
+pub use schema::{TestConnection, connection};
 pub use diesel::*;
 pub use diesel::result::Error;
 pub use diesel::data_types::*;
-pub use diesel::types::{HasSqlType, ToSql, Nullable};
+pub use diesel::types::{HasSqlType, Nullable, ToSql};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::QueryFragment;
@@ -29,14 +29,17 @@ pub fn test_type_round_trips<ST, T>(value: T) -> bool where
             } else {
                 true
             }
-        }
-        Err(Error::DatabaseError(msg)) =>
-            &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n",
+        },
+        Err(Error::DatabaseError(msg)) => {
+            &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n"
+        },
         Err(e) => panic!("Query failed: {:?}", e),
     }
 }
 
-pub fn id<A>(a: A) -> A { a }
+pub fn id<A>(a: A) -> A {
+    a
+}
 
 macro_rules! test_round_trip {
     ($test_name:ident, $sql_type:ident, $tpe:ty) => {
@@ -91,7 +94,10 @@ mod pg_types {
     test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp);
     test_round_trip!(interval_roundtrips, Interval, PgInterval);
     test_round_trip!(numeric_roundtrips, Numeric, PgNumeric);
-    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
+    test_round_trip!(naive_datetime_roundtrips,
+                     Timestamp,
+                     (i64, u32),
+                     mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
 }
@@ -128,5 +134,8 @@ mod unstable_types {
         time + Duration::new(0, 1) - Duration::new(0, 1)
     }
 
-    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision);
+    test_round_trip!(systemtime_roundtrips,
+                     Timestamp,
+                     SystemTime,
+                     strip_nanosecond_precision);
 }

@@ -107,16 +107,14 @@ fn test_transaction_always_rolls_back() {
 #[should_panic(expected = "Transaction did not succeed")]
 fn test_transaction_panics_on_error() {
     let connection = connection_without_transaction();
-    connection.test_transaction::<(), _, _>(|| {
-        Err(())
-    });
+    connection.test_transaction::<(), _, _>(|| Err(()));
 }
 
 fn setup_test_table(connection: &TestConnection, table_name: &str) {
     use schema_dsl::*;
-    create_table(table_name, (
-        integer("id").primary_key().auto_increment(),
-    )).execute(connection).unwrap();
+    create_table(table_name, (integer("id").primary_key().auto_increment(),))
+        .execute(connection)
+        .unwrap();
 }
 
 fn drop_test_table(connection: &TestConnection, table_name: &str) {
@@ -126,5 +124,6 @@ fn drop_test_table(connection: &TestConnection, table_name: &str) {
 fn count_test_table(connection: &TestConnection, table_name: &str) -> i64 {
     use diesel::expression::dsl::sql;
     select(sql::<types::BigInt>(&format!("COUNT(*) FROM {}", table_name)))
-        .first(connection).unwrap()
+        .first(connection)
+        .unwrap()
 }

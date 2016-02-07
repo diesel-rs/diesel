@@ -15,14 +15,11 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn from_annotable(
-        cx: &mut ExtCtxt,
-        span: Span,
-        annotatable: &Annotatable,
-    ) -> Option<Self> {
+    pub fn from_annotable(cx: &mut ExtCtxt, span: Span, annotatable: &Annotatable) -> Option<Self> {
         if let Annotatable::Item(ref item) = *annotatable {
-            let table_name_from_annotation =
-                str_value_of_attr_with_name(cx, &item.attrs, "table_name");
+            let table_name_from_annotation = str_value_of_attr_with_name(cx,
+                                                                         &item.attrs,
+                                                                         "table_name");
             Attr::from_item(cx, item).map(|(generics, attrs)| {
                 let ty = struct_ty(cx, span, item.ident, &generics);
                 Model {
@@ -42,15 +39,15 @@ impl Model {
     }
 
     pub fn table_name(&self) -> ast::Ident {
-        self.table_name_from_annotation.unwrap_or_else(|| {
-            str_to_ident(&infer_table_name(&self.name.name.as_str()))
-        })
+        self.table_name_from_annotation
+            .unwrap_or_else(|| str_to_ident(&infer_table_name(&self.name.name.as_str())))
     }
 
     pub fn attr_named(&self, name: ast::Ident) -> &Attr {
-        self.attrs.iter().find(|attr| {
-            attr.field_name == Some(name)
-        }).expect(&format!("Couldn't find an attr named {}", name))
+        self.attrs
+            .iter()
+            .find(|attr| attr.field_name == Some(name))
+            .expect(&format!("Couldn't find an attr named {}", name))
     }
 }
 

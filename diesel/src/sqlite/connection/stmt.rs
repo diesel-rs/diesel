@@ -2,9 +2,9 @@ extern crate libsqlite3_sys as ffi;
 extern crate libc;
 extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, BigEndian};
+use self::byteorder::{BigEndian, ReadBytesExt};
 use std::ffi::CString;
-use std::io::{stderr, Write};
+use std::io::{Write, stderr};
 use std::ptr;
 
 use sqlite::SqliteType;
@@ -23,23 +23,25 @@ impl Statement {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
         let prepare_result = unsafe {
-            ffi::sqlite3_prepare_v2(
-                raw_connection.internal_connection,
-                try!(CString::new(sql)).as_ptr(),
-                sql.len() as libc::c_int,
-                &mut stmt,
-                &mut unused_portion,
-            )
+            ffi::sqlite3_prepare_v2(raw_connection.internal_connection,
+                                    try!(CString::new(sql)).as_ptr(),
+                                    sql.len() as libc::c_int,
+                                    &mut stmt,
+                                    &mut unused_portion)
         };
 
-        ensure_sqlite_ok(prepare_result)
-            .map(|_| Statement { inner_statement: stmt, bind_index: 0 })
+        ensure_sqlite_ok(prepare_result).map(|_| {
+            Statement {
+                inner_statement: stmt,
+                bind_index: 0,
+            }
+        })
     }
 
     pub fn run(&self) -> QueryResult<()> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
-            error => Err(DatabaseError(super::error_message(error).into()))
+            error => Err(DatabaseError(super::error_message(error).into())),
         }
     }
 
@@ -138,7 +140,10 @@ impl Drop for Statement {
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
         if let Err(e) = ensure_sqlite_ok(finalize_result) {
             if panicking() {
-                write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
+                write!(stderr(),
+                       "Error finalizing SQLite prepared statement: {:?}",
+                       e)
+                    .unwrap();
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
             }

@@ -16,10 +16,10 @@ pub trait MigrationConnection: Connection {
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
 }
 
-impl<T> MigrationConnection for T where
-    T: Connection,
-    String: FromSql<VarChar, T::Backend>,
-    for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, T::Backend>,
+impl<T> MigrationConnection for T
+    where T: Connection,
+          String: FromSql<VarChar, T::Backend>,
+          for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, T::Backend>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations.select(version)

@@ -7,6 +7,6 @@ pub trait SaveChangesDsl<Conn, ST> where
     Conn: Connection,
     Conn::Backend: HasSqlType<ST>,
 {
-    fn save_changes<T>(&self, connection: &Conn) -> QueryResult<T> where
-        T: Queryable<ST, Conn::Backend>;
+    fn save_changes<T>(&self, connection: &Conn) -> QueryResult<T>
+        where T: Queryable<ST, Conn::Backend>;
 }

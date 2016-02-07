@@ -1,6 +1,6 @@
 use expression::grouped::Grouped;
 use expression::predicates::{And, Or};
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use types::Bool;
 
 pub trait BoolExpressionMethods: Expression<SqlType=Bool> + Sized {
@@ -19,4 +19,4 @@ pub trait BoolExpressionMethods: Expression<SqlType=Bool> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Bool>> BoolExpressionMethods for T {}
+impl<T: Expression<SqlType = Bool>> BoolExpressionMethods for T {}

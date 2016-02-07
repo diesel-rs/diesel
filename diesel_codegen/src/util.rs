@@ -3,31 +3,28 @@ use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::build::AstBuilder;
-use syntax::parse::token::{str_to_ident, intern_and_get_ident};
+use syntax::parse::token::{intern_and_get_ident, str_to_ident};
 use syntax::ptr::P;
 
-fn str_value_of_attr(
-    cx: &mut ExtCtxt,
-    attr: &ast::Attribute,
-    name: &str,
-) -> Option<ast::Ident> {
-    attr.value_str().map(|value| {
-        str_to_ident(&value)
-    }).or_else(|| {
-        cx.span_err(attr.span(),
-            &format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name));
-        None
-    })
+fn str_value_of_attr(cx: &mut ExtCtxt, attr: &ast::Attribute, name: &str) -> Option<ast::Ident> {
+    attr.value_str()
+        .map(|value| str_to_ident(&value))
+        .or_else(|| {
+            cx.span_err(attr.span(),
+                        &format!(r#"`{}` must be in the form `#[{}="something"]`"#,
+                                 name,
+                                 name));
+            None
+        })
 }
 
-pub fn str_value_of_attr_with_name(
-    cx: &mut ExtCtxt,
-    attrs: &[ast::Attribute],
-    name: &str,
-) -> Option<ast::Ident> {
+pub fn str_value_of_attr_with_name(cx: &mut ExtCtxt,
+                                   attrs: &[ast::Attribute],
+                                   name: &str)
+                                   -> Option<ast::Ident> {
     attrs.iter()
-        .find(|a| a.check_name(name))
-        .and_then(|a| str_value_of_attr(cx, &a, name))
+         .find(|a| a.check_name(name))
+         .and_then(|a| str_value_of_attr(cx, &a, name))
 }
 
 #[cfg(feature = "with-syntex")]
@@ -53,27 +50,29 @@ pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
     fold::Folder::fold_crate(&mut StripAttributeFolder, krate)
 }
 
-pub fn struct_ty(
-    cx: &mut ExtCtxt,
-    span: Span,
-    name: ast::Ident,
-    generics: &ast::Generics,
-) -> P<ast::Ty> {
+pub fn struct_ty(cx: &mut ExtCtxt,
+                 span: Span,
+                 name: ast::Ident,
+                 generics: &ast::Generics)
+                 -> P<ast::Ty> {
     let lifetimes = generics.lifetimes.iter().map(|lt| lt.lifetime).collect();
-    let ty_params = generics.ty_params.iter()
-        .map(|param| cx.ty_ident(span, param.ident))
-        .collect();
+    let ty_params = generics.ty_params
+                            .iter()
+                            .map(|param| cx.ty_ident(span, param.ident))
+                            .collect();
     cx.ty_path(cx.path_all(span, false, vec![name], lifetimes, ty_params, Vec::new()))
 }
 
 pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
     match ty.node {
         ast::TyPath(_, ref path) => {
-            path.segments.first().iter()
+            path.segments
+                .first()
+                .iter()
                 .filter(|s| s.identifier.name.as_str() == intern_and_get_ident("Option"))
                 .flat_map(|s| s.parameters.types().first().map(|p| *p))
                 .next()
-        }
+        },
         _ => None,
     }
 }

@@ -12,7 +12,7 @@ pub use self::sqlite_value::SqliteValue;
 use std::cell::Cell;
 use std::ffi::CStr;
 
-use connection::{SimpleConnection, Connection};
+use connection::{Connection, SimpleConnection};
 use query_builder::*;
 use query_source::*;
 use result::*;
@@ -52,19 +52,19 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+        where T: AsQuery,
+              T::Query: QueryFragment<Self::Backend>,
+              Self::Backend: HasSqlType<T::SqlType>,
+              U: Queryable<T::SqlType, Self::Backend>,
     {
         self.prepare_query(&source.as_query())
             .map(StatementIterator::new)
             .and_then(Iterator::collect)
     }
 
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend>,
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+        where T: QueryFragment<Self::Backend>,
     {
         let stmt = try!(self.prepare_query(source));
         try!(stmt.run());
@@ -77,11 +77,13 @@ impl Connection for SqliteConnection {
 
     fn begin_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            self.execute("BEGIN")
-        } else {
-            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
+        self.change_transaction_depth(1,
+                                      if transaction_depth == 0 {
+                                          self.execute("BEGIN")
+                                      } else {
+                                          self.execute(&format!("SAVEPOINT diesel_savepoint_{}",
+                                                                transaction_depth))
+                                      })
     }
 
     fn rollback_transaction(&self) -> QueryResult<()> {

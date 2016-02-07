@@ -47,10 +47,14 @@ macro_rules! fold_function {
     }
 }
 
-fold_function!(sum, Sum, "SUM",
-"Represents a SQL `SUM` function. This function can only take types which are
+fold_function!(sum,
+               Sum,
+               "SUM",
+               "Represents a SQL `SUM` function. This function can only take types which are
 Foldable.");
 
-fold_function!(avg, Avg, "AVG",
-"Represents a SQL `AVG` function. This function can only take types which are
+fold_function!(avg,
+               Avg,
+               "AVG",
+               "Represents a SQL `AVG` function. This function can only take types which are
 Foldable.");

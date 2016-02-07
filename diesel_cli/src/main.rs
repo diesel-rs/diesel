@@ -13,45 +13,42 @@ use diesel::pg::PgConnection;
 use diesel::sqlite::SqliteConnection;
 use diesel::migrations::schema::*;
 use diesel::types::{FromSql, VarChar};
-use diesel::{migrations, Connection, Insertable};
+use diesel::{Connection, Insertable, migrations};
 use std::error::Error;
 use std::io::stdout;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use self::database_error::{DatabaseError, DatabaseResult};
 
 fn main() {
-    let database_arg = || Arg::with_name("DATABASE_URL")
-        .long("database-url")
-        .help("Specifies the database URL to connect to. Falls back to \
+    let database_arg = || {
+        Arg::with_name("DATABASE_URL")
+            .long("database-url")
+            .help("Specifies the database URL to connect to. Falls back to \
                    the DATABASE_URL environment variable if unspecified.")
-        .takes_value(true);
+            .takes_value(true)
+    };
 
     let migration_subcommand = SubCommand::with_name("migration")
         .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(
-            SubCommand::with_name("run")
-                .about("Runs all pending migrations")
-                .arg(database_arg())
-        ).subcommand(
-            SubCommand::with_name("revert")
-                .about("Reverts the latest run migration")
-                .arg(database_arg())
-        ).subcommand(
-            SubCommand::with_name("redo")
-                .about("Reverts and re-runs the latest migration. Useful \
+        .subcommand(SubCommand::with_name("run")
+            .about("Runs all pending migrations")
+            .arg(database_arg()))
+        .subcommand(SubCommand::with_name("revert")
+            .about("Reverts the latest run migration")
+            .arg(database_arg()))
+        .subcommand(SubCommand::with_name("redo")
+            .about("Reverts and re-runs the latest migration. Useful \
                       for testing that a migration can in fact be reverted.")
-                .arg(database_arg())
-        ).subcommand(
-            SubCommand::with_name("generate")
-                .about("Generate a new migration with the given name, and \
+            .arg(database_arg()))
+        .subcommand(SubCommand::with_name("generate")
+            .about("Generate a new migration with the given name, and \
                       the current timestamp as the version")
-                .arg(Arg::with_name("MIGRATION_NAME")
-                     .help("The name of the migration to create")
-                     .required(true)
-                 )
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
+            .arg(Arg::with_name("MIGRATION_NAME")
+                .help("The name of the migration to create")
+                .required(true)))
+        .setting(AppSettings::SubcommandRequiredElseHelp);
 
     let setup_subcommand = SubCommand::with_name("setup")
         .about("Creates the migrations directory, creates the database \
@@ -60,17 +57,15 @@ fn main() {
 
     let database_subcommand = SubCommand::with_name("database")
         .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(
-            SubCommand::with_name("setup")
-                .about("Creates the migrations directory, creates the database \
+        .subcommand(SubCommand::with_name("setup")
+            .about("Creates the migrations directory, creates the database \
                         specified in your DATABASE_URL, and runs existing migrations.")
-                .arg(database_arg())
-        ).subcommand(
-            SubCommand::with_name("reset")
-                .about("Resets your database by dropping the database specified \
+            .arg(database_arg()))
+        .subcommand(SubCommand::with_name("reset")
+            .about("Resets your database by dropping the database specified \
                         in your DATABASE_URL and then running `diesel database setup`.")
-                .arg(database_arg())
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
+            .arg(database_arg()))
+        .setting(AppSettings::SubcommandRequiredElseHelp);
 
     let matches = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
@@ -95,45 +90,50 @@ fn run_migration_command(matches: &ArgMatches) {
     match matches.subcommand() {
         ("run", Some(_)) => {
             call_with_conn!(database_url, migrations::run_pending_migrations)
-                .map_err(handle_error).unwrap();
-        }
+                .map_err(handle_error)
+                .unwrap();
+        },
         ("revert", Some(_)) => {
             call_with_conn!(database_url, migrations::revert_latest_migration)
-                .map_err(handle_error).unwrap();
-        }
+                .map_err(handle_error)
+                .unwrap();
+        },
         ("redo", Some(_)) => {
             call_with_conn!(database_url, redo_latest_migration);
-        }
+        },
         ("generate", Some(args)) => {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let timestamp = Local::now().format("%Y%m%d%H%M%S");
             let versioned_name = format!("{}_{}", &timestamp, migration_name);
             let mut migration_dir = migrations::find_migrations_directory()
-                .map_err(handle_error).unwrap().join(versioned_name);
+                .map_err(handle_error)
+                .unwrap()
+                .join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
-            let migration_dir_relative = convert_absolute_path_to_relative(
-                &mut migration_dir,
-                &mut env::current_dir().unwrap()
-            );
+            let migration_dir_relative = convert_absolute_path_to_relative(&mut migration_dir,
+                                                                           &mut env::current_dir()
+                                                                               .unwrap());
 
             let up_path = migration_dir.join("up.sql");
-            println!("Creating {}", migration_dir_relative.join("up.sql").display());
+            println!("Creating {}",
+                     migration_dir_relative.join("up.sql").display());
             fs::File::create(up_path).unwrap();
             let down_path = migration_dir.join("down.sql");
-            println!("Creating {}", migration_dir_relative.join("down.sql").display());
+            println!("Creating {}",
+                     migration_dir_relative.join("down.sql").display());
             fs::File::create(down_path).unwrap();
-        }
+        },
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
 
 fn run_setup_command(matches: &ArgMatches) {
-    migrations::find_migrations_directory()
-        .unwrap_or_else(|_|
-                        create_migrations_directory()
-                        .map_err(handle_error).unwrap()
-                       );
+    migrations::find_migrations_directory().unwrap_or_else(|_| {
+        create_migrations_directory()
+            .map_err(handle_error)
+            .unwrap()
+    });
 
     database::setup_database(matches).unwrap_or_else(handle_error);
 }
@@ -152,9 +152,9 @@ fn run_database_command(matches: &ArgMatches) {
 /// Returns a `DatabaseError::CargoTomlNotFound` if no Cargo.toml is found.
 fn create_migrations_directory() -> DatabaseResult<PathBuf> {
     let project_root = try!(find_project_root());
-    println!("Creating migrations/ directory at: {}", project_root
-                                                        .join("migrations")
-                                                        .display());
+    println!("Creating migrations/ directory at: {}",
+             project_root.join("migrations")
+                         .display());
     try!(fs::create_dir(project_root.join("migrations")));
     try!(fs::File::create(project_root.join("migrations/.gitkeep")));
     Ok(project_root)
@@ -171,23 +171,24 @@ fn search_for_cargo_toml_directory(path: &Path) -> DatabaseResult<PathBuf> {
     if toml_path.is_file() {
         Ok(path.to_owned())
     } else {
-        path.parent().map(search_for_cargo_toml_directory)
+        path.parent()
+            .map(search_for_cargo_toml_directory)
             .unwrap_or(Err(DatabaseError::CargoTomlNotFound))
     }
 }
 
 /// Reverts the most recent migration, and then runs it again, all in a
 /// transaction. If either part fails, the transaction is not committed.
-fn redo_latest_migration<Conn>(conn: &Conn) where
-        Conn: Connection,
-        String: FromSql<VarChar, Conn::Backend>,
-        for<'a> &'a NewMigration<'a>:
-            Insertable<__diesel_schema_migrations::table, Conn::Backend>,
+fn redo_latest_migration<Conn>(conn: &Conn)
+    where Conn: Connection,
+          String: FromSql<VarChar, Conn::Backend>,
+          for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations::table, Conn::Backend>,
 {
     conn.transaction(|| {
-        let reverted_version = try!(migrations::revert_latest_migration(conn));
-        migrations::run_migration_with_version(conn, &reverted_version, &mut stdout())
-    }).unwrap_or_else(handle_error);
+            let reverted_version = try!(migrations::revert_latest_migration(conn));
+            migrations::run_migration_with_version(conn, &reverted_version, &mut stdout())
+        })
+        .unwrap_or_else(handle_error);
 }
 
 fn handle_error<E: Error>(error: E) {
@@ -196,9 +197,9 @@ fn handle_error<E: Error>(error: E) {
 
 // Converts an absolute path to a relative path, with the restriction that the
 // target path must be in the same directory or above the current path.
-fn convert_absolute_path_to_relative(target_path: &mut PathBuf, current_path: &mut PathBuf)
-    -> PathBuf
-{
+fn convert_absolute_path_to_relative(target_path: &mut PathBuf,
+                                     current_path: &mut PathBuf)
+                                     -> PathBuf {
     let mut result = PathBuf::new();
     let target_path = target_path.as_path();
     let mut current_path = current_path.as_path();
@@ -212,16 +213,16 @@ fn convert_absolute_path_to_relative(target_path: &mut PathBuf, current_path: &m
 }
 
 // FIXME: Remove all of this when 1.7 is stable
-fn strip_prefix<'a>(target: &'a Path, base: &'a Path)
--> &'a Path {
+fn strip_prefix<'a>(target: &'a Path, base: &'a Path) -> &'a Path {
     iter_after(target.components(), base.components())
-        .map(|c| c.as_path()).unwrap()
+        .map(|c| c.as_path())
+        .unwrap()
 }
 
 fn iter_after<A, I, J>(mut iter: I, mut prefix: J) -> Option<I>
-where I: Iterator<Item = A> + Clone,
-      J: Iterator<Item = A>,
-      A: PartialEq
+    where I: Iterator<Item = A> + Clone,
+          J: Iterator<Item = A>,
+          A: PartialEq,
 {
     loop {
         let mut iter_next = iter.clone();
@@ -230,7 +231,7 @@ where I: Iterator<Item = A> + Clone,
                 if x != y {
                     return None;
                 }
-            }
+            },
             (Some(_), None) => return Some(iter),
             (None, None) => return Some(iter),
             (None, Some(_)) => return None,
@@ -262,7 +263,8 @@ mod tests {
 
         fs::File::create(&toml_path).unwrap();
 
-        assert_eq!(Ok(temp_path.clone()), search_for_cargo_toml_directory(&temp_path));
+        assert_eq!(Ok(temp_path.clone()),
+                   search_for_cargo_toml_directory(&temp_path));
     }
 
     #[test]
@@ -271,7 +273,7 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(Err(DatabaseError::CargoTomlNotFound),
-            search_for_cargo_toml_directory(&temp_path));
+                   search_for_cargo_toml_directory(&temp_path));
     }
 
     #[test]

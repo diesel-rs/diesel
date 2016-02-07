@@ -19,31 +19,33 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 }
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
-    file_names(path).map(|files| {
-        files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
-    }).unwrap_or(false)
+    file_names(path)
+        .map(|files| files.contains(&"down.sql".into()) && files.contains(&"up.sql".into()))
+        .unwrap_or(false)
 }
 
 fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
-    try!(path.read_dir()).map(|e| {
-        Ok(try!(e).file_name().into_string().unwrap())
-    }).filter(|name| match name {
-        &Ok(ref n) => !n.starts_with("."),
-        _ => true
-    }).collect()
+    try!(path.read_dir())
+        .map(|e| Ok(try!(e).file_name().into_string().unwrap()))
+        .filter(|name| {
+            match name {
+                &Ok(ref n) => !n.starts_with("."),
+                _ => true,
+            }
+        })
+        .collect()
 }
 
 fn version_from_path(path: &Path) -> Result<String, MigrationError> {
-    path.file_name().unwrap()
+    path.file_name()
+        .unwrap()
         .to_os_string()
         .into_string()
         .unwrap()
         .split("_")
         .nth(0)
         .map(|s| Ok(s.into()))
-        .unwrap_or_else(|| {
-            Err(MigrationError::UnknownMigrationFormat(path.to_path_buf()))
-        })
+        .unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
 }
 
 use std::fs::File;
@@ -77,7 +79,7 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
 mod tests {
     extern crate tempdir;
 
-    use super::{version_from_path, valid_sql_migration_directory};
+    use super::{valid_sql_migration_directory, version_from_path};
 
     use self::tempdir::TempDir;
     use std::fs;

@@ -1,7 +1,7 @@
 use diesel::*;
 use super::User;
 
-//FIXME: We can go back to `infer_schema!` when codegen becomes generic
+// FIXME: We can go back to `infer_schema!` when codegen becomes generic
 table! {
     users {
         id -> Integer,

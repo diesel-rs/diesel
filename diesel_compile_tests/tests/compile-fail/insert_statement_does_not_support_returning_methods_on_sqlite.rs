@@ -20,8 +20,8 @@ pub struct User {
 
 use diesel::types::FromSqlRow;
 
-impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
-    (i32, String): FromSqlRow<(Integer, VarChar), DB>,
+impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User
+    where (i32, String): FromSqlRow<(Integer, VarChar), DB>,
 {
     type Row = (i32, String);
 

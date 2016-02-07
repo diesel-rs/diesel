@@ -165,7 +165,8 @@ fn select_complex_from_left_join() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body)));
+    let source = users::table.left_outer_join(posts::table)
+                             .select((users::all_columns, (posts::title, posts::body)));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -188,7 +189,8 @@ fn select_right_side_with_nullable_column_first() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title)));
+    let source = users::table.left_outer_join(posts::table)
+                             .select((users::all_columns, (posts::body, posts::title)));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -202,14 +204,18 @@ fn select_then_join() {
     connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
         .unwrap();
     let expected_data = vec![1];
-    let data: Vec<_> = users.select(id).inner_join(posts::table)
-        .load(&connection).unwrap();
+    let data: Vec<_> = users.select(id)
+                            .inner_join(posts::table)
+                            .load(&connection)
+                            .unwrap();
 
     assert_eq!(expected_data, data);
 
     let expected_data = vec![1, 2];
-    let data: Vec<_> = users.select(id).left_outer_join(posts::table)
-        .load(&connection).unwrap();
+    let data: Vec<_> = users.select(id)
+                            .left_outer_join(posts::table)
+                            .load(&connection)
+                            .unwrap();
 
     assert_eq!(expected_data, data);
 }
@@ -225,14 +231,16 @@ fn join_through_other() {
         NewPost::new(1, "Hello again!", None),
     ], posts::table, &connection);
     let posts = posts::table.load::<Post>(&connection).unwrap();
-    batch_insert(&vec![
-        NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
-        NewComment(posts[2].id, "Best post ever!!!")
-    ], comments::table, &connection);
+    batch_insert(&vec![NewComment(posts[0].id, "OMG"),
+                       NewComment(posts[1].id, "WTF"),
+                       NewComment(posts[2].id, "Best post ever!!!")],
+                 comments::table,
+                 &connection);
     let comments = comments::table.load::<Comment>(&connection).unwrap();
 
-    let data = users.inner_join(comments::table).load(&connection)
-        .unwrap();
+    let data = users.inner_join(comments::table)
+                    .load(&connection)
+                    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");

@@ -10,7 +10,7 @@ pub struct NewMigration<'a>(pub &'a str);
 use backend::Backend;
 use expression::AsExpression;
 use expression::helper_types::AsExpr;
-use persistable::{Insertable, ColumnInsertValue, InsertValues};
+use persistable::{ColumnInsertValue, InsertValues, Insertable};
 
 impl<'update: 'a, 'a, DB> Insertable<__diesel_schema_migrations::table, DB>
     for &'update NewMigration<'a> where

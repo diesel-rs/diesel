@@ -1,6 +1,6 @@
 use diesel::*;
 use diesel::pg::Pg;
-use diesel::types::{HasSqlType, FromSqlRow};
+use diesel::types::{FromSqlRow, HasSqlType};
 
 table! {
     pg_attribute (attrelid) {
@@ -38,9 +38,9 @@ pub struct PgAttr {
     pub nullable: bool,
 }
 
-impl<ST> Queryable<ST, Pg> for PgAttr where
-    Pg: HasSqlType<ST>,
-    (String, String, bool): FromSqlRow<ST, Pg>,
+impl<ST> Queryable<ST, Pg> for PgAttr
+    where Pg: HasSqlType<ST>,
+          (String, String, bool): FromSqlRow<ST, Pg>,
 {
     type Row = (String, String, bool);
 

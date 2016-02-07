@@ -5,10 +5,10 @@ pub trait Foldable {
     type Avg;
 }
 
-impl<T> Foldable for types::Nullable<T> where
-    T: Foldable + NotNull,
-    T::Sum: NotNull,
-    T::Avg: NotNull,
+impl<T> Foldable for types::Nullable<T>
+    where T: Foldable + NotNull,
+          T::Sum: NotNull,
+          T::Avg: NotNull,
 {
     type Sum = types::Nullable<T::Sum>;
     type Avg = types::Nullable<T::Avg>;

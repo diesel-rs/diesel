@@ -39,9 +39,15 @@ impl Error for DatabaseError {
     fn description(&self) -> &str {
         match *self {
             CargoTomlNotFound => "Unable to find Cargo.toml in this directory or any parent directories.",
-            IoError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
-            QueryError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
-            ConnectionError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
+            IoError(ref error) => {
+                error.cause().map(|e| e.description()).unwrap_or(error.description())
+            },
+            QueryError(ref error) => {
+                error.cause().map(|e| e.description()).unwrap_or(error.description())
+            },
+            ConnectionError(ref error) => {
+                error.cause().map(|e| e.description()).unwrap_or(error.description())
+            },
         }
     }
 }
@@ -55,11 +61,8 @@ impl fmt::Display for DatabaseError {
 impl PartialEq for DatabaseError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                &CargoTomlNotFound,
-                &CargoTomlNotFound,
-            ) => true,
-            _ => false
+            (&CargoTomlNotFound, &CargoTomlNotFound) => true,
+            _ => false,
         }
     }
 }

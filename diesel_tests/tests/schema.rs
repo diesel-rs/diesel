@@ -11,7 +11,11 @@ pub struct User {
 
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
-        User { id: id, name: name.to_string(), hair_color: None }
+        User {
+            id: id,
+            name: name.to_string(),
+            hair_color: None,
+        }
     }
 
     pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
@@ -109,7 +113,7 @@ pub fn connection() -> TestConnection {
 #[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
-        "DATABASE_URL must be set in order to run tests");
+                                 "DATABASE_URL must be set in order to run tests");
     ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }
 
@@ -119,7 +123,8 @@ pub fn connection_without_transaction() -> TestConnection {
 
     let connection = ::diesel::sqlite::SqliteConnection::establish(":memory:").unwrap();
     let migrations_dir = migrations::find_migrations_directory().unwrap().join("sqlite");
-    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
+    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink())
+        .unwrap();
     connection
 }
 
@@ -127,23 +132,21 @@ use diesel::query_builder::insert_statement::InsertStatement;
 use diesel::query_builder::QueryFragment;
 
 #[cfg(not(feature = "sqlite"))]
-pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
-    -> usize where
-        T: Table,
-        Conn: Connection,
-        &'a [U]: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a [U]>: QueryFragment<Conn::Backend>,
+pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn) -> usize
+    where T: Table,
+          Conn: Connection,
+          &'a [U]: Insertable<T, Conn::Backend>,
+          InsertStatement<T, &'a [U]>: QueryFragment<Conn::Backend>,
 {
     insert(records).into(table).execute(connection).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
-pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
-    -> usize where
-        T: Table + Copy,
-        Conn: Connection,
-        &'a U: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a U>: QueryFragment<Conn::Backend>,
+pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn) -> usize
+    where T: Table + Copy,
+          Conn: Connection,
+          &'a U: Insertable<T, Conn::Backend>,
+          InsertStatement<T, &'a U>: QueryFragment<Conn::Backend>,
 {
     for record in records {
         insert(record).into(table).execute(connection).unwrap();

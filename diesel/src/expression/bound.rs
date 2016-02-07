@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use query_builder::*;
-use super::{Expression, SelectableExpression, NonAggregate};
-use types::{HasSqlType, ToSql, IsNull};
+use super::{Expression, NonAggregate, SelectableExpression};
+use types::{HasSqlType, IsNull, ToSql};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {
@@ -24,9 +24,9 @@ impl<T, U> Expression for Bound<T, U> {
     type SqlType = T;
 }
 
-impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
-    DB: Backend + HasSqlType<T>,
-    U: ToSql<T, DB>,
+impl<T, U, DB> QueryFragment<DB> for Bound<T, U>
+    where DB: Backend + HasSqlType<T>,
+          U: ToSql<T, DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let mut bytes = Vec::new();
@@ -34,21 +34,15 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
             IsNull::Yes => {
                 out.push_bound_value::<T>(None);
                 Ok(())
-            }
+            },
             IsNull::No => {
                 out.push_bound_value::<T>(Some(bytes));
                 Ok(())
-            }
+            },
         }
     }
 }
 
-impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
-    Bound<T, U>: Expression,
-{
-}
+impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where Bound<T, U>: Expression, {}
 
-impl<T, U> NonAggregate for Bound<T, U> where
-    Bound<T, U>: Expression,
-{
-}
+impl<T, U> NonAggregate for Bound<T, U> where Bound<T, U>: Expression, {}

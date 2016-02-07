@@ -1,7 +1,4 @@
-use syntax::ast::{
-    self,
-    MetaItem,
-};
+use syntax::ast::{self, MetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -9,15 +6,13 @@ use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
 
 use model::Model;
-use super::{parse_association_options, AssociationOptions, to_foreign_key};
+use super::{AssociationOptions, parse_association_options, to_foreign_key};
 
-pub fn expand_has_many(
-    cx: &mut ExtCtxt,
-    span: Span,
-    meta_item: &MetaItem,
-    annotatable: &Annotatable,
-    push: &mut FnMut(Annotatable)
-) {
+pub fn expand_has_many(cx: &mut ExtCtxt,
+                       span: Span,
+                       meta_item: &MetaItem,
+                       annotatable: &Annotatable,
+                       push: &mut FnMut(Annotatable)) {
     let options = parse_association_options("has_many", cx, span, meta_item, annotatable);
     if let Some((model, options)) = options {
         let builder = HasManyAssociationBuilder {
@@ -46,7 +41,8 @@ impl<'a, 'b> HasManyAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_table(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.association_name(), str_to_ident("table")])
+        self.cx.path(self.span,
+                     vec![self.association_name(), str_to_ident("table")])
     }
 
     fn table_name(&self) -> ast::Ident {
@@ -62,7 +58,8 @@ impl<'a, 'b> HasManyAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_key(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.association_name(), self.foreign_key_name()])
+        self.cx.path(self.span,
+                     vec![self.association_name(), self.foreign_key_name()])
     }
 
     fn column_path(&self, column_name: ast::Ident) -> ast::Path {
@@ -81,17 +78,18 @@ fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
 }
 
 fn selectable_column_hack(builder: &HasManyAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().flat_map(|attr| {
-        selectable_column_impl(builder, attr.column_name)
-    }).collect::<Vec<_>>();
+    let mut result = builder.model
+                            .attrs
+                            .iter()
+                            .flat_map(|attr| selectable_column_impl(builder, attr.column_name))
+                            .collect::<Vec<_>>();
     result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
     result
 }
 
-fn selectable_column_impl(
-    builder: &HasManyAssociationBuilder,
-    column_name: ast::Ident,
-) -> Vec<P<ast::Item>> {
+fn selectable_column_impl(builder: &HasManyAssociationBuilder,
+                          column_name: ast::Ident)
+                          -> Vec<P<ast::Item>> {
     let table = builder.table();
     let foreign_table = builder.foreign_table();
     let column = builder.column_path(column_name);

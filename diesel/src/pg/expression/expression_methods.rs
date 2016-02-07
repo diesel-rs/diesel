@@ -1,4 +1,4 @@
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use super::predicates::*;
 
 pub trait PgExpressionMethods: Expression + Sized {
@@ -25,9 +25,8 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// let data = users.select(id).filter(name.is_not_distinct_from("Sean"));
     /// assert_eq!(Ok(1), data.first(&connection));
     /// # }
-    fn is_not_distinct_from<T>(self, other: T)
-        -> IsNotDistinctFrom<Self, T::Expression> where
-            T: AsExpression<Self::SqlType>,
+    fn is_not_distinct_from<T>(self, other: T) -> IsNotDistinctFrom<Self, T::Expression>
+        where T: AsExpression<Self::SqlType>,
     {
         IsNotDistinctFrom::new(self, other.as_expression())
     }
@@ -36,16 +35,16 @@ pub trait PgExpressionMethods: Expression + Sized {
 impl<T: Expression> PgExpressionMethods for T {}
 
 use super::date_and_time::AtTimeZone;
-use types::{VarChar, Timestamp};
+use types::{Timestamp, VarChar};
 
 #[doc(hidden)]
 pub trait PgTimestampExpressionMethods: Expression<SqlType=Timestamp> + Sized {
     /// Returns a PostgreSQL "AT TIME ZONE" expression
-    fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression> where
-        T: AsExpression<VarChar>,
+    fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression>
+        where T: AsExpression<VarChar>,
     {
         AtTimeZone::new(self, timezone.as_expression())
     }
 }
 
-impl<T: Expression<SqlType=Timestamp>> PgTimestampExpressionMethods for T {}
+impl<T: Expression<SqlType = Timestamp>> PgTimestampExpressionMethods for T {}

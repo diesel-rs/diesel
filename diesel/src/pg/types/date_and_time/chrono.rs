@@ -4,7 +4,7 @@ extern crate chrono;
 
 use std::error::Error;
 use std::io::Write;
-use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime};
+use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
 use self::chrono::naive::date;
 
 use expression::AsExpression;
@@ -39,7 +39,7 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
             None => {
                 let message = "Tried to deserialize a timestamp that is too large for Chrono";
                 Err(message.into())
-            }
+            },
         }
     }
 }
@@ -49,9 +49,10 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
         let time = match (*self - pg_epoch()).num_microseconds() {
             Some(time) => time,
             None => {
-                let error_message = format!("{:?} as microseconds is too large to fit in an i64", self);
+                let error_message = format!("{:?} as microseconds is too large to fit in an i64",
+                                            self);
                 return Err(Box::<Error + Send + Sync>::from(error_message));
-            }
+            },
         };
         ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(time), out)
     }
@@ -66,7 +67,7 @@ impl ToSql<Time, Pg> for NaiveTime {
         let duration = *self - midnight();
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
-            None => unreachable!()
+            None => unreachable!(),
         }
     }
 }
@@ -99,7 +100,7 @@ impl FromSql<Date, Pg> for NaiveDate {
                 let error_message = format!("Chrono can only represent dates up to {:?}",
                                             date::MAX);
                 Err(Box::<Error + Send + Sync>::from(error_message))
-            }
+            },
         }
     }
 }
@@ -113,8 +114,8 @@ mod tests {
     use self::chrono::naive::date;
     use self::dotenv::dotenv;
 
-    use ::select;
-    use expression::dsl::{sql, now};
+    use select;
+    use expression::dsl::{now, sql};
     use pg::PgConnection;
     use prelude::*;
     use types::{Date, Time, Timestamp};
@@ -186,7 +187,8 @@ mod tests {
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 04, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time"));
-        assert_eq!(Ok(roughly_half_past_eleven), query.get_result::<NaiveTime>(&connection));
+        assert_eq!(Ok(roughly_half_past_eleven),
+                   query.get_result::<NaiveTime>(&connection));
     }
 
     #[test]
@@ -222,7 +224,8 @@ mod tests {
         let connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("'2000-1-1'::date"));
-        assert_eq!(Ok(january_first_2000), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(Ok(january_first_2000),
+                   query.get_result::<NaiveDate>(&connection));
 
         let distant_past = NaiveDate::from_ymd(-398, 4, 11);
         let query = select(sql::<Date>("'399-4-11 BC'::date"));
@@ -238,10 +241,12 @@ mod tests {
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("'2018-1-1'::date"));
-        assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(Ok(january_first_2018),
+                   query.get_result::<NaiveDate>(&connection));
 
         let distant_future = NaiveDate::from_ymd(72400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date"));
-        assert_eq!(Ok(distant_future), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(Ok(distant_future),
+                   query.get_result::<NaiveDate>(&connection));
     }
 }

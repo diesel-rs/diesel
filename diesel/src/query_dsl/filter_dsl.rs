@@ -1,7 +1,7 @@
 use expression::{Expression, NonAggregate};
 use query_builder::AsQuery;
 use query_source::filter::FilteredQuerySource;
-use query_source::{Table, InnerJoinSource, LeftOuterJoinSource};
+use query_source::{InnerJoinSource, LeftOuterJoinSource, Table};
 use types::Bool;
 
 /// Adds to the `WHERE` clause of a query. If there is already a `WHERE` clause,
@@ -41,10 +41,10 @@ pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {
 pub trait NotFiltered {
 }
 
-impl<T, Predicate> FilterDsl<Predicate> for T where
-    Predicate: Expression<SqlType=Bool> + NonAggregate,
-    FilteredQuerySource<T, Predicate>: AsQuery,
-    T: NotFiltered,
+impl<T, Predicate> FilterDsl<Predicate> for T
+    where Predicate: Expression<SqlType = Bool> + NonAggregate,
+          FilteredQuerySource<T, Predicate>: AsQuery,
+          T: NotFiltered,
 {
     type Output = FilteredQuerySource<Self, Predicate>;
 
@@ -99,8 +99,9 @@ pub trait FindDsl<PK> where
     }
 }
 
-impl<T, PK> FindDsl<PK> for T where
-    T: Table + FilterDsl<Eq<<T as Table>::PrimaryKey, PK>>,
-    PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
-    Eq<T::PrimaryKey, PK>: SelectableExpression<T, SqlType=Bool> + NonAggregate,
-{}
+impl<T, PK> FindDsl<PK> for T
+    where T: Table + FilterDsl<Eq<<T as Table>::PrimaryKey, PK>>,
+          PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
+          Eq<T::PrimaryKey, PK>: SelectableExpression<T, SqlType = Bool> + NonAggregate,
+{
+}

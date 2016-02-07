@@ -1,7 +1,7 @@
 use backend::Backend;
 use query_builder::*;
 use std::marker::PhantomData;
-use super::{Expression, SelectableExpression, NonAggregate};
+use super::{Expression, NonAggregate, SelectableExpression};
 use types::HasSqlType;
 
 #[derive(Debug, Clone)]
@@ -26,8 +26,8 @@ impl<ST> Expression for SqlLiteral<ST> {
     type SqlType = ST;
 }
 
-impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
-    DB: Backend + HasSqlType<ST>,
+impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST>
+    where DB: Backend + HasSqlType<ST>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(&self.sql);
@@ -35,11 +35,9 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
     }
 }
 
-impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
-}
+impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {}
 
-impl<ST> NonAggregate for SqlLiteral<ST> {
-}
+impl<ST> NonAggregate for SqlLiteral<ST> {}
 
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
     SqlLiteral::new(sql.into())

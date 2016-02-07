@@ -11,5 +11,6 @@ fn test_debug_count_output() {
 fn test_debug_output() {
     use schema::users::dsl::*;
     let command = update(users.filter(id.eq(1))).set(name.eq("new_name"));
-    assert_eq!(debug_sql!(command), "UPDATE `users` SET `name` = ? WHERE `users`.`id` = ?")
+    assert_eq!(debug_sql!(command),
+               "UPDATE `users` SET `name` = ? WHERE `users`.`id` = ?")
 }

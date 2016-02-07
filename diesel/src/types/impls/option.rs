@@ -6,33 +6,35 @@ use backend::Backend;
 use expression::*;
 use expression::bound::Bound;
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
+use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql};
 
-impl<T, DB> HasSqlType<Nullable<T>> for DB where
-    DB: Backend + HasSqlType<T>, T: NotNull,
+impl<T, DB> HasSqlType<Nullable<T>> for DB
+    where DB: Backend + HasSqlType<T>,
+          T: NotNull,
 {
-    fn metadata() -> DB::TypeMetadata{
+    fn metadata() -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata()
     }
 }
 
-impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
-    T: FromSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>, ST: NotNull,
+impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
+    where T: FromSql<ST, DB>,
+          DB: Backend + HasSqlType<ST>,
+          ST: NotNull,
 {
     fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 }
 
-impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T> where
-    T: Queryable<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
-    Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
-    ST: NotNull,
+impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T>
+    where T: Queryable<ST, DB>,
+          DB: Backend + HasSqlType<ST>,
+          Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
+          ST: NotNull,
 {
     type Row = Option<T::Row>;
 
@@ -41,10 +43,10 @@ impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T> where
     }
 }
 
-impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
-    T: ToSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
-    ST: NotNull,
+impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>
+    where T: ToSql<ST, DB>,
+          DB: Backend + HasSqlType<ST>,
+          ST: NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         if let &Some(ref value) = self {
@@ -55,8 +57,8 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     }
 }
 
-impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
-    ST: NotNull,
+impl<T, ST> AsExpression<Nullable<ST>> for Option<T>
+    where ST: NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
 
@@ -65,8 +67,8 @@ impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
     }
 }
 
-impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T> where
-    ST: NotNull,
+impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T>
+    where ST: NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
 

@@ -1,7 +1,8 @@
 #![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, plugin_registrar, quote))]
 #![deny(warnings)]
 
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 
 #[cfg(feature = "with-syntex")]
 extern crate syntex;
@@ -33,7 +34,8 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_decorator("has_many", associations::expand_has_many);
     reg.add_decorator("belongs_to", associations::expand_belongs_to);
-    reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
+    reg.add_macro("infer_table_from_schema",
+                  schema_inference::expand_load_table);
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
 
     reg.add_post_expansion_pass(util::strip_attributes);
@@ -44,26 +46,17 @@ pub fn register(reg: &mut syntex::Registry) {
 pub fn register(reg: &mut rustc_plugin::Registry) {
     use syntax::parse::token::intern;
     use syntax::ext::base::MultiDecorator;
-    reg.register_syntax_extension(
-        intern("derive_Queryable"),
-        MultiDecorator(Box::new(queryable::expand_derive_queryable))
-    );
-    reg.register_syntax_extension(
-        intern("insertable_into"),
-        MultiDecorator(Box::new(insertable::expand_insert))
-    );
-    reg.register_syntax_extension(
-        intern("changeset_for"),
-        MultiDecorator(Box::new(update::expand_changeset_for)),
-    );
-    reg.register_syntax_extension(
-        intern("has_many"),
-        MultiDecorator(Box::new(associations::expand_has_many))
-    );
-    reg.register_syntax_extension(
-        intern("belongs_to"),
-        MultiDecorator(Box::new(associations::expand_belongs_to))
-    );
-    reg.register_macro("infer_table_from_schema", schema_inference::expand_load_table);
+    reg.register_syntax_extension(intern("derive_Queryable"),
+                                  MultiDecorator(Box::new(queryable::expand_derive_queryable)));
+    reg.register_syntax_extension(intern("insertable_into"),
+                                  MultiDecorator(Box::new(insertable::expand_insert)));
+    reg.register_syntax_extension(intern("changeset_for"),
+                                  MultiDecorator(Box::new(update::expand_changeset_for)));
+    reg.register_syntax_extension(intern("has_many"),
+                                  MultiDecorator(Box::new(associations::expand_has_many)));
+    reg.register_syntax_extension(intern("belongs_to"),
+                                  MultiDecorator(Box::new(associations::expand_belongs_to)));
+    reg.register_macro("infer_table_from_schema",
+                       schema_inference::expand_load_table);
     reg.register_macro("infer_schema", schema_inference::expand_infer_schema);
 }

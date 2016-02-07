@@ -1,11 +1,11 @@
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use persistable::{ColumnInsertValue, InsertValues};
-use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
-use query_source::{QuerySource, Queryable, Table, Column};
+use query_builder::{AsChangeset, BuildQueryResult, Changeset, QueryBuilder, QueryFragment};
+use query_source::{Column, QuerySource, Queryable, Table};
 use row::Row;
 use std::error::Error;
-use types::{HasSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
+use types::{FromSqlRow, HasSqlType, IntoNullable, NotNull, Nullable, ToSql};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {

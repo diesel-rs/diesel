@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 
 pub struct Grouped<T>(pub T);
@@ -17,13 +17,10 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Grouped<T> where
-    T: SelectableExpression<QS>,
-    Grouped<T>: Expression,
+impl<T, QS> SelectableExpression<QS> for Grouped<T>
+    where T: SelectableExpression<QS>,
+          Grouped<T>: Expression,
 {
 }
 
-impl<T: NonAggregate> NonAggregate for Grouped<T> where
-    Grouped<T>: Expression,
-{
-}
+impl<T: NonAggregate> NonAggregate for Grouped<T> where Grouped<T>: Expression, {}

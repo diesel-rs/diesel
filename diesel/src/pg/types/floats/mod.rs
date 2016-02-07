@@ -1,11 +1,11 @@
 extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, IsNull, FromSql, ToSql};
+use types::{self, FromSql, IsNull, ToSql};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;

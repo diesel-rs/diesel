@@ -66,7 +66,7 @@ pub use self::migration_error::*;
 #[doc(inline)]
 pub use self::connection::MigrationConnection;
 
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 
 use expression::expression_methods::*;
 use query_dsl::*;
@@ -76,7 +76,7 @@ use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
 
 use std::env;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 /// Runs all migrations that have not yet been run. This function will print all progress to
 /// stdout. This function will return an `Err` if some error occurs reading the migrations, or if
@@ -91,17 +91,19 @@ use std::path::{PathBuf, Path};
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsError> where
-    Conn: MigrationConnection,
+pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     let migrations_dir = try!(find_migrations_directory());
     run_pending_migrations_in_directory(conn, &migrations_dir, &mut stdout())
 }
 
 #[doc(hidden)]
-pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
-        Conn: MigrationConnection,
+pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn,
+                                                 migrations_dir: &Path,
+                                                 output: &mut Write)
+                                                 -> Result<(), RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     try!(create_schema_migrations_table_if_needed(conn));
     let already_run = try!(conn.previously_run_migration_versions());
@@ -117,8 +119,8 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError> where
-    Conn: MigrationConnection,
+pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     try!(create_schema_migrations_table_if_needed(conn));
     let latest_migration_version = try!(conn.latest_run_migration_version());
@@ -127,18 +129,21 @@ pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigration
 }
 
 #[doc(hidden)]
-pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, output: &mut Write)
-    -> Result<(), RunMigrationsError>
-{
+pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn,
+                                                       ver: &str,
+                                                       output: &mut Write)
+                                                       -> Result<(), RunMigrationsError> {
     migration_with_version(ver)
         .map_err(|e| e.into())
         .and_then(|m| revert_migration(conn, m, output))
 }
 
 #[doc(hidden)]
-pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
-        Conn: MigrationConnection,
+pub fn run_migration_with_version<Conn>(conn: &Conn,
+                                        ver: &str,
+                                        output: &mut Write)
+                                        -> Result<(), RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     migration_with_version(ver)
         .map_err(|e| e.into())
@@ -148,9 +153,7 @@ pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Wri
 fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
     let migrations_dir = try!(find_migrations_directory());
     let all_migrations = try!(migrations_in_directory(&migrations_dir));
-    let migration = all_migrations.into_iter().find(|m| {
-        m.version() == ver
-    });
+    let migration = all_migrations.into_iter().find(|m| m.version() == ver);
     match migration {
         Some(m) => Ok(m),
         None => Err(UnknownMigrationVersion(ver.into())),
@@ -181,12 +184,15 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
             } else {
                 None
             }
-        }).collect()
+        })
+        .collect()
 }
 
-fn run_migrations<Conn>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
-        Conn: MigrationConnection,
+fn run_migrations<Conn>(conn: &Conn,
+                        mut migrations: Vec<Box<Migration>>,
+                        output: &mut Write)
+                        -> Result<(), RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in migrations {
@@ -195,9 +201,11 @@ fn run_migrations<Conn>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output
     Ok(())
 }
 
-fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
-        Conn: MigrationConnection,
+fn run_migration<Conn>(conn: &Conn,
+                       migration: Box<Migration>,
+                       output: &mut Write)
+                       -> Result<(), RunMigrationsError>
+    where Conn: MigrationConnection,
 {
     conn.transaction(|| {
         try!(writeln!(output, "Running migration {}", migration.version()));
@@ -207,9 +215,10 @@ fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Writ
     }).map_err(|e| e.into())
 }
 
-fn revert_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
-    -> Result<(), RunMigrationsError>
-{
+fn revert_migration<Conn: Connection>(conn: &Conn,
+                                      migration: Box<Migration>,
+                                      output: &mut Write)
+                                      -> Result<(), RunMigrationsError> {
     try!(conn.transaction(|| {
         try!(writeln!(output, "Rolling back migration {}", migration.version()));
         try!(migration.revert(conn));
@@ -233,7 +242,8 @@ fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationErro
     if migration_path.is_dir() {
         Ok(migration_path)
     } else {
-        path.parent().map(search_for_migrations_directory)
+        path.parent()
+            .map(search_for_migrations_directory)
             .unwrap_or(Err(MigrationError::MigrationDirectoryNotFound))
     }
 }
@@ -253,7 +263,7 @@ mod tests {
         let dir = TempDir::new("diesel").unwrap();
 
         assert_eq!(Err(MigrationError::MigrationDirectoryNotFound),
-            search_for_migrations_directory(dir.path()));
+                   search_for_migrations_directory(dir.path()));
     }
 
     #[test]
@@ -264,7 +274,8 @@ mod tests {
 
         fs::create_dir(&migrations_path).unwrap();
 
-        assert_eq!(Ok(migrations_path), search_for_migrations_directory(&temp_path));
+        assert_eq!(Ok(migrations_path),
+                   search_for_migrations_directory(&temp_path));
     }
 
     #[test]
@@ -277,6 +288,7 @@ mod tests {
         fs::create_dir(&child_path).unwrap();
         fs::create_dir(&migrations_path).unwrap();
 
-        assert_eq!(Ok(migrations_path), search_for_migrations_directory(&child_path));
+        assert_eq!(Ok(migrations_path),
+                   search_for_migrations_directory(&child_path));
     }
 }

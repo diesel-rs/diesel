@@ -5,7 +5,7 @@ use std::error::Error;
 
 use super::Sqlite;
 use super::connection::SqliteValue;
-use types::{self, FromSql, ToSql, IsNull};
+use types::{self, FromSql, IsNull, ToSql};
 
 impl FromSql<types::VarChar, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error>> {

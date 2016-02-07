@@ -15,9 +15,9 @@ pub trait WithDsl<'a, Expr> {
     fn with(self, expr: Aliased<'a, Expr>) -> Self::Output;
 }
 
-impl<'a, T, Expr> WithDsl<'a, Expr> for T where
-    T: QuerySource + AsQuery,
-    T::Query: WithDsl<'a, Expr>
+impl<'a, T, Expr> WithDsl<'a, Expr> for T
+    where T: QuerySource + AsQuery,
+          T::Query: WithDsl<'a, Expr>,
 {
     type Output = <T::Query as WithDsl<'a, Expr>>::Output;
 
@@ -41,9 +41,9 @@ impl<'a, Left, Right> WithQuerySource<'a, Left, Right> {
     }
 }
 
-impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right> where
-    Left: QuerySource,
-    Aliased<'a, Right>: QuerySource + Expression,
+impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right>
+    where Left: QuerySource,
+          Aliased<'a, Right>: QuerySource + Expression,
 {
     type FromClause = PgOnly<(Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause)>;
 

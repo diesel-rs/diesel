@@ -3,7 +3,7 @@ use diesel::expression::sql;
 use diesel::pg::PgConnection;
 use diesel::sqlite::SqliteConnection;
 use diesel::types::Bool;
-use diesel::{migrations, Connection, select, LoadDsl};
+use diesel::{Connection, LoadDsl, migrations, select};
 
 use database_error::DatabaseResult;
 
@@ -45,13 +45,11 @@ pub fn setup_database(args: &ArgMatches) -> DatabaseResult<()> {
 
 /// Creates the database specified in the connection url. It returns an error
 /// it it was unable to create the database.
-fn create_database_if_needed(database_url: &String)
-    -> DatabaseResult<()>
-{
+fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
     match backend(database_url) {
         "postgres" => {
             if PgConnection::establish(database_url).is_err() {
-                let(database, postgres_url) = split_pg_connection_string(database_url);
+                let (database, postgres_url) = split_pg_connection_string(database_url);
                 try!(create_postgres_database(&postgres_url, &database));
             }
         },
@@ -65,9 +63,7 @@ fn create_database_if_needed(database_url: &String)
     Ok(())
 }
 
-fn create_postgres_database(database_url: &String, database: &String)
-    -> DatabaseResult<()>
-{
+fn create_postgres_database(database_url: &String, database: &String) -> DatabaseResult<()> {
     let conn = try!(PgConnection::establish(database_url));
     println!("Creating database: {}", database);
     try!(conn.execute(&format!("CREATE DATABASE {}", database)));
@@ -79,12 +75,12 @@ fn create_postgres_database(database_url: &String, database: &String)
 /// table didn't exist, it also runs any pending migrations. Returns a
 /// `DatabaseError::ConnectionError` if it can't create the table, and exits
 /// with a migration error if it can't run migrations.
-fn create_schema_table_and_run_migrations_if_needed(database_url: &String)
-    -> DatabaseResult<()>
-{
+fn create_schema_table_and_run_migrations_if_needed(database_url: &String) -> DatabaseResult<()> {
     if !schema_table_exists(database_url).map_err(handle_error).unwrap() {
-        try!(call_with_conn!(database_url, migrations::create_schema_migrations_table_if_needed));
-        call_with_conn!(database_url, migrations::run_pending_migrations).unwrap_or_else(handle_error);
+        try!(call_with_conn!(database_url,
+                             migrations::create_schema_migrations_table_if_needed));
+        call_with_conn!(database_url, migrations::run_pending_migrations)
+            .unwrap_or_else(handle_error);
     };
     Ok(())
 }
@@ -140,9 +136,9 @@ pub fn database_url(matches: &ArgMatches) -> String {
     dotenv().ok();
 
     matches.value_of("DATABASE_URL")
-        .map(|s| s.into())
-        .or(env::var("DATABASE_URL").ok())
-        .expect("The --database-url argument must be passed, \
+           .map(|s| s.into())
+           .or(env::var("DATABASE_URL").ok())
+           .expect("The --database-url argument must be passed, \
                 or the DATABASE_URL environment variable must be set.")
 }
 
@@ -200,8 +196,7 @@ mod tests {
     }
 
     #[cfg(feature = "postgres")]
-    fn teardown(_: String) {
-    }
+    fn teardown(_: String) {}
 
     #[cfg(feature = "sqlite")]
     fn database_url(identifier: &str) -> String {
@@ -225,12 +220,12 @@ mod tests {
     #[test]
     fn schema_table_exists_finds_table() {
         let database_url = database_url("test1");
-        create_database_if_needed(&database_url)
-            .expect("Unable to create test database");
+        create_database_if_needed(&database_url).expect("Unable to create test database");
         let connection = connection(&database_url);
         connection.silence_notices(|| {
             connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
-            connection.execute("CREATE TABLE __diesel_schema_migrations (version INTEGER)").unwrap();
+            connection.execute("CREATE TABLE __diesel_schema_migrations (version INTEGER)")
+                      .unwrap();
         });
 
         assert!(schema_table_exists(&database_url).unwrap());
@@ -241,8 +236,7 @@ mod tests {
     #[test]
     fn schema_table_exists_doesnt_find_table() {
         let database_url = database_url("test2");
-        create_database_if_needed(&database_url)
-            .expect("Unable to create test database");
+        create_database_if_needed(&database_url).expect("Unable to create test database");
         let connection = connection(&database_url);
         connection.silence_notices(|| {
             connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
@@ -304,6 +298,7 @@ mod tests {
         let database = "database".to_owned();
         let postgres_url = "postgresql://localhost:5432".to_owned();
         let database_url = format!("{}/{}", postgres_url, database);
-        assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
+        assert_eq!((database, postgres_url),
+                   split_pg_connection_string(&database_url));
     }
 }

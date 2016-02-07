@@ -6,7 +6,7 @@ use expression::bound::Bound;
 use pg::Pg;
 use pg::data_types::PgNumeric;
 use query_source::Queryable;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, FromSql, IsNull, ToSql};
 
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));
 
@@ -26,9 +26,8 @@ impl ToSql<types::Bool, Pg> for bool {
         } else {
             out.write_all(&[0])
         };
-        write_result
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error>)
+        write_result.map(|_| IsNull::No)
+                    .map_err(|e| Box::new(e) as Box<Error>)
     }
 }
 

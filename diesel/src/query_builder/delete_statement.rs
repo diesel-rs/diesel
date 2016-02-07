@@ -10,11 +10,11 @@ impl<T> DeleteStatement<T> {
     }
 }
 
-impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
-    DB: Backend,
-    T: UpdateTarget,
-    T::WhereClause: QueryFragment<DB>,
-    T::FromClause: QueryFragment<DB>,
+impl<T, DB> QueryFragment<DB> for DeleteStatement<T>
+    where DB: Backend,
+          T: UpdateTarget,
+          T::WhereClause: QueryFragment<DB>,
+          T::FromClause: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("DELETE FROM ");
@@ -26,4 +26,3 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
         Ok(())
     }
 }
-

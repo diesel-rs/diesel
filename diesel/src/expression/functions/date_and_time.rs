@@ -1,7 +1,10 @@
 use backend;
 use types::*;
 
-no_arg_sql_function!(now, Timestamp, "Represents the SQL NOW() function", backend::SupportsNowFunction);
+no_arg_sql_function!(now,
+                     Timestamp,
+                     "Represents the SQL NOW() function",
+                     backend::SupportsNowFunction);
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
 sql_function!(date, date_t, (x: Timestamp) -> Date,

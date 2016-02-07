@@ -27,8 +27,8 @@ pub trait Connection: SimpleConnection + Sized {
     /// function returns an `Err`,
     /// [`TransactionError::UserReturnedError`](result/enum.TransactionError.html#variant.UserReturnedError)
     /// will be returned wrapping that value.
-    fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
-        F: FnOnce() -> Result<T, E>,
+    fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E>
+        where F: FnOnce() -> Result<T, E>,
     {
         try!(self.begin_transaction());
         match f() {
@@ -52,8 +52,8 @@ pub trait Connection: SimpleConnection + Sized {
 
     /// Executes the given function inside a transaction, but does not commit
     /// it. Panics if the given function returns an `Err`.
-    fn test_transaction<T, E, F>(&self, f: F) -> T where
-        F: FnOnce() -> Result<T, E>,
+    fn test_transaction<T, E, F>(&self, f: F) -> T
+        where F: FnOnce() -> Result<T, E>,
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|| {
@@ -67,26 +67,26 @@ pub trait Connection: SimpleConnection + Sized {
     fn execute(&self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+    fn query_one<T, U>(&self, source: T) -> QueryResult<U>
+        where T: AsQuery,
+              T::Query: QueryFragment<Self::Backend>,
+              Self::Backend: HasSqlType<T::SqlType>,
+              U: Queryable<T::SqlType, Self::Backend>,
     {
         self.query_all(source)
             .and_then(|e: Vec<U>| e.into_iter().next().ok_or(Error::NotFound))
     }
 
     #[doc(hidden)]
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>;
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+        where T: AsQuery,
+              T::Query: QueryFragment<Self::Backend>,
+              Self::Backend: HasSqlType<T::SqlType>,
+              U: Queryable<T::SqlType, Self::Backend>;
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend>;
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+        where T: QueryFragment<Self::Backend>;
 
     #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
     #[doc(hidden)] fn begin_transaction(&self) -> QueryResult<()>;

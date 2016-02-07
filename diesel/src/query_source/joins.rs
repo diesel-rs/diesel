@@ -19,9 +19,9 @@ impl<Left, Right> InnerJoinSource<Left, Right> {
     }
 }
 
-impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right, Inner>,
-    Right: Table,
+impl<Left, Right> QuerySource for InnerJoinSource<Left, Right>
+    where Left: Table + JoinTo<Right, Inner>,
+          Right: Table,
 {
     type FromClause = <Left as JoinTo<Right, Inner>>::JoinClause;
 
@@ -30,13 +30,12 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     }
 }
 
-impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right, Inner>,
-    Right: Table,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<
-                                   InnerJoinSource<Left, Right>,
-                                   (Left::SqlType, Right::SqlType),
-                               >,
+impl<Left, Right> AsQuery for InnerJoinSource<Left, Right>
+    where Left: Table + JoinTo<Right, Inner>,
+          Right: Table,
+          (Left::AllColumns, Right::AllColumns): SelectableExpression<InnerJoinSource<Left, Right>,
+                                                                      (Left::SqlType,
+                                                                       Right::SqlType)>,
 {
     type SqlType = (Left::SqlType, Right::SqlType);
     type Query = SelectStatement<
@@ -66,9 +65,9 @@ impl<Left, Right> LeftOuterJoinSource<Left, Right> {
     }
 }
 
-impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right, LeftOuter>,
-    Right: Table,
+impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right>
+    where Left: Table + JoinTo<Right, LeftOuter>,
+          Right: Table,
 {
     type FromClause = <Left as JoinTo<Right, LeftOuter>>::JoinClause;
 

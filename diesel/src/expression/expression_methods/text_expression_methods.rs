@@ -1,6 +1,6 @@
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use expression::predicates::{Like, NotLike};
-use types::{VarChar, Text};
+use types::{Text, VarChar};
 
 pub trait VarCharExpressionMethods: Expression<SqlType=VarChar> + Sized {
     /// Returns a SQL `LIKE` expression
@@ -14,7 +14,7 @@ pub trait VarCharExpressionMethods: Expression<SqlType=VarChar> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=VarChar>> VarCharExpressionMethods for T {}
+impl<T: Expression<SqlType = VarChar>> VarCharExpressionMethods for T {}
 
 pub trait TextExpressionMethods: Expression<SqlType=Text> + Sized {
     /// Returns a SQL `LIKE` expression
@@ -28,4 +28,4 @@ pub trait TextExpressionMethods: Expression<SqlType=Text> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Text>> TextExpressionMethods for T {}
+impl<T: Expression<SqlType = Text>> TextExpressionMethods for T {}

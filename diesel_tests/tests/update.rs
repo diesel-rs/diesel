@@ -20,8 +20,10 @@ fn test_updating_single_column_of_single_row() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
 
-    update(users.filter(id.eq(sean.id))).set(name.eq("Jim"))
-        .execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set(name.eq("Jim"))
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec!["Jim".to_string(), "Tess".to_string()];
     let data: Vec<String> = users.select(name).order(id).load(&connection).unwrap();
@@ -35,8 +37,10 @@ fn test_updating_nullable_column() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
 
-    update(users.filter(id.eq(sean.id))).set(hair_color.eq(Some("black")))
-        .execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set(hair_color.eq(Some("black")))
+        .execute(&connection)
+        .unwrap();
 
     let data: Option<String> = users.select(hair_color)
         .filter(id.eq(sean.id))
@@ -44,8 +48,10 @@ fn test_updating_nullable_column() {
         .unwrap();
     assert_eq!(Some("black".to_string()), data);
 
-    update(users.filter(id.eq(sean.id))).set(hair_color.eq(None::<String>))
-        .execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set(hair_color.eq(None::<String>))
+        .execute(&connection)
+        .unwrap();
 
     let data: QueryResult<Option<String>> = users.select(hair_color)
         .filter(id.eq(sean.id))
@@ -60,10 +66,10 @@ fn test_updating_multiple_columns() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
 
-    update(users.filter(id.eq(sean.id))).set((
-        name.eq("Jim"),
-        hair_color.eq(Some("black")),
-    )).execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set((name.eq("Jim"), hair_color.eq(Some("black"))))
+        .execute(&connection)
+        .unwrap();
 
     let expected_user = User::with_hair_color(sean.id, "Jim", "black");
     let user = users.find(sean.id).first(&connection);
@@ -77,7 +83,8 @@ fn update_returning_struct() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let user = update(users.filter(id.eq(sean.id))).set(hair_color.eq("black"))
+    let user = update(users.filter(id.eq(sean.id)))
+        .set(hair_color.eq("black"))
         .get_result(&connection);
     let expected_user = User::with_hair_color(sean.id, "Sean", "black");
 
@@ -92,8 +99,10 @@ fn update_with_struct_as_changes() {
     let sean = find_user_by_name("Sean", &connection);
     let changes = NewUser::new("Jim", Some("blue"));
 
-    update(users.filter(id.eq(sean.id))).set(&changes)
-        .execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set(&changes)
+        .execute(&connection)
+        .unwrap();
     let user = users.find(sean.id).first(&connection);
     let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
 
@@ -109,8 +118,10 @@ fn update_with_struct_does_not_set_primary_key() {
     let other_id = sean.id + 1;
     let changes = User::with_hair_color(other_id, "Jim", "blue");
 
-    update(users.filter(id.eq(sean.id))).set(&changes)
-        .execute(&connection).unwrap();
+    update(users.filter(id.eq(sean.id)))
+        .set(&changes)
+        .execute(&connection)
+        .unwrap();
     let user = users.find(sean.id).first(&connection);
     let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
 
@@ -138,7 +149,8 @@ fn option_fields_on_structs_are_not_assigned() {
     let sean = find_user_by_name("Sean", &connection);
     update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
-        .execute(&connection).unwrap();
+        .execute(&connection)
+        .unwrap();
     let user = User::new(sean.id, "Jim").save_changes(&connection);
 
     let expected_user = User::with_hair_color(sean.id, "Jim", "black");
@@ -153,11 +165,16 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
         name: String,
     }
 
-    let changes = Changes { hair_color: None, name: "Jim".into() };
+    let changes = Changes {
+        hair_color: None,
+        name: "Jim".into(),
+    };
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    update(users::table.filter(users::id.eq(sean.id))).set(&changes)
-        .execute(&connection).unwrap();
+    update(users::table.filter(users::id.eq(sean.id)))
+        .set(&changes)
+        .execute(&connection)
+        .unwrap();
     let user = users::table.find(sean.id).first(&connection);
 
     let expected_user = User::new(sean.id, "Jim");
@@ -178,7 +195,11 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     let new_post = sean.new_post("Hello", Some("world"));
     insert(&new_post).into(posts::table).execute(&connection).unwrap();
 
-    let changes = Changes { user_id: 1, title: None, body: "earth".into() };
+    let changes = Changes {
+        user_id: 1,
+        title: None,
+        body: "earth".into(),
+    };
     update(posts::table)
         .set(&changes)
         .execute(&connection)
@@ -224,11 +245,17 @@ fn struct_with_option_fields_treated_as_null() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let new_post = sean.new_post("Hello", Some("world"));
-    insert(&new_post).into(posts::table)
-        .execute(&connection).unwrap();
+    insert(&new_post)
+        .into(posts::table)
+        .execute(&connection)
+        .unwrap();
     let post = posts::table.order(posts::id.desc()).first::<Post>(&connection).unwrap();
 
-    let changes = UpdatePost { id: post.id, title: "Hello again".into(), body: None };
+    let changes = UpdatePost {
+        id: post.id,
+        title: "Hello again".into(),
+        body: None,
+    };
     let expected_post = Post::new(post.id, sean.id, "Hello again".into(), None);
     let updated_post = changes.save_changes(&connection);
     let post_in_database = posts::table.find(post.id).first(&connection);

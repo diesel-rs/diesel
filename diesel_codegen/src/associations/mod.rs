@@ -3,7 +3,7 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
 
-use model::{infer_association_name, Model};
+use model::{Model, infer_association_name};
 
 mod has_many;
 mod belongs_to;
@@ -11,42 +11,39 @@ mod belongs_to;
 pub use self::has_many::expand_has_many;
 pub use self::belongs_to::expand_belongs_to;
 
-fn parse_association_options(
-    association_kind: &str,
-    cx: &mut ExtCtxt,
-    span: Span,
-    meta_item: &MetaItem,
-    annotatable: &Annotatable,
-) -> Option<(Model, AssociationOptions)> {
+fn parse_association_options(association_kind: &str,
+                             cx: &mut ExtCtxt,
+                             span: Span,
+                             meta_item: &MetaItem,
+                             annotatable: &Annotatable)
+                             -> Option<(Model, AssociationOptions)> {
     let model = match Model::from_annotable(cx, span, annotatable) {
         Some(model) => model,
         None => {
             cx.span_err(span,
-                &format!("#[{}] can only be applied to structs or tuple structs",
-                         association_kind));
+                        &format!("#[{}] can only be applied to structs or tuple structs",
+                                 association_kind));
             return None;
-        }
+        },
     };
 
-    build_association_options(association_kind, cx, span, meta_item).map(|options| {
-        (model, options)
-    })
+    build_association_options(association_kind, cx, span, meta_item).map(|options| (model, options))
 }
 
 struct AssociationOptions {
     name: ast::Ident,
 }
 
-fn build_association_options(
-    association_kind: &str,
-    cx: &mut ExtCtxt,
-    span: Span,
-    meta_item: &MetaItem,
-) -> Option<AssociationOptions> {
+fn build_association_options(association_kind: &str,
+                             cx: &mut ExtCtxt,
+                             span: Span,
+                             meta_item: &MetaItem)
+                             -> Option<AssociationOptions> {
     let usage_err = || {
         cx.span_err(span,
-            &format!("`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
-                     association_kind, association_kind));
+                    &format!("`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
+                             association_kind,
+                             association_kind));
         None
     };
     match meta_item.node {
@@ -56,10 +53,8 @@ fn build_association_options(
                 _ => return usage_err(),
             };
 
-            Some(AssociationOptions {
-                name: association_name,
-            })
-        }
+            Some(AssociationOptions { name: association_name })
+        },
         _ => usage_err(),
     }
 }

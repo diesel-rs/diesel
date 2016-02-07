@@ -2,7 +2,7 @@ extern crate quickcheck;
 
 use self::quickcheck::{Arbitrary, Gen};
 
-use super::{PgDate, PgTime, PgTimestamp, PgInterval};
+use super::{PgDate, PgInterval, PgTime, PgTimestamp};
 
 impl Arbitrary for PgDate {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
