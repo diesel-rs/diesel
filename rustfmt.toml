@@ -1,0 +1,7 @@
+where_trailing_comma = true
+format_strings = false
+reorder_imports = true
+normalise_comments = false
+match_block_trailing_comma = true
+chain_base_indent = "Tabbed"
+chain_indent = "Tabbed"
