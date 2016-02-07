@@ -31,33 +31,54 @@ use row::Row;
 use std::error::Error;
 use std::io::Write;
 
-#[derive(Clone, Copy, Default)] pub struct Bool;
+#[derive(Clone, Copy, Default)]
+pub struct Bool;
 
-#[derive(Clone, Copy, Default)] pub struct SmallInt;
-#[doc(hidden)] pub type Int2 = SmallInt;
-#[derive(Clone, Copy, Default)] pub struct Integer;
-#[doc(hidden)] pub type Int4 = Integer;
-#[derive(Clone, Copy, Default)] pub struct BigInt;
-#[doc(hidden)] pub type Int8 = BigInt;
+#[derive(Clone, Copy, Default)]
+pub struct SmallInt;
+#[doc(hidden)]
+pub type Int2 = SmallInt;
+#[derive(Clone, Copy, Default)]
+pub struct Integer;
+#[doc(hidden)]
+pub type Int4 = Integer;
+#[derive(Clone, Copy, Default)]
+pub struct BigInt;
+#[doc(hidden)]
+pub type Int8 = BigInt;
 
-#[derive(Clone, Copy, Default)] pub struct Float;
-#[doc(hidden)] pub type Float4 = Float;
-#[derive(Clone, Copy, Default)] pub struct Double;
-#[doc(hidden)] pub type Float8 = Double;
-#[derive(Clone, Copy, Default)] pub struct Numeric;
+#[derive(Clone, Copy, Default)]
+pub struct Float;
+#[doc(hidden)]
+pub type Float4 = Float;
+#[derive(Clone, Copy, Default)]
+pub struct Double;
+#[doc(hidden)]
+pub type Float8 = Double;
+#[derive(Clone, Copy, Default)]
+pub struct Numeric;
 
-#[derive(Clone, Copy, Default)] pub struct VarChar;
-#[doc(hidden)] pub type Varchar = VarChar;
-#[derive(Clone, Copy, Default)] pub struct Text;
+#[derive(Clone, Copy, Default)]
+pub struct VarChar;
+#[doc(hidden)]
+pub type Varchar = VarChar;
+#[derive(Clone, Copy, Default)]
+pub struct Text;
 
-#[derive(Clone, Copy, Default)] pub struct Binary;
+#[derive(Clone, Copy, Default)]
+pub struct Binary;
 
-#[derive(Clone, Copy, Default)] pub struct Date;
-#[derive(Clone, Copy, Default)] pub struct Interval;
-#[derive(Clone, Copy, Default)] pub struct Time;
-#[derive(Clone, Copy, Default)] pub struct Timestamp;
+#[derive(Clone, Copy, Default)]
+pub struct Date;
+#[derive(Clone, Copy, Default)]
+pub struct Interval;
+#[derive(Clone, Copy, Default)]
+pub struct Time;
+#[derive(Clone, Copy, Default)]
+pub struct Timestamp;
 
-#[derive(Clone, Copy, Default)] pub struct Nullable<T: NotNull>(T);
+#[derive(Clone, Copy, Default)]
+pub struct Nullable<T: NotNull>(T);
 
 #[cfg(feature = "postgres")]
 #[doc(inline)]
@@ -108,9 +129,9 @@ pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
 }
 
-impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
-    DB: Backend + HasSqlType<A>,
-    T: ToSql<A, DB>,
+impl<'a, A, T, DB> ToSql<A, DB> for &'a T
+    where DB: Backend + HasSqlType<A>,
+          T: ToSql<A, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
         (*self).to_sql(out)

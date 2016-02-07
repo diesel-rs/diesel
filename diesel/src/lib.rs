@@ -51,8 +51,7 @@ pub mod helper_types {
         <Source as FilterDsl<Predicate>>::Output;
 
     /// Represents the return type of `.filter(lhs.eq(rhs))`
-    pub type FindBy<Source, Column, Value> =
-        Filter<Source, Eq<Column, Value>>;
+    pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
     /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> =
@@ -65,24 +64,26 @@ pub mod helper_types {
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
     /// Represents the return type of `.with(aliased_expr)`
-    pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
+    pub type With<'a, Source, Other> =
+        <Source as WithDsl<'a, Other>>::Output;
 }
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use connection::Connection;
-    pub use expression::{Expression, SelectableExpression, BoxableExpression};
+    pub use expression::{BoxableExpression, Expression, SelectableExpression};
     pub use expression::expression_methods::*;
     #[doc(inline)]
     pub use persistable::Insertable;
     pub use query_dsl::*;
-    pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
-    pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+    pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
+    pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult,
+                     TransactionError, TransactionResult};
 }
 
 pub use prelude::*;
 #[doc(inline)]
-pub use query_builder::functions::{insert, update, delete, select};
+pub use query_builder::functions::{delete, insert, select, update};
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;
