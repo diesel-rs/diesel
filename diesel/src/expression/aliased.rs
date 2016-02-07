@@ -21,15 +21,15 @@ impl<'a, Expr> Aliased<'a, Expr> {
 
 pub struct FromEverywhere;
 
-impl<'a, T> Expression for Aliased<'a, T> where
-    T: Expression,
+impl<'a, T> Expression for Aliased<'a, T>
+    where T: Expression,
 {
     type SqlType = T::SqlType;
 }
 
-impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
-    DB: Backend,
-    T: QueryFragment<DB>,
+impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T>
+    where DB: Backend,
+          T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_identifier(&self.alias)
@@ -37,10 +37,7 @@ impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
 }
 
 // FIXME This is incorrect, should only be selectable from WithQuerySource
-impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where
-    Aliased<'a, T>: Expression,
-{
-}
+impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where Aliased<'a, T>: Expression, {}
 
 impl<'a, T: Expression + Copy> QuerySource for Aliased<'a, T> {
     type FromClause = InfixNode<'static, T, Identifier<'a>>;
@@ -50,5 +47,4 @@ impl<'a, T: Expression + Copy> QuerySource for Aliased<'a, T> {
     }
 }
 
-impl<'a, T> NonAggregate for Aliased<'a, T> where Aliased<'a, T>: Expression {
-}
+impl<'a, T> NonAggregate for Aliased<'a, T> where Aliased<'a, T>: Expression, {}

@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use types::IntoNullable;
 
@@ -11,30 +11,30 @@ impl<T> Nullable<T> {
     }
 }
 
-impl<T> Expression for Nullable<T> where
-    T: Expression,
-    <T as Expression>::SqlType: IntoNullable,
+impl<T> Expression for Nullable<T>
+    where T: Expression,
+          <T as Expression>::SqlType: IntoNullable,
 {
     type SqlType = <<T as Expression>::SqlType as IntoNullable>::Nullable;
 }
 
-impl<T, DB> QueryFragment<DB> for Nullable<T> where
-    DB: Backend,
-    T: QueryFragment<DB>,
+impl<T, DB> QueryFragment<DB> for Nullable<T>
+    where DB: Backend,
+          T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Nullable<T> where
-    T: SelectableExpression<QS>,
-    Nullable<T>: Expression,
+impl<T, QS> SelectableExpression<QS> for Nullable<T>
+    where T: SelectableExpression<QS>,
+          Nullable<T>: Expression,
 {
 }
 
-impl<T> NonAggregate for Nullable<T> where
-    T: NonAggregate,
-    Nullable<T>: Expression,
+impl<T> NonAggregate for Nullable<T>
+    where T: NonAggregate,
+          Nullable<T>: Expression,
 {
 }

@@ -211,10 +211,10 @@ use query_source::Column;
 use query_builder::*;
 use super::SelectableExpression;
 
-impl<T, U, DB> Changeset<DB> for Eq<T, U> where
-    DB: Backend,
-    T: Column,
-    U: SelectableExpression<T::Table> + QueryFragment<DB>,
+impl<T, U, DB> Changeset<DB> for Eq<T, U>
+    where DB: Backend,
+          T: Column,
+          U: SelectableExpression<T::Table> + QueryFragment<DB>,
 {
     fn is_noop(&self) -> bool {
         false
@@ -227,9 +227,9 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
     }
 }
 
-impl<T, U> AsChangeset for Eq<T, U> where
-    T: Column,
-    U: SelectableExpression<T::Table>,
+impl<T, U> AsChangeset for Eq<T, U>
+    where T: Column,
+          U: SelectableExpression<T::Table>,
 {
     type Target = T::Table;
     type Changeset = Self;

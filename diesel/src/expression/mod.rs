@@ -111,15 +111,15 @@ pub trait SelectableExpression<
 >: Expression {
 }
 
-impl<T: ?Sized, ST, QS> SelectableExpression<QS, ST> for Box<T> where
-    T: SelectableExpression<QS, ST>,
-    Box<T>: Expression,
+impl<T: ?Sized, ST, QS> SelectableExpression<QS, ST> for Box<T>
+    where T: SelectableExpression<QS, ST>,
+          Box<T>: Expression,
 {
 }
 
-impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
-    T: SelectableExpression<QS, ST>,
-    &'a T: Expression,
+impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T
+    where T: SelectableExpression<QS, ST>,
+          &'a T: Expression,
 {
 }
 
@@ -130,11 +130,9 @@ impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
 pub trait NonAggregate: Expression {
 }
 
-impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
-}
+impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
 
-impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
-}
+impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
 
 use query_builder::QueryFragment;
 
@@ -149,11 +147,11 @@ pub trait BoxableExpression<QS, ST, DB> where
     Self: QueryFragment<DB>,
 {}
 
-impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
-    DB: Backend,
-    T: Expression,
-    T: SelectableExpression<QS, ST>,
-    T: NonAggregate,
-    T: QueryFragment<DB>,
+impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T
+    where DB: Backend,
+          T: Expression,
+          T: SelectableExpression<QS, ST>,
+          T: NonAggregate,
+          T: QueryFragment<DB>,
 {
 }

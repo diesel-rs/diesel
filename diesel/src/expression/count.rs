@@ -9,9 +9,7 @@ use types::BigInt;
 /// it specifically as `diesel::expression::count`, or glob import
 /// `diesel::expression::dsl::*`
 pub fn count<T: Expression>(t: T) -> Count<T> {
-    Count {
-        target: t,
-    }
+    Count { target: t }
 }
 
 /// Creates a SQL `COUNT(*)` expression
@@ -64,8 +62,7 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
     }
 }
 
-impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
-}
+impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {}
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -82,5 +79,4 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
     }
 }
 
-impl<QS> SelectableExpression<QS> for CountStar {
-}
+impl<QS> SelectableExpression<QS> for CountStar {}
