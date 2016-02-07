@@ -35,15 +35,11 @@ impl fmt::Display for MigrationError {
 impl PartialEq for MigrationError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                &MigrationError::MigrationDirectoryNotFound,
-                &MigrationError::MigrationDirectoryNotFound,
-            ) => true,
-            (
-                &MigrationError::UnknownMigrationFormat(ref p1),
-                &MigrationError::UnknownMigrationFormat(ref p2),
-            ) => p1 == p2,
-            _ => false
+            (&MigrationError::MigrationDirectoryNotFound,
+             &MigrationError::MigrationDirectoryNotFound) => true,
+            (&MigrationError::UnknownMigrationFormat(ref p1),
+             &MigrationError::UnknownMigrationFormat(ref p2)) => p1 == p2,
+            _ => false,
         }
     }
 }
