@@ -1,5 +1,5 @@
 use expression::Expression;
-use query_builder::{Query, AsQuery};
+use query_builder::{AsQuery, Query};
 use query_source::QuerySource;
 
 /// Sets the order clause of a query. If there was already a order clause, it
@@ -15,10 +15,10 @@ pub trait OrderDsl<Expr: Expression> {
     fn order(self, expr: Expr) -> Self::Output;
 }
 
-impl<T, Expr> OrderDsl<Expr> for T where
-    Expr: Expression,
-    T: QuerySource + AsQuery,
-    T::Query: OrderDsl<Expr>,
+impl<T, Expr> OrderDsl<Expr> for T
+    where Expr: Expression,
+          T: QuerySource + AsQuery,
+          T::Query: OrderDsl<Expr>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
 

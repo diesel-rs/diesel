@@ -1,4 +1,4 @@
-use query_builder::{Query, AsQuery};
+use query_builder::{AsQuery, Query};
 use query_source::QuerySource;
 
 /// Sets the limit clause of a query. If there was already a limit clause, it
@@ -10,9 +10,9 @@ pub trait LimitDsl {
     fn limit(self, limit: i64) -> Self::Output;
 }
 
-impl<T> LimitDsl for T where
-    T: QuerySource + AsQuery,
-    T::Query: LimitDsl,
+impl<T> LimitDsl for T
+    where T: QuerySource + AsQuery,
+          T::Query: LimitDsl,
 {
     type Output = <T::Query as LimitDsl>::Output;
 
