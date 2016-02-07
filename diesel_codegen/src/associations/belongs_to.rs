@@ -1,7 +1,4 @@
-use syntax::ast::{
-    self,
-    MetaItem,
-};
+use syntax::ast::{self, MetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -9,16 +6,14 @@ use syntax::parse::token::str_to_ident;
 use syntax::ptr::P;
 
 use model::Model;
-use super::{parse_association_options, AssociationOptions, to_foreign_key};
+use super::{AssociationOptions, parse_association_options, to_foreign_key};
 use util::ty_param_of_option;
 
-pub fn expand_belongs_to(
-    cx: &mut ExtCtxt,
-    span: Span,
-    meta_item: &MetaItem,
-    annotatable: &Annotatable,
-    push: &mut FnMut(Annotatable)
-) {
+pub fn expand_belongs_to(cx: &mut ExtCtxt,
+                         span: Span,
+                         meta_item: &MetaItem,
+                         annotatable: &Annotatable,
+                         push: &mut FnMut(Annotatable)) {
     let options = parse_association_options("belongs_to", cx, span, meta_item, annotatable);
     if let Some((model, options)) = options {
         let builder = BelongsToAssociationBuilder {
@@ -59,7 +54,8 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn child_table(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.child_table_name(), str_to_ident("table")])
+        self.cx.path(self.span,
+                     vec![self.child_table_name(), str_to_ident("table")])
     }
 
     fn parent_table_name(&self) -> ast::Ident {
@@ -68,7 +64,8 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn parent_table(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.parent_table_name(), str_to_ident("table")])
+        self.cx.path(self.span,
+                     vec![self.parent_table_name(), str_to_ident("table")])
     }
 
     fn foreign_key_name(&self) -> ast::Ident {
@@ -76,7 +73,8 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_key(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.child_table_name(), self.foreign_key_name()])
+        self.cx.path(self.span,
+                     vec![self.child_table_name(), self.foreign_key_name()])
     }
 
     fn foreign_key_type(&self) -> P<ast::Ty> {
@@ -90,7 +88,8 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
 
     fn primary_key_type(&self) -> P<ast::Ty> {
         let ty = self.foreign_key_type();
-        ty_param_of_option(&ty).map(|t| t.clone())
+        ty_param_of_option(&ty)
+            .map(|t| t.clone())
             .unwrap_or(ty)
     }
 
@@ -145,17 +144,18 @@ fn join_to_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> {
 }
 
 fn selectable_column_hack(builder: &BelongsToAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().flat_map(|attr| {
-        selectable_column_impl(builder, attr.column_name)
-    }).collect::<Vec<_>>();
+    let mut result = builder.model
+                            .attrs
+                            .iter()
+                            .flat_map(|attr| selectable_column_impl(builder, attr.column_name))
+                            .collect::<Vec<_>>();
     result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
     result
 }
 
-fn selectable_column_impl(
-    builder: &BelongsToAssociationBuilder,
-    column_name: ast::Ident,
-) -> Vec<P<ast::Item>> {
+fn selectable_column_impl(builder: &BelongsToAssociationBuilder,
+                          column_name: ast::Ident)
+                          -> Vec<P<ast::Item>> {
     let parent_table = builder.parent_table();
     let child_table = builder.child_table();
     let column = builder.column_path(column_name);

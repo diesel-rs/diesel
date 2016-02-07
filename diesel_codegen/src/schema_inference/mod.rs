@@ -11,18 +11,17 @@ use syntax::util::small_vector::SmallVector;
 
 use self::data_structures::*;
 
-pub fn expand_load_table<'cx>(
-    cx: &'cx mut ExtCtxt,
-    sp: Span,
-    tts: &[ast::TokenTree]
-) -> Box<MacResult+'cx> {
+pub fn expand_load_table<'cx>(cx: &'cx mut ExtCtxt,
+                              sp: Span,
+                              tts: &[ast::TokenTree])
+                              -> Box<MacResult + 'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(ref exprs) if exprs.is_empty() => {
             cx.span_err(sp, "load_table_from_schema! takes 2 arguments");
             return DummyResult::any(sp);
-        }
+        },
         None => return DummyResult::any(sp),
-        Some(exprs) => exprs.into_iter()
+        Some(exprs) => exprs.into_iter(),
     };
 
     match load_table_body(cx, sp, &mut exprs) {
@@ -31,11 +30,12 @@ pub fn expand_load_table<'cx>(
     }
 }
 
-pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    exprs: &mut T,
-) -> Result<Box<MacResult>, Box<MacResult>> {
+pub fn load_table_body<T>(cx: &mut ExtCtxt,
+                          sp: Span,
+                          exprs: &mut T)
+                          -> Result<Box<MacResult>, Box<MacResult>>
+    where T: Iterator<Item = P<ast::Expr>>,
+{
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let table_name = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
@@ -43,11 +43,10 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
         .map(|item| MacEager::items(SmallVector::one(item)))
 }
 
-pub fn expand_infer_schema<'cx>(
-    cx: &'cx mut ExtCtxt,
-    sp: Span,
-    tts: &[ast::TokenTree]
-) -> Box<MacResult+'cx> {
+pub fn expand_infer_schema<'cx>(cx: &'cx mut ExtCtxt,
+                                sp: Span,
+                                tts: &[ast::TokenTree])
+                                -> Box<MacResult + 'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
         None => return DummyResult::any(sp),
@@ -59,11 +58,12 @@ pub fn expand_infer_schema<'cx>(
     }
 }
 
-pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    exprs: &mut T,
-) -> Result<Box<MacResult>, Box<MacResult>> {
+pub fn infer_schema_body<T>(cx: &mut ExtCtxt,
+                            sp: Span,
+                            exprs: &mut T)
+                            -> Result<Box<MacResult>, Box<MacResult>>
+    where T: Iterator<Item = P<ast::Expr>>,
+{
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
     let table_names = load_table_names(cx, sp, &connection).unwrap();
@@ -73,51 +73,53 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     Ok(MacEager::items(SmallVector::many(try!(impls))))
 }
 
-fn establish_connection(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    database_url: &str,
-) -> Result<PgConnection, Box<MacResult>> {
+fn establish_connection(cx: &mut ExtCtxt,
+                        sp: Span,
+                        database_url: &str)
+                        -> Result<PgConnection, Box<MacResult>> {
     PgConnection::establish(database_url).map_err(|_| {
         cx.span_err(sp, "failed to establish a database connection");
         DummyResult::any(sp)
     })
 }
 
-fn table_macro_call(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    connection: &PgConnection,
-    table_name: &str,
-) -> Result<P<ast::Item>, Box<MacResult>> {
+fn table_macro_call(cx: &mut ExtCtxt,
+                    sp: Span,
+                    connection: &PgConnection,
+                    table_name: &str)
+                    -> Result<P<ast::Item>, Box<MacResult>> {
     match get_table_data(connection, table_name) {
         Err(NotFound) => {
             cx.span_err(sp, &format!("no table exists named {}", table_name));
             Err(DummyResult::any(sp))
-        }
+        },
         Err(_) => {
             cx.span_err(sp, "error loading schema");
             Err(DummyResult::any(sp))
-        }
+        },
         Ok(data) => {
-            let tokens = data.iter().map(|a| column_def_tokens(cx, a))
-                .collect::<Vec<_>>();
+            let tokens = data.iter()
+                             .map(|a| column_def_tokens(cx, a))
+                             .collect::<Vec<_>>();
             let table_name = str_to_ident(table_name);
-            let item = quote_item!(cx, table! {
+            let item = quote_item!(cx,
+                                   table! {
                 $table_name {
                     $tokens
                 }
-            }).unwrap();
+            })
+                .unwrap();
             Ok(item)
-        }
+        },
     }
 }
 
-fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    exprs: &mut T,
-) -> Result<InternedString, Box<MacResult>> {
+fn next_str_lit<T>(cx: &mut ExtCtxt,
+                   sp: Span,
+                   exprs: &mut T)
+                   -> Result<InternedString, Box<MacResult>>
+    where T: Iterator<Item = P<ast::Expr>>,
+{
     match expr_to_string(cx, exprs.next().unwrap(), "expected string literal") {
         Some((s, _)) => Ok(s),
         None => Err(DummyResult::any(sp)),
@@ -169,11 +171,10 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-fn load_table_names(
-    _cx: &mut ExtCtxt,
-    _sp: Span,
-    connection: &PgConnection,
-) -> Result<Vec<String>, result::Error> {
+fn load_table_names(_cx: &mut ExtCtxt,
+                    _sp: Span,
+                    connection: &PgConnection)
+                    -> Result<Vec<String>, result::Error> {
     use diesel::prelude::*;
     use diesel::expression::dsl::sql;
 
