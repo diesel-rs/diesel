@@ -20,8 +20,12 @@ fn test_sql_function() {
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
 
-    assert_eq!(vec![sean], users.filter(my_lower(name).eq("sean"))
-        .load(&connection).unwrap());
-    assert_eq!(vec![tess], users.filter(my_lower(name).eq("tess"))
-        .load(&connection).unwrap());
+    assert_eq!(vec![sean],
+               users.filter(my_lower(name).eq("sean"))
+                    .load(&connection)
+                    .unwrap());
+    assert_eq!(vec![tess],
+               users.filter(my_lower(name).eq("tess"))
+                    .load(&connection)
+                    .unwrap());
 }

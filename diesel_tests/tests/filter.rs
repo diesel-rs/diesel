@@ -14,7 +14,8 @@ fn filter_by_int_equality() {
     let tess = User::new(tess_id, "Tess");
     assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(&connection));
     assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(id.eq(unused_id)).first::<User>(&connection));
+    assert_eq!(Err(NotFound),
+               users.filter(id.eq(unused_id)).first::<User>(&connection));
 }
 
 #[test]
@@ -27,7 +28,8 @@ fn filter_by_string_equality() {
     let tess = User::new(2, "Tess");
     assert_eq!(Ok(sean), users.filter(name.eq("Sean")).first(&connection));
     assert_eq!(Ok(tess), users.filter(name.eq("Tess")).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).first::<User>(&connection));
+    assert_eq!(Err(NotFound),
+               users.filter(name.eq("Jim")).first::<User>(&connection));
 }
 
 #[test]
@@ -117,10 +119,11 @@ fn select_then_filter() {
 
     let source = users.select(name);
     assert_eq!(Ok("Sean".to_string()),
-        source.filter(name.eq("Sean")).first(&connection));
+               source.filter(name.eq("Sean")).first(&connection));
     assert_eq!(Ok("Tess".to_string()),
-        source.filter(name.eq("Tess")).first(&connection));
-    assert_eq!(Err(NotFound), source.filter(name.eq("Jim")).first::<String>(&connection));
+               source.filter(name.eq("Tess")).first(&connection));
+    assert_eq!(Err(NotFound),
+               source.filter(name.eq("Jim")).first::<String>(&connection));
 }
 
 #[test]
@@ -132,11 +135,13 @@ fn filter_then_select() {
     batch_insert(&data, users, &connection);
 
     assert_eq!(Ok("Sean".to_string()),
-        users.filter(name.eq("Sean")).select(name).first(&connection));
+               users.filter(name.eq("Sean")).select(name).first(&connection));
     assert_eq!(Ok("Tess".to_string()),
-        users.filter(name.eq("Tess")).select(name).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).select(name)
-                                   .first::<String>(&connection));
+               users.filter(name.eq("Tess")).select(name).first(&connection));
+    assert_eq!(Err(NotFound),
+               users.filter(name.eq("Jim"))
+                    .select(name)
+                    .first::<String>(&connection));
 }
 
 #[test]
@@ -245,13 +250,16 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let f = AsExpression::<types::Bool>::as_expression(false);
-    let count = users.filter(f).filter(f.or(true))
-        .count().first(&connection);
+    let count = users.filter(f)
+                     .filter(f.or(true))
+                     .count()
+                     .first(&connection);
 
     assert_eq!(Ok(0), count);
 
     let count = users.filter(f.or(f).and(f.or(true)))
-        .count().first(&connection);
+                     .count()
+                     .first(&connection);
 
     assert_eq!(Ok(0), count);
 }
@@ -261,7 +269,9 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
-    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, TestBackend, SqlType=types::Bool>> {
+    fn by_name
+        (name: &str)
+         -> Box<BoxableExpression<users::table, types::Bool, TestBackend, SqlType = types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

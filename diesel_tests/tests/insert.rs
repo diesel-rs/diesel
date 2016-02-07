@@ -72,11 +72,12 @@ fn insert_with_defaults() {
 
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    create_table("users", (
-        integer("id").primary_key().auto_increment(),
-        string("name").not_null(),
-        string("hair_color").not_null().default("'Green'"),
-    )).execute(&connection).unwrap();
+    create_table("users",
+                 (integer("id").primary_key().auto_increment(),
+                  string("name").not_null(),
+                  string("hair_color").not_null().default("'Green'")))
+        .execute(&connection)
+        .unwrap();
     insert(&NewUser::new("Tess", None)).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
@@ -102,7 +103,10 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         BaldUser { name: "Tess".to_string() },
     ];
     let count = batch_insert(new_users, users, &connection);
-    let second_count = insert(&BaldUser { name: "Guy".to_string() }).into(users).execute(&connection).unwrap();
+    let second_count = insert(&BaldUser { name: "Guy".to_string() })
+        .into(users)
+        .execute(&connection)
+        .unwrap();
 
     assert_eq!(2, count);
     assert_eq!(1, second_count);

@@ -1,6 +1,6 @@
 pub struct CreateTable<'a, Cols> {
     name: &'a str,
-    columns: Cols
+    columns: Cols,
 }
 
 impl<'a, Cols> CreateTable<'a, Cols> {
@@ -70,9 +70,9 @@ use diesel::pg::Pg;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
-impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
-    DB: Backend,
-    Cols: QueryFragment<DB>,
+impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols>
+    where DB: Backend,
+          Cols: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("CREATE TABLE ");
@@ -84,8 +84,8 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
     }
 }
 
-impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
-    DB: Backend,
+impl<'a, DB, T> QueryFragment<DB> for Column<'a, T>
+    where DB: Backend,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier(self.name));
@@ -95,9 +95,9 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
     }
 }
 
-impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
-    DB: Backend,
-    Col: QueryFragment<DB>,
+impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col>
+    where DB: Backend,
+          Col: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.0.to_sql(out));
@@ -107,8 +107,8 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
-    Col: QueryFragment<Sqlite>,
+impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col>
+    where Col: QueryFragment<Sqlite>,
 {
     fn to_sql(&self, out: &mut <Sqlite as Backend>::QueryBuilder) -> BuildQueryResult {
         try!(self.0.to_sql(out));
@@ -126,9 +126,9 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     }
 }
 
-impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
-    DB: Backend,
-    Col: QueryFragment<DB>,
+impl<DB, Col> QueryFragment<DB> for NotNull<Col>
+    where DB: Backend,
+          Col: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.0.to_sql(out));
@@ -137,9 +137,9 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
     }
 }
 
-impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
-    DB: Backend,
-    Col: QueryFragment<DB>,
+impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col>
+    where DB: Backend,
+          Col: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         try!(self.column.to_sql(out));

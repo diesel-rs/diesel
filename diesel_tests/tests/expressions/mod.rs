@@ -2,7 +2,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, batch_insert, connection_with_sean_and_tess_in_users_table};
+use schema::{NewUser, batch_insert, connection, connection_with_sean_and_tess_in_users_table};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -39,13 +39,13 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 #[cfg(feature = "postgres")]
 fn test_with_expression_aliased() {
     let n = lower("sean").aliased("n");
-    assert_eq!(
-        "SELECT `users`.`id` FROM `users`, lower(?) `n` WHERE `n` = ?",
-        debug_sql!(users.with(n).filter(n.eq("Sean")).select(id))
-    );
+    assert_eq!("SELECT `users`.`id` FROM `users`, lower(?) `n` WHERE `n` = ?",
+               debug_sql!(users.with(n).filter(n.eq("Sean")).select(id)));
     let connection = connection_with_sean_and_tess_in_users_table();
-    let result = users.with(n).filter(n.eq("sean")).select(name)
-        .first::<String>(&connection);
+    let result = users.with(n)
+                      .filter(n.eq("sean"))
+                      .select(name)
+                      .first::<String>(&connection);
     assert_eq!(Ok("Sean".into()), result);
 }
 
@@ -96,8 +96,8 @@ impl<T> Expression for Arbitrary<T> {
     type SqlType = T;
 }
 
-impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
-    DB: Backend,
+impl<T, DB> QueryFragment<DB> for Arbitrary<T>
+    where DB: Backend,
 {
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
