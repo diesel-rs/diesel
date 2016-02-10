@@ -22,10 +22,11 @@ use std::{env, fs};
 use self::database_error::{DatabaseError, DatabaseResult};
 
 fn main() {
-    let database_arg = || Arg::with_name("DATABASE_URL")
+    let database_arg = Arg::with_name("DATABASE_URL")
         .long("database-url")
         .help("Specifies the database URL to connect to. Falls back to \
                    the DATABASE_URL environment variable if unspecified.")
+        .global(true)
         .takes_value(true);
 
     let migration_subcommand = SubCommand::with_name("migration")
@@ -33,16 +34,13 @@ fn main() {
         .subcommand(
             SubCommand::with_name("run")
                 .about("Runs all pending migrations")
-                .arg(database_arg())
         ).subcommand(
             SubCommand::with_name("revert")
                 .about("Reverts the latest run migration")
-                .arg(database_arg())
         ).subcommand(
             SubCommand::with_name("redo")
                 .about("Reverts and re-runs the latest migration. Useful \
                       for testing that a migration can in fact be reverted.")
-                .arg(database_arg())
         ).subcommand(
             SubCommand::with_name("generate")
                 .about("Generate a new migration with the given name, and \
@@ -55,8 +53,7 @@ fn main() {
 
     let setup_subcommand = SubCommand::with_name("setup")
         .about("Creates the migrations directory, creates the database \
-                specified in your DATABASE_URL, and runs existing migrations.")
-        .arg(database_arg());
+                specified in your DATABASE_URL, and runs existing migrations.");
 
     let database_subcommand = SubCommand::with_name("database")
         .setting(AppSettings::VersionlessSubcommands)
@@ -64,17 +61,16 @@ fn main() {
             SubCommand::with_name("setup")
                 .about("Creates the migrations directory, creates the database \
                         specified in your DATABASE_URL, and runs existing migrations.")
-                .arg(database_arg())
         ).subcommand(
             SubCommand::with_name("reset")
                 .about("Resets your database by dropping the database specified \
                         in your DATABASE_URL and then running `diesel database setup`.")
-                .arg(database_arg())
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
     let matches = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
+        .arg(database_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
