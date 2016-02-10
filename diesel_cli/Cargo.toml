@@ -20,7 +20,7 @@ dotenv = "0.8.0"
 
 [dev-dependencies]
 tempdir = "0.3.4"
-regex = "0.1.48"
+regex = { version = "0.1.48", features = ["pattern"] }
 
 [features]
 postgres = ["diesel/postgres"]
