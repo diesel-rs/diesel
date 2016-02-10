@@ -31,7 +31,14 @@ fn main() {
 
     let migration_subcommand = SubCommand::with_name("migration")
         .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(
+        .arg(Arg::with_name("MIGRATION_DIRECTORY")
+            .long("migration-dir")
+            .help("The location of your migration directory. By default this \
+                   will look for a directory called `migrations` in the \
+                   current directory and its parents.")
+            .takes_value(true)
+            .global(true)
+        ).subcommand(
             SubCommand::with_name("run")
                 .about("Runs all pending migrations")
         ).subcommand(
@@ -102,11 +109,11 @@ fn run_migration_command(matches: &ArgMatches) {
     match matches.subcommand() {
         ("run", Some(_)) => {
             call_with_conn!(database_url, migrations::run_pending_migrations)
-                .map_err(handle_error).unwrap();
+                .unwrap_or_else(handle_error);
         }
         ("revert", Some(_)) => {
             call_with_conn!(database_url, migrations::revert_latest_migration)
-                .map_err(handle_error).unwrap();
+                .unwrap_or_else(handle_error);
         }
         ("redo", Some(_)) => {
             call_with_conn!(database_url, redo_latest_migration);
@@ -115,13 +122,12 @@ fn run_migration_command(matches: &ArgMatches) {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
-            let mut migration_dir = migrations::find_migrations_directory()
-                .map_err(handle_error).unwrap().join(versioned_name);
+            let migration_dir = migrations_dir(args).join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
             let migration_dir_relative = convert_absolute_path_to_relative(
-                &mut migration_dir,
-                &mut env::current_dir().unwrap()
+                &migration_dir,
+                &env::current_dir().unwrap()
             );
 
             let up_path = migration_dir.join("up.sql");
@@ -141,12 +147,23 @@ fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
         .unwrap_or_else(|| Box::new(Local::now().format("%Y%m%d%H%M%S")))
 }
 
+fn migrations_dir(matches: &ArgMatches) -> PathBuf {
+    matches.value_of("MIGRATION_DIRECTORY")
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok()
+        }).unwrap_or_else(|| {
+            migrations::find_migrations_directory()
+                .unwrap_or_else(handle_error)
+        })
+}
+
 fn run_setup_command(matches: &ArgMatches) {
     migrations::find_migrations_directory()
-        .unwrap_or_else(|_|
-                        create_migrations_directory()
-                        .map_err(handle_error).unwrap()
-                       );
+        .unwrap_or_else(|_| {
+            create_migrations_directory()
+                .unwrap_or_else(handle_error)
+        });
 
     database::setup_database(matches).unwrap_or_else(handle_error);
 }
@@ -204,22 +221,23 @@ fn redo_latest_migration<Conn>(conn: &Conn) where
     }).unwrap_or_else(handle_error);
 }
 
-fn handle_error<E: Error>(error: E) {
+fn handle_error<E: Error, T>(error: E) -> T {
     panic!("{}", error);
 }
 
 // Converts an absolute path to a relative path, with the restriction that the
 // target path must be in the same directory or above the current path.
-fn convert_absolute_path_to_relative(target_path: &mut PathBuf, current_path: &mut PathBuf)
+fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path)
     -> PathBuf
 {
     let mut result = PathBuf::new();
-    let target_path = target_path.as_path();
-    let mut current_path = current_path.as_path();
 
     while !target_path.starts_with(current_path) {
         result.push("..");
-        current_path = current_path.parent().unwrap();
+        match current_path.parent() {
+            Some(parent) => current_path = parent,
+            None => return target_path.into(),
+        }
     }
 
     result.join(strip_prefix(target_path, current_path))
@@ -291,19 +309,19 @@ mod tests {
     #[test]
     fn convert_absolute_path_to_relative_works() {
         assert_eq!(PathBuf::from("migrations/12345_create_user"),
-                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
-                                                     &mut PathBuf::from("projects/foo")));
+                   convert_absolute_path_to_relative(&PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &PathBuf::from("projects/foo")));
         assert_eq!(PathBuf::from("../migrations/12345_create_user"),
-                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
-                                                     &mut PathBuf::from("projects/foo/src")));
+                   convert_absolute_path_to_relative(&PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &PathBuf::from("projects/foo/src")));
         assert_eq!(PathBuf::from("../../../migrations/12345_create_user"),
-                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
-                                                     &mut PathBuf::from("projects/foo/src/controllers/errors")));
+                   convert_absolute_path_to_relative(&PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &PathBuf::from("projects/foo/src/controllers/errors")));
         assert_eq!(PathBuf::from("12345_create_user"),
-                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
-                                                     &mut PathBuf::from("projects/foo/migrations")));
+                   convert_absolute_path_to_relative(&PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &PathBuf::from("projects/foo/migrations")));
         assert_eq!(PathBuf::from("../12345_create_user"),
-                   convert_absolute_path_to_relative(&mut PathBuf::from("projects/foo/migrations/12345_create_user"),
-                                                     &mut PathBuf::from("projects/foo/migrations/67890_create_post")));
+                   convert_absolute_path_to_relative(&PathBuf::from("projects/foo/migrations/12345_create_user"),
+                                                     &PathBuf::from("projects/foo/migrations/67890_create_post")));
     }
 }

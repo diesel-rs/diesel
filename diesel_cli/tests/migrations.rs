@@ -49,3 +49,49 @@ Creating migrations/1234_hello/down.sql
     assert!(p.has_file("migrations/1234_hello/up.sql"));
     assert!(p.has_file("migrations/1234_hello/down.sql"));
 }
+
+#[test]
+fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
+    let p = project("migration_name")
+        .folder("foo")
+        .build();
+    let result = p.command("migration")
+        .arg("generate")
+        .arg("stuff")
+        .arg("--version=12345")
+        .arg("--migration-dir=foo")
+        .run();
+
+    let expected_stdout = "\
+Creating foo/12345_stuff/up.sql
+Creating foo/12345_stuff/down.sql
+";
+    assert!(result.is_success(), "Command failed: {:?}", result);
+    assert_eq!(expected_stdout, result.stdout());
+
+    assert!(p.has_file("foo/12345_stuff/up.sql"));
+    assert!(p.has_file("foo/12345_stuff/down.sql"));
+}
+
+#[test]
+fn migration_directory_can_be_specified_for_generate_by_env_var() {
+    let p = project("migration_name")
+        .folder("bar")
+        .build();
+    let result = p.command("migration")
+        .arg("generate")
+        .arg("stuff")
+        .arg("--version=12345")
+        .env("MIGRATION_DIRECTORY", "bar")
+        .run();
+
+    let expected_stdout = "\
+Creating bar/12345_stuff/up.sql
+Creating bar/12345_stuff/down.sql
+";
+    assert!(result.is_success(), "Command failed: {:?}", result);
+    assert_eq!(expected_stdout, result.stdout());
+
+    assert!(p.has_file("bar/12345_stuff/up.sql"));
+    assert!(p.has_file("bar/12345_stuff/down.sql"));
+}
