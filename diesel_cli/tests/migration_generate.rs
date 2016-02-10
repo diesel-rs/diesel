@@ -28,5 +28,6 @@ fn diesel_migration_generate_makes_valid_migration_directory() {
         .unwrap().map(|entry| {
             entry.unwrap().file_name().into_string().unwrap()
         }).collect();
-    assert_eq!(vec!["down.sql".to_owned(), "up.sql".to_owned()], filenames);
+    assert!(filenames.contains(&"down.sql".to_owned()));
+    assert!(filenames.contains(&"up.sql".to_owned()));
 }
