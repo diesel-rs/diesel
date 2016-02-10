@@ -65,6 +65,10 @@ fn main() {
             SubCommand::with_name("reset")
                 .about("Resets your database by dropping the database specified \
                         in your DATABASE_URL and then running `diesel database setup`.")
+        ).subcommand(
+            SubCommand::with_name("drop")
+                .about("Drops the database specified in your DATABASE_URL")
+                .setting(AppSettings::Hidden)
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
     let matches = App::new("diesel")
@@ -138,6 +142,7 @@ fn run_database_command(matches: &ArgMatches) {
     match matches.subcommand() {
         ("setup", Some(args)) => database::setup_database(args).unwrap_or_else(handle_error),
         ("reset", Some(args)) => database::reset_database(args).unwrap_or_else(handle_error),
+        ("drop", Some(args)) => database::drop_database_command(args).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
 }

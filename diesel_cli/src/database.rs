@@ -43,6 +43,10 @@ pub fn setup_database(args: &ArgMatches) -> DatabaseResult<()> {
     create_schema_table_and_run_migrations_if_needed(&database_url)
 }
 
+pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
+    drop_database(&database_url(args))
+}
+
 /// Creates the database specified in the connection url. It returns an error
 /// it it was unable to create the database.
 fn create_database_if_needed(database_url: &String)
