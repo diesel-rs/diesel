@@ -3,7 +3,7 @@ extern crate diesel;
 
 use self::diesel::Connection;
 
-use self::diesel_test_helpers::{TestDatabase, TestEnvironment, table_exists, TestConnection};
+use self::diesel_test_helpers::{TestConnection, TestDatabase, TestEnvironment, table_exists};
 
 use std::io::Write;
 use std::path::PathBuf;
