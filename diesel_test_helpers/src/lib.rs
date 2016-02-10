@@ -1,16 +1,15 @@
 extern crate diesel;
+extern crate dotenv;
 extern crate rand;
 extern crate tempdir;
-extern crate dotenv;
-
-use self::diesel::expression::sql;
-use self::diesel::types::Bool;
-use self::diesel::{select, LoadDsl};
-use self::diesel::Connection;
 
 use dotenv::dotenv;
 
 use rand::Rng;
+
+use self::diesel::expression::sql;
+use self::diesel::types::Bool;
+use self::diesel::{Connection, LoadDsl, select};
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -35,11 +34,14 @@ impl Drop for TestDatabase {
         let system_url = split.join("/");
 
         let conn = TestConnection::establish(&system_url).unwrap();
-        conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)).unwrap();
+        conn.silence_notices(|| {
+            conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)).unwrap();
+        });
     }
 
     #[cfg(feature = "sqlite")]
     fn drop(&mut self) {
+        // TempDir takes care of cleaing up the entire directory holding our database
     }
 }
 
@@ -55,10 +57,7 @@ impl TestDatabase {
         let system_url = split.join("/");
 
         let conn = TestConnection::establish(&system_url).unwrap();
-        match conn.execute(&format!("CREATE DATABASE {};", database)) {
-            Ok(_) => (),
-            Err(err) => println!("{}", err),
-        };
+        conn.execute(&format!("CREATE DATABASE {};", database)).unwrap();
 
         TestDatabase {
             database_url: format!("{}/{}", system_url, database)
@@ -85,10 +84,12 @@ impl TestEnvironment {
     pub fn new() -> Self {
         let temp_dir = TempDir::new("diesel").unwrap();
         // This needs to be lowercase because postgres will only create
-        // databases with all lowercase letters, but will still try to connect
-        // to a database with uppercase letters.
+        // databases with all lowercase letters, but we will happily try to
+        // connect to a database with uppercase letters.
         let rstr: String = (0..8).map(|_|
-                                      rand::thread_rng().gen_range(b'a', b'z') as char).collect();
+                                      rand::thread_rng()
+                                      .gen_range(b'a', b'z') as char
+                                      ).collect();
 
         TestEnvironment {
             root_dir: temp_dir,

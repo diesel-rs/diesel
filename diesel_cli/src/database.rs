@@ -221,6 +221,7 @@ mod tests {
     fn drop_database_drops_the_database() {
         let test_environment = TestEnvironment::new();
         let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
+        assert!(TestConnection::establish(&test_database.database_url).is_ok());
         drop_database(&test_database.database_url).unwrap();
         assert!(TestConnection::establish(&test_database.database_url).is_err());
     }

@@ -9,10 +9,10 @@ homepage = "http://diesel.rs"
 repository = "https://github.com/sgrif/diesel"
 
 [dependencies]
-tempdir = "0.3.4"
-rand = "0.3.13"
 diesel = { version = "0.5.0", features = ["postgres", "sqlite"] }
 dotenv = "0.8.0"
+rand = "0.3.13"
+tempdir = "0.3.4"
 
 [features]
 postgres = ["diesel/postgres"]
