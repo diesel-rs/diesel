@@ -6,8 +6,6 @@ use std::{env, fs};
 
 #[test]
 fn diesel_migration_generate_makes_valid_migration_directory() {
-    Command::new("cargo").arg("build").output().unwrap();
-
     let test_environment = TestEnvironment::new();
 
     let migrations_dir = test_environment.root_path().join("migrations");

@@ -272,7 +272,7 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(Err(DatabaseError::CargoTomlNotFound),
-        search_for_cargo_toml_directory(&temp_path));
+            search_for_cargo_toml_directory(&temp_path));
     }
 
     #[test]

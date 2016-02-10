@@ -7,17 +7,12 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs};
 
-fn build_diesel() {
-    Command::new("cargo").arg("build").output().unwrap();
-}
-
 fn diesel_exe() -> PathBuf {
     env::current_exe().unwrap().parent().unwrap().join("diesel")
 }
 
 #[test]
 fn diesel_setup_creates_database_and_migrations_dir() {
-    build_diesel();
     let test_environment = TestEnvironment::new();
     let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
     fs::File::create(&test_environment.root_path().join("Cargo.toml")).unwrap();
@@ -34,7 +29,6 @@ fn diesel_setup_creates_database_and_migrations_dir() {
 
 #[test]
 fn diesel_setup_runs_existing_migrations_if_no_schema_table() {
-    build_diesel();
     let test_environment = TestEnvironment::new();
     let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
     let migrations_dir = test_environment.root_path().join("migrations");
@@ -61,7 +55,6 @@ fn diesel_setup_runs_existing_migrations_if_no_schema_table() {
 
 #[test]
 fn diesel_setup_doesnt_run_migrations_if_schema_table_exists() {
-    build_diesel();
     let test_environment = TestEnvironment::new();
     let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
     let migrations_dir = test_environment.root_path().join("migrations");
