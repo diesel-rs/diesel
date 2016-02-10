@@ -17,7 +17,7 @@ Creating migrations/\\d{14}_hello/up.sql
 Creating migrations/\\d{14}_hello/down.sql\
         ").unwrap();
     assert!(result.is_success());
-    assert!(result.stdout().contains(&expected_stdout));
+    assert!(expected_stdout.is_match(result.stdout()));
 
     let migrations = p.migrations();
     assert_eq!(1, migrations.len());
