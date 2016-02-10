@@ -49,6 +49,13 @@ fn main() {
                      .help("The name of the migration to create")
                      .required(true)
                  )
+                .arg(Arg::with_name("MIGRATION_VERSION")
+                     .long("version")
+                     .help("The version number to use when generating the migration. \
+                            Defaults to the current timestamp, which should suffice \
+                            for most use cases.")
+                     .takes_value(true)
+                )
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
     let setup_subcommand = SubCommand::with_name("setup")
@@ -106,8 +113,8 @@ fn run_migration_command(matches: &ArgMatches) {
         }
         ("generate", Some(args)) => {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
-            let timestamp = Local::now().format("%Y%m%d%H%M%S");
-            let versioned_name = format!("{}_{}", &timestamp, migration_name);
+            let version = migration_version(args);
+            let versioned_name = format!("{}_{}", version, migration_name);
             let mut migration_dir = migrations::find_migrations_directory()
                 .map_err(handle_error).unwrap().join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
@@ -126,6 +133,12 @@ fn run_migration_command(matches: &ArgMatches) {
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
+}
+
+use std::fmt::Display;
+fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
+    matches.value_of("MIGRATION_VERSION").map(|s| Box::new(s) as Box<Display>)
+        .unwrap_or_else(|| Box::new(Local::now().format("%Y%m%d%H%M%S")))
 }
 
 fn run_setup_command(matches: &ArgMatches) {

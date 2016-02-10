@@ -74,6 +74,10 @@ impl Project {
             .into_os_string()
             .into_string().unwrap()
     }
+
+    pub fn has_file(&self, path: &str) -> bool {
+        self.directory.path().join(path).exists()
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -98,12 +102,9 @@ pub struct Migration {
 }
 
 impl Migration {
-    pub fn version(&self) -> &str {
-        &self.file_name()[..14]
-    }
-
     pub fn name(&self) -> &str {
-        &self.file_name()[15..]
+        let name_start_index = self.file_name().find('_').unwrap() + 1;
+        &self.file_name()[name_start_index..]
     }
 
     pub fn path(&self) -> &Path {
