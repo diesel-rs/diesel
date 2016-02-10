@@ -86,18 +86,19 @@ fn main() {
 }
 
 fn run_migration_command(matches: &ArgMatches) {
-    let database_url = database::database_url(matches);
-
     match matches.subcommand() {
         ("run", Some(_)) => {
+            let database_url = database::database_url(matches);
             call_with_conn!(database_url, migrations::run_pending_migrations)
                 .map_err(handle_error).unwrap();
         }
         ("revert", Some(_)) => {
+            let database_url = database::database_url(matches);
             call_with_conn!(database_url, migrations::revert_latest_migration)
                 .map_err(handle_error).unwrap();
         }
         ("redo", Some(_)) => {
+            let database_url = database::database_url(matches);
             call_with_conn!(database_url, redo_latest_migration);
         }
         ("generate", Some(args)) => {
