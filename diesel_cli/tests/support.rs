@@ -1,15 +1,10 @@
-extern crate diesel;
-extern crate dotenv;
-extern crate rand;
-extern crate tempdir;
-
 use dotenv::dotenv;
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
-use self::diesel::expression::sql;
-use self::diesel::types::Bool;
-use self::diesel::{Connection, LoadDsl, select};
+use diesel::expression::sql;
+use diesel::types::Bool;
+use diesel::{Connection, LoadDsl, select};
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -87,8 +82,7 @@ impl TestEnvironment {
         // databases with all lowercase letters, but we will happily try to
         // connect to a database with uppercase letters.
         let rstr: String = (0..8).map(|_|
-                                      rand::thread_rng()
-                                      .gen_range(b'a', b'z') as char
+                                      thread_rng().gen_range(b'a', b'z') as char
                                       ).collect();
 
         TestEnvironment {

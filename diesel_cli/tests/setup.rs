@@ -1,9 +1,6 @@
-extern crate diesel_test_helpers;
-extern crate diesel;
+use diesel::Connection;
 
-use self::diesel::Connection;
-
-use self::diesel_test_helpers::{TestConnection, TestDatabase, TestEnvironment, table_exists};
+use support::{TestConnection, TestDatabase, TestEnvironment, table_exists};
 
 use std::io::Write;
 use std::path::PathBuf;

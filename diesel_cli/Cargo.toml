@@ -19,8 +19,12 @@ diesel = { version = "0.5.0", features = ["postgres", "sqlite"] }
 dotenv = "0.8.0"
 
 [dev-dependencies]
-diesel_test_helpers = { path = "../diesel_test_helpers" }
+rand = "0.3.13"
+tempdir = "0.3.4"
 
 [features]
-postgres = ["diesel_test_helpers/postgres"]
-sqlite = ["diesel_test_helpers/sqlite"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+
+[[test]]
+name = "tests"

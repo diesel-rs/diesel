@@ -1,6 +1,4 @@
-extern crate diesel_test_helpers;
-
-use self::diesel_test_helpers::{TestEnvironment};
+use support::{TestEnvironment};
 
 use std::process::Command;
 use std::path::PathBuf;

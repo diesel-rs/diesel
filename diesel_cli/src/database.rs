@@ -171,68 +171,111 @@ fn handle_error<E: Error>(error: E) {
 
 #[cfg(test)]
 mod tests {
-    extern crate diesel_test_helpers;
-
+    use dotenv::dotenv;
     use diesel::Connection;
 
-    use std::fs;
+    use std::{env, fs};
 
     use super::{create_database_if_needed, drop_database, schema_table_exists};
     use super::split_pg_connection_string;
 
-    use self::diesel_test_helpers::{TestDatabase, TestEnvironment, TestConnection};
+    #[cfg(feature = "postgres")]
+    type TestConnection = ::diesel::pg::PgConnection;
+    #[cfg(feature = "sqlite")]
+    type TestConnection = ::diesel::sqlite::SqliteConnection;
+
+    #[cfg(feature = "postgres")]
+    fn database_url(identifier: &str) -> String {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set in order to run diesel_cli tests");
+        let (_, base_url) = split_pg_connection_string(&database_url);
+        format!("{}/{}", base_url, identifier)
+    }
+
+    #[cfg(feature = "postgres")]
+    fn connection(database_url: &String) -> TestConnection {
+        ::diesel::pg::PgConnection::establish(database_url).unwrap()
+    }
+
+    #[cfg(feature = "postgres")]
+    fn teardown(_: String) {
+    }
+
+    #[cfg(feature = "sqlite")]
+    fn database_url(identifier: &str) -> String {
+        let dir = env::current_dir().unwrap();
+        let db_file = dir.join(identifier);
+        fs::remove_file(&db_file).ok();
+        fs::File::create(&db_file).unwrap();
+        db_file.to_str().unwrap().to_owned()
+    }
+
+    #[cfg(feature = "sqlite")]
+    fn connection(database_url: &String) -> TestConnection {
+        ::diesel::sqlite::SqliteConnection::establish(database_url).unwrap()
+    }
+
+    #[cfg(feature = "sqlite")]
+    fn teardown(database_path: String) {
+        fs::remove_file(&database_path).unwrap();
+    }
 
     #[test]
     fn schema_table_exists_finds_table() {
-        let test_environment = TestEnvironment::new();
-        let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
-        let connection = TestConnection::establish(&test_database.database_url).unwrap();
+        let database_url = database_url("test1");
+        create_database_if_needed(&database_url)
+            .expect("Unable to create test database");
+        let connection = connection(&database_url);
         connection.silence_notices(|| {
             connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
             connection.execute("CREATE TABLE __diesel_schema_migrations (version INTEGER)").unwrap();
         });
 
-        assert!(schema_table_exists(&test_database.database_url).unwrap());
+        assert!(schema_table_exists(&database_url).unwrap());
+
+        teardown(database_url);
     }
 
     #[test]
     fn schema_table_exists_doesnt_find_table() {
-        let test_environment = TestEnvironment::new();
-        let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
-        let connection = TestConnection::establish(&test_database.database_url).unwrap();
+        let database_url = database_url("test2");
+        create_database_if_needed(&database_url)
+            .expect("Unable to create test database");
+        let connection = connection(&database_url);
         connection.silence_notices(|| {
             connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
         });
 
-        assert!(!schema_table_exists(&test_database.database_url).unwrap());
+        assert!(!schema_table_exists(&database_url).unwrap());
+
+        teardown(database_url);
     }
 
     #[test]
     fn create_database_creates_the_database() {
-        let test_environment = TestEnvironment::new();
-        let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
-        drop_database(&test_database.database_url).unwrap();
-        create_database_if_needed(&test_database.database_url).unwrap();
-        assert!(TestConnection::establish(&test_database.database_url).is_ok());
+        let database_url = database_url("test3");
+        drop_database(&database_url).unwrap();
+        create_database_if_needed(&database_url).unwrap();
+        assert!(TestConnection::establish(&database_url).is_ok());
+
+        teardown(database_url);
     }
 
     #[test]
     #[cfg(feature = "postgres")]
     fn drop_database_drops_the_database() {
-        let test_environment = TestEnvironment::new();
-        let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
-        assert!(TestConnection::establish(&test_database.database_url).is_ok());
-        drop_database(&test_database.database_url).unwrap();
-        assert!(TestConnection::establish(&test_database.database_url).is_err());
+        let database_url = database_url("test4");
+        drop_database(&database_url).unwrap();
+        assert!(TestConnection::establish(&database_url).is_err());
     }
 
     #[test]
     #[cfg(feature = "sqlite")]
     fn drop_database_drops_the_database() {
-        let test_environment = TestEnvironment::new();
-        let test_database = TestDatabase::new(&test_environment.identifier, &test_environment.root_path());
-        drop_database(&test_database.database_url).unwrap();
-        assert!(fs::File::open(&test_database.database_url).is_err());
+        let database_url = database_url("test4");
+        drop_database(&database_url).unwrap();
+        assert!(fs::File::open(database_url).is_err());
     }
 
     #[test]

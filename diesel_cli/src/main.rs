@@ -243,9 +243,11 @@ where I: Iterator<Item = A> + Clone,
 
 #[cfg(test)]
 mod tests {
-    extern crate diesel_test_helpers;
+    extern crate tempdir;
 
     use database_error::DatabaseError;
+
+    use self::tempdir::TempDir;
 
     use std::fs;
     use std::path::PathBuf;
@@ -253,24 +255,24 @@ mod tests {
     use super::convert_absolute_path_to_relative;
     use super::search_for_cargo_toml_directory;
 
-    use self::diesel_test_helpers::TestEnvironment;
-
     #[test]
     fn toml_directory_find_cargo_toml() {
-        let test_environment = TestEnvironment::new();
-        let toml_path = test_environment.root_path().join("Cargo.toml");
+        let dir = TempDir::new("diesel").unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let toml_path = temp_path.join("Cargo.toml");
 
         fs::File::create(&toml_path).unwrap();
 
-        assert_eq!(Ok(test_environment.root_path().clone()), search_for_cargo_toml_directory(&test_environment.root_path()));
+        assert_eq!(Ok(temp_path.clone()), search_for_cargo_toml_directory(&temp_path));
     }
 
     #[test]
     fn cargo_toml_not_found_if_no_cargo_toml() {
-        let test_environment = TestEnvironment::new();
+        let dir = TempDir::new("diesel").unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(Err(DatabaseError::CargoTomlNotFound),
-            search_for_cargo_toml_directory(&test_environment.root_path()));
+        search_for_cargo_toml_directory(&temp_path));
     }
 
     #[test]
