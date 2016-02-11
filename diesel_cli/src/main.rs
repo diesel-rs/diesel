@@ -9,7 +9,9 @@ mod database;
 
 use chrono::*;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+#[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
+#[cfg(feature = "sqlite")]
 use diesel::sqlite::SqliteConnection;
 use diesel::migrations::schema::*;
 use diesel::types::{FromSql, VarChar};

@@ -1,6 +1,8 @@
 use clap::ArgMatches;
 use diesel::expression::sql;
+#[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
+#[cfg(feature = "sqlite")]
 use diesel::sqlite::SqliteConnection;
 use diesel::types::Bool;
 use diesel::{migrations, Connection, select, LoadDsl};
@@ -12,6 +14,9 @@ use dotenv::dotenv;
 use std::error::Error;
 use std::{env, fs};
 
+// FIXME: Remove the duplicates of this macro once expression level attributes
+// are stable (I believe this is in 1.7)
+#[cfg(all(feature = "sqlite", feature = "postgres"))]
 macro_rules! call_with_conn {
     ( $database_url:ident,
       $func:path
@@ -30,6 +35,25 @@ macro_rules! call_with_conn {
     }};
 }
 
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+macro_rules! call_with_conn {
+    ( $database_url:ident,
+      $func:path
+    ) => {{
+        let conn = SqliteConnection::establish(&$database_url).unwrap();
+        $func(&conn)
+    }};
+}
+
+#[cfg(all(not(feature = "sqlite"), feature = "postgres"))]
+macro_rules! call_with_conn {
+    ( $database_url:ident,
+      $func:path
+    ) => {{
+        let conn = PgConnection::establish(&$database_url).unwrap();
+        $func(&conn)
+    }};
+}
 
 pub fn reset_database(args: &ArgMatches) -> DatabaseResult<()> {
     try!(drop_database(&database_url(args)));
@@ -47,11 +71,12 @@ pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
     drop_database(&database_url(args))
 }
 
+// FIXME: Remove the duplicates of this function once expression level attributes
+// are stable (I believe this is in 1.7)
 /// Creates the database specified in the connection url. It returns an error
 /// it it was unable to create the database.
-fn create_database_if_needed(database_url: &String)
-    -> DatabaseResult<()>
-{
+#[cfg(all(feature = "sqlite", feature = "postgres"))]
+fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
     match backend(database_url) {
         "postgres" => {
             if PgConnection::establish(database_url).is_err() {
@@ -69,6 +94,24 @@ fn create_database_if_needed(database_url: &String)
     Ok(())
 }
 
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
+    println!("Creating database: {}", database_url);
+    try!(SqliteConnection::establish(database_url));
+    Ok(())
+}
+
+#[cfg(all(not(feature = "sqlite"), feature = "postgres"))]
+fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
+    println!("Creating database: {}", database_url);
+    if PgConnection::establish(database_url).is_err() {
+        let(database, postgres_url) = split_pg_connection_string(database_url);
+        try!(create_postgres_database(&postgres_url, &database));
+    }
+    Ok(())
+}
+
+#[cfg(feature = "postgres")]
 fn create_postgres_database(database_url: &String, database: &String)
     -> DatabaseResult<()>
 {
@@ -93,8 +136,11 @@ fn create_schema_table_and_run_migrations_if_needed(database_url: &String)
     Ok(())
 }
 
+// FIXME: Remove the duplicates of this function once expression level attributes
+// are stable (I believe this is in 1.7)
 /// Drops the database specified in the connection url. It returns an error
 /// if it was unable to drop the database.
+#[cfg(all(feature = "sqlite", feature = "postgres"))]
 fn drop_database(database_url: &String) -> DatabaseResult<()> {
     match backend(database_url) {
         "postgres" => {
@@ -114,8 +160,29 @@ fn drop_database(database_url: &String) -> DatabaseResult<()> {
     Ok(())
 }
 
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+fn drop_database(database_url: &String) -> DatabaseResult<()> {
+    println!("Dropping database: {}", database_url);
+    try!(fs::remove_file(&database_url));
+    Ok(())
+}
+
+#[cfg(all(not(feature = "sqlite"), feature = "postgres"))]
+fn drop_database(database_url: &String) -> DatabaseResult<()> {
+    let (database, postgres_url) = split_pg_connection_string(database_url);
+    println!("Dropping database: {}", database);
+    let conn = try!(PgConnection::establish(&postgres_url));
+    try!(conn.silence_notices(|| {
+        conn.execute(&format!("DROP DATABASE IF EXISTS {}", database))
+    }));
+    Ok(())
+}
+
+// FIXME: Remove the duplicates of this function once expression level attributes
+// are stable (I believe this is in 1.7)
 /// Returns true if the '__diesel_schema_migrations' table exists in the
 /// database we connect to, returns false if it does not.
+#[cfg(all(feature = "sqlite", feature = "postgres"))]
 pub fn schema_table_exists(database_url: &String) -> DatabaseResult<bool> {
     let result = match backend(database_url) {
         "postgres" => {
@@ -138,6 +205,29 @@ pub fn schema_table_exists(database_url: &String) -> DatabaseResult<bool> {
         _ => unreachable!("The backend function should ensure we never get here."),
     };
     Ok(result)
+}
+
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+pub fn schema_table_exists(database_url: &String) -> DatabaseResult<bool> {
+    let conn = SqliteConnection::establish(database_url).unwrap();
+    select(sql::<Bool>("EXISTS \
+            (SELECT 1 \
+             FROM sqlite_master \
+             WHERE type = 'table' \
+             AND name = '__diesel_schema_migrations')"))
+        .get_result(&conn)
+        .map_err(|e| e.into())
+}
+
+#[cfg(all(not(feature = "sqlite"), feature = "postgres"))]
+pub fn schema_table_exists(database_url: &String) -> DatabaseResult<bool> {
+    let conn = PgConnection::establish(database_url).unwrap();
+    select(sql::<Bool>("EXISTS \
+            (SELECT 1 \
+             FROM information_schema.tables \
+             WHERE table_name = '__diesel_schema_migrations')"))
+        .get_result(&conn)
+        .map_err(|e| e.into())
 }
 
 pub fn database_url(matches: &ArgMatches) -> String {
