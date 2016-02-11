@@ -33,18 +33,12 @@ fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name")
         .folder("migrations")
         .build();
-    let result = p.command("migration")
+    let result = p.command_without_datatabase_url("migration")
         .arg("generate")
         .arg("hello")
-        .remove_env("DATABASE_URL")
         .run();
 
-    let expected_stdout = Regex::new("\
-Creating migrations/\\d{14}_hello/up.sql
-Creating migrations/\\d{14}_hello/down.sql\
-        ").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
-    assert!(expected_stdout.is_match(result.stdout()));
 }
 
 #[test]

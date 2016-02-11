@@ -28,17 +28,6 @@ impl TestCommand {
         self
     }
 
-    pub fn remove_env(mut self, key: &str) -> Self {
-        let mut index = None;
-        for (i, &(ref k, ref _v)) in self.env_vars.iter().enumerate() {
-            if k == key {
-                index = Some(i)
-            }
-        }
-        index.map(|i| self.env_vars.remove(i));
-        self
-    }
-
     pub fn run(self) -> CommandResult {
         let output = self.build_command().output().unwrap();
         CommandResult {
