@@ -9,8 +9,6 @@ use diesel::{migrations, Connection, select, LoadDsl};
 
 use database_error::DatabaseResult;
 
-use dotenv::dotenv;
-
 use std::error::Error;
 use std::{env, fs};
 
@@ -231,8 +229,6 @@ pub fn schema_table_exists(database_url: &String) -> DatabaseResult<bool> {
 }
 
 pub fn database_url(matches: &ArgMatches) -> String {
-    dotenv().ok();
-
     matches.value_of("DATABASE_URL")
         .map(|s| s.into())
         .or(env::var("DATABASE_URL").ok())

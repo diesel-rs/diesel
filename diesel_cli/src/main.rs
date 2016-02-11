@@ -24,6 +24,9 @@ use std::{env, fs};
 use self::database_error::{DatabaseError, DatabaseResult};
 
 fn main() {
+    use self::dotenv::dotenv;
+    dotenv().ok();
+
     let database_arg = Arg::with_name("DATABASE_URL")
         .long("database-url")
         .help("Specifies the database URL to connect to. Falls back to \
