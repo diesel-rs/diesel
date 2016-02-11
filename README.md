@@ -1,4 +1,4 @@
-![](http://diesel.rs/assets/images/diesel_logo_stacked_black.png)
+[![](http://diesel.rs/assets/images/diesel_logo_stacked_black.png)](http://diesel.rs)
 
 A safe, extensible ORM and Query Builder for Rust
 ==========================================================
@@ -7,6 +7,7 @@ A safe, extensible ORM and Query Builder for Rust
 [![Gitter](https://badges.gitter.im/sgrif/diesel.svg)](https://gitter.im/sgrif/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 [Documentation](http://docs.diesel.rs)
+[Homepage](http://diesel.rs)
 
 Diesel gets rid of the boilerplate for database interaction and eliminates
 runtime errors, without sacrificing performance. It takes full advantage of
