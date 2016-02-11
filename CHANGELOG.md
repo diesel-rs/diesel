@@ -3,6 +3,14 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.5.1] 2016-02-11
+
+* Diesel CLI no longer has a hard dependency on SQLite and PostgreSQL. It
+  assumes both by default, but if you need to install on a system that doesn't
+  have one or the other, you can install it with `cargo install diesel_cli
+  --no-default-features --features postgres` or `cargo install diesel_cli
+  --no-default-features --features sqlite`
+
 ## [0.5.0] 2016-02-05
 
 ### Added
