@@ -15,6 +15,7 @@ mod expressions;
 mod filter;
 mod filter_operators;
 mod find;
+mod group_by;
 mod internal_details;
 mod joins;
 mod macros;
