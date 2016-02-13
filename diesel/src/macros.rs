@@ -385,17 +385,24 @@ macro_rules! join_through {
 /// # Example
 ///
 /// ### Returning SQL from a count statment:
-/// #
-/// # ```rust
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # table! {
+/// #     users {
+/// #         id -> Timestamp,
+/// #         n -> Integer,
+/// #     }
+/// # }
 /// # // example requires setup for users table
-/// # use diesel::users::dsl::*;
-/// # use diesel::query_builder::QueryFragment;
+/// # use self::users::dsl::*;
+/// # use diesel::*;
 /// #
 /// # fn main() {
 /// let sql = debug_sql!(users.count());
-/// assert_eq!(sql, "SELECT COUNT(*) FROM users");
+/// assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
 /// # }
-/// # ```
+/// ```
 #[macro_export]
 macro_rules! debug_sql {
     ($query:expr) => {{
@@ -413,16 +420,23 @@ macro_rules! debug_sql {
 /// # Example
 ///
 /// ### Printing SQL from a count statment:
-/// #
-/// # ```rust
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # table! {
+/// #     users {
+/// #         id -> Timestamp,
+/// #         n -> Integer,
+/// #     }
+/// # }
 /// # // example requires setup for users table
-/// # use diesel::users::dsl::*;
-/// # use diesel::query_builder::QueryFragment;
+/// # use self::users::dsl::*;
+/// # use diesel::*;
 /// #
 /// # fn main() {
 /// print_sql!(users.count());
 /// # }
-/// # ```
+/// ```
 #[macro_export]
 macro_rules! print_sql {
     ($query:expr) => {
