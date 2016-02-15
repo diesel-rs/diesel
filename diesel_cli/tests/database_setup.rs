@@ -1,14 +1,19 @@
 use support::{database, project};
 
 #[test]
-fn setup_creates_database() {
-    let p = project("setup_creates_database").build();
+fn database_setup_creates_database() {
+    let p = project("database_setup_creates_database")
+        .folder("migrations")
+        .build();
+
     let db = database(&p.database_url());
 
     // sanity check
     assert!(!db.exists());
 
-    let result = p.command("setup").run();
+    let result = p.command("database")
+        .arg("setup")
+        .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout().contains("Creating database:"),
@@ -17,31 +22,27 @@ fn setup_creates_database() {
 }
 
 #[test]
-fn setup_creates_migrations_directory() {
-    let p = project("setup_creates_migrations_directory").build();
+fn database_setup_creates_schema_table () {
+    let p = project("database_setup_creates_schema_table")
+        .folder("migrations")
+        .build();
 
-    // make sure the project builder doesn't create it for us
-    assert!(!p.has_file("migrations"));
-
-    let result = p.command("setup").run();
-
-    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(p.has_file("migrations"));
-}
-
-#[test]
-fn setup_creates_schema_table() {
-    let p = project("setup_creates_schema_table").build();
     let db = database(&p.database_url());
-    let result = p.command("setup").run();
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p.command("database")
+        .arg("setup")
+        .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(db.table_exists("__diesel_schema_migrations"));
 }
 
 #[test]
-fn setup_runs_migrations_if_no_schema_table() {
-    let p = project("setup_runs_migrations_if_no_schema_table")
+fn database_setup_runs_migrations_if_no_schema_table() {
+    let p = project("database_setup_runs_migrations_if_no_schema_table")
         .folder("migrations")
         .build();
     let db = database(&p.database_url());
@@ -53,7 +54,9 @@ fn setup_runs_migrations_if_no_schema_table() {
     // sanity check
     assert!(!db.exists());
 
-    let result = p.command("setup").run();
+    let result = p.command("database")
+        .arg("setup")
+        .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout().contains("Running migration 12345"),
