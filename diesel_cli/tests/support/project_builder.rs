@@ -82,6 +82,18 @@ impl Project {
     pub fn has_file(&self, path: &str) -> bool {
         self.directory.path().join(path).exists()
     }
+
+    pub fn create_migration(&self, name: &str, up: &str, down: &str) {
+        use std::io::Write;
+        let migration_path = self.directory.path().join("migrations").join(name);
+        fs::create_dir(&migration_path)
+            .expect("Migrations folder must exist to create a migration");
+        let mut up_file = fs::File::create(&migration_path.join("up.sql")).unwrap();
+        up_file.write_all(up.as_bytes()).unwrap();
+
+        let mut down_file = fs::File::create(&migration_path.join("down.sql")).unwrap();
+        down_file.write_all(down.as_bytes()).unwrap();
+    }
 }
 
 #[cfg(feature = "postgres")]
