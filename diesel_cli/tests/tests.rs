@@ -6,3 +6,4 @@ mod setup;
 mod support;
 mod migrations;
 mod database_setup;
+mod database_reset;

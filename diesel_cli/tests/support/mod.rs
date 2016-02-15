@@ -10,3 +10,7 @@ pub mod database;
 pub mod database;
 
 pub use self::project_builder::project;
+
+pub fn database(url: &str) -> database::Database {
+    database::Database::new(url)
+}
