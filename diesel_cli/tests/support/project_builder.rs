@@ -96,6 +96,7 @@ impl Project {
     }
 }
 
+
 #[cfg(feature = "postgres")]
 impl Drop for Project {
     fn drop(&mut self) {
