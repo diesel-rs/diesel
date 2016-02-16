@@ -1,4 +1,5 @@
 use syntax::ast;
+use syntax::ast::TyKind;
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
@@ -68,7 +69,7 @@ pub fn struct_ty(
 
 pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
     match ty.node {
-        ast::TyPath(_, ref path) => {
+        TyKind::Path(_, ref path) => {
             path.segments.first().iter()
                 .filter(|s| s.identifier.name.as_str() == intern_and_get_ident("Option"))
                 .flat_map(|s| s.parameters.types().first().map(|p| *p))

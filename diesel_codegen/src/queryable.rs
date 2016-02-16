@@ -2,6 +2,7 @@ use syntax::ast::{
     self,
     Item,
     MetaItem,
+    TyKind,
 };
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
@@ -30,7 +31,7 @@ pub fn expand_derive_queryable(
 
         let ty = struct_ty(cx, span, item.ident, &generics);
 
-        let row_type = cx.ty(span, ast::TyTup(attrs.iter().map(|f| f.ty.clone()).collect()));
+        let row_type = cx.ty(span, TyKind::Tup(attrs.iter().map(|f| f.ty.clone()).collect()));
 
         let build_impl = struct_literal_with_fields_assigned_to_row_elements(
             span, &item, cx, &attrs);
