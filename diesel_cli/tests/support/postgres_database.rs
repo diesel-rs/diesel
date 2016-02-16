@@ -55,6 +55,6 @@ impl Drop for Database {
     fn drop(&mut self) {
         let (database, postgres_url) = self.split_url();
         let conn = PgConnection::establish(&postgres_url).unwrap();
-        conn.execute(&format!("DROP DATABASE {}", database)).unwrap();
+        conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)).unwrap();
     }
 }
