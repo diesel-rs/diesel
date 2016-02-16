@@ -12,6 +12,8 @@ use database_error::DatabaseResult;
 use std::error::Error;
 use std::{env, fs};
 
+use std::path::Path;
+
 // FIXME: Remove the duplicates of this macro once expression level attributes
 // are stable (I believe this is in 1.7)
 #[cfg(all(feature = "sqlite", feature = "postgres"))]
@@ -78,13 +80,17 @@ fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
     match backend(database_url) {
         "postgres" => {
             if PgConnection::establish(database_url).is_err() {
-                let(database, postgres_url) = split_pg_connection_string(database_url);
-                try!(create_postgres_database(&postgres_url, &database));
+                let (database, postgres_url) = split_pg_connection_string(database_url);
+                println!("Creating database: {}", database);
+                let conn = try!(PgConnection::establish(&postgres_url));
+                try!(conn.execute(&format!("CREATE DATABASE {}", database)));
             }
         },
         "sqlite" => {
-            println!("Creating database: {}", database_url);
-            try!(SqliteConnection::establish(database_url));
+            if !Path::new(database_url).exists() {
+                println!("Creating database: {}", database_url);
+                try!(SqliteConnection::establish(database_url));
+            }
         },
         _ => unreachable!("The backend function should ensure we never get here."),
     }
@@ -94,31 +100,23 @@ fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
 
 #[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
-    println!("Creating database: {}", database_url);
-    try!(SqliteConnection::establish(database_url));
+    if !Path::new(database_url).exists() {
+        println!("Creating database: {}", database_url);
+        try!(SqliteConnection::establish(database_url));
+    }
     Ok(())
 }
 
 #[cfg(all(not(feature = "sqlite"), feature = "postgres"))]
 fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
-    println!("Creating database: {}", database_url);
     if PgConnection::establish(database_url).is_err() {
-        let(database, postgres_url) = split_pg_connection_string(database_url);
-        try!(create_postgres_database(&postgres_url, &database));
+        let (database, postgres_url) = split_pg_connection_string(database_url);
+        println!("Creating database: {}", database);
+        let conn = try!(PgConnection::establish(&postgres_url));
+        try!(conn.execute(&format!("CREATE DATABASE {}", database)));
     }
     Ok(())
 }
-
-#[cfg(feature = "postgres")]
-fn create_postgres_database(database_url: &String, database: &String)
-    -> DatabaseResult<()>
-{
-    let conn = try!(PgConnection::establish(database_url));
-    println!("Creating database: {}", database);
-    try!(conn.execute(&format!("CREATE DATABASE {}", database)));
-    Ok(())
-}
-
 
 /// Creates the __diesel_schema_migrations table if it doesn't exist. If the
 /// table didn't exist, it also runs any pending migrations. Returns a
