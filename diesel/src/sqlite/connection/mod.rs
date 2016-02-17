@@ -107,6 +107,10 @@ impl Connection for SqliteConnection {
     fn get_transaction_depth(&self) -> i32 {
         self.transaction_depth.get()
     }
+
+    fn setup_helper_functions(&self) {
+        // this will be implemented at least when timestamps are supported in SQLite
+    }
 }
 
 impl SqliteConnection {

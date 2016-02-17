@@ -103,7 +103,7 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
     -> Result<(), RunMigrationsError> where
         Conn: MigrationConnection,
 {
-    try!(create_schema_migrations_table_if_needed(conn));
+    try!(setup_database(conn));
     let already_run = try!(conn.previously_run_migration_versions());
     let all_migrations = try!(migrations_in_directory(migrations_dir));
     let pending_migrations = all_migrations.into_iter().filter(|m| {
@@ -120,7 +120,7 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
 pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError> where
     Conn: MigrationConnection,
 {
-    try!(create_schema_migrations_table_if_needed(conn));
+    try!(setup_database(conn));
     let latest_migration_version = try!(conn.latest_run_migration_version());
     revert_migration_with_version(conn, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
@@ -158,7 +158,12 @@ fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
 }
 
 #[doc(hidden)]
-pub fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
+pub fn setup_database<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
+    conn.setup_helper_functions();
+    create_schema_migrations_table_if_needed(conn)
+}
+
+fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
     conn.silence_notices(|| {
         conn.execute("CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
             version VARCHAR PRIMARY KEY NOT NULL,

@@ -3,6 +3,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* Added helper function `diesel_manage_updated_at('TABLE_NAME')` to postgres
+  upon database setup. This function sets up a trigger on the specified table
+  that automatically updates the `updated_at` column to the `current_timestamp`
+  for each affected row in `UPDATE` statements.
+
 ## [0.5.1] 2016-02-11
 
 * Diesel CLI no longer has a hard dependency on SQLite and PostgreSQL. It
