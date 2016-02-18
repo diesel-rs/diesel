@@ -1,4 +1,5 @@
 use syntax::ast;
+use syntax::ast::ItemKind;
 use syntax::ext::base::ExtCtxt;
 use syntax::ptr::P;
 
@@ -47,7 +48,7 @@ impl Attr {
         -> Option<(ast::Generics, Vec<Self>)>
     {
         match item.node {
-            ast::ItemStruct(ref variant_data, ref generics) => {
+            ItemKind::Struct(ref variant_data, ref generics) => {
                 let fields = match *variant_data {
                     ast::VariantData::Struct(ref fields, _) => fields,
                     ast::VariantData::Tuple(ref fields, _) => fields,

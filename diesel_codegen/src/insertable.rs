@@ -2,7 +2,8 @@ use syntax::ast::{
     self,
     Item,
     MetaItem,
-    MetaItem_,
+    MetaItemKind,
+    TyKind,
 };
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
@@ -33,7 +34,7 @@ pub fn expand_insert(
 
 fn insertable_tables(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Vec<InternedString> {
     match meta_item.node {
-        MetaItem_::MetaList(_, ref meta_items) => {
+        MetaItemKind::List(_, ref meta_items) => {
             meta_items.iter().map(|i| table_name(cx, i)).collect()
         }
         _ => usage_error(cx, meta_item),
@@ -42,7 +43,7 @@ fn insertable_tables(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Vec<InternedStri
 
 fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> InternedString {
     match meta_item.node {
-        MetaItem_::MetaWord(ref word) => word.clone(),
+        MetaItemKind::Word(ref word) => word.clone(),
         _ => usage_error(cx, meta_item),
     }
 }
@@ -156,7 +157,7 @@ fn tuple_ty_from<F: Fn(&Attr) -> P<ast::Ty>>(
     fields: &[Attr],
     f: F,
 ) -> P<ast::Ty> {
-    cx.ty(span, ast::TyTup(fields.iter().map(f).collect()))
+    cx.ty(span, TyKind::Tup(fields.iter().map(f).collect()))
 }
 
 fn tuple_expr_from<F: Fn((usize, &Attr)) -> P<ast::Expr>>(

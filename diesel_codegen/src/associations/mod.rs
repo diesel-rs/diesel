@@ -1,4 +1,4 @@
-use syntax::ast::{self, MetaItem};
+use syntax::ast::{self, MetaItem, MetaItemKind};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
@@ -50,9 +50,9 @@ fn build_association_options(
         None
     };
     match meta_item.node {
-        ast::MetaList(_, ref options) => {
+        MetaItemKind::List(_, ref options) => {
             let association_name = match options[0].node {
-                ast::MetaWord(ref name) => str_to_ident(&name),
+                MetaItemKind::Word(ref name) => str_to_ident(&name),
                 _ => return usage_err(),
             };
 

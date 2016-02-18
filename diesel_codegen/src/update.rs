@@ -1,4 +1,4 @@
-use syntax::ast::{self, MetaItem};
+use syntax::ast::{self, MetaItem, MetaItemKind, TyKind};
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
@@ -37,7 +37,7 @@ struct ChangesetOptions {
 
 fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<ChangesetOptions, ()> {
     match meta_item.node {
-        ast::MetaList(_, ref meta_items) => {
+        MetaItemKind::List(_, ref meta_items) => {
             let table_name = try!(table_name(cx, &meta_items[0]));
             let treat_none_as_null = try!(boolean_option(cx, &meta_items[1..], "treat_none_as_null"))
                 .unwrap_or(false);
@@ -52,7 +52,7 @@ fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<Changeset
 
 fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<InternedString, ()> {
     match meta_item.node {
-        ast::MetaWord(ref word) => Ok(word.clone()),
+        MetaItemKind::Word(ref word) => Ok(word.clone()),
         _ => usage_error(cx, meta_item),
     }
 }
@@ -93,7 +93,7 @@ fn changeset_impl(
     let table_name = options.table_name;
     let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
         .collect::<Vec<_>>();
-    let changeset_ty = cx.ty(span, ast::TyTup(
+    let changeset_ty = cx.ty(span, TyKind::Tup(
         attrs_for_changeset.iter()
               .map(|a| changeset_ty(cx, span, &options, a))
               .collect()

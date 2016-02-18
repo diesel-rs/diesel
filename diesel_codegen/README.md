@@ -34,7 +34,7 @@ build-dependencies.
 
 ```toml
 diesel_codegen = "0.5.0"
-syntex = "0.26.0"
+syntex = "0.28.0"
 ```
 
 You'll need to move any code using annotations into a different file.
