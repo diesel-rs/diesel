@@ -35,6 +35,8 @@ fn main() {
         .takes_value(true);
 
     let migration_subcommand = SubCommand::with_name("migration")
+        .about("A group of commands for generating, running, and reverting \
+                migrations.")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(Arg::with_name("MIGRATION_DIRECTORY")
             .long("migration-dir")
@@ -75,24 +77,26 @@ fn main() {
                 specified in your DATABASE_URL, and runs existing migrations.");
 
     let database_subcommand = SubCommand::with_name("database")
+        .about("A group of commands for setting up and resetting your database.")
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(
             SubCommand::with_name("setup")
-                .about("Creates the migrations directory, creates the database \
-                        specified in your DATABASE_URL, and runs existing migrations.")
+                .about("Creates the database specified in your DATABASE_URL, \
+                        and then runs any existing migrations.")
         ).subcommand(
             SubCommand::with_name("reset")
                 .about("Resets your database by dropping the database specified \
                         in your DATABASE_URL and then running `diesel database setup`.")
         ).subcommand(
             SubCommand::with_name("drop")
-                .about("Drops the database specified in your DATABASE_URL")
+                .about("Drops the database specified in your DATABASE_URL.")
                 .setting(AppSettings::Hidden)
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
     let matches = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
+        .after_help("You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")
         .arg(database_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
