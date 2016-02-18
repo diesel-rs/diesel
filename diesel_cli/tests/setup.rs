@@ -11,8 +11,6 @@ fn setup_creates_database() {
     let result = p.command("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(result.stdout().contains("Creating database:"),
-        "Unexpected stdout {}", result.stdout());
     assert!(db.exists());
 }
 
@@ -59,4 +57,25 @@ fn setup_runs_migrations_if_no_schema_table() {
     assert!(result.stdout().contains("Running migration 12345"),
         "Unexpected stdout {}", result.stdout());
     assert!(db.table_exists("users"));
+}
+
+#[test]
+fn setup_notifies_when_creating_a_database() {
+    let p = project("setup_notifies").build();
+
+    let result = p.command("setup").run();
+
+    assert!(result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}", result.stdout());
+}
+
+#[test]
+fn setup_doesnt_notify_when_not_creating_a_database() {
+    let p = project("setup_doesnt_notify").build();
+    let db = database(&p.database_url()).create();
+
+    let result = p.command("setup").run();
+
+    assert!(!result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}", result.stdout());
 }
