@@ -367,26 +367,6 @@ mod tests {
         assert!(fs::File::open(database_url).is_err());
     }
 
-    // #[test]
-    // #[should_panic] // FIXME: Our migration structure is non-standard
-    // // we need to test this against a clean env with a normal structure
-    // // once we get integration test coverage (we can't change cwd in the test
-    // // process)
-    // fn create_schema_table_creates_diesel_table() {
-    //     let database_url = database_url("test5");
-    //     create_database_if_needed(&database_url)
-    //         .expect("Unable to create test database");
-    //     let connection = connection(&database_url);
-    //     connection.silence_notices(|| {
-    //         connection.execute("DROP TABLE IF EXISTS __diesel_schema_migrations").unwrap();
-    //     });
-    //     assert!(!schema_table_exists(&database_url).unwrap());
-    //     create_schema_table_and_run_migrations_if_needed(&database_url).unwrap();
-    //     assert!(schema_table_exists(&database_url).unwrap());
-    //
-    //     teardown(database_url);
-    // }
-
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
         let database = "database".to_owned();
