@@ -13,8 +13,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
         .run();
 
     let expected_stdout = Regex::new("\
-Creating migrations/\\d{14}_hello/up.sql
-Creating migrations/\\d{14}_hello/down.sql\
+Creating migrations.\\d{14}_hello.up.sql
+Creating migrations.\\d{14}_hello.down.sql\
         ").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
@@ -52,12 +52,12 @@ fn migration_version_can_be_specified_on_creation() {
         .arg("--version=1234")
         .run();
 
-    let expected_stdout = "\
-Creating migrations/1234_hello/up.sql
-Creating migrations/1234_hello/down.sql
-";
+    let expected_stdout = Regex::new("\
+Creating migrations.1234_hello.up.sql
+Creating migrations.1234_hello.down.sql
+").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
-    assert_eq!(expected_stdout, result.stdout());
+    assert!(expected_stdout.is_match(result.stdout()));
 
     assert!(p.has_file("migrations/1234_hello/up.sql"));
     assert!(p.has_file("migrations/1234_hello/down.sql"));
@@ -75,12 +75,12 @@ fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
         .arg("--migration-dir=foo")
         .run();
 
-    let expected_stdout = "\
-Creating foo/12345_stuff/up.sql
-Creating foo/12345_stuff/down.sql
-";
+    let expected_stdout = Regex::new("\
+Creating foo.12345_stuff.up.sql
+Creating foo.12345_stuff.down.sql
+").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
-    assert_eq!(expected_stdout, result.stdout());
+    assert!(expected_stdout.is_match(result.stdout()));
 
     assert!(p.has_file("foo/12345_stuff/up.sql"));
     assert!(p.has_file("foo/12345_stuff/down.sql"));
@@ -98,12 +98,12 @@ fn migration_directory_can_be_specified_for_generate_by_env_var() {
         .env("MIGRATION_DIRECTORY", "bar")
         .run();
 
-    let expected_stdout = "\
-Creating bar/12345_stuff/up.sql
-Creating bar/12345_stuff/down.sql
-";
+    let expected_stdout = Regex::new("\
+Creating bar.12345_stuff.up.sql
+Creating bar.12345_stuff.down.sql
+").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
-    assert_eq!(expected_stdout, result.stdout());
+    assert!(expected_stdout.is_match(result.stdout()));
 
     assert!(p.has_file("bar/12345_stuff/up.sql"));
     assert!(p.has_file("bar/12345_stuff/down.sql"));
