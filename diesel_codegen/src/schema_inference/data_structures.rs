@@ -1,54 +1,61 @@
 use diesel::*;
+#[cfg(feature = "postgres")]
 use diesel::pg::Pg;
+#[cfg(feature = "postgres")]
+use diesel::pg::PgConnection;
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::Sqlite;
+#[cfg(feature = "sqlite")]
+use diesel::sqlite::SqliteConnection;
 use diesel::types::{HasSqlType, FromSqlRow};
 
-table! {
-    pg_attribute (attrelid) {
-        attrelid -> Oid,
-        attname -> VarChar,
-        atttypid -> Oid,
-        attnotnull -> Bool,
-        attnum -> SmallInt,
-        attisdropped -> Bool,
-    }
-}
-
-table! {
-    pg_type (oid) {
-        oid -> Oid,
-        typname -> VarChar,
-    }
-}
-
-joinable!(pg_attribute -> pg_type (atttypid));
-select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
-select_column_workaround!(pg_type -> pg_attribute (oid, typname));
-
-table! {
-    pg_class (oid) {
-        oid -> Oid,
-        relname -> VarChar,
-    }
-}
-
 #[derive(Debug, Clone)]
-pub struct PgAttr {
+pub struct ColumnInformation {
     pub column_name: String,
     pub type_name: String,
     pub nullable: bool,
 }
 
-impl<ST> Queryable<ST, Pg> for PgAttr where
+#[cfg(feature = "postgres")]
+impl<ST> Queryable<ST, Pg> for ColumnInformation where
     Pg: HasSqlType<ST>,
     (String, String, bool): FromSqlRow<ST, Pg>,
 {
     type Row = (String, String, bool);
 
     fn build(row: Self::Row) -> Self {
-        PgAttr {
+        ColumnInformation {
             column_name: row.0,
             type_name: row.1,
             nullable: !row.2,
         }
     }
+}
+
+#[cfg(feature = "sqlite")]
+impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
+    Sqlite: HasSqlType<ST>,
+    (i32, String, String, bool, Option<String>, i32): FromSqlRow<ST, Sqlite>,
+{
+    type Row = (i32, String, String, bool, Option<String>, i32);
+
+    fn build(row: Self::Row) -> Self {
+        ColumnInformation {
+            column_name: row.1,
+            type_name: row.2,
+            nullable: !row.3,
+        }
+    }
+}
+
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+pub type InferConnection = SqliteConnection;
+
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
+pub type InferConnection = PgConnection;
+
+#[cfg(all(feature = "sqlite", feature = "postgres"))]
+pub enum InferConnection{
+    Sqlite(SqliteConnection),
+    Pg(PgConnection),
 }
