@@ -12,6 +12,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   that automatically updates the `updated_at` column to the `current_timestamp`
   for each affected row in `UPDATE` statements.
 
+## [0.5.2] 2016-02-27
+
+* Updated to work on nightly from late February
+
 ## [0.5.1] 2016-02-11
 
 * Diesel CLI no longer has a hard dependency on SQLite and PostgreSQL. It
