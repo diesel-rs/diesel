@@ -60,6 +60,24 @@ fn setup_runs_migrations_if_no_schema_table() {
 }
 
 #[test]
+fn setup_doesnt_run_migrations_if_schema_table_exists() {
+    let p = project("setup_doesnt_run_migrations_if_schema_table_exists")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url()).create();
+    db.execute("CREATE TABLE __diesel_schema_migrations ( version INTEGER )");
+
+    p.create_migration("12345_create_users_table",
+                       "CREATE TABLE users ( id INTEGER )",
+                       "DROP TABLE users");
+
+    let result = p.command("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!db.table_exists("users"));
+}
+
+#[test]
 fn setup_notifies_when_creating_a_database() {
     let p = project("setup_notifies").build();
 
@@ -70,6 +88,7 @@ fn setup_notifies_when_creating_a_database() {
 }
 
 #[test]
+#[allow(unused_variables)]
 fn setup_doesnt_notify_when_not_creating_a_database() {
     let p = project("setup_doesnt_notify").build();
     let db = database(&p.database_url()).create();
