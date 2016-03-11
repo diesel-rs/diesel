@@ -3,6 +3,8 @@ extern crate dotenv;
 use diesel::prelude::*;
 use diesel::backend;
 use self::dotenv::dotenv;
+use diesel::query_builder::{QueryBuilder, BuildQueryResult};
+use diesel::persistable::{InsertValues};
 
 #[cfg(feature = "postgres")]
 type DB = diesel::pg::Pg;
@@ -52,4 +54,38 @@ fn establish_connection() -> diesel::sqlite::SqliteConnection {
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").unwrap();
 
     connection
+}
+
+struct NewUser {
+    name: String,
+}
+
+struct NewUserValues {
+    name: String,
+}
+
+impl<DB> InsertValues<DB> for NewUserValues where
+    DB: diesel::backend::Backend,
+{
+    fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql("name");
+        Ok(())
+    }
+
+    fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql(&format!("('{}')", self.name));
+        Ok(())
+    }
+}
+
+impl<'a, DB> Insertable<users::table, DB> for &'a NewUser where
+    DB: diesel::backend::Backend,
+{
+    type Values = NewUserValues;
+
+    fn values(self) -> Self::Values {
+        NewUserValues {
+            name: self.name.clone(),
+        }
+    }
 }

@@ -5,7 +5,7 @@ pub use self::changeset::{Changeset, AsChangeset};
 pub use self::target::UpdateTarget;
 
 use backend::{Backend, SupportsReturningClause};
-use expression::Expression;
+use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
 use query_source::Table;
 
@@ -23,7 +23,7 @@ impl<T> IncompleteUpdateStatement<T> {
 impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
     pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where
         U: changeset::AsChangeset<Target=T::Table>,
-        UpdateQuery<T, U::Changeset>: Query,
+        UpdateStatement<T, U::Changeset>: AsQuery,
     {
         UpdateStatement {
             target: self.0,
@@ -32,7 +32,6 @@ impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
     }
 }
 
-#[doc(hidden)]
 pub struct UpdateStatement<T, U> {
     target: T,
     values: U,
@@ -59,35 +58,83 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
 }
 
 impl<T, U> AsQuery for UpdateStatement<T, U> where
-    UpdateQuery<T, U>: Query,
+    T: UpdateTarget,
+    UpdateQuery<<T::Table as Table>::AllColumns, UpdateStatement<T, U>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
-    type Query = UpdateQuery<T, U>;
+    type Query = UpdateQuery<<T::Table as Table>::AllColumns, UpdateStatement<T, U>>;
 
     fn as_query(self) -> Self::Query {
-        UpdateQuery(self)
+        UpdateQuery {
+            returning: T::Table::all_columns(),
+            statement: self,
+        }
+    }
+}
+
+impl<T, U> UpdateStatement<T, U> {
+    /// Specify what expression is returned after execution of the `update`.
+    /// # Examples
+    ///
+    /// ### Updating a single record:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let updated_name = diesel::update(users.filter(id.eq(1)))
+    ///     .set(name.eq("Dean"))
+    ///     .returning(name)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok("Dean".to_string()), updated_name);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    pub fn returning<E>(self, returns: E) -> UpdateQuery<E, UpdateStatement<T, U>> where
+        T: UpdateTarget,
+        UpdateQuery<E, UpdateStatement<T, U>>: Query,
+    {
+        UpdateQuery {
+            returning: returns,
+            statement: self,
+        }
     }
 }
 
 #[doc(hidden)]
-pub struct UpdateQuery<T, U>(UpdateStatement<T, U>);
+pub struct UpdateQuery<T, U> {
+    returning: T,
+    statement: U,
+}
+
+impl<T, U, V> Query for UpdateQuery<T, UpdateStatement<U, V>> where
+    U: UpdateTarget,
+    T: Expression + SelectableExpression<U::Table> + NonAggregate,
+{
+    type SqlType = T::SqlType;
+}
 
 impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
     DB: Backend + SupportsReturningClause,
-    T: UpdateTarget,
-    <T::Table as Table>::AllColumns: QueryFragment<DB>,
-    UpdateStatement<T, U>: QueryFragment<DB>,
+    T: QueryFragment<DB>,
+    U: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0.to_sql(out));
+        try!(self.statement.to_sql(out));
         out.push_sql(" RETURNING ");
-        try!(T::Table::all_columns().to_sql(out));
+        try!(self.returning.to_sql(out));
         Ok(())
     }
-}
-
-impl<T, U> Query for UpdateQuery<T, U> where
-    T: UpdateTarget,
-{
-    type SqlType = <<T::Table as Table>::AllColumns as Expression>::SqlType;
 }

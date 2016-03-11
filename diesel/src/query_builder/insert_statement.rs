@@ -1,6 +1,6 @@
 use backend::{Backend, SupportsReturningClause};
 use persistable::{Insertable, InsertValues};
-use expression::Expression;
+use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 use query_source::Table;
 
@@ -29,7 +29,6 @@ impl<T> IncompleteInsertStatement<T> {
     }
 }
 
-#[doc(hidden)]
 pub struct InsertStatement<T, U> {
     target: T,
     records: U,
@@ -68,14 +67,60 @@ impl<T, U> AsQuery for InsertStatement<T, U> where
     }
 }
 
+impl<T, U> InsertStatement<T, U> {
+    /// Specify what expression is returned after execution of the `insert`.
+    /// # Examples
+    ///
+    /// ### Inserting a record:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let new_user = NewUser {
+    ///     name: "Timmy".to_string(),
+    /// };
+    ///
+    /// let inserted_name = diesel::insert(&new_user)
+    ///     .into(users)
+    ///     .returning(name)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok("Timmy".to_string()), inserted_name);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    pub fn returning<E>(self, returns: E) -> InsertQuery<E, InsertStatement<T, U>> where
+        E: Expression,
+        InsertQuery<E, InsertStatement<T, U>>: Query,
+    {
+        InsertQuery {
+            returning: returns,
+            statement: self,
+        }
+    }
+}
+
 #[doc(hidden)]
 pub struct InsertQuery<T, U> {
     returning: T,
     statement: U,
 }
 
-impl<T, U> Query for InsertQuery<T, U> where
-    T: Expression,
+impl<T, U, V> Query for InsertQuery<T, InsertStatement<U, V>> where
+    U: Table,
+    T: Expression + SelectableExpression<U> + NonAggregate,
 {
     type SqlType = T::SqlType;
 }

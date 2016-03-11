@@ -66,4 +66,10 @@ fn main() {
         .into(users::table)
         .get_result::<User>(&connection);
     //~^ ERROR: SupportsReturningClause
+
+    insert(&NewUser("Hello".into()))
+        .into(users::table)
+        .returning(users::name)
+        .get_result(&connection);
+    //~^ ERROR: SupportsReturningClause
 }

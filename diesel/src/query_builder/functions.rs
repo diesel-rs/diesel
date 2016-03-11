@@ -29,7 +29,9 @@ use super::delete_statement::DeleteStatement;
 ///     .set(name.eq("James"))
 ///     .get_result(&connection);
 /// // On backends that support it, you can call `get_result` instead of `execute`
-/// // to have `RETURNING *` automatically appended to the query.
+/// // to have `RETURNING *` automatically appended to the query. Alternatively, you
+/// // can explicitly return an expression by using the `returning` method before
+/// // getting the result.
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
