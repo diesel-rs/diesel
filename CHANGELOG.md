@@ -5,12 +5,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [0.5.3] 2016-03-12
+
 ### Added
 
 * Added helper function `diesel_manage_updated_at('TABLE_NAME')` to postgres
   upon database setup. This function sets up a trigger on the specified table
   that automatically updates the `updated_at` column to the `current_timestamp`
   for each affected row in `UPDATE` statements.
+
+### Fixed
+
+* Updated to work on nightly from early March
 
 ## [0.5.2] 2016-02-27
 
