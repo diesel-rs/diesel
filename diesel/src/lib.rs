@@ -2,7 +2,6 @@
 //! interactions. [A getting started guide](https://github.com/sgrif/diesel#getting-started) can be
 //! found in the README.
 #![deny(warnings)]
-#![cfg_attr(all(feature = "unstable", feature = "postgres"), feature(time2))]
 pub mod backend;
 pub mod connection;
 #[macro_use]

@@ -23,7 +23,7 @@ fn pg_epoch() -> SystemTime {
 
 impl ToSql<types::Timestamp, Pg> for SystemTime {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
-        let (before_epoch, duration) = match self.duration_from_earlier(pg_epoch()) {
+        let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
         };
