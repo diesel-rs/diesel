@@ -7,7 +7,7 @@ use diesel::sqlite::SqliteConnection;
 use diesel::types::Bool;
 use diesel::{migrations, Connection, select, LoadDsl};
 
-use database_error::DatabaseResult;
+use database_error::{DatabaseError, DatabaseResult};
 
 use std::error::Error;
 use std::{env, fs};
@@ -125,7 +125,7 @@ fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
 fn create_schema_table_and_run_migrations_if_needed(database_url: &String)
     -> DatabaseResult<()>
 {
-    if !schema_table_exists(database_url).map_err(handle_error).unwrap() {
+    if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
         try!(call_with_conn!(database_url, migrations::setup_database));
         call_with_conn!(database_url, migrations::run_pending_migrations).unwrap_or_else(handle_error);
     };
@@ -230,8 +230,9 @@ pub fn database_url(matches: &ArgMatches) -> String {
     matches.value_of("DATABASE_URL")
         .map(|s| s.into())
         .or(env::var("DATABASE_URL").ok())
-        .expect("The --database-url argument must be passed, \
-                or the DATABASE_URL environment variable must be set.")
+        .unwrap_or_else(|| {
+            handle_error(DatabaseError::DatabaseUrlMissing)
+        })
 }
 
 /// Returns a &str representing the type of backend being used, determined
@@ -251,8 +252,9 @@ fn split_pg_connection_string(database_url: &String) -> (String, String) {
     (database.to_owned(), postgres_url)
 }
 
-fn handle_error<E: Error>(error: E) {
-    panic!("{}", error);
+fn handle_error<E: Error, T>(error: E) -> T {
+    println!("{}", error);
+    ::std::process::exit(1);
 }
 
 #[cfg(test)]

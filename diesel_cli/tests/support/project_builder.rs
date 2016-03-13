@@ -50,11 +50,11 @@ pub struct Project {
 
 impl Project {
     pub fn command(&self, name: &str) -> TestCommand {
-        self.command_without_datatabase_url(name)
+        self.command_without_database_url(name)
             .env("DATABASE_URL", &self.database_url())
     }
 
-    pub fn command_without_datatabase_url(&self, name: &str) -> TestCommand {
+    pub fn command_without_database_url(&self, name: &str) -> TestCommand {
         TestCommand::new(self.directory.path(), name)
     }
 

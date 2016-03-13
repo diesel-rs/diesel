@@ -33,7 +33,7 @@ fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name")
         .folder("migrations")
         .build();
-    let result = p.command_without_datatabase_url("migration")
+    let result = p.command_without_database_url("migration")
         .arg("generate")
         .arg("hello")
         .run();
