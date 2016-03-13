@@ -1,15 +1,19 @@
 mod dsl_impls;
+mod boxed;
+
+pub use self::boxed::BoxedSelectStatement;
+
+use std::marker::PhantomData;
 
 use backend::Backend;
 use expression::*;
 use query_source::*;
-use std::marker::PhantomData;
-use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::where_clause::NoWhereClause;
+use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]

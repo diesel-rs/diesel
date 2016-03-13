@@ -18,7 +18,7 @@ pub mod insert_statement;
 pub mod update_statement;
 
 #[doc(hidden)]
-pub use self::select_statement::SelectStatement;
+pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
 #[doc(inline)]
 pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
 #[doc(inline)]

@@ -1,12 +1,14 @@
+use backend::Backend;
 use expression::*;
 use expression::aliased::Aliased;
-use query_builder::{Query, SelectStatement};
 use query_builder::group_by_clause::*;
 use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
 use query_builder::order_clause::*;
 use query_builder::where_clause::*;
+use query_builder::{Query, QueryFragment, SelectStatement};
 use query_dsl::*;
+use super::BoxedSelectStatement;
 use types::{self, Bool};
 
 impl<ST, S, F, W, O, L, Of, G, Selection, Type> SelectDsl<Selection, Type>
@@ -104,5 +106,28 @@ for SelectStatement<ST, S, F, W, O, L, Of, G> where
         let group_by = GroupByClause(expr);
         SelectStatement::new(self.select, self.from, self.where_clause,
             self.order, self.limit, self.offset, group_by)
+    }
+}
+
+impl<ST, S, F, W, O, L, Of, G, DB> BoxedDsl<DB>
+for SelectStatement<ST, S, F, W, O, L, Of, G> where
+    DB: Backend,
+    S: QueryFragment<DB> + 'static,
+    W: QueryFragment<DB> + 'static,
+    O: QueryFragment<DB> + 'static,
+    L: QueryFragment<DB> + 'static,
+    Of: QueryFragment<DB> + 'static,
+{
+    type Output = BoxedSelectStatement<ST, F, DB>;
+
+    fn into_boxed(self) -> Self::Output {
+        BoxedSelectStatement::new(
+            Box::new(self.select),
+            self.from,
+            Box::new(self.where_clause),
+            Box::new(self.order),
+            Box::new(self.limit),
+            Box::new(self.offset),
+        )
     }
 }

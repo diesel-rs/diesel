@@ -1,4 +1,5 @@
 mod belonging_to_dsl;
+mod boxed_dsl;
 mod count_dsl;
 mod group_by_dsl;
 #[doc(hidden)]
@@ -15,6 +16,7 @@ mod order_dsl;
 mod with_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
+pub use self::boxed_dsl::BoxedDsl;
 pub use self::count_dsl::CountDsl;
 pub use self::filter_dsl::{FilterDsl, FindDsl};
 #[doc(hidden)]
