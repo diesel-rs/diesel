@@ -85,6 +85,22 @@ fn update_returning_struct() {
 }
 
 #[test]
+#[cfg(not(feature="sqlite"))]
+fn update_with_custom_returning_clause() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &connection);
+    let user = update(users.filter(id.eq(sean.id)))
+        .set(hair_color.eq("black"))
+        .returning((name, hair_color))
+        .get_result::<(String, Option<String>)>(&connection);
+    let expected_result = ("Sean".to_string(), Some("black".to_string()));
+
+    assert_eq!(Ok(expected_result), user);
+}
+
+#[test]
 fn update_with_struct_as_changes() {
     use schema::users::dsl::*;
 

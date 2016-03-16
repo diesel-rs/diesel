@@ -41,6 +41,30 @@ fn insert_records_using_returning_clause() {
 
 #[test]
 #[cfg(not(feature = "sqlite"))]
+fn insert_records_with_custom_returning_clause() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    let new_users: &[_] = &[
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+
+    let inserted_users = insert(new_users)
+        .into(users)
+        .returning((name, hair_color))
+        .get_results::<(String, Option<String>)>(&connection)
+        .unwrap();
+    let expected_users = vec![
+        ("Sean".to_string(), Some("Black".to_string())),
+        ("Tess".to_string(), None),
+    ];
+
+    assert_eq!(expected_users, inserted_users);
+}
+
+#[test]
+#[cfg(not(feature = "sqlite"))]
 fn batch_insert_with_defaults() {
     use schema::users::table as users;
     let connection = connection();

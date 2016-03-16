@@ -14,6 +14,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   that automatically updates the `updated_at` column to the `current_timestamp`
   for each affected row in `UPDATE` statements.
 
+* Added support for explicit `RETURNING` expressions in `INSERT` and `UPDATE`
+  queries. Implicitly these queries will still use `RETURNING *`.
+
 ### Fixed
 
 * Updated to work on nightly from early March
