@@ -12,44 +12,44 @@ macro_rules! not_none {
 macro_rules! expression_impls {
     ($($Source:ident -> $Target:ty),+,) => {
         $(
-            impl<'a> AsExpression<types::$Source> for $Target {
-                type Expression = Bound<types::$Source, Self>;
+            impl<'a> $crate::expression::AsExpression<types::$Source> for $Target {
+                type Expression = $crate::expression::bound::Bound<types::$Source, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a: 'expr, 'expr> AsExpression<types::$Source> for &'expr $Target {
-                type Expression = Bound<types::$Source, Self>;
+            impl<'a: 'expr, 'expr> $crate::expression::AsExpression<types::$Source> for &'expr $Target {
+                type Expression = $crate::expression::bound::Bound<types::$Source, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a> AsExpression<types::Nullable<types::$Source>> for $Target {
-                type Expression = Bound<types::Nullable<types::$Source>, Self>;
+            impl<'a> $crate::expression::AsExpression<$crate::types::Nullable<types::$Source>> for $Target {
+                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<types::$Source>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a: 'expr, 'expr> AsExpression<types::Nullable<types::$Source>> for &'a $Target {
-                type Expression = Bound<types::Nullable<types::$Source>, Self>;
+            impl<'a: 'expr, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<types::$Source>> for &'a $Target {
+                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<types::$Source>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a, DB> ToSql<types::Nullable<types::$Source>, DB> for $Target where
-                DB: $crate::backend::Backend + types::HasSqlType<types::$Source>,
-                $Target: ToSql<types::$Source, DB>,
+            impl<'a, DB> $crate::types::ToSql<$crate::types::Nullable<types::$Source>, DB> for $Target where
+                DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
+                $Target: $crate::types::ToSql<types::$Source, DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<IsNull, Box<::std::error::Error>> {
-                    ToSql::<types::$Source, DB>::to_sql(self, out)
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error>> {
+                    $crate::types::ToSql::<types::$Source, DB>::to_sql(self, out)
                 }
             }
         )+
@@ -69,16 +69,16 @@ macro_rules! queryable_impls {
         }
 
         //FIXME: This can be made generic w/ specialization by making FromSql imply FromSqlRow
-        impl<DB> $crate::types::FromSqlRow<types::Nullable<types::$Source>, DB> for Option<$Target> where
+        impl<DB> $crate::types::FromSqlRow<$crate::types::Nullable<types::$Source>, DB> for Option<$Target> where
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
-            Option<$Target>: $crate::types::FromSql<types::Nullable<types::$Source>, DB>,
+            Option<$Target>: $crate::types::FromSql<$crate::types::Nullable<types::$Source>, DB>,
         {
             fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error>> {
-                $crate::types::FromSql::<types::Nullable<types::$Source>, DB>::from_sql(row.take())
+                $crate::types::FromSql::<$crate::types::Nullable<types::$Source>, DB>::from_sql(row.take())
             }
         }
 
-        impl<DB> Queryable<types::$Source, DB> for $Target where
+        impl<DB> $crate::query_source::Queryable<types::$Source, DB> for $Target where
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSqlRow<types::$Source, DB>,
         {

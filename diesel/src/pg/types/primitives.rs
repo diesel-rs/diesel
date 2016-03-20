@@ -1,11 +1,8 @@
 use std::io::prelude::*;
 use std::error::Error;
 
-use expression::AsExpression;
-use expression::bound::Bound;
 use pg::Pg;
 use pg::data_types::PgNumeric;
-use query_source::Queryable;
 use types::{self, ToSql, IsNull, FromSql};
 
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));

@@ -4,10 +4,7 @@ use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
 use std::error::Error;
 use std::io::prelude::*;
 
-use expression::AsExpression;
-use expression::bound::Bound;
 use pg::Pg;
-use query_source::Queryable;
 use types::{self, ToSql, IsNull, FromSql};
 
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));

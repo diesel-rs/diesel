@@ -3,9 +3,7 @@ use std::io::Write;
 use std::ops::Add;
 
 use expression::*;
-use expression::bound::Bound;
 use pg::{Pg, PgTypeMetadata};
-use query_source::Queryable;
 use types::{self, FromSql, ToSql, IsNull};
 
 #[cfg(feature = "quickcheck")]

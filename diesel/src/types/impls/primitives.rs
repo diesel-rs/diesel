@@ -2,10 +2,7 @@ use std::error::Error;
 use std::io::Write;
 
 use backend::Backend;
-use expression::bound::Bound;
-use expression::AsExpression;
-use types::{HasSqlType, FromSql, ToSql, IsNull, NotNull};
-use {Queryable, types};
+use types::{self, HasSqlType, FromSql, ToSql, IsNull, NotNull};
 
 primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer)));
 
