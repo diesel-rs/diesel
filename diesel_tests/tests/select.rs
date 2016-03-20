@@ -147,7 +147,6 @@ fn selecting_columns_with_different_definition_order() {
 #[test]
 fn selection_using_subselect() {
     use schema::posts::dsl::*;
-    use diesel::expression::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let ids: Vec<i32> = users::table.select(users::id).load(&connection).unwrap();

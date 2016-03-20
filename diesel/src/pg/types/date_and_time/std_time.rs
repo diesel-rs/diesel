@@ -2,10 +2,7 @@ use std::error::Error;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use expression::AsExpression;
-use expression::bound::Bound;
 use pg::Pg;
-use query_source::Queryable;
 use types::{self, ToSql, FromSql, IsNull};
 
 expression_impls! {

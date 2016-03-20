@@ -7,10 +7,7 @@ use std::io::Write;
 use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime};
 use self::chrono::naive::date;
 
-use expression::AsExpression;
-use expression::bound::Bound;
 use pg::Pg;
-use query_source::Queryable;
 use super::{PgDate, PgTime, PgTimestamp};
 use types::{self, Date, FromSql, IsNull, Time, Timestamp, ToSql};
 
