@@ -12,6 +12,7 @@ pub type DatabaseResult<T> = Result<T, DatabaseError>;
 pub enum DatabaseError {
     #[allow(dead_code)]
     CargoTomlNotFound,
+    DatabaseUrlMissing,
     IoError(io::Error),
     QueryError(result::Error),
     ConnectionError(result::ConnectionError),
@@ -39,6 +40,7 @@ impl Error for DatabaseError {
     fn description(&self) -> &str {
         match *self {
             CargoTomlNotFound => "Unable to find Cargo.toml in this directory or any parent directories.",
+            DatabaseUrlMissing => "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.",
             IoError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
             QueryError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),
             ConnectionError(ref error) => error.cause().map(|e| e.description()).unwrap_or(error.description()),

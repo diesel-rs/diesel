@@ -232,7 +232,8 @@ fn redo_latest_migration<Conn>(conn: &Conn) where
 }
 
 fn handle_error<E: Error, T>(error: E) -> T {
-    panic!("{}", error);
+    println!("{}", error);
+    ::std::process::exit(1);
 }
 
 // Converts an absolute path to a relative path, with the restriction that the

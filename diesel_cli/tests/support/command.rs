@@ -62,6 +62,10 @@ impl CommandResult {
     pub fn stderr(&self) -> &str {
         str::from_utf8(&self.output.stderr).unwrap()
     }
+
+    pub fn code(&self) -> i32 {
+        self.output.status.code().unwrap()
+    }
 }
 
 fn path_to_diesel_cli() -> PathBuf {
