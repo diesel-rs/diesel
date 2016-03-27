@@ -9,6 +9,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `infer_schema!` is now supported for use with SQLite3.
 
+### Changed
+
+* `diesel::result::Error` now implements `Send` and `Sync`. This required a
+  change in the return type of `ToSql` and `FromSql` to have those bounds as
+  well.
+
 ## [0.5.4] 2016-03-23
 
 * Updated `diesel_codegen` to allow syntex versions up to 0.30.0.

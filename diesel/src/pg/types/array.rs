@@ -34,7 +34,7 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
     T: FromSql<ST, Pg>,
     Pg: HasSqlType<ST>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
         let num_dimensions = try!(bytes.read_i32::<BigEndian>());
         let has_null = try!(bytes.read_i32::<BigEndian>()) != 0;
@@ -67,7 +67,7 @@ impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     Vec<T>: FromSql<Array<ST>, Pg>,
 {
-    fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error>> {
+    fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<Array<ST>, Pg>::from_sql(row.take())
     }
 }
@@ -119,7 +119,7 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let num_dimensions = 1;
         try!(out.write_i32::<BigEndian>(num_dimensions));
         let flags = 0;
@@ -146,7 +146,7 @@ impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (&self as &[T]).to_sql(out)
     }
 }

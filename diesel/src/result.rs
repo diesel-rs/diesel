@@ -11,8 +11,8 @@ pub enum Error {
     InvalidCString(NulError),
     DatabaseError(String),
     NotFound,
-    QueryBuilderError(Box<StdError>),
-    DeserializationError(Box<StdError>),
+    QueryBuilderError(Box<StdError+Send+Sync>),
+    DeserializationError(Box<StdError+Send+Sync>),
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -145,4 +145,12 @@ impl PartialEq for Error {
             _ => false,
         }
     }
+}
+
+#[cfg(test)]
+#[allow(warnings)]
+fn error_impls_send_and_sync() {
+    let err: Error = unimplemented!();
+    let x: &Send = &err;
+    let x: &Sync = &err;
 }

@@ -20,7 +20,7 @@ impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
     T: FromSql<ST, DB>,
     DB: Backend + HasSqlType<ST>, ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error+Send+Sync>> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None)
@@ -46,7 +46,7 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         if let &Some(ref value) = self {
             value.to_sql(out)
         } else {

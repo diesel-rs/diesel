@@ -19,7 +19,7 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -34,7 +34,7 @@ impl ToSql<types::Timestamp, Pg> for SystemTime {
 }
 
 impl FromSql<types::Timestamp, Pg> for SystemTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let usecs_passed = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);

@@ -48,7 +48,7 @@ macro_rules! expression_impls {
                 DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
                 $Target: $crate::types::ToSql<types::$Source, DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error>> {
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
                     $crate::types::ToSql::<types::$Source, DB>::to_sql(self, out)
                 }
             }
@@ -63,7 +63,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSql<types::$Source, DB>,
         {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error+Send+Sync>> {
                 $crate::types::FromSql::<types::$Source, DB>::from_sql(row.take())
             }
         }
@@ -73,7 +73,7 @@ macro_rules! queryable_impls {
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             Option<$Target>: $crate::types::FromSql<$crate::types::Nullable<types::$Source>, DB>,
         {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error>> {
+            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error+Send+Sync>> {
                 $crate::types::FromSql::<$crate::types::Nullable<types::$Source>, DB>::from_sql(row.take())
             }
         }

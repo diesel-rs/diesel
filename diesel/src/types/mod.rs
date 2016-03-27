@@ -85,13 +85,13 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 /// How to deserialize a single field of a given type. The input will always be
 /// the binary representation, not the text.
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error>>;
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error+Send+Sync>>;
 }
 
 /// How to deserialize multiple fields, with a known type. This type is
 /// implemented for tuples of various sizes.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error>>;
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -105,14 +105,14 @@ pub enum IsNull {
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
 pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>>;
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
     DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (*self).to_sql(out)
     }
 }

@@ -29,7 +29,7 @@ fn pg_epoch() -> NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let PgTimestamp(offset) = try!(FromSql::<Timestamp, Pg>::from_sql(bytes));
         match pg_epoch().checked_add(Duration::microseconds(offset)) {
             Some(v) => Ok(v),
@@ -42,7 +42,7 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let time = match (*self - pg_epoch()).num_microseconds() {
             Some(time) => time,
             None => {
@@ -59,7 +59,7 @@ fn midnight() -> NaiveTime {
 }
 
 impl ToSql<Time, Pg> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let duration = *self - midnight();
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
@@ -69,7 +69,7 @@ impl ToSql<Time, Pg> for NaiveTime {
 }
 
 impl FromSql<Time, Pg> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let PgTime(offset) = try!(FromSql::<Time, Pg>::from_sql(bytes));
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
@@ -81,14 +81,14 @@ fn pg_epoch_date() -> NaiveDate {
 }
 
 impl ToSql<Date, Pg> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let days_since_epoch = (*self - pg_epoch_date()).num_days();
         ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }
 }
 
 impl FromSql<Date, Pg> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
         match pg_epoch_date().checked_add(Duration::days(offset as i64)) {
             Some(date) => Ok(date),

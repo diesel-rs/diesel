@@ -8,7 +8,7 @@ use types::{self, ToSql, IsNull, FromSql};
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));
 
 impl FromSql<types::Bool, Pg> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         match bytes {
             Some(bytes) => Ok(bytes[0] != 0),
             None => Ok(false),
@@ -17,7 +17,7 @@ impl FromSql<types::Bool, Pg> for bool {
 }
 
 impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let write_result = if *self {
             out.write_all(&[1])
         } else {
@@ -25,7 +25,7 @@ impl ToSql<types::Bool, Pg> for bool {
         };
         write_result
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error>)
+            .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
     }
 }
 

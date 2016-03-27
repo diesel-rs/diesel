@@ -10,14 +10,14 @@ use types::{self, ToSql, IsNull, FromSql};
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 
 impl FromSql<types::Oid, Pg> for u32 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
         bytes.read_u32::<BigEndian>().map_err(|e| e.into())
     }
 }
 
 impl ToSql<types::Oid, Pg> for u32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_u32::<BigEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())

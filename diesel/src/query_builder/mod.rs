@@ -31,7 +31,7 @@ use types::HasSqlType;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
-pub type BuildQueryResult = Result<(), Box<Error>>;
+pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
 
 /// Apps should not need to concern themselves with this trait.
 ///

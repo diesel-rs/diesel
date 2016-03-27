@@ -103,46 +103,46 @@ impl HasSqlType<types::Timestamp> for Pg {
 }
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Timestamp, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes)
             .map(PgTimestamp)
     }
 }
 
 impl ToSql<types::Date, Pg> for PgDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<types::Integer, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Date, Pg> for PgDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::Integer, Pg>::from_sql(bytes)
             .map(PgDate)
     }
 }
 
 impl ToSql<types::Time, Pg> for PgTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Time, Pg> for PgTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes)
             .map(PgTime)
     }
 }
 
 impl ToSql<types::Interval, Pg> for PgInterval {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error>> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         try!(ToSql::<types::BigInt, Pg>::to_sql(&self.microseconds, out));
         try!(ToSql::<types::Integer, Pg>::to_sql(&self.days, out));
         try!(ToSql::<types::Integer, Pg>::to_sql(&self.months, out));
@@ -151,7 +151,7 @@ impl ToSql<types::Interval, Pg> for PgInterval {
 }
 
 impl FromSql<types::Interval, Pg> for PgInterval {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let bytes = not_none!(bytes);
         Ok(PgInterval {
             microseconds: try!(FromSql::<types::BigInt, Pg>::from_sql(Some(&bytes[..8]))),
