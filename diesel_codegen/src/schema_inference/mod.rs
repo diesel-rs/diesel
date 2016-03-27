@@ -131,8 +131,13 @@ fn establish_real_connection<Conn>(
 ) -> Result<Conn, Box<MacResult>> where
     Conn: Connection,
 {
-    Conn::establish(database_url).map_err(|_| {
-        cx.span_err(sp, "failed to establish a database connection");
+    Conn::establish(database_url).map_err(|error| {
+        let error_message = format!(
+            "Failed to establish a database connection at {}. Error: {:?}",
+            database_url,
+            error,
+        );
+        cx.span_err(sp, &error_message);
         DummyResult::any(sp)
     })
 }
