@@ -24,7 +24,7 @@ quickcheck = "0.2.25"
 [features]
 default = ["with-syntex"]
 unstable = ["diesel_codegen/nightly", "diesel/unstable", "dotenv_macros"]
-with-syntex = ["dotenv_codegen", "diesel_codegen/with-syntex"]
+with-syntex = ["syntex", "dotenv_codegen", "diesel_codegen/with-syntex"]
 postgres = ["diesel/postgres", "diesel_codegen/postgres"]
 sqlite = ["diesel/sqlite", "diesel_codegen/sqlite"]
 
