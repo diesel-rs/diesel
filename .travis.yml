@@ -29,7 +29,7 @@ script:
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "syntex dotenv_codegen $BACKEND")
+    (cd diesel_tests && travis-cargo test -- --no-default-features --features "with-syntex $BACKEND")
   fi &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_compile_tests && travis-cargo test)

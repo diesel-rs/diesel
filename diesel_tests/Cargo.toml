@@ -22,9 +22,9 @@ chrono = { version = "^0.2.17" }
 quickcheck = "0.2.25"
 
 [features]
-default = ["syntex", "diesel_codegen/with-syntex", "dotenv_codegen"]
+default = ["with-syntex"]
 unstable = ["diesel_codegen/nightly", "diesel/unstable", "dotenv_macros"]
-syntex = ["diesel_codegen/with-syntex"]
+with-syntex = ["dotenv_codegen", "diesel_codegen/with-syntex"]
 postgres = ["diesel/postgres", "diesel_codegen/postgres"]
 sqlite = ["diesel/sqlite", "diesel_codegen/sqlite"]
 
