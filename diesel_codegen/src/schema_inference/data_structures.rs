@@ -49,13 +49,17 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
 }
 
 #[cfg(all(feature = "sqlite", not(feature = "postgres")))]
-pub type InferConnection = SqliteConnection;
+pub enum InferConnection {
+    Sqlite(SqliteConnection),
+}
 
 #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-pub type InferConnection = PgConnection;
+pub enum InferConnection {
+    Pg(PgConnection),
+}
 
 #[cfg(all(feature = "sqlite", feature = "postgres"))]
-pub enum InferConnection{
+pub enum InferConnection {
     Sqlite(SqliteConnection),
     Pg(PgConnection),
 }

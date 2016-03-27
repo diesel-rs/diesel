@@ -142,116 +142,62 @@ fn establish_real_connection<Conn>(
     })
 }
 
-
-// FIXME: Remove the duplicates of this function once expression level attributes
-// are stable (I believe this is in 1.7)
-#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 fn establish_connection(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
 ) -> Result<InferConnection, Box<MacResult>> {
-    establish_real_connection(cx, sp, database_url)
-}
-
-
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-fn establish_connection(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    database_url: &str,
-) -> Result<InferConnection, Box<MacResult>> {
-    establish_real_connection(cx, sp, database_url)
-}
-
-#[cfg(all(feature = "sqlite", feature = "postgres"))]
-fn establish_connection(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    database_url: &str,
-) -> Result<InferConnection, Box<MacResult>> {
-    if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") {
-        establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Pg(c))
-    } else {
-        establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Sqlite(c))
+    match database_url {
+        #[cfg(feature = "postgres")]
+        _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") => {
+            establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Pg(c))
+        }
+        #[cfg(feature = "sqlite")]
+        _ => establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Sqlite(c)),
+        #[cfg(not(feature = "sqlite"))]
+        _ => {
+            let error_message = format!(
+                "{} is not a valid PG database URL. \
+                It must start with postgres:// or postgresql://",
+                database_url,
+            );
+            cx.span_err(sp, &error_message);
+            Err(DummyResult::any(sp))
+        }
     }
 }
 
-
-#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 fn get_table_data(conn: &InferConnection, table_name: &str)
     -> QueryResult<Vec<ColumnInformation>>
 {
-    sqlite::get_table_data(conn, table_name)
-}
-
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-fn get_table_data(conn: &InferConnection, table_name: &str)
-    -> QueryResult<Vec<ColumnInformation>>
-{
-    pg::get_table_data(conn, table_name)
-}
-
-#[cfg(all(feature = "postgres", feature = "sqlite"))]
-fn get_table_data(conn: &InferConnection, table_name: &str)
-    -> QueryResult<Vec<ColumnInformation>>
-{
-    match *conn{
+    match *conn {
+        #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => sqlite::get_table_data(c, table_name),
+        #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => pg::get_table_data(c, table_name),
     }
 }
 
-#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
-fn load_table_names(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error> {
-    sqlite::load_table_names(cx, sp, connection)
-}
-
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-fn load_table_names(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error> {
-    pg::load_table_names(cx, sp, connection)
-}
-
-#[cfg(all(feature = "sqlite", feature = "postgres"))]
 fn load_table_names(
     cx: &mut ExtCtxt,
     sp: Span,
     connection: &InferConnection,
 ) -> Result<Vec<String>, ::diesel::result::Error> {
     match *connection {
+        #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => sqlite::load_table_names(cx, sp, c),
+        #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => pg::load_table_names(cx, sp, c),
     }
 }
 
-#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
-fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, _conn: &InferConnection)
-    -> P<ast::Ty>
-{
-    sqlite::determine_column_type(cx, attr)
-}
-
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, _conn: &InferConnection)
-    -> P<ast::Ty>
-{
-    pg::determine_column_type(cx, attr)
-}
-
-#[cfg(all(feature = "sqlite", feature = "postgres"))]
 fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
     -> P<ast::Ty>
 {
     match *conn {
+        #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, attr),
+        #[cfg(feature = "postgres")]
         InferConnection::Pg(_) => pg::determine_column_type(cx, attr),
     }
 }
