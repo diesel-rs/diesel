@@ -5,6 +5,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* `infer_schema!` is now supported for use with SQLite3.
+
 ## [0.5.4] 2016-03-23
 
 * Updated `diesel_codegen` to allow syntex versions up to 0.30.0.
