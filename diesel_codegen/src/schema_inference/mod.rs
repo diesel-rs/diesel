@@ -18,8 +18,7 @@ pub fn expand_load_table<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
-) -> Box<MacResult + 'cx>
-{
+) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(ref exprs) if exprs.is_empty() => {
             cx.span_err(sp, "load_table_from_schema! takes 2 arguments");
@@ -39,8 +38,7 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
     cx: &mut ExtCtxt,
     sp: Span,
     exprs: &mut T,
-) -> Result<Box<MacResult>, Box<MacResult>>
-{
+) -> Result<Box<MacResult>, Box<MacResult>> {
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let table_name = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
@@ -52,8 +50,7 @@ pub fn expand_infer_schema<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
     tts: &[ast::TokenTree]
-) -> Box<MacResult + 'cx>
-{
+) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
         None => return DummyResult::any(sp),
@@ -69,8 +66,7 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     cx: &mut ExtCtxt,
     sp: Span,
     exprs: &mut T,
-) -> Result<Box<MacResult>, Box<MacResult>>
-{
+) -> Result<Box<MacResult>, Box<MacResult>> {
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
     let table_names = load_table_names(cx, sp, &connection).unwrap();
@@ -80,15 +76,12 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     Ok(MacEager::items(SmallVector::many(try!(impls))))
 }
 
-
-
 fn table_macro_call(
     cx: &mut ExtCtxt,
     sp: Span,
     connection: &InferConnection,
     table_name: &str,
-) -> Result<P<ast::Item>, Box<MacResult>>
-{
+) -> Result<P<ast::Item>, Box<MacResult>> {
     match get_table_data(connection, table_name) {
         Err(::diesel::result::Error::NotFound) => {
             cx.span_err(sp, &format!("no table exists named {}", table_name));
@@ -116,14 +109,12 @@ fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
     cx: &mut ExtCtxt,
     sp: Span,
     exprs: &mut T,
-) -> Result<InternedString, Box<MacResult>>
-{
+) -> Result<InternedString, Box<MacResult>> {
     match expr_to_string(cx, exprs.next().unwrap(), "expected string literal") {
         Some((s, _)) => Ok(s),
         None => Err(DummyResult::any(sp)),
     }
 }
-
 
 fn column_def_tokens(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
     -> Vec<ast::TokenTree>
@@ -137,8 +128,8 @@ fn establish_real_connection<Conn>(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
-) -> Result<Conn, Box<MacResult>>
-    where Conn: Connection
+) -> Result<Conn, Box<MacResult>> where
+    Conn: Connection,
 {
     Conn::establish(database_url).map_err(|_| {
         cx.span_err(sp, "failed to establish a database connection");
@@ -154,8 +145,7 @@ fn establish_connection(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
-) -> Result<InferConnection, Box<MacResult>>
-{
+) -> Result<InferConnection, Box<MacResult>> {
     establish_real_connection(cx, sp, database_url)
 }
 
@@ -165,8 +155,7 @@ fn establish_connection(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
-) -> Result<InferConnection, Box<MacResult>>
-{
+) -> Result<InferConnection, Box<MacResult>> {
     establish_real_connection(cx, sp, database_url)
 }
 
@@ -175,8 +164,7 @@ fn establish_connection(
     cx: &mut ExtCtxt,
     sp: Span,
     database_url: &str,
-) -> Result<InferConnection, Box<MacResult>>
-{
+) -> Result<InferConnection, Box<MacResult>> {
     if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") {
         establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Pg(c))
     } else {
@@ -186,25 +174,26 @@ fn establish_connection(
 
 
 #[cfg(all(feature = "sqlite", not(feature = "postgres")))]
-fn get_table_data(conn: &InferConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>>
+fn get_table_data(conn: &InferConnection, table_name: &str)
+    -> QueryResult<Vec<ColumnInformation>>
 {
     sqlite::get_table_data(conn, table_name)
 }
 
 #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-fn get_table_data(conn: &InferConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>>
+fn get_table_data(conn: &InferConnection, table_name: &str)
+    -> QueryResult<Vec<ColumnInformation>>
 {
     pg::get_table_data(conn, table_name)
 }
 
 #[cfg(all(feature = "postgres", feature = "sqlite"))]
-fn get_table_data(conn: &InferConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>>
+fn get_table_data(conn: &InferConnection, table_name: &str)
+    -> QueryResult<Vec<ColumnInformation>>
 {
     match *conn{
-        InferConnection::Sqlite(ref c) =>
-                sqlite::get_table_data(c, table_name),
-        InferConnection::Pg(ref c) =>
-                pg::get_table_data(c, table_name),
+        InferConnection::Sqlite(ref c) => sqlite::get_table_data(c, table_name),
+        InferConnection::Pg(ref c) => pg::get_table_data(c, table_name),
     }
 }
 
@@ -213,8 +202,7 @@ fn load_table_names(
     cx: &mut ExtCtxt,
     sp: Span,
     connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error>
-{
+) -> Result<Vec<String>, ::diesel::result::Error> {
     sqlite::load_table_names(cx, sp, connection)
 }
 
@@ -223,8 +211,7 @@ fn load_table_names(
     cx: &mut ExtCtxt,
     sp: Span,
     connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error>
-{
+) -> Result<Vec<String>, ::diesel::result::Error> {
     pg::load_table_names(cx, sp, connection)
 }
 
@@ -233,13 +220,10 @@ fn load_table_names(
     cx: &mut ExtCtxt,
     sp: Span,
     connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error>
-{
-    match *connection{
-        InferConnection::Sqlite(ref c) =>
-            sqlite::load_table_names(cx, sp, c),
-        InferConnection::Pg(ref c) =>
-                pg::load_table_names(cx, sp, c),
+) -> Result<Vec<String>, ::diesel::result::Error> {
+    match *connection {
+        InferConnection::Sqlite(ref c) => sqlite::load_table_names(cx, sp, c),
+        InferConnection::Pg(ref c) => pg::load_table_names(cx, sp, c),
     }
 }
 
@@ -261,7 +245,7 @@ fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, _conn: &Inf
 fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
     -> P<ast::Ty>
 {
-    match *conn{
+    match *conn {
         InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, attr),
         InferConnection::Pg(_) => pg::determine_column_type(cx, attr),
     }

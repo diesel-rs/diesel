@@ -8,8 +8,6 @@ use syntax::parse::token::str_to_ident;
 
 use super::data_structures::*;
 
-
-
 table! {
     pg_attribute (attrelid) {
         attrelid -> Oid,

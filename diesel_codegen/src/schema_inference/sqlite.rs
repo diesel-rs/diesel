@@ -18,9 +18,8 @@ table!{
     }
 }
 
-
-
-pub fn get_table_data(conn: &SqliteConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>>
+pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
+    -> QueryResult<Vec<ColumnInformation>>
 {
     conn.execute_pragma::<pragma_table_info::SqlType, ColumnInformation>(
         &format!("PRAGMA TABLE_INFO('{}')", table_name))
@@ -55,8 +54,7 @@ pub fn load_table_names(
     _cx: &mut ExtCtxt,
     _sp: Span,
     connection: &SqliteConnection,
-) -> Result<Vec<String>, result::Error>
-{
+) -> Result<Vec<String>, result::Error> {
     use diesel::prelude::*;
     use diesel::expression::dsl::sql;
 

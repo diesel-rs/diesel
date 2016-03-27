@@ -134,9 +134,9 @@ impl SqliteConnection {
     }
 
     #[doc(hidden)]
-    pub fn execute_pragma<ST, U>(&self, source: &str) -> QueryResult<Vec<U>>
-        where U: Queryable<ST, Sqlite>,
-              <SqliteConnection as Connection>::Backend: HasSqlType<ST>
+    pub fn execute_pragma<ST, U>(&self, source: &str) -> QueryResult<Vec<U>> where
+        U: Queryable<ST, Sqlite>,
+        <SqliteConnection as Connection>::Backend: HasSqlType<ST>,
     {
         Statement::prepare(&self.raw_connection, source)
             .map(StatementIterator::new)
