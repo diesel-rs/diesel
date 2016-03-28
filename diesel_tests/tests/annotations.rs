@@ -116,3 +116,15 @@ mod associations_can_have_nullable_foreign_keys {
         foo_id: Option<i32>,
     }
 }
+
+// This module has no test functions, as it's only to test compilation.
+mod multiple_lifetimes_in_insertable_struct_definition {
+    #![allow(dead_code)]
+    use schema::posts;
+
+    #[insertable_into(posts)]
+    pub struct MyPost<'a> {
+        title: &'a str,
+        body: &'a str,
+    }
+}

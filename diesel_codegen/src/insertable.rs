@@ -74,7 +74,7 @@ fn insertable_impl(
     let values_expr = values_expr(cx, span, table_mod, &fields);
 
     quote_item!(cx,
-        impl<'a: 'insert, 'insert, DB> ::diesel::persistable::Insertable<$table_mod::table, DB>
+        impl<'a, 'insert: 'a, DB> ::diesel::persistable::Insertable<$table_mod::table, DB>
             for &'insert $ty where
                 DB: ::diesel::backend::Backend,
                 $values_ty: ::diesel::persistable::InsertValues<DB>,
