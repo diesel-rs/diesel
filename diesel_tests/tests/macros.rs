@@ -5,7 +5,7 @@
 #![cfg(feature = "postgres")]
 use schema::*;
 use diesel::*;
-use diesel::types::VarChar;
+use diesel::types::{VarChar, BigInt};
 
 sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
 
@@ -24,4 +24,16 @@ fn test_sql_function() {
         .load(&connection).unwrap());
     assert_eq!(vec![tess], users.filter(my_lower(name).eq("tess"))
         .load(&connection).unwrap());
+}
+
+sql_function!(setval, setval_t, (x: VarChar, y: BigInt));
+sql_function!(currval, currval_t, (x: VarChar) -> BigInt);
+
+#[test]
+fn sql_function_without_return_type() {
+    let connection = connection();
+    select(setval("users_id_seq", 54)).execute(&connection).unwrap();
+
+    let seq_val = select(currval("users_id_seq")).get_result::<i64>(&connection);
+    assert_eq!(Ok(54), seq_val);
 }
