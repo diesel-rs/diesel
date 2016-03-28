@@ -54,6 +54,11 @@ macro_rules! column {
 /// additional set of columns which exist, but should not be selected by default
 /// (for example, for things like full text search)
 ///
+/// By default this allows a maximum of 16 columns per table, in order to reduce
+/// compilation time. You can increase this limit to 26 by enabling the
+/// `large-tables` feature, or up to 52 by enabling the `huge-tables` feature.
+/// Enabling `huge-tables` will *substantially* increase compile times.
+///
 /// Example usage
 /// -------------
 ///

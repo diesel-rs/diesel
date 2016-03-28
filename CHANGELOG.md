@@ -9,6 +9,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `infer_schema!` is now supported for use with SQLite3.
 
+* The maximum table size can be increased to 52 by enabling the `huge-tables`
+  feature. This feature will substantially increase compile times.
+
 ### Changed
 
 * `diesel::result::Error` now implements `Send` and `Sync`. This required a
