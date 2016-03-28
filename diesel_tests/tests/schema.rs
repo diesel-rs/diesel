@@ -154,18 +154,19 @@ pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
-    use diesel::expression::dsl::sql;
     let connection = connection();
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
-    // Ensure the primary key will try to set a value greater than 2.
-    // FIXME: This should be in a descriptively named function, but a rustc bug on 2016-03-11
-    // prevents me from doing that. It should be fixed on the latest nightly
-    if cfg!(feature = "postgres") {
-        select(nextval("users_id_seq")).execute(&connection).unwrap();
-        select(nextval("users_id_seq")).execute(&connection).unwrap();
-    }
+    ensure_primary_key_seq_greater_than(2, &connection);
     connection
+}
+
+fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
+    if cfg!(feature = "postgres") {
+        for _ in 0..x {
+            select(nextval("users_id_seq")).execute(connection).unwrap();
+        }
+    }
 }
 
 pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
