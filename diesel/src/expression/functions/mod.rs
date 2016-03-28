@@ -101,7 +101,11 @@ macro_rules! sql_function {
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
     $docs: expr) => {
         sql_function_body!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, $docs);
-    }
+    };
+
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
+        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
+    };
 }
 
 #[macro_export]
