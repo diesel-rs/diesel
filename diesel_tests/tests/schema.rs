@@ -110,7 +110,7 @@ pub fn connection() -> TestConnection {
 pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    ::diesel::pg::PgConnection::establish(&connection_url).unwrap();
+    ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
