@@ -103,9 +103,6 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
-    if cfg!(feature = "postgres") {
-        result.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
-    }
     result
 }
 
@@ -113,8 +110,7 @@ pub fn connection() -> TestConnection {
 pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    let connection = ::diesel::pg::PgConnection::establish(&connection_url).unwrap();
-    connection
+    ::diesel::pg::PgConnection::establish(&connection_url).unwrap();
 }
 
 #[cfg(feature = "sqlite")]
