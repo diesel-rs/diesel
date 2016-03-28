@@ -103,6 +103,9 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
     result.begin_test_transaction().unwrap();
+    if cfg!(feature = "postgres") {
+        result.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
+    }
     result
 }
 
@@ -110,7 +113,8 @@ pub fn connection() -> TestConnection {
 pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv!("DATABASE_URL",
         "DATABASE_URL must be set in order to run tests");
-    ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
+    let connection = ::diesel::pg::PgConnection::establish(&connection_url).unwrap();
+    connection
 }
 
 #[cfg(feature = "sqlite")]
@@ -151,10 +155,20 @@ pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: 
     records.len()
 }
 
+sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
+
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
+    use diesel::expression::dsl::sql;
     let connection = connection();
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
+    // Ensure the primary key will try to set a value greater than 2.
+    // FIXME: This should be in a descriptively named function, but a rustc bug on 2016-03-11
+    // prevents me from doing that. It should be fixed on the latest nightly
+    if cfg!(feature = "postgres") {
+        select(nextval("users_id_seq")).execute(&connection).unwrap();
+        select(nextval("users_id_seq")).execute(&connection).unwrap();
+    }
     connection
 }
 
