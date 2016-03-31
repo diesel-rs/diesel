@@ -18,6 +18,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   change in the return type of `ToSql` and `FromSql` to have those bounds as
   well.
 
+### Fixed
+
+* `#[insertable_into]` can now be used with structs that have lifetimes with
+  names other than `'a'`.
+
 ## [0.5.4] 2016-03-23
 
 * Updated `diesel_codegen` to allow syntex versions up to 0.30.0.

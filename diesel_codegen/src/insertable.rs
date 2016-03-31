@@ -9,7 +9,7 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
-use syntax::parse::token::{InternedString, str_to_ident};
+use syntax::parse::token::{InternedString, str_to_ident, intern};
 
 use attr::Attr;
 use util::{struct_ty, is_option_ty};
@@ -60,7 +60,7 @@ fn insertable_impl(
     table: InternedString,
     item: &Item,
 ) -> Option<P<ast::Item>> {
-    let (generics, fields) = match Attr::from_item(cx, item) {
+    let (mut generics, fields) = match Attr::from_item(cx, item) {
         Some(vals) => vals,
         None => {
             cx.span_err(item.span,
@@ -68,13 +68,26 @@ fn insertable_impl(
             return None;
         }
     };
+
+    if !generics.ty_params.is_empty() {
+        cx.span_err(item.span, "#[insertable_into] does not support generic types");
+        return None;
+    }
+
     let ty = struct_ty(cx, span, item.ident, &generics);
     let table_mod = str_to_ident(&table);
     let values_ty = values_ty(cx, span, table_mod, &fields);
     let values_expr = values_expr(cx, span, table_mod, &fields);
 
+    let lifetimes = generics.lifetimes.iter().map(|ld| ld.lifetime).collect();
+    let insert_lifetime = cx.lifetime_def(span, intern("'insert"), lifetimes);
+    generics.lifetimes.push(insert_lifetime);
+    generics.ty_params = P::from_vec(vec![
+        cx.typaram(span, str_to_ident("DB"), P::empty(), None),
+    ]);
+
     quote_item!(cx,
-        impl<'a, 'insert: 'a, DB> ::diesel::persistable::Insertable<$table_mod::table, DB>
+        impl$generics ::diesel::persistable::Insertable<$table_mod::table, DB>
             for &'insert $ty where
                 DB: ::diesel::backend::Backend,
                 $values_ty: ::diesel::persistable::InsertValues<DB>,

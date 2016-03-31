@@ -128,3 +128,15 @@ mod multiple_lifetimes_in_insertable_struct_definition {
         body: &'a str,
     }
 }
+
+mod lifetimes_with_names_other_than_a {
+    #![allow(dead_code)]
+    use schema::posts;
+
+    #[insertable_into(posts)]
+    pub struct MyPost<'a, 'b> {
+        id: i32,
+        title: &'b str,
+        body: &'a str,
+    }
+}
