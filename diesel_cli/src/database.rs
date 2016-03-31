@@ -163,7 +163,7 @@ pub fn backend(database_url: &String) -> &str {
 fn split_pg_connection_string(database_url: &String) -> (String, String) {
     let mut split: Vec<&str> = database_url.split("/").collect();
     let database = split.pop().unwrap();
-    let postgres_url = split.join("/");
+    let postgres_url = format!("{}/{}", split.join("/"), "postgres");
     (database.to_owned(), postgres_url)
 }
 
@@ -179,8 +179,18 @@ mod tests {
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
         let database = "database".to_owned();
-        let postgres_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{}/{}", postgres_url, database);
+        let base_url = "postgresql://localhost:5432".to_owned();
+        let database_url = format!("{}/{}", base_url, database);
+        let postgres_url = format!("{}/{}", base_url, "postgres");
+        assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
+    }
+
+    #[test]
+    fn split_pg_connection_string_handles_user_and_password() {
+        let database = "database".to_owned();
+        let base_url = "postgresql://user:password@localhost:5432".to_owned();
+        let database_url = format!("{}/{}", base_url, database);
+        let postgres_url = format!("{}/{}", base_url, "postgres");
         assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
     }
 }

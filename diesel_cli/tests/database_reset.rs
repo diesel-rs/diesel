@@ -43,3 +43,22 @@ fn reset_runs_database_setup() {
     assert!(db.table_exists("users"));
     assert!(db.table_exists("__diesel_schema_migrations"));
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn reset_handles_postgres_urls_with_username_and_password() {
+    let p = project("handles_postgres_urls")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url()).create();
+
+    db.execute("DROP ROLE IF EXISTS foo");
+    db.execute("CREATE ROLE foo WITH LOGIN SUPERUSER PASSWORD 'password'");
+
+    let result = p.command("database")
+        .arg("reset")
+        .env("DATABASE_URL", &format!("postgres://foo:password@localhost/{}", p.name))
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());
+}

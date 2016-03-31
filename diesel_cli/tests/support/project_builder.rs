@@ -45,7 +45,7 @@ impl ProjectBuilder {
 
 pub struct Project {
     directory: TempDir,
-    name: String,
+    pub name: String,
 }
 
 impl Project {
