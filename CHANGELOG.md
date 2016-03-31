@@ -18,6 +18,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   change in the return type of `ToSql` and `FromSql` to have those bounds as
   well.
 
+* It is no longer possible to pass an owned value to `diesel::insert`. `insert`
+  will now give a more helpful error message when you accidentally try to pass
+  an owned value instead of a reference.
+
 ### Fixed
 
 * `#[insertable_into]` can now be used with structs that have lifetimes with
