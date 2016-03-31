@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
+use expression::SelectableExpression;
 use query_builder::*;
+use query_dsl::*;
 use query_source::QuerySource;
 use types::HasSqlType;
 
@@ -58,5 +60,24 @@ impl<ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<ST, QS, DB> where
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
         Ok(())
+    }
+}
+
+impl<ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
+    for BoxedSelectStatement<ST, QS, DB> where
+        DB: Backend + HasSqlType<Type>,
+        Selection: SelectableExpression<QS, Type> + QueryFragment<DB> + 'static,
+{
+    type Output = BoxedSelectStatement<Type, QS, DB>;
+
+    fn select(self, selection: Selection) -> Self::Output {
+        BoxedSelectStatement::new(
+            Box::new(selection),
+            self.from,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+        )
     }
 }

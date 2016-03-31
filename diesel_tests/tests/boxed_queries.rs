@@ -62,3 +62,11 @@ fn boxed_queries_can_differ_conditionally() {
     let expected_data = vec![sean.clone()];
     assert_eq!(Ok(expected_data), one);
 }
+
+#[test]
+fn boxed_queries_implement_select_dsl() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let data = users::table.into_boxed().select(users::name)
+        .load::<String>(&connection);
+    assert_eq!(Ok(vec!["Sean".into(), "Tess".into()]), data);
+}
