@@ -130,7 +130,7 @@ Field annotations
 Any field can be annotated with `column_name=` to have it map to a column with a
 different name. This is required for all fields of tuple structs.
 
-Macros (Experimental)
+Macros
 ---------------------
 
 ### `infer_schema!("database_url")`
