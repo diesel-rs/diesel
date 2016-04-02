@@ -127,7 +127,7 @@ impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
 /// functions. Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
-pub trait NonAggregate: Expression {
+pub trait NonAggregate {
 }
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
