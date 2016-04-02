@@ -74,7 +74,8 @@ macro_rules! column {
 /// # fn main() {}
 /// ```
 ///
-/// More complex usage:
+/// You may also specify a primary key if it's called something other than `id`.
+/// Tables with no primary key, or composite primary keys aren't yet supported.
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -83,8 +84,6 @@ macro_rules! column {
 ///         non_standard_primary_key -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
-///     } no select {
-///         complex_index_column -> Text,
 ///     }
 /// }
 /// # fn main() {}
@@ -103,8 +102,7 @@ macro_rules! column {
 /// all_columns
 /// -----------
 ///
-/// A constant will be assigned called `all_columns`, which will be a tuple of
-/// all the columns that aren't in the "no select" group. This is what will be
+/// A constant will be assigned called `all_columns`. This is what will be
 /// selected if you don't otherwise specify a select clause. It's type will be
 /// `table::AllColumns`. You can also get this value from the
 /// `Table::all_columns` function.
@@ -136,42 +134,12 @@ macro_rules! table {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
-        table! {
-            $name ($pk) {
-                $($column_name -> $Type,)+
-            } no select {}
-        }
-    };
-    (
-        $name:ident {
-            $($column_name:ident -> $Type:ty,)+
-        } no select {
-            $($no_select_column_name:ident -> $no_select_type:ty,)*
-        }
-    ) => {
-        table! {
-            $name (id) {
-                $($column_name -> $Type,)+
-            } no select {
-                $($no_select_column_name -> $no_select_type,)*
-            }
-        }
-    };
-    (
-        $name:ident ($pk:ident) {
-            $($column_name:ident -> $Type:ty,)+
-        } no select {
-            $($no_select_column_name:ident -> $no_select_type:ty,)*
-        }
-    ) => {
         table_body! {
             $name ($pk) {
                 $($column_name -> $Type,)+
-            } no select {
-                $($no_select_column_name -> $no_select_type,)*
             }
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -180,8 +148,6 @@ macro_rules! table_body {
     (
         $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
-        } no select {
-            $($no_select_column_name:ident -> $no_select_type:ty,)*
         }
     ) => {
         pub mod $name {
@@ -275,7 +241,6 @@ macro_rules! table_body {
                 impl SelectableExpression<table> for star {}
 
                 $(column!(table, $column_name -> $Type);)+
-                $(column!(table, $no_select_column_name -> $no_select_type);)*
             }
         }
     }

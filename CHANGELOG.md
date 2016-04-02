@@ -27,6 +27,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[insertable_into]` can now be used with structs that have lifetimes with
   names other than `'a'`.
 
+### Removed
+
+* Removed the `no select` option for the `table!` macro. This was a niche
+  feature that didn't fit with Diesel's philosophies. You can write a function
+  that calls `select` for you if you need this functionality.
+
 ## [0.5.4] 2016-03-23
 
 * Updated `diesel_codegen` to allow syntex versions up to 0.30.0.
