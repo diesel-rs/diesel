@@ -8,6 +8,7 @@ use query_builder::order_clause::*;
 use query_builder::where_clause::*;
 use query_builder::{Query, QueryFragment, SelectStatement};
 use query_dsl::*;
+use query_dsl::boxed_dsl::InternalBoxedDsl;
 use super::BoxedSelectStatement;
 use types::{self, Bool};
 
@@ -109,7 +110,7 @@ for SelectStatement<ST, S, F, W, O, L, Of, G> where
     }
 }
 
-impl<ST, S, F, W, O, L, Of, G, DB> BoxedDsl<DB>
+impl<ST, S, F, W, O, L, Of, G, DB> InternalBoxedDsl<DB>
 for SelectStatement<ST, S, F, W, O, L, Of, G> where
     DB: Backend,
     S: QueryFragment<DB> + 'static,
@@ -120,7 +121,7 @@ for SelectStatement<ST, S, F, W, O, L, Of, G> where
 {
     type Output = BoxedSelectStatement<ST, F, DB>;
 
-    fn into_boxed(self) -> Self::Output {
+    fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
             Box::new(self.select),
             self.from,

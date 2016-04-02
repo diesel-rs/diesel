@@ -1,6 +1,5 @@
 use super::schema::*;
 use diesel::*;
-use diesel::query_builder::BoxedSelectStatement;
 
 #[test]
 fn boxed_queries_can_be_executed() {
@@ -28,9 +27,7 @@ fn boxed_queries_can_differ_conditionally() {
         .execute(&connection).unwrap();
 
     enum Query { All, Ordered, One };
-    fn source(query: Query)
-        -> BoxedSelectStatement<users::SqlType, users::table, TestBackend>
-    {
+    let source = |query| {
         match query {
             Query::All => users::table.into_boxed(),
             Query::Ordered =>
@@ -45,7 +42,7 @@ fn boxed_queries_can_differ_conditionally() {
                     .offset(1)
                     .into_boxed(),
         }
-    }
+    };
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
     let jim = find_user_by_name("Jim", &connection);

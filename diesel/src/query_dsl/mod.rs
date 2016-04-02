@@ -1,5 +1,6 @@
 mod belonging_to_dsl;
-mod boxed_dsl;
+#[doc(hidden)]
+pub mod boxed_dsl;
 mod count_dsl;
 mod group_by_dsl;
 #[doc(hidden)]

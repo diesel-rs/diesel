@@ -2,20 +2,31 @@ use backend::Backend;
 use query_builder::AsQuery;
 use query_source::QuerySource;
 
-pub trait BoxedDsl<DB: Backend> {
+pub trait InternalBoxedDsl<DB: Backend> {
     type Output;
 
-    fn into_boxed(self) -> Self::Output;
+    fn internal_into_boxed(self) -> Self::Output;
 }
 
-impl<T, DB> BoxedDsl<DB> for T where
+impl<T, DB> InternalBoxedDsl<DB> for T where
     DB: Backend,
     T: QuerySource + AsQuery,
-    T::Query: BoxedDsl<DB>,
+    T::Query: InternalBoxedDsl<DB>,
 {
-    type Output = <T::Query as BoxedDsl<DB>>::Output;
+    type Output = <T::Query as InternalBoxedDsl<DB>>::Output;
 
-    fn into_boxed(self) -> Self::Output {
-        self.as_query().into_boxed()
+    fn internal_into_boxed(self) -> Self::Output {
+        self.as_query().internal_into_boxed()
     }
 }
+
+pub trait BoxedDsl: Sized {
+    fn into_boxed<DB>(self) -> Self::Output where
+        DB: Backend,
+        Self: InternalBoxedDsl<DB>,
+    {
+        self.internal_into_boxed()
+    }
+}
+
+impl<T: AsQuery> BoxedDsl for T {}
