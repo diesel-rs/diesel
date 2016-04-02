@@ -14,7 +14,7 @@ before_script:
   - psql -c 'create database diesel_schema;' -U postgres
 script:
 - |
-  (cd diesel && travis-cargo doc -- --features "postgres sqlite" && echo "docs.diesel.rs" > target/doc/CNAME) &&
+  (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono" && echo "docs.diesel.rs" > target/doc/CNAME) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel && travis-cargo test -- --no-default-features --features "unstable chrono $BACKEND")
   else
