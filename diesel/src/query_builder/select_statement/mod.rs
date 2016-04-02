@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::*;
 use query_source::*;
+use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
@@ -21,6 +22,7 @@ pub struct SelectStatement<
     SqlType,
     Select,
     From,
+    Distinct = NoDistinctClause,
     Where = NoWhereClause,
     Order = NoOrderClause,
     Limit = NoLimitClause,
@@ -29,6 +31,7 @@ pub struct SelectStatement<
 > {
     select: Select,
     from: From,
+    distinct: Distinct,
     where_clause: Where,
     order: Order,
     limit: Limit,
@@ -37,10 +40,11 @@ pub struct SelectStatement<
     _marker: PhantomData<SqlType>,
 }
 
-impl<ST, S, F, W, O, L, Of, G> SelectStatement<ST, S, F, W, O, L, Of, G> {
+impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
     pub fn new(
         select: S,
         from: F,
+        distinct: D,
         where_clause: W,
         order: O,
         limit: L,
@@ -50,6 +54,7 @@ impl<ST, S, F, W, O, L, Of, G> SelectStatement<ST, S, F, W, O, L, Of, G> {
         SelectStatement {
             select: select,
             from: from,
+            distinct: distinct,
             where_clause: where_clause,
             order: order,
             limit: limit,
@@ -60,21 +65,37 @@ impl<ST, S, F, W, O, L, Of, G> SelectStatement<ST, S, F, W, O, L, Of, G> {
     }
 
     pub fn inner_join<T>(self, other: T)
-        -> SelectStatement<ST, S, InnerJoinSource<F, T>, W, O, L, Of, G> where
+        -> SelectStatement<ST, S, InnerJoinSource<F, T>, D, W, O, L, Of, G> where
             T: Table,
             F: Table + JoinTo<T, joins::Inner>,
     {
-        SelectStatement::new(self.select, self.from.inner_join(other),
-            self.where_clause, self.order, self.limit, self.offset, self.group_by)
+        SelectStatement::new(
+            self.select,
+            self.from.inner_join(other),
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+        )
     }
 
     pub fn left_outer_join<T>(self, other: T)
-        -> SelectStatement<ST, S, LeftOuterJoinSource<F, T>, W, O, L, Of, G> where
+        -> SelectStatement<ST, S, LeftOuterJoinSource<F, T>, D, W, O, L, Of, G> where
             T: Table,
             F: Table + JoinTo<T, joins::LeftOuter>,
     {
-        SelectStatement::new(self.select, self.from.left_outer_join(other),
-            self.where_clause, self.order, self.limit, self.offset, self.group_by)
+        SelectStatement::new(
+            self.select,
+            self.from.left_outer_join(other),
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+        )
     }
 }
 
@@ -83,6 +104,7 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
         SelectStatement::new(
             select,
             from,
+            NoDistinctClause,
             NoWhereClause,
             NoOrderClause,
             NoLimitClause,
@@ -92,39 +114,45 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
     }
 }
 
-impl<ST, S, F, W, O, L, Of, G> Query for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    S: SelectableExpression<F, ST>,
+impl<ST, S, F, D, W, O, L, Of, G> Query
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F, ST>,
 {
     type SqlType = ST;
 }
 
 #[cfg(feature = "postgres")]
-impl<ST, S, F, W, O, L, Of, G> Expression for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    S: SelectableExpression<F, ST>,
+impl<ST, S, F, D, W, O, L, Of, G> Expression
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F, ST>,
 {
     type SqlType = ::types::Array<ST>;
 }
 
 #[cfg(not(feature = "postgres"))]
-impl<ST, S, F, W, O, L, Of, G> Expression for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    S: SelectableExpression<F, ST>,
+impl<ST, S, F, D, W, O, L, Of, G> Expression
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F, ST>,
 {
     type SqlType = ST;
 }
 
-impl<ST, S, F, W, O, L, Of, DB, G> QueryFragment<DB> for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    DB: Backend,
-    S: QueryFragment<DB>,
-    F: QuerySource,
-    F::FromClause: QueryFragment<DB>,
-    W: QueryFragment<DB>,
-    O: QueryFragment<DB>,
-    L: QueryFragment<DB>,
-    Of: QueryFragment<DB>,
-    G: QueryFragment<DB>,
+impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        DB: Backend,
+        S: QueryFragment<DB>,
+        F: QuerySource,
+        F::FromClause: QueryFragment<DB>,
+        D: QueryFragment<DB>,
+        W: QueryFragment<DB>,
+        O: QueryFragment<DB>,
+        L: QueryFragment<DB>,
+        Of: QueryFragment<DB>,
+        G: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("SELECT ");
+        try!(self.distinct.to_sql(out));
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
         try!(self.from.from_clause().to_sql(out));
@@ -137,17 +165,20 @@ impl<ST, S, F, W, O, L, Of, DB, G> QueryFragment<DB> for SelectStatement<ST, S, 
     }
 }
 
-impl<ST, S, W, O, L, Of, DB, G> QueryFragment<DB> for SelectStatement<ST, S, (), W, O, L, Of, G> where
-    DB: Backend,
-    S: QueryFragment<DB>,
-    W: QueryFragment<DB>,
-    O: QueryFragment<DB>,
-    L: QueryFragment<DB>,
-    Of: QueryFragment<DB>,
-    G: QueryFragment<DB>,
+impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
+    for SelectStatement<ST, S, (), D, W, O, L, Of, G> where
+        DB: Backend,
+        S: QueryFragment<DB>,
+        D: QueryFragment<DB>,
+        W: QueryFragment<DB>,
+        O: QueryFragment<DB>,
+        L: QueryFragment<DB>,
+        Of: QueryFragment<DB>,
+        G: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("SELECT ");
+        try!(self.distinct.to_sql(out));
         try!(self.select.to_sql(out));
         try!(self.where_clause.to_sql(out));
         try!(self.group_by.to_sql(out));
@@ -158,12 +189,14 @@ impl<ST, S, W, O, L, Of, DB, G> QueryFragment<DB> for SelectStatement<ST, S, (),
     }
 }
 
-impl<ST, S, F, W, O, L, Of, QS, G> SelectableExpression<QS> for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    SelectStatement<ST, S, F, W, O, L, Of, G>: Expression,
+impl<ST, S, F, D, W, O, L, Of, G, QS> SelectableExpression<QS>
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: Expression,
 {
 }
 
-impl<ST, S, F, W, O, L, Of, G> NonAggregate for SelectStatement<ST, S, F, W, O, L, Of, G> where
-    SelectStatement<ST, S, F, W, O, L, Of, G>: Expression,
+impl<ST, S, F, D, W, O, L, Of, G> NonAggregate
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: Expression,
 {
 }

@@ -56,6 +56,7 @@ fn establish_connection() -> diesel::sqlite::SqliteConnection {
     connection
 }
 
+#[derive(Clone)]
 struct NewUser {
     name: String,
 }

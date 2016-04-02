@@ -12,6 +12,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The maximum table size can be increased to 52 by enabling the `huge-tables`
   feature. This feature will substantially increase compile times.
 
+* The `DISTINCT` keyword can now be added to queries via the `distinct()`
+  method.
+
 ### Changed
 
 * `diesel::result::Error` now implements `Send` and `Sync`. This required a

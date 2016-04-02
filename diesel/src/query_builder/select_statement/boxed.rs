@@ -10,6 +10,7 @@ use types::{HasSqlType, Bool};
 pub struct BoxedSelectStatement<ST, QS, DB> {
     select: Box<QueryFragment<DB>>,
     from: QS,
+    distinct: Box<QueryFragment<DB>>,
     where_clause: Option<Box<QueryFragment<DB>>>,
     order: Box<QueryFragment<DB>>,
     limit: Box<QueryFragment<DB>>,
@@ -21,6 +22,7 @@ impl<ST, QS, DB> BoxedSelectStatement<ST, QS, DB> {
     pub fn new(
         select: Box<QueryFragment<DB>>,
         from: QS,
+        distinct: Box<QueryFragment<DB>>,
         where_clause: Option<Box<QueryFragment<DB>>>,
         order: Box<QueryFragment<DB>>,
         limit: Box<QueryFragment<DB>>,
@@ -29,6 +31,7 @@ impl<ST, QS, DB> BoxedSelectStatement<ST, QS, DB> {
         BoxedSelectStatement {
             select: select,
             from: from,
+            distinct: distinct,
             where_clause: where_clause,
             order: order,
             limit: limit,
@@ -52,6 +55,7 @@ impl<ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<ST, QS, DB> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("SELECT ");
+        try!(self.distinct.to_sql(out));
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
         try!(self.from.from_clause().to_sql(out));
@@ -82,6 +86,7 @@ impl<ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
         BoxedSelectStatement::new(
             Box::new(selection),
             self.from,
+            self.distinct,
             self.where_clause,
             self.order,
             self.limit,

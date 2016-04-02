@@ -8,6 +8,7 @@ pub mod functions;
 pub mod nodes;
 #[macro_use]
 mod clause_macro;
+mod distinct_clause;
 mod group_by_clause;
 mod limit_clause;
 mod offset_clause;

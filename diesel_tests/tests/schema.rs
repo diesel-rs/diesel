@@ -51,7 +51,7 @@ select_column_workaround!(comments -> users (id, post_id, text));
 
 join_through!(users -> posts -> comments);
 
-#[derive(Debug, PartialEq, Eq, Queryable)]
+#[derive(Debug, PartialEq, Eq, Queryable, Clone)]
 #[insertable_into(users)]
 #[changeset_for(users)]
 pub struct NewUser {
