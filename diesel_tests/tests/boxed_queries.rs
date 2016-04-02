@@ -67,3 +67,16 @@ fn boxed_queries_implement_select_dsl() {
         .load::<String>(&connection);
     assert_eq!(Ok(vec!["Sean".into(), "Tess".into()]), data);
 }
+
+#[test]
+fn boxed_queries_implement_filter_dsl() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    insert(&NewUser::new("Shane", None)).into(users::table)
+        .execute(&connection).unwrap();
+    let data = users::table.into_boxed()
+        .select(users::name)
+        .filter(users::name.ne("Sean"))
+        .filter(users::name.like("S%"))
+        .load(&connection);
+    assert_eq!(Ok(vec![String::from("Shane")]), data);
+}

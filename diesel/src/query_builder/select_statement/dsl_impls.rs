@@ -114,7 +114,7 @@ impl<ST, S, F, W, O, L, Of, G, DB> InternalBoxedDsl<DB>
 for SelectStatement<ST, S, F, W, O, L, Of, G> where
     DB: Backend,
     S: QueryFragment<DB> + 'static,
-    W: QueryFragment<DB> + 'static,
+    W: Into<Option<Box<QueryFragment<DB>>>>,
     O: QueryFragment<DB> + 'static,
     L: QueryFragment<DB> + 'static,
     Of: QueryFragment<DB> + 'static,
@@ -125,7 +125,7 @@ for SelectStatement<ST, S, F, W, O, L, Of, G> where
         BoxedSelectStatement::new(
             Box::new(self.select),
             self.from,
-            Box::new(self.where_clause),
+            self.where_clause.into(),
             Box::new(self.order),
             Box::new(self.limit),
             Box::new(self.offset),
