@@ -2,6 +2,7 @@
 //! interactions. [A getting started guide](https://github.com/sgrif/diesel#getting-started) can be
 //! found in the README.
 #![deny(warnings)]
+#![cfg_attr(feature = "unstable", feature(specialization))]
 pub mod backend;
 pub mod connection;
 #[macro_use]

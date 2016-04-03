@@ -377,6 +377,7 @@ fn third_party_crates_can_add_new_types() {
         }
     }
 
+    #[cfg(not(feature = "unstable"))]
     impl FromSqlRow<MyInt, Pg> for i32 {
         fn build_from_row<R: ::diesel::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
             FromSql::<MyInt, Pg>::from_sql(row.take())
