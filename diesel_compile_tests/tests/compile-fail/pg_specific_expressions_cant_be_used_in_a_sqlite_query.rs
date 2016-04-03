@@ -22,7 +22,7 @@ fn main() {
 
     users.select(id).filter(name.eq(any(Vec::<String>::new())))
         .load::<i32>(&connection);
-    //~^ ERROR type mismatch resolving `<diesel::sqlite::connection::SqliteConnection as diesel::connection::Connection>::Backend == diesel::pg::backend::Pg
+    //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     users.select(id).filter(name.is_not_distinct_from("Sean"))
         .load::<i32>(&connection);
     //~^ ERROR E0277
