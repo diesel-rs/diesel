@@ -92,15 +92,30 @@ fn table_macro_call(
             Err(DummyResult::any(sp))
         }
         Ok(data) => {
-            let tokens = data.iter().map(|a| column_def_tokens(cx, a, &connection))
-                .collect::<Vec<_>>();
-            let table_name = str_to_ident(table_name);
-            let item = quote_item!(cx, table! {
-                $table_name {
-                    $tokens
+            let primary_keys = match get_primary_keys(connection, table_name) {
+                Ok(keys) => keys,
+                Err(_) =>{
+                    cx.span_err(sp, "error loading schema");
+                    return Err(DummyResult::any(sp));
                 }
-            }).unwrap();
-            Ok(item)
+            };
+            if primary_keys.len() != 1 {
+                cx.span_err(sp,
+                    &format!("table {} has {} primary keys, only one is currently supported",
+                        table_name, primary_keys.len()));
+                Err(DummyResult::any(sp))
+            } else {
+                let tokens = data.iter().map(|a| column_def_tokens(cx, a, &connection))
+                    .collect::<Vec<_>>();
+                let table_name = str_to_ident(table_name);
+                let primary_key = str_to_ident(&primary_keys[0]);
+                let item = quote_item!(cx, table! {
+                    $table_name ($primary_key) {
+                        $tokens
+                    }
+                }).unwrap();
+                Ok(item)
+            }
         }
     }
 }
@@ -199,5 +214,14 @@ fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &Infe
         InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, attr),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(_) => pg::determine_column_type(cx, attr),
+    }
+}
+
+fn get_primary_keys(conn: &InferConnection, table_name: &str) -> QueryResult<Vec<String>> {
+    match *conn {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(ref c) => sqlite::get_primary_keys(c, table_name),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(ref c) => pg::get_primary_keys(c, table_name),
     }
 }

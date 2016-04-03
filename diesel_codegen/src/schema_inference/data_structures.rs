@@ -35,9 +35,9 @@ impl<ST> Queryable<ST, Pg> for ColumnInformation where
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
     Sqlite: HasSqlType<ST>,
-    (i32, String, String, bool, Option<String>, i32): FromSqlRow<ST, Sqlite>,
+    (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
 {
-    type Row = (i32, String, String, bool, Option<String>, i32);
+    type Row = (i32, String, String, bool, Option<String>, bool);
 
     fn build(row: Self::Row) -> Self {
         ColumnInformation {

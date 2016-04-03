@@ -31,6 +31,15 @@ select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, 
 select_column_workaround!(pg_type -> pg_attribute (oid, typname));
 
 table! {
+    pg_index (indrelid) {
+        indrelid -> Oid,
+        indexrelid -> Oid,
+        indkey -> Array<SmallInt>,
+        indisprimary -> Bool,
+    }
+}
+
+table! {
     pg_class (oid) {
         oid -> Oid,
         relname -> VarChar,
@@ -74,17 +83,32 @@ pub fn load_table_names(
 pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>> {
     use self::pg_attribute::dsl::*;
     use self::pg_type::dsl::{pg_type, typname};
-    let t_oid = try!(table_oid(conn, table_name));
+    use self::pg_class::dsl::*;
+
+    let table_oid = pg_class.select(oid).filter(relname.eq(table_name)).limit(1);
 
     pg_attribute.inner_join(pg_type)
         .select((attname, typname, attnotnull))
-        .filter(attrelid.eq(t_oid))
+        .filter(attrelid.eq_any(table_oid))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
         .load(conn)
 }
 
-fn table_oid(conn: &PgConnection, table_name: &str) -> QueryResult<u32> {
+
+pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<String>> {
+    use self::pg_attribute::dsl::*;
+    use self::pg_index::dsl::{pg_index, indisprimary, indexrelid, indrelid};
     use self::pg_class::dsl::*;
-    pg_class.select(oid).filter(relname.eq(table_name)).first(conn)
+
+    let table_oid = pg_class.select(oid).filter(relname.eq(table_name)).limit(1);
+
+    let pk_query = pg_index.select(indexrelid)
+        .filter(indrelid.eq_any(table_oid))
+        .filter(indisprimary.eq(true));
+
+    pg_attribute.select(attname)
+        .filter(attrelid.eq_any(pk_query))
+        .order(attnum)
+        .load(conn)
 }
