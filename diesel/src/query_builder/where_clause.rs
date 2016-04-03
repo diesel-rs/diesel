@@ -30,6 +30,12 @@ impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
     }
 }
 
+impl<DB: Backend> Into<Option<Box<QueryFragment<DB>>>> for NoWhereClause {
+    fn into(self) -> Option<Box<QueryFragment<DB>>> {
+        None
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
 
@@ -51,5 +57,14 @@ impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
 
     fn and(self, predicate: Predicate) -> Self::Output {
         WhereClause(self.0.and(predicate))
+    }
+}
+
+impl<DB, Predicate> Into<Option<Box<QueryFragment<DB>>>> for WhereClause<Predicate> where
+    DB: Backend,
+    Predicate: QueryFragment<DB> + 'static,
+{
+    fn into(self) -> Option<Box<QueryFragment<DB>>> {
+        Some(Box::new(self.0))
     }
 }

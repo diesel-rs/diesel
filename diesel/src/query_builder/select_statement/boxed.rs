@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
-use expression::SelectableExpression;
+use expression::{SelectableExpression, NonAggregate};
 use query_builder::*;
 use query_dsl::*;
 use query_source::QuerySource;
-use types::HasSqlType;
+use types::{HasSqlType, Bool};
 
 pub struct BoxedSelectStatement<ST, QS, DB> {
     select: Box<QueryFragment<DB>>,
     from: QS,
-    where_clause: Box<QueryFragment<DB>>,
+    where_clause: Option<Box<QueryFragment<DB>>>,
     order: Box<QueryFragment<DB>>,
     limit: Box<QueryFragment<DB>>,
     offset: Box<QueryFragment<DB>>,
@@ -21,7 +21,7 @@ impl<ST, QS, DB> BoxedSelectStatement<ST, QS, DB> {
     pub fn new(
         select: Box<QueryFragment<DB>>,
         from: QS,
-        where_clause: Box<QueryFragment<DB>>,
+        where_clause: Option<Box<QueryFragment<DB>>>,
         order: Box<QueryFragment<DB>>,
         limit: Box<QueryFragment<DB>>,
         offset: Box<QueryFragment<DB>>,
@@ -55,7 +55,15 @@ impl<ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<ST, QS, DB> where
         try!(self.select.to_sql(out));
         out.push_sql(" FROM ");
         try!(self.from.from_clause().to_sql(out));
-        try!(self.where_clause.to_sql(out));
+
+        match self.where_clause {
+            Some(ref where_clause) => {
+                out.push_sql(" WHERE ");
+                try!(where_clause.to_sql(out));
+            }
+            None => {}
+        }
+
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
@@ -79,5 +87,23 @@ impl<ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
             self.limit,
             self.offset,
         )
+    }
+}
+
+impl<ST, QS, DB, Predicate> FilterDsl<Predicate>
+    for BoxedSelectStatement<ST, QS, DB> where
+        DB: Backend + HasSqlType<ST> + 'static,
+        Predicate: SelectableExpression<QS, SqlType=Bool> + NonAggregate,
+        Predicate: QueryFragment<DB> + 'static,
+{
+    type Output = Self;
+
+    fn filter(mut self, predicate: Predicate) -> Self::Output {
+        use expression::predicates::And;
+        self.where_clause = Some(match self.where_clause {
+            Some(where_clause) => Box::new(And::new(where_clause, predicate)),
+            None => Box::new(predicate),
+        });
+        self
     }
 }
