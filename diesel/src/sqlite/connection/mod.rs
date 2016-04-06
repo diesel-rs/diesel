@@ -29,6 +29,11 @@ pub struct SqliteConnection {
     transaction_depth: Cell<i32>,
 }
 
+// This relies on the invariant that RawConnection or Statement are never
+// leaked. If a reference to one of those was held on a different thread, this
+// would not be thread safe.
+unsafe impl Send for SqliteConnection {}
+
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         self.raw_connection.exec(query)

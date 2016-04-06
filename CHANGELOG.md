@@ -15,6 +15,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `DISTINCT` keyword can now be added to queries via the `distinct()`
   method.
 
+* `SqliteConnection` now implements `Send`
+
 ### Changed
 
 * `diesel::result::Error` now implements `Send` and `Sync`. This required a
