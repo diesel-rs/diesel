@@ -11,6 +11,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   those wishing to avoid syntax extensions from `diesel_codegen`. See
   http://docs.diesel.rs/diesel/macro.Insertable!.html for details.
 
+* Added support for `UNION` and `UNION ALL` query combinations.
+
 ### Changed
 
 * `infer_schema!` on SQLite now accepts a larger range of type names
