@@ -7,6 +7,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Queries can now be boxed using the `into_boxed()` method. This is useful for
+  conditionally modifying queries without changing the type. See
+  [BoxedDsl][boxed_dsl] for more details.
+
 * `infer_schema!` is now supported for use with SQLite3.
 
 * The maximum table size can be increased to 52 by enabling the `huge-tables`
@@ -16,6 +20,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   method.
 
 * `SqliteConnection` now implements `Send`
+
+[boxed_dsl]: http://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
 
 ### Changed
 

@@ -116,6 +116,22 @@ macro_rules! column {
 /// `()` to prevent accidentally using it as such. It is sometimes useful for
 /// count statements however. It can also be accessed through the `Table.star()`
 /// method.
+///
+/// SqlType
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`. The SQL type is needed for things like [returning boxed
+/// queries][boxed_queries].
+///
+/// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
+///
+/// BoxedQuery
+/// ----------
+///
+/// ```ignore
+/// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
+/// ```
 #[macro_export]
 macro_rules! table {
     (
@@ -180,6 +196,8 @@ macro_rules! table_body {
             }
 
             pub type SqlType = ($($Type),+);
+
+            pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
             impl QuerySource for table {
                 type FromClause = Identifier<'static>;
