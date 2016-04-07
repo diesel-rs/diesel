@@ -80,3 +80,19 @@ fn boxed_queries_implement_filter_dsl() {
         .load(&connection);
     assert_eq!(Ok(vec![String::from("Shane")]), data);
 }
+
+#[test]
+fn boxed_queries_implement_limit_dsl() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let data = users::table.into_boxed().limit(1).load(&connection);
+    let expected_data = vec![find_user_by_name("Sean", &connection)];
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn boxed_queries_implement_offset_dsl() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let data = users::table.into_boxed().offset(1).load(&connection);
+    let expected_data = vec![find_user_by_name("Tess", &connection)];
+    assert_eq!(Ok(expected_data), data);
+}

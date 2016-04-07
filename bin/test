@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-if [ $1 == "integration" ]; then
+if [ "$1" == "integration" ]; then
   (cd diesel_tests && cargo test --features "unstable postgres" --no-default-features)
-elif [ $1 == "compile" ]; then
+elif [ "$1" == "compile" ]; then
   (cd diesel_compile_tests && cargo test)
 else
   (cd diesel && cargo test --features "unstable chrono sqlite")

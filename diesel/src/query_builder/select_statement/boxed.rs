@@ -1,11 +1,13 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
-use expression::{SelectableExpression, NonAggregate};
+use expression::{SelectableExpression, NonAggregate, AsExpression};
 use query_builder::*;
+use query_builder::limit_clause::LimitClause;
+use query_builder::offset_clause::OffsetClause;
 use query_dsl::*;
 use query_source::QuerySource;
-use types::{HasSqlType, Bool};
+use types::{HasSqlType, Bool, BigInt};
 
 pub struct BoxedSelectStatement<ST, QS, DB> {
     select: Box<QueryFragment<DB>>,
@@ -109,6 +111,32 @@ impl<ST, QS, DB, Predicate> FilterDsl<Predicate>
             Some(where_clause) => Box::new(And::new(where_clause, predicate)),
             None => Box::new(predicate),
         });
+        self
+    }
+}
+
+impl<ST, QS, DB> LimitDsl for BoxedSelectStatement<ST, QS, DB> where
+    DB: Backend,
+    BoxedSelectStatement<ST, QS, DB>: Query,
+{
+    type Output = Self;
+
+    fn limit(mut self, limit: i64) -> Self::Output {
+        let limit_expression = AsExpression::<BigInt>::as_expression(limit);
+        self.limit = Box::new(LimitClause(limit_expression));
+        self
+    }
+}
+
+impl<ST, QS, DB> OffsetDsl for BoxedSelectStatement<ST, QS, DB> where
+    DB: Backend,
+    BoxedSelectStatement<ST, QS, DB>: Query,
+{
+    type Output = Self;
+
+    fn offset(mut self, offset: i64) -> Self::Output {
+        let offset_expression = AsExpression::<BigInt>::as_expression(offset);
+        self.offset = Box::new(OffsetClause(offset_expression));
         self
     }
 }
