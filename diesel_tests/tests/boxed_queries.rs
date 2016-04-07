@@ -96,3 +96,15 @@ fn boxed_queries_implement_offset_dsl() {
     let expected_data = vec![find_user_by_name("Tess", &connection)];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+fn boxed_queries_implement_order_dsl() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let data = users::table.into_boxed().order(users::name.desc())
+        .load(&connection);
+    let expected_data = vec![
+        find_user_by_name("Tess", &connection),
+        find_user_by_name("Sean", &connection),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}

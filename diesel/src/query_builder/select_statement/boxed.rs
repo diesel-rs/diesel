@@ -5,6 +5,7 @@ use expression::{SelectableExpression, NonAggregate, AsExpression};
 use query_builder::*;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
+use query_builder::order_clause::OrderClause;
 use query_dsl::*;
 use query_source::QuerySource;
 use types::{HasSqlType, Bool, BigInt};
@@ -137,6 +138,20 @@ impl<ST, QS, DB> OffsetDsl for BoxedSelectStatement<ST, QS, DB> where
     fn offset(mut self, offset: i64) -> Self::Output {
         let offset_expression = AsExpression::<BigInt>::as_expression(offset);
         self.offset = Box::new(OffsetClause(offset_expression));
+        self
+    }
+}
+
+impl<ST, QS, DB, Order> OrderDsl<Order>
+    for BoxedSelectStatement<ST, QS, DB> where
+        DB: Backend + 'static,
+        Order: QueryFragment<DB> + SelectableExpression<QS> + 'static,
+        BoxedSelectStatement<ST, QS, DB>: Query,
+{
+    type Output = Self;
+
+    fn order(mut self, order: Order) -> Self::Output {
+        self.order = Box::new(OrderClause(order));
         self
     }
 }
