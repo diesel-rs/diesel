@@ -188,17 +188,17 @@ impl<ST, S, F, D, W, O, L, Of, G, Expr> GroupByDsl<Expr>
     }
 }
 
-impl<ST, S, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<DB>
+impl<'a, ST, S, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
         DB: Backend,
-        S: QueryFragment<DB> + 'static,
-        D: QueryFragment<DB> + 'static,
-        W: Into<Option<Box<QueryFragment<DB>>>>,
-        O: QueryFragment<DB> + 'static,
-        L: QueryFragment<DB> + 'static,
-        Of: QueryFragment<DB> + 'static,
+        S: QueryFragment<DB> + 'a,
+        D: QueryFragment<DB> + 'a,
+        W: Into<Option<Box<QueryFragment<DB> + 'a>>>,
+        O: QueryFragment<DB> + 'a,
+        L: QueryFragment<DB> + 'a,
+        Of: QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'static, ST, F, DB>;
+    type Output = BoxedSelectStatement<'a, ST, F, DB>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(

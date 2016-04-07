@@ -60,11 +60,12 @@ impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
     }
 }
 
-impl<DB, Predicate> Into<Option<Box<QueryFragment<DB>>>> for WhereClause<Predicate> where
-    DB: Backend,
-    Predicate: QueryFragment<DB> + 'static,
+impl<'a, DB, Predicate> Into<Option<Box<QueryFragment<DB> + 'a>>>
+    for WhereClause<Predicate> where
+        DB: Backend,
+        Predicate: QueryFragment<DB> + 'a,
 {
-    fn into(self) -> Option<Box<QueryFragment<DB>>> {
+    fn into(self) -> Option<Box<QueryFragment<DB> + 'a>> {
         Some(Box::new(self.0))
     }
 }

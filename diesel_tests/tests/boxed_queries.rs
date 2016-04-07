@@ -122,3 +122,15 @@ fn boxed_queries_can_use_borrowed_data() {
     let expected_data = vec![find_user_by_name("Sean", &connection)];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+fn queries_with_borrowed_data_can_be_boxed() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let s = String::from("Tess");
+    let data = users::table
+        .filter(users::name.eq(&s))
+        .into_boxed()
+        .load(&connection);
+    let expected_data = vec![find_user_by_name("Tess", &connection)];
+    assert_eq!(Ok(expected_data), data);
+}
