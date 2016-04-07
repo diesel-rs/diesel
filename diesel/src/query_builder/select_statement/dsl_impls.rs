@@ -198,7 +198,7 @@ impl<ST, S, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<DB>
         L: QueryFragment<DB> + 'static,
         Of: QueryFragment<DB> + 'static,
 {
-    type Output = BoxedSelectStatement<ST, F, DB>;
+    type Output = BoxedSelectStatement<'static, ST, F, DB>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(

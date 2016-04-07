@@ -10,26 +10,26 @@ use query_dsl::*;
 use query_source::QuerySource;
 use types::{HasSqlType, Bool, BigInt};
 
-pub struct BoxedSelectStatement<ST, QS, DB> {
-    select: Box<QueryFragment<DB>>,
+pub struct BoxedSelectStatement<'a, ST, QS, DB> {
+    select: Box<QueryFragment<DB> + 'a>,
     from: QS,
-    distinct: Box<QueryFragment<DB>>,
-    where_clause: Option<Box<QueryFragment<DB>>>,
-    order: Box<QueryFragment<DB>>,
-    limit: Box<QueryFragment<DB>>,
-    offset: Box<QueryFragment<DB>>,
+    distinct: Box<QueryFragment<DB> + 'a>,
+    where_clause: Option<Box<QueryFragment<DB> + 'a>>,
+    order: Box<QueryFragment<DB> + 'a>,
+    limit: Box<QueryFragment<DB> + 'a>,
+    offset: Box<QueryFragment<DB> + 'a>,
     _marker: PhantomData<(ST, DB)>,
 }
 
-impl<ST, QS, DB> BoxedSelectStatement<ST, QS, DB> {
+impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     pub fn new(
-        select: Box<QueryFragment<DB>>,
+        select: Box<QueryFragment<DB> + 'a>,
         from: QS,
-        distinct: Box<QueryFragment<DB>>,
-        where_clause: Option<Box<QueryFragment<DB>>>,
-        order: Box<QueryFragment<DB>>,
-        limit: Box<QueryFragment<DB>>,
-        offset: Box<QueryFragment<DB>>,
+        distinct: Box<QueryFragment<DB> + 'a>,
+        where_clause: Option<Box<QueryFragment<DB> + 'a>>,
+        order: Box<QueryFragment<DB> + 'a>,
+        limit: Box<QueryFragment<DB> + 'a>,
+        offset: Box<QueryFragment<DB> + 'a>,
     ) -> Self {
         BoxedSelectStatement {
             select: select,
@@ -44,14 +44,14 @@ impl<ST, QS, DB> BoxedSelectStatement<ST, QS, DB> {
     }
 }
 
-impl<ST, QS, DB> Query for BoxedSelectStatement<ST, QS, DB> where
+impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB> where
     DB: Backend,
     DB: HasSqlType<ST>,
 {
     type SqlType = ST;
 }
 
-impl<ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<ST, QS, DB> where
+impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> where
     DB: Backend,
     QS: QuerySource,
     QS::FromClause: QueryFragment<DB>,
@@ -78,12 +78,12 @@ impl<ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<ST, QS, DB> where
     }
 }
 
-impl<ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
-    for BoxedSelectStatement<ST, QS, DB> where
+impl<'a, ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
         DB: Backend + HasSqlType<Type>,
-        Selection: SelectableExpression<QS, Type> + QueryFragment<DB> + 'static,
+        Selection: SelectableExpression<QS, Type> + QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<Type, QS, DB>;
+    type Output = BoxedSelectStatement<'a, Type, QS, DB>;
 
     fn select(self, selection: Selection) -> Self::Output {
         BoxedSelectStatement::new(
@@ -98,11 +98,11 @@ impl<ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
     }
 }
 
-impl<ST, QS, DB, Predicate> FilterDsl<Predicate>
-    for BoxedSelectStatement<ST, QS, DB> where
-        DB: Backend + HasSqlType<ST> + 'static,
+impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        DB: Backend + HasSqlType<ST> + 'a,
         Predicate: SelectableExpression<QS, SqlType=Bool> + NonAggregate,
-        Predicate: QueryFragment<DB> + 'static,
+        Predicate: QueryFragment<DB> + 'a,
 {
     type Output = Self;
 
@@ -116,9 +116,9 @@ impl<ST, QS, DB, Predicate> FilterDsl<Predicate>
     }
 }
 
-impl<ST, QS, DB> LimitDsl for BoxedSelectStatement<ST, QS, DB> where
+impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB> where
     DB: Backend,
-    BoxedSelectStatement<ST, QS, DB>: Query,
+    BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;
 
@@ -129,9 +129,9 @@ impl<ST, QS, DB> LimitDsl for BoxedSelectStatement<ST, QS, DB> where
     }
 }
 
-impl<ST, QS, DB> OffsetDsl for BoxedSelectStatement<ST, QS, DB> where
+impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB> where
     DB: Backend,
-    BoxedSelectStatement<ST, QS, DB>: Query,
+    BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;
 
@@ -142,11 +142,11 @@ impl<ST, QS, DB> OffsetDsl for BoxedSelectStatement<ST, QS, DB> where
     }
 }
 
-impl<ST, QS, DB, Order> OrderDsl<Order>
-    for BoxedSelectStatement<ST, QS, DB> where
-        DB: Backend + 'static,
-        Order: QueryFragment<DB> + SelectableExpression<QS> + 'static,
-        BoxedSelectStatement<ST, QS, DB>: Query,
+impl<'a, ST, QS, DB, Order> OrderDsl<Order>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        DB: Backend,
+        Order: QueryFragment<DB> + SelectableExpression<QS> + 'a,
+        BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;
 

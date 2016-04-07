@@ -111,3 +111,14 @@ fn boxed_queries_implement_order_dsl() {
     ];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+fn boxed_queries_can_use_borrowed_data() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let s = String::from("Sean");
+    let data = users::table.into_boxed()
+        .filter(users::name.eq(&s))
+        .load(&connection);
+    let expected_data = vec![find_user_by_name("Sean", &connection)];
+    assert_eq!(Ok(expected_data), data);
+}
