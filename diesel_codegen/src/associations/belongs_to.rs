@@ -80,7 +80,9 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_key_type(&self) -> P<ast::Ty> {
-        self.model.attr_named(self.foreign_key_name())
+        let name = self.foreign_key_name();
+        self.model.attr_named(name)
+            .expect(&format!("Couldn't find an attr named {}", name))
             .ty.clone()
     }
 

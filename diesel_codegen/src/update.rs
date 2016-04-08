@@ -91,7 +91,7 @@ fn changeset_impl(
     let ref struct_name = model.ty;
     let pk = model.primary_key_name();
     let table_name = options.table_name;
-    let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name != pk)
+    let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name.name != pk.name)
         .collect::<Vec<_>>();
     let changeset_ty = cx.ty(span, TyKind::Tup(
         attrs_for_changeset.iter()
@@ -127,7 +127,7 @@ fn save_changes_impl(
     let sql_type = cx.path(span, vec![options.table_name, str_to_ident("SqlType")]);
     let table = cx.path(span, vec![options.table_name, str_to_ident("table")]);
     let mut result = Vec::new();
-    if let Some(pk) = model.attrs.iter().find(|a| a.column_name == pk) {
+    if let Some(pk) = model.attr_for_column(pk) {
         let pk_field = pk.field_name.unwrap();
         if cfg!(feature = "postgres") {
             result.push(quote_item!(cx,

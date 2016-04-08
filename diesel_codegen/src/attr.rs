@@ -14,10 +14,10 @@ pub struct Attr {
 
 impl Attr {
     pub fn from_struct_field(cx: &mut ExtCtxt, field: &ast::StructField) -> Option<Self> {
-        let field_name = field.node.ident();
+        let field_name = field.ident;
         let column_name =
-            str_value_of_attr_with_name(cx, &field.node.attrs, "column_name");
-        let ty = field.node.ty.clone();
+            str_value_of_attr_with_name(cx, &field.attrs, "column_name");
+        let ty = field.ty.clone();
 
         match (column_name, field_name) {
             (Some(column_name), f) => Some(Attr {

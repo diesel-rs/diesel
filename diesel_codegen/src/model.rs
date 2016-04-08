@@ -47,10 +47,16 @@ impl Model {
         })
     }
 
-    pub fn attr_named(&self, name: ast::Ident) -> &Attr {
+    pub fn attr_named(&self, name: ast::Ident) -> Option<&Attr> {
         self.attrs.iter().find(|attr| {
-            attr.field_name == Some(name)
-        }).expect(&format!("Couldn't find an attr named {}", name))
+            attr.field_name.map(|f| f.name) == Some(name.name)
+        })
+    }
+
+    pub fn attr_for_column(&self, name: ast::Ident) -> Option<&Attr> {
+        self.attrs.iter().find(|attr| {
+            attr.column_name.name == name.name
+        })
     }
 }
 
