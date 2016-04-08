@@ -58,7 +58,6 @@ macro_rules! expression_impls {
 
 macro_rules! queryable_impls {
     ($($Source:ident -> $Target:ty),+,) => {$(
-        #[cfg(not(feature = "unstable"))]
         impl<DB> $crate::types::FromSqlRow<types::$Source, DB> for $Target where
             DB: $crate::backend::Backend + $crate::types::HasSqlType<types::$Source>,
             $Target: $crate::types::FromSql<types::$Source, DB>,

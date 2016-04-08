@@ -7,7 +7,7 @@ use std::io::Write;
 use backend::Debug;
 use pg::{Pg, PgTypeMetadata};
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, ToSql, Array, IsNull, NotNull};
+use types::{HasSqlType, FromSql, ToSql, Array, IsNull, NotNull, FromSqlRow};
 
 impl<T> HasSqlType<Array<T>> for Pg where
     Pg: HasSqlType<T>,
@@ -62,9 +62,6 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
     }
 }
 
-#[cfg(not(feature = "unstable"))]
-use types::FromSqlRow;
-#[cfg(not(feature = "unstable"))]
 impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     Vec<T>: FromSql<Array<ST>, Pg>,
