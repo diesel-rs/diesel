@@ -71,7 +71,7 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
-                type SqlType = ($(<$T as Expression>::SqlType),+);
+                type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
             impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
