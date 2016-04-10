@@ -38,6 +38,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[insertable_into]` can now be used with structs that have lifetimes with
   names other than `'a'`.
 
+* Tables with a single column now properly return a single element tuple. E.g.
+  if the column was of type integer, then `users::all_columns` is now `(id,)`
+  and not `id`.
+
 ### Removed
 
 * Removed the `no select` option for the `table!` macro. This was a niche

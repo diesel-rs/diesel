@@ -182,7 +182,7 @@ macro_rules! table_body {
             }
 
             #[allow(non_upper_case_globals, dead_code)]
-            pub const all_columns: ($($column_name),+) = ($($column_name),+);
+            pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
             #[derive(Clone, Copy)]
@@ -195,7 +195,7 @@ macro_rules! table_body {
                 }
             }
 
-            pub type SqlType = ($($Type),+);
+            pub type SqlType = ($($Type,)+);
 
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
@@ -209,7 +209,7 @@ macro_rules! table_body {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<SqlType, ($($column_name),+), Self>;
+                type Query = SelectStatement<SqlType, ($($column_name,)+), Self>;
 
                 fn as_query(self) -> Self::Query {
                     SelectStatement::simple(all_columns, self)
@@ -218,7 +218,7 @@ macro_rules! table_body {
 
             impl Table for table {
                 type PrimaryKey = columns::$pk;
-                type AllColumns = ($($column_name),+);
+                type AllColumns = ($($column_name,)+);
 
                 fn name() -> &'static str {
                     stringify!($name)
@@ -229,7 +229,7 @@ macro_rules! table_body {
                 }
 
                 fn all_columns() -> Self::AllColumns {
-                    ($($column_name),+)
+                    ($($column_name,)+)
                 }
             }
 

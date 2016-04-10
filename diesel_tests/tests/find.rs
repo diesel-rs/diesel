@@ -31,7 +31,7 @@ fn find_with_non_serial_pk() {
     connection.execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    assert_eq!(Ok("Sean".to_string()), users.find("Sean").first(&connection));
-    assert_eq!(Ok("Tess".to_string()), users.find("Tess".to_string()).first(&connection));
-    assert_eq!(Ok(None::<String>), users.find("Wibble").first(&connection).optional());
+    assert_eq!(Ok(("Sean".to_string(),)), users.find("Sean").first(&connection));
+    assert_eq!(Ok(("Tess".to_string(),)), users.find("Tess".to_string()).first(&connection));
+    assert_eq!(Ok(None::<(String,)>), users.find("Wibble").first(&connection).optional());
 }
