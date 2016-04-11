@@ -84,8 +84,11 @@ test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
 
 #[cfg(feature = "postgres")]
 mod pg_types {
+    extern crate uuid;
     use super::*;
+
     test_round_trip!(bool_roundtrips, Bool, bool);
+    test_round_trip!(bytea_roundtrips, Bytea, Vec<u8>);
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
     test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp);
@@ -94,6 +97,13 @@ mod pg_types {
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(uuid_roundtrips, Uuid, (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)), mk_uuid);
+
+    fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
+        let a = data.3;
+        let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b).unwrap()
+    }
 }
 
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
