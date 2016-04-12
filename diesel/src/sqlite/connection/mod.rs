@@ -137,16 +137,6 @@ impl SqliteConnection {
         }
         query.map(|_| ())
     }
-
-    #[doc(hidden)]
-    pub fn execute_pragma<ST, U>(&self, source: &str) -> QueryResult<Vec<U>> where
-        U: Queryable<ST, Sqlite>,
-        <SqliteConnection as Connection>::Backend: HasSqlType<ST>,
-    {
-        Statement::prepare(&self.raw_connection, source)
-            .map(StatementIterator::new)
-            .and_then(Iterator::collect)
-    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {

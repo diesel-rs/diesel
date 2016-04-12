@@ -35,6 +35,10 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
     }
 }
 
+impl<ST> Query for SqlLiteral<ST> {
+    type SqlType = ST;
+}
+
 impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
 }
 

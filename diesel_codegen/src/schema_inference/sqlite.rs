@@ -1,4 +1,5 @@
 use diesel::*;
+use diesel::expression::dsl::sql;
 use diesel::sqlite::{SqliteConnection, Sqlite};
 use diesel::types::{HasSqlType, FromSqlRow};
 use syntax::ast;
@@ -22,8 +23,8 @@ table!{
 pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
     -> QueryResult<Vec<ColumnInformation>>
 {
-    conn.execute_pragma::<pragma_table_info::SqlType, ColumnInformation>(
-        &format!("PRAGMA TABLE_INFO('{}')", table_name))
+    let query = format!("PRAGMA TABLE_INFO('{}')", table_name);
+    sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
 fn is_text(type_name: &str) -> bool {
@@ -92,9 +93,10 @@ impl<ST> Queryable<ST, Sqlite> for FullTableInfo where
 }
 
 pub fn get_primary_keys(conn: &SqliteConnection, table_name: &str) -> QueryResult<Vec<String>> {
-    conn.execute_pragma::<pragma_table_info::SqlType, FullTableInfo>(
-        &format!("PRAGMA TABLE_INFO('{}')", table_name))
-        .map( |i| i.iter()
-               .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
-               .collect())
+    let query = format!("PRAGMA TABLE_INFO('{}')", table_name);
+    let results = try!(sql::<pragma_table_info::SqlType>(&query)
+        .load::<FullTableInfo>(conn));
+    Ok(results.iter()
+        .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
+        .collect())
 }
