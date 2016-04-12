@@ -42,6 +42,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   if the column was of type integer, then `users::all_columns` is now `(id,)`
   and not `id`.
 
+* `infer_schema!` can now work with tables that have a primary key other than
+  `id`.
+
 ### Removed
 
 * Removed the `no select` option for the `table!` macro. This was a niche
