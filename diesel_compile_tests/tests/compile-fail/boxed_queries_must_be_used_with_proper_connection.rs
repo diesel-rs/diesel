@@ -13,6 +13,6 @@ table! {
 
 fn main() {
     let connection = SqliteConnection::establish("").unwrap();
-    users::table.into_boxed::<Pg>().load::<i32>(&connection);
+    users::table.into_boxed::<Pg>().load::<(i32,)>(&connection);
     //~^ ERROR type mismatch
 }
