@@ -1,4 +1,11 @@
 #!/bin/sh
+set -e
 
-(cd diesel_tests && cargo bench --no-default-features --features "unstable sqlite")
-(cd diesel_tests && cargo bench --no-default-features --features "unstable postgres")
+if [ "$1" == "sqlite" ]; then
+  (cd diesel_tests && cargo bench --no-default-features --features "unstable sqlite")
+elif [ "$1" == "postgres" ]; then
+  (cd diesel_tests && cargo bench --no-default-features --features "unstable postgres")
+else
+  (cd diesel_tests && cargo bench --no-default-features --features "unstable sqlite")
+  (cd diesel_tests && cargo bench --no-default-features --features "unstable postgres")
+fi
