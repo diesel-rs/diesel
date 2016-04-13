@@ -7,8 +7,20 @@ extern crate test;
 mod schema;
 
 use self::test::Bencher;
-use self::schema::*;
+use self::schema::{users, NewUser, User, Post, TestConnection, posts, batch_insert};
 use diesel::*;
+
+#[cfg(not(feature = "sqlite"))]
+fn connection() -> TestConnection {
+    let conn = schema::connection();
+    conn.execute("TRUNCATE TABLE USERS").unwrap();
+    conn
+}
+
+#[cfg(feature = "sqlite")]
+fn connection() -> TestConnection {
+    schema::connection()
+}
 
 #[bench]
 fn bench_selecting_0_rows_with_trivial_query(b: &mut Bencher) {
