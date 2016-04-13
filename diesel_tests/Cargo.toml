@@ -13,10 +13,11 @@ diesel = { path = "../diesel", default-features = false }
 dotenv = { git = "https://github.com/slapresta/rust-dotenv.git" }
 
 [dependencies]
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid"] }
 diesel_codegen = { path = "../diesel_codegen", default-features = false }
 dotenv_macros = { git = "https://github.com/slapresta/rust-dotenv.git", optional = true }
 chrono = { version = "^0.2.17" }
+uuid = { version = "^0.2.0" }
 
 [dev-dependencies]
 quickcheck = "0.2.25"

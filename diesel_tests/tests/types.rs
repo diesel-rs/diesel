@@ -359,6 +359,34 @@ fn pg_numeric_from_sql() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn pg_uuid_from_sql() {
+    extern crate uuid;
+
+    let query = "'8a645207-42d6-4d17-82e7-f5e42ede0f67'::uuid";
+    let expected_value = uuid::Uuid::parse_str("8a645207-42d6-4d17-82e7-f5e42ede0f67").unwrap();
+    assert_eq!(expected_value, query_single_value::<Uuid, uuid::Uuid>(query));
+    let query = "'f94e0e4d-c7b0-405f-9c0e-57b97f4afb58'::uuid";
+    let expected_value = uuid::Uuid::parse_str("f94e0e4d-c7b0-405f-9c0e-57b97f4afb58").unwrap();
+    assert_eq!(expected_value, query_single_value::<Uuid, uuid::Uuid>(query));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_uuid_to_sql_uuid() {
+    extern crate uuid;
+
+    let expected_value = "'8a645207-42d6-4d17-82e7-f5e42ede0f67'::uuid";
+    let value = uuid::Uuid::parse_str("8a645207-42d6-4d17-82e7-f5e42ede0f67").unwrap();
+    assert!(query_to_sql_equality::<Uuid, uuid::Uuid>(expected_value, value));
+    let expected_value = "'f94e0e4d-c7b0-405f-9c0e-57b97f4afb58'::uuid";
+    let value = uuid::Uuid::parse_str("f94e0e4d-c7b0-405f-9c0e-57b97f4afb58").unwrap();
+    assert!(query_to_sql_equality::<Uuid, uuid::Uuid>(expected_value, value));
+    let expected_non_equal_value = "'8e940686-97a5-4e8b-ac44-64cf3cceea9b'::uuid";
+    assert!(!query_to_sql_equality::<Uuid, uuid::Uuid>(expected_non_equal_value, value));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
     use std::io::prelude::*;
