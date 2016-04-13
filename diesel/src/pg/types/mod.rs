@@ -3,6 +3,7 @@ pub mod date_and_time;
 pub mod floats;
 mod integers;
 mod primitives;
+#[cfg(feature = "uuid")]
 mod uuid;
 
 #[doc(hidden)]
@@ -12,6 +13,7 @@ pub mod sql_types {
     pub type SmallSerial = ::types::SmallInt;
     pub type Serial = ::types::Integer;
     pub type BigSerial = ::types::BigInt;
+    #[cfg(feature = "uuid")]
     #[derive(Clone, Copy, Default)] pub struct Uuid;
     pub type Bytea = ::types::Binary;
 }
