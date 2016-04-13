@@ -1,5 +1,6 @@
 use backend::Backend;
 use query_builder::*;
+use result::QueryResult;
 
 pub struct DeleteStatement<T>(T);
 
@@ -22,6 +23,14 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
         if let Some(clause) = self.0.where_clause() {
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
+        }
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.0.from_clause().collect_binds(out));
+        if let Some(clause) = self.0.where_clause() {
+            try!(clause.collect_binds(out));
         }
         Ok(())
     }

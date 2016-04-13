@@ -2,6 +2,7 @@ use backend::*;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
+use result::QueryResult;
 use types::{Timestamp, VarChar};
 
 pub struct AtTimeZone<Ts, Tz> {
@@ -40,6 +41,12 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
         out.push_sql(" AT TIME ZONE ");
         self.timezone.to_sql(out)
     }
+
+    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.timestamp.collect_binds(out));
+        try!(self.timezone.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
@@ -50,6 +57,12 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
         try!(self.timestamp.to_sql(out));
         out.push_sql(" AT TIME ZONE ");
         self.timezone.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.timestamp.collect_binds(out));
+        try!(self.timezone.collect_binds(out));
+        Ok(())
     }
 }
 

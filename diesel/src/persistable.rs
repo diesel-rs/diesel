@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
+use result::QueryResult;
 use query_builder::{QueryBuilder, BuildQueryResult};
 use query_source::{Table, Column};
 
@@ -19,6 +20,7 @@ pub trait Insertable<T: Table, DB: Backend> {
 pub trait InsertValues<DB: Backend> {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+    fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
 }
 
 pub enum ColumnInsertValue<Col, Expr> where
@@ -78,6 +80,13 @@ impl<'a, T, U: 'a, DB> InsertValues<DB> for BatchInsertValues<'a, T, U, DB> wher
                 out.push_sql(", ");
             }
             try!(record.values().values_clause(out));
+        }
+        Ok(())
+    }
+
+    fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        for record in self.values.into_iter() {
+            try!(record.values().values_bind_params(out));
         }
         Ok(())
     }

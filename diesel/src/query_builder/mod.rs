@@ -1,6 +1,7 @@
 //! Contains traits responsible for the actual construction of SQL statements
 pub mod debug;
 
+pub mod bind_collector;
 mod delete_statement;
 #[doc(hidden)]
 pub mod functions;
@@ -18,6 +19,7 @@ mod where_clause;
 pub mod insert_statement;
 pub mod update_statement;
 
+pub use self::bind_collector::BindCollector;
 #[doc(hidden)]
 pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
 #[doc(inline)]
@@ -28,7 +30,7 @@ pub use self::insert_statement::IncompleteInsertStatement;
 use std::error::Error;
 
 use backend::Backend;
-use types::HasSqlType;
+use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -42,8 +44,7 @@ pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
 pub trait QueryBuilder<DB: Backend> {
     fn push_sql(&mut self, sql: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
-    fn push_bound_value<T>(&mut self, binds: Option<Vec<u8>>) where
-        DB: HasSqlType<T>;
+    fn push_bind_param(&mut self);
 }
 
 /// A complete SQL query with a return type. This can be a select statement, or
@@ -65,6 +66,7 @@ impl<'a, T: Query> Query for &'a T {
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
@@ -73,6 +75,10 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        QueryFragment::collect_binds(&**self, out)
     }
 }
 
@@ -83,10 +89,18 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         QueryFragment::to_sql(&**self, out)
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        QueryFragment::collect_binds(&**self, out)
+    }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

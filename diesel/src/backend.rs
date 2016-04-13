@@ -1,4 +1,4 @@
-use query_builder::QueryBuilder;
+use query_builder::{QueryBuilder, BindCollector};
 use query_builder::debug::DebugQueryBuilder;
 use types::{self, HasSqlType};
 
@@ -17,6 +17,7 @@ pub trait Backend where
     Self: HasSqlType<types::Timestamp>,
 {
     type QueryBuilder: QueryBuilder<Self>;
+    type BindCollector: BindCollector<Self>;
     type RawValue: ?Sized;
 }
 
@@ -31,7 +32,15 @@ pub struct Debug;
 
 impl Backend for Debug {
     type QueryBuilder = DebugQueryBuilder;
+    type BindCollector = ();
     type RawValue = ();
+}
+
+impl BindCollector<Debug> for () {
+    fn push_bound_value<T>(&mut self, _binds: Option<Vec<u8>>) where
+        Debug: HasSqlType<T>,
+    {
+    }
 }
 
 impl TypeMetadata for Debug {

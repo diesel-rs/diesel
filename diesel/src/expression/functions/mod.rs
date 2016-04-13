@@ -38,15 +38,20 @@ macro_rules! sql_function_body {
             DB: $crate::backend::Backend,
             for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder)
-                -> $crate::query_builder::BuildQueryResult {
-                    use $crate::query_builder::QueryBuilder;
-                    out.push_sql(concat!(stringify!($fn_name), "("));
-                    try!($crate::query_builder::QueryFragment::to_sql(
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+                use $crate::query_builder::QueryBuilder;
+                out.push_sql(concat!(stringify!($fn_name), "("));
+                try!($crate::query_builder::QueryFragment::to_sql(
                         &($(&self.$arg_name),*), out));
-                    out.push_sql(")");
-                    Ok(())
-                }
+                out.push_sql(")");
+                Ok(())
+            }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+                try!($crate::query_builder::QueryFragment::collect_binds(
+                        &($(&self.$arg_name),*), out));
+                Ok(())
+            }
         }
 
         #[allow(non_camel_case_types)]
@@ -137,11 +142,13 @@ macro_rules! no_arg_sql_function_body {
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend + $($constraint)::+,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder)
-                -> $crate::query_builder::BuildQueryResult
-            {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 use $crate::query_builder::QueryBuilder;
                 out.push_sql(concat!(stringify!($type_name), "()"));
+                Ok(())
+            }
+
+            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 Ok(())
             }
         }
@@ -153,11 +160,13 @@ macro_rules! no_arg_sql_function_body {
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder)
-                -> $crate::query_builder::BuildQueryResult
-            {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 use $crate::query_builder::QueryBuilder;
                 out.push_sql(concat!(stringify!($type_name), "()"));
+                Ok(())
+            }
+
+            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 Ok(())
             }
         }

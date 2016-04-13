@@ -14,6 +14,7 @@ use std::ffi::CStr;
 
 use connection::{SimpleConnection, Connection};
 use query_builder::*;
+use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::*;
 use result::*;
 use result::Error::QueryBuilderError;
@@ -124,7 +125,9 @@ impl SqliteConnection {
         try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
         let mut result = try!(Statement::prepare(&self.raw_connection, &query_builder.sql));
 
-        for (tpe, value) in query_builder.bind_params.into_iter() {
+        let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
+        try!(source.collect_binds(&mut bind_collector));
+        for (tpe, value) in bind_collector.binds.into_iter() {
             try!(result.bind(tpe, value));
         }
 

@@ -1,4 +1,5 @@
 use backend::*;
+use query_builder::bind_collector::RawBytesBindCollector;
 use super::connection::SqliteValue;
 use super::query_builder::SqliteQueryBuilder;
 
@@ -16,6 +17,7 @@ pub enum SqliteType {
 
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
+    type BindCollector = RawBytesBindCollector<Sqlite>;
     type RawValue = SqliteValue;
 }
 

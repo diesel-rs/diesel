@@ -1,5 +1,6 @@
 use backend::Backend;
 use query_builder::*;
+use result::QueryResult;
 use std::marker::PhantomData;
 use super::{Expression, SelectableExpression, NonAggregate};
 use types::HasSqlType;
@@ -31,6 +32,10 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(&self.sql);
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

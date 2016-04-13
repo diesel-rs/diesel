@@ -1,6 +1,7 @@
 use backend::Backend;
 use query_builder::BuildQueryResult;
 use query_source::QuerySource;
+use result::QueryResult;
 
 /// Types which can be passed to
 /// [`update.set`](struct.IncompleteUpdateStatement.html#method.set). This can
@@ -17,6 +18,7 @@ pub trait AsChangeset {
 pub trait Changeset<DB: Backend> {
     fn is_noop(&self) -> bool;
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
 }
 
 impl<T: AsChangeset> AsChangeset for Option<T> {
@@ -36,6 +38,13 @@ impl<T: Changeset<DB>, DB: Backend> Changeset<DB> for Option<T> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         match self {
             &Some(ref c) => c.to_sql(out),
+            &None => Ok(()),
+        }
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        match self {
+            &Some(ref c) => c.collect_binds(out),
             &None => Ok(()),
         }
     }

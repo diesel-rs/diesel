@@ -8,6 +8,7 @@ mod result;
 use connection::{SimpleConnection, Connection};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::{AsQuery, QueryFragment};
+use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
 use self::cursor::Cursor;
@@ -158,7 +159,11 @@ impl PgConnection {
     {
         let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
         source.to_sql(&mut query_builder).unwrap();
-        (query_builder.sql, query_builder.binds, query_builder.bind_types)
+        let mut bind_collector = RawBytesBindCollector::<Pg>::new();
+        source.collect_binds(&mut bind_collector).unwrap();
+        let (binds, bind_types) = bind_collector.binds.into_iter()
+            .map(|(meta, bind)| (bind, meta.oid)).unzip();
+        (query_builder.sql, binds, bind_types)
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {

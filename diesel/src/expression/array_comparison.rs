@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::*;
 use query_builder::{QueryBuilder, QueryFragment, BuildQueryResult};
+use result::QueryResult;
 use types::Bool;
 
 pub struct In<T, U> {
@@ -46,6 +47,12 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
         out.push_sql(" IN (");
         try!(self.values.to_sql(out));
         out.push_sql(")");
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.left.collect_binds(out));
+        try!(self.values.collect_binds(out));
         Ok(())
     }
 }
@@ -107,6 +114,13 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
         }
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        for value in self.0.iter() {
+            try!(value.collect_binds(out));
+        }
+        Ok(())
+    }
 }
 
 pub struct Subselect<T, ST> {
@@ -130,5 +144,9 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         self.values.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.values.collect_binds(out)
     }
 }

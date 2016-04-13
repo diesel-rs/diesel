@@ -2,6 +2,7 @@ use expression::Expression;
 use expression::aliased::Aliased;
 use query_builder::*;
 use query_source::QuerySource;
+use result::QueryResult;
 
 /// Adds an additional expression to the FROM clause. This is useful for things
 /// like full text search, where you need to access the result of an expensive
@@ -63,6 +64,10 @@ impl<T: QueryFragment<Pg>> QueryFragment<Pg> for PgOnly<T> {
     fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
     }
+
+    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+        self.0.collect_binds(out)
+    }
 }
 
 use backend::*;
@@ -70,5 +75,9 @@ use backend::*;
 impl<T: QueryFragment<Debug>> QueryFragment<Debug> for PgOnly<T> {
     fn to_sql(&self, out: &mut <Debug as Backend>::QueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
+        self.0.collect_binds(out)
     }
 }

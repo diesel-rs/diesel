@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::*;
 use query_source::*;
+use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
@@ -163,6 +164,18 @@ impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
         try!(self.offset.to_sql(out));
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.distinct.collect_binds(out));
+        try!(self.select.collect_binds(out));
+        try!(self.from.from_clause().collect_binds(out));
+        try!(self.where_clause.collect_binds(out));
+        try!(self.group_by.collect_binds(out));
+        try!(self.order.collect_binds(out));
+        try!(self.limit.collect_binds(out));
+        try!(self.offset.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
@@ -185,6 +198,17 @@ impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.distinct.collect_binds(out));
+        try!(self.select.collect_binds(out));
+        try!(self.where_clause.collect_binds(out));
+        try!(self.group_by.collect_binds(out));
+        try!(self.order.collect_binds(out));
+        try!(self.limit.collect_binds(out));
+        try!(self.offset.collect_binds(out));
         Ok(())
     }
 }

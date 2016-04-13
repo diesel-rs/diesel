@@ -1,11 +1,16 @@
 use backend::Backend;
 use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+use result::QueryResult;
 
 pub struct Identifier<'a>(pub &'a str);
 
 impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_identifier(self.0)
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+        Ok(())
     }
 }
 
@@ -62,6 +67,14 @@ impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
         try!(self.predicate.to_sql(out));
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.lhs.collect_binds(out));
+        try!(self.join_type.collect_binds(out));
+        try!(self.rhs.collect_binds(out));
+        try!(self.predicate.collect_binds(out));
+        Ok(())
+    }
 }
 
 pub struct InfixNode<'a, T, U> {
@@ -89,6 +102,12 @@ impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
         try!(self.lhs.to_sql(out));
         out.push_sql(self.middle);
         try!(self.rhs.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.lhs.collect_binds(out));
+        try!(self.rhs.collect_binds(out));
         Ok(())
     }
 }

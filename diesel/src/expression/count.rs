@@ -1,5 +1,6 @@
 use backend::Backend;
 use query_builder::*;
+use result::QueryResult;
 use super::{Expression, SelectableExpression};
 use types::BigInt;
 
@@ -62,6 +63,11 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
         out.push_sql(")");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.target.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
@@ -78,6 +84,10 @@ impl Expression for CountStar {
 impl<DB: Backend> QueryFragment<DB> for CountStar {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("COUNT(*)");
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

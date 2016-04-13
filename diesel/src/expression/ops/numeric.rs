@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
+use result::QueryResult;
 use types;
 
 macro_rules! numeric_operation {
@@ -36,6 +37,12 @@ macro_rules! numeric_operation {
                 try!(self.lhs.to_sql(out));
                 out.push_sql($op);
                 self.rhs.to_sql(out)
+            }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                try!(self.lhs.collect_binds(out));
+                try!(self.rhs.collect_binds(out));
+                Ok(())
             }
         }
 

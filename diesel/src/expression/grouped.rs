@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
+use result::QueryResult;
 
 pub struct Grouped<T>(pub T);
 
@@ -13,6 +14,11 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
         out.push_sql("(");
         try!(self.0.to_sql(out));
         out.push_sql(")");
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
         Ok(())
     }
 }
