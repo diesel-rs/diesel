@@ -4,5 +4,6 @@ mod insertable;
 mod model;
 mod queryable;
 mod schema_inference;
+mod migrations;
 
 mod update;

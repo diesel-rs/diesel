@@ -133,6 +133,18 @@ different name. This is required for all fields of tuple structs.
 Macros
 ---------------------
 
+### `create_migration_module()` and `create_migration_module("migrations-directory")`
+
+Reads all migrations form the migration directory and creates at the calling side
+a module with the name migrations. The following methods are available:
+* `pub fn run<Conn>(connection: &Conn)
+          -> Result<Vec<String>, ::diesel::migrations::RunMigrationsError>
+           where Conn: ::diesel::migrations::MigrationConnection,`
+* `pub fn run_with_writer<Conn, W>(connection: &Conn, writer: &mut ::std::io::Write)
+           -> Result<Vec<String>, ::diesel::migrations::RunMigrationsError>
+            where Conn: ::diesel::migrations::MigrationConnection`
+to execute all pending migrations on application startup
+
 ### `infer_schema!("database_url")`
 
 Queries the database for the names of all tables, and calls
