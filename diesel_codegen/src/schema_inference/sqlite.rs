@@ -3,7 +3,6 @@ use diesel::expression::dsl::sql;
 use diesel::sqlite::{SqliteConnection, Sqlite};
 use diesel::types::{HasSqlType, FromSqlRow};
 use syntax::ast;
-use syntax::codemap::Span;
 use syntax::ext::base::*;
 use syntax::ptr::P;
 
@@ -28,21 +27,28 @@ pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
 }
 
 fn is_text(type_name: &str) -> bool {
-    type_name.contains("char")||
-        type_name.contains("clob")||
+    type_name.contains("clob") ||
         type_name.contains("text")
 }
 
 pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<ast::Ty> {
-    let type_name=attr.type_name.to_lowercase();
-    let tpe = if type_name.contains("int") {
-        quote_ty!(cx, ::diesel::types::BigInteger)
-    } else if is_text(&type_name) {
-        quote_ty!(cx, ::diesel::types::Text)
-    } else if type_name.contains("blob") || type_name.is_empty() {
-        quote_ty!(cx, ::diesel::types::Binary)
-    } else {
-        quote_ty!(cx, ::diesel::types::Double)
+    let type_name = attr.type_name.to_lowercase();
+    let tpe = match &*type_name {
+        "tinyint" => quote_ty!(cx, ::diesel::types::Bool),
+        "smallint" | "int2" => quote_ty!(cx, ::diesel::types::SmallInt),
+        "int" | "integer" | "int4" => quote_ty!(cx, ::diesel::types::Integer),
+        "bigint" => quote_ty!(cx, ::diesel::types::BigInt),
+        _ if type_name.contains("char") => quote_ty!(cx, ::diesel::types::VarChar),
+        _ if is_text(&type_name) => quote_ty!(cx, ::diesel::types::Text),
+        _ if type_name.contains("blob") || type_name.is_empty() => {
+            quote_ty!(cx, ::diesel::types::Binary)
+        }
+        "float" => quote_ty!(cx, ::diesel::types::Float),
+        "double" | "real" | "double precision" => quote_ty!(cx, ::diesel::types::Double),
+        _ => {
+            cx.span_err(cx.original_span(), &format!("Unsupported type: {}", type_name));
+            quote_ty!(cx, ())
+        }
     };
 
     if attr.nullable {
@@ -52,17 +58,20 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
     }
 }
 
-pub fn load_table_names(
-    _cx: &mut ExtCtxt,
-    _sp: Span,
-    connection: &SqliteConnection,
-) -> Result<Vec<String>, result::Error> {
-    use diesel::prelude::*;
-    use diesel::expression::dsl::sql;
+table! {
+    sqlite_master (name) {
+        name -> VarChar,
+    }
+}
 
-    let query = select(sql::<types::VarChar>("name FROM sqlite_master"))
-        .filter(sql::<types::Bool>("type='table' AND name NOT LIKE '\\_\\_%'"));
-    query.load(connection)
+pub fn load_table_names(connection: &SqliteConnection) -> QueryResult<Vec<String>> {
+    use self::sqlite_master::dsl::*;
+
+    sqlite_master.select(name)
+        .filter(name.not_like("\\_\\_%").escape('\\'))
+        .filter(name.not_like("sqlite%"))
+        .filter(sql("type='table'"))
+        .load(connection)
 }
 
 struct FullTableInfo {
@@ -99,4 +108,35 @@ pub fn get_primary_keys(conn: &SqliteConnection, table_name: &str) -> QueryResul
     Ok(results.iter()
         .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
         .collect())
+}
+
+#[test]
+fn load_table_names_returns_nothing_when_no_tables_exist() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    assert_eq!(Ok(vec![]), load_table_names(&conn));
+}
+
+#[test]
+fn load_table_names_includes_tables_that_exist() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    let table_names = load_table_names(&conn).unwrap();
+    assert!(table_names.contains(&String::from("users")));
+}
+
+#[test]
+fn load_table_names_excludes_diesel_metadata_tables() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    let table_names = load_table_names(&conn).unwrap();
+    assert!(!table_names.contains(&String::from("__diesel_metadata")));
+}
+
+#[test]
+fn load_table_names_excludes_sqlite_metadata_tables() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    let table_names = load_table_names(&conn);
+    assert_eq!(Ok(vec![String::from("users")]), table_names);
 }

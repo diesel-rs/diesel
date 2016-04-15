@@ -69,7 +69,7 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
 ) -> Result<Box<MacResult>, Box<MacResult>> {
     let database_url = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
-    let table_names = load_table_names(cx, sp, &connection).unwrap();
+    let table_names = load_table_names(&connection).unwrap();
     let impls = table_names.into_iter()
         .map(|n| table_macro_call(cx, sp, &connection, &n))
         .collect();
@@ -193,16 +193,12 @@ fn get_table_data(conn: &InferConnection, table_name: &str)
     }
 }
 
-fn load_table_names(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    connection: &InferConnection,
-) -> Result<Vec<String>, ::diesel::result::Error> {
+fn load_table_names(connection: &InferConnection) -> QueryResult<Vec<String>> {
     match *connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => sqlite::load_table_names(cx, sp, c),
+        InferConnection::Sqlite(ref c) => sqlite::load_table_names(c),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => pg::load_table_names(cx, sp, c),
+        InferConnection::Pg(ref c) => pg::load_table_names(c),
     }
 }
 

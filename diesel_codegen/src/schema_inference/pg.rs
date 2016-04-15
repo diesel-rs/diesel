@@ -1,7 +1,6 @@
 use diesel::*;
 use diesel::pg::PgConnection;
 use syntax::ast;
-use syntax::codemap::Span;
 use syntax::ext::base::*;
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
@@ -66,12 +65,7 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-pub fn load_table_names(
-    _cx: &mut ExtCtxt,
-    _sp: Span,
-    connection: &PgConnection,
-) -> Result<Vec<String>, result::Error>
-{
+pub fn load_table_names(connection: &PgConnection) -> QueryResult<Vec<String>> {
     use diesel::prelude::*;
     use diesel::expression::dsl::sql;
 
