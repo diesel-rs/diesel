@@ -1,6 +1,6 @@
 use schema::connection;
 use diesel::*;
-use diesel::pg::PgConnection;
+use schema::TestConnection;
 use diesel::data_types::*;
 use diesel::expression::dsl::*;
 
@@ -113,7 +113,7 @@ fn adding_interval_to_timestamp() {
     assert_eq!(expected_data, actual_data);
 }
 
-fn setup_test_table(conn: &PgConnection) {
+fn setup_test_table(conn: &TestConnection) {
     conn.execute("CREATE TABLE has_timestamps (
         id SERIAL PRIMARY KEY,
         created_at TIMESTAMP NOT NULL,

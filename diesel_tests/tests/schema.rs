@@ -48,11 +48,11 @@ impl Comment {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 #[path="postgres_specific_schema.rs"]
 mod backend_specifics;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 #[path="sqlite_specific_schema.rs"]
 mod backend_specifics;
 
@@ -111,6 +111,10 @@ pub struct NewComment<'a>(
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 pub type TestConnection = ::diesel::sqlite::SqliteConnection;
+#[cfg(all(feature = "pg", feature = "debug"))]
+pub type TestConnection = ::diesel::debug_connection::DebugConnection<::diesel::pg::PgConnection>;
+#[cfg(all(feature = "sq", feature = "debug"))]
+pub type TestConnection = ::diesel::debug_connection::DebugConnection<::diesel::sqlite::SqliteConnection>;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -127,6 +131,15 @@ pub fn connection_without_transaction() -> TestConnection {
     ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }
 
+#[cfg(all(feature = "pg", feature = "debug"))]
+pub fn connection_without_transaction() -> TestConnection {
+    use diesel::pg::PgConnection;
+    use diesel::debug_connection::DebugConnection;
+    let connection_url = dotenv!("DATABASE_URL",
+        "DATABASE_URL must be set in order to run tests");
+    DebugConnection::<PgConnection>::establish(&connection_url).unwrap()
+}
+
 #[cfg(feature = "sqlite")]
 embed_migrations!("../../migrations/sqlite");
 
@@ -137,10 +150,22 @@ pub fn connection_without_transaction() -> TestConnection {
     connection
 }
 
+#[cfg(all(feature = "sq", feature = "debug"))]
+pub fn connection_without_transaction() -> TestConnection {
+    use std::io;
+    use diesel::sqlite::SqliteConnection;
+    use diesel::debug_connection::DebugConnection;
+
+    let connection = DebugConnection::<SqliteConnection>::establish(":memory:").unwrap();
+    let migrations_dir = migrations::find_migrations_directory().unwrap().join("sqlite");
+    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
+    connection
+}
+
 use diesel::query_builder::insert_statement::{InsertStatement, Insert};
 use diesel::query_builder::QueryFragment;
 
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
     -> usize where
         T: Table,
@@ -151,7 +176,7 @@ pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: 
     insert(records).into(table).execute(connection).unwrap()
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
     -> usize where
         T: Table + Copy,
@@ -176,7 +201,7 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
 }
 
 fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
-    if cfg!(feature = "postgres") {
+    if cfg!(feature = "pg") {
         for _ in 0..x {
             select(nextval("users_id_seq")).execute(connection).unwrap();
         }

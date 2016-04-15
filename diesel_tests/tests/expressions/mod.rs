@@ -1,4 +1,4 @@
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
+#[cfg(feature = "pg")] // FIXME: We need to test this on SQLite when we support these types
 mod date_and_time;
 mod ops;
 
@@ -36,7 +36,7 @@ use diesel::types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn test_with_expression_aliased() {
     let n = lower("sean").aliased("n");
     assert_eq!(
@@ -261,7 +261,7 @@ fn test_avg_for_nullable() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
+#[cfg(feature = "pg")] // FIXME: We need to test this on SQLite when we support these types
 fn test_avg_for_integer() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -296,7 +296,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite
+#[cfg(feature = "pg")] // FIXME: We need to test this on SQLite
 fn test_avg_for_numeric() {
     use self::numeric::columns::*;
     use self::numeric::table as numeric;

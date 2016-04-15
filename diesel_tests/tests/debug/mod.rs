@@ -13,3 +13,6 @@ fn test_debug_output() {
     let command = update(users.filter(id.eq(1))).set(name.eq("new_name"));
     assert_eq!(debug_sql!(command), "UPDATE `users` SET `name` = ? WHERE `users`.`id` = ?")
 }
+
+#[cfg(feature = "debug")]
+mod debug_connection_test;

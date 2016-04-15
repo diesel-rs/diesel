@@ -5,13 +5,18 @@ mod cache;
 
 use std::ffi::CString;
 use std::ptr;
+use std::rc::Rc;
 
 use super::result::PgResult;
 use result::QueryResult;
+use connection::DebugSql;
+use row::Row;
 
 pub use self::cache::StatementCache;
 pub use super::raw::RawConnection;
 
+
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub enum Query {
     Prepared {
         name: CString,
@@ -96,6 +101,37 @@ impl Query {
             name: name,
             param_formats: vec![1; param_types.len()],
         })
+    }
+}
+
+impl DebugSql<Rc<RawConnection>> for Query {
+    fn get_debug_sql(&self, raw_connection: &Rc<RawConnection>) -> String {
+        match *self {
+            Query::Sql{ ref query, .. } => query.to_string_lossy().to_string(),
+            Query::Prepared{ ref name, .. } => {
+                let query:String = format!("SELECT statement FROM pg_prepared_statements where name = '{}'", name.to_string_lossy());
+                let mut query = query.into_bytes();
+                query.push(0);
+                let internal_result = unsafe {
+                    raw_connection.exec(query.as_ptr() as *const libc::c_char)
+                };
+                match PgResult::new(internal_result) {
+                    Ok(r) => {
+                        if r.num_rows() != 1 {
+                            return "Could not fetch prepared statement for logging".to_owned();
+                        }
+                        let mut row = r.get_row(0);
+                        match row.take() {
+                            Some(bytes) => {
+                                String::from_utf8_lossy(bytes).into_owned()
+                            }
+                            None => "Could not fetch prepared statement for logging".to_owned()
+                        }
+                    }
+                    Err(e) => format!("{:?}", e)
+                }
+            }
+        }
     }
 }
 

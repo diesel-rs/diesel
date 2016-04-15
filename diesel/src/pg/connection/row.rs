@@ -2,6 +2,7 @@ use pg::Pg;
 use row::Row;
 use super::result::PgResult;
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct PgRow<'a> {
     db_result: &'a PgResult,
     row_idx: usize,

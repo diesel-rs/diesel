@@ -11,9 +11,9 @@ use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::rc::Rc;
 
-use connection::{SimpleConnection, Connection};
+use connection::{SimpleConnection, Connection, DebugSql};
 use pg::{Pg, PgQueryBuilder};
-use query_builder::{AsQuery, QueryFragment, QueryId};
+use query_builder::{QueryFragment, QueryId};
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
@@ -48,6 +48,9 @@ impl SimpleConnection for PgConnection {
 
 impl Connection for PgConnection {
     type Backend = Pg;
+    type RawConnection = Rc<RawConnection>;
+    type PreparedQuery = (Rc<Query>, Vec<Option<Vec<u8>>>);
+
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).map(|raw_conn| {
@@ -63,23 +66,17 @@ impl Connection for PgConnection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
-        T: AsQuery,
-        T::Query: QueryFragment<Pg> + QueryId,
-        Pg: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Pg>,
+    fn _query_all<ST, U>(&self, (query, params): (Rc<Query>,Vec<Option<Vec<u8>>>)) -> QueryResult<Vec<U>> where
+        Pg: HasSqlType<ST>,
+        U: Queryable<ST, Pg>,
     {
-        let (query, params) = try!(self.prepare_query(&source.as_query()));
         query.execute(&self.raw_connection, &params)
             .and_then(|r| Cursor::new(r).collect())
     }
 
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Pg> + QueryId,
+    fn _execute_returning_count(&self, (query, params): (Rc<Query>,Vec<Option<Vec<u8>>>)) -> QueryResult<usize>
     {
-        let (query, params) = try!(self.prepare_query(source));
-        query.execute(&self.raw_connection, &params)
-            .map(|r| r.rows_affected())
+        query.execute(&self.raw_connection, &params).map(|r| r.rows_affected())
     }
 
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
@@ -127,9 +124,7 @@ impl Connection for PgConnection {
             include_str!("setup/timestamp_helpers.sql")
         ).expect("Error creating timestamp helper functions for Pg");
     }
-}
 
-impl PgConnection {
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
         -> QueryResult<(Rc<Query>, Vec<Option<Vec<u8>>>)>
     {
@@ -152,6 +147,20 @@ impl PgConnection {
 
         Ok((query, binds))
     }
+
+    fn _get_raw_connection(&self) -> &Rc<RawConnection> {
+        &self.raw_connection
+    }
+}
+
+impl DebugSql<Rc<RawConnection>> for (Rc<Query>, Vec<Option<Vec<u8>>>) {
+    fn get_debug_sql(&self, raw_connection: &Rc<RawConnection>) -> String {
+        // TODO: get arguments from vector
+        self.0.get_debug_sql(raw_connection)
+    }
+}
+
+impl PgConnection {
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
         let query = try!(Query::sql(query, None));

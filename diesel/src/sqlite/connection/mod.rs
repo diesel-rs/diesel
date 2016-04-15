@@ -54,6 +54,8 @@ impl SimpleConnection for SqliteConnection {
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
+    type RawConnection = RawConnection;
+    type PreparedQuery = StatementUse;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| {
@@ -70,21 +72,16 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+    fn _query_all<ST, U>(&self, statement: StatementUse) -> QueryResult<Vec<U>> where
+        Self::Backend: HasSqlType<ST>,
+        U: Queryable<ST, Self::Backend>,
     {
-        let statement = try!(self.prepare_query(&source.as_query()));
         let mut statement_ref = statement.borrow_mut();
         StatementIterator::new(&mut statement_ref).collect()
     }
 
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend> + QueryId,
+    fn _execute_returning_count(&self, stmt: StatementUse) -> QueryResult<usize>
     {
-        let stmt = try!(self.prepare_query(source));
         try!(stmt.borrow().run());
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
@@ -129,12 +126,8 @@ impl Connection for SqliteConnection {
     fn setup_helper_functions(&self) {
         // this will be implemented at least when timestamps are supported in SQLite
     }
-}
-
-impl SqliteConnection {
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<StatementUse> {
         let result = try!(self.cached_prepared_statement(source));
-
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         try!(source.collect_binds(&mut bind_collector));
         {
@@ -146,6 +139,13 @@ impl SqliteConnection {
 
         Ok(result)
     }
+
+    fn _get_raw_connection(&self) -> &RawConnection {
+        &self.raw_connection
+    }
+}
+
+impl SqliteConnection {
 
     fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
         if query.is_ok() {

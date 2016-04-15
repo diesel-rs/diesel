@@ -11,8 +11,14 @@ pub trait SimpleConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
+pub trait DebugSql<RawConnection>{
+    fn get_debug_sql(&self, raw_connection: &RawConnection) -> String;
+}
+
 pub trait Connection: SimpleConnection + Sized {
     type Backend: Backend;
+    type RawConnection;
+    type PreparedQuery: DebugSql<Self::RawConnection>;
 
     /// Establishes a new connection to the database at the given URL. The URL
     /// should be a valid connection string for a given backend. See the
@@ -82,11 +88,27 @@ pub trait Connection: SimpleConnection + Sized {
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>;
+        U: Queryable<T::SqlType, Self::Backend>
+    {
+        self._query_all::<T::SqlType, U>(try!(self.prepare_query(&source.as_query())))
+    }
+
+    #[doc(hidden)]
+    fn _query_all<ST, U>(&self, query: Self::PreparedQuery) -> QueryResult<Vec<U>> where
+        Self::Backend: HasSqlType<ST>,
+        U: Queryable<ST, Self::Backend>;
+
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend> + QueryId;
+        T: QueryFragment<Self::Backend> + QueryId
+    {
+        self._execute_returning_count(try!(self.prepare_query(source)))
+    }
+
+    #[doc(hidden)]
+    fn _execute_returning_count(&self, query: Self::PreparedQuery) -> QueryResult<usize>;
+
 
     #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
     #[doc(hidden)] fn begin_transaction(&self) -> QueryResult<()>;
@@ -95,4 +117,9 @@ pub trait Connection: SimpleConnection + Sized {
     #[doc(hidden)] fn get_transaction_depth(&self) -> i32;
 
     #[doc(hidden)] fn setup_helper_functions(&self);
+    #[doc(hidden)] fn _get_raw_connection(&self) -> &Self::RawConnection;
+
+    #[doc(hidden)]
+    fn prepare_query<T: QueryFragment<Self::Backend> + QueryId>(&self, source: &T)
+        -> QueryResult<Self::PreparedQuery>;
 }

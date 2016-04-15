@@ -11,7 +11,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn managing_updated_at_for_table() {
     use self::auto_time::columns::*;
     use self::auto_time::table as auto_time;

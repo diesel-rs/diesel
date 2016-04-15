@@ -3,7 +3,7 @@ extern crate chrono;
 
 use schema::*;
 use diesel::*;
-#[cfg(feature="postgres")]
+#[cfg(feature="pg")]
 use diesel::pg::Pg;
 use diesel::types::*;
 
@@ -15,7 +15,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn errors_during_deserialization_do_not_panic() {
     use self::chrono::NaiveDateTime;
     use self::has_timestamps::dsl::*;
@@ -38,14 +38,14 @@ fn errors_during_deserialization_do_not_panic() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn boolean_from_sql() {
     assert_eq!(true, query_single_value::<Bool, bool>("'t'::bool"));
     assert_eq!(false, query_single_value::<Bool, bool>("'f'::bool"));
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn boolean_treats_null_as_false_when_predicates_return_null() {
     let connection = connection();
     let one = AsExpression::<Nullable<Integer>>::as_expression(Some(1));
@@ -54,7 +54,7 @@ fn boolean_treats_null_as_false_when_predicates_return_null() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn boolean_to_sql() {
     assert!(query_to_sql_equality::<Bool, bool>("'t'::bool", true));
     assert!(query_to_sql_equality::<Bool, bool>("'f'::bool", false));
@@ -63,7 +63,7 @@ fn boolean_to_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn i16_from_sql() {
     assert_eq!(0, query_single_value::<SmallInt, i16>("0::int2"));
     assert_eq!(-1, query_single_value::<SmallInt, i16>("-1::int2"));
@@ -71,7 +71,7 @@ fn i16_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn i16_to_sql_smallint() {
     assert!(query_to_sql_equality::<SmallInt, i16>("0::int2", 0));
     assert!(query_to_sql_equality::<SmallInt, i16>("-1::int2", -1));
@@ -97,7 +97,7 @@ fn i32_to_sql_integer() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn i64_from_sql() {
     assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));
     assert_eq!(-1, query_single_value::<BigInt, i64>("-1::int8"));
@@ -106,7 +106,7 @@ fn i64_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn i64_to_sql_bigint() {
     assert!(query_to_sql_equality::<BigInt, i64>("0::int8", 0));
     assert!(query_to_sql_equality::<BigInt, i64>("-1::int8", -1));
@@ -118,7 +118,7 @@ fn i64_to_sql_bigint() {
 use std::{f32, f64};
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn f32_from_sql() {
     assert_eq!(0.0, query_single_value::<Float, f32>("0.0::real"));
     assert_eq!(0.5, query_single_value::<Float, f32>("0.5::real"));
@@ -131,7 +131,7 @@ fn f32_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn f32_to_sql_float() {
     assert!(query_to_sql_equality::<Float, f32>("0.0::real", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5::real", 0.5));
@@ -145,7 +145,7 @@ fn f32_to_sql_float() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn f64_from_sql() {
     assert_eq!(0.0, query_single_value::<Double, f64>("0.0::double precision"));
     assert_eq!(0.5, query_single_value::<Double, f64>("0.5::double precision"));
@@ -158,7 +158,7 @@ fn f64_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn f64_to_sql_float() {
     assert!(query_to_sql_equality::<Double, f64>("0.0::double precision", 0.0));
     assert!(query_to_sql_equality::<Double, f64>("0.5::double precision", 0.5));
@@ -195,7 +195,7 @@ fn string_to_sql_varchar() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn binary_from_sql() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
     assert_eq!(invalid_utf8_bytes,
@@ -207,7 +207,7 @@ fn binary_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn bytes_to_sql_binary() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
     assert!(query_to_sql_equality::<Binary, Vec<u8>>("E'\\\\x1F8B'::bytea",
@@ -221,7 +221,7 @@ fn bytes_to_sql_binary() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_specific_option_from_sql() {
     assert_eq!(Some(true),
     query_single_value::<Nullable<Bool>, Option<bool>>("'t'::bool"));
@@ -244,7 +244,7 @@ fn option_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_specific_option_to_sql() {
     assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>("'t'::bool", Some(true)));
     assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>("'f'::bool", Some(true)));
@@ -264,7 +264,7 @@ fn option_to_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_array_from_sql() {
     assert_eq!(vec![true, false, true],
                query_single_value::<Array<Bool>, Vec<bool>>(
@@ -277,7 +277,7 @@ fn pg_array_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn to_sql_array() {
     assert!(query_to_sql_equality::<Array<Bool>, Vec<bool>>(
             "ARRAY['t', 'f', 't']::bool[]", vec![true, false, true]));
@@ -292,7 +292,7 @@ fn to_sql_array() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_array_containing_null() {
     let query = "ARRAY['Hello', '', NULL, 'world']";
     let data = query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>(query);
@@ -306,7 +306,7 @@ fn pg_array_containing_null() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn timestamp_from_sql() {
     use diesel::data_types::PgTimestamp;
 
@@ -319,7 +319,7 @@ fn timestamp_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_timestamp_to_sql_timestamp() {
     use diesel::data_types::PgTimestamp;
 
@@ -334,7 +334,7 @@ fn pg_timestamp_to_sql_timestamp() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_numeric_from_sql() {
     use diesel::data_types::PgNumeric;
 
@@ -358,7 +358,7 @@ fn pg_numeric_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_uuid_from_sql() {
     extern crate uuid;
 
@@ -371,7 +371,7 @@ fn pg_uuid_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn pg_uuid_to_sql_uuid() {
     extern crate uuid;
 
@@ -386,7 +386,7 @@ fn pg_uuid_to_sql_uuid() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn text_array_can_be_assigned_to_varchar_array_column() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
@@ -401,7 +401,7 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
     use std::io::prelude::*;

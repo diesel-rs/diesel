@@ -21,7 +21,7 @@ fn insert_records() {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 fn insert_records_using_returning_clause() {
     use schema::users::table as users;
     let connection = connection();
@@ -40,7 +40,7 @@ fn insert_records_using_returning_clause() {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 fn insert_records_with_custom_returning_clause() {
     use schema::users::dsl::*;
 
@@ -64,7 +64,7 @@ fn insert_records_with_custom_returning_clause() {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 fn batch_insert_with_defaults() {
     use schema::users::table as users;
     let connection = connection();

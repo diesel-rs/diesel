@@ -68,9 +68,9 @@ use diesel::backend::*;
 use diesel::query_builder::*;
 use diesel::result::QueryResult;
 use diesel::types::Integer;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 use diesel::pg::Pg;
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 use diesel::sqlite::Sqlite;
 
 impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
@@ -153,7 +153,7 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
 
 impl_query_id!(noop: PrimaryKey<Col>);
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
     Col: QueryFragment<Sqlite>,
 {
@@ -175,7 +175,7 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
 
 impl_query_id!(noop: AutoIncrement<Col>);
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier((self.0).0.name));
