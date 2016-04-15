@@ -3,6 +3,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* Added the `escape` method to `Like` and `NotLike`, to specify the escape
+  character used in the pattern. See [EscapeExpressionMethods][escape] for
+  details.
+
+[escape]: http://docs.diesel.rs/diesel/expression/expression_methods/escape_expression_methods/trait.EscapeExpressionMethods.html
+
 ## [0.6.0] 2016-04-12
 
 ### Added

@@ -4,9 +4,8 @@
 use super::{Expression, AsExpression};
 use types;
 
-pub type AsExpr<Item, TargetExpr> = <Item as AsExpression<
-    <TargetExpr as Expression>::SqlType
->>::Expression;
+pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, <TargetExpr as Expression>::SqlType>;
+pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
 
 macro_rules! gen_helper_type {
     ($name:ident) => {

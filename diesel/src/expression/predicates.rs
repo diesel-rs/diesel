@@ -190,6 +190,7 @@ macro_rules! postfix_expression {
 
 infix_predicate!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
+infix_predicate!(Escape, " ESCAPE ");
 infix_predicate!(Eq, " = ");
 infix_predicate!(Gt, " > ");
 infix_predicate!(GtEq, " >= ");
