@@ -154,3 +154,20 @@ crates, and having any columns with a type not already supported will result in
 a compiler error (please open an issue if this happens unexpectedly for a type
 listed in [our
 docs](http://sgrif.github.io/diesel/diesel/types/index.html#structs).)
+
+### `embed_migrations!()`
+
+This macro will read your migrations at compile time, and embed a module you can
+use to execute them at runtime without the migration files being present on the
+file system. This is useful if you would like to use Diesel's migration
+infrastructure, but want to ship a single executable file (such as for embedded
+applications). It can also be used to apply migrations to an in memory database
+(Diesel does this for its own test suite).
+
+You can optionally pass the path to the migrations directory to this macro. When
+left unspecified, Diesel Codegen will search for the migrations directory in the
+same way that Diesel CLI does. If specified, the path should be relative to the
+directory where the macro was invoked (similar to
+[`include_str!`][include-str]).
+
+[include-str]: https://doc.rust-lang.org/nightly/std/macro.include_str!.html

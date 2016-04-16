@@ -62,15 +62,17 @@ mod migration_error;
 #[doc(hidden)]
 pub mod schema;
 
-pub use self::migration_error::*;
 #[doc(inline)]
 pub use self::connection::MigrationConnection;
+#[doc(inline)]
+pub use self::migration::*;
+pub use self::migration_error::*;
 
+use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
 use expression::expression_methods::*;
 use query_dsl::*;
-use self::migration::*;
 use self::migration_error::MigrationError::*;
 use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
@@ -103,13 +105,8 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
     -> Result<(), RunMigrationsError> where
         Conn: MigrationConnection,
 {
-    try!(setup_database(conn));
-    let already_run = try!(conn.previously_run_migration_versions());
     let all_migrations = try!(migrations_in_directory(migrations_dir));
-    let pending_migrations = all_migrations.into_iter().filter(|m| {
-        !already_run.contains(&m.version().to_string())
-    });
-    run_migrations(conn, pending_migrations.collect(), output)
+    run_migrations(conn, all_migrations, output)
 }
 
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
@@ -142,7 +139,7 @@ pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Wri
 {
     migration_with_version(ver)
         .map_err(|e| e.into())
-        .and_then(|m| run_migration(conn, m, output))
+        .and_then(|m| run_migration(conn, &*m, output))
 }
 
 fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
@@ -172,9 +169,8 @@ fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> Qu
     })
 }
 
-fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
-    use self::migration::migration_from;
-
+#[doc(hidden)]
+pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, MigrationError> {
     try!(path.read_dir())
         .filter_map(|entry| {
             let entry = match entry {
@@ -182,25 +178,47 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
                 Err(e) => return Some(Err(e.into())),
             };
             if !entry.file_name().to_string_lossy().starts_with(".") {
-                Some(migration_from(entry.path()))
+                Some(Ok(entry))
             } else {
                 None
             }
         }).collect()
 }
 
-fn run_migrations<Conn>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
-        Conn: MigrationConnection,
+fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
+    use self::migration::migration_from;
+
+    try!(migration_paths_in_directory(path)).iter().map(|e| {
+        migration_from(e.path())
+    }).collect()
+}
+
+/// Run all pending migrations in the given list. Apps should likely be calling
+/// `run_pending_migrations` or `run_pending_migrations_in_directory` instead.
+pub fn run_migrations<Conn, List, M>(
+    conn: &Conn,
+    migrations: List,
+    output: &mut Write,
+) -> Result<(), RunMigrationsError> where
+    Conn: MigrationConnection,
+    List: IntoIterator<Item=M>,
+    M: ::std::ops::Deref<Target=Migration>,
 {
-    migrations.sort_by(|a, b| a.version().cmp(b.version()));
-    for migration in migrations {
-        try!(run_migration(conn, migration, output));
+    try!(setup_database(conn));
+    let already_run = try!(conn.previously_run_migration_versions());
+    let mut pending_migrations: Vec<_> = migrations.into_iter()
+        .filter(|m| {
+            !already_run.contains(&m.version().to_string())
+        }).collect();
+
+    pending_migrations.sort_by(|a, b| a.version().cmp(b.version()));
+    for migration in pending_migrations {
+        try!(run_migration(conn, &*migration, output));
     }
     Ok(())
 }
 
-fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
+fn run_migration<Conn>(conn: &Conn, migration: &Migration, output: &mut Write)
     -> Result<(), RunMigrationsError> where
         Conn: MigrationConnection,
 {
@@ -233,7 +251,9 @@ pub fn find_migrations_directory() -> Result<PathBuf, MigrationError> {
     search_for_migrations_directory(&try!(env::current_dir()))
 }
 
-fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationError> {
+/// Searches for the migrations directory relative to the given path. See
+/// `find_migrations_directory` for more details.
+pub fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationError> {
     let migration_path = path.join("migrations");
     if migration_path.is_dir() {
         Ok(migration_path)
@@ -248,7 +268,6 @@ mod tests {
     extern crate tempdir;
 
     use super::*;
-    use super::search_for_migrations_directory;
 
     use self::tempdir::TempDir;
     use std::fs;

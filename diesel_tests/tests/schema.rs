@@ -116,12 +116,12 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "sqlite")]
-pub fn connection_without_transaction() -> TestConnection {
-    use std::io;
+embed_migrations!("../../migrations/sqlite");
 
+#[cfg(feature = "sqlite")]
+pub fn connection_without_transaction() -> TestConnection {
     let connection = ::diesel::sqlite::SqliteConnection::establish(":memory:").unwrap();
-    let migrations_dir = migrations::find_migrations_directory().unwrap().join("sqlite");
-    migrations::run_pending_migrations_in_directory(&connection, &migrations_dir, &mut io::sink()).unwrap();
+    embedded_migrations::run(&connection).unwrap();
     connection
 }
 

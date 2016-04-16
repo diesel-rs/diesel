@@ -33,11 +33,10 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
     }).collect()
 }
 
-fn version_from_path(path: &Path) -> Result<String, MigrationError> {
+#[doc(hidden)]
+pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
     path.file_name().unwrap()
-        .to_os_string()
-        .into_string()
-        .unwrap()
+        .to_string_lossy()
         .split("_")
         .nth(0)
         .map(|s| Ok(s.into()))

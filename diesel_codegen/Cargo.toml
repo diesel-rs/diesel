@@ -19,6 +19,9 @@ syntex = { version = "0.31.0", optional = true }
 syntex_syntax = { version = "0.31.0", optional = true }
 diesel = { version = "0.6.0", default-features = false }
 
+[dev-dependencies]
+tempdir = "0.3.4"
+
 [features]
 default = ["with-syntex", "postgres"]
 nightly = []
