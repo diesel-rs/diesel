@@ -13,6 +13,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [escape]: http://docs.diesel.rs/diesel/expression/expression_methods/escape_expression_methods/trait.EscapeExpressionMethods.html
 
+### Fixed
+
+* `diesel_codegen` and `diesel_cli` now properly rely on Diesel 0.6.0. The
+  restriction to 0.5.0 was an oversight.
+
 ## [0.6.0] 2016-04-12
 
 ### Added
