@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
@@ -20,7 +20,7 @@ uuid = { version = "^0.2.0", optional = true, features = ["use_std"] }
 
 [dev-dependencies]
 quickcheck = "0.2.25"
-dotenv = { git = "https://github.com/slapresta/rust-dotenv.git" }
+dotenv = "0.8.0"
 tempdir = "^0.3.4"
 
 [features]

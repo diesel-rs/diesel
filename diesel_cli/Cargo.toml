@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
