@@ -55,7 +55,8 @@
 //! -- 20160107082941_create_posts/down.sql
 //! DROP TABLE posts;
 //! ```
-mod migration;
+#[doc(hidden)]
+pub mod migration;
 #[doc(hidden)]
 pub mod connection;
 mod migration_error;
@@ -81,7 +82,8 @@ use std::path::{PathBuf, Path};
 /// Runs all migrations that have not yet been run. This function will print all progress to
 /// stdout. This function will return an `Err` if some error occurs reading the migrations, or if
 /// any migration fails to run. Each migration is run in its own transaction, so some migrations
-/// may be committed, even if a later migration fails to run.
+/// may be committed, even if a later migration fails to run. A Vec with codes of executed
+/// migrations will be returned.
 ///
 /// It should be noted that this runs all migrations that have not already been run, regardless of
 /// whether or not their version is later than the latest run migration. This is generally not a
@@ -91,7 +93,7 @@ use std::path::{PathBuf, Path};
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsError> where
+pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<Vec<String>, RunMigrationsError> where
     Conn: MigrationConnection,
 {
     let migrations_dir = try!(find_migrations_directory());
@@ -100,17 +102,32 @@ pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsErro
 
 #[doc(hidden)]
 pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
+    -> Result<Vec<String>, RunMigrationsError> where
         Conn: MigrationConnection,
+{
+    use self::migration::migration_from;
+
+    let all_migrations = try!(migrations_in_directory(migrations_dir, migration_from));
+    run_pending_migrations_from_iter(conn, all_migrations.into_iter(), output)
+}
+
+#[doc(hidden)]
+pub fn run_pending_migrations_from_iter<Conn, T>(
+    conn: &Conn,
+    all_migrations: T,
+    output: &mut Write,
+) -> Result<Vec<String>, RunMigrationsError> where
+    Conn: MigrationConnection,
+    T: Iterator<Item = Box<Migration>>,
 {
     try!(setup_database(conn));
     let already_run = try!(conn.previously_run_migration_versions());
-    let all_migrations = try!(migrations_in_directory(migrations_dir));
-    let pending_migrations = all_migrations.into_iter().filter(|m| {
+    let pending_migrations = all_migrations.filter(|m| {
         !already_run.contains(&m.version().to_string())
     });
+
     run_migrations(conn, pending_migrations.collect(), output)
-}
+ }
 
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
 /// `Err` if no migrations have ever been run.
@@ -132,7 +149,7 @@ pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, o
 {
     migration_with_version(ver)
         .map_err(|e| e.into())
-        .and_then(|m| revert_migration(conn, m, output))
+        .and_then(|ref m| revert_migration(conn, m, output))
 }
 
 #[doc(hidden)]
@@ -142,12 +159,13 @@ pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Wri
 {
     migration_with_version(ver)
         .map_err(|e| e.into())
-        .and_then(|m| run_migration(conn, m, output))
+        .and_then(|ref m| run_migration(conn, m, output))
 }
 
 fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
+    use self::migration::migration_from;
     let migrations_dir = try!(find_migrations_directory());
-    let all_migrations = try!(migrations_in_directory(&migrations_dir));
+    let all_migrations = try!(migrations_in_directory(&migrations_dir, migration_from));
     let migration = all_migrations.into_iter().find(|m| {
         m.version() == ver
     });
@@ -172,9 +190,10 @@ fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> Qu
     })
 }
 
-fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
-    use self::migration::migration_from;
-
+pub fn migrations_in_directory<F, T>(path: &Path, mut convertor: F)
+    -> Result<Vec<T>, MigrationError> where
+        F: FnMut(PathBuf) -> Result<T, MigrationError>
+{
     try!(path.read_dir())
         .filter_map(|entry| {
             let entry = match entry {
@@ -182,7 +201,7 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
                 Err(e) => return Some(Err(e.into())),
             };
             if !entry.file_name().to_string_lossy().starts_with(".") {
-                Some(migration_from(entry.path()))
+                Some(convertor(entry.path()))
             } else {
                 None
             }
@@ -190,17 +209,17 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
 }
 
 fn run_migrations<Conn>(conn: &Conn, mut migrations: Vec<Box<Migration>>, output: &mut Write)
-    -> Result<(), RunMigrationsError> where
+    -> Result<Vec<String>, RunMigrationsError> where
         Conn: MigrationConnection,
 {
     migrations.sort_by(|a, b| a.version().cmp(b.version()));
-    for migration in migrations {
-        try!(run_migration(conn, migration, output));
-    }
-    Ok(())
+    for migration in migrations.iter() {
+         try!(run_migration(conn, migration, output));
+     }
+    Ok(migrations.into_iter().map(|a| a.version().to_string()).collect())
 }
 
-fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
+fn run_migration<Conn>(conn: &Conn, migration: &Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError> where
         Conn: MigrationConnection,
 {
@@ -212,7 +231,8 @@ fn run_migration<Conn>(conn: &Conn, migration: Box<Migration>, output: &mut Writ
     }).map_err(|e| e.into())
 }
 
-fn revert_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
+#[doc(hidden)]
+pub fn revert_migration<Conn: Connection>(conn: &Conn, migration: &Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
     try!(conn.transaction(|| {

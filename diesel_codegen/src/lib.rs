@@ -35,6 +35,7 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_decorator("belongs_to", associations::expand_belongs_to);
     reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
+    reg.add_macro("create_migrations_module", migrations::create_migration_module);
 
     reg.add_post_expansion_pass(util::strip_attributes);
 }
@@ -66,4 +67,5 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
     );
     reg.register_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.register_macro("infer_schema", schema_inference::expand_infer_schema);
+    reg.register_macro("create_migrations_module", migrations::create_migration_module);
 }

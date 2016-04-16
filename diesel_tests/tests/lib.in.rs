@@ -4,3 +4,4 @@ mod deserialization;
 mod insert;
 mod schema;
 mod update;
+mod migrations;

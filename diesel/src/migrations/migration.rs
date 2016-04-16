@@ -18,7 +18,7 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     }
 }
 
-fn valid_sql_migration_directory(path: &Path) -> bool {
+pub fn valid_sql_migration_directory(path: &Path) -> bool {
     file_names(path).map(|files| {
         files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
     }).unwrap_or(false)
@@ -33,7 +33,7 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
     }).collect()
 }
 
-fn version_from_path(path: &Path) -> Result<String, MigrationError> {
+pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
     path.file_name().unwrap()
         .to_os_string()
         .into_string()
@@ -71,6 +71,30 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
     try!(file.read_to_string(&mut sql));
     try!(conn.batch_execute(&sql));
     Ok(())
+}
+
+#[doc(hidden)]
+#[derive(Clone, Copy)]
+pub struct ProgrammaticMigration {
+    pub version: &'static str,
+    pub up: &'static str,
+    pub down: &'static str,
+}
+
+impl Migration for ProgrammaticMigration {
+    fn version(&self) -> &str {
+        self.version
+    }
+
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        try!(conn.batch_execute(self.up));
+        Ok(())
+    }
+
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        try!(conn.batch_execute(self.down));
+        Ok(())
+    }
 }
 
 #[cfg(test)]
