@@ -1,7 +1,5 @@
 use diesel::*;
-use super::User;
-
-infer_schema!(dotenv!("DATABASE_URL"));
+use super::{User, posts, comments, users};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
 #[has_many(comments)]
