@@ -18,6 +18,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `diesel_codegen` and `diesel_cli` now properly rely on Diesel 0.6.0. The
   restriction to 0.5.0 was an oversight.
 
+* `infer_schema!` now properly excludes metadata tables on SQLite.
+
+* `infer_schema!` now properly maps types on SQLite.
+
 ## [0.6.0] 2016-04-12
 
 ### Added
