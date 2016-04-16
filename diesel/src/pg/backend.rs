@@ -1,4 +1,5 @@
 use backend::*;
+use query_builder::bind_collector::RawBytesBindCollector;
 use super::query_builder::PgQueryBuilder;
 
 pub struct Pg;
@@ -11,6 +12,7 @@ pub struct PgTypeMetadata {
 
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
+    type BindCollector = RawBytesBindCollector<Pg>;
     type RawValue = [u8];
 }
 

@@ -1,17 +1,14 @@
-use super::backend::{Sqlite, SqliteType};
+use super::backend::Sqlite;
 use query_builder::{QueryBuilder, BuildQueryResult};
-use types::HasSqlType;
 
 pub struct SqliteQueryBuilder {
     pub sql: String,
-    pub bind_params: Vec<(SqliteType, Option<Vec<u8>>)>,
 }
 
 impl SqliteQueryBuilder {
     pub fn new() -> Self {
         SqliteQueryBuilder {
             sql: String::new(),
-            bind_params: Vec::new(),
         }
     }
 }
@@ -28,10 +25,7 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
         Ok(())
     }
 
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
-        Sqlite: HasSqlType<T>,
-    {
+    fn push_bind_param(&mut self) {
         self.push_sql("?");
-        self.bind_params.push((Sqlite::metadata(), bind));
     }
 }

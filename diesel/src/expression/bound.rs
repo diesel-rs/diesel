@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use query_builder::*;
+use result::Error::SerializationError;
+use result::QueryResult;
 use super::{Expression, SelectableExpression, NonAggregate};
 use types::{HasSqlType, ToSql, IsNull};
 
@@ -29,8 +31,14 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
     U: ToSql<T, DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_bind_param();
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         let mut bytes = Vec::new();
-        match try!(self.item.to_sql(&mut bytes)) {
+        let is_null = try!(self.item.to_sql(&mut bytes).map_err(SerializationError));
+        match is_null {
             IsNull::Yes => {
                 out.push_bound_value::<T>(None);
                 Ok(())

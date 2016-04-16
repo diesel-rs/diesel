@@ -25,6 +25,10 @@ macro_rules! column {
                 out.push_sql(".");
                 out.push_identifier(stringify!($column_name))
             }
+
+            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+                Ok(())
+            }
         }
 
         impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
@@ -238,6 +242,7 @@ macro_rules! table_body {
                 use $crate::{Table, Column, Expression, SelectableExpression};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::result::QueryResult;
                 use $crate::types::*;
 
                 #[allow(non_camel_case_types, dead_code)]
@@ -252,6 +257,10 @@ macro_rules! table_body {
                     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                         try!(out.push_identifier(table::name()));
                         out.push_sql(".*");
+                        Ok(())
+                    }
+
+                    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
                         Ok(())
                     }
                 }

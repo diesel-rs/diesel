@@ -64,6 +64,7 @@ pub struct Default<'a, Col> {
 
 use diesel::backend::*;
 use diesel::query_builder::*;
+use diesel::result::QueryResult;
 use diesel::types::Integer;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
@@ -82,6 +83,11 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
         out.push_sql(")");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.columns.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
@@ -91,6 +97,10 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
         try!(out.push_identifier(self.name));
         out.push_sql(" ");
         out.push_sql(self.type_name);
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -104,6 +114,11 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
         out.push_sql(" PRIMARY KEY");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
+        Ok(())
+    }
 }
 
 #[cfg(feature = "sqlite")]
@@ -115,6 +130,11 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
         out.push_sql(" AUTOINCREMENT");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
+        Ok(())
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -122,6 +142,10 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
         try!(out.push_identifier((self.0).0.name));
         out.push_sql(" SERIAL PRIMARY KEY");
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -135,6 +159,11 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
         out.push_sql(" NOT NULL");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
@@ -145,6 +174,11 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
         try!(self.column.to_sql(out));
         out.push_sql(" DEFAULT ");
         out.push_sql(self.value);
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.column.collect_binds(out));
         Ok(())
     }
 }

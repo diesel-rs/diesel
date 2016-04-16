@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression};
 use query_builder::*;
+use result::QueryResult;
 use types::{Foldable, HasSqlType};
 
 macro_rules! fold_function {
@@ -35,6 +36,11 @@ macro_rules! fold_function {
                 out.push_sql(concat!($operator, "("));
                 try!(self.target.to_sql(out));
                 out.push_sql(")");
+                Ok(())
+            }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                try!(self.target.collect_binds(out));
                 Ok(())
             }
         }

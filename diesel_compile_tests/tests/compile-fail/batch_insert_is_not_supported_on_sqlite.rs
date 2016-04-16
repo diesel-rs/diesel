@@ -2,6 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
+use diesel::backend::Backend;
 use diesel::sqlite::*;
 use diesel::types::{Integer, VarChar};
 
@@ -26,6 +27,10 @@ impl InsertValues<Sqlite> for MyValues {
     }
 
     fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
+        Ok(())
+    }
+
+    fn values_bind_params(&self, out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

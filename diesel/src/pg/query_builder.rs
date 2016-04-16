@@ -2,14 +2,11 @@ use std::rc::Rc;
 
 use super::backend::Pg;
 use super::connection::raw::RawConnection;
-use query_builder::{QueryBuilder, Binds, BuildQueryResult};
-use types::HasSqlType;
+use query_builder::{QueryBuilder, BuildQueryResult};
 
 pub struct PgQueryBuilder {
     conn: Rc<RawConnection>,
     pub sql: String,
-    pub binds: Binds,
-    pub bind_types: Vec<u32>,
     bind_idx: u32,
 }
 
@@ -18,8 +15,6 @@ impl PgQueryBuilder {
         PgQueryBuilder {
             conn: conn.clone(),
             sql: String::new(),
-            binds: Vec::new(),
-            bind_types: Vec::new(),
             bind_idx: 0,
         }
     }
@@ -35,13 +30,9 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
         Ok(self.push_sql(&escaped_identifier))
     }
 
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where
-        Pg: HasSqlType<T>,
-    {
+    fn push_bind_param(&mut self) {
         self.bind_idx += 1;
         let sql = format!("${}", self.bind_idx);
         self.push_sql(&sql);
-        self.binds.push(bind);
-        self.bind_types.push(Pg::metadata().oid);
     }
 }

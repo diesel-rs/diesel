@@ -1,8 +1,9 @@
 use backend::{Backend, SupportsReturningClause};
-use persistable::{Insertable, InsertValues};
 use expression::{Expression, SelectableExpression, NonAggregate};
+use persistable::{Insertable, InsertValues};
 use query_builder::*;
 use query_source::Table;
+use result::QueryResult;
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
@@ -48,6 +49,13 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
         try!(values.column_names(out));
         out.push_sql(") VALUES ");
         try!(values.values_clause(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        let values = self.records.values();
+        try!(self.target.from_clause().collect_binds(out));
+        try!(values.values_bind_params(out));
         Ok(())
     }
 }
@@ -134,6 +142,12 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
         try!(self.statement.to_sql(out));
         out.push_sql(" RETURNING ");
         try!(self.returning.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.statement.collect_binds(out));
+        try!(self.returning.collect_binds(out));
         Ok(())
     }
 }

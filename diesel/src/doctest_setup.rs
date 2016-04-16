@@ -1,10 +1,10 @@
 extern crate dotenv;
 
-use diesel::prelude::*;
 use diesel::backend;
-use self::dotenv::dotenv;
-use diesel::query_builder::{QueryBuilder, BuildQueryResult};
 use diesel::persistable::{InsertValues};
+use diesel::prelude::*;
+use diesel::query_builder::{QueryBuilder, BuildQueryResult};
+use self::dotenv::dotenv;
 
 #[cfg(feature = "postgres")]
 type DB = diesel::pg::Pg;
@@ -75,6 +75,10 @@ impl<DB> InsertValues<DB> for NewUserValues where
 
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(&format!("('{}')", self.name));
+        Ok(())
+    }
+
+    fn values_bind_params(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

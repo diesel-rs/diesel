@@ -5,6 +5,7 @@ use expression::{AsExpression, Expression, SelectableExpression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use query_builder::debug::DebugQueryBuilder;
+use result::QueryResult;
 use types::{Array, HasSqlType};
 
 /// Creates a PostgreSQL `ANY` expression.
@@ -75,6 +76,11 @@ impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
         out.push_sql(")");
         Ok(())
     }
+
+    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.expr.collect_binds(out));
+        Ok(())
+    }
 }
 
 impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
@@ -84,6 +90,11 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
         out.push_sql("ANY(");
         try!(self.expr.to_sql(out));
         out.push_sql(")");
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.expr.collect_binds(out));
         Ok(())
     }
 }

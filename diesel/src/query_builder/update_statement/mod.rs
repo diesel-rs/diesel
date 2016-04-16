@@ -8,6 +8,7 @@ use backend::{Backend, SupportsReturningClause};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
 use query_source::Table;
+use result::QueryResult;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
@@ -52,6 +53,15 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
         if let Some(clause) = self.target.where_clause() {
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
+        }
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.target.from_clause().collect_binds(out));
+        try!(self.values.collect_binds(out));
+        if let Some(clause) = self.target.where_clause() {
+            try!(clause.collect_binds(out));
         }
         Ok(())
     }
@@ -135,6 +145,12 @@ impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
         try!(self.statement.to_sql(out));
         out.push_sql(" RETURNING ");
         try!(self.returning.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.statement.collect_binds(out));
+        try!(self.returning.collect_binds(out));
         Ok(())
     }
 }

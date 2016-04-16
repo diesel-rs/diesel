@@ -1,6 +1,7 @@
-use super::{QuerySource, Table};
-use query_builder::*;
 use expression::SelectableExpression;
+use query_builder::*;
+use result::QueryResult;
+use super::{QuerySource, Table};
 use types::IntoNullable;
 
 #[derive(Debug, Clone, Copy)]
@@ -119,6 +120,10 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
         out.push_sql(" INNER");
         Ok(())
     }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 #[doc(hidden)]
@@ -128,6 +133,10 @@ pub struct LeftOuter;
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" LEFT OUTER");
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

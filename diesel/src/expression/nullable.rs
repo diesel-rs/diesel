@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
+use result::QueryResult;
 use types::IntoNullable;
 
 pub struct Nullable<T>(T);
@@ -24,6 +25,10 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         self.0.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.0.collect_binds(out)
     }
 }
 

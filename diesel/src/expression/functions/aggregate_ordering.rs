@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression};
 use query_builder::*;
+use result::QueryResult;
 use types::{SqlOrd, HasSqlType};
 
 macro_rules! ord_function {
@@ -32,6 +33,11 @@ macro_rules! ord_function {
                 out.push_sql(concat!($operator, "("));
                 try!(self.target.to_sql(out));
                 out.push_sql(")");
+                Ok(())
+            }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                try!(self.target.collect_binds(out));
                 Ok(())
             }
         }

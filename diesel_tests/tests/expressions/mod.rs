@@ -102,6 +102,10 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}

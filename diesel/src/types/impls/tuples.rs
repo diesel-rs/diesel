@@ -3,6 +3,7 @@ use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{ColumnInsertValue, InsertValues};
 use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
 use query_source::{QuerySource, Queryable, Table, Column};
+use result::QueryResult;
 use row::Row;
 use std::error::Error;
 use types::{HasSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
@@ -85,6 +86,13 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
+
+                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                    $(
+                        try!(e!(self.$idx.collect_binds(out)));
+                    )+
+                    Ok(())
+                }
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
@@ -121,6 +129,18 @@ macro_rules! tuple_impls {
                         }
                     )+
                     out.push_sql(")");
+                    Ok(())
+                }
+
+                fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                    $(
+                        match e!(&self.$idx) {
+                            &ColumnInsertValue::Expression(_, ref value) => {
+                                try!(value.collect_binds(out));
+                            }
+                            _ => {}
+                        }
+                    )+
                     Ok(())
                 }
             }
@@ -167,6 +187,21 @@ macro_rules! tuple_impls {
                         }
                     )+
                     out.push_sql(")");
+                    Ok(())
+                }
+
+                fn values_bind_params(
+                    &self,
+                    out: &mut <::sqlite::Sqlite as Backend>::BindCollector
+                ) -> QueryResult<()> {
+                    $(
+                        match e!(&self.$idx) {
+                            &ColumnInsertValue::Expression(_, ref value) => {
+                                try!(value.collect_binds(out));
+                            }
+                            _ => {}
+                        }
+                    )+
                     Ok(())
                 }
             }
@@ -220,6 +255,13 @@ macro_rules! tuple_impls {
                             try!(e!(self.$idx.to_sql(out)));
                             needs_comma = true;
                         }
+                    )+
+                    Ok(())
+                }
+
+                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                    $(
+                        try!(e!(self.$idx.collect_binds(out)));
                     )+
                     Ok(())
                 }

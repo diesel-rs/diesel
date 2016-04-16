@@ -52,6 +52,12 @@ macro_rules! global_infix_predicate_to_sql {
                 out.push_sql($operator);
                 self.right.to_sql(out)
             }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+                try!(self.left.collect_binds(out));
+                try!(self.right.collect_binds(out));
+                Ok(())
+            }
         }
     }
 }
@@ -72,6 +78,14 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 out.push_sql($operator);
                 self.right.to_sql(out)
             }
+
+            fn collect_binds(&self, out: &mut <$backend as $crate::backend::Backend>::BindCollector)
+                -> $crate::result::QueryResult<()>
+            {
+                try!(self.left.collect_binds(out));
+                try!(self.right.collect_binds(out));
+                Ok(())
+            }
         }
 
         impl<T, U> $crate::query_builder::QueryFragment<$crate::backend::Debug>
@@ -87,6 +101,15 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 try!(self.left.to_sql(out));
                 out.push_sql($operator);
                 self.right.to_sql(out)
+            }
+
+            fn collect_binds(
+                &self,
+                out: &mut <$crate::backend::Debug as $crate::backend::Backend>::BindCollector,
+            ) -> $crate::result::QueryResult<()> {
+                try!(self.left.collect_binds(out));
+                try!(self.right.collect_binds(out));
+                Ok(())
             }
         }
     }
@@ -158,6 +181,11 @@ macro_rules! postfix_predicate_body {
                 out.push_sql($operator);
                 Ok(())
             }
+
+            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+                try!(self.expr.collect_binds(out));
+                Ok(())
+            }
         }
 
         impl<T, QS> $crate::expression::SelectableExpression<QS> for $name<T> where
@@ -210,6 +238,7 @@ postfix_expression!(Desc, " DESC", ());
 use backend::Backend;
 use query_source::Column;
 use query_builder::*;
+use result::QueryResult;
 use super::SelectableExpression;
 
 impl<T, U, DB> Changeset<DB> for Eq<T, U> where
@@ -225,6 +254,10 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
         QueryFragment::to_sql(&self.right, out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        QueryFragment::collect_binds(&self.right, out)
     }
 }
 

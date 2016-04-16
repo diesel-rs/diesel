@@ -3,6 +3,7 @@ use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::nodes::{Identifier, InfixNode};
 use query_source::*;
+use result::QueryResult;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Aliased<'a, Expr> {
@@ -33,6 +34,10 @@ impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_identifier(&self.alias)
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+        Ok(())
     }
 }
 

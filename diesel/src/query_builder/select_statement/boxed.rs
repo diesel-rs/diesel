@@ -8,6 +8,7 @@ use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
 use query_dsl::*;
 use query_source::QuerySource;
+use result::QueryResult;
 use types::{HasSqlType, Bool, BigInt};
 
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
@@ -74,6 +75,24 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         try!(self.order.to_sql(out));
         try!(self.limit.to_sql(out));
         try!(self.offset.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.distinct.collect_binds(out));
+        try!(self.select.collect_binds(out));
+        try!(self.from.from_clause().collect_binds(out));
+
+        match self.where_clause {
+            Some(ref where_clause) => {
+                try!(where_clause.collect_binds(out));
+            }
+            None => {}
+        }
+
+        try!(self.order.collect_binds(out));
+        try!(self.limit.collect_binds(out));
+        try!(self.offset.collect_binds(out));
         Ok(())
     }
 }

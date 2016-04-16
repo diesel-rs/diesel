@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
+use result::QueryResult;
 use types::*;
 
 /// Represents the SQL CURRENT_TIMESTAMP constant. This is equivalent to the
@@ -21,6 +22,10 @@ impl NonAggregate for now {
 impl<DB: Backend> QueryFragment<DB> for now {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("CURRENT_TIMESTAMP");
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }

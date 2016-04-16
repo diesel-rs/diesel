@@ -2,6 +2,7 @@ use backend::Backend;
 use expression::*;
 use expression::expression_methods::*;
 use expression::predicates::And;
+use result::QueryResult;
 use super::{QueryFragment, QueryBuilder, BuildQueryResult};
 use types::Bool;
 
@@ -16,6 +17,10 @@ pub struct NoWhereClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -46,6 +51,10 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql(" WHERE ");
         self.0.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.0.collect_binds(out)
     }
 }
 

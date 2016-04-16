@@ -49,6 +49,10 @@ impl InsertValues<Sqlite> for MyValues {
     fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
         Ok(())
     }
+
+    fn values_bind_params(&self, out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 impl<'a> Insertable<users::table, Sqlite> for &'a NewUser {
