@@ -7,13 +7,13 @@ use sqlite::Sqlite;
 use super::stmt::Statement;
 use types::{HasSqlType, FromSqlRow};
 
-pub struct StatementIterator<ST, T> {
-    stmt: Statement,
+pub struct StatementIterator<'a, ST, T> {
+    stmt: &'a mut Statement,
     _marker: PhantomData<(ST, T)>,
 }
 
-impl<ST, T> StatementIterator<ST, T> {
-    pub fn new(stmt: Statement) -> Self {
+impl<'a, ST, T> StatementIterator<'a, ST, T> {
+    pub fn new(stmt: &'a mut Statement) -> Self {
         StatementIterator {
             stmt: stmt,
             _marker: PhantomData,
@@ -21,7 +21,7 @@ impl<ST, T> StatementIterator<ST, T> {
     }
 }
 
-impl<ST, T> Iterator for StatementIterator<ST, T> where
+impl<'a, ST, T> Iterator for StatementIterator<'a, ST, T> where
     Sqlite: HasSqlType<ST>,
     T: Queryable<ST, Sqlite>,
 {

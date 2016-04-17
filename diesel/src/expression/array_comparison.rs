@@ -55,6 +55,11 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
         try!(self.values.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.left.is_safe_to_cache_prepared() &&
+            self.values.is_safe_to_cache_prepared()
+    }
 }
 
 use std::marker::PhantomData;
@@ -121,6 +126,10 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
         }
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 pub struct Subselect<T, ST> {
@@ -148,5 +157,9 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         self.values.collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.values.is_safe_to_cache_prepared()
     }
 }

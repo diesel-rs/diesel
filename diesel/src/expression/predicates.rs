@@ -58,6 +58,11 @@ macro_rules! global_infix_predicate_to_sql {
                 try!(self.right.collect_binds(out));
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.left.is_safe_to_cache_prepared() &&
+                    self.right.is_safe_to_cache_prepared()
+            }
         }
     }
 }
@@ -86,6 +91,11 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 try!(self.right.collect_binds(out));
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.left.is_safe_to_cache_prepared() &&
+                    self.right.is_safe_to_cache_prepared()
+            }
         }
 
         impl<T, U> $crate::query_builder::QueryFragment<$crate::backend::Debug>
@@ -110,6 +120,11 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 try!(self.left.collect_binds(out));
                 try!(self.right.collect_binds(out));
                 Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.left.is_safe_to_cache_prepared() &&
+                    self.right.is_safe_to_cache_prepared()
             }
         }
     }
@@ -185,6 +200,10 @@ macro_rules! postfix_predicate_body {
             fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 try!(self.expr.collect_binds(out));
                 Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.expr.is_safe_to_cache_prepared()
             }
         }
 

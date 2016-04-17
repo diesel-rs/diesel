@@ -47,6 +47,11 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
         try!(self.timezone.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.timestamp.is_safe_to_cache_prepared() &&
+            self.timezone.is_safe_to_cache_prepared()
+    }
 }
 
 impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
@@ -63,6 +68,11 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
         try!(self.timestamp.collect_binds(out));
         try!(self.timezone.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.timestamp.is_safe_to_cache_prepared() &&
+            self.timezone.is_safe_to_cache_prepared()
     }
 }
 

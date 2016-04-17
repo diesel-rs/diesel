@@ -68,6 +68,10 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
         try!(self.target.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.target.is_safe_to_cache_prepared()
+    }
 }
 
 impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
@@ -89,6 +93,10 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
 
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
     }
 }
 

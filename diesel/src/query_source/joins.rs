@@ -124,6 +124,10 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 #[doc(hidden)]
@@ -138,5 +142,9 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
 
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
     }
 }

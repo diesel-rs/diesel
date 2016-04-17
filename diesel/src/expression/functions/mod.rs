@@ -52,6 +52,10 @@ macro_rules! sql_function_body {
                         &($(&self.$arg_name),*), out));
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                ($(&self.$arg_name),*).is_safe_to_cache_prepared()
+            }
         }
 
         #[allow(non_camel_case_types)]
@@ -151,6 +155,10 @@ macro_rules! no_arg_sql_function_body {
             fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
         }
     };
 
@@ -168,6 +176,10 @@ macro_rules! no_arg_sql_function_body {
 
             fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
             }
         }
     };

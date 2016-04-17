@@ -38,6 +38,10 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 impl<ST> Query for SqlLiteral<ST> {

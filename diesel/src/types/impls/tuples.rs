@@ -93,6 +93,10 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
+
+                fn is_safe_to_cache_prepared(&self) -> bool {
+                    $(e!(self.$idx.is_safe_to_cache_prepared()) &&)+ true
+                }
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {

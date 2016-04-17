@@ -44,6 +44,11 @@ macro_rules! numeric_operation {
                 try!(self.rhs.collect_binds(out));
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.lhs.is_safe_to_cache_prepared() &&
+                    self.rhs.is_safe_to_cache_prepared()
+            }
         }
 
         impl<Lhs, Rhs, QS> SelectableExpression<QS> for $name<Lhs, Rhs> where

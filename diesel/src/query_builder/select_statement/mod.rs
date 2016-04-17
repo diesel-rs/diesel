@@ -176,6 +176,17 @@ impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
         try!(self.offset.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.distinct.is_safe_to_cache_prepared() &&
+            self.select.is_safe_to_cache_prepared() &&
+            self.from.from_clause().is_safe_to_cache_prepared() &&
+            self.where_clause.is_safe_to_cache_prepared() &&
+            self.group_by.is_safe_to_cache_prepared() &&
+            self.order.is_safe_to_cache_prepared() &&
+            self.limit.is_safe_to_cache_prepared() &&
+            self.offset.is_safe_to_cache_prepared()
+    }
 }
 
 impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
@@ -210,6 +221,16 @@ impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         try!(self.limit.collect_binds(out));
         try!(self.offset.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.distinct.is_safe_to_cache_prepared() &&
+            self.select.is_safe_to_cache_prepared() &&
+            self.where_clause.is_safe_to_cache_prepared() &&
+            self.group_by.is_safe_to_cache_prepared() &&
+            self.order.is_safe_to_cache_prepared() &&
+            self.limit.is_safe_to_cache_prepared() &&
+            self.offset.is_safe_to_cache_prepared()
     }
 }
 

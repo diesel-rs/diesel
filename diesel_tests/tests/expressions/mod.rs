@@ -106,6 +106,10 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}

@@ -23,6 +23,10 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
@@ -55,6 +59,10 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         self.0.collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
     }
 }
 

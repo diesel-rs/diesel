@@ -67,6 +67,7 @@ impl<'a, T: Query> Query for &'a T {
 pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
+    fn is_safe_to_cache_prepared(&self) -> bool;
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
@@ -79,6 +80,10 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         QueryFragment::collect_binds(&**self, out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        QueryFragment::is_safe_to_cache_prepared(&**self)
     }
 }
 
@@ -93,6 +98,10 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         QueryFragment::collect_binds(&**self, out)
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        QueryFragment::is_safe_to_cache_prepared(&**self)
+    }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
@@ -102,6 +111,10 @@ impl<DB: Backend> QueryFragment<DB> for () {
 
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
     }
 }
 

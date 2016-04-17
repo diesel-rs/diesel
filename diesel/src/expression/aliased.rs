@@ -39,6 +39,10 @@ impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 // FIXME This is incorrect, should only be selectable from WithQuerySource

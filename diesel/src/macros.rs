@@ -29,6 +29,10 @@ macro_rules! column {
             fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
         }
 
         impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
@@ -262,6 +266,10 @@ macro_rules! table_body {
 
                     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
                         Ok(())
+                    }
+
+                    fn is_safe_to_cache_prepared(&self) -> bool {
+                        true
                     }
                 }
 

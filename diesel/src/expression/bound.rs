@@ -49,6 +49,10 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
             }
         }
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where

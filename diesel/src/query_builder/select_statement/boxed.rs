@@ -95,6 +95,17 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         try!(self.offset.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.distinct.is_safe_to_cache_prepared() &&
+            self.select.is_safe_to_cache_prepared() &&
+            self.from.from_clause().is_safe_to_cache_prepared() &&
+            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared())
+                .unwrap_or(true) &&
+            self.order.is_safe_to_cache_prepared() &&
+            self.limit.is_safe_to_cache_prepared() &&
+            self.offset.is_safe_to_cache_prepared()
+    }
 }
 
 impl<'a, ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>

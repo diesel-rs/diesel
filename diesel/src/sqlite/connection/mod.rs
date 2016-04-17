@@ -9,7 +9,8 @@ mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::ffi::CStr;
 
 use connection::{SimpleConnection, Connection};
@@ -20,12 +21,13 @@ use result::*;
 use result::Error::QueryBuilderError;
 use self::raw::RawConnection;
 use self::statement_iterator::StatementIterator;
-use self::stmt::Statement;
+use self::stmt::{Statement, StatementUse};
 use sqlite::Sqlite;
 use super::query_builder::SqliteQueryBuilder;
 use types::HasSqlType;
 
 pub struct SqliteConnection {
+    statement_cache: RefCell<HashMap<String, StatementUse>>,
     raw_connection: RawConnection,
     transaction_depth: Cell<i32>,
 }
@@ -47,6 +49,7 @@ impl Connection for SqliteConnection {
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| {
             SqliteConnection {
+                statement_cache: RefCell::new(HashMap::new()),
                 raw_connection: conn,
                 transaction_depth: Cell::new(0),
             }
@@ -64,16 +67,16 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        self.prepare_query(&source.as_query())
-            .map(StatementIterator::new)
-            .and_then(Iterator::collect)
+        let statement = try!(self.prepare_query(&source.as_query()));
+        let mut statement_ref = statement.borrow_mut();
+        StatementIterator::new(&mut statement_ref).collect()
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend>,
     {
         let stmt = try!(self.prepare_query(source));
-        try!(stmt.run());
+        try!(stmt.borrow().run());
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -120,15 +123,16 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
-    fn prepare_query<T: QueryFragment<Sqlite>>(&self, source: &T) -> QueryResult<Statement> {
-        let mut query_builder = SqliteQueryBuilder::new();
-        try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
-        let mut result = try!(Statement::prepare(&self.raw_connection, &query_builder.sql));
+    fn prepare_query<T: QueryFragment<Sqlite>>(&self, source: &T) -> QueryResult<StatementUse> {
+        let result = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         try!(source.collect_binds(&mut bind_collector));
-        for (tpe, value) in bind_collector.binds.into_iter() {
-            try!(result.bind(tpe, value));
+        {
+            let mut stmt = result.borrow_mut();
+            for (tpe, value) in bind_collector.binds.into_iter() {
+                try!(stmt.bind(tpe, value));
+            }
         }
 
         Ok(result)
@@ -140,6 +144,33 @@ impl SqliteConnection {
         }
         query.map(|_| ())
     }
+
+    fn cached_prepared_statement<T: QueryFragment<Sqlite>>(&self, source: &T)
+        -> QueryResult<StatementUse>
+    {
+        let sql = try!(to_sql(source));
+
+        let mut cache = self.statement_cache.borrow_mut();
+        // FIXME: This can be cleaned up once https://github.com/rust-lang/rust/issues/32281
+        // is stable
+        if cache.contains_key(&sql) {
+            Ok(cache[&sql].clone())
+        } else {
+            let statement = Statement::prepare(&self.raw_connection, &sql)
+                .map(StatementUse::new);
+            if !source.is_safe_to_cache_prepared() {
+                return statement;
+            }
+            let entry = cache.entry(sql);
+            Ok(entry.or_insert(try!(statement)).clone())
+        }
+    }
+}
+
+fn to_sql<T: QueryFragment<Sqlite>>(source: &T) -> QueryResult<String> {
+    let mut query_builder = SqliteQueryBuilder::new();
+    try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
+    Ok(query_builder.sql)
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -147,5 +178,63 @@ fn error_message(err_code: libc::c_int) -> &'static str {
         let message_ptr = ffi::sqlite3_errstr(err_code);
         let result = CStr::from_ptr(message_ptr);
         result.to_str().unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use expression::AsExpression;
+    use expression::dsl::sql;
+    use prelude::*;
+    use super::*;
+    use types::Integer;
+
+    #[test]
+    fn prepared_statements_are_cached_when_run() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let query = ::select(AsExpression::<Integer>::as_expression(1));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(1, connection.statement_cache.borrow().len());
+    }
+
+    #[test]
+    fn sql_literal_nodes_are_not_cached() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let query = ::select(sql::<Integer>("1"));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(0, connection.statement_cache.borrow().len());
+    }
+
+    #[test]
+    fn queries_containing_sql_literal_nodes_are_not_cached() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let query = ::select(one_as_expr.eq(sql::<Integer>("1")));
+
+        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(0, connection.statement_cache.borrow().len());
+    }
+
+    #[test]
+    fn queries_containing_in_with_vec_are_not_cached() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let query = ::select(one_as_expr.eq_any(vec![1, 2, 3]));
+
+        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(0, connection.statement_cache.borrow().len());
+    }
+
+    #[test]
+    fn queries_containing_in_with_subselect_are_cached() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let query = ::select(one_as_expr.eq_any(::select(one_as_expr)));
+
+        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(1, connection.statement_cache.borrow().len());
     }
 }

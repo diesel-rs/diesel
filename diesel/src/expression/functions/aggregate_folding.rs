@@ -43,6 +43,10 @@ macro_rules! fold_function {
                 try!(self.target.collect_binds(out));
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.target.is_safe_to_cache_prepared()
+            }
         }
 
         impl<ST, T, QS> SelectableExpression<QS> for $type_name<T> where

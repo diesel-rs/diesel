@@ -88,6 +88,10 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
         try!(self.columns.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
@@ -102,6 +106,10 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
 
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
     }
 }
 
@@ -119,6 +127,10 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
         try!(self.0.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(feature = "sqlite")]
@@ -135,6 +147,10 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
         try!(self.0.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -147,6 +163,10 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
 
     fn collect_binds(&self, _out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
     }
 }
 
@@ -164,6 +184,10 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
         try!(self.0.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
@@ -180,5 +204,9 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         try!(self.column.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
     }
 }

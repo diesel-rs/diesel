@@ -30,6 +30,10 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         self.0.collect_binds(out)
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
+    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Nullable<T> where

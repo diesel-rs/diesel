@@ -68,6 +68,10 @@ impl<T: QueryFragment<Pg>> QueryFragment<Pg> for PgOnly<T> {
     fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
         self.0.collect_binds(out)
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
+    }
 }
 
 use backend::*;
@@ -79,5 +83,9 @@ impl<T: QueryFragment<Debug>> QueryFragment<Debug> for PgOnly<T> {
 
     fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
         self.0.collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
     }
 }

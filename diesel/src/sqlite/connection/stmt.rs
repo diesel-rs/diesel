@@ -121,6 +121,11 @@ impl Statement {
             error => panic!("{}", super::error_message(error)),
         }
     }
+
+    fn reset(&mut self) -> QueryResult<()> {
+        self.bind_index = 0;
+        ensure_sqlite_ok(unsafe { ffi::sqlite3_reset(self.inner_statement) })
+    }
 }
 
 fn ensure_sqlite_ok(code: libc::c_int) -> QueryResult<()> {
@@ -141,6 +146,46 @@ impl Drop for Statement {
                 write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
+            }
+        }
+    }
+}
+
+use std::cell::RefCell;
+use std::ops::Deref;
+use std::rc::Rc;
+
+#[derive(Clone)]
+pub struct StatementUse {
+    statement: Rc<RefCell<Statement>>,
+}
+
+impl StatementUse {
+    pub fn new(statement: Statement) -> Self {
+        StatementUse {
+            statement: Rc::new(RefCell::new(statement)),
+        }
+    }
+}
+
+impl Deref for StatementUse {
+    type Target = RefCell<Statement>;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.statement
+    }
+}
+
+impl Drop for StatementUse {
+    fn drop(&mut self) {
+        use std::thread::panicking;
+
+        let reset_result = self.statement.borrow_mut().reset();
+        if let Err(e) = reset_result {
+            if panicking() {
+                write!(stderr(), "Error resetting SQLite prepared statement: {:?}", e).unwrap();
+            } else {
+                panic!("Error resetting SQLite prepared statement: {:?}", e);
             }
         }
     }

@@ -15,6 +15,10 @@ macro_rules! simple_clause {
             fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
                 Ok(())
             }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
         }
 
         #[derive(Debug, Clone, Copy)]
@@ -31,6 +35,10 @@ macro_rules! simple_clause {
 
             fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
                 self.0.collect_binds(out)
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                self.0.is_safe_to_cache_prepared()
             }
         }
     }

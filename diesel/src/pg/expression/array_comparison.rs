@@ -81,6 +81,10 @@ impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
         try!(self.expr.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.expr.is_safe_to_cache_prepared()
+    }
 }
 
 impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
@@ -96,6 +100,10 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
     fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
         try!(self.expr.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.expr.is_safe_to_cache_prepared()
     }
 }
 

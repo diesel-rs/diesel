@@ -21,6 +21,10 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
         try!(self.0.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
+    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Grouped<T> where

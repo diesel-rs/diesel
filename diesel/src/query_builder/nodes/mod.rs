@@ -12,6 +12,10 @@ impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
 }
 
 pub struct Join<T, U, V, W> {
@@ -75,6 +79,13 @@ impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
         try!(self.predicate.collect_binds(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.lhs.is_safe_to_cache_prepared() &&
+            self.join_type.is_safe_to_cache_prepared() &&
+            self.rhs.is_safe_to_cache_prepared() &&
+            self.predicate.is_safe_to_cache_prepared()
+    }
 }
 
 pub struct InfixNode<'a, T, U> {
@@ -109,5 +120,10 @@ impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
         try!(self.lhs.collect_binds(out));
         try!(self.rhs.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.lhs.is_safe_to_cache_prepared() &&
+            self.rhs.is_safe_to_cache_prepared()
     }
 }

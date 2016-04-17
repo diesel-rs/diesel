@@ -34,5 +34,10 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
         }
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.from_clause().is_safe_to_cache_prepared() &&
+            self.0.where_clause().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true)
+    }
 }
 

@@ -58,6 +58,10 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
         try!(values.values_bind_params(out));
         Ok(())
     }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
 }
 
 impl<T, U> AsQuery for InsertStatement<T, U> where
@@ -149,5 +153,9 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
         try!(self.statement.collect_binds(out));
         try!(self.returning.collect_binds(out));
         Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        false
     }
 }
