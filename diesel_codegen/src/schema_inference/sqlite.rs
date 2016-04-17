@@ -26,29 +26,29 @@ pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
-fn is_text(type_name: &str) -> bool {
-    type_name.contains("clob") ||
-        type_name.contains("text")
-}
-
 pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<ast::Ty> {
     let type_name = attr.type_name.to_lowercase();
-    let tpe = match &*type_name {
-        "tinyint" => quote_ty!(cx, ::diesel::types::Bool),
-        "smallint" | "int2" => quote_ty!(cx, ::diesel::types::SmallInt),
-        "int" | "integer" | "int4" => quote_ty!(cx, ::diesel::types::Integer),
-        "bigint" => quote_ty!(cx, ::diesel::types::BigInt),
-        _ if type_name.contains("char") => quote_ty!(cx, ::diesel::types::VarChar),
-        _ if is_text(&type_name) => quote_ty!(cx, ::diesel::types::Text),
-        _ if type_name.contains("blob") || type_name.is_empty() => {
-            quote_ty!(cx, ::diesel::types::Binary)
-        }
-        "float" => quote_ty!(cx, ::diesel::types::Float),
-        "double" | "real" | "double precision" => quote_ty!(cx, ::diesel::types::Double),
-        _ => {
-            cx.span_err(cx.original_span(), &format!("Unsupported type: {}", type_name));
-            quote_ty!(cx, ())
-        }
+    let tpe = if is_bool(&type_name) {
+        quote_ty!(cx, ::diesel::types::Bool)
+    } else if is_smallint(&type_name) {
+        quote_ty!(cx, ::diesel::types::SmallInt)
+    } else if is_bigint(&type_name) {
+        quote_ty!(cx, ::diesel::types::BigInt)
+    } else if type_name.contains("int") {
+        quote_ty!(cx, ::diesel::types::Integer)
+    } else if type_name.contains("char") {
+        quote_ty!(cx, ::diesel::types::VarChar)
+    } else if is_text(&type_name) {
+        quote_ty!(cx, ::diesel::types::Text)
+    } else if type_name.contains("blob") || type_name.is_empty() {
+        quote_ty!(cx, ::diesel::types::Binary)
+    } else if is_float(&type_name) {
+        quote_ty!(cx, ::diesel::types::Float)
+    } else if is_double(&type_name) {
+        quote_ty!(cx, ::diesel::types::Double)
+    } else {
+        cx.span_err(cx.original_span(), &format!("Unsupported type: {}", type_name));
+        quote_ty!(cx, ())
     };
 
     if attr.nullable {
@@ -56,6 +56,40 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
     } else {
         tpe
     }
+}
+
+fn is_text(type_name: &str) -> bool {
+    type_name.contains("clob") ||
+        type_name.contains("text")
+}
+
+fn is_bool(type_name: &str) -> bool {
+    type_name == "boolean" ||
+        type_name.contains("tiny") &&
+        type_name.contains("int")
+}
+
+fn is_smallint(type_name: &str) -> bool {
+    type_name == "int2" ||
+        type_name.contains("small") &&
+        type_name.contains("int")
+}
+
+fn is_bigint(type_name: &str) -> bool {
+    type_name == "int8" ||
+        type_name.contains("big") &&
+        type_name.contains("int")
+}
+
+fn is_float(type_name: &str) -> bool {
+    type_name.contains("float") ||
+        type_name.contains("real")
+}
+
+fn is_double(type_name: &str) -> bool {
+    type_name.contains("double") ||
+        type_name.contains("num") ||
+        type_name.contains("dec")
 }
 
 table! {
