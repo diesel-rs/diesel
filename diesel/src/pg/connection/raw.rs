@@ -81,6 +81,42 @@ impl RawConnection {
             result_format,
         )
     }
+
+    pub unsafe fn exec_prepared(
+        &self,
+        stmt_name: *const libc::c_char,
+        param_count: libc::c_int,
+        param_values: *const *const libc::c_char,
+        param_lengths: *const libc::c_int,
+        param_formats: *const libc::c_int,
+        result_format: libc::c_int,
+    ) -> *mut PGresult {
+        PQexecPrepared(
+            self.internal_connection,
+            stmt_name,
+            param_count,
+            param_values,
+            param_lengths,
+            param_formats,
+            result_format,
+        )
+    }
+
+    pub unsafe fn prepare(
+        &self,
+        stmt_name: *const libc::c_char,
+        query: *const libc::c_char,
+        param_count: libc::c_int,
+        param_types: *const Oid,
+    ) -> *mut PGresult {
+        PQprepare(
+            self.internal_connection,
+            stmt_name,
+            query,
+            param_count,
+            param_types,
+        )
+    }
 }
 
 pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);

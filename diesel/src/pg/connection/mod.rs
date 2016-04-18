@@ -3,7 +3,13 @@ extern crate libc;
 mod cursor;
 pub mod raw;
 mod row;
-mod result;
+#[doc(hidden)]
+pub mod result;
+mod stmt;
+
+use std::cell::Cell;
+use std::ffi::{CString, CStr};
+use std::rc::Rc;
 
 use connection::{SimpleConnection, Connection};
 use pg::{Pg, PgQueryBuilder};
@@ -14,10 +20,7 @@ use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
-use std::cell::Cell;
-use std::ffi::{CString, CStr};
-use std::ptr;
-use std::rc::Rc;
+use self::stmt::{Query, StatementCache};
 use types::{ToSql, HasSqlType};
 
 /// The connection string expected by `PgConnection::establish`
@@ -26,6 +29,7 @@ use types::{ToSql, HasSqlType};
 pub struct PgConnection {
     raw_connection: Rc<RawConnection>,
     transaction_depth: Cell<i32>,
+    statement_cache: StatementCache,
 }
 
 unsafe impl Send for PgConnection {}
@@ -36,7 +40,7 @@ impl SimpleConnection for PgConnection {
         let inner_result = unsafe {
             self.raw_connection.exec(query.as_ptr())
         };
-        try!(PgResult::new(self, inner_result));
+        try!(PgResult::new(&self.raw_connection, inner_result));
         Ok(())
     }
 }
@@ -49,6 +53,7 @@ impl Connection for PgConnection {
             PgConnection {
                 raw_connection: Rc::new(raw_conn),
                 transaction_depth: Cell::new(0),
+                statement_cache: StatementCache::new(),
             }
         })
     }
@@ -63,16 +68,16 @@ impl Connection for PgConnection {
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
-        let (sql, params, types) = self.prepare_query(&source.as_query());
-        self.exec_sql_params(&sql, &params, &Some(types))
+        let (query, params) = try!(self.prepare_query(&source.as_query()));
+        query.execute(&self.raw_connection, &params)
             .and_then(|r| Cursor::new(r).collect())
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Pg>,
     {
-        let (sql, params, param_types) = self.prepare_query(source);
-        self.exec_sql_params(&sql, &params, &Some(param_types))
+        let (query, params) = try!(self.prepare_query(source));
+        query.execute(&self.raw_connection, &params)
             .map(|r| r.rows_affected())
     }
 
@@ -124,55 +129,33 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
-    fn exec_sql_params(&self, query: &str, param_data: &Vec<Option<Vec<u8>>>, param_types: &Option<Vec<u32>>) -> QueryResult<PgResult> {
-        let query = try!(CString::new(query));
-        let params_pointer = param_data.iter()
-            .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
-                 .unwrap_or(ptr::null()))
-            .collect::<Vec<_>>();
-        let param_types_ptr = param_types.as_ref()
-            .map(|types| types.as_ptr())
-            .unwrap_or(ptr::null());
-        let param_lengths = param_data.iter()
-            .map(|data| data.as_ref().map(|d| d.len() as libc::c_int)
-                 .unwrap_or(0))
-            .collect::<Vec<_>>();
-        let param_formats = vec![1; param_data.len()];
-
-        let internal_res = unsafe {
-            self.raw_connection.exec_params(
-                query.as_ptr(),
-                params_pointer.len() as libc::c_int,
-                param_types_ptr,
-                params_pointer.as_ptr(),
-                param_lengths.as_ptr(),
-                param_formats.as_ptr(),
-                1,
-            )
-        };
-
-        PgResult::new(self, internal_res)
-    }
-
     fn prepare_query<T: QueryFragment<Pg>>(&self, source: &T)
-        -> (String, Vec<Option<Vec<u8>>>, Vec<u32>)
+        -> QueryResult<(Rc<Query>, Vec<Option<Vec<u8>>>)>
     {
         let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
         source.to_sql(&mut query_builder).unwrap();
+
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         source.collect_binds(&mut bind_collector).unwrap();
         let (binds, bind_types) = bind_collector.binds.into_iter()
             .map(|(meta, bind)| (bind, meta.oid)).unzip();
-        (query_builder.sql, binds, bind_types)
+
+        let query = if source.is_safe_to_cache_prepared() {
+            try!(self.statement_cache.cached_query(
+                &self.raw_connection,
+                query_builder.sql,
+                bind_types,
+            ))
+        } else {
+            Rc::new(try!(Query::sql(&query_builder.sql, Some(bind_types))))
+        };
+
+        Ok((query, binds))
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
-        self.exec_sql_params(query, &Vec::new(), &None)
-    }
-
-    #[doc(hidden)]
-    pub fn last_error_message(&self) -> String {
-        self.raw_connection.last_error_message()
+        let query = try!(Query::sql(query, None));
+        query.execute(&self.raw_connection, &Vec::new())
     }
 
     fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
@@ -190,4 +173,71 @@ extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const lib
     use std::io::Write;
     let c_str = unsafe { CStr::from_ptr(message) };
     ::std::io::stderr().write(c_str.to_bytes()).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate dotenv;
+
+    use self::dotenv::dotenv;
+    use std::env;
+
+    use expression::AsExpression;
+    use expression::dsl::sql;
+    use prelude::*;
+    use super::*;
+    use types::{Integer, VarChar};
+
+    #[test]
+    fn prepared_statements_are_cached() {
+        let connection = connection();
+
+        let query = ::select(AsExpression::<Integer>::as_expression(1));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(1, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn different_queries_have_unique_names() {
+        let connection = connection();
+
+        let one = AsExpression::<Integer>::as_expression(1);
+        let query = ::select(one);
+        let query2 = ::select(one.eq(one));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(true), query2.get_result(&connection));
+
+        let statement_names = connection.statement_cache.statement_names();
+        assert_eq!(2, statement_names.len());
+    }
+
+    #[test]
+    fn queries_with_identical_sql_but_different_types_are_cached_separately() {
+        let connection = connection();
+
+        let query = ::select(AsExpression::<Integer>::as_expression(1));
+        let query2 = ::select(AsExpression::<VarChar>::as_expression("hi"));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn queries_with_sql_literal_nodes_are_not_cached() {
+        let connection = connection();
+        let query = ::select(sql::<Integer>("1"));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(0, connection.statement_cache.len());
+    }
+
+    fn connection() -> PgConnection {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").unwrap();
+        PgConnection::establish(&database_url).unwrap()
+    }
 }
