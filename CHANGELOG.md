@@ -210,7 +210,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   for more information.
 
 * Add the ability for diesel to maintain your schema for you automatically. See
-  the [migrations](http://sgrif.github.io/diesel/diesel/migrations/index.html)
+  the [migrations](http://docs.diesel.rs/diesel/migrations/index.html)
   module for individual methods.
 
 * Add DebugQueryBuilder to build sql without requiring a connection.
@@ -307,7 +307,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `Connection#insert` and `Connection#insert_returning_count` have been
   deprecated in favor of [`insert`][insert]
 
-[insert]: http://sgrif.github.io/diesel/diesel/query_builder/fn.insert.html
+[insert]: http://docs.diesel.rs/diesel/query_builder/fn.insert.html
 
 ## [0.1.0] - 2015-11-29
 

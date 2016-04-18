@@ -87,5 +87,5 @@ Runs the `down.sql` for the most recent migration.
 #### `migration redo`
 Runs the `down.sql` and then the `up.sql` for the most recent migration.
 
-[pending-migrations]: http://sgrif.github.io/diesel/diesel/migrations/fn.run_pending_migrations.html
+[pending-migrations]: http://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
 [rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples

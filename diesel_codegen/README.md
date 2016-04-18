@@ -2,7 +2,7 @@ Diesel Codegen
 ============
 
 Provides various macros and annotations for
-[Diesel](http://sgrif.github.io/diesel/diesel/index.html) to reduce the amount of
+[Diesel](http://docs.diesel.rs/diesel/index.html) to reduce the amount of
 boilerplate needing to be written. It can be used through `rustc_plugin`, or
 `syntex` on stable.
 
@@ -118,9 +118,9 @@ QueryResult<T>`, will be added to the model. This will persist any changes made,
 and return the resulting record. It is intended to be a shorthand for filtering
 by the primary key.
 
-[queryable]: http://sgrif.github.io/diesel/diesel/query_source/trait.Queryable.html
-[insertable]: http://sgrif.github.io/diesel/diesel/trait.Insertable.html
-[as_changeset]: http://sgrif.github.io/diesel/diesel/query_builder/trait.AsChangeset.html
+[queryable]: http://docs.diesel.rs/diesel/query_source/trait.Queryable.html
+[insertable]: http://docs.diesel.rs/diesel/trait.Insertable.html
+[as_changeset]: http://docs.diesel.rs/diesel/query_builder/trait.AsChangeset.html
 
 Field annotations
 -----------------
@@ -144,7 +144,7 @@ Queries the database for the names of all tables, and calls
 
 Establishes a database connection at compile time, loads the schema information
 about a table's columns, and invokes
-[`table`](http://sgrif.github.io/diesel/diesel/macro.table!.html) for you
+[`table`](http://docs.diesel.rs/diesel/macro.table!.html) for you
 automatically. We recommend using with the
 [`dotenv`](https://github.com/slapresta/rust-dotenv) crate, and invoking this as
 `infer_table_from_schema!(dotenv!("DATABASE_URL"), "table_name")`
@@ -153,7 +153,7 @@ At this time, the schema inference macros do not support types from third party
 crates, and having any columns with a type not already supported will result in
 a compiler error (please open an issue if this happens unexpectedly for a type
 listed in [our
-docs](http://sgrif.github.io/diesel/diesel/types/index.html#structs).)
+docs](http://docs.diesel.rs/diesel/types/index.html#structs).)
 
 ### `embed_migrations!()`
 
