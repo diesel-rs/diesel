@@ -26,6 +26,8 @@ impl<T> HasSqlType<Array<T>> for Debug where
     fn metadata() {}
 }
 
+impl_query_id!(Array<T>);
+
 impl<T> NotNull for Array<T> {
 }
 

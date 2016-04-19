@@ -1,7 +1,7 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{ColumnInsertValue, InsertValues};
-use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, QueryFragment};
+use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
@@ -96,6 +96,14 @@ macro_rules! tuple_impls {
 
                 fn is_safe_to_cache_prepared(&self) -> bool {
                     $(e!(self.$idx.is_safe_to_cache_prepared()) &&)+ true
+                }
+            }
+
+            impl<$($T: QueryId),+> QueryId for ($($T,)+) {
+                type QueryId = ($($T::QueryId,)+);
+
+                fn has_static_query_id() -> bool {
+                    $($T::has_static_query_id() &&)+ true
                 }
             }
 

@@ -1,5 +1,5 @@
 use backend::Backend;
-use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use result::QueryResult;
 
 #[derive(Debug, Clone, Copy)]
@@ -21,6 +21,8 @@ impl<DB: Backend> QueryFragment<DB> for NoDistinctClause {
     }
 }
 
+impl_query_id!(NoDistinctClause);
+
 impl<DB: Backend> QueryFragment<DB> for DistinctClause {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("DISTINCT ");
@@ -35,3 +37,5 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
         true
     }
 }
+
+impl_query_id!(DistinctClause);

@@ -5,7 +5,7 @@ pub mod extensions;
 #[doc(hidden)]
 pub mod predicates;
 
-mod date_and_time;
+pub mod date_and_time;
 
 /// PostgreSQL specific expression DSL methods. This module will be glob
 /// imported by [`expression::dsl`](../../expression/dsl/index.html) when

@@ -46,6 +46,8 @@ macro_rules! ord_function {
             }
         }
 
+        impl_query_id!($type_name<T>);
+
         impl<T: Expression, QS> SelectableExpression<QS> for $type_name<T> {
         }
     }

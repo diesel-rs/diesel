@@ -15,6 +15,8 @@ pub trait WhereAnd<Predicate> {
 #[derive(Debug, Clone, Copy)]
 pub struct NoWhereClause;
 
+impl_query_id!(NoWhereClause);
+
 impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
@@ -65,6 +67,8 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
         self.0.is_safe_to_cache_prepared()
     }
 }
+
+impl_query_id!(WhereClause<T>);
 
 impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
     Expr: Expression<SqlType=Bool>,

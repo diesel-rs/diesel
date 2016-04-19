@@ -58,6 +58,8 @@ macro_rules! sql_function_body {
             }
         }
 
+        impl_query_id!($struct_name<$($arg_name),+>);
+
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::SelectableExpression<QS>,)*
@@ -134,6 +136,8 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 
         impl $crate::expression::NonAggregate for $type_name {
         }
+
+        impl_query_id!($type_name);
     }
 }
 

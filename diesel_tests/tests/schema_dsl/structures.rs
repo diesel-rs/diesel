@@ -94,6 +94,14 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
     }
 }
 
+impl<'a, Cols> QueryId for CreateTable<'a, Cols> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        false
+    }
+}
+
 impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
     DB: Backend,
 {
@@ -109,6 +117,14 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
     }
 
     fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
+}
+
+impl<'a, Cols> QueryId for Column<'a, Cols> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
         false
     }
 }
@@ -133,6 +149,8 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
     }
 }
 
+impl_query_id!(noop: PrimaryKey<Col>);
+
 #[cfg(feature = "sqlite")]
 impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
     Col: QueryFragment<Sqlite>,
@@ -152,6 +170,8 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
         false
     }
 }
+
+impl_query_id!(noop: AutoIncrement<Col>);
 
 #[cfg(feature = "postgres")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
@@ -190,6 +210,8 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
     }
 }
 
+impl_query_id!(noop: NotNull<Col>);
+
 impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
     DB: Backend,
     Col: QueryFragment<DB>,
@@ -207,6 +229,14 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
     }
 
     fn is_safe_to_cache_prepared(&self) -> bool {
+        false
+    }
+}
+
+impl<'a, Col> QueryId for Default<'a, Col> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
         false
     }
 }

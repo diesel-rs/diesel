@@ -59,6 +59,8 @@ impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> w
     }
 }
 
+impl_query_id!(FilteredQuerySource<Source, Predicate>);
+
 impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> where
     Source: UpdateTarget,
     Predicate: SelectableExpression<Source, SqlType=Bool>,

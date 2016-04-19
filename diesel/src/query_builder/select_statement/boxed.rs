@@ -108,6 +108,14 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
     }
 }
 
+impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        false
+    }
+}
+
 impl<'a, ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
     for BoxedSelectStatement<'a, ST, QS, DB> where
         DB: Backend + HasSqlType<Type>,

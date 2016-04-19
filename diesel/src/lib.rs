@@ -3,6 +3,12 @@
 //! found in the README.
 #![deny(warnings)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
+
+#[macro_use]
+mod macros;
+#[macro_use]
+pub mod query_builder;
+
 pub mod backend;
 pub mod connection;
 #[macro_use]
@@ -17,11 +23,7 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-#[macro_use]
-mod macros;
-
 pub mod migrations;
-pub mod query_builder;
 mod query_dsl;
 pub mod query_source;
 pub mod result;

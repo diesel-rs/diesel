@@ -107,6 +107,8 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
     }
 }
 
+impl_query_id!(Any<Expr, ST>);
+
 impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST> where
     Pg: HasSqlType<ST>,
     Any<Expr, ST>: Expression,

@@ -45,6 +45,14 @@ impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
     }
 }
 
+impl<'a, T> QueryId for Aliased<'a, T> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        false
+    }
+}
+
 // FIXME This is incorrect, should only be selectable from WithQuerySource
 impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where
     Aliased<'a, T>: Expression,

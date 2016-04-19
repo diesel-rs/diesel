@@ -51,6 +51,8 @@ impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     }
 }
 
+impl_query_id!(InnerJoinSource<Left, Right>);
+
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub struct LeftOuterJoinSource<Left, Right> {
@@ -98,6 +100,8 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
         SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
     }
 }
+
+impl_query_id!(LeftOuterJoinSource<Left, Right>);
 
 /// Indicates that two tables can be used together in a JOIN clause.
 /// Implementations of this trait will be generated for you automatically by

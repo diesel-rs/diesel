@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 use connection::{SimpleConnection, Connection};
 use pg::{Pg, PgQueryBuilder};
-use query_builder::{AsQuery, QueryFragment};
+use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
@@ -64,7 +64,7 @@ impl Connection for PgConnection {
 
     fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
-        T::Query: QueryFragment<Pg>,
+        T::Query: QueryFragment<Pg> + QueryId,
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
@@ -74,7 +74,7 @@ impl Connection for PgConnection {
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Pg>,
+        T: QueryFragment<Pg> + QueryId,
     {
         let (query, params) = try!(self.prepare_query(source));
         query.execute(&self.raw_connection, &params)
@@ -129,12 +129,9 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
-    fn prepare_query<T: QueryFragment<Pg>>(&self, source: &T)
+    fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
         -> QueryResult<(Rc<Query>, Vec<Option<Vec<u8>>>)>
     {
-        let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
-        source.to_sql(&mut query_builder).unwrap();
-
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         source.collect_binds(&mut bind_collector).unwrap();
         let (binds, bind_types) = bind_collector.binds.into_iter()
@@ -143,10 +140,12 @@ impl PgConnection {
         let query = if source.is_safe_to_cache_prepared() {
             try!(self.statement_cache.cached_query(
                 &self.raw_connection,
-                query_builder.sql,
+                source,
                 bind_types,
             ))
         } else {
+            let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
+            try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
             Rc::new(try!(Query::sql(&query_builder.sql, Some(bind_types))))
         };
 

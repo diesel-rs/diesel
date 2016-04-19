@@ -136,7 +136,7 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
 }
 
-use query_builder::QueryFragment;
+use query_builder::{QueryFragment, QueryId};
 
 /// Helper trait used when boxing expressions. This exists to work around the
 /// fact that Rust will not let us use non-core types as bounds on a trait
@@ -156,4 +156,12 @@ impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
     T: NonAggregate,
     T: QueryFragment<DB>,
 {
+}
+
+impl<QS, ST, DB> QueryId for BoxableExpression<QS, ST, DB, SqlType=ST> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        false
+    }
 }

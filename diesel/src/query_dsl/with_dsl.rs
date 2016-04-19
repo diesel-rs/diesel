@@ -53,6 +53,14 @@ impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right> where
     }
 }
 
+impl<'a, Left, Right> QueryId for WithQuerySource<'a, Left, Right> {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        false
+    }
+}
+
 #[doc(hidden)]
 pub struct PgOnly<T>(T);
 

@@ -35,6 +35,8 @@ macro_rules! column {
             }
         }
 
+        impl_query_id!($column_name);
+
         impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
 
         impl<'a, ST, Left, Right> SelectableExpression<
@@ -240,6 +242,8 @@ macro_rules! table_body {
                     ($($column_name,)+)
                 }
             }
+
+            impl_query_id!(table);
 
             pub mod columns {
                 use super::table;

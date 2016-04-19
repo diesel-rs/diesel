@@ -5,6 +5,7 @@ use std::io::Write;
 use backend::Backend;
 use expression::*;
 use expression::bound::Bound;
+use query_builder::QueryId;
 use query_source::Queryable;
 use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 
@@ -13,6 +14,16 @@ impl<T, DB> HasSqlType<Nullable<T>> for DB where
 {
     fn metadata() -> DB::TypeMetadata{
         <DB as HasSqlType<T>>::metadata()
+    }
+}
+
+impl<T> QueryId for Nullable<T> where
+    T: QueryId + NotNull,
+{
+    type QueryId = T::QueryId;
+
+    fn has_static_query_id() -> bool {
+        T::has_static_query_id()
     }
 }
 

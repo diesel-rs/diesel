@@ -62,6 +62,8 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
     }
 }
 
+impl_query_id!(In<T, U>);
+
 use std::marker::PhantomData;
 use query_builder::SelectStatement;
 
@@ -132,6 +134,8 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
     }
 }
 
+impl_query_id!(noop: Many<T>);
+
 pub struct Subselect<T, ST> {
     values: T,
     _sql_type: PhantomData<ST>,
@@ -163,3 +167,5 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
         self.values.is_safe_to_cache_prepared()
     }
 }
+
+impl_query_id!(Subselect<T, ST>);

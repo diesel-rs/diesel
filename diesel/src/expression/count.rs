@@ -74,6 +74,8 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
     }
 }
 
+impl_query_id!(Count<T>);
+
 impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
 }
 
@@ -102,3 +104,5 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
 
 impl<QS> SelectableExpression<QS> for CountStar {
 }
+
+impl_query_id!(CountStar);
