@@ -19,7 +19,7 @@ fn main() {
     let select_name = users.select(name);
 
     let ids = select_name.load::<i32>(&connection);
-    //~^ ERROR the trait bound `i32: diesel::Queryable<diesel::types::VarChar, _>` is not satisfied
+    //~^ ERROR the trait bound `i32: diesel::Queryable<diesel::types::Text, _>` is not satisfied
     let names = select_id.load::<String>(&connection);
     //~^ ERROR the trait bound `std::string::String: diesel::Queryable<diesel::types::Integer, _>` is not satisfied
 }
