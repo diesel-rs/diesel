@@ -7,7 +7,7 @@ use std::io::Write;
 use backend::Debug;
 use pg::{Pg, PgTypeMetadata};
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, ToSql, Array, IsNull, NotNull, FromSqlRow};
+use types::*;
 
 impl<T> HasSqlType<Array<T>> for Pg where
     Pg: HasSqlType<T>,
@@ -86,35 +86,26 @@ impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
 use expression::AsExpression;
 use expression::bound::Bound;
 
-impl<'a, ST, T> AsExpression<Array<ST>> for &'a [T] where
-    Pg: HasSqlType<ST>,
-{
-    type Expression = Bound<Array<ST>, Self>;
+macro_rules! array_as_expression {
+    ($ty:ty, $sql_type:ty) => {
+        impl<'a, ST, T> AsExpression<$sql_type> for $ty where
+            Pg: HasSqlType<ST>,
+        {
+            type Expression = Bound<$sql_type, Self>;
 
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
+            fn as_expression(self) -> Self::Expression {
+                Bound::new(self)
+            }
+        }
     }
 }
 
-impl<ST, T> AsExpression<Array<ST>> for Vec<T> where
-    Pg: HasSqlType<ST>,
-{
-    type Expression = Bound<Array<ST>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
-    }
-}
-
-impl<'a, ST, T> AsExpression<Array<ST>> for &'a Vec<T> where
-    Pg: HasSqlType<ST>,
-{
-    type Expression = Bound<Array<ST>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        Bound::new(self)
-    }
-}
+array_as_expression!(&'a [T], Array<ST>);
+array_as_expression!(&'a [T], Nullable<Array<ST>>);
+array_as_expression!(Vec<T>, Array<ST>);
+array_as_expression!(Vec<T>, Nullable<Array<ST>>);
+array_as_expression!(&'a Vec<T>, Array<ST>);
+array_as_expression!(&'a Vec<T>, Nullable<Array<ST>>);
 
 impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
