@@ -17,6 +17,8 @@ macro_rules! infix_predicate_body {
             }
         }
 
+        impl_query_id!($name<T, U>);
+
         impl<T, U> $crate::expression::Expression for $name<T, U> where
             T: $crate::expression::Expression,
             U: $crate::expression::Expression,
@@ -180,6 +182,8 @@ macro_rules! postfix_predicate_body {
                 }
             }
         }
+
+        impl_query_id!($name<T>);
 
         impl<T> $crate::expression::Expression for $name<T> where
             T: $crate::expression::Expression,

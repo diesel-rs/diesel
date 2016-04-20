@@ -64,6 +64,8 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
     }
 }
 
+impl_query_id!(noop: InsertStatement<T, U>);
+
 impl<T, U> AsQuery for InsertStatement<T, U> where
     T: Table,
     InsertQuery<T::AllColumns, InsertStatement<T, U>>: Query,
@@ -159,3 +161,5 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
         false
     }
 }
+
+impl_query_id!(noop: InsertQuery<T, U>);

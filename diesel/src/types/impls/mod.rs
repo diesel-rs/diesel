@@ -127,6 +127,14 @@ macro_rules! primitive_impls {
             fn metadata() {}
         }
 
+        impl $crate::query_builder::QueryId for types::$Source {
+            type QueryId = Self;
+
+            fn has_static_query_id() -> bool {
+                true
+            }
+        }
+
         impl types::NotNull for types::$Source {
         }
     }

@@ -34,6 +34,8 @@ impl<DB: Backend> QueryFragment<DB> for now {
     }
 }
 
+impl_query_id!(now);
+
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
 sql_function!(date, date_t, (x: Timestamp) -> Date,

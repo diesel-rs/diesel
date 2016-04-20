@@ -54,6 +54,8 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
     }
 }
 
+impl_query_id!(AtTimeZone<Ts, Tz>);
+
 impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
     Ts: QueryFragment<Debug>,
     Tz: QueryFragment<Debug>,

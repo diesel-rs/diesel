@@ -419,6 +419,8 @@ fn third_party_crates_can_add_new_types() {
         }
     }
 
+    impl_query_id!(MyInt);
+
     assert_eq!(0, query_single_value::<MyInt, i32>("0"));
     assert_eq!(-1, query_single_value::<MyInt, i32>("-1"));
     assert_eq!(70000, query_single_value::<MyInt, i32>("70000"));
@@ -426,6 +428,7 @@ fn third_party_crates_can_add_new_types() {
 
 fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U where
     TestBackend: HasSqlType<T>,
+    T: QueryId,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();
@@ -434,12 +437,13 @@ fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U where
 
 use std::fmt::Debug;
 use diesel::expression::AsExpression;
-use diesel::query_builder::QueryFragment;
+use diesel::query_builder::{QueryFragment, QueryId};
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
     TestBackend: HasSqlType<T>,
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), T> + QueryFragment<TestBackend>,
+    U::Expression: SelectableExpression<(), T> + QueryFragment<TestBackend> + QueryId,
+    T: QueryId,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();

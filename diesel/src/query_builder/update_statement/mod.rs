@@ -71,6 +71,8 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
     }
 }
 
+impl_query_id!(noop: UpdateStatement<T, U>);
+
 impl<T, U> AsQuery for UpdateStatement<T, U> where
     T: UpdateTarget,
     UpdateQuery<<T::Table as Table>::AllColumns, UpdateStatement<T, U>>: Query,
@@ -162,3 +164,5 @@ impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
         false
     }
 }
+
+impl_query_id!(noop: UpdateQuery<T, U>);

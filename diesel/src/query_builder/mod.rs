@@ -1,25 +1,29 @@
 //! Contains traits responsible for the actual construction of SQL statements
 pub mod debug;
 
+#[macro_use]
+mod query_id;
+#[macro_use]
+mod clause_macro;
+
 pub mod bind_collector;
 mod delete_statement;
 #[doc(hidden)]
 pub mod functions;
 #[doc(hidden)]
 pub mod nodes;
-#[macro_use]
-mod clause_macro;
 mod distinct_clause;
 mod group_by_clause;
 mod limit_clause;
 mod offset_clause;
 mod order_clause;
 mod select_statement;
-mod where_clause;
+pub mod where_clause;
 pub mod insert_statement;
 pub mod update_statement;
 
 pub use self::bind_collector::BindCollector;
+pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
 #[doc(inline)]

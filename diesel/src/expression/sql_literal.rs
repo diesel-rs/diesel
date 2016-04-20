@@ -44,6 +44,8 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
     }
 }
 
+impl_query_id!(noop: SqlLiteral<ST>);
+
 impl<ST> Query for SqlLiteral<ST> {
     type SqlType = ST;
 }

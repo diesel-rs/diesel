@@ -234,6 +234,8 @@ impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
     }
 }
 
+impl_query_id!(SelectStatement<ST, S, F, D, W, O, L, Of, G>);
+
 impl<ST, S, F, D, W, O, L, Of, G, QS> SelectableExpression<QS>
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
         SelectStatement<ST, S, F, D, W, O, L, Of, G>: Expression,

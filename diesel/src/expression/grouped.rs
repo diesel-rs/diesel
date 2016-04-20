@@ -27,6 +27,8 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
     }
 }
 
+impl_query_id!(Grouped<T>);
+
 impl<T, QS> SelectableExpression<QS> for Grouped<T> where
     T: SelectableExpression<QS>,
     Grouped<T>: Expression,

@@ -41,3 +41,4 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
     }
 }
 
+impl_query_id!(noop: DeleteStatement<T>);

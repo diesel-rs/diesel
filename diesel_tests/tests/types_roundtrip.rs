@@ -11,12 +11,13 @@ pub use diesel::data_types::*;
 pub use diesel::types::{HasSqlType, ToSql, Nullable};
 
 use diesel::expression::AsExpression;
-use diesel::query_builder::QueryFragment;
+use diesel::query_builder::{QueryFragment, QueryId};
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool where
+    ST: QueryId,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST> + Queryable<ST, <TestConnection as Connection>::Backend> + PartialEq + Clone + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<()> + QueryFragment<<TestConnection as Connection>::Backend>,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<()> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
 {
     let connection = connection();
     let query = select(AsExpression::<ST>::as_expression(value.clone()));

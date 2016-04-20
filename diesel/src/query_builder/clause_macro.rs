@@ -21,6 +21,8 @@ macro_rules! simple_clause {
             }
         }
 
+        impl_query_id!($no_clause);
+
         #[derive(Debug, Clone, Copy)]
         pub struct $clause<Expr>(pub Expr);
 
@@ -41,5 +43,7 @@ macro_rules! simple_clause {
                 self.0.is_safe_to_cache_prepared()
             }
         }
+
+        impl_query_id!($clause<Expr>);
     }
 }

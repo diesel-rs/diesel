@@ -51,6 +51,8 @@ macro_rules! numeric_operation {
             }
         }
 
+        impl_query_id!($name<Lhs, Rhs>);
+
         impl<Lhs, Rhs, QS> SelectableExpression<QS> for $name<Lhs, Rhs> where
             Lhs: SelectableExpression<QS>,
             Rhs: SelectableExpression<QS>,

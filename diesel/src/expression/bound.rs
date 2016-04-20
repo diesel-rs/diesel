@@ -55,6 +55,14 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
     }
 }
 
+impl<T: QueryId, U> QueryId for Bound<T, U> {
+    type QueryId = Bound<T::QueryId, ()>;
+
+    fn has_static_query_id() -> bool {
+        T::has_static_query_id()
+    }
+}
+
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
     Bound<T, U>: Expression,
 {

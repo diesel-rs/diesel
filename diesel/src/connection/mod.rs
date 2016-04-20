@@ -1,7 +1,7 @@
 extern crate libc;
 
 use backend::Backend;
-use query_builder::{AsQuery, QueryFragment};
+use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
@@ -69,7 +69,7 @@ pub trait Connection: SimpleConnection + Sized {
     #[doc(hidden)]
     fn query_one<T, U>(&self, source: T) -> QueryResult<U> where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
+        T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
@@ -80,13 +80,13 @@ pub trait Connection: SimpleConnection + Sized {
     #[doc(hidden)]
     fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
+        T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>;
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend>;
+        T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
     #[doc(hidden)] fn begin_transaction(&self) -> QueryResult<()>;

@@ -9,6 +9,8 @@ mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
+use std::any::TypeId;
+use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::ffi::CStr;
@@ -27,9 +29,15 @@ use super::query_builder::SqliteQueryBuilder;
 use types::HasSqlType;
 
 pub struct SqliteConnection {
-    statement_cache: RefCell<HashMap<String, StatementUse>>,
+    statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
     raw_connection: RawConnection,
     transaction_depth: Cell<i32>,
+}
+
+#[derive(Hash, PartialEq, Eq)]
+enum QueryCacheKey {
+    Sql(String),
+    Type(TypeId),
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -63,7 +71,7 @@ impl Connection for SqliteConnection {
 
     fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend>,
+        T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
@@ -73,7 +81,7 @@ impl Connection for SqliteConnection {
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
-        T: QueryFragment<Self::Backend>,
+        T: QueryFragment<Self::Backend> + QueryId,
     {
         let stmt = try!(self.prepare_query(source));
         try!(stmt.borrow().run());
@@ -123,7 +131,7 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
-    fn prepare_query<T: QueryFragment<Sqlite>>(&self, source: &T) -> QueryResult<StatementUse> {
+    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<StatementUse> {
         let result = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
@@ -145,25 +153,47 @@ impl SqliteConnection {
         query.map(|_| ())
     }
 
-    fn cached_prepared_statement<T: QueryFragment<Sqlite>>(&self, source: &T)
+    fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
         -> QueryResult<StatementUse>
     {
-        let sql = try!(to_sql(source));
+        let cache_key = try!(cache_key(source));
 
         let mut cache = self.statement_cache.borrow_mut();
         // FIXME: This can be cleaned up once https://github.com/rust-lang/rust/issues/32281
         // is stable
-        if cache.contains_key(&sql) {
-            Ok(cache[&sql].clone())
+        if cache.contains_key(&cache_key) {
+            Ok(cache[&cache_key].clone())
         } else {
-            let statement = Statement::prepare(&self.raw_connection, &sql)
-                .map(StatementUse::new);
+            let statement = {
+                let sql = try!(sql_from_cache_key(&cache_key, source));
+
+                Statement::prepare(&self.raw_connection, &sql)
+                    .map(StatementUse::new)
+            };
             if !source.is_safe_to_cache_prepared() {
                 return statement;
             }
-            let entry = cache.entry(sql);
+            let entry = cache.entry(cache_key);
             Ok(entry.or_insert(try!(statement)).clone())
         }
+    }
+}
+
+fn cache_key<T: QueryFragment<Sqlite> + QueryId>(source: &T)
+    -> QueryResult<QueryCacheKey>
+{
+    match T::query_id() {
+        Some(id) => Ok(QueryCacheKey::Type(id)),
+        None => to_sql(source).map(QueryCacheKey::Sql),
+    }
+}
+
+fn sql_from_cache_key<'a, T: QueryFragment<Sqlite>>(key: &'a QueryCacheKey, source: &T)
+    -> QueryResult<Cow<'a, str>>
+{
+    match key {
+        &QueryCacheKey::Sql(ref sql) => Ok(Cow::Borrowed(sql)),
+        _ => to_sql(source).map(Cow::Owned),
     }
 }
 

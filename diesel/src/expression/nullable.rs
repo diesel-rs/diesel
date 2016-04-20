@@ -42,6 +42,14 @@ impl<T, QS> SelectableExpression<QS> for Nullable<T> where
 {
 }
 
+impl<T: QueryId> QueryId for Nullable<T> {
+    type QueryId = T::QueryId;
+
+    fn has_static_query_id() -> bool {
+        T::has_static_query_id()
+    }
+}
+
 impl<T> NonAggregate for Nullable<T> where
     T: NonAggregate,
     Nullable<T>: Expression,
