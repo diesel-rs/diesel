@@ -6,7 +6,7 @@ use result::QueryResult;
 /// Types which can be passed to
 /// [`update.set`](struct.IncompleteUpdateStatement.html#method.set). This can
 /// be automatically generated for structs by
-/// [`#[changeset_for]`](https://github.com/sgrif/diesel/tree/master/diesel_codegen#changeset_fortable_name).
+/// [`#[changeset_for]`](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen#changeset_fortable_name).
 pub trait AsChangeset {
     type Target: QuerySource;
     type Changeset;

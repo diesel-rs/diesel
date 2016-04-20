@@ -79,7 +79,7 @@ pub fn main() {
 Note that compiler errors will be reported in the generated file, not the source
 file. For that reason, it's often easier to develop with nightly rust, and
 deploy or test on stable. You can see an example of how to do this by looking at
-[Diesel's tests](https://github.com/sgrif/diesel/tree/master/diesel_tests).
+[Diesel's tests](https://github.com/diesel-rs/diesel/tree/master/diesel_tests).
 
 Struct annotations
 ------------------

@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 documentation = "http://diesel.rs/guides/getting-started"
 homepage = "http://diesel.rs"
-repository = "https://github.com/sgrif/diesel"
+repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [[bin]]

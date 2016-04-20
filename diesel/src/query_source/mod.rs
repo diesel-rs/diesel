@@ -17,7 +17,7 @@ pub use self::joins::JoinTo;
 
 /// Trait indicating that a record can be queried from the database. This trait
 /// can be derived automatically. See the [codegen
-/// documentation](https://github.com/sgrif/diesel/tree/master/diesel_codegen#derivequeryable)
+/// documentation](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen#derivequeryable)
 /// for more.
 pub trait Queryable<ST, DB> where
     DB: Backend + HasSqlType<ST>,

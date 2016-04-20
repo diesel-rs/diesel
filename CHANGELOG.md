@@ -206,7 +206,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Added
 
 * Added Diesel CLI, a tool for managing your schema.
-  See [the readme](https://github.com/sgrif/diesel/blob/v0.4.0/README.md#database-migrations)
+  See [the readme](https://github.com/diesel-rs/diesel/blob/v0.4.0/README.md#database-migrations)
   for more information.
 
 * Add the ability for diesel to maintain your schema for you automatically. See
@@ -221,16 +221,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Fixed
 
 * `#[changeset_for]` can now be used with structs containing a `Vec`. Fixes
-  [#63](https://github.com/sgrif/diesel/issues/63).
+  [#63](https://github.com/diesel-rs/diesel/issues/63).
 
 * No longer generate invalid SQL when an optional update field is not the first
-  field on a changeset. Fixes [#68](https://github.com/sgrif/diesel/issues/68).
+  field on a changeset. Fixes [#68](https://github.com/diesel-rs/diesel/issues/68).
 
 * `#[changeset_for]` can now be used with structs containing only a single field
-  other than `id`. Fixes [#66](https://github.com/sgrif/diesel/issues/66).
+  other than `id`. Fixes [#66](https://github.com/diesel-rs/diesel/issues/66).
 
 * `infer_schema!` properly works with array columns. Fixes
-  [#65](https://github.com/sgrif/diesel/issues/65).
+  [#65](https://github.com/diesel-rs/diesel/issues/65).
 
 ## [0.3.0] 2015-12-04
 
