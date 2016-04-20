@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 pub struct CreateTable<'a, Cols> {
     name: &'a str,
     columns: Cols
@@ -15,15 +17,15 @@ impl<'a, Cols> CreateTable<'a, Cols> {
 pub struct Column<'a, T> {
     name: &'a str,
     type_name: &'a str,
-    _tpe: T,
+    _marker: PhantomData<T>,
 }
 
 impl<'a, T> Column<'a, T> {
-    pub fn new(name: &'a str, type_name: &'a str, tpe: T) -> Self {
+    pub fn new(name: &'a str, type_name: &'a str) -> Self {
         Column {
             name: name,
             type_name: type_name,
-            _tpe: tpe,
+            _marker: PhantomData,
         }
     }
 

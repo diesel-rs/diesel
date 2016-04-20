@@ -36,8 +36,6 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
         quote_ty!(cx, ::diesel::types::BigInt)
     } else if type_name.contains("int") {
         quote_ty!(cx, ::diesel::types::Integer)
-    } else if type_name.contains("char") {
-        quote_ty!(cx, ::diesel::types::VarChar)
     } else if is_text(&type_name) {
         quote_ty!(cx, ::diesel::types::Text)
     } else if type_name.contains("blob") || type_name.is_empty() {
@@ -59,6 +57,7 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
 }
 
 fn is_text(type_name: &str) -> bool {
+    type_name.contains("char") ||
     type_name.contains("clob") ||
         type_name.contains("text")
 }

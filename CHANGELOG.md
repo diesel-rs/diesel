@@ -9,6 +9,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `infer_schema!` on SQLite now accepts a larger range of type names
 
+* `types::VarChar` is now an alias for `types::Text`. Most code should be
+  unaffected by this. PG array columns are treated slightly differently,
+  however. If you are using `varchar[]`, you should switch to `text[]` instead.
+
 ## [0.6.1] 2016-04-14
 
 ### Added

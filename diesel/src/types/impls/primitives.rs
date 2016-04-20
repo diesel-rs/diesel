@@ -13,7 +13,6 @@ primitive_impls!(BigInt -> (i64, pg: (20, 1016), sqlite: (Long)));
 primitive_impls!(Float -> (f32, pg: (700, 1021), sqlite: (Float)));
 primitive_impls!(Double -> (f64, pg: (701, 1022), sqlite: (Double)));
 
-primitive_impls!(VarChar -> (String, pg: (1043, 1015), sqlite: (Text)));
 primitive_impls!(Text -> (String, pg: (25, 1009), sqlite: (Text)));
 
 primitive_impls!(Binary -> (Vec<u8>, pg: (17, 1001), sqlite: (Binary)));
@@ -23,7 +22,6 @@ primitive_impls!(Time);
 primitive_impls!(Timestamp);
 
 expression_impls! {
-    VarChar -> &'a str,
     Text -> &'a str,
 
     Binary -> &'a [u8],
@@ -31,36 +29,18 @@ expression_impls! {
 
 impl NotNull for () {}
 
-impl<DB: Backend<RawValue=[u8]>> FromSql<types::VarChar, DB> for String {
+impl<DB: Backend<RawValue=[u8]>> FromSql<types::Text, DB> for String {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let bytes = not_none!(bytes);
         String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
     }
 }
 
-impl<DB> ToSql<types::VarChar, DB> for String where
-    DB: Backend,
-    for<'a> &'a str: ToSql<types::VarChar, DB>,
-{
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (&self as &str).to_sql(out)
-    }
-}
-
-impl<'a, DB: Backend> ToSql<types::VarChar, DB> for &'a str {
+impl<'a, DB: Backend> ToSql<types::Text, DB> for &'a str {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
-    }
-}
-
-impl<DB> FromSql<types::Text, DB> for String where
-    DB: Backend,
-    String: FromSql<types::VarChar, DB>,
-{
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error+Send+Sync>> {
-        <Self as FromSql<types::VarChar, DB>>::from_sql(bytes)
     }
 }
 
@@ -70,15 +50,6 @@ impl<DB> ToSql<types::Text, DB> for String where
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (&self as &str).to_sql(out)
-    }
-}
-
-impl<'a, DB> ToSql<types::Text, DB> for &'a str where
-    DB: Backend,
-    &'a str: ToSql<types::VarChar, DB>,
-{
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::VarChar, DB>::to_sql(self, out)
     }
 }
 

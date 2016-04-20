@@ -46,9 +46,9 @@ use std::io::Write;
 #[doc(hidden)] pub type Float8 = Double;
 #[derive(Clone, Copy, Default)] pub struct Numeric;
 
-#[derive(Clone, Copy, Default)] pub struct VarChar;
-#[doc(hidden)] pub type Varchar = VarChar;
 #[derive(Clone, Copy, Default)] pub struct Text;
+pub type VarChar = Text;
+#[doc(hidden)] pub type Varchar = VarChar;
 
 #[derive(Clone, Copy, Default)] pub struct Binary;
 

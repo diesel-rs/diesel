@@ -1,7 +1,7 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 extern crate chrono;
 
-use schema::{connection, TestBackend};
+use schema::*;
 use diesel::*;
 #[cfg(feature="postgres")]
 use diesel::pg::Pg;
@@ -288,7 +288,7 @@ fn to_sql_array() {
     assert!(query_to_sql_equality::<Array<Integer>, &[i32]>(
             "ARRAY[1, 2, 3]", &[1, 2, 3]));
     assert!(query_to_sql_equality::<Array<VarChar>, &[&str]>(
-            "ARRAY['Hello', '', 'world']::varchar[]", &["Hello", "", "world"]));
+            "ARRAY['Hello', '', 'world']::text[]", &["Hello", "", "world"]));
 }
 
 #[test]
@@ -383,6 +383,21 @@ fn pg_uuid_to_sql_uuid() {
     assert!(query_to_sql_equality::<Uuid, uuid::Uuid>(expected_value, value));
     let expected_non_equal_value = "'8e940686-97a5-4e8b-ac44-64cf3cceea9b'::uuid";
     assert!(!query_to_sql_equality::<Uuid, uuid::Uuid>(expected_non_equal_value, value));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn text_array_can_be_assigned_to_varchar_array_column() {
+    let conn = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &conn);
+    let post = insert(&sean.new_post("Hello", None)).into(posts::table)
+        .get_result::<Post>(&conn).unwrap();
+
+    update(posts::table.find(post.id)).set(posts::tags.eq(vec!["tag1", "tag2"]))
+        .execute(&conn).unwrap();
+    let tags_in_db = posts::table.find(post.id).select(posts::tags).first(&conn);
+
+    assert_eq!(Ok(vec!["tag1".to_string(), "tag2".to_string()]), tags_in_db);
 }
 
 #[test]
