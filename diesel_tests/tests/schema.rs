@@ -2,7 +2,7 @@ use diesel::*;
 
 infer_schema!(dotenv!("DATABASE_URL"));
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[changeset_for(users)]
 #[has_many(posts)]
 pub struct User {

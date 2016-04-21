@@ -4,7 +4,8 @@
 use super::{Expression, AsExpression};
 use types;
 
-pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, <TargetExpr as Expression>::SqlType>;
+pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;
+pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, SqlTypeOf<TargetExpr>>;
 pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
 
 macro_rules! gen_helper_type {
@@ -35,4 +36,7 @@ pub type Between<Lhs, Rhs> = super::predicates::Between<Lhs,
 pub type NotBetween<Lhs, Rhs> = super::predicates::NotBetween<Lhs,
     super::predicates::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
 
+#[doc(inline)]
 pub use super::predicates::{IsNull, IsNotNull, Asc, Desc};
+#[doc(inline)]
+pub use super::array_comparison::EqAny;

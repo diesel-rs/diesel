@@ -9,6 +9,7 @@ mod macros;
 #[macro_use]
 pub mod query_builder;
 
+pub mod associations;
 pub mod backend;
 pub mod connection;
 #[macro_use]
@@ -72,6 +73,7 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+    pub use associations::GroupedBy;
     pub use connection::Connection;
     pub use expression::{Expression, SelectableExpression, BoxableExpression};
     pub use expression::expression_methods::*;

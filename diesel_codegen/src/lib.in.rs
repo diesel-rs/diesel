@@ -1,5 +1,6 @@
 mod associations;
 mod attr;
+mod identifiable;
 mod insertable;
 mod migrations;
 mod model;

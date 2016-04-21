@@ -1,5 +1,6 @@
 use backend::Backend;
 use expression::*;
+use expression::helper_types::SqlTypeOf;
 use query_builder::{QueryBuilder, QueryFragment, BuildQueryResult};
 use result::QueryResult;
 use types::Bool;
@@ -8,6 +9,8 @@ pub struct In<T, U> {
     left: T,
     values: U,
 }
+
+pub type EqAny<T, U> = In<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
 
 impl<T, U> In<T, U> {
     pub fn new(left: T, values: U) -> Self {
