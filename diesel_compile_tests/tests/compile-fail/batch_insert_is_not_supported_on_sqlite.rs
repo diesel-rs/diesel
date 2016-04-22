@@ -3,7 +3,7 @@ extern crate diesel;
 
 use diesel::*;
 use diesel::backend::Backend;
-use diesel::sqlite::*;
+use diesel::sqlite::{Sqlite, SqliteQueryBuilder, SqliteConnection};
 use diesel::types::{Integer, VarChar};
 
 table! {
