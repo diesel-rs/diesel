@@ -29,6 +29,7 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_attr("feature(custom_attribute)");
 
     reg.add_decorator("derive_Queryable", queryable::expand_derive_queryable);
+    reg.add_decorator("derive_Identifiable", identifiable::expand_derive_identifiable);
     reg.add_decorator("insertable_into", insertable::expand_insert);
     reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_decorator("has_many", associations::expand_has_many);
@@ -48,6 +49,10 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
     reg.register_syntax_extension(
         intern("derive_Queryable"),
         MultiDecorator(Box::new(queryable::expand_derive_queryable))
+    );
+    reg.register_syntax_extension(
+        intern("derive_Identifiable"),
+        MultiDecorator(Box::new(identifiable::expand_derive_identifiable))
     );
     reg.register_syntax_extension(
         intern("insertable_into"),

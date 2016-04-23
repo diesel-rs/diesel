@@ -1,7 +1,7 @@
 use diesel::*;
 use super::{User, posts, comments, users};
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[has_many(comments)]
 #[belongs_to(user)]
 pub struct Post {
