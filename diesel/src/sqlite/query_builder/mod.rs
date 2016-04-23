@@ -1,6 +1,10 @@
 use super::backend::Sqlite;
 use query_builder::{QueryBuilder, BuildQueryResult};
 
+pub mod functions;
+#[doc(hidden)]
+pub mod nodes;
+
 pub struct SqliteQueryBuilder {
     pub sql: String,
 }

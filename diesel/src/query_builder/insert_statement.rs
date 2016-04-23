@@ -7,43 +7,49 @@ use result::QueryResult;
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
-pub struct IncompleteInsertStatement<T> {
+pub struct IncompleteInsertStatement<T, Op> {
     records: T,
+    operator: Op
 }
 
-impl<T> IncompleteInsertStatement<T> {
+impl<T, Op> IncompleteInsertStatement<T, Op> {
     #[doc(hidden)]
-    pub fn new(records: T) -> Self {
+    pub fn new(records: T, operator: Op) -> Self {
         IncompleteInsertStatement {
             records: records,
+            operator: operator,
         }
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> InsertStatement<S, T> where
-        InsertStatement<S, T>: AsQuery,
+    pub fn into<S>(self, target: S) -> InsertStatement<S, T, Op> where
+        InsertStatement<S, T, Op>: AsQuery,
     {
         InsertStatement {
+            operator: self.operator,
             target: target,
             records: self.records,
         }
     }
 }
 
-pub struct InsertStatement<T, U> {
+pub struct InsertStatement<T, U, Op> {
+    operator: Op,
     target: T,
     records: U,
 }
 
-impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
+impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: Insertable<T, DB> + Copy,
+    Op: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let values = self.records.values();
-        out.push_sql("INSERT INTO ");
+        try!(self.operator.to_sql(out));
+        out.push_sql(" INTO ");
         try!(self.target.from_clause().to_sql(out));
         out.push_sql(" (");
         try!(values.column_names(out));
@@ -54,6 +60,7 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         let values = self.records.values();
+        try!(self.operator.collect_binds(out));
         try!(self.target.from_clause().collect_binds(out));
         try!(values.values_bind_params(out));
         Ok(())
@@ -64,14 +71,14 @@ impl<T, U, DB> QueryFragment<DB> for InsertStatement<T, U> where
     }
 }
 
-impl_query_id!(noop: InsertStatement<T, U>);
+impl_query_id!(noop: InsertStatement<T, U, Op>);
 
-impl<T, U> AsQuery for InsertStatement<T, U> where
+impl<T, U, Op> AsQuery for InsertStatement<T, U, Op> where
     T: Table,
-    InsertQuery<T::AllColumns, InsertStatement<T, U>>: Query,
+    InsertQuery<T::AllColumns, InsertStatement<T, U, Op>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
-    type Query = InsertQuery<T::AllColumns, InsertStatement<T, U>>;
+    type Query = InsertQuery<T::AllColumns, Self>;
 
     fn as_query(self) -> Self::Query {
         InsertQuery {
@@ -81,7 +88,7 @@ impl<T, U> AsQuery for InsertStatement<T, U> where
     }
 }
 
-impl<T, U> InsertStatement<T, U> {
+impl<T, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.
     /// # Examples
     ///
@@ -115,9 +122,9 @@ impl<T, U> InsertStatement<T, U> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> InsertQuery<E, InsertStatement<T, U>> where
-        E: Expression,
-        InsertQuery<E, InsertStatement<T, U>>: Query,
+    pub fn returning<E>(self, returns: E) -> InsertQuery<E, Self> where
+        E: Expression + SelectableExpression<T>,
+        InsertQuery<E, Self>: Query,
     {
         InsertQuery {
             returning: returns,
@@ -132,9 +139,8 @@ pub struct InsertQuery<T, U> {
     statement: U,
 }
 
-impl<T, U, V> Query for InsertQuery<T, InsertStatement<U, V>> where
-    U: Table,
-    T: Expression + SelectableExpression<U> + NonAggregate,
+impl<T, U> Query for InsertQuery<T, U> where
+    T: Expression + NonAggregate,
 {
     type SqlType = T::SqlType;
 }
@@ -163,3 +169,22 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
 }
 
 impl_query_id!(noop: InsertQuery<T, U>);
+
+pub struct Insert;
+
+impl<DB: Backend> QueryFragment<DB> for Insert {
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql("INSERT");
+        Ok(())
+    }
+
+    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        true
+    }
+}
+
+impl_query_id!(Insert);

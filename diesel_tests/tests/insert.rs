@@ -174,3 +174,23 @@ fn delete_records() {
 
     assert_eq!(Ok(1), num_users);
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn insert_on_conflict_replace() {
+    use schema::users::dsl::*;
+    use diesel::insert_or_replace;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let mut sean = find_user_by_name("Sean", &connection);
+    sean.name = "Jim".into();
+    insert_or_replace(&sean)
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_names = vec!["Jim".into(), "Tess".into()];
+    let names = users.select(name).order(id).load::<String>(&connection);
+    assert_eq!(Ok(expected_names), names);
+}

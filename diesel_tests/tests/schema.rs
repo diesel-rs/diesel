@@ -4,6 +4,7 @@ infer_schema!(dotenv!("DATABASE_URL"));
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[changeset_for(users)]
+#[insertable_into(users)]
 #[has_many(posts)]
 pub struct User {
     pub id: i32,
@@ -125,7 +126,7 @@ pub fn connection_without_transaction() -> TestConnection {
     connection
 }
 
-use diesel::query_builder::insert_statement::InsertStatement;
+use diesel::query_builder::insert_statement::{InsertStatement, Insert};
 use diesel::query_builder::QueryFragment;
 
 #[cfg(not(feature = "sqlite"))]
@@ -134,7 +135,7 @@ pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: 
         T: Table,
         Conn: Connection,
         &'a [U]: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a [U]>: QueryFragment<Conn::Backend>,
+        InsertStatement<T, &'a [U], Insert>: QueryFragment<Conn::Backend>,
 {
     insert(records).into(table).execute(connection).unwrap()
 }
@@ -145,7 +146,7 @@ pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: 
         T: Table + Copy,
         Conn: Connection,
         &'a U: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a U>: QueryFragment<Conn::Backend>,
+        InsertStatement<T, &'a U, Insert>: QueryFragment<Conn::Backend>,
 {
     for record in records {
         insert(record).into(table).execute(connection).unwrap();

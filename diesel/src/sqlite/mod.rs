@@ -1,7 +1,8 @@
 mod backend;
 mod connection;
-mod query_builder;
 mod types;
+
+pub mod query_builder;
 
 pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SqliteConnection;
