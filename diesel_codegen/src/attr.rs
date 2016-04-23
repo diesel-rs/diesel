@@ -3,7 +3,7 @@ use syntax::ast::ItemKind;
 use syntax::ext::base::ExtCtxt;
 use syntax::ptr::P;
 
-use util::str_value_of_attr_with_name;
+use util::ident_value_of_attr_with_name;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Attr {
@@ -16,7 +16,7 @@ impl Attr {
     pub fn from_struct_field(cx: &mut ExtCtxt, field: &ast::StructField) -> Option<Self> {
         let field_name = field.ident;
         let column_name =
-            str_value_of_attr_with_name(cx, &field.attrs, "column_name");
+            ident_value_of_attr_with_name(cx, &field.attrs, "column_name");
         let ty = field.ty.clone();
 
         match (column_name, field_name) {
@@ -32,7 +32,7 @@ impl Attr {
             }),
             (None, None) => {
                 cx.span_err(field.span,
-                    r#"Field must be named or annotated with #[column_name="something"]"#);
+                    r#"Field must be named or annotated with #[column_name(something)]"#);
                 None
             }
         }
