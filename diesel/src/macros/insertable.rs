@@ -249,10 +249,17 @@ mod tests {
 
     macro_rules! test_struct_definition {
         ($test_name:ident, $($struct_def:tt)*) => {
+            // FIXME: This module is to work around rust-lang/rust#31776
+            // Remove the module and move the struct definition into the test function once
+            // 1.9 is released. The `use` statements can be removed.
+            //
+            // The indentation is intentionally weird to avoid git churn when this is fixed.
+            mod $test_name {
+                use super::{users, connection};
+                use prelude::*;
+                __diesel_parse_as_item!($($struct_def)*);
             #[test]
             fn $test_name() {
-                __diesel_parse_as_item!($($struct_def)*);
-
                 Insertable! {
                     (users)
                     $($struct_def)*
@@ -266,6 +273,7 @@ mod tests {
                     .load::<(String, Option<String>)>(&conn);
                 let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
                 assert_eq!(Ok(expected), saved);
+            }
             }
         }
     }
@@ -366,7 +374,7 @@ mod tests {
     #[test]
     fn tuple_struct() {
         struct NewUser<'a>(
-            pub &'a str,
+            &'a str,
             Option<&'a str>,
         );
 
