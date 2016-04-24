@@ -7,6 +7,7 @@ use std::{str, ptr};
 
 use result::*;
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
     internal_connection: *mut PGconn,
 }
@@ -135,6 +136,7 @@ fn last_error_message(conn: *const PGconn) -> String {
     }
 }
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct PgString {
     pg_str: *mut libc::c_char,
 }

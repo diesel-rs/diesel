@@ -2,6 +2,7 @@ use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
 
+#[derive(Debug, Copy, Clone)]
 pub struct DeleteStatement<T>(T);
 
 impl<T> DeleteStatement<T> {

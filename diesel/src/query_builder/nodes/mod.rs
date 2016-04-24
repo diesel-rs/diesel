@@ -2,6 +2,7 @@ use backend::Backend;
 use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
 use result::QueryResult;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Identifier<'a>(pub &'a str);
 
 impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
@@ -18,6 +19,7 @@ impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Join<T, U, V, W> {
     lhs: T,
     rhs: U,
@@ -88,6 +90,7 @@ impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct InfixNode<'a, T, U> {
     lhs: T,
     rhs: U,

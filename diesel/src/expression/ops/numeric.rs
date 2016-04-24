@@ -6,6 +6,7 @@ use types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
+        #[derive(Debug, Copy, Clone)]
         pub struct $name<Lhs, Rhs> {
             lhs: Lhs,
             rhs: Rhs,

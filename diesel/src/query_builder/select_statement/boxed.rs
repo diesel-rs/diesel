@@ -11,6 +11,7 @@ use query_source::QuerySource;
 use result::QueryResult;
 use types::{HasSqlType, Bool, BigInt};
 
+#[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     select: Box<QueryFragment<DB> + 'a>,
     from: QS,

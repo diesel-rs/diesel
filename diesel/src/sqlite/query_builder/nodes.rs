@@ -3,6 +3,7 @@ use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
 use result::QueryResult;
 use sqlite::Sqlite;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Replace;
 
 impl QueryFragment<Sqlite> for Replace {

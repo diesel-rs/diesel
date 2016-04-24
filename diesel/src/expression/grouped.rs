@@ -3,6 +3,7 @@ use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {

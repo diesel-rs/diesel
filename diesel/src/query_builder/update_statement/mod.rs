@@ -12,6 +12,7 @@ use result::QueryResult;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
+#[derive(Debug, Copy, Clone)]
 pub struct IncompleteUpdateStatement<T>(T);
 
 impl<T> IncompleteUpdateStatement<T> {
@@ -33,6 +34,7 @@ impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct UpdateStatement<T, U> {
     target: T,
     values: U,
@@ -130,6 +132,7 @@ impl<T, U> UpdateStatement<T, U> {
 }
 
 #[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
 pub struct UpdateQuery<T, U> {
     returning: T,
     statement: U,

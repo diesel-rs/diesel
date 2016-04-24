@@ -20,6 +20,7 @@ impl<'a, Expr> Aliased<'a, Expr> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct FromEverywhere;
 
 impl<'a, T> Expression for Aliased<'a, T> where

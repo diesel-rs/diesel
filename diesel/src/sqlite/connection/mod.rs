@@ -28,6 +28,7 @@ use sqlite::Sqlite;
 use super::query_builder::SqliteQueryBuilder;
 use types::HasSqlType;
 
+#[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
     raw_connection: RawConnection,

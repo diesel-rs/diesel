@@ -31,33 +31,33 @@ use row::Row;
 use std::error::Error;
 use std::io::Write;
 
-#[derive(Clone, Copy, Default)] pub struct Bool;
+#[derive(Debug, Clone, Copy, Default)] pub struct Bool;
 
-#[derive(Clone, Copy, Default)] pub struct SmallInt;
+#[derive(Debug, Clone, Copy, Default)] pub struct SmallInt;
 #[doc(hidden)] pub type Int2 = SmallInt;
-#[derive(Clone, Copy, Default)] pub struct Integer;
+#[derive(Debug, Clone, Copy, Default)] pub struct Integer;
 #[doc(hidden)] pub type Int4 = Integer;
-#[derive(Clone, Copy, Default)] pub struct BigInt;
+#[derive(Debug, Clone, Copy, Default)] pub struct BigInt;
 #[doc(hidden)] pub type Int8 = BigInt;
 
-#[derive(Clone, Copy, Default)] pub struct Float;
+#[derive(Debug, Clone, Copy, Default)] pub struct Float;
 #[doc(hidden)] pub type Float4 = Float;
-#[derive(Clone, Copy, Default)] pub struct Double;
+#[derive(Debug, Clone, Copy, Default)] pub struct Double;
 #[doc(hidden)] pub type Float8 = Double;
-#[derive(Clone, Copy, Default)] pub struct Numeric;
+#[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
 
-#[derive(Clone, Copy, Default)] pub struct Text;
+#[derive(Debug, Clone, Copy, Default)] pub struct Text;
 pub type VarChar = Text;
 #[doc(hidden)] pub type Varchar = VarChar;
 
-#[derive(Clone, Copy, Default)] pub struct Binary;
+#[derive(Debug, Clone, Copy, Default)] pub struct Binary;
 
-#[derive(Clone, Copy, Default)] pub struct Date;
-#[derive(Clone, Copy, Default)] pub struct Interval;
-#[derive(Clone, Copy, Default)] pub struct Time;
-#[derive(Clone, Copy, Default)] pub struct Timestamp;
+#[derive(Debug, Clone, Copy, Default)] pub struct Date;
+#[derive(Debug, Clone, Copy, Default)] pub struct Interval;
+#[derive(Debug, Clone, Copy, Default)] pub struct Time;
+#[derive(Debug, Clone, Copy, Default)] pub struct Timestamp;
 
-#[derive(Clone, Copy, Default)] pub struct Nullable<T: NotNull>(T);
+#[derive(Debug, Clone, Copy, Default)] pub struct Nullable<T: NotNull>(T);
 
 #[cfg(feature = "postgres")]
 #[doc(inline)]
@@ -99,7 +99,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
 #[cfg(feature = "unstable")]
 include!("specialization_impls.rs");
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Tiny enum to make the return type of `ToSql` more descriptive
 pub enum IsNull {
     Yes,

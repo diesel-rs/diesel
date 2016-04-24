@@ -194,7 +194,7 @@ macro_rules! table_body {
             #[allow(non_upper_case_globals, dead_code)]
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
-            #[allow(non_camel_case_types)]
+            #[allow(non_camel_case_types, missing_debug_implementations)]
             #[derive(Clone, Copy)]
             pub struct table;
 

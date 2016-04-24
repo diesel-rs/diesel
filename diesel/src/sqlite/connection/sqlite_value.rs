@@ -6,6 +6,7 @@ use std::{slice, str};
 use sqlite::Sqlite;
 use row::Row;
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
     inner_statement: *mut ffi::sqlite3_stmt,
     col_index: libc::c_int,

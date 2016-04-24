@@ -2,6 +2,7 @@ use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use super::query_builder::PgQueryBuilder;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Pg;
 
 #[derive(Debug, Clone, Copy)]

@@ -1,7 +1,7 @@
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database
 //! interactions. [A getting started guide](http://diesel.rs/guides/getting-started/) can be
 //! found on our website.
-#![deny(warnings)]
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
 
 #[macro_use]

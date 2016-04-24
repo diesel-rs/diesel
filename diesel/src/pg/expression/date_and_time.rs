@@ -5,6 +5,7 @@ use query_builder::*;
 use result::QueryResult;
 use types::{Timestamp, VarChar};
 
+#[derive(Debug, Copy, Clone)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,

@@ -8,6 +8,7 @@ use std::{ptr, str};
 use result::*;
 use result::Error::DatabaseError;
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
     pub internal_connection: *mut ffi::sqlite3,
 }
