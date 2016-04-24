@@ -5,6 +5,7 @@ use query_builder::{QueryBuilder, QueryFragment, BuildQueryResult};
 use result::QueryResult;
 use types::Bool;
 
+#[derive(Debug, Copy, Clone)]
 pub struct In<T, U> {
     left: T,
     values: U,
@@ -100,6 +101,7 @@ impl<ST, S, F, W, O, L, Of> AsInExpression<ST>
     }
 }
 
+#[derive(Debug)]
 pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {
@@ -139,6 +141,7 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
 
 impl_query_id!(noop: Many<T>);
 
+#[derive(Debug, Copy, Clone)]
 pub struct Subselect<T, ST> {
     values: T,
     _sql_type: PhantomData<ST>,

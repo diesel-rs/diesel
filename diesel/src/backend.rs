@@ -28,6 +28,7 @@ pub trait TypeMetadata {
 pub trait SupportsReturningClause {}
 pub trait SupportsDefaultKeyword {}
 
+#[derive(Debug, Copy, Clone)]
 pub struct Debug;
 
 impl Backend for Debug {

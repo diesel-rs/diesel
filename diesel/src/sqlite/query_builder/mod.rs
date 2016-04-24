@@ -5,6 +5,7 @@ pub mod functions;
 #[doc(hidden)]
 pub mod nodes;
 
+#[allow(missing_debug_implementations)]
 pub struct SqliteQueryBuilder {
     pub sql: String,
 }

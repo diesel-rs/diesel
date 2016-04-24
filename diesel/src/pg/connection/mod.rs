@@ -26,6 +26,7 @@ use types::{ToSql, HasSqlType};
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
 /// http://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING
+#[allow(missing_debug_implementations)]
 pub struct PgConnection {
     raw_connection: Rc<RawConnection>,
     transaction_depth: Cell<i32>,

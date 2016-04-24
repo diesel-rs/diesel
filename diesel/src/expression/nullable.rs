@@ -4,6 +4,7 @@ use query_builder::*;
 use result::QueryResult;
 use types::IntoNullable;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Nullable<T>(T);
 
 impl<T> Nullable<T> {

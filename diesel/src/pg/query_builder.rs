@@ -4,6 +4,7 @@ use super::backend::Pg;
 use super::connection::raw::RawConnection;
 use query_builder::{QueryBuilder, BuildQueryResult};
 
+#[allow(missing_debug_implementations)]
 pub struct PgQueryBuilder {
     conn: Rc<RawConnection>,
     pub sql: String,

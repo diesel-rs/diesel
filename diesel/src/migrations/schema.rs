@@ -5,6 +5,7 @@ table! {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct NewMigration<'a>(pub &'a str);
 
 use backend::Backend;

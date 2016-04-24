@@ -28,6 +28,7 @@ impl<'a, T, Expr> WithDsl<'a, Expr> for T where
 }
 
 #[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
 pub struct WithQuerySource<'a, Left, Right> {
     left: Left,
     right: Aliased<'a, Right>,
@@ -62,6 +63,7 @@ impl<'a, Left, Right> QueryId for WithQuerySource<'a, Left, Right> {
 }
 
 #[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
 pub struct PgOnly<T>(T);
 
 #[cfg(feature = "postgres")]

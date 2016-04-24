@@ -46,6 +46,7 @@ pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
 }
 
 #[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
 pub struct Any<Expr, ST> {
     expr: Expr,
     _marker: PhantomData<ST>,

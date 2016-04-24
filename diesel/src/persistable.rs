@@ -23,6 +23,7 @@ pub trait InsertValues<DB: Backend> {
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum ColumnInsertValue<Col, Expr> where
     Col: Column,
     Expr: Expression<SqlType=Col::SqlType>,
@@ -59,7 +60,7 @@ impl<'a, T, U, DB> Insertable<T, DB> for &'a Vec<U> where
     }
 }
 
-
+#[derive(Debug, Copy, Clone)]
 pub struct BatchInsertValues<'a, T, U: 'a, DB> {
     values: &'a [U],
     _marker: PhantomData<(T, DB)>,

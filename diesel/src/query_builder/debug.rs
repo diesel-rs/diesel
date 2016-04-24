@@ -2,6 +2,7 @@ use backend::Debug;
 use super::{QueryBuilder, BuildQueryResult};
 
 #[doc(hidden)]
+#[derive(Debug)]
 pub struct DebugQueryBuilder {
     pub sql: String,
     pub bind_types: Vec<u32>,

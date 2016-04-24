@@ -7,6 +7,7 @@ use result::QueryResult;
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
+#[derive(Debug, Copy, Clone)]
 pub struct IncompleteInsertStatement<T, Op> {
     records: T,
     operator: Op
@@ -33,6 +34,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct InsertStatement<T, U, Op> {
     operator: Op,
     target: T,
@@ -134,6 +136,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
 }
 
 #[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
 pub struct InsertQuery<T, U> {
     returning: T,
     statement: U,
@@ -170,6 +173,7 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
 
 impl_query_id!(noop: InsertQuery<T, U>);
 
+#[derive(Debug, Copy, Clone)]
 pub struct Insert;
 
 impl<DB: Backend> QueryFragment<DB> for Insert {
