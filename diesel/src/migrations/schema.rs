@@ -7,29 +7,10 @@ table! {
 
 #[derive(Debug, Copy, Clone)]
 pub struct NewMigration<'a>(pub &'a str);
-
-use backend::Backend;
-use expression::AsExpression;
-use expression::helper_types::AsExpr;
-use persistable::{Insertable, ColumnInsertValue, InsertValues};
-
-impl<'update: 'a, 'a, DB> Insertable<__diesel_schema_migrations::table, DB>
-    for &'update NewMigration<'a> where
-        DB: Backend,
-        (ColumnInsertValue<
-            __diesel_schema_migrations::version,
-            AsExpr<&'a str, __diesel_schema_migrations::version>,
-        >,): InsertValues<DB>,
-{
-    type Values = (ColumnInsertValue<
-        __diesel_schema_migrations::version,
-        AsExpr<&'a str, __diesel_schema_migrations::version>,
-    >,);
-
-    fn values(self) -> Self::Values {
-        (ColumnInsertValue::Expression(
-            __diesel_schema_migrations::version,
-            AsExpression::<::types::VarChar>::as_expression(self.0),
-        ),)
-    }
+Insertable! {
+    (__diesel_schema_migrations)
+    pub struct NewMigration<'a>(
+        #[column_name(version)]
+        pub &'a str,
+    );
 }
