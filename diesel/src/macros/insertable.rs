@@ -210,6 +210,7 @@ macro_rules! Insertable_column_expr {
 }
 
 #[cfg(test)]
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 mod tests {
     use prelude::*;
 
