@@ -26,13 +26,14 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 ///
 /// # Example
 ///
+/// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("src/doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
 /// #     users {
-/// #         id -> Serial,
+/// #         id -> Integer,
 /// #         name -> VarChar,
 /// #     }
 /// # }
@@ -40,8 +41,9 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// assert_eq!(Ok(Some(2)), users.select(count_star()).first(&connection));
+/// assert_eq!(Ok(2), users.select(count_star()).first(&connection));
 /// # }
+/// ```
 pub fn count_star() -> CountStar {
     CountStar
 }
