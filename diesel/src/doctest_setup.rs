@@ -61,36 +61,17 @@ struct NewUser {
     name: String,
 }
 
-struct NewUserValues {
-    name: String,
-}
-
-impl<DB> InsertValues<DB> for NewUserValues where
-    DB: diesel::backend::Backend,
-{
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_sql("name");
-        Ok(())
-    }
-
-    fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_sql(&format!("('{}')", self.name));
-        Ok(())
-    }
-
-    fn values_bind_params(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
-        Ok(())
-    }
-}
-
-impl<'a, DB> Insertable<users::table, DB> for &'a NewUser where
-    DB: diesel::backend::Backend,
-{
-    type Values = NewUserValues;
-
-    fn values(self) -> Self::Values {
-        NewUserValues {
-            name: self.name.clone(),
+impl NewUser {
+    pub fn new(name: &str) -> Self {
+        NewUser {
+            name: name.into(),
         }
+    }
+}
+
+Insertable! {
+    (users)
+    struct NewUser {
+        name: String,
     }
 }

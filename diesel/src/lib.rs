@@ -6,8 +6,6 @@
 
 #[macro_use]
 mod macros;
-#[macro_use]
-pub mod query_builder;
 
 pub mod associations;
 pub mod backend;
@@ -16,6 +14,7 @@ pub mod connection;
 pub mod expression;
 #[doc(hidden)]
 pub mod persistable;
+pub mod query_builder;
 #[macro_use]
 pub mod types;
 

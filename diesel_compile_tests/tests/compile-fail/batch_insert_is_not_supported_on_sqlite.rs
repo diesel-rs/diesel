@@ -15,32 +15,9 @@ table! {
 
 pub struct NewUser(String);
 
-use diesel::persistable::InsertValues;
-use diesel::query_builder::BuildQueryResult;
-
-// It doesn't actually matter if this would work. We're testing that insert fails
-// to compile here.
-pub struct MyValues;
-impl InsertValues<Sqlite> for MyValues {
-    fn column_names(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
-    fn values_clause(&self, out: &mut SqliteQueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
-    fn values_bind_params(&self, out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
-        Ok(())
-    }
-}
-
-impl<'a> Insertable<users::table, Sqlite> for &'a NewUser {
-    type Values = MyValues;
-
-    fn values(self) -> Self::Values {
-        MyValues
-    }
+Insertable! {
+    (users)
+    pub struct NewUser(#[column_name(name)] String,);
 }
 
 fn main() {
