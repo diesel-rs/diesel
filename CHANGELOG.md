@@ -13,6 +13,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   unaffected by this. PG array columns are treated slightly differently,
   however. If you are using `varchar[]`, you should switch to `text[]` instead.
 
+* Struct fields annotated with `#[column_name="name"]` should be changed to
+  `#[column_name(name)]`.
+
 ## [0.6.1] 2016-04-14
 
 ### Added

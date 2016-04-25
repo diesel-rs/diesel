@@ -21,6 +21,31 @@ fn str_value_of_attr(
     })
 }
 
+fn single_arg_value_of_attr(
+    cx: &mut ExtCtxt,
+    attr: &ast::Attribute,
+    name: &str,
+) -> Option<ast::Ident> {
+    let usage_err = || {
+        cx.span_err(attr.span(),
+            &format!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name));
+        None
+    };
+    // FIXME: This can be cleaned up with slice patterns
+    match attr.node.value.node {
+        ast::MetaItemKind::List(_, ref items) => {
+            if items.len() != 1 {
+                return usage_err();
+            }
+            match items[0].node {
+                ast::MetaItemKind::Word(ref value) => Some(str_to_ident(&value)),
+                _ => usage_err(),
+            }
+        }
+        _ => usage_err(),
+    }
+}
+
 pub fn str_value_of_attr_with_name(
     cx: &mut ExtCtxt,
     attrs: &[ast::Attribute],
@@ -29,6 +54,16 @@ pub fn str_value_of_attr_with_name(
     attrs.iter()
         .find(|a| a.check_name(name))
         .and_then(|a| str_value_of_attr(cx, &a, name))
+}
+
+pub fn ident_value_of_attr_with_name(
+    cx: &mut ExtCtxt,
+    attrs: &[ast::Attribute],
+    name: &str,
+) -> Option<ast::Ident> {
+    attrs.iter()
+        .find(|a| a.check_name(name))
+        .and_then(|a| single_arg_value_of_attr(cx, &a, name))
 }
 
 #[cfg(feature = "with-syntex")]

@@ -90,9 +90,9 @@ impl NewPost {
 
 #[insertable_into(comments)]
 pub struct NewComment<'a>(
-    #[column_name="post_id"]
+    #[column_name(post_id)]
     pub i32,
-    #[column_name="text"]
+    #[column_name(text)]
     pub &'a str,
 );
 
