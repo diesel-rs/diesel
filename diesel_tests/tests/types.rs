@@ -468,3 +468,14 @@ fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
     );
     query.get_result(&connection).expect(&format!("Error comparing {}, {:?}", sql_str, value))
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+#[should_panic(expected="Received more than 4 bytes decoding i32")]
+fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
+    use diesel::expression::dsl::sql;
+    use diesel::types::Integer;
+
+    let connection = connection();
+    users::table.select(sql::<Integer>("COUNT(*)")).get_result::<i32>(&connection).unwrap();
+}
