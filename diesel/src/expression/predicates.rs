@@ -166,6 +166,11 @@ macro_rules! infix_predicate {
     };
 }
 
+/// Alias for `infix_predicate!`
+macro_rules! infix_expression {
+    ($($args:tt)*) => { infix_predicate!($($args)*); }
+}
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! postfix_predicate_body {
