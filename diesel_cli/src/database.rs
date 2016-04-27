@@ -153,10 +153,13 @@ pub fn database_url(matches: &ArgMatches) -> String {
 /// Returns a &str representing the type of backend being used, determined
 /// by the format of the database url.
 pub fn backend(database_url: &String) -> &str {
-    if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") {
+    if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") && cfg!(feature = "postgres") {
         "postgres"
-    } else {
+    } else if cfg!(feature = "sqlite") {
         "sqlite"
+    } else {
+        panic!("{:?} is not a valid PostgreSQL URL. It should start with\
+                `postgres://` or `postgresql://`", database_url);
     }
 }
 
