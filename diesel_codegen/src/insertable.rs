@@ -83,7 +83,7 @@ fn insertable_impl(
     let insert_lifetime = cx.lifetime_def(span, intern("'insert"), lifetimes);
     generics.lifetimes.push(insert_lifetime);
     generics.ty_params = P::from_vec(vec![
-        cx.typaram(span, str_to_ident("DB"), P::empty(), None),
+        cx.typaram(span, str_to_ident("DB"), P::new(), None),
     ]);
 
     quote_item!(cx,
