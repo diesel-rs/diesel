@@ -61,7 +61,7 @@ pub fn expand_derive_queryable(
 }
 
 fn ty_param_with_name(cx: &mut ExtCtxt, span: Span, name: &str) -> ast::TyParam {
-    cx.typaram(span, str_to_ident(name), P::empty(), None)
+    cx.typaram(span, str_to_ident(name), P::new(), None)
 }
 
 fn struct_literal_with_fields_assigned_to_row_elements(
