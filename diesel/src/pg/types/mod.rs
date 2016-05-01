@@ -16,4 +16,5 @@ pub mod sql_types {
     #[cfg(feature = "uuid")]
     #[derive(Debug, Clone, Copy, Default)] pub struct Uuid;
     pub type Bytea = ::types::Binary;
+    pub type Bpchar = ::types::VarChar;
 }
