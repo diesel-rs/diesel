@@ -261,7 +261,7 @@ mod tests {
 
                 let connection_url = ::std::env::var("DATABASE_URL")
                     .expect("DATABASE_URL must be set in order to run tests");
-                let connection = try!(PgConnection::establish(&connection_url));
+                let connection = PgConnection::establish(&connection_url).unwrap();
 
                 let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
                 let query = select(sql::<types::Interval>(&sql_str));

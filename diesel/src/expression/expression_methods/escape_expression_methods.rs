@@ -22,8 +22,8 @@ use types::VarChar;
 /// #     use self::users::dsl::*;
 /// #     use diesel::insert;
 /// #     let connection = establish_connection();
-/// #     insert(&NewUser { name: "Ha%%0r".into() }).into(users)
-/// #         .try!(execute(&connection));
+/// #     try!(insert(&NewUser { name: "Ha%%0r".into() }).into(users)
+/// #         .execute(&connection));
 /// let users_with_percent = users.select(name)
 ///     .filter(name.like("%😀%%").escape('😀'))
 ///     .load(&connection);
