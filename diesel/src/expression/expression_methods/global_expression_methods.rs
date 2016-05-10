@@ -97,8 +97,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// #     connection.execute("INSERT INTO users (name) VALUES
-    /// #         ('Jim')").unwrap();
+    /// #     try!(connection.execute("INSERT INTO users (name) VALUES
+    /// #         ('Jim')"));
     /// let data = users.select(id).filter(name.eq_any(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
     /// # }

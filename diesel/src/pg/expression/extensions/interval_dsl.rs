@@ -26,16 +26,16 @@ use data_types::PgInterval;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     try!(connection.execute("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)"));
+/// try!(connection.execute("INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 minutes'::interval),
-///     ('Jim', NOW() - '10 minutes'::interval)").unwrap();
+///     ('Jim', NOW() - '10 minutes'::interval)"));
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.minutes()))
-///     .load(&connection).unwrap();
+///     .try!(load(&connection));
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
@@ -117,16 +117,16 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     try!(connection.execute("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)"));
+/// try!(connection.execute("INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 days'::interval),
-///     ('Jim', NOW() - '10 days'::interval)").unwrap();
+///     ('Jim', NOW() - '10 days'::interval)"));
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.days()))
-///     .load(&connection).unwrap();
+///     .try!(load(&connection));
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
@@ -261,7 +261,7 @@ mod tests {
 
                 let connection_url = ::std::env::var("DATABASE_URL")
                     .expect("DATABASE_URL must be set in order to run tests");
-                let connection = PgConnection::establish(&connection_url).unwrap();
+                let connection = try!(PgConnection::establish(&connection_url));
 
                 let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
                 let query = select(sql::<types::Interval>(&sql_str));

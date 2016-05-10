@@ -82,14 +82,14 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     try!(conn.execute("DROP TABLE IF EXISTS posts"));
+    /// #     try!(conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)"));
     /// #
     /// diesel::insert(&vec![
     ///     NewPost { tags: vec!["cool", "awesome"] },
     ///     NewPost { tags: vec!["awesome", "great"] },
     ///     NewPost { tags: vec!["cool", "great"] },
-    /// ]).into(posts).execute(&conn).unwrap();
+    /// ]).into(posts).try!(execute(&conn));
     ///
     /// let query = posts.select(id).filter(tags.overlaps_with(vec!["horrid", "cool"]));
     /// assert_eq!(Ok(vec![1, 3]), query.load(&conn));
@@ -136,12 +136,12 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     try!(conn.execute("DROP TABLE IF EXISTS posts"));
+    /// #     try!(conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)"));
     /// #
     /// diesel::insert(&vec![
     ///     NewPost { tags: vec!["cool", "awesome"] },
-    /// ]).into(posts).execute(&conn).unwrap();
+    /// ]).into(posts).try!(execute(&conn));
     ///
     /// let query = posts.select(id).filter(tags.contains(vec!["cool"]));
     /// assert_eq!(Ok(vec![1]), query.load(&conn));
@@ -186,12 +186,12 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     try!(conn.execute("DROP TABLE IF EXISTS posts"));
+    /// #     try!(conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)"));
     /// #
     /// diesel::insert(&vec![
     ///     NewPost { tags: vec!["cool", "awesome"] },
-    /// ]).into(posts).execute(&conn).unwrap();
+    /// ]).into(posts).try!(execute(&conn));
     ///
     /// let query = posts.select(id).filter(tags.is_contained_by(vec!["cool", "awesome", "amazing"]));
     /// assert_eq!(Ok(vec![1]), query.load(&conn));
