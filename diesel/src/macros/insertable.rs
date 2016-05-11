@@ -197,7 +197,7 @@ macro_rules! Insertable {
 macro_rules! Insertable_column_expr {
     ($column:path, $field_access:expr, option) => {
         match $field_access {
-            &Some(ref value) => Insertable_column_expr!($column, value, regular),
+            value @ &Some(_) => Insertable_column_expr!($column, value, regular),
             &None => ColumnInsertValue::Default($column),
         }
     };

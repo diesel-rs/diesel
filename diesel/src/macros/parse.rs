@@ -54,7 +54,7 @@
 ///     }, {
 ///         field_name: bar,
 ///         column_name: bar,
-///         field_ty: i32,
+///         field_ty: Option<i32>,
 ///         field_kind: option,
 ///     }, {
 ///         field_name: baz,
@@ -127,7 +127,7 @@ macro_rules! __diesel_parse_struct_body {
             callback = $callback,
             fields = [$($fields)* {
                 column_name: $column_name,
-                field_ty: $field_ty,
+                field_ty: Option<$field_ty>,
                 field_kind: option,
             }],
             body = ($($tail)*),
@@ -202,7 +202,7 @@ macro_rules! __diesel_parse_struct_body {
             fields = [$($fields)* {
                 field_name: $field_name,
                 column_name: $column_name,
-                field_ty: $field_ty,
+                field_ty: Option<$field_ty>,
                 field_kind: option,
             }],
             body = ($($tail)*),
