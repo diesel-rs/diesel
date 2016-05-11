@@ -7,6 +7,9 @@
 #[macro_use]
 mod macros;
 
+#[cfg(test)]
+pub mod test_helpers;
+
 pub mod associations;
 pub mod backend;
 pub mod connection;

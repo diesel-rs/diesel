@@ -91,7 +91,7 @@ macro_rules! Insertable {
         }
     };
 
-    // Handle named struct with no lifetimes
+    // Handle struct with no lifetimes
     (
         ($table_name:ident)
         $struct_name:ident
@@ -401,30 +401,15 @@ mod tests {
     }
 
     #[cfg(feature = "sqlite")]
-    use sqlite::SqliteConnection;
-
-    #[cfg(feature = "sqlite")]
-    fn connection() -> SqliteConnection {
-        let conn = SqliteConnection::establish(":memory:").unwrap();
+    fn connection() -> ::test_helpers::TestConnection {
+        let conn = ::test_helpers::connection();
         conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
         conn
     }
 
     #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-    use pg::PgConnection;
-    #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-    extern crate dotenv;
-
-    #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-    fn connection() -> PgConnection {
-        use self::dotenv::dotenv;
-        use std::env;
-
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL")
-            .expect("DATABASE_URL must be set to run tests");
-        let conn = PgConnection::establish(&database_url).unwrap();
-        conn.begin_test_transaction().unwrap();
+    fn connection() -> ::test_helpers::TestConnection {
+        let conn = ::test_helpers::connection();
         conn.execute("DROP TABLE IF EXISTS users").unwrap();
         conn.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
         conn
