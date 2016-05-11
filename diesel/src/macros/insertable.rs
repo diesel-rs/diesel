@@ -320,6 +320,14 @@ mod tests {
         }
     }
 
+    test_struct_definition! {
+        named_struct_without_trailing_comma,
+        struct NewUser<'a> {
+            name: &'a str,
+            hair_color: Option<&'a str>
+        }
+    }
+
     #[test]
     fn named_struct_with_renamed_field() {
         struct NewUser {
@@ -399,6 +407,34 @@ mod tests {
         let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
         assert_eq!(Ok(expected), saved);
     }
+
+    #[test]
+    fn tuple_struct_without_trailing_comma() {
+        struct NewUser<'a>(
+            &'a str,
+            Option<&'a str>
+        );
+
+        Insertable! {
+            (users)
+            struct NewUser<'a>(
+                #[column_name(name)]
+                pub &'a str,
+                #[column_name(hair_color)]
+                Option<&'a str>
+            );
+        }
+
+        let conn = connection();
+        let new_user = NewUser("Sean", None);
+        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+
+        let saved = users::table.select((users::name, users::hair_color))
+            .load::<(String, Option<String>)>(&conn);
+        let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+        assert_eq!(Ok(expected), saved);
+    }
+
 
     #[cfg(feature = "sqlite")]
     fn connection() -> ::test_helpers::TestConnection {

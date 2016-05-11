@@ -76,7 +76,7 @@ macro_rules! __diesel_parse_struct_body {
             $headers,
             callback = $callback,
             fields = [],
-            body = ($($body)*),
+            body = ($($body)*,),
         }
     };
 
@@ -84,13 +84,13 @@ macro_rules! __diesel_parse_struct_body {
     (
         $headers:tt,
         callback = $callback:ident,
-        body = $body:tt,
+        body = ($($body:tt)*),
     ) => {
         __diesel_parse_struct_body! {
             $headers,
             callback = $callback,
             fields = [],
-            body = $body,
+            body = ($($body)*,),
         }
     };
 
@@ -109,6 +109,23 @@ macro_rules! __diesel_parse_struct_body {
             callback = $callback,
             fields = $fields,
             body = ($(#$meta)* $($tail)*),
+        }
+    };
+
+    // Since we blindly add a comma to the end of the body, we might have a
+    // double trailing comma.  If it's the only token left, that's what
+    // happened. Strip it.
+    (
+        $headers:tt,
+        callback = $callback:ident,
+        fields = $fields:tt,
+        body = (,),
+    ) => {
+        __diesel_parse_struct_body! {
+            $headers,
+            callback = $callback,
+            fields = $fields,
+            body = (),
         }
     };
 
