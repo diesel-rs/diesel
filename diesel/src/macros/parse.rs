@@ -246,6 +246,30 @@ macro_rules! __diesel_parse_struct_body {
         }
     };
 
+    // When we reach a type with no column name annotation, handle the unnamed
+    // tuple struct field. Since we require that either all fields are annotated
+    // or none are, we could actually handle the whole body in one pass for this
+    // case. However, anything using tuple structs without the column name
+    // likely needs some ident per field to be useable and by handling each
+    // field separately this way, the `field_kind` acts as a fresh ident each
+    // time.
+    (
+        $headers:tt,
+        callback = $callback:ident,
+        fields = [$($fields:tt)*],
+        body = ($field_ty:ty , $($tail:tt)*),
+    ) => {
+        __diesel_parse_struct_body! {
+            $headers,
+            callback = $callback,
+            fields = [$($fields)* {
+                field_ty: $field_ty,
+                field_kind: bare,
+            }],
+            body = ($($tail)*),
+        }
+    };
+
     // At this point we've parsed the entire body. We create the pattern
     // for destructuring, and pass all the information back to the main macro
     // to generate the final impl

@@ -11,6 +11,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   those wishing to avoid syntax extensions from `diesel_codegen`. See
   http://docs.diesel.rs/diesel/macro.Insertable!.html for details.
 
+* The `Queryable!` macro can now be used instead of `#[derive(Queryable)]` for
+  those wishing to avoid syntax extensions from `diesel_codegen`. See
+  http://docs.diesel.rs/diesel/macro.Queryable!.html for details.
+
 ### Changed
 
 * `infer_schema!` on SQLite now accepts a larger range of type names
