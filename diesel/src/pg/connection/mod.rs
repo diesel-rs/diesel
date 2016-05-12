@@ -21,7 +21,7 @@ use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::{Query, StatementCache};
-use types::{ToSql, HasSqlType};
+use types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at

@@ -4,7 +4,7 @@ dist: trusty
 rust:
   - stable
   - beta
-  - nightly-2016-04-25
+  - nightly-2016-05-09
   - nightly
 addons:
   postgresql: '9.4'

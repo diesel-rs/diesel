@@ -2,7 +2,6 @@ use std::error::Error;
 use std::io::Write;
 use std::ops::Add;
 
-use expression::*;
 use pg::{Pg, PgTypeMetadata};
 use types::{self, FromSql, ToSql, IsNull};
 

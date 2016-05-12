@@ -247,7 +247,7 @@ macro_rules! table_body {
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Column, Expression, SelectableExpression};
+                use $crate::{Table, Expression, SelectableExpression};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::result::QueryResult;

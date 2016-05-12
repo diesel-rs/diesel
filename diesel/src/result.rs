@@ -1,6 +1,6 @@
 use std::convert::From;
 use std::error::Error as StdError;
-use std::fmt::{self, Display, Write};
+use std::fmt::{self, Display};
 use std::ffi::NulError;
 
 #[derive(Debug)]
