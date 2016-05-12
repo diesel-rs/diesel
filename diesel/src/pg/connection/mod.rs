@@ -17,7 +17,7 @@ use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::ptr;
 use std::rc::Rc;
-use types::{ToSql, HasSqlType};
+use types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at

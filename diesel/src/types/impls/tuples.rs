@@ -5,7 +5,7 @@ use query_builder::{Changeset, AsChangeset, QueryBuilder, BuildQueryResult, Quer
 use query_source::{QuerySource, Queryable, Table, Column};
 use row::Row;
 use std::error::Error;
-use types::{HasSqlType, FromSqlRow, ToSql, Nullable, IntoNullable, NotNull};
+use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
 
 // FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
 macro_rules! e {
