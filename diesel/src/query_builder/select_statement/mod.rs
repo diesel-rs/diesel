@@ -15,7 +15,7 @@ use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::where_clause::NoWhereClause;
-use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
+use super::{Query, CombinableQuery, QueryBuilder, QueryFragment, BuildQueryResult};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -120,6 +120,11 @@ impl<ST, S, F, D, W, O, L, Of, G> Query
         S: SelectableExpression<F, ST>,
 {
     type SqlType = ST;
+}
+
+impl<ST, S, F, W, O, L, Of, G> CombinableQuery for SelectStatement<ST, S, F, W, O, L, Of, G> where
+    SelectStatement<ST, S, F, W, O, L, Of, G>: Query,
+{
 }
 
 #[cfg(feature = "postgres")]
