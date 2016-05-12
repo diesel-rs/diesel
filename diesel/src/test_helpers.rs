@@ -1,5 +1,5 @@
 #[cfg(feature = "sqlite")]
-mod database_specific_helpers {
+pub mod sqlite_helpers {
     use prelude::*;
     use sqlite::SqliteConnection;
 
@@ -10,8 +10,8 @@ mod database_specific_helpers {
     }
 }
 
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-mod database_specific_helpers {
+#[cfg(feature = "postgres")]
+pub mod pg_helpers {
     extern crate dotenv;
 
     use self::dotenv::dotenv;
@@ -32,4 +32,8 @@ mod database_specific_helpers {
     }
 }
 
-pub use self::database_specific_helpers::*;
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
+pub use self::pg_helpers::*;
+
+#[cfg(feature = "sqlite")]
+pub use self::sqlite_helpers::*;

@@ -435,6 +435,31 @@ mod tests {
         assert_eq!(Ok(expected), saved);
     }
 
+    // FIXME: This can be moved into the function once `pub` is allowed
+    #[cfg(feature = "postgres")]
+    table! {
+        posts {
+            id -> Serial,
+            tags -> Array<Text>,
+        }
+    }
+
+    #[cfg(feature = "postgres")]
+    #[test]
+    fn insertable_with_slice_of_borrowed() {
+        struct NewPost<'a> { tags: &'a [&'a str], }
+        Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
+
+        let conn = ::test_helpers::pg_helpers::connection();
+        conn.execute("DROP TABLE IF EXISTS posts").unwrap();
+        conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+        let new_post = NewPost { tags: &["hi", "there"] };
+        ::insert(&new_post).into(posts::table).execute(&conn).unwrap();
+
+        let saved = posts::table.select(posts::tags).load::<Vec<String>>(&conn);
+        let expected = vec![vec![String::from("hi"), String::from("there")]];
+        assert_eq!(Ok(expected), saved);
+    }
 
     #[cfg(feature = "sqlite")]
     fn connection() -> ::test_helpers::TestConnection {
