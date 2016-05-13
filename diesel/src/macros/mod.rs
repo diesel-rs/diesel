@@ -457,5 +457,7 @@ macro_rules! print_sql {
 // Utililty macros which don't call any others need to come first.
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
+
+#[macro_use] mod identifiable;
 #[macro_use] mod insertable;
 #[macro_use] mod queryable;
