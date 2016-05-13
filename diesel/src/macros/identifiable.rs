@@ -38,6 +38,7 @@
 ///     }
 /// }
 /// ```
+#[macro_export]
 macro_rules! Identifiable {
     // Strip empty argument list if given (Passed by custom_derive macro)
     (() $($body:tt)*) => {
