@@ -3,6 +3,12 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.6.2] 2016-05-17
+
+### Changed
+
+* Updated for compatibility with the most recent nightly version
+
 ## [0.6.1] 2016-04-14
 
 ### Added
