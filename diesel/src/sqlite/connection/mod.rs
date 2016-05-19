@@ -13,7 +13,6 @@ use std::any::TypeId;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::ffi::CStr;
 
 use connection::{SimpleConnection, Connection};
 use query_builder::*;
@@ -205,11 +204,7 @@ fn to_sql<T: QueryFragment<Sqlite>>(source: &T) -> QueryResult<String> {
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
-    unsafe {
-        let message_ptr = ffi::sqlite3_errstr(err_code);
-        let result = CStr::from_ptr(message_ptr);
-        result.to_str().unwrap()
-    }
+    ffi::code_to_str(err_code)
 }
 
 #[cfg(test)]
