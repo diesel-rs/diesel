@@ -142,7 +142,7 @@ fn save_changes_impl(
                         T: Queryable<$sql_type, ::diesel::pg::Pg>,
                     {
                         use ::diesel::update;
-                        update($table.filter($table.primary_key().eq(&self.$pk_field)))
+                        update($table.find(&self.$pk_field))
                             .set(self)
                             .get_result(connection)
                     }
@@ -162,7 +162,7 @@ fn save_changes_impl(
                         T: Queryable<$sql_type, ::diesel::sqlite::Sqlite>,
                     {
                         use ::diesel::update;
-                        try!(update($table.filter($table.primary_key().eq(&self.$pk_field)))
+                        try!(update($table.find(&self.$pk_field))
                             .set(self)
                             .execute(connection));
                         $table.find(&self.$pk_field).first(connection)
