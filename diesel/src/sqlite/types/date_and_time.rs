@@ -29,18 +29,24 @@ mod chrono {
 
     use sqlite::Sqlite;
     use sqlite::connection::SqliteValue;
-    use types::{self, Date, FromSql, IsNull, Time, Timestamp, ToSql, Text};
+    use types::{Date, FromSql, IsNull, Time, Timestamp, ToSql, Text};
+
+    #[cfg(not(feature = "postgres"))]
+    use types;
+
 
     const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
     const SQLITE_DATE_FMT: &'static str = "%Y-%m-%d";
     const SQLITE_TIME_FMT: &'static str = "%H:%M:%S";
 
+    #[cfg(not(feature = "postgres"))]
     expression_impls! {
         Date -> NaiveDate,
         Time -> NaiveTime,
         Timestamp -> NaiveDateTime,
     }
 
+    #[cfg(not(feature = "postgres"))]
     queryable_impls! {
         Date -> NaiveDate,
         Time -> NaiveTime,
