@@ -81,6 +81,9 @@ mod sqlite_types {
     test_round_trip!(date_roundtrips, Date, String);
     test_round_trip!(time_roundtrips, Time, String);
     test_round_trip!(timestamp_roundtrips, Timestamp, String);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
 }
 
 #[cfg(feature = "postgres")]
@@ -147,6 +150,14 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
     let num_days_representable = latest_mysql_date.signed_duration_since(earliest_mysql_date).num_days();
     earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
+}
+
+#[cfg(feature = "sqlite")]
+pub fn mk_naive_date(days: u32) -> NaiveDate {
+    let earliest_sqlite_date = date::MIN;
+    let latest_sqlite_date = date::MAX;
+    let num_days_representable = latest_sqlite_date.signed_duration_since(earliest_sqlite_date).num_days();
+    earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
 }
 
 #[cfg(feature = "postgres")]

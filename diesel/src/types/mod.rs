@@ -176,7 +176,7 @@ pub type VarChar = Text;
 
 /// The date SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL.
+/// This type is currently only implemented for PostgreSQL and SQLite.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -209,7 +209,7 @@ pub type VarChar = Text;
 
 /// The time SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL.
+/// This type is currently only implemented for PostgreSQL and SQLite.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -224,7 +224,7 @@ pub type VarChar = Text;
 
 /// The timestamp/datetime SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL.
+/// This type is currently only implemented for PostgreSQL and SQLite.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///

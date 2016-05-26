@@ -5,6 +5,9 @@ use sqlite::{Sqlite, SqliteType};
 use sqlite::connection::SqliteValue;
 use types::{self, FromSql, ToSql, IsNull, HasSqlType};
 
+#[cfg(feature = "chrono")]
+mod chrono;
+
 impl HasSqlType<types::Date> for Sqlite {
     fn metadata() -> SqliteType {
         SqliteType::Text

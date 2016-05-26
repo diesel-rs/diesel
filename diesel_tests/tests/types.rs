@@ -14,6 +14,14 @@ table! {
     }
 }
 
+table! {
+    has_time_types(datetime) {
+        datetime -> Timestamp,
+        date -> Date,
+        time -> Time,
+    }
+}
+
 #[test]
 #[cfg(feature = "postgres")]
 fn errors_during_deserialization_do_not_panic() {
@@ -35,6 +43,66 @@ fn errors_during_deserialization_do_not_panic() {
         Err(DeserializationError(_)) => {}
         v => panic!("Expected a deserialization error, got {:?}", v),
     }
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn errors_during_deserialization_do_not_panic() {
+    use self::chrono::NaiveDateTime;
+    use self::has_timestamps::dsl::*;
+    use diesel::result::Error::DeserializationError;
+
+    let connection = connection();
+    connection.execute("CREATE TABLE has_timestamps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts VARCHAR NOT NULL
+    )").unwrap();
+
+    let valid_sqlite_date_too_large_for_chrono = "'294276-01-01 00:00:00'";
+    connection.execute(&format!("INSERT INTO has_timestamps (ts) VALUES ({})",
+        valid_sqlite_date_too_large_for_chrono)).unwrap();
+    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+
+    match values {
+        Err(DeserializationError(_)) => {}
+        v => panic!("Expected a deserialization error, got {:?}", v),
+    }
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn test_chrono_types_sqlite() {
+    use self::chrono::{NaiveDateTime, NaiveDate, NaiveTime};
+    use self::has_time_types;
+
+    #[derive(Queryable, Insertable)]
+    #[table_name="has_time_types"]
+    struct NewTimeTypes {
+        datetime: NaiveDateTime,
+        date: NaiveDate,
+        time: NaiveTime,
+    }
+
+    let connection = connection();
+    connection.execute("CREATE TABLE has_time_types (
+        datetime DATETIME PRIMARY KEY,
+        date DATE,
+        time TIME
+    )").unwrap();
+
+    let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+    let new_time_types = NewTimeTypes{
+        datetime: dt,
+        date: dt.date(),
+        time: dt.time(),
+    };
+
+    insert(&new_time_types).into(has_time_types::table).execute(&connection);
+
+    let result = has_time_types::table.first::<NewTimeTypes>(&connection).unwrap();
+    assert_eq!(result.datetime, dt);
+    assert_eq!(result.date, dt.date());
+    assert_eq!(result.time, dt.time());
 }
 
 #[test]
