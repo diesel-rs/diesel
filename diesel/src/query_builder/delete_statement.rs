@@ -1,27 +1,28 @@
 use backend::Backend;
 use query_builder::*;
+use query_source::Table;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone)]
-pub struct DeleteStatement<T>(T);
+#[derive(Debug)]
+pub struct DeleteStatement<T, U>(UpdateTarget<T, U>);
 
-impl<T> DeleteStatement<T> {
+impl<T, U> DeleteStatement<T, U> {
     #[doc(hidden)]
-    pub fn new(t: T) -> Self {
+    pub fn new(t: UpdateTarget<T, U>) -> Self {
         DeleteStatement(t)
     }
 }
 
-impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
+impl<T, U, DB> QueryFragment<DB> for DeleteStatement<T, U> where
     DB: Backend,
-    T: UpdateTarget,
-    T::WhereClause: QueryFragment<DB>,
+    T: Table,
     T::FromClause: QueryFragment<DB>,
+    U: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("DELETE FROM ");
-        try!(self.0.from_clause().to_sql(out));
-        if let Some(clause) = self.0.where_clause() {
+        try!(self.0.table.from_clause().to_sql(out));
+        if let Some(ref clause) = self.0.where_clause {
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
         }
@@ -29,17 +30,17 @@ impl<T, DB> QueryFragment<DB> for DeleteStatement<T> where
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.from_clause().collect_binds(out));
-        if let Some(clause) = self.0.where_clause() {
+        try!(self.0.table.from_clause().collect_binds(out));
+        if let Some(ref clause) = self.0.where_clause {
             try!(clause.collect_binds(out));
         }
         Ok(())
     }
 
     fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.from_clause().is_safe_to_cache_prepared() &&
-            self.0.where_clause().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true)
+        self.0.table.from_clause().is_safe_to_cache_prepared() &&
+            self.0.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true)
     }
 }
 
-impl_query_id!(noop: DeleteStatement<T>);
+impl_query_id!(noop: DeleteStatement<T, U>);

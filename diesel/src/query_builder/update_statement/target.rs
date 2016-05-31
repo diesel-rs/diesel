@@ -1,18 +1,29 @@
-use query_source::{QuerySource, Table};
+use associations::Identifiable;
+use query_dsl::FindDsl;
+use query_source::Table;
 
-/// You should not need to implement this trait.
-/// [`table!`](../macro.table!.html) will implement it for you.
-///
-/// Types which can be passed to [`update`](fn.update.html). This will be
-/// implemented for [tables](../query_source/trait.Table.html), and the result
-/// of calling [`filter`](../query_dsl/trait.FilterDsl.html).
-///
-/// Errors about this trait not being implemented are likely indicating that you
-/// have called a method like `select` or `order`, which does not make sense in
-/// the context of an `update` or `delete` operation.
-pub trait UpdateTarget: QuerySource {
+#[doc(hidden)]
+#[derive(Debug)]
+pub struct UpdateTarget<Table, WhereClause> {
+    pub table: Table,
+    pub where_clause: Option<WhereClause>,
+}
+
+#[doc(hidden)]
+pub trait IntoUpdateTarget {
     type Table: Table;
     type WhereClause;
 
-    fn where_clause(&self) -> Option<&Self::WhereClause>;
+    fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause>;
+}
+
+impl<'a, T: Identifiable, V> IntoUpdateTarget for &'a T where
+    <T::Table as FindDsl<T::Id>>::Output: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
+{
+    type Table = T::Table;
+    type WhereClause = V;
+
+    fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
+        T::table().find(self.id()).into_update_target()
+    }
 }

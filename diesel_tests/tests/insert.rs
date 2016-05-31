@@ -162,20 +162,6 @@ fn insert_borrowed_content() {
 }
 
 #[test]
-fn delete_records() {
-    use schema::users::dsl::*;
-    let connection = connection_with_sean_and_tess_in_users_table();
-
-    let deleted_rows = delete(users.filter(name.eq("Sean"))).execute(&connection);
-
-    assert_eq!(Ok(1), deleted_rows);
-
-    let num_users = users.count().first(&connection);
-
-    assert_eq!(Ok(1), num_users);
-}
-
-#[test]
 #[cfg(feature = "sqlite")]
 fn insert_on_conflict_replace() {
     use schema::users::dsl::*;

@@ -27,7 +27,14 @@ pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
 #[doc(inline)]
-pub use self::update_statement::{IncompleteUpdateStatement, AsChangeset, Changeset, UpdateTarget};
+pub use self::update_statement::{
+    AsChangeset,
+    Changeset,
+    IncompleteUpdateStatement,
+    IntoUpdateTarget,
+    UpdateStatement,
+    UpdateTarget,
+};
 #[doc(inline)]
 pub use self::insert_statement::IncompleteInsertStatement;
 

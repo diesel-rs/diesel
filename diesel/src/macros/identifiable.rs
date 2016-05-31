@@ -10,12 +10,14 @@
 ///
 /// ```no_run
 /// # #[macro_use] extern crate diesel;
+/// # table! { users { id -> Integer, } }
 /// struct User {
 ///     id: i32,
 ///     name: String,
 /// }
 ///
 /// Identifiable! {
+///     (users)
 ///     struct User {
 ///         id: i32,
 ///         name: String,
@@ -40,19 +42,14 @@
 /// ```
 #[macro_export]
 macro_rules! Identifiable {
-    // Strip empty argument list if given (Passed by custom_derive macro)
-    (() $($body:tt)*) => {
-        Identifiable! {
-            $($body)*
-        }
-    };
-
     // Strip meta items, pub (if present) and struct from definition
     (
+        $args:tt
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
         Identifiable! {
+            $args
             $($body)*
         }
     };
@@ -60,6 +57,7 @@ macro_rules! Identifiable {
     // We found the `id` field, return the final impl
     (
         (
+            table_name = $table_name:ident,
             struct_ty = $struct_ty:ty,
         ),
         fields = [{
@@ -71,6 +69,11 @@ macro_rules! Identifiable {
     ) => {
         impl $crate::associations::Identifiable for $struct_ty {
             type Id = $field_ty;
+            type Table = $table_name::table;
+
+            fn table() -> Self::Table {
+                $table_name::table
+            }
 
             fn id(&self) -> Self::Id {
                 self.id
@@ -80,9 +83,7 @@ macro_rules! Identifiable {
 
     // Search for the `id` field and continue
     (
-        (
-            struct_ty = $struct_ty:ty,
-        ),
+        $args:tt,
         fields = [{
             field_name: $field_name:ident,
             column_name: $column_name:ident,
@@ -91,7 +92,7 @@ macro_rules! Identifiable {
         } $($fields:tt)*],
     ) => {
         Identifiable! {
-            (struct_ty = $struct_ty,),
+            $args,
             fields = [$($fields)*],
         }
     };
@@ -99,17 +100,31 @@ macro_rules! Identifiable {
 
     // Handle struct with no generics
     (
+        ($table_name:ident)
         $struct_name:ident
         $body:tt $(;)*
     ) => {
         __diesel_parse_struct_body! {
             (
+                table_name = $table_name,
                 struct_ty = $struct_name,
             ),
             callback = Identifiable,
             body = $body,
         }
     };
+}
+
+table! {
+    foos {
+        id -> Integer,
+    }
+}
+
+table! {
+    bars {
+        id -> VarChar,
+    }
 }
 
 #[test]
@@ -123,6 +138,7 @@ fn derive_identifiable_on_simple_struct() {
     }
 
     Identifiable! {
+        (foos)
         struct Foo {
             id: i32,
             foo: i32,
@@ -146,6 +162,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
     }
 
     Identifiable! {
+        (foos)
         struct Foo {
             foo: i32,
             id: i32,
@@ -169,6 +186,7 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
     }
 
     Identifiable! {
+        (bars)
         struct Foo {
             id: &'static str,
             foo: i32,

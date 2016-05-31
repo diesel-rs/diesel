@@ -52,12 +52,6 @@ impl Model {
             attr.field_name.map(|f| f.name) == Some(name.name)
         })
     }
-
-    pub fn attr_for_column(&self, name: ast::Ident) -> Option<&Attr> {
-        self.attrs.iter().find(|attr| {
-            attr.column_name.name == name.name
-        })
-    }
 }
 
 pub fn infer_association_name(name: &str) -> String {

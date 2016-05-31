@@ -2,7 +2,7 @@ pub mod changeset;
 pub mod target;
 
 pub use self::changeset::{Changeset, AsChangeset};
-pub use self::target::UpdateTarget;
+pub use self::target::{UpdateTarget, IntoUpdateTarget};
 
 use backend::{Backend, SupportsReturningClause};
 use expression::{Expression, SelectableExpression, NonAggregate};
@@ -12,47 +12,50 @@ use result::QueryResult;
 
 /// The type returned by [`update`](fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
-#[derive(Debug, Copy, Clone)]
-pub struct IncompleteUpdateStatement<T>(T);
+#[derive(Debug)]
+pub struct IncompleteUpdateStatement<T, U>(UpdateTarget<T, U>);
 
-impl<T> IncompleteUpdateStatement<T> {
+impl<T, U> IncompleteUpdateStatement<T, U> {
     #[doc(hidden)]
-    pub fn new(t: T) -> Self {
+    pub fn new(t: UpdateTarget<T, U>) -> Self {
         IncompleteUpdateStatement(t)
     }
 }
 
-impl<T: UpdateTarget> IncompleteUpdateStatement<T> {
-    pub fn set<U>(self, values: U) -> UpdateStatement<T, U::Changeset> where
-        U: changeset::AsChangeset<Target=T::Table>,
-        UpdateStatement<T, U::Changeset>: AsQuery,
+impl<T, U> IncompleteUpdateStatement<T, U> {
+    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset> where
+        T: Table,
+        V: changeset::AsChangeset<Target=T>,
+        UpdateStatement<T, U, V::Changeset>: AsQuery,
     {
         UpdateStatement {
-            target: self.0,
+            table: self.0.table,
+            where_clause: self.0.where_clause,
             values: values.as_changeset(),
         }
     }
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct UpdateStatement<T, U> {
-    target: T,
-    values: U,
+pub struct UpdateStatement<T, U, V> {
+    table: T,
+    where_clause: Option<U>,
+    values: V,
 }
 
-impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
+impl<T, U, V, DB> QueryFragment<DB> for UpdateStatement<T, U, V> where
     DB: Backend,
-    T: UpdateTarget,
-    T::WhereClause: QueryFragment<DB>,
+    T: Table,
     T::FromClause: QueryFragment<DB>,
-    U: changeset::Changeset<DB>,
+    U: QueryFragment<DB>,
+    V: changeset::Changeset<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         out.push_sql("UPDATE ");
-        try!(self.target.from_clause().to_sql(out));
+        try!(self.table.from_clause().to_sql(out));
         out.push_sql(" SET ");
         try!(self.values.to_sql(out));
-        if let Some(clause) = self.target.where_clause() {
+        if let Some(ref clause) = self.where_clause {
             out.push_sql(" WHERE ");
             try!(clause.to_sql(out));
         }
@@ -60,9 +63,9 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.target.from_clause().collect_binds(out));
+        try!(self.table.from_clause().collect_binds(out));
         try!(self.values.collect_binds(out));
-        if let Some(clause) = self.target.where_clause() {
+        if let Some(ref clause) = self.where_clause {
             try!(clause.collect_binds(out));
         }
         Ok(())
@@ -73,24 +76,24 @@ impl<T, U, DB> QueryFragment<DB> for UpdateStatement<T, U> where
     }
 }
 
-impl_query_id!(noop: UpdateStatement<T, U>);
+impl_query_id!(noop: UpdateStatement<T, U, V>);
 
-impl<T, U> AsQuery for UpdateStatement<T, U> where
-    T: UpdateTarget,
-    UpdateQuery<<T::Table as Table>::AllColumns, UpdateStatement<T, U>>: Query,
+impl<T, U, V> AsQuery for UpdateStatement<T, U, V> where
+    T: Table,
+    UpdateQuery<T::AllColumns, UpdateStatement<T, U, V>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
-    type Query = UpdateQuery<<T::Table as Table>::AllColumns, UpdateStatement<T, U>>;
+    type Query = UpdateQuery<T::AllColumns, Self>;
 
     fn as_query(self) -> Self::Query {
         UpdateQuery {
-            returning: T::Table::all_columns(),
+            returning: T::all_columns(),
             statement: self,
         }
     }
 }
 
-impl<T, U> UpdateStatement<T, U> {
+impl<T, U, V> UpdateStatement<T, U, V> {
     /// Specify what expression is returned after execution of the `update`.
     /// # Examples
     ///
@@ -120,9 +123,9 @@ impl<T, U> UpdateStatement<T, U> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> UpdateQuery<E, UpdateStatement<T, U>> where
-        T: UpdateTarget,
-        UpdateQuery<E, UpdateStatement<T, U>>: Query,
+    pub fn returning<E>(self, returns: E) -> UpdateQuery<E, Self> where
+        T: Table,
+        UpdateQuery<E, Self>: Query,
     {
         UpdateQuery {
             returning: returns,
@@ -138,11 +141,11 @@ pub struct UpdateQuery<T, U> {
     statement: U,
 }
 
-impl<T, U, V> Query for UpdateQuery<T, UpdateStatement<U, V>> where
-    U: UpdateTarget,
-    T: Expression + SelectableExpression<U::Table> + NonAggregate,
+impl<Ret, T, U, V> Query for UpdateQuery<Ret, UpdateStatement<T, U, V>> where
+    T: Table,
+    Ret: Expression + SelectableExpression<T> + NonAggregate,
 {
-    type SqlType = T::SqlType;
+    type SqlType = Ret::SqlType;
 }
 
 impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where

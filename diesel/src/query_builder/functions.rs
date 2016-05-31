@@ -1,5 +1,5 @@
 use expression::Expression;
-use super::{UpdateTarget, IncompleteUpdateStatement, IncompleteInsertStatement, SelectStatement};
+use super::{IntoUpdateTarget, IncompleteUpdateStatement, IncompleteInsertStatement, SelectStatement};
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::Insert;
 
@@ -38,8 +38,8 @@ use super::insert_statement::Insert;
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
-    IncompleteUpdateStatement::new(source)
+pub fn update<T: IntoUpdateTarget>(source: T) -> IncompleteUpdateStatement<T::Table, T::WhereClause> {
+    IncompleteUpdateStatement::new(source.into_update_target())
 }
 
 /// Creates a delete statement. Will delete the records in the given set.
@@ -102,8 +102,8 @@ pub fn update<T: UpdateTarget>(source: T) -> IncompleteUpdateStatement<T> {
 /// # Ok(())
 /// # }
 /// ```
-pub fn delete<T: UpdateTarget>(source: T) -> DeleteStatement<T> {
-    DeleteStatement::new(source)
+pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::WhereClause> {
+    DeleteStatement::new(source.into_update_target())
 }
 
 /// Creates an insert statement. Will add the given data to a table. This

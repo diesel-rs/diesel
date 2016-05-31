@@ -231,6 +231,8 @@ fn can_update_with_struct_containing_single_field() {
 #[test]
 fn struct_with_option_fields_treated_as_null() {
     #[changeset_for(posts, treat_none_as_null="true")]
+    #[derive(Identifiable)]
+    #[table_name="posts"]
     struct UpdatePost {
         id: i32,
         title: String,

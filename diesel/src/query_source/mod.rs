@@ -65,12 +65,3 @@ pub trait Table: QuerySource + AsQuery + Sized {
         LeftOuterJoinSource::new(self, other)
     }
 }
-
-impl<T: Table> UpdateTarget for T {
-    type Table = Self;
-    type WhereClause = ();
-
-    fn where_clause(&self) -> Option<&Self::WhereClause> {
-        None
-    }
-}
