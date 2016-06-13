@@ -32,7 +32,7 @@ use types::Bool;
 /// assert_eq!(Ok(2), tess_id);
 /// # }
 /// ```
-pub trait FilterDsl<Predicate: Expression<SqlType=Bool> + NonAggregate> {
+pub trait FilterDsl<Predicate> {
     type Output: AsQuery;
 
     fn filter(self, predicate: Predicate) -> Self::Output;
@@ -57,7 +57,7 @@ impl<T: Table> NotFiltered for T {}
 impl<Left, Right> NotFiltered for InnerJoinSource<Left, Right> {}
 impl<Left, Right> NotFiltered for LeftOuterJoinSource<Left, Right> {}
 
-use expression::{AsExpression, SelectableExpression};
+use expression::AsExpression;
 use expression::expression_methods::*;
 use expression::helper_types::Eq;
 use helper_types::FindBy;
@@ -88,19 +88,20 @@ use helper_types::FindBy;
 /// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
 /// # }
 /// ```
-pub trait FindDsl<PK> where
-    Self: Table + FilterDsl<Eq<<Self as Table>::PrimaryKey, PK>>,
-    PK: AsExpression<<Self::PrimaryKey as Expression>::SqlType>,
-    Eq<Self::PrimaryKey, PK>: SelectableExpression<Self, SqlType=Bool> + NonAggregate,
-{
-    fn find(self, id: PK) -> FindBy<Self, Self::PrimaryKey, PK> {
-        let primary_key = self.primary_key();
-        self.filter(primary_key.eq(id))
-    }
+pub trait FindDsl<PK> {
+    type Output: AsQuery;
+
+    fn find(self, id: PK) -> Self::Output;
 }
 
 impl<T, PK> FindDsl<PK> for T where
     T: Table + FilterDsl<Eq<<T as Table>::PrimaryKey, PK>>,
     PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
-    Eq<T::PrimaryKey, PK>: SelectableExpression<T, SqlType=Bool> + NonAggregate,
-{}
+{
+    type Output = FindBy<Self, T::PrimaryKey, PK>;
+
+    fn find(self, id: PK) -> Self::Output {
+        let primary_key = self.primary_key();
+        self.filter(primary_key.eq(id))
+    }
+}
