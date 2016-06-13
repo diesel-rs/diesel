@@ -59,6 +59,9 @@ pub mod helper_types {
     pub type FindBy<Source, Column, Value> =
         Filter<Source, Eq<Column, Value>>;
 
+    /// Represents the return type of `.find(pk)`
+    pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
+
     /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> =
         <Source as OrderDsl<Ordering>>::Output;
