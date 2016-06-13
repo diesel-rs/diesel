@@ -7,7 +7,7 @@ use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
 use query_builder::order_clause::*;
 use query_builder::where_clause::*;
-use query_builder::{Query, QueryFragment, SelectStatement};
+use query_builder::{AsQuery, Query, QueryFragment, SelectStatement};
 use query_dsl::*;
 use query_dsl::boxed_dsl::InternalBoxedDsl;
 use super::BoxedSelectStatement;
@@ -35,7 +35,9 @@ impl<ST, S, F, D, W, O, L, Of, G, Selection, Type> SelectDsl<Selection, Type>
 }
 
 impl<ST, S, F, D, W, O, L, Of, G> DistinctDsl
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G>
+    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
+        SelectStatement<ST, S, F, DistinctClause, W, O, L, Of, G>: AsQuery<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, DistinctClause, W, O, L, Of, G>;
 
@@ -55,9 +57,10 @@ impl<ST, S, F, D, W, O, L, Of, G> DistinctDsl
 
 impl<ST, S, F, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
+        SelectStatement<ST, S, F, D, W::Output, O, L, Of, G>: Query<SqlType=ST>,
         Predicate: SelectableExpression<F, SqlType=Bool> + NonAggregate,
         W: WhereAnd<Predicate>,
-        SelectStatement<ST, S, F, D, W::Output, O, L, Of, G>: Query,
 {
     type Output = SelectStatement<ST, S, F, D, W::Output, O, L, Of, G>;
 
@@ -78,7 +81,8 @@ impl<ST, S, F, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
 impl<ST, S, F, D, W, O, L, Of, G, Expr> OrderDsl<Expr>
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
         Expr: SelectableExpression<F>,
-        SelectStatement<ST, S, F, D, W, OrderClause<Expr>, L, Of, G>: Query<SqlType=ST>,
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
+        SelectStatement<ST, S, F, D, W, OrderClause<Expr>, L, Of, G>: AsQuery<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, D, W, OrderClause<Expr>, L, Of, G>;
 
@@ -102,6 +106,7 @@ pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
 
 impl<ST, S, F, D, W, O, L, Of, G> LimitDsl
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
         SelectStatement<ST, S, F, D, W, O, LimitClause<Limit>, Of, G>: Query<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, D, W, O, LimitClause<Limit>, Of, G>;
@@ -126,7 +131,8 @@ pub type Offset = Limit;
 
 impl<ST, S, F, D, W, O, L, Of, G> OffsetDsl
     for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        SelectStatement<ST, S, F, D, W, O, L, OffsetClause<Offset>, G>: Query<SqlType=ST>,
+        SelectStatement<ST, S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
+        SelectStatement<ST, S, F, D, W, O, L, OffsetClause<Offset>, G>: AsQuery<SqlType=ST>,
 {
     type Output = SelectStatement<ST, S, F, D, W, O, L, OffsetClause<Offset>, G>;
 

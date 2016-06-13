@@ -36,9 +36,10 @@ impl<Source, Predicate> AsQuery for FilteredQuerySource<Source, Predicate> where
     }
 }
 
-impl<Source, Predicate, NewPredicate> FilterDsl<NewPredicate>
+impl<Source, Predicate, NewPredicate, ST> FilterDsl<NewPredicate>
     for FilteredQuerySource<Source, Predicate> where
-        FilteredQuerySource<Source, And<Predicate, NewPredicate>>: AsQuery,
+        FilteredQuerySource<Source, Predicate>: AsQuery<SqlType=ST>,
+        FilteredQuerySource<Source, And<Predicate, NewPredicate>>: AsQuery<SqlType=ST>,
         Predicate: SelectableExpression<Source, SqlType=Bool>,
         NewPredicate: SelectableExpression<Source, SqlType=Bool> + NonAggregate,
 {

@@ -1,6 +1,6 @@
 use connection::Connection;
 use helper_types::Limit;
-use query_builder::{Query, QueryFragment, AsQuery, QueryId};
+use query_builder::{QueryFragment, AsQuery, QueryId};
 use query_source::Queryable;
 use result::QueryResult;
 use super::LimitDsl;
@@ -9,16 +9,12 @@ use types::HasSqlType;
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
 pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
-    Self::Query: QueryFragment<Conn::Backend> + QueryId,
     Conn::Backend: HasSqlType<Self::SqlType>,
 {
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
     fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
-    {
-        conn.query_all(self)
-    }
+        U: Queryable<Self::SqlType, Conn::Backend> + 'a;
 
     /// Attempts to load a single record. Returns `Ok(record)` if found, and
     /// `Err(NotFound)` if no results are returned. If the query truly is
@@ -26,11 +22,10 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Conn) -> QueryResult<U> where
         Self: LimitDsl,
-        U: Queryable<<Limit<Self> as Query>::SqlType, Conn::Backend>,
-        Limit<Self>: QueryFragment<Conn::Backend> + QueryId,
-        Conn::Backend: HasSqlType<<Limit<Self> as Query>::SqlType>,
+        Limit<Self>: LoadDsl<Conn>,
+        U: Queryable<Self::SqlType, Conn::Backend>,
     {
-        conn.query_one(self.limit(1))
+        self.limit(1).get_result(conn)
     }
 
     /// Runs the command, and returns the affected row. `Err(NotFound)` will be
@@ -38,10 +33,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// result of this if the command was optional to get back a
     /// `Result<Option<U>>`
     fn get_result<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<Self::SqlType, Conn::Backend>,
-    {
-        conn.query_one(self)
-    }
+        U: Queryable<Self::SqlType, Conn::Backend>;
 
     /// Runs the command, returning an `Iterator` over the affected rows.
     fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
@@ -55,6 +47,17 @@ impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
     T::Query: QueryFragment<Conn::Backend> + QueryId,
     Conn::Backend: HasSqlType<T::SqlType>,
 {
+    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
+        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
+    {
+        conn.query_all(self)
+    }
+
+    fn get_result<U>(self, conn: &Conn) -> QueryResult<U> where
+        U: Queryable<Self::SqlType, Conn::Backend>,
+    {
+        conn.query_one(self)
+    }
 }
 
 pub trait ExecuteDsl<Conn: Connection>: Sized + QueryFragment<Conn::Backend> + QueryId {

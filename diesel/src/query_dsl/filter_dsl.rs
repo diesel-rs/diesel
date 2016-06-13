@@ -32,8 +32,8 @@ use types::Bool;
 /// assert_eq!(Ok(2), tess_id);
 /// # }
 /// ```
-pub trait FilterDsl<Predicate> {
-    type Output: AsQuery;
+pub trait FilterDsl<Predicate>: AsQuery {
+    type Output: AsQuery<SqlType=Self::SqlType>;
 
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
@@ -41,10 +41,10 @@ pub trait FilterDsl<Predicate> {
 pub trait NotFiltered {
 }
 
-impl<T, Predicate> FilterDsl<Predicate> for T where
+impl<T, Predicate, ST> FilterDsl<Predicate> for T where
     Predicate: Expression<SqlType=Bool> + NonAggregate,
-    FilteredQuerySource<T, Predicate>: AsQuery,
-    T: NotFiltered,
+    FilteredQuerySource<T, Predicate>: AsQuery<SqlType=ST>,
+    T: AsQuery<SqlType=ST> + NotFiltered,
 {
     type Output = FilteredQuerySource<Self, Predicate>;
 
@@ -88,8 +88,8 @@ use helper_types::FindBy;
 /// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
 /// # }
 /// ```
-pub trait FindDsl<PK> {
-    type Output: AsQuery;
+pub trait FindDsl<PK>: AsQuery {
+    type Output: AsQuery<SqlType=Self::SqlType>;
 
     fn find(self, id: PK) -> Self::Output;
 }

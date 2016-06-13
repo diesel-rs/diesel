@@ -1,5 +1,5 @@
 use expression::Expression;
-use query_builder::{Query, AsQuery};
+use query_builder::AsQuery;
 use query_source::QuerySource;
 
 /// Sets the order clause of a query. If there was already a order clause, it
@@ -9,16 +9,16 @@ use query_source::QuerySource;
 /// and [`.asc()`](expression/expression_methods/global_expression_methods/trait.ExpressionMethods.html#method.asc)
 ///
 /// This is automatically implemented for the various query builder types.
-pub trait OrderDsl<Expr: Expression> {
-    type Output: Query;
+pub trait OrderDsl<Expr: Expression>: AsQuery {
+    type Output: AsQuery<SqlType=Self::SqlType>;
 
     fn order(self, expr: Expr) -> Self::Output;
 }
 
-impl<T, Expr> OrderDsl<Expr> for T where
+impl<T, Expr, ST> OrderDsl<Expr> for T where
     Expr: Expression,
-    T: QuerySource + AsQuery,
-    T::Query: OrderDsl<Expr>,
+    T: QuerySource + AsQuery<SqlType=ST>,
+    T::Query: OrderDsl<Expr, SqlType=ST>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
 

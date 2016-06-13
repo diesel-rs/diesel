@@ -31,14 +31,14 @@ use query_source::QuerySource;
 /// assert_eq!(Ok(vec![sean.clone()]), distinct_names);
 /// # }
 /// ```
-pub trait DistinctDsl {
-    type Output;
+pub trait DistinctDsl: AsQuery {
+    type Output: AsQuery<SqlType=Self::SqlType>;
     fn distinct(self) -> Self::Output;
 }
 
-impl<T> DistinctDsl for T where
-    T: AsQuery + QuerySource,
-    T::Query: DistinctDsl,
+impl<T, ST> DistinctDsl for T where
+    T: AsQuery<SqlType=ST> + QuerySource,
+    T::Query: DistinctDsl<SqlType=ST>,
 {
     type Output = <T::Query as DistinctDsl>::Output;
 
