@@ -39,7 +39,7 @@ impl Statement {
     pub fn run(&self) -> QueryResult<()> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
-            error => Err(DatabaseError(super::error_message(error).into()))
+            error => Err(DatabaseError(Box::new(super::error_message(error).to_owned())))
         }
     }
 
@@ -130,7 +130,7 @@ impl Statement {
 
 fn ensure_sqlite_ok(code: libc::c_int) -> QueryResult<()> {
     if code != ffi::SQLITE_OK {
-        Err(DatabaseError(super::error_message(code).into()))
+        Err(DatabaseError(Box::new(super::error_message(code).to_owned())))
     } else {
         Ok(())
     }

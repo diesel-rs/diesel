@@ -9,13 +9,40 @@ use std::ffi::NulError;
 /// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),
-    DatabaseError(String),
+    DatabaseError(Box<DatabaseErrorInformation+Send>),
     NotFound,
-    QueryBuilderError(Box<StdError+Send+Sync>),
+    QueryBuilderError(Box<StdError+Send>),
     DeserializationError(Box<StdError+Send+Sync>),
     SerializationError(Box<StdError+Send+Sync>),
     #[doc(hidden)]
     __Nonexhaustive,
+}
+
+pub trait DatabaseErrorInformation {
+    fn message(&self) -> &str;
+    fn details(&self) -> Option<&str>;
+    fn hint(&self) -> Option<&str>;
+    fn table_name(&self) -> Option<&str>;
+    fn column_name(&self) -> Option<&str>;
+    fn constraint_name(&self) -> Option<&str>;
+}
+
+impl fmt::Debug for DatabaseErrorInformation+Send {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.message(), f)
+    }
+}
+
+impl DatabaseErrorInformation for String {
+    fn message(&self) -> &str {
+        &self
+    }
+
+    fn details(&self) -> Option<&str> { None }
+    fn hint(&self) -> Option<&str> { None }
+    fn table_name(&self) -> Option<&str> { None }
+    fn column_name(&self) -> Option<&str> { None }
+    fn constraint_name(&self) -> Option<&str> { None }
 }
 
 #[derive(Debug)]
@@ -79,7 +106,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            &Error::DatabaseError(ref s) => write!(f, "{}", &s),
+            &Error::DatabaseError(ref e) => write!(f, "{}", e.message()),
             &Error::NotFound => f.write_str("NotFound"),
             &Error::QueryBuilderError(ref e) => e.fmt(f),
             &Error::DeserializationError(ref e) => e.fmt(f),
@@ -93,7 +120,7 @@ impl StdError for Error {
     fn description(&self) -> &str {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.description(),
-            &Error::DatabaseError(ref s) => &s,
+            &Error::DatabaseError(ref e) => e.message(),
             &Error::NotFound => "Record not found",
             &Error::QueryBuilderError(ref e) => e.description(),
             &Error::DeserializationError(ref e) => e.description(),
@@ -143,7 +170,8 @@ impl PartialEq for Error {
     fn eq(&self, other: &Error) -> bool {
         match (self, other) {
             (&Error::InvalidCString(ref a), &Error::InvalidCString(ref b)) => a == b,
-            (&Error::DatabaseError(ref a), &Error::DatabaseError(ref b)) => a == b,
+            (&Error::DatabaseError(ref a), &Error::DatabaseError(ref b)) =>
+                a.message() == b.message(),
             (&Error::NotFound, &Error::NotFound) => true,
             _ => false,
         }
@@ -152,8 +180,7 @@ impl PartialEq for Error {
 
 #[cfg(test)]
 #[allow(warnings)]
-fn error_impls_send_and_sync() {
+fn error_impls_send() {
     let err: Error = unimplemented!();
     let x: &Send = &err;
-    let x: &Sync = &err;
 }

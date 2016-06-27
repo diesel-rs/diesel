@@ -49,7 +49,7 @@ impl RawConnection {
 
         if !err_msg.is_null() {
             let msg = convert_to_string_and_free(err_msg);
-            Err(DatabaseError(msg))
+            Err(DatabaseError(Box::new(msg)))
         } else {
             Ok(())
         }

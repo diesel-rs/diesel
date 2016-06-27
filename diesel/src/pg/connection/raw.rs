@@ -43,7 +43,7 @@ impl RawConnection {
         ) };
 
         if result_ptr.is_null() {
-            Err(Error::DatabaseError(last_error_message(self.internal_connection)))
+            Err(Error::DatabaseError(Box::new(last_error_message(self.internal_connection))))
         } else {
             unsafe {
                 Ok(PgString::new(result_ptr))

@@ -1,8 +1,7 @@
 extern crate pq_sys;
 extern crate libc;
 
-use result::{Error, QueryResult};
-use super::raw::RawConnection;
+use result::{Error, QueryResult, DatabaseErrorInformation};
 use super::row::PgRow;
 
 use self::pq_sys::*;
@@ -14,7 +13,7 @@ pub struct PgResult {
 }
 
 impl PgResult {
-    pub fn new(conn: &RawConnection, internal_result: *mut PGresult) -> QueryResult<Self> {
+    pub fn new(internal_result: *mut PGresult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
@@ -23,9 +22,8 @@ impl PgResult {
                 })
             },
             _ => {
-                let error_message = conn.last_error_message();
-                unsafe { PQclear(internal_result) };
-                Err(Error::DatabaseError(error_message))
+                let error_information = Box::new(PgErrorInformation(internal_result));
+                Err(Error::DatabaseError(error_information))
             }
         }
     }
@@ -80,4 +78,57 @@ impl Drop for PgResult {
     fn drop(&mut self) {
         unsafe { PQclear(self.internal_result) };
     }
+}
+
+struct PgErrorInformation(*mut PGresult);
+
+unsafe impl Send for PgErrorInformation {}
+
+impl Drop for PgErrorInformation {
+    fn drop(&mut self) {
+        unsafe { PQclear(self.0) };
+    }
+}
+
+impl DatabaseErrorInformation for PgErrorInformation {
+    fn message(&self) -> &str {
+        match get_result_field(self.0, 'M') {
+            Some(e) => e,
+            None => unreachable!("Per PGs documentation, all errors should have a message"),
+        }
+    }
+
+    fn details(&self) -> Option<&str> {
+        get_result_field(self.0, 'D')
+    }
+
+    fn hint(&self) -> Option<&str> {
+        get_result_field(self.0, 'H')
+    }
+
+    fn table_name(&self) -> Option<&str> {
+        get_result_field(self.0, 't')
+    }
+
+    fn column_name(&self) -> Option<&str> {
+        get_result_field(self.0, 'c')
+    }
+
+    fn constraint_name(&self) -> Option<&str> {
+        get_result_field(self.0, 'n')
+    }
+}
+
+/// `field` is one of the valid options to
+/// [`PQresultErrorField`](https://www.postgresql.org/docs/current/static/libpq-exec.html#LIBPQ-PQRESULTERRORFIELD)
+/// Their values are defined as C preprocessor macros, and therefore are not exported by libpq-sys.
+/// Their values can be found in `postgres_ext.h`
+fn get_result_field<'a>(res: *mut PGresult, field: char) -> Option<&'a str> {
+    let ptr = unsafe { PQresultErrorField(res, field as libc::c_int) };
+    if ptr.is_null() {
+        return None;
+    }
+
+    let c_str = unsafe { CStr::from_ptr(ptr) };
+    c_str.to_str().ok()
 }

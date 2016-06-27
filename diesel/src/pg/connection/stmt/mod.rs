@@ -63,7 +63,7 @@ impl Query {
             }
         };
 
-        PgResult::new(conn, internal_res)
+        PgResult::new(internal_res)
     }
 
     pub fn sql(sql: &str, param_types: Option<Vec<u32>>) -> QueryResult<Self> {
@@ -90,7 +90,7 @@ impl Query {
                 param_types_to_ptr(Some(&param_types)),
             )
         };
-        try!(PgResult::new(conn, internal_result));
+        try!(PgResult::new(internal_result));
 
         Ok(Query::Prepared {
             name: name,

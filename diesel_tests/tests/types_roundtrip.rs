@@ -31,8 +31,8 @@ pub fn test_type_round_trips<ST, T>(value: T) -> bool where
                 true
             }
         }
-        Err(Error::DatabaseError(msg)) =>
-            &msg == "ERROR:  invalid byte sequence for encoding \"UTF8\": 0x00\n",
+        Err(Error::DatabaseError(ref e))
+            if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" => true,
         Err(e) => panic!("Query failed: {:?}", e),
     }
 }
