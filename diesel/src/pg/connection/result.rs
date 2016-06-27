@@ -22,7 +22,11 @@ impl PgResult {
                     internal_result: internal_result,
                 })
             },
-            _ => Err(Error::DatabaseError(conn.last_error_message())),
+            _ => {
+                let error_message = conn.last_error_message();
+                unsafe { PQclear(internal_result) };
+                Err(Error::DatabaseError(error_message))
+            }
         }
     }
 
