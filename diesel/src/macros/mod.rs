@@ -13,6 +13,12 @@ macro_rules! column {
         #[derive(Debug, Clone, Copy)]
         pub struct $column_name;
 
+        impl Default for $column_name {
+            fn default() -> Self {
+                $column_name
+            }
+        }
+
         impl $crate::expression::Expression for $column_name {
             type SqlType = $Type;
         }
@@ -42,6 +48,26 @@ macro_rules! column {
         impl<'a, ST, Left, Right> SelectableExpression<
             $crate::WithQuerySource<'a, Left, Right>, ST> for $column_name where
             $column_name: SelectableExpression<Left, ST>
+        {
+        }
+
+        impl<Left, Right, FK> $crate::expression::SelectableExpression<
+            $crate::query_source::joins::InnerJoinSource<Left, Right, FK>,
+            <$column_name as $crate::Expression>::SqlType,
+        > for $column_name where
+            Left: $crate::query_source::joins::JoinTo<Right, $crate::query_source::joins::Inner, FK>,
+            Right: $crate::query_source::Table,
+            FK: $crate::query_source::Column,
+        {    
+        }
+
+        impl<Left, Right, FK, ST> $crate::expression::SelectableExpression<
+            $crate::query_source::LeftOuterJoinSource<Left, Right, FK>,
+            ST,
+        > for $column_name where
+            Left: $crate::query_source::Table + $crate::query_source::joins::JoinTo<Right, $crate::query_source::joins::LeftOuter, FK>,
+            Right: $crate::query_source::Table,
+            FK: $crate::query_source::Column,
         {
         }
 
@@ -226,6 +252,12 @@ macro_rules! table_body {
                 }
             }
 
+            impl Default for table {
+                fn default() -> Self {
+                    table
+                }
+            }
+
             impl Table for table {
                 type PrimaryKey = columns::$pk;
                 type AllColumns = ($($column_name,)+);
@@ -288,17 +320,23 @@ macro_rules! table_body {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! joinable {
-    ($child:ident -> $parent:ident ($source:ident)) => {
-        joinable_inner!($child::table => $parent::table : ($child::$source = $parent::table));
-        joinable_inner!($parent::table => $child::table : ($child::$source = $parent::table));
+    ($child:ident -> $parent:ident ($fk:ident)) => {
+        joinable_inner!($child::table => $parent::table : ($child::$fk = $parent::table = $child::table));
+        joinable_inner!($parent::table => $child::table : ($child::$fk = $parent::table = $child::table));
     }
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! joinable_inner {
-    ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
-        impl<JoinType> $crate::JoinTo<$right_table, JoinType> for $left_table {
+    ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path = $child_table:path)) => {
+        impl $crate::JoinTo<$right_table, $crate::query_source::joins::LeftOuter, $foreign_key> for $left_table {
+            type JoinSqlType = (<$parent_table as $crate::query_builder::AsQuery>::SqlType,
+                                <<$child_table as $crate::query_builder::AsQuery>::SqlType as $crate::types::IntoNullable>::Nullable);
+            type JoinAllColumns = (<$parent_table as $crate::query_source::Table>::AllColumns,
+                                   <$child_table as $crate::query_source::Table>::AllColumns);
+            
+            type ParentTable = $parent_table;
             type JoinClause = $crate::query_builder::nodes::Join<
                 <$left_table as $crate::QuerySource>::FromClause,
                 <$right_table as $crate::QuerySource>::FromClause,
@@ -307,10 +345,10 @@ macro_rules! joinable_inner {
                     $crate::expression::nullable::Nullable<
                         <$parent_table as $crate::query_source::Table>::PrimaryKey>,
                 >,
-                JoinType,
+                $crate::query_source::joins::LeftOuter,
             >;
 
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
+            fn join_clause(&self, join_type: $crate::query_source::joins::LeftOuter) -> Self::JoinClause {
                 use $crate::QuerySource;
 
                 $crate::query_builder::nodes::Join::new(
@@ -320,73 +358,50 @@ macro_rules! joinable_inner {
                     join_type,
                 )
             }
-        }
-    }
-}
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_workaround {
-    ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent -> $child $column_name);)+
-        select_column_inner!($parent -> $child star);
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_inner {
-    ($parent:ident -> $child:ident $column_name:ident) => {
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
-        > for $parent::$column_name
-        {
+            fn join_all_columns() -> Self::JoinAllColumns {
+                (<$parent_table as $crate::query_source::Table>::all_columns(),
+                 <$child_table as $crate::query_source::Table>::all_columns())
+            }
         }
 
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
-        {
-        }
+        impl $crate::JoinTo<$right_table, $crate::query_source::joins::Inner, $foreign_key> for $left_table {
+            type JoinSqlType = (<$parent_table as $crate::query_builder::AsQuery>::SqlType,
+                                <$child_table as $crate::query_builder::AsQuery>::SqlType);
+            type JoinAllColumns = (<$parent_table as $crate::query_source::Table>::AllColumns,
+                                   <$child_table as $crate::query_source::Table>::AllColumns);
+            
+            type ParentTable = $parent_table;
+            type JoinClause = $crate::query_builder::nodes::Join<
+                <$left_table as $crate::QuerySource>::FromClause,
+                <$right_table as $crate::QuerySource>::FromClause,
+                $crate::expression::helper_types::Eq<
+                    $crate::expression::nullable::Nullable<$foreign_key>,
+                    $crate::expression::nullable::Nullable<
+                        <$parent_table as $crate::query_source::Table>::PrimaryKey>,
+                >,
+                $crate::query_source::joins::Inner,
+            >;
 
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-            <<$parent::$column_name as $crate::Expression>::SqlType
-                as $crate::types::IntoNullable>::Nullable,
-        > for $parent::$column_name
-        {
-        }
+            fn join_clause(&self, join_type: $crate::query_source::joins::Inner) -> Self::JoinClause {
+                use $crate::QuerySource;
 
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
-        {
-        }
-    }
-}
+                $crate::query_builder::nodes::Join::new(
+                    self.from_clause(),
+                    $right_table.from_clause(),
+                    $foreign_key.nullable().eq($parent_table.primary_key().nullable()),
+                    join_type,
+                )
+            }
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! join_through {
-    ($parent:ident -> $through:ident -> $child:ident) => {
-        impl<JoinType: Copy> $crate::JoinTo<$child::table, JoinType> for $parent::table {
-            type JoinClause = <
-                <$parent::table as $crate::JoinTo<$through::table, JoinType>>::JoinClause
-                as $crate::query_builder::nodes::CombinedJoin<
-                    <$through::table as $crate::JoinTo<$child::table, JoinType>>::JoinClause,
-                >>::Output;
-
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::query_builder::nodes::CombinedJoin;
-                let parent_to_through = $crate::JoinTo::<$through::table, JoinType>
-                    ::join_clause(&$parent::table, join_type);
-                let through_to_child = $crate::JoinTo::<$child::table, JoinType>
-                    ::join_clause(&$through::table, join_type);
-                parent_to_through.combine_with(through_to_child)
+            fn join_all_columns() -> Self::JoinAllColumns {
+                (<$parent_table as $crate::query_source::Table>::all_columns(),
+                 <$child_table as $crate::query_source::Table>::all_columns())
             }
         }
     }
 }
+
 
 /// Takes a query QueryFragment expression as an argument and returns a string
 /// of SQL with placeholders for the dynamic values.

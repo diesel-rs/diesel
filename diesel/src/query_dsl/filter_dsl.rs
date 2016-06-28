@@ -54,8 +54,8 @@ impl<T, Predicate, ST> FilterDsl<Predicate> for T where
 }
 
 impl<T: Table> NotFiltered for T {}
-impl<Left, Right> NotFiltered for InnerJoinSource<Left, Right> {}
-impl<Left, Right> NotFiltered for LeftOuterJoinSource<Left, Right> {}
+impl<Left, Right, FK> NotFiltered for InnerJoinSource<Left, Right, FK> {}
+impl<Left, Right, FK> NotFiltered for LeftOuterJoinSource<Left, Right, FK> {}
 
 use expression::AsExpression;
 use expression::expression_methods::*;

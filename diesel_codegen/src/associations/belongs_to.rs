@@ -7,6 +7,7 @@ use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::parse::token::str_to_ident;
 use syntax::ptr::P;
+use inflector::Inflector;
 
 use model::Model;
 use super::{parse_association_options, AssociationOptions, to_foreign_key};
@@ -33,9 +34,6 @@ pub fn expand_belongs_to(
         if let Some(item) = belongs_to_impl(&builder) {
             push(Annotatable::Item(item));
         }
-        for item in selectable_column_hack(&builder) {
-            push(Annotatable::Item(item));
-        }
     }
 }
 
@@ -49,8 +47,7 @@ struct BelongsToAssociationBuilder<'a, 'b: 'a> {
 impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     fn parent_struct_name(&self) -> ast::Ident {
         let association_name = self.options.name.name.as_str();
-        let struct_name = capitalize_from_association_name(association_name.to_string());
-        str_to_ident(&struct_name)
+        str_to_ident(&association_name.to_class_case())
     }
 
     fn child_struct_name(&self) -> ast::Ident {
@@ -66,7 +63,7 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn parent_table_name(&self) -> ast::Ident {
-        let pluralized = format!("{}s", &self.options.name.name.as_str());
+        let pluralized = self.options.name.name.as_str().to_plural();
         str_to_ident(&pluralized)
     }
 
@@ -75,7 +72,7 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_key_name(&self) -> ast::Ident {
-        to_foreign_key(&self.options.name.name.as_str())
+        self.options.fk.unwrap_or(to_foreign_key(&self.options.name.name.as_str()))
     }
 
     fn foreign_key(&self) -> ast::Path {
@@ -98,22 +95,6 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
         ty_param_of_option(&ty).map(|t| t.clone())
             .unwrap_or(ty)
     }
-
-    fn column_path(&self, column_name: ast::Ident) -> ast::Path {
-        self.cx.path(self.span, vec![self.child_table_name(), column_name])
-    }
-}
-
-fn capitalize_from_association_name(name: String) -> String {
-    let mut result = String::with_capacity(name.len());
-    let words = name.split("_");
-
-    for word in words {
-        result.push_str(&word[..1].to_uppercase());
-        result.push_str(&word[1..]);
-    }
-
-    result
 }
 
 fn belonging_to_dsl_impl(
@@ -128,7 +109,7 @@ fn belonging_to_dsl_impl(
     let primary_key_name = builder.primary_key_name();
 
     let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<$parent_struct_name> for $child_struct_name {
+        impl ::diesel::BelongingToDsl<$parent_struct_name, $foreign_key> for $child_struct_name {
             type Output = ::diesel::helper_types::FindBy<
                 $child_table,
                 $foreign_key,
@@ -143,7 +124,7 @@ fn belonging_to_dsl_impl(
     push(Annotatable::Item(item));
 
     let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<Vec<$parent_struct_name>> for $child_struct_name {
+        impl ::diesel::BelongingToDsl<Vec<$parent_struct_name>, $foreign_key> for $child_struct_name {
             type Output = ::diesel::helper_types::Filter<
                 $child_table,
                 ::diesel::expression::helper_types::EqAny<
@@ -161,7 +142,7 @@ fn belonging_to_dsl_impl(
     push(Annotatable::Item(item));
 
     let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<[$parent_struct_name]> for $child_struct_name {
+        impl ::diesel::BelongingToDsl<[$parent_struct_name], $foreign_key> for $child_struct_name {
             type Output = ::diesel::helper_types::Filter<
                 $child_table,
                 ::diesel::expression::helper_types::EqAny<
@@ -184,12 +165,13 @@ fn belongs_to_impl(builder: &BelongsToAssociationBuilder) -> Option<P<ast::Item>
     let child_struct_name = builder.child_struct_name();
     let primary_key_type = builder.primary_key_type();
     let foreign_key_name = builder.foreign_key_name();
+    let foreign_key = builder.foreign_key();
 
     if is_option_ty(&builder.foreign_key_type()) {
         None
     } else {
         Some(quote_item!(builder.cx,
-            impl ::diesel::associations::BelongsTo<$parent_struct_name> for $child_struct_name {
+            impl ::diesel::associations::BelongsTo<$parent_struct_name, $foreign_key> for $child_struct_name {
                 fn foreign_key(&self) -> $primary_key_type {
                     self.$foreign_key_name
                 }
@@ -204,43 +186,7 @@ fn join_to_impl(builder: &BelongsToAssociationBuilder) -> P<ast::Item> {
     let foreign_key = builder.foreign_key();
 
     quote_item!(builder.cx,
-        joinable_inner!($child_table => $parent_table : ($foreign_key = $parent_table));
+        joinable_inner!($child_table => $parent_table : ($foreign_key = $parent_table = $child_table));
     ).unwrap()
 }
 
-fn selectable_column_hack(builder: &BelongsToAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().flat_map(|attr| {
-        selectable_column_impl(builder, attr.column_name)
-    }).collect::<Vec<_>>();
-    result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
-    result
-}
-
-fn selectable_column_impl(
-    builder: &BelongsToAssociationBuilder,
-    column_name: ast::Ident,
-) -> Vec<P<ast::Item>> {
-    let parent_table = builder.parent_table();
-    let child_table = builder.child_table();
-    let column = builder.column_path(column_name);
-
-    [quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$parent_table, $child_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$child_table, $parent_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$child_table, $parent_table>,
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$parent_table, $child_table>,
-            <<$column as ::diesel::Expression>::SqlType
-                as ::diesel::types::IntoNullable>::Nullable,
-        > for $column {}
-    ).unwrap()].to_vec()
-}

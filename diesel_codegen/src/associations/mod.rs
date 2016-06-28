@@ -2,6 +2,7 @@ use syntax::ast::{self, MetaItem, MetaItemKind};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
+use inflector::Inflector;
 
 use model::{infer_association_name, Model};
 
@@ -33,8 +34,10 @@ fn parse_association_options(
     })
 }
 
+#[derive(Debug)]
 struct AssociationOptions {
     name: ast::Ident,
+    fk: Option<ast::Ident>,
 }
 
 fn build_association_options(
@@ -55,9 +58,19 @@ fn build_association_options(
                 MetaItemKind::Word(ref name) => str_to_ident(&name),
                 _ => return usage_err(),
             };
+            let fk = if options.len() >1 {
+                match options[1].node {
+                    MetaItemKind::Word(ref name) => Some(str_to_ident(&name)),
+                    _ =>  None,
+                }
+            } else{
+                None
+            };
+
 
             Some(AssociationOptions {
                 name: association_name,
+                fk: fk,
             })
         }
         _ => usage_err(),
@@ -66,7 +79,7 @@ fn build_association_options(
 
 fn to_foreign_key(model_name: &str) -> ast::Ident {
     let lower_cased = infer_association_name(model_name);
-    str_to_ident(&format!("{}_id", &lower_cased))
+    str_to_ident(&lower_cased.to_foreign_key())
 }
 
 #[test]

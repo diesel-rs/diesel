@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use query_source::Column;
 
 pub trait Identifiable {
     type Id: Hash + Eq + Copy;
@@ -6,17 +7,19 @@ pub trait Identifiable {
     fn id(&self) -> Self::Id;
 }
 
-pub trait BelongsTo<Parent: Identifiable> {
+pub trait BelongsTo<Parent: Identifiable, FK> where FK: Column
+{
     fn foreign_key(&self) -> Parent::Id;
 }
 
-pub trait GroupedBy<Parent>: IntoIterator + Sized {
+pub trait GroupedBy<Parent, FK>: IntoIterator + Sized {
     fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Self::Item>>;
 }
 
-impl<Parent, Child> GroupedBy<Parent> for Vec<Child> where
-    Child: BelongsTo<Parent>,
-    Parent: Identifiable,
+impl<Parent, Child, FK> GroupedBy<Parent, FK> for Vec<Child> where
+    FK: Column,
+    Child: BelongsTo<Parent, FK>,
+    Parent: Identifiable
 {
     fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;

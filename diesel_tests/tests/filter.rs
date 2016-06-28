@@ -100,7 +100,7 @@ fn filter_after_joining() {
     let tess = User::new(2, "Tess");
     let seans_post = Post::new(1, 1, "Hello", None);
     let tess_post = Post::new(2, 2, "World", None);
-    let source = users::table.inner_join(posts::table);
+    let source = users::table.inner_join(posts::table, posts::user_id);
     assert_eq!(Ok((sean, seans_post)),
         source.filter(name.eq("Sean")).first(&connection));
     assert_eq!(Ok((tess, tess_post)),

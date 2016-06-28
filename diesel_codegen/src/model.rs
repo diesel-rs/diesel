@@ -3,10 +3,12 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
+use inflector::Inflector;
 
 use attr::Attr;
 use util::{str_value_of_attr_with_name, struct_ty};
 
+#[derive(Debug)]
 pub struct Model {
     pub ty: P<ast::Ty>,
     pub attrs: Vec<Attr>,
@@ -61,25 +63,11 @@ impl Model {
 }
 
 pub fn infer_association_name(name: &str) -> String {
-    let mut result = String::with_capacity(name.len());
-    result.push_str(&name[..1].to_lowercase());
-    for character in name[1..].chars() {
-        if character.is_uppercase() {
-            result.push('_');
-            for lowercase in character.to_lowercase() {
-                result.push(lowercase);
-            }
-        } else {
-            result.push(character);
-        }
-    }
-    result
+    name.to_snake_case()
 }
 
 fn infer_table_name(name: &str) -> String {
-    let mut result = infer_association_name(name);
-    result.push('s');
-    result
+    infer_association_name(name).to_plural()
 }
 
 #[test]
@@ -92,4 +80,9 @@ fn infer_table_name_pluralizes_and_downcases() {
 fn infer_table_name_properly_handles_underscores() {
     assert_eq!("foo_bars", &infer_table_name("FooBar"));
     assert_eq!("foo_bar_bazs", &infer_table_name("FooBarBaz"));
+}
+
+#[test]
+fn infer_table_name_handle_crude() {
+    assert_eq!("geometries", &infer_table_name("Geometry"));
 }

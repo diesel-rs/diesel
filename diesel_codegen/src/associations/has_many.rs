@@ -27,9 +27,6 @@ pub fn expand_has_many(
             span: span,
         };
         push(Annotatable::Item(join_to_impl(&builder)));
-        for item in selectable_column_hack(&builder).into_iter() {
-            push(Annotatable::Item(item));
-        }
     }
 }
 
@@ -58,15 +55,11 @@ impl<'a, 'b> HasManyAssociationBuilder<'a, 'b> {
     }
 
     fn foreign_key_name(&self) -> ast::Ident {
-        to_foreign_key(&self.model.name.name.as_str())
+        self.options.fk.unwrap_or(to_foreign_key(&self.model.name.name.as_str()))
     }
 
     fn foreign_key(&self) -> ast::Path {
         self.cx.path(self.span, vec![self.association_name(), self.foreign_key_name()])
-    }
-
-    fn column_path(&self, column_name: ast::Ident) -> ast::Path {
-        self.cx.path(self.span, vec![self.table_name(), column_name])
     }
 }
 
@@ -76,43 +69,6 @@ fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
     let foreign_key = builder.foreign_key();
 
     quote_item!(builder.cx,
-        joinable_inner!($table => $foreign_table : ($foreign_key = $table));
+        joinable_inner!($table => $foreign_table : ($foreign_key = $table = $foreign_table));
     ).unwrap()
-}
-
-fn selectable_column_hack(builder: &HasManyAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().flat_map(|attr| {
-        selectable_column_impl(builder, attr.column_name)
-    }).collect::<Vec<_>>();
-    result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
-    result
-}
-
-fn selectable_column_impl(
-    builder: &HasManyAssociationBuilder,
-    column_name: ast::Ident,
-) -> Vec<P<ast::Item>> {
-    let table = builder.table();
-    let foreign_table = builder.foreign_table();
-    let column = builder.column_path(column_name);
-
-    [quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$table, $foreign_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$foreign_table, $table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$table, $foreign_table>,
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$foreign_table, $table>,
-            <<$column as ::diesel::Expression>::SqlType
-                as ::diesel::types::IntoNullable>::Nullable,
-        > for $column {}
-    ).unwrap()].to_vec()
 }
