@@ -128,9 +128,9 @@ impl Statement {
         }
     }
 
-    fn reset(&mut self) -> QueryResult<()> {
+    fn reset(&mut self) {
         self.bind_index = 0;
-        ensure_sqlite_ok(unsafe { ffi::sqlite3_reset(self.inner_statement) }, &self.raw_connection)
+        unsafe { ffi::sqlite3_reset(self.inner_statement) };
     }
 }
 
@@ -189,15 +189,6 @@ impl Deref for StatementUse {
 
 impl Drop for StatementUse {
     fn drop(&mut self) {
-        use std::thread::panicking;
-
-        let reset_result = self.statement.borrow_mut().reset();
-        if let Err(e) = reset_result {
-            if panicking() {
-                write!(stderr(), "Error resetting SQLite prepared statement: {:?}", e).unwrap();
-            } else {
-                panic!("Error resetting SQLite prepared statement: {:?}", e);
-            }
-        }
+        self.statement.borrow_mut().reset();
     }
 }

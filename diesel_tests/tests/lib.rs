@@ -2,6 +2,7 @@
 #![cfg_attr(feature = "unstable", plugin(diesel_codegen, dotenv_macros))]
 
 extern crate quickcheck;
+#[macro_use] extern crate assert_matches;
 #[macro_use] extern crate diesel;
 
 #[cfg(feature = "unstable")]
@@ -14,6 +15,7 @@ mod associations;
 mod boxed_queries;
 mod connection;
 mod debug;
+mod errors;
 mod expressions;
 mod filter;
 mod filter_operators;
