@@ -30,6 +30,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Struct fields annotated with `#[column_name="name"]` should be changed to
   `#[column_name(name)]`.
 
+* The structure of `DatabaseError` has changed to hold more information. See
+  http://docs.diesel.rs/diesel/result/enum.Error.html and
+  http://docs.diesel.rs/diesel/result/trait.DatabaseErrorInformation.html for
+  more information
+
 ### Fixed
 
 * `&&[T]` can now be used in queries. This allows using slices with things like

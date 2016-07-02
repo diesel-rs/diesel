@@ -1,7 +1,7 @@
 extern crate pq_sys;
 extern crate libc;
 
-use result::{Error, QueryResult, DatabaseErrorInformation};
+use result::{Error, QueryResult, DatabaseErrorInformation, DatabaseErrorKind};
 use super::row::PgRow;
 
 use self::pq_sys::*;
@@ -23,7 +23,11 @@ impl PgResult {
             },
             _ => {
                 let error_information = Box::new(PgErrorInformation(internal_result));
-                Err(Error::DatabaseError(error_information))
+                let error_kind = match get_result_field(internal_result, ResultField::SqlState) {
+                    Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
+                    _ => DatabaseErrorKind::__Unknown,
+                };
+                Err(Error::DatabaseError(error_kind, error_information))
             }
         }
     }
@@ -92,38 +96,49 @@ impl Drop for PgErrorInformation {
 
 impl DatabaseErrorInformation for PgErrorInformation {
     fn message(&self) -> &str {
-        match get_result_field(self.0, 'M') {
+        match get_result_field(self.0, ResultField::MessagePrimary) {
             Some(e) => e,
             None => unreachable!("Per PGs documentation, all errors should have a message"),
         }
     }
 
     fn details(&self) -> Option<&str> {
-        get_result_field(self.0, 'D')
+        get_result_field(self.0, ResultField::MessageDetail)
     }
 
     fn hint(&self) -> Option<&str> {
-        get_result_field(self.0, 'H')
+        get_result_field(self.0, ResultField::MessageHint)
     }
 
     fn table_name(&self) -> Option<&str> {
-        get_result_field(self.0, 't')
+        get_result_field(self.0, ResultField::TableName)
     }
 
     fn column_name(&self) -> Option<&str> {
-        get_result_field(self.0, 'c')
+        get_result_field(self.0, ResultField::ColumnName)
     }
 
     fn constraint_name(&self) -> Option<&str> {
-        get_result_field(self.0, 'n')
+        get_result_field(self.0, ResultField::ConstraintName)
     }
 }
 
-/// `field` is one of the valid options to
+/// Represents valid options to
 /// [`PQresultErrorField`](https://www.postgresql.org/docs/current/static/libpq-exec.html#LIBPQ-PQRESULTERRORFIELD)
 /// Their values are defined as C preprocessor macros, and therefore are not exported by libpq-sys.
 /// Their values can be found in `postgres_ext.h`
-fn get_result_field<'a>(res: *mut PGresult, field: char) -> Option<&'a str> {
+#[repr(i32)]
+enum ResultField {
+    SqlState = 'C' as i32,
+    MessagePrimary = 'M' as i32,
+    MessageDetail = 'D' as i32,
+    MessageHint = 'H' as i32,
+    TableName = 't' as i32,
+    ColumnName = 'c' as i32,
+    ConstraintName = 'n' as i32,
+}
+
+fn get_result_field<'a>(res: *mut PGresult, field: ResultField) -> Option<&'a str> {
     let ptr = unsafe { PQresultErrorField(res, field as libc::c_int) };
     if ptr.is_null() {
         return None;
@@ -131,4 +146,12 @@ fn get_result_field<'a>(res: *mut PGresult, field: char) -> Option<&'a str> {
 
     let c_str = unsafe { CStr::from_ptr(ptr) };
     c_str.to_str().ok()
+}
+
+mod error_codes {
+    //! These error codes are documented at
+    //! https://www.postgresql.org/docs/9.5/static/errcodes-appendix.html
+    //!
+    //! They are not exposed programatically through libpq.
+    pub const UNIQUE_VIOLATION: &'static str = "23505";
 }

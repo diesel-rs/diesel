@@ -49,7 +49,8 @@ impl RawConnection {
 
         if !err_msg.is_null() {
             let msg = convert_to_string_and_free(err_msg);
-            Err(DatabaseError(Box::new(msg)))
+            let error_kind = DatabaseErrorKind::__Unknown;
+            Err(DatabaseError(error_kind, Box::new(msg)))
         } else {
             Ok(())
         }
@@ -62,6 +63,10 @@ impl RawConnection {
     pub fn last_error_message(&self) -> String {
         let c_str = unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(self.internal_connection)) };
         c_str.to_string_lossy().into_owned()
+    }
+
+    pub fn last_error_code(&self) -> libc::c_int {
+        unsafe { ffi::sqlite3_extended_errcode(self.internal_connection) }
     }
 }
 

@@ -145,7 +145,12 @@ fn ensure_sqlite_ok(code: libc::c_int, raw_connection: &RawConnection) -> QueryR
 fn last_error(raw_connection: &RawConnection) -> Error {
     let error_message = raw_connection.last_error_message();
     let error_information = Box::new(error_message);
-    DatabaseError(error_information)
+    let error_kind = match raw_connection.last_error_code() {
+        ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY =>
+            DatabaseErrorKind::UniqueViolation,
+        _ => DatabaseErrorKind::__Unknown,
+    };
+    DatabaseError(error_kind, error_information)
 }
 
 impl Drop for Statement {

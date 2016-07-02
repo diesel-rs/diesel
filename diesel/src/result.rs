@@ -9,13 +9,25 @@ use std::ffi::NulError;
 /// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),
-    DatabaseError(Box<DatabaseErrorInformation+Send>),
+    DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send>),
     NotFound,
     QueryBuilderError(Box<StdError+Send>),
     DeserializationError(Box<StdError+Send+Sync>),
     SerializationError(Box<StdError+Send+Sync>),
     #[doc(hidden)]
     __Nonexhaustive,
+}
+
+#[derive(Debug, Clone, Copy)]
+/// The kind of database error that occurred. This is not meant to exhaustively
+/// cover all possible errors, but is used to identify errors which are commonly
+/// recovered from programatically. This enum is not intended to be exhaustively
+/// matched, and new variants may be added in the future without a major version
+/// bump.
+pub enum DatabaseErrorKind {
+    UniqueViolation,
+    #[doc(hidden)]
+    __Unknown, // Match against _ instead, more variants may be added in the future
 }
 
 pub trait DatabaseErrorInformation {
@@ -106,7 +118,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            &Error::DatabaseError(ref e) => write!(f, "{}", e.message()),
+            &Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
             &Error::NotFound => f.write_str("NotFound"),
             &Error::QueryBuilderError(ref e) => e.fmt(f),
             &Error::DeserializationError(ref e) => e.fmt(f),
@@ -120,7 +132,7 @@ impl StdError for Error {
     fn description(&self) -> &str {
         match self {
             &Error::InvalidCString(ref nul_err) => nul_err.description(),
-            &Error::DatabaseError(ref e) => e.message(),
+            &Error::DatabaseError(_, ref e) => e.message(),
             &Error::NotFound => "Record not found",
             &Error::QueryBuilderError(ref e) => e.description(),
             &Error::DeserializationError(ref e) => e.description(),
@@ -170,7 +182,7 @@ impl PartialEq for Error {
     fn eq(&self, other: &Error) -> bool {
         match (self, other) {
             (&Error::InvalidCString(ref a), &Error::InvalidCString(ref b)) => a == b,
-            (&Error::DatabaseError(ref a), &Error::DatabaseError(ref b)) =>
+            (&Error::DatabaseError(_, ref a), &Error::DatabaseError(_, ref b)) =>
                 a.message() == b.message(),
             (&Error::NotFound, &Error::NotFound) => true,
             _ => false,
