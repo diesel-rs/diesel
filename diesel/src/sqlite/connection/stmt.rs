@@ -6,6 +6,7 @@ use self::byteorder::{ReadBytesExt, BigEndian};
 use std::ffi::CString;
 use std::io::{stderr, Write};
 use std::ptr;
+use std::rc::Rc;
 
 use sqlite::SqliteType;
 use result::*;
@@ -14,12 +15,13 @@ use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
 
 pub struct Statement {
+    raw_connection: Rc<RawConnection>,
     inner_statement: *mut ffi::sqlite3_stmt,
     bind_index: libc::c_int,
 }
 
 impl Statement {
-    pub fn prepare(raw_connection: &RawConnection, sql: &str) -> QueryResult<Self> {
+    pub fn prepare(raw_connection: &Rc<RawConnection>, sql: &str) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
         let prepare_result = unsafe {
@@ -32,14 +34,18 @@ impl Statement {
             )
         };
 
-        ensure_sqlite_ok(prepare_result)
-            .map(|_| Statement { inner_statement: stmt, bind_index: 0 })
+        ensure_sqlite_ok(prepare_result, &raw_connection)
+            .map(|_| Statement {
+                raw_connection: raw_connection.clone(),
+                inner_statement: stmt,
+                bind_index: 0,
+            })
     }
 
     pub fn run(&self) -> QueryResult<()> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
-            error => Err(DatabaseError(Box::new(super::error_message(error).to_owned())))
+            _ => Err(last_error(&self.raw_connection)),
         }
     }
 
@@ -111,7 +117,7 @@ impl Statement {
             }
         }};
 
-        ensure_sqlite_ok(result)
+        ensure_sqlite_ok(result, &self.raw_connection)
     }
 
     pub fn step(&mut self) -> Option<SqliteRow> {
@@ -124,16 +130,22 @@ impl Statement {
 
     fn reset(&mut self) -> QueryResult<()> {
         self.bind_index = 0;
-        ensure_sqlite_ok(unsafe { ffi::sqlite3_reset(self.inner_statement) })
+        ensure_sqlite_ok(unsafe { ffi::sqlite3_reset(self.inner_statement) }, &self.raw_connection)
     }
 }
 
-fn ensure_sqlite_ok(code: libc::c_int) -> QueryResult<()> {
+fn ensure_sqlite_ok(code: libc::c_int, raw_connection: &RawConnection) -> QueryResult<()> {
     if code != ffi::SQLITE_OK {
-        Err(DatabaseError(Box::new(super::error_message(code).to_owned())))
+        Err(last_error(raw_connection))
     } else {
         Ok(())
     }
+}
+
+fn last_error(raw_connection: &RawConnection) -> Error {
+    let error_message = raw_connection.last_error_message();
+    let error_information = Box::new(error_message);
+    DatabaseError(error_information)
 }
 
 impl Drop for Statement {
@@ -141,7 +153,7 @@ impl Drop for Statement {
         use std::thread::panicking;
 
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
-        if let Err(e) = ensure_sqlite_ok(finalize_result) {
+        if let Err(e) = ensure_sqlite_ok(finalize_result, &self.raw_connection) {
             if panicking() {
                 write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
             } else {
@@ -153,7 +165,6 @@ impl Drop for Statement {
 
 use std::cell::RefCell;
 use std::ops::Deref;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct StatementUse {

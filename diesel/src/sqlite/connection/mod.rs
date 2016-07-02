@@ -13,6 +13,7 @@ use std::any::TypeId;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use connection::{SimpleConnection, Connection};
 use query_builder::*;
@@ -30,7 +31,7 @@ use types::HasSqlType;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
-    raw_connection: RawConnection,
+    raw_connection: Rc<RawConnection>,
     transaction_depth: Cell<i32>,
 }
 
@@ -58,7 +59,7 @@ impl Connection for SqliteConnection {
         RawConnection::establish(database_url).map(|conn| {
             SqliteConnection {
                 statement_cache: RefCell::new(HashMap::new()),
-                raw_connection: conn,
+                raw_connection: Rc::new(conn),
                 transaction_depth: Cell::new(0),
             }
         })
