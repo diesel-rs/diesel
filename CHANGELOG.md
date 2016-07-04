@@ -24,6 +24,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Changed
 
+* Most structs that implement `Queryable` will now also need
+  `#[derive(Identifiable)]`.
+
 * `infer_schema!` on SQLite now accepts a larger range of type names
 
 * `types::VarChar` is now an alias for `types::Text`. Most code should be
@@ -37,6 +40,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   http://docs.diesel.rs/diesel/result/enum.Error.html and
   http://docs.diesel.rs/diesel/result/trait.DatabaseErrorInformation.html for
   more information
+
+* Structs which implement `Identifiable` can now be passed to `update` and
+  `delete`. This means you can now write `delete(&user).execute(&connection)`
+  instead of `delete(users.find(user.id)).execute(&connection)`
 
 ### Fixed
 

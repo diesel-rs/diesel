@@ -243,6 +243,18 @@ macro_rules! table_body {
                 }
             }
 
+            impl IntoUpdateTarget for table {
+                type Table = Self;
+                type WhereClause = ();
+
+                fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
+                    UpdateTarget {
+                        table: self,
+                        where_clause: None,
+                    }
+                }
+            }
+
             impl_query_id!(table);
 
             pub mod columns {

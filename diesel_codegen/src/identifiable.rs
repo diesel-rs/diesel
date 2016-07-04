@@ -13,6 +13,7 @@ pub fn expand_derive_identifiable(
 ) {
     if let Some(model) = Model::from_annotable(cx, span, annotatable) {
         let struct_name = model.name;
+        let table_name = model.table_name();
         let primary_key_name = model.primary_key_name();
         let primary_key_type = match model.attr_named(primary_key_name) {
             Some(a) => a.ty.clone(),
@@ -30,6 +31,11 @@ pub fn expand_derive_identifiable(
         let item = quote_item!(cx,
             impl ::diesel::associations::Identifiable for $struct_name {
                 type Id = $primary_key_type;
+                type Table = $table_name::table;
+
+                fn table() -> Self::Table {
+                    $table_name::table
+                }
 
                 fn id(&self) -> Self::Id {
                     self.$primary_key_name

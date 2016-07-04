@@ -22,7 +22,7 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Conn) -> QueryResult<U> where
         Self: LimitDsl,
-        Limit<Self>: LoadDsl<Conn>,
+        Limit<Self>: LoadDsl<Conn, SqlType=Self::SqlType>,
         U: Queryable<Self::SqlType, Conn::Backend>,
     {
         self.limit(1).get_result(conn)

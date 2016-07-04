@@ -15,6 +15,7 @@ mod associations;
 mod boxed_queries;
 mod connection;
 mod debug;
+mod delete;
 mod errors;
 mod expressions;
 mod filter;

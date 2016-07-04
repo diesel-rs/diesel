@@ -4,7 +4,7 @@ use expression::predicates::And;
 use helper_types::Filter;
 use query_builder::*;
 use query_dsl::FilterDsl;
-use query_source::QuerySource;
+use query_source::{QuerySource, Table};
 use types::Bool;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -62,14 +62,17 @@ impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> w
 
 impl_query_id!(FilteredQuerySource<Source, Predicate>);
 
-impl<Source, Predicate> UpdateTarget for FilteredQuerySource<Source, Predicate> where
-    Source: UpdateTarget,
+impl<Source, Predicate> IntoUpdateTarget for FilteredQuerySource<Source, Predicate> where
+    Source: Table,
     Predicate: SelectableExpression<Source, SqlType=Bool>,
 {
-    type Table = Source::Table;
+    type Table = Source;
     type WhereClause = Predicate;
 
-    fn where_clause(&self) -> Option<&Self::WhereClause> {
-        Some(&self.predicate)
+    fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
+        UpdateTarget {
+            table: self.source,
+            where_clause: Some(self.predicate),
+        }
     }
 }

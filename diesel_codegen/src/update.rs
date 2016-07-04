@@ -20,10 +20,6 @@ pub fn expand_changeset_for(
     if let Some(model) = Model::from_annotable(cx, span, annotatable) {
         let options = changeset_options(cx, meta_item).unwrap();
         push(Annotatable::Item(changeset_impl(cx, span, &options, &model).unwrap()));
-        let items = save_changes_impl(cx, span, &options, &model);
-        for item in items.into_iter().filter_map(|x| x) {
-            push(Annotatable::Item(item));
-        }
     } else {
         cx.span_err(meta_item.span,
             "`changeset_for` may only be apllied to enums and structs");
@@ -113,65 +109,6 @@ fn changeset_impl(
             }
         }
     )
-}
-
-#[allow(unused_imports)]
-fn save_changes_impl(
-    cx: &mut ExtCtxt,
-    span: Span,
-    options: &ChangesetOptions,
-    model: &Model,
-) -> Vec<Option<P<ast::Item>>> {
-    let ref struct_name = model.ty;
-    let pk = model.primary_key_name();
-    let sql_type = cx.path(span, vec![options.table_name, str_to_ident("SqlType")]);
-    let table = cx.path(span, vec![options.table_name, str_to_ident("table")]);
-    let mut result = Vec::new();
-    if let Some(pk) = model.attr_for_column(pk) {
-        let pk_field = pk.field_name.unwrap();
-        if cfg!(feature = "postgres") {
-            result.push(quote_item!(cx,
-                impl<'a> SaveChangesDsl<
-                    ::diesel::pg::PgConnection,
-                    $sql_type,
-                > for $struct_name {
-                    fn save_changes<T>(
-                        &self,
-                        connection: &::diesel::pg::PgConnection,
-                    ) -> ::diesel::QueryResult<T> where
-                        T: Queryable<$sql_type, ::diesel::pg::Pg>,
-                    {
-                        use ::diesel::update;
-                        update($table.find(&self.$pk_field))
-                            .set(self)
-                            .get_result(connection)
-                    }
-                }
-            ));
-        }
-        if cfg!(feature = "sqlite") {
-            result.push(quote_item!(cx,
-                impl<'a> SaveChangesDsl<
-                    ::diesel::sqlite::SqliteConnection,
-                    $sql_type,
-                > for $struct_name {
-                    fn save_changes<T>(
-                        &self,
-                        connection: &::diesel::sqlite::SqliteConnection,
-                    ) -> ::diesel::QueryResult<T> where
-                        T: Queryable<$sql_type, ::diesel::sqlite::Sqlite>,
-                    {
-                        use ::diesel::update;
-                        try!(update($table.find(&self.$pk_field))
-                            .set(self)
-                            .execute(connection));
-                        $table.find(&self.$pk_field).first(connection)
-                    }
-                }
-            ));
-        }
-    }
-    result
 }
 
 fn changeset_ty(
