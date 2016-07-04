@@ -19,6 +19,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   those wishing to avoid syntax extensions from `diesel_codegen`. See
   http://docs.diesel.rs/diesel/macro.Identifiable!.html for details.
 
+* Added support for the PostgreSQL `ALL` operator. See
+  http://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
+
 ### Changed
 
 * `infer_schema!` on SQLite now accepts a larger range of type names
