@@ -70,7 +70,7 @@ pub fn load_table_names(connection: &PgConnection) -> QueryResult<Vec<String>> {
     use diesel::expression::dsl::sql;
 
     let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
-        .filter(sql::<types::Bool>("table_schema = 'public' AND table_name NOT LIKE '\\_\\_%'"));
+        .filter(sql::<types::Bool>("table_schema = 'public' AND table_name NOT LIKE '\\_\\_%' AND table_type LIKE 'BASE TABLE'"));
     query.load(connection)
 }
 
