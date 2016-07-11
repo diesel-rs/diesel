@@ -24,6 +24,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Changed
 
+* Diesel now targets `nightly-2016-07-07`. Future releases will update to a
+  newer nightly version on the date that Rust releases.
+
 * Most structs that implement `Queryable` will now also need
   `#[derive(Identifiable)]`.
 

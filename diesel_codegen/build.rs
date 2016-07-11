@@ -6,9 +6,9 @@ mod inner {
     use std::env;
     use std::path::Path;
 
-    use self::syntax::ast;
     use self::syntax::codemap::Span;
     use self::syntax::ext::base::{self, ExtCtxt};
+    use self::syntax::tokenstream::TokenTree;
 
     pub fn main() {
         let out_dir = env::var_os("OUT_DIR").unwrap();
@@ -19,7 +19,7 @@ mod inner {
                 fn $name<'cx>(
                     cx: &'cx mut ExtCtxt,
                     sp: Span,
-                    tts: &[ast::TokenTree],
+                    tts: &[tokenstream::TokenTree],
                 ) -> Box<base::MacResult + 'cx> {
                     syntax::ext::quote::$name(cx, sp, tts)
                 }

@@ -7,11 +7,12 @@ use syntax::ext::base::*;
 use syntax::util::small_vector::SmallVector;
 use syntax::ptr::P;
 use syntax::ext::build::AstBuilder;
+use syntax::tokenstream;
 
 pub fn expand_embed_migrations<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[tokenstream::TokenTree]
 ) -> Box<MacResult+'cx> {
     let migrations_expr = migrations_directory_from_args(cx, sp, tts)
         .and_then(|d| migration_literals_from_path(cx, sp, &d));
@@ -67,7 +68,7 @@ pub fn expand_embed_migrations<'cx>(
 fn migrations_directory_from_args(
     cx: &mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree],
+    tts: &[tokenstream::TokenTree],
 ) -> Result<PathBuf, Box<Error>> {
     let callsite_file = cx.codemap().span_to_filename(sp);
     let relative_path_to_migrations = if tts.is_empty() {

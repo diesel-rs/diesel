@@ -1,9 +1,10 @@
 use diesel::*;
 use diesel::pg::PgConnection;
 use syntax::ast;
+use syntax::codemap::Span;
 use syntax::ext::base::*;
-use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
+use syntax::ptr::P;
 
 use super::data_structures::*;
 
@@ -45,7 +46,7 @@ table! {
     }
 }
 
-pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<ast::Ty> {
+pub fn determine_column_type(cx: &mut ExtCtxt, _span: Span, attr: &ColumnInformation) -> P<ast::Ty> {
     let tpe = if attr.type_name.starts_with("_") {
         let subtype = str_to_ident(&capitalize(&attr.type_name[1..]));
         quote_ty!(cx, Array<$subtype>)

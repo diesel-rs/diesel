@@ -11,13 +11,14 @@ use syntax::ext::base::*;
 use syntax::parse::token::{InternedString, str_to_ident};
 use syntax::ptr::P;
 use syntax::util::small_vector::SmallVector;
+use syntax::tokenstream;
 
 use self::data_structures::*;
 
 pub fn expand_load_table<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[tokenstream::TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(ref exprs) if exprs.is_empty() => {
@@ -49,7 +50,7 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
 pub fn expand_infer_schema<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[tokenstream::TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
@@ -105,7 +106,7 @@ fn table_macro_call(
                         table_name, primary_keys.len()));
                 Err(DummyResult::any(sp))
             } else {
-                let tokens = data.iter().map(|a| column_def_tokens(cx, a, &connection))
+                let tokens = data.iter().map(|a| column_def_tokens(cx, sp, a, &connection))
                     .collect::<Vec<_>>();
                 let table_name = str_to_ident(table_name);
                 let primary_key = str_to_ident(&primary_keys[0]);
@@ -131,11 +132,11 @@ fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
     }
 }
 
-fn column_def_tokens(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
-    -> Vec<ast::TokenTree>
+fn column_def_tokens(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation, conn: &InferConnection)
+    -> Vec<tokenstream::TokenTree>
 {
     let column_name = str_to_ident(&attr.column_name);
-    let tpe = determine_column_type(cx, attr, conn);
+    let tpe = determine_column_type(cx, span, attr, conn);
     quote_tokens!(cx, $column_name -> $tpe,)
 }
 
@@ -202,14 +203,14 @@ fn load_table_names(connection: &InferConnection) -> QueryResult<Vec<String>> {
     }
 }
 
-fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
+fn determine_column_type(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation, conn: &InferConnection)
     -> P<ast::Ty>
 {
     match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, attr),
+        InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, span, attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => pg::determine_column_type(cx, attr),
+        InferConnection::Pg(_) => pg::determine_column_type(cx, span, attr),
     }
 }
 
