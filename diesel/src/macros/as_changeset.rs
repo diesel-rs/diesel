@@ -1,3 +1,73 @@
+/// Implements the [`AsChangeset`][changeset] trait for a given struct. This
+/// macro should be called with the name of the table you wish to use the struct
+/// with, followed by the entire struct body. This macro mirrors
+/// `#[as_changeset]` from [`diesel_codegen`][diesel_codegen]
+///
+/// [changeset]: prelude/trait.AsChangeset.html
+/// [diesel_codegen]: https://github.com/diesel-rs/diesel/tree/master/diesel_codegen
+///
+/// # Options
+///
+/// - `treat_none_as_null` (boolean)
+///     - Default value: `"false"`
+///     - When set to `"true"`, option fields will set the column to `NULL` when their value is
+///       `None`. When set to `"false"`, the field will not be assigned.
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use] extern crate diesel;
+/// # table! { users { id -> Integer, name -> VarChar, } }
+/// # include!("src/doctest_setup.rs");
+///
+/// #[derive(PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// AsChangeset! {
+///     (users)
+///     struct User {
+///         id: i32,
+///         name: String,
+///     }
+/// }
+///
+/// # Queryable! {
+/// #     struct User {
+/// #         id: i32,
+/// #         name: String,
+/// #     }
+/// # }
+/// #
+/// # impl User {
+/// #     fn new(id: i32, name: &str) -> Self {
+/// #         User {
+/// #             id: id,
+/// #             name: name.into(),
+/// #         }
+/// #     }
+/// # }
+///
+///
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// let user = diesel::insert(&NewUser::new("Sean"))
+///     .into(users)
+///     .get_result::<User>(&connection)
+///     .unwrap();
+/// let changes = User::new(user.id, "Jim");
+/// diesel::update(users.find(user.id))
+///     .set(&changes)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// let user_in_db = users.find(user.id).first(&connection);
+/// assert_eq!(Ok(changes), user_in_db);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! AsChangeset {
     // Provide a default value for treat_none_as_null if not provided
