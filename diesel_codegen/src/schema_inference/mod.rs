@@ -6,6 +6,7 @@ mod sqlite;
 
 use diesel::{QueryResult, Connection};
 use syntax::ast;
+use syntax::tokenstream::TokenTree;
 use syntax::codemap::Span;
 use syntax::ext::base::*;
 use syntax::parse::token::{InternedString, str_to_ident};
@@ -17,7 +18,7 @@ use self::data_structures::*;
 pub fn expand_load_table<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(ref exprs) if exprs.is_empty() => {
@@ -49,7 +50,7 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
 pub fn expand_infer_schema<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[ast::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
@@ -132,7 +133,7 @@ fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
 }
 
 fn column_def_tokens(cx: &mut ExtCtxt, attr: &ColumnInformation, conn: &InferConnection)
-    -> Vec<ast::TokenTree>
+    -> Vec<TokenTree>
 {
     let column_name = str_to_ident(&attr.column_name);
     let tpe = determine_column_type(cx, attr, conn);

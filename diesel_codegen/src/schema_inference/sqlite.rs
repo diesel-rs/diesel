@@ -45,7 +45,7 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
     } else if is_double(&type_name) {
         quote_ty!(cx, ::diesel::types::Double)
     } else {
-        cx.span_err(cx.original_span(), &format!("Unsupported type: {}", type_name));
+        cx.span_err(cx.expansion_cause(), &format!("Unsupported type: {}", type_name));
         quote_ty!(cx, ())
     };
 
