@@ -2,6 +2,7 @@
 #![deny(warnings)]
 
 #[macro_use] extern crate diesel;
+extern crate inflector;
 
 #[cfg(feature = "with-syntex")]
 extern crate syntex;

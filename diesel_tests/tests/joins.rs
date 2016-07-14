@@ -15,8 +15,8 @@ fn belongs_to() {
     let seans_post = Post::new(1, 1, "Hello", Some("Content"));
     let tess_post = Post::new(2, 2, "World", None);
 
-    let expected_data = vec![(seans_post, sean), (tess_post, tess)];
-    let source = posts::table.inner_join(users::table);
+    let expected_data = vec![(sean, seans_post), (tess, tess_post)];
+    let source = posts::table.inner_join(users::table, posts::user_id);
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -31,7 +31,7 @@ fn select_single_from_join() {
         (2, 2, 'World')
     ").unwrap();
 
-    let source = posts::table.inner_join(users::table);
+    let source = posts::table.inner_join(users::table, posts::user_id);
     let select_name = source.select(users::name);
     let select_title = source.select(posts::title);
 
@@ -55,7 +55,7 @@ fn select_multiple_from_join() {
         (2, 2, 'World')
     ").unwrap();
 
-    let source = posts::table.inner_join(users::table)
+    let source = posts::table.inner_join(users::table, posts::user_id)
         .select((users::name, posts::title));
 
     let expected_data = vec![
@@ -74,7 +74,7 @@ fn select_only_one_side_of_join() {
     connection.execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
         .unwrap();
 
-    let source = users::table.inner_join(posts::table).select(users::all_columns);
+    let source = users::table.inner_join(posts::table, posts::user_id).select(users::all_columns);
 
     let expected_data = vec![User::new(2, "Tess")];
     let actual_data: Vec<_> = source.load(&connection).unwrap();
@@ -101,7 +101,7 @@ fn left_outer_joins() {
         (sean, Some(seans_second_post)),
         (tess, None)
     ];
-    let source = users::table.left_outer_join(posts::table);
+    let source = users::table.left_outer_join(posts::table, posts::user_id);
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -121,7 +121,7 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         ("Sean".to_string(), Some("World".to_string())),
         ("Tess".to_string(), None),
     ];
-    let source = users::table.left_outer_join(posts::table).select((users::name, posts::title));
+    let source = users::table.left_outer_join(posts::table, posts::user_id).select((users::name, posts::title));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -142,7 +142,7 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
         None,
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((posts::title, posts::body));
+    let source = users::table.left_outer_join(posts::table, posts::user_id).select((posts::title, posts::body));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -150,6 +150,9 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
 
 #[test]
 fn select_complex_from_left_join() {
+    use diesel::query_builder::SelectStatement;
+    use diesel::types::*;
+    
     let connection = connection_with_sean_and_tess_in_users_table();
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
@@ -160,12 +163,14 @@ fn select_complex_from_left_join() {
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
     let expected_data = vec![
-        (sean.clone(), Some(("Hello".to_string(), Some("Content".to_string())))),
-        (sean, Some(("World".to_string(), None))),
-        (tess, None),
+      (sean.clone(), Some(("Hello".to_string(), Some("Content".to_string())))),
+      (sean, Some(("World".to_string(), None))),
+      (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body)));
+    let source: SelectStatement<((Integer, Text, Nullable<Text>),_), _,_>
+        = users::table.left_outer_join(posts::table, posts::user_id)
+                      .select((users::all_columns, (posts::title, posts::body)));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -173,6 +178,9 @@ fn select_complex_from_left_join() {
 
 #[test]
 fn select_right_side_with_nullable_column_first() {
+    use diesel::query_builder::SelectStatement;
+    use diesel::types::*;
+    
     let connection = connection_with_sean_and_tess_in_users_table();
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
@@ -188,10 +196,12 @@ fn select_right_side_with_nullable_column_first() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title)));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let source: SelectStatement<((Integer, Text, Nullable<Text>),_), _,_>
+        = users::table.left_outer_join(posts::table, posts::user_id)
+                      .select((users::all_columns, (posts::body, posts::title)));
+   let actual_data: Vec<_> = source.load(&connection).unwrap();
 
-    assert_eq!(expected_data, actual_data);
+   assert_eq!(expected_data, actual_data);
 }
 
 #[test]
@@ -202,13 +212,13 @@ fn select_then_join() {
     connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
         .unwrap();
     let expected_data = vec![1];
-    let data: Vec<_> = users.select(id).inner_join(posts::table)
+    let data: Vec<_> = users.select(id).inner_join(posts::table, posts::user_id)
         .load(&connection).unwrap();
 
     assert_eq!(expected_data, data);
 
     let expected_data = vec![1, 2];
-    let data: Vec<_> = users.select(id).left_outer_join(posts::table)
+    let data: Vec<_> = users.select(id).left_outer_join(posts::table, posts::user_id)
         .load(&connection).unwrap();
 
     assert_eq!(expected_data, data);
@@ -229,17 +239,18 @@ fn join_through_other() {
         NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
         NewComment(posts[2].id, "Best post ever!!!")
     ], comments::table, &connection);
+    
     let comments = comments::table.load::<Comment>(&connection).unwrap();
 
-    let data = users.inner_join(comments::table).load(&connection)
+    let data = users.inner_join(posts::table, posts::user_id).inner_join(comments::table, comments::post_id).select((users::all_columns(), comments::table::all_columns())).load(&connection)
         .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
     let expected_data = vec![
-        (sean.clone(), comments[0].clone()),
-        (tess, comments[1].clone()),
-        (sean, comments[2].clone()),
+       (sean.clone(), comments[0].clone()),
+       (tess, comments[1].clone()),
+       (sean, comments[2].clone())
     ];
     assert_eq!(expected_data, data);
 }

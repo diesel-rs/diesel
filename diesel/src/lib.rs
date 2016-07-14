@@ -95,6 +95,7 @@ pub mod prelude {
     pub use query_dsl::*;
     pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
     pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+    pub use query_source::joins::{InnerJoinable, LeftJoinable};
 }
 
 pub use prelude::*;

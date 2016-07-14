@@ -84,7 +84,7 @@ macro_rules! bench_medium_complex_query {
 
             b.iter(|| {
                 use schema::users::dsl::*;
-                let target = users.left_outer_join(posts::table)
+                let target = users.left_outer_join(posts::table, posts::user_id)
                     .filter(hair_color.eq("black"))
                     .order(name.desc());
                 target.load::<(User, Option<Post>)>(&conn).unwrap()
@@ -103,7 +103,7 @@ macro_rules! bench_medium_complex_query {
 
             b.iter(|| {
                 use schema::users::dsl::*;
-                let target = users.left_outer_join(posts::table)
+                let target = users.left_outer_join(posts::table, posts::user_id)
                     .filter(hair_color.eq("black"))
                     .order(name.desc())
                     .into_boxed();

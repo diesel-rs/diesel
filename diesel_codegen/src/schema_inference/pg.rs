@@ -26,8 +26,6 @@ table! {
 }
 
 joinable!(pg_attribute -> pg_type (atttypid));
-select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
-select_column_workaround!(pg_type -> pg_attribute (oid, typname));
 
 table! {
     pg_index (indrelid) {
@@ -81,7 +79,7 @@ pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<
 
     let table_oid = pg_class.select(oid).filter(relname.eq(table_name)).limit(1);
 
-    pg_attribute.inner_join(pg_type)
+    pg_attribute.inner_join(pg_type, atttypid)
         .select((attname, typname, attnotnull))
         .filter(attrelid.eq_any(table_oid))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))

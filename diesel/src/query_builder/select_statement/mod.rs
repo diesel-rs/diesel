@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::*;
 use query_source::*;
+use query_source::joins::{InnerJoinable, LeftJoinable};
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
@@ -65,14 +66,18 @@ impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
         }
     }
 
-    pub fn inner_join<T>(self, other: T)
-        -> SelectStatement<ST, S, InnerJoinSource<F, T>, D, W, O, L, Of, G> where
+    pub fn inner_join<T, FK>(self, other: T, by: FK)
+        -> SelectStatement<ST, S, InnerJoinSource<F, T, FK>, D, W, O, L, Of, G> where
             T: Table,
-            F: Table + JoinTo<T, joins::Inner>,
+            F: Table + JoinTo<T, joins::Inner, FK> + InnerJoinable,
+            FK: Column,
+            F::JoinAllColumns: SelectableExpression<InnerJoinSource<F, T,FK>,
+                <F as JoinTo<T, joins::Inner, FK>>::JoinSqlType>
+
     {
         SelectStatement::new(
             self.select,
-            self.from.inner_join(other),
+            self.from.inner_join(other, by),
             self.distinct,
             self.where_clause,
             self.order,
@@ -82,14 +87,18 @@ impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
         )
     }
 
-    pub fn left_outer_join<T>(self, other: T)
-        -> SelectStatement<ST, S, LeftOuterJoinSource<F, T>, D, W, O, L, Of, G> where
+    pub fn left_outer_join<T, FK>(self, other: T, by: FK)
+        -> SelectStatement<ST, S, LeftOuterJoinSource<F, T, FK>, D, W, O, L, Of, G> where
+            F: JoinTo<T, joins::LeftOuter, FK> + LeftJoinable,
             T: Table,
-            F: Table + JoinTo<T, joins::LeftOuter>,
+            FK: Column,
+            T::SqlType: ::types::IntoNullable,
+            F::JoinAllColumns: SelectableExpression<LeftOuterJoinSource<F, T, FK>,
+                <F as JoinTo<T, joins::LeftOuter, FK>>::JoinSqlType>
     {
         SelectStatement::new(
             self.select,
-            self.from.left_outer_join(other),
+            self.from.left_outer_join(other, by),
             self.distinct,
             self.where_clause,
             self.order,
