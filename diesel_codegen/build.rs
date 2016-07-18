@@ -19,7 +19,7 @@ mod inner {
                 fn $name<'cx>(
                     cx: &'cx mut ExtCtxt,
                     sp: Span,
-                    tts: &[tokenstream::TokenTree],
+                    tts: &[TokenTree],
                 ) -> Box<base::MacResult + 'cx> {
                     syntax::ext::quote::$name(cx, sp, tts)
                 }

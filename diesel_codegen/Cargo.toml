@@ -11,12 +11,12 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [build-dependencies]
-syntex = { version = "0.31.0", optional = true }
-syntex_syntax = { version = "0.31.0", optional = true }
+syntex = { version = ">= 0.37.0, < 0.39.0", optional = true }
+syntex_syntax = { version = ">= 0.37.0, < 0.39.0", optional = true }
 
 [dependencies]
-syntex = { version = "0.31.0", optional = true }
-syntex_syntax = { version = "0.31.0", optional = true }
+syntex = { version = ">= 0.37.0, < 0.39.0", optional = true }
+syntex_syntax = { version = ">= 0.37.0, < 0.39.0", optional = true }
 diesel = { git = "https://github.com/diesel-rs/diesel.git", default-features = false }
 
 [dev-dependencies]
