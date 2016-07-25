@@ -3,7 +3,7 @@ use schema::*;
 
 #[test]
 fn association_where_struct_name_doesnt_match_table_name() {
-    #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
+    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
     #[belongs_to(post)]
     #[table_name="comments"]
     struct OtherComment {
@@ -51,7 +51,7 @@ fn association_where_parent_and_child_have_underscores() {
         }
     }
 
-    #[derive(PartialEq, Eq, Debug, Clone, Queryable)]
+    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
     #[belongs_to(special_post)]
     struct SpecialComment {
         id: i32,
@@ -112,6 +112,7 @@ mod associations_can_have_nullable_foreign_keys {
     }
 
     #[belongs_to(foo)]
+    #[derive(Identifiable)]
     pub struct Bar {
         id: i32,
         foo_id: Option<i32>,

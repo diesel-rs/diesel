@@ -28,7 +28,6 @@ pub fn expand_belongs_to(
             span: span,
         };
 
-        belonging_to_dsl_impl(&builder, push);
         push(Annotatable::Item(join_to_impl(&builder)));
         if let Some(item) = belongs_to_impl(&builder) {
             push(Annotatable::Item(item));
@@ -89,10 +88,6 @@ impl<'a, 'b> BelongsToAssociationBuilder<'a, 'b> {
             .ty.clone()
     }
 
-    fn primary_key_name(&self) -> ast::Ident {
-        str_to_ident("id")
-    }
-
     fn primary_key_type(&self) -> P<ast::Ty> {
         let ty = self.foreign_key_type();
         ty_param_of_option(&ty).map(|t| t.clone())
@@ -116,82 +111,26 @@ fn capitalize_from_association_name(name: String) -> String {
     result
 }
 
-fn belonging_to_dsl_impl(
-    builder: &BelongsToAssociationBuilder,
-    push: &mut FnMut(Annotatable),
-) {
-    let parent_struct_name = builder.parent_struct_name();
-    let child_struct_name = builder.child_struct_name();
-    let child_table = builder.child_table();
-    let foreign_key = builder.foreign_key();
-    let primary_key_type = builder.primary_key_type();
-    let primary_key_name = builder.primary_key_name();
-
-    let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<$parent_struct_name> for $child_struct_name {
-            type Output = ::diesel::helper_types::FindBy<
-                $child_table,
-                $foreign_key,
-                $primary_key_type,
-            >;
-
-            fn belonging_to(model: &$parent_struct_name) -> Self::Output {
-                $child_table.filter($foreign_key.eq(model.$primary_key_name.clone()))
-            }
-        }
-    ).unwrap();
-    push(Annotatable::Item(item));
-
-    let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<Vec<$parent_struct_name>> for $child_struct_name {
-            type Output = ::diesel::helper_types::Filter<
-                $child_table,
-                ::diesel::expression::helper_types::EqAny<
-                    $foreign_key,
-                    Vec<$primary_key_type>,
-                >,
-            >;
-
-            fn belonging_to(parents: &Vec<$parent_struct_name>) -> Self::Output {
-                let ids = parents.iter().map(|p| p.$primary_key_name.clone()).collect::<Vec<_>>();
-                $child_table.filter($foreign_key.eq_any(ids))
-            }
-        }
-    ).unwrap();
-    push(Annotatable::Item(item));
-
-    let item = quote_item!(builder.cx,
-        impl ::diesel::BelongingToDsl<[$parent_struct_name]> for $child_struct_name {
-            type Output = ::diesel::helper_types::Filter<
-                $child_table,
-                ::diesel::expression::helper_types::EqAny<
-                    $foreign_key,
-                    Vec<$primary_key_type>,
-                >,
-            >;
-
-            fn belonging_to(parents: &[$parent_struct_name]) -> Self::Output {
-                let ids = parents.iter().map(|p| p.$primary_key_name.clone()).collect::<Vec<_>>();
-                $child_table.filter($foreign_key.eq_any(ids))
-            }
-        }
-    ).unwrap();
-    push(Annotatable::Item(item));
-}
-
 fn belongs_to_impl(builder: &BelongsToAssociationBuilder) -> Option<P<ast::Item>> {
     let parent_struct_name = builder.parent_struct_name();
     let child_struct_name = builder.child_struct_name();
     let primary_key_type = builder.primary_key_type();
     let foreign_key_name = builder.foreign_key_name();
+    let foreign_key = builder.foreign_key();
 
     if is_option_ty(&builder.foreign_key_type()) {
         None
     } else {
         Some(quote_item!(builder.cx,
             impl ::diesel::associations::BelongsTo<$parent_struct_name> for $child_struct_name {
+                type ForeignKeyColumn = $foreign_key;
+
                 fn foreign_key(&self) -> $primary_key_type {
                     self.$foreign_key_name
+                }
+
+                fn foreign_key_column() -> Self::ForeignKeyColumn {
+                    $foreign_key
                 }
             }
         ).unwrap())

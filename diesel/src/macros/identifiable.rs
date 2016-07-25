@@ -97,7 +97,6 @@ macro_rules! Identifiable {
         }
     };
 
-
     // Handle struct with no generics
     (
         ($table_name:ident)
