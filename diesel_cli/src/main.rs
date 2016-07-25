@@ -154,7 +154,7 @@ fn run_migration_command(matches: &ArgMatches) {
 use std::fmt::Display;
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
     matches.value_of("MIGRATION_VERSION").map(|s| Box::new(s) as Box<Display>)
-        .unwrap_or_else(|| Box::new(Local::now().format("%Y%m%d%H%M%S")))
+        .unwrap_or_else(|| Box::new(UTC::now().format("%Y%m%d%H%M%S")))
 }
 
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
