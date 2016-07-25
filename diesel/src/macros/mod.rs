@@ -340,38 +340,38 @@ macro_rules! joinable_inner {
 #[doc(hidden)]
 macro_rules! select_column_workaround {
     ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent -> $child $column_name);)+
-        select_column_inner!($parent -> $child star);
+        $(select_column_inner!($parent::table, $child::table, $parent::$column_name);)+
+        select_column_inner!($parent::table, $child::table, $parent::star);
     }
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! select_column_inner {
-    ($parent:ident -> $child:ident $column_name:ident) => {
+    ($parent:ty, $child:ty, $column:ty $(,)*) => {
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
-        > for $parent::$column_name
+            $crate::query_source::InnerJoinSource<$child, $parent>,
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
+            $crate::query_source::InnerJoinSource<$parent, $child>,
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-            <<$parent::$column_name as $crate::Expression>::SqlType
+            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
+            <<$column as $crate::Expression>::SqlType
                 as $crate::types::IntoNullable>::Nullable,
-        > for $parent::$column_name
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
+            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
+        > for $column
         {
         }
     }
@@ -470,6 +470,7 @@ macro_rules! print_sql {
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 
+#[macro_use] mod associations;
 #[macro_use] mod identifiable;
 #[macro_use] mod insertable;
 #[macro_use] mod queryable;

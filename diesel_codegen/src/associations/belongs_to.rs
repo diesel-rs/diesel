@@ -163,23 +163,5 @@ fn selectable_column_impl(
     let child_table = builder.child_table();
     let column = builder.column_path(column_name);
 
-    [quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$parent_table, $child_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$child_table, $parent_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$child_table, $parent_table>,
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$parent_table, $child_table>,
-            <<$column as ::diesel::Expression>::SqlType
-                as ::diesel::types::IntoNullable>::Nullable,
-        > for $column {}
-    ).unwrap()].to_vec()
+    [quote_item!(builder.cx, select_column_inner!($child_table, $parent_table, $column);).unwrap()].to_vec()
 }

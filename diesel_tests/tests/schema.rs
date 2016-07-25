@@ -30,7 +30,7 @@ impl User {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 pub struct Comment {
     id: i32,
     post_id: i32,

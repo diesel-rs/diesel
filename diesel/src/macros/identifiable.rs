@@ -17,7 +17,7 @@
 /// }
 ///
 /// Identifiable! {
-///     (users)
+///     #[table_name(users)]
 ///     struct User {
 ///         id: i32,
 ///         name: String,
@@ -34,6 +34,7 @@
 /// ```ignore
 /// custom_derive! {
 ///     #[derive(Identifiable)]
+///     #[table_name(users)]
 ///     struct User {
 ///         id: i32,
 ///         name: String,
@@ -42,16 +43,34 @@
 /// ```
 #[macro_export]
 macro_rules! Identifiable {
-    // Strip meta items, pub (if present) and struct from definition
+    // Extract table name from meta item
     (
-        $args:tt
-        $(#[$ignore:meta])*
-        $(pub)* struct $($body:tt)*
+        $(())*
+        #[table_name($table_name:ident)]
+        $($rest:tt)*
     ) => {
         Identifiable! {
-            $args
-            $($body)*
+            (table_name = $table_name,)
+            $($rest)*
         }
+    };
+
+    // Strip meta items that aren't table name
+    (
+        $args:tt
+        #[$ignore:meta]
+        $($rest:tt)*
+    ) => {
+        Identifiable!($args $($rest)*);
+    };
+
+    // Strip pub (if present) and struct from definition
+    // After this step, we will go to the step at the bottom.
+    (
+        $args:tt
+        $(pub)* struct $($body:tt)*
+    ) => {
+        Identifiable!($args $($body)*);
     };
 
     // We found the `id` field, return the final impl
@@ -99,13 +118,13 @@ macro_rules! Identifiable {
 
     // Handle struct with no generics
     (
-        ($table_name:ident)
+        ($($args:tt)*)
         $struct_name:ident
         $body:tt $(;)*
     ) => {
         __diesel_parse_struct_body! {
             (
-                table_name = $table_name,
+                $($args)*
                 struct_ty = $struct_name,
             ),
             callback = Identifiable,
@@ -137,7 +156,7 @@ fn derive_identifiable_on_simple_struct() {
     }
 
     Identifiable! {
-        (foos)
+        #[table_name(foos)]
         struct Foo {
             id: i32,
             foo: i32,
@@ -161,7 +180,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
     }
 
     Identifiable! {
-        (foos)
+        #[table_name(foos)]
         struct Foo {
             foo: i32,
             id: i32,
@@ -185,7 +204,7 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
     }
 
     Identifiable! {
-        (bars)
+        #[table_name(bars)]
         struct Foo {
             id: &'static str,
             foo: i32,
