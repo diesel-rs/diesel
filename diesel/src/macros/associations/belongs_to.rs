@@ -128,11 +128,13 @@ macro_rules! BelongsTo {
             }
         }
 
-        __diesel_belongs_to_joinable_impl!(
-            parent_table_ty = <$parent_struct as $crate::associations::Identifiable>::Table,
-            parent_table_expr = <$parent_struct as $crate::associations::Identifiable>::table(),
-            child_table = $child_table_name::table,
+        joinable_inner!(
+            left_table_ty = $child_table_name::table,
+            right_table_ty = <$parent_struct as $crate::associations::Identifiable>::Table,
+            right_table_expr = <$parent_struct as $crate::associations::Identifiable>::table(),
             foreign_key = $child_table_name::$foreign_key_name,
+            primary_key_ty = <<$parent_struct as $crate::associations::Identifiable>::Table as $crate::Table>::PrimaryKey,
+            primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::Identifiable>::table()),
         );
 
         $(select_column_inner!(
@@ -160,41 +162,6 @@ macro_rules! BelongsTo {
             ),
             callback = BelongsTo,
             body = $body,
-        }
-    };
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __diesel_belongs_to_joinable_impl {
-    (
-        parent_table_ty = $parent_table_ty:ty,
-        parent_table_expr = $parent_table_expr:expr,
-        child_table = $child_table:path,
-        foreign_key = $foreign_key:path,
-    ) => {
-        impl<JoinType> $crate::JoinTo<$parent_table_ty, JoinType> for $child_table {
-            type JoinClause = $crate::query_builder::nodes::Join<
-                <$child_table as $crate::QuerySource>::FromClause,
-                <$parent_table_ty as $crate::QuerySource>::FromClause,
-                $crate::expression::helper_types::Eq<
-                    $crate::expression::nullable::Nullable<$foreign_key>,
-                    $crate::expression::nullable::Nullable<
-                        <$parent_table_ty as $crate::query_source::Table>::PrimaryKey>,
-                >,
-                JoinType,
-            >;
-
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::{QuerySource, Table, ExpressionMethods};
-
-                $crate::query_builder::nodes::Join::new(
-                    self.from_clause(),
-                    $parent_table_expr.from_clause(),
-                    $foreign_key.nullable().eq($parent_table_expr.primary_key().nullable()),
-                    join_type,
-                )
-            }
         }
     };
 }
