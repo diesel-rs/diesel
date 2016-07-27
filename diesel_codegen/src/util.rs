@@ -74,7 +74,7 @@ pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
 
     impl fold::Folder for StripAttributeFolder {
         fn fold_attribute(&mut self, attr: ast::Attribute) -> Option<ast::Attribute> {
-            if attr.check_name("table_name") {
+            if attr.check_name("table_name") || attr.check_name("column_name") {
                 None
             } else {
                 Some(attr)
