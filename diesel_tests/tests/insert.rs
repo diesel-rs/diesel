@@ -21,6 +21,19 @@ fn insert_records() {
 }
 
 #[test]
+fn insert_records_empty_array() {
+    use schema::users::table as users;
+    let connection = connection();
+    let new_users: &[NewUser] = &[];
+
+    batch_insert(new_users, users, &connection);
+    let actual_users: Vec<User> = users.load::<User>(&connection).unwrap();
+
+    let expected_users: Vec<User> = vec![];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
 #[cfg(not(feature = "sqlite"))]
 fn insert_records_using_returning_clause() {
     use schema::users::table as users;

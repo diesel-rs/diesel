@@ -66,6 +66,11 @@ pub trait ExecuteDsl<Conn: Connection>: Sized + QueryFragment<Conn::Backend> + Q
     /// [`update`](../query_builder/fn.update.html) and
     /// [`delete`](../query_builder/fn.delete.html)
     fn execute(&self, conn: &Conn) -> QueryResult<usize> {
+        // Skip query if it doesn't contain any values
+        if self.is_empty() {
+            return Ok(0);
+        }
+
         conn.execute_returning_count(self)
     }
 }
