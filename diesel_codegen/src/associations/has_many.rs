@@ -81,38 +81,20 @@ fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
 }
 
 fn selectable_column_hack(builder: &HasManyAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().flat_map(|attr| {
+    let mut result = builder.model.attrs.iter().map(|attr| {
         selectable_column_impl(builder, attr.column_name)
     }).collect::<Vec<_>>();
-    result.append(&mut selectable_column_impl(builder, str_to_ident("star")));
+    result.push(selectable_column_impl(builder, str_to_ident("star")));
     result
 }
 
 fn selectable_column_impl(
     builder: &HasManyAssociationBuilder,
     column_name: ast::Ident,
-) -> Vec<P<ast::Item>> {
+) -> P<ast::Item> {
     let table = builder.table();
     let foreign_table = builder.foreign_table();
     let column = builder.column_path(column_name);
 
-    [quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$table, $foreign_table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::InnerJoinSource<$foreign_table, $table>
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$table, $foreign_table>,
-        > for $column {}
-    ).unwrap(), quote_item!(builder.cx,
-        impl ::diesel::expression::SelectableExpression<
-            ::diesel::query_source::LeftOuterJoinSource<$foreign_table, $table>,
-            <<$column as ::diesel::Expression>::SqlType
-                as ::diesel::types::IntoNullable>::Nullable,
-        > for $column {}
-    ).unwrap()].to_vec()
+    quote_item!(builder.cx, select_column_inner!($table, $foreign_table, $column);).unwrap()
 }

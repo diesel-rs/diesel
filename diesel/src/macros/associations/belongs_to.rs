@@ -10,9 +10,9 @@
 ///
 /// ## foreign_key
 ///
-/// Required. The name of the foreing key column for this association.
+/// Required. The name of the foreign key column for this association.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```no_run
 /// # #[macro_use] extern crate diesel;
