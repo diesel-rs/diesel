@@ -1,11 +1,12 @@
-use syntax::ast;
 use syntax::ast::TyKind;
+use syntax::ast;
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::build::AstBuilder;
-use syntax::parse::token::{str_to_ident, intern_and_get_ident};
+use syntax::parse::token::{self, str_to_ident, intern_and_get_ident};
 use syntax::ptr::P;
+use syntax::tokenstream::TokenTree;
 
 fn str_value_of_attr(
     cx: &mut ExtCtxt,
@@ -116,4 +117,15 @@ pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
 
 pub fn is_option_ty(ty: &ast::Ty) -> bool {
     ty_param_of_option(ty).is_some()
+}
+
+pub fn lifetime_list_tokens(lifetimes: &[ast::LifetimeDef], span: Span) -> Vec<TokenTree> {
+    lifetimes.iter()
+        .map(|ld| {
+            let name = ld.lifetime.name;
+            let lt = token::Lifetime(ast::Ident::with_empty_ctxt(name));
+            [TokenTree::Token(span, lt)]
+        })
+        .collect::<Vec<_>>()
+        .join(&TokenTree::Token(span, token::Comma))
 }

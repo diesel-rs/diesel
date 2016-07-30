@@ -3,6 +3,7 @@ use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
 use syntax::parse::token::str_to_ident;
+use syntax::tokenstream::TokenTree;
 
 use attr::Attr;
 use util::{str_value_of_attr_with_name, struct_ty};
@@ -11,6 +12,7 @@ pub struct Model {
     pub ty: P<ast::Ty>,
     pub attrs: Vec<Attr>,
     pub name: ast::Ident,
+    pub generics: ast::Generics,
     table_name_from_annotation: Option<ast::Ident>,
 }
 
@@ -29,6 +31,7 @@ impl Model {
                     ty: ty,
                     attrs: attrs,
                     name: item.ident,
+                    generics: generics,
                     table_name_from_annotation: table_name_from_annotation,
                 }
             })
@@ -47,10 +50,8 @@ impl Model {
         })
     }
 
-    pub fn attr_named(&self, name: ast::Ident) -> Option<&Attr> {
-        self.attrs.iter().find(|attr| {
-            attr.field_name.map(|f| f.name) == Some(name.name)
-        })
+    pub fn field_tokens_for_stable_macro(&self, cx: &mut ExtCtxt) -> Vec<Vec<TokenTree>> {
+        self.attrs.iter().map(|a| a.to_stable_macro_tokens(cx)).collect()
     }
 }
 
