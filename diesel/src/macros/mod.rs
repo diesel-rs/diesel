@@ -487,6 +487,7 @@ macro_rules! print_sql {
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 
+#[macro_use] mod as_changeset;
 #[macro_use] mod associations;
 #[macro_use] mod identifiable;
 #[macro_use] mod insertable;
