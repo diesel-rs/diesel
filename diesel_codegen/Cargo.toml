@@ -1,6 +1,6 @@
 [package]
 name = "diesel_codegen"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Annotations to remove boilerplate from Diesel"
@@ -10,7 +10,7 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
-diesel_codegen_syntex = { path = "../diesel_codegen_syntex", default-features = false }
+diesel_codegen_syntex = { version = "0.7.0", default-features = false }
 
 [features]
 default = ["postgres"]

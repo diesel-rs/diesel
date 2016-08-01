@@ -1,6 +1,6 @@
 [package]
 name = "diesel_codegen_syntex"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
@@ -17,7 +17,7 @@ syntex_syntax = { version = ">= 0.37.0, < 0.39.0", optional = true }
 [dependencies]
 syntex = { version = ">= 0.37.0, < 0.39.0", optional = true }
 syntex_syntax = { version = ">= 0.37.0, < 0.39.0", optional = true }
-diesel = { git = "https://github.com/diesel-rs/diesel.git", default-features = false }
+diesel = { version = "0.7.0", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3.4"

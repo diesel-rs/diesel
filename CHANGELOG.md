@@ -5,6 +5,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [0.7.0] - 2016-08-01
+
 ### Added
 
 * The initial APIs have been added in the form of `#[has_many]` and
