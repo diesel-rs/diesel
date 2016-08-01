@@ -32,8 +32,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   newer nightly version on the date that Rust releases.
 
 * `diesel_codegen` has been split into two crates. `diesel_codegen` and
-  `diesel_codegen_syntex`. See [this commit](FIXME COMMIT LINK HERE) for
-  migration information.
+  `diesel_codegen_syntex`. See [this commit][syntex-split] for migration
+  information.
 
 * Most structs that implement `Queryable` will now also need
   `#[derive(Identifiable)]`.
@@ -55,6 +55,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Structs which implement `Identifiable` can now be passed to `update` and
   `delete`. This means you can now write `delete(&user).execute(&connection)`
   instead of `delete(users.find(user.id)).execute(&connection)`
+
+[syntex-split]: https://github.com/diesel-rs/diesel/commit/36b8801bf5e9594443743e6a7c62e29d3dce36b7
 
 ### Fixed
 
