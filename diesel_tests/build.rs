@@ -1,7 +1,7 @@
 #[cfg(not(feature = "unstable"))]
 mod inner {
     extern crate syntex;
-    extern crate diesel_codegen;
+    extern crate diesel_codegen_syntex as diesel_codegen;
     extern crate dotenv_codegen;
 
     use std::env;

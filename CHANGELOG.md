@@ -31,6 +31,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel now targets `nightly-2016-07-07`. Future releases will update to a
   newer nightly version on the date that Rust releases.
 
+* `diesel_codegen` has been split into two crates. `diesel_codegen` and
+  `diesel_codegen_syntex`. See [this commit](FIXME COMMIT LINK HERE) for
+  migration information.
+
 * Most structs that implement `Queryable` will now also need
   `#[derive(Identifiable)]`.
 
