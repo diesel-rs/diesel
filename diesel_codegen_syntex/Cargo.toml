@@ -23,7 +23,7 @@ diesel = { git = "https://github.com/diesel-rs/diesel.git", default-features = f
 tempdir = "0.3.4"
 
 [features]
-default = ["with-syntex"]
+default = ["with-syntex", "postgres"]
 with-syntex = ["syntex", "syntex_syntax"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
