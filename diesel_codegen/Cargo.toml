@@ -13,6 +13,7 @@ keywords = ["orm", "database", "postgres", "sql", "codegen"]
 diesel_codegen_syntex = { path = "../diesel_codegen_syntex", default-features = false }
 
 [features]
+default = ["postgres"]
 postgres = ["diesel_codegen_syntex/postgres"]
 sqlite = ["diesel_codegen_syntex/sqlite"]
 
