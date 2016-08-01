@@ -237,6 +237,8 @@ macro_rules! AsChangeset {
     };
 }
 
+// FIXME: This can be cleaned up significantly when https://github.com/rust-lang/rust/issues/27245
+// is stable
 #[doc(hidden)]
 #[macro_export]
 macro_rules! AsChangeset_construct_changeset_ty {
