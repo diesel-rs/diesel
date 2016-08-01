@@ -63,7 +63,7 @@
 //!
 //! [belonging-to]: prelude/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
-//! ```rust
+//! ```ignore
 //! let user = try!(users::find(1).first(&connection));
 //! let posts = Post::belonging_to(&user).load(&connection);
 //! ```
