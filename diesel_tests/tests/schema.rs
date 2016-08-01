@@ -31,10 +31,21 @@ impl User {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
+#[belongs_to(Post)]
 pub struct Comment {
     id: i32,
     post_id: i32,
     text: String,
+}
+
+impl Comment {
+    pub fn new(id: i32, post_id: i32, text: &str) -> Self {
+        Comment {
+            id: id,
+            post_id: post_id,
+            text: text.into(),
+        }
+    }
 }
 
 #[cfg(feature = "postgres")]

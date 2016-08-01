@@ -16,7 +16,8 @@ pub trait GroupedBy<Parent>: IntoIterator + Sized {
     fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Self::Item>>;
 }
 
-impl<Parent, Child> GroupedBy<Parent> for Vec<Child> where
+impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
+    Iter: IntoIterator<Item=Child>,
     Child: BelongsTo<Parent>,
     Parent: Identifiable,
 {

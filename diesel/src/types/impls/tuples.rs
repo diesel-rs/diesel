@@ -1,3 +1,4 @@
+use associations::{BelongsTo, Identifiable};
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{ColumnInsertValue, InsertValues};
@@ -276,6 +277,21 @@ macro_rules! tuple_impls {
                         try!(e!(self.$idx.collect_binds(out)));
                     )+
                     Ok(())
+                }
+            }
+
+            impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
+                A: BelongsTo<Parent>,
+                Parent: Identifiable,
+            {
+                type ForeignKeyColumn = A::ForeignKeyColumn;
+
+                fn foreign_key(&self) -> Parent::Id {
+                    self.0.foreign_key()
+                }
+
+                fn foreign_key_column() -> Self::ForeignKeyColumn {
+                    A::foreign_key_column()
                 }
             }
         )+
