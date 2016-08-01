@@ -5,5 +5,5 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { path = "../diesel", features = ["sqlite", "postgres"] }
-diesel_codegen = { path = "../diesel_codegen", default-features = false, features = ["nightly", "postgres", "sqlite"] }
+diesel_codegen = { path = "../diesel_codegen", features = ["postgres", "sqlite"] }
 compiletest_rs = "0.2.0"
