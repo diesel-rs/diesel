@@ -13,6 +13,8 @@
 //! `#[belongs_to(Foo)]` with `#[derive(BelongsTo(Foo, foreign_key = foo_id))]` and
 //! `#[has_many(bars)]` with `#[derive(HasMany(bars, foreign_key = bar_id))]`.
 //!
+//! [custom-derive]: https://crates.io/crates/custom_derive
+//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with `#[has_many]` and
 //! `#[belongs_to]`.
