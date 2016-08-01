@@ -54,17 +54,18 @@
 /// # fn main() {
 /// #     use users::dsl::*;
 /// #     let connection = establish_connection();
-/// let user = diesel::insert(&NewUser::new("Sean"))
+/// diesel::insert(&NewUser::new("Sean"))
 ///     .into(users)
-///     .get_result::<User>(&connection)
+///     .execute(&connection)
 ///     .unwrap();
-/// let changes = User::new(user.id, "Jim");
-/// diesel::update(users.find(user.id))
+/// let user_id = users.select(id).order(id.desc()).first(&connection).unwrap();
+/// let changes = User::new(user_id, "Jim");
+/// diesel::update(users.find(user_id))
 ///     .set(&changes)
 ///     .execute(&connection)
 ///     .unwrap();
 ///
-/// let user_in_db = users.find(user.id).first(&connection);
+/// let user_in_db = users.find(user_id).first(&connection);
 /// assert_eq!(Ok(changes), user_in_db);
 /// # }
 /// ```
