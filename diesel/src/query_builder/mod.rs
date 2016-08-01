@@ -84,11 +84,6 @@ pub trait QueryFragment<DB: Backend> {
 
     /// Determine whether this query fragment can be cached
     fn is_safe_to_cache_prepared(&self) -> bool;
-
-    /// Determine whether this query fragment is actually empty
-    ///
-    /// This will be used to see if the query can be skipped
-    fn is_empty(&self) -> bool { false }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where

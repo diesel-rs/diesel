@@ -2,7 +2,7 @@ use connection::Connection;
 use helper_types::Limit;
 use query_builder::{QueryFragment, AsQuery, QueryId};
 use query_source::Queryable;
-use result::QueryResult;
+use result::{Error, QueryResult};
 use super::LimitDsl;
 use types::HasSqlType;
 
@@ -66,12 +66,12 @@ pub trait ExecuteDsl<Conn: Connection>: Sized + QueryFragment<Conn::Backend> + Q
     /// [`update`](../query_builder/fn.update.html) and
     /// [`delete`](../query_builder/fn.delete.html)
     fn execute(&self, conn: &Conn) -> QueryResult<usize> {
-        // Skip query if it doesn't contain any values
-        if self.is_empty() {
-            return Ok(0);
+        match conn.execute_returning_count(self) {
+            Ok(num_affected) => Ok(num_affected),
+            // Query did not contain anything (e.g. when batch inserting zero rows).
+            Err(Error::EmptyQuery) => Ok(0),
+            Err(e) => Err(e),
         }
-
-        conn.execute_returning_count(self)
     }
 }
 
