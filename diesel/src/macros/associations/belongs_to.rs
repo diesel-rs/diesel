@@ -68,6 +68,7 @@ macro_rules! BelongsTo {
             (
                 parent_struct = $parent_struct,
                 foreign_key_name = $foreign_key_name,
+                optional_foreign_key = "false",
             )
             $($rest)*
         }
@@ -107,14 +108,10 @@ macro_rules! BelongsTo {
             struct_name = $struct_name:ident,
             parent_struct = $parent_struct:ident,
             foreign_key_name = $foreign_key_name:ident,
+            optional_foreign_key = "false",
             child_table_name = $child_table_name:ident,
         ),
-        fields = [$({
-            field_name: $field_name:ident,
-            column_name: $column_name:ident,
-            field_ty: $field_ty:ty,
-            field_kind: $field_kind:ident,
-        })+],
+        $($rest:tt)*
     ) => {
         impl $crate::associations::BelongsTo<$parent_struct> for $struct_name {
             type ForeignKeyColumn = $child_table_name::$foreign_key_name;
@@ -128,6 +125,35 @@ macro_rules! BelongsTo {
             }
         }
 
+        BelongsTo! {
+            (
+                struct_name = $struct_name,
+                parent_struct = $parent_struct,
+                foreign_key_name = $foreign_key_name,
+                optional_foreign_key = "true",
+                child_table_name = $child_table_name,
+            ),
+            $($rest)*
+        }
+    };
+
+    // Recieve parsed fields when FK is optional, or after the step when FK was
+    // not optional
+    (
+        (
+            struct_name = $struct_name:ident,
+            parent_struct = $parent_struct:ident,
+            foreign_key_name = $foreign_key_name:ident,
+            optional_foreign_key = "true",
+            child_table_name = $child_table_name:ident,
+        ),
+        fields = [$({
+            field_name: $field_name:ident,
+            column_name: $column_name:ident,
+            field_ty: $field_ty:ty,
+            field_kind: $field_kind:ident,
+        })+],
+    ) => {
         joinable_inner!(
             left_table_ty = $child_table_name::table,
             right_table_ty = <$parent_struct as $crate::associations::Identifiable>::Table,

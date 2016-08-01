@@ -50,6 +50,12 @@ impl Model {
         })
     }
 
+    pub fn attr_named(&self, name: ast::Ident) -> Option<&Attr> {
+        self.attrs.iter().find(|attr| {
+            attr.column_name.name == name.name
+        })
+    }
+
     pub fn field_tokens_for_stable_macro(&self, cx: &mut ExtCtxt) -> Vec<Vec<TokenTree>> {
         self.attrs.iter().map(|a| a.to_stable_macro_tokens(cx)).collect()
     }
