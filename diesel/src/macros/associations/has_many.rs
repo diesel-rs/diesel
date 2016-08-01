@@ -100,7 +100,6 @@ macro_rules! HasMany {
     // These patterns must appear above those which start with an ident to compile
     (
         (
-            struct_name = $struct_name:ident,
             parent_table_name = $parent_table_name:ident,
             child_table = $child_table:path,
             foreign_key = $foreign_key:path,
@@ -135,15 +134,12 @@ macro_rules! HasMany {
 
     // Handle struct with no generics
     (
-        ($($args:tt)*)
+        $args:tt
         $struct_name:ident
         $body:tt $(;)*
     ) => {
         __diesel_parse_struct_body! {
-            (
-                struct_name = $struct_name,
-                $($args)*
-            ),
+            $args,
             callback = HasMany,
             body = $body,
         }

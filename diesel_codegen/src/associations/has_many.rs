@@ -1,15 +1,8 @@
-use syntax::ast::{
-    self,
-    MetaItem,
-};
+use syntax::ast::MetaItem;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::ext::build::AstBuilder;
-use syntax::ptr::P;
-use syntax::parse::token::str_to_ident;
 
-use model::Model;
-use super::{parse_association_options, AssociationOptions, to_foreign_key};
+use super::{parse_association_options, to_foreign_key};
 
 pub fn expand_has_many(
     cx: &mut ExtCtxt,
@@ -20,81 +13,17 @@ pub fn expand_has_many(
 ) {
     let options = parse_association_options("has_many", cx, span, meta_item, annotatable);
     if let Some((model, options)) = options {
-        let builder = HasManyAssociationBuilder {
-            options: options,
-            model: model,
-            cx: cx,
-            span: span,
-        };
-        push(Annotatable::Item(join_to_impl(&builder)));
-        for item in selectable_column_hack(&builder).into_iter() {
-            push(Annotatable::Item(item));
-        }
+        let parent_table_name = model.table_name();
+        let child_table_name = options.name;
+        let foreign_key_name = to_foreign_key(&model.name.name.as_str());
+        let fields = model.field_tokens_for_stable_macro(cx);
+        push(Annotatable::Item(quote_item!(cx, HasMany! {
+            (
+                parent_table_name = $parent_table_name,
+                child_table = $child_table_name::table,
+                foreign_key = $child_table_name::$foreign_key_name,
+            ),
+            fields = [$fields],
+        }).unwrap()));
     }
-}
-
-struct HasManyAssociationBuilder<'a, 'b: 'a> {
-    pub options: AssociationOptions,
-    pub model: Model,
-    pub cx: &'a mut ExtCtxt<'b>,
-    pub span: Span,
-}
-
-impl<'a, 'b> HasManyAssociationBuilder<'a, 'b> {
-    fn association_name(&self) -> ast::Ident {
-        self.options.name
-    }
-
-    fn foreign_table(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.association_name(), str_to_ident("table")])
-    }
-
-    fn table_name(&self) -> ast::Ident {
-        self.model.table_name()
-    }
-
-    fn table(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.table_name(), str_to_ident("table")])
-    }
-
-    fn foreign_key_name(&self) -> ast::Ident {
-        to_foreign_key(&self.model.name.name.as_str())
-    }
-
-    fn foreign_key(&self) -> ast::Path {
-        self.cx.path(self.span, vec![self.association_name(), self.foreign_key_name()])
-    }
-
-    fn column_path(&self, column_name: ast::Ident) -> ast::Path {
-        self.cx.path(self.span, vec![self.table_name(), column_name])
-    }
-}
-
-fn join_to_impl(builder: &HasManyAssociationBuilder) -> P<ast::Item> {
-    let foreign_table = builder.foreign_table();
-    let table = builder.table();
-    let foreign_key = builder.foreign_key();
-
-    quote_item!(builder.cx,
-        joinable_inner!($table => $foreign_table : ($foreign_key = $table));
-    ).unwrap()
-}
-
-fn selectable_column_hack(builder: &HasManyAssociationBuilder) -> Vec<P<ast::Item>> {
-    let mut result = builder.model.attrs.iter().map(|attr| {
-        selectable_column_impl(builder, attr.column_name)
-    }).collect::<Vec<_>>();
-    result.push(selectable_column_impl(builder, str_to_ident("star")));
-    result
-}
-
-fn selectable_column_impl(
-    builder: &HasManyAssociationBuilder,
-    column_name: ast::Ident,
-) -> P<ast::Item> {
-    let table = builder.table();
-    let foreign_table = builder.foreign_table();
-    let column = builder.column_path(column_name);
-
-    quote_item!(builder.cx, select_column_inner!($table, $foreign_table, $column);).unwrap()
 }

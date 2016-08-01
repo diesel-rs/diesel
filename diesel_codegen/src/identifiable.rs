@@ -1,6 +1,7 @@
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
+use syntax::parse::token::str_to_ident;
 
 use model::Model;
 
@@ -12,36 +13,19 @@ pub fn expand_derive_identifiable(
     push: &mut FnMut(Annotatable)
 ) {
     if let Some(model) = Model::from_annotable(cx, span, annotatable) {
-        let struct_name = model.name;
         let table_name = model.table_name();
-        let primary_key_name = model.primary_key_name();
-        let primary_key_type = match model.attr_named(primary_key_name) {
-            Some(a) => a.ty.clone(),
-            None => {
-                let err_msg = format!(
-                    "Could not find a field named `{}` on `{}`",
-                    primary_key_name,
-                    struct_name,
-                );
-                cx.span_err(span, &err_msg);
-                return;
-            }
-        };
-
-        let item = quote_item!(cx,
-            impl ::diesel::associations::Identifiable for $struct_name {
-                type Id = $primary_key_type;
-                type Table = $table_name::table;
-
-                fn table() -> Self::Table {
-                    $table_name::table
-                }
-
-                fn id(&self) -> Self::Id {
-                    self.$primary_key_name
-                }
-            }
-        ).unwrap();
-        push(Annotatable::Item(item));
+        let struct_ty = &model.ty;
+        let fields = model.field_tokens_for_stable_macro(cx);
+        if model.attr_named(str_to_ident("id")).is_some() {
+            push(Annotatable::Item(quote_item!(cx, Identifiable! {
+                (
+                    table_name = $table_name,
+                    struct_ty = $struct_ty,
+                ),
+                fields = [$fields],
+            }).unwrap()));
+        } else {
+            cx.span_err(span, &format!("Could not find a field named `id` on `{}`", model.name));
+        }
     }
 }

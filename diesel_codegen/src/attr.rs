@@ -1,9 +1,11 @@
 use syntax::ast;
 use syntax::ast::ItemKind;
 use syntax::ext::base::ExtCtxt;
+use syntax::parse::token::str_to_ident;
 use syntax::ptr::P;
+use syntax::tokenstream::TokenTree;
 
-use util::ident_value_of_attr_with_name;
+use util::{ident_value_of_attr_with_name, ty_param_of_option};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Attr {
@@ -57,6 +59,34 @@ impl Attr {
                 Self::from_struct_fields(cx, fields).map(|f| (generics.clone(), f))
             }
             _ => None
+        }
+    }
+
+    pub fn to_stable_macro_tokens(&self, cx: &mut ExtCtxt) -> Vec<TokenTree> {
+        let field_kind;
+        let field_ty;
+        if let Some(option_ty) = ty_param_of_option(&self.ty) {
+            field_kind = str_to_ident("option");
+            field_ty = quote_tokens!(cx, Option<$option_ty>);
+        } else {
+            let ty = &self.ty;
+            field_kind = str_to_ident("regular");
+            field_ty = quote_tokens!(cx, $ty);
+        }
+
+        let column_name = self.column_name;
+        match self.field_name {
+            Some(field_name) => quote_tokens!(cx, {
+                field_name: $field_name,
+                column_name: $column_name,
+                field_ty: $field_ty,
+                field_kind: $field_kind,
+            }),
+            None => quote_tokens!(cx, {
+                column_name: $column_name,
+                field_ty: $field_ty,
+                field_kind: $field_kind,
+            }),
         }
     }
 }
