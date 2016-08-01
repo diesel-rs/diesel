@@ -3,22 +3,12 @@ use super::{User, posts, comments, users};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[has_many(comments)]
+#[belongs_to(User)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
     pub title: String,
     pub body: Option<String>,
-}
-
-BelongsTo! {
-    (User, foreign_key = user_id)
-    #[table_name(posts)]
-    pub struct Post {
-        pub id: i32,
-        pub user_id: i32,
-        pub title: String,
-        pub body: Option<String>,
-    }
 }
 
 impl Post {

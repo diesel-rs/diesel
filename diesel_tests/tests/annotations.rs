@@ -4,7 +4,7 @@ use schema::*;
 #[test]
 fn association_where_struct_name_doesnt_match_table_name() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
-    #[belongs_to(post)]
+    #[belongs_to(Post)]
     #[table_name="comments"]
     struct OtherComment {
         id: i32,
@@ -29,7 +29,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
     #[has_many(special_comments)]
-    #[belongs_to(user)]
+    #[belongs_to(User)]
     struct SpecialPost {
         id: i32,
         user_id: i32,
@@ -52,7 +52,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
-    #[belongs_to(special_post)]
+    #[belongs_to(SpecialPost)]
     struct SpecialComment {
         id: i32,
         special_post_id: i32,
@@ -111,7 +111,7 @@ mod associations_can_have_nullable_foreign_keys {
         id: i32,
     }
 
-    #[belongs_to(foo)]
+    #[belongs_to(Foo)]
     #[derive(Identifiable)]
     pub struct Bar {
         id: i32,

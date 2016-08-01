@@ -1,10 +1,6 @@
-use syntax::ast::{
-    self,
-    MetaItem,
-};
+use syntax::ast::MetaItem;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::parse::token::str_to_ident;
 
 use super::{parse_association_options, to_foreign_key};
 use util::is_option_ty;
@@ -19,10 +15,10 @@ pub fn expand_belongs_to(
 ) {
     let options = parse_association_options("belongs_to", cx, span, meta_item, annotatable);
     if let Some((model, options)) = options {
-        let association_name = options.name.name.as_str();
+        let parent_struct = options.name;
         let struct_name = model.name;
 
-        let foreign_key_name = to_foreign_key(&association_name);
+        let foreign_key_name = to_foreign_key(&parent_struct.name.as_str());
 
         let foreign_key = model.attr_named(foreign_key_name);
         let optional_fk = if foreign_key.map(|a| is_option_ty(&a.ty)).unwrap_or(false) {
@@ -31,7 +27,6 @@ pub fn expand_belongs_to(
             quote_tokens!(cx, "false")
         };
 
-        let parent_struct = parent_struct_name(&association_name);
         let child_table_name = model.table_name();
         let fields = model.field_tokens_for_stable_macro(cx);
         push(Annotatable::Item(quote_item!(cx, BelongsTo! {
@@ -45,21 +40,4 @@ pub fn expand_belongs_to(
             fields = [$fields],
         }).unwrap()));
     }
-}
-
-fn parent_struct_name(association_name: &str) -> ast::Ident {
-    let struct_name = capitalize_from_association_name(association_name.to_string());
-    str_to_ident(&struct_name)
-}
-
-fn capitalize_from_association_name(name: String) -> String {
-    let mut result = String::with_capacity(name.len());
-    let words = name.split("_");
-
-    for word in words {
-        result.push_str(&word[..1].to_uppercase());
-        result.push_str(&word[1..]);
-    }
-
-    result
 }
