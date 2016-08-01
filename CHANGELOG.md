@@ -7,6 +7,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* The initial APIs have been added in the form of `#[has_many]` and
+  `#[belongs_to]`. See [the module documentation][associations-module] for more
+  information.
+
 * The `Insertable!` macro can now be used instead of `#[insertable_into]` for
   those wishing to avoid syntax extensions from `diesel_codegen`. See
   http://docs.diesel.rs/diesel/macro.Insertable!.html for details.
@@ -56,6 +60,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `delete`. This means you can now write `delete(&user).execute(&connection)`
   instead of `delete(users.find(user.id)).execute(&connection)`
 
+[associations-module]: http://docs.diesel.rs/diesel/associations/index.html
 [syntex-split]: https://github.com/diesel-rs/diesel/commit/36b8801bf5e9594443743e6a7c62e29d3dce36b7
 
 ### Fixed
