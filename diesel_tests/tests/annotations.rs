@@ -144,3 +144,16 @@ mod lifetimes_with_names_other_than_a {
         body: &'a str,
     }
 }
+
+mod custom_foreign_keys_are_respected_on_belongs_to {
+    use schema::{users, User};
+
+    table! { special_posts { id -> Integer, author_id -> Integer, } }
+
+    #[derive(Identifiable)]
+    #[belongs_to(User, foreign_key = "author_id")]
+    pub struct SpecialPost {
+        id: i32,
+        author_id: i32,
+    }
+}

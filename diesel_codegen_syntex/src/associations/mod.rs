@@ -1,4 +1,5 @@
 use syntax::ast::{self, MetaItem, MetaItemKind};
+use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::parse::token::str_to_ident;
@@ -35,6 +36,7 @@ fn parse_association_options(
 
 struct AssociationOptions {
     name: ast::Ident,
+    foreign_key_name: Option<ast::Ident>,
 }
 
 fn build_association_options(
@@ -55,9 +57,12 @@ fn build_association_options(
                 MetaItemKind::Word(ref name) => str_to_ident(&name),
                 _ => return usage_err(),
             };
+            let foreign_key_name = options.iter().find(|a| a.check_name("foreign_key"))
+                .and_then(|a| a.value_str()).map(|s| str_to_ident(&s));
 
             Some(AssociationOptions {
                 name: association_name,
+                foreign_key_name: foreign_key_name,
             })
         }
         _ => usage_err(),

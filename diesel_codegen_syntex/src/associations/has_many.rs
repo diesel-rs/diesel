@@ -15,7 +15,8 @@ pub fn expand_has_many(
     if let Some((model, options)) = options {
         let parent_table_name = model.table_name();
         let child_table_name = options.name;
-        let foreign_key_name = to_foreign_key(&model.name.name.as_str());
+        let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
+            to_foreign_key(&model.name.name.as_str()));
         let fields = model.field_tokens_for_stable_macro(cx);
         push(Annotatable::Item(quote_item!(cx, HasMany! {
             (
