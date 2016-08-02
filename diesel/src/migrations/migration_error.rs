@@ -1,34 +1,25 @@
 use result::{self, TransactionError};
 
 use std::convert::From;
-use std::{fmt, io};
+use std::io;
 use std::path::PathBuf;
-use std::error::Error;
 
-use self::MigrationError::*;
-
-#[derive(Debug)]
-pub enum MigrationError {
-    MigrationDirectoryNotFound,
-    UnknownMigrationFormat(PathBuf),
-    IoError(io::Error),
-    UnknownMigrationVersion(String),
-}
-
-impl Error for MigrationError {
-    fn description(&self) -> &str {
-        match *self {
-            MigrationDirectoryNotFound => "Unable to find migrations directory in this directory or any parent directories.",
-            UnknownMigrationFormat(_) => "Invalid migration directory, the directory's name should be <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.",
-            IoError(ref error) => error.description(),
-            UnknownMigrationVersion(_) => "Unable to find migration version to revert in the migrations directory.",
+quick_error! {
+    #[derive(Debug)]
+    pub enum MigrationError {
+        MigrationDirectoryNotFound {
+            description("Unable to find migrations directory in this directory or any parent directories.")
         }
-    }
-}
-
-impl fmt::Display for MigrationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
+        UnknownMigrationFormat(path: PathBuf) {
+            description("Invalid migration directory, the directory's name should be <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.")
+        }
+        IoError(error: io::Error) {
+            from()
+            description(error.description())
+        }
+        UnknownMigrationVersion(message: String) {
+            description("Unable to find migration version to revert in the migrations directory.")
+        }
     }
 }
 
@@ -48,36 +39,16 @@ impl PartialEq for MigrationError {
     }
 }
 
-impl From<io::Error> for MigrationError {
-    fn from(e: io::Error) -> Self {
-        MigrationError::IoError(e)
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum RunMigrationsError {
-    MigrationError(MigrationError),
-    QueryError(result::Error),
-}
-
-impl Error for RunMigrationsError {
-    fn description(&self) -> &str {
-        match *self {
-            RunMigrationsError::MigrationError(ref error) => error.description(),
-            RunMigrationsError::QueryError(ref error) => error.description(),
+quick_error! {
+    #[derive(Debug)]
+    pub enum RunMigrationsError {
+        MigrationError(error: MigrationError) {
+            from()
+            description(error.description())
         }
-    }
-}
-
-impl fmt::Display for RunMigrationsError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
-    }
-}
-
-impl From<MigrationError> for RunMigrationsError {
-    fn from(e: MigrationError) -> Self {
-        RunMigrationsError::MigrationError(e)
+        QueryError(error: result::Error) {
+            description(error.description())
+        }
     }
 }
 
