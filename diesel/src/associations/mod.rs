@@ -40,7 +40,7 @@
 //! while `#[belongs_to]` is given the name of the struct that represents the parent. Both types
 //! must implement the [`Identifiable`][identifiable] trait.
 //!
-//! [Identifiable]: associations/trait.Identifiable.html
+//! [Identifiable]: trait.Identifiable.html
 //!
 //! `#[has_many]` actually has no behavior on its own. It only enables joining between the two
 //! tables. If you are only accessing data through the [`belonging_to`][belonging-to] method, you
@@ -49,8 +49,8 @@
 //! Once the associations are defined, you can join between the two tables using the
 //! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
 //!
-//! [inner-join]: query_source/trait.Table.html#method.inner_join
-//! [left-outer-join]: query_source/trait.Table.html#method.left_outer_join
+//! [inner-join]: /diesel/query_source/trait.Table.html#method.inner_join
+//! [left-outer-join]: /diesel/query_source/trait.Table.html#method.left_outer_join
 //!
 //! ```ignore
 //! let data: Vec<(User, Post)> = users::table.inner_join(posts::table).load(&connection);
@@ -64,7 +64,7 @@
 //! costs us. You can load the children for a single parent using the
 //! [`belonging_to`][belonging-to]
 //!
-//! [belonging-to]: prelude/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [belonging-to]: /diesel/prelude/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```ignore
 //! let user = try!(users::find(1).first(&connection));
@@ -86,7 +86,7 @@
 //! [`belonging_to`][belonging-to] can be used to load the data, but we'll also need to group it
 //! with its parents. For this we use an additional method [`grouped_by`][grouped-by]
 //!
-//! [grouped-by]: associations/trait.GroupedBy.html#tymethod.grouped_by
+//! [grouped-by]: trait.GroupedBy.html#tymethod.grouped_by
 //!
 //! ```ignore
 //! fn first_twenty_users_and_their_posts(conn: &PgConnection) -> QueryResult<Vec<(User, Vec<Post>)>> {
