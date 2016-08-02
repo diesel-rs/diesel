@@ -116,8 +116,8 @@ macro_rules! BelongsTo {
         impl $crate::associations::BelongsTo<$parent_struct> for $struct_name {
             type ForeignKeyColumn = $child_table_name::$foreign_key_name;
 
-            fn foreign_key(&self) -> <$parent_struct as $crate::associations::Identifiable>::Id {
-                self.$foreign_key_name
+            fn foreign_key(&self) -> &<$parent_struct as $crate::associations::Identifiable>::Id {
+                &self.$foreign_key_name
             }
 
             fn foreign_key_column() -> Self::ForeignKeyColumn {

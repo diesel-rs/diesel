@@ -94,8 +94,8 @@ macro_rules! Identifiable {
                 $table_name::table
             }
 
-            fn id(&self) -> Self::Id {
-                self.id
+            fn id(&self) -> &Self::Id {
+                &self.id
             }
         }
     };
@@ -165,8 +165,8 @@ fn derive_identifiable_on_simple_struct() {
 
     let foo1 = Foo { id: 1, foo: 2 };
     let foo2 = Foo { id: 2, foo: 3 };
-    assert_eq!(1, foo1.id());
-    assert_eq!(2, foo2.id());
+    assert_eq!(&1, foo1.id());
+    assert_eq!(&2, foo2.id());
 }
 
 #[test]
@@ -189,8 +189,8 @@ fn derive_identifiable_when_id_is_not_first_field() {
 
     let foo1 = Foo { id: 1, foo: 2 };
     let foo2 = Foo { id: 2, foo: 3 };
-    assert_eq!(1, foo1.id());
-    assert_eq!(2, foo2.id());
+    assert_eq!(&1, foo1.id());
+    assert_eq!(&2, foo2.id());
 }
 
 #[test]
@@ -213,6 +213,6 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
 
     let foo1 = Foo { id: "hi", foo: 2 };
     let foo2 = Foo { id: "there", foo: 3 };
-    assert_eq!("hi", foo1.id());
-    assert_eq!("there", foo2.id());
+    assert_eq!(&"hi", foo1.id());
+    assert_eq!(&"there", foo2.id());
 }

@@ -34,6 +34,52 @@ fn eager_loading_associations_for_multiple_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
+mod eager_loading_with_string_keys {
+    use diesel::*;
+    use diesel::connection::SimpleConnection;
+    use schema::connection;
+
+    table! { users { id -> Text, } }
+    table! { posts { id -> Text, user_id -> Text, } }
+
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
+    pub struct User {
+        id: String,
+    }
+
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
+    #[belongs_to(User)]
+    pub struct Post {
+        id: String,
+        user_id: String,
+    }
+
+    #[test]
+    fn eager_loading_associations_for_multiple_records() {
+        let connection = connection();
+        connection.batch_execute(r#"
+            DROP TABLE users;
+            DROP TABLE posts;
+            CREATE TABLE users (id TEXT PRIMARY KEY NOT NULL);
+            CREATE TABLE posts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);
+            INSERT INTO users (id) VALUES ('Sean'), ('Tess');
+            INSERT INTO posts (id, user_id) VALUES ('Hello', 'Sean'), ('World', 'Sean'), ('Hello 2', 'Tess');
+        "#).unwrap();
+        let sean = User { id: "Sean".into() };
+        let tess = User { id: "Tess".into() };
+
+        let users = vec![sean.clone(), tess.clone()];
+        let posts = Post::belonging_to(&users).load::<Post>(&connection).unwrap()
+            .grouped_by(&users);
+        let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
+
+        let seans_posts = Post::belonging_to(&sean).load(&connection).unwrap();
+        let tess_posts = Post::belonging_to(&tess).load(&connection).unwrap();
+        let expected_data = vec![(sean, seans_posts), (tess, tess_posts)];
+        assert_eq!(expected_data, users_and_posts);
+    }
+}
+
 #[test]
 fn grouping_associations_maintains_ordering() {
     let (connection, sean, tess, _) = conn_with_test_data();

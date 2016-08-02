@@ -11,7 +11,6 @@ include!("lib.in.rs");
 #[cfg(not(feature = "unstable"))]
 include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
-mod associations;
 mod boxed_queries;
 mod connection;
 mod debug;

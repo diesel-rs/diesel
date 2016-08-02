@@ -18,7 +18,7 @@ pub trait IntoUpdateTarget {
 }
 
 impl<'a, T: Identifiable, V> IntoUpdateTarget for &'a T where
-    <T::Table as FindDsl<T::Id>>::Output: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
+    <T::Table as FindDsl<&'a T::Id>>::Output: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
 {
     type Table = T::Table;
     type WhereClause = V;

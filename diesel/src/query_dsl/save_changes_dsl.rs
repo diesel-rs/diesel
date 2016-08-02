@@ -42,7 +42,7 @@ impl<'a, T, ST> SaveChangesDsl<SqliteConnection, ST> for &'a T where
     T::Table: AsQuery<SqlType=ST>,
     &'a T: AsChangeset<Target=T::Table> + IntoUpdateTarget<Table=T::Table>,
     Update<&'a T, &'a T>: ExecuteDsl<SqliteConnection>,
-    Find<T::Table, T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
+    Find<T::Table, &'a T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
 {
     fn save_changes<U>(self, conn: &SqliteConnection) -> QueryResult<U> where
         U: Queryable<ST, Sqlite>,
