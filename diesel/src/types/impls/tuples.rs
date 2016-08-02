@@ -286,8 +286,8 @@ macro_rules! tuple_impls {
             {
                 type ForeignKeyColumn = A::ForeignKeyColumn;
 
-                fn foreign_key(&self) -> Parent::Id {
-                    self.0.foreign_key()
+                fn foreign_key(&self) -> &Parent::Id {
+                    &self.0.foreign_key()
                 }
 
                 fn foreign_key_column() -> Self::ForeignKeyColumn {
