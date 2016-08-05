@@ -4,7 +4,7 @@
 /// The struct must have a field called `id`, and the type of that field must be
 /// `Copy`. This macro does not work with tuple structs.
 ///
-/// [identifiable]: query_source/trait.Identifiable.html
+/// [identifiable]: /diesel/associations/trait.Identifiable.html
 ///
 /// # Example
 ///
