@@ -5,6 +5,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+* Added support for PostgreSQL `NULLS FIRST` and `NULLS LAST` when sorting.
+  See http://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html
+  for details.
+
 ## [0.7.0] - 2016-08-01
 
 ### Added

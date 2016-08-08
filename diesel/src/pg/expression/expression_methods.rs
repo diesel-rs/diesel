@@ -211,3 +211,95 @@ impl<T, ST> ArrayExpressionMethods<ST> for T where
     T: Expression<SqlType=Array<ST>>,
 {
 }
+
+use expression::predicates::{Asc, Desc};
+
+pub trait SortExpressionMethods : Sized {
+    /// Specify that nulls should come before other values in this ordering.
+    /// Normally, nulls come last when sorting in ascending order and first
+    /// when sorting in descending order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # table! {
+    /// #     foos {
+    /// #         id -> Integer,
+    /// #         foo -> Nullable<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("DROP TABLE IF EXISTS foos").unwrap();
+    /// connection.execute("CREATE TABLE foos (id SERIAL PRIMARY KEY, foo INTEGER)").unwrap();
+    /// connection.execute("INSERT INTO foos (foo) VALUES (NULL), (1), (2)").unwrap();
+    ///
+    /// #     use self::foos::dsl::*;
+    /// assert_eq!(Ok(vec![Some(1), Some(2), None]),
+    ///            foos.select(foo).order(foo.asc()).load(&connection));
+    /// assert_eq!(Ok(vec![None, Some(1), Some(2)]),
+    ///            foos.select(foo).order(foo.asc().nulls_first()).load(&connection));
+    /// #     connection.execute("DROP TABLE foos").unwrap();
+    /// # }
+    /// ```
+    fn nulls_first(self) -> NullsFirst<Self> {
+        NullsFirst::new(self)
+    }
+
+    /// Specify that nulls should come after other values in this ordering.
+    /// Normally, nulls come last when sorting in ascending order and first
+    /// when sorting in descending order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # table! {
+    /// #     foos {
+    /// #         id -> Integer,
+    /// #         foo -> Nullable<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("DROP TABLE IF EXISTS foos").unwrap();
+    /// connection.execute("CREATE TABLE foos (id SERIAL PRIMARY KEY, foo INTEGER)").unwrap();
+    /// connection.execute("INSERT INTO foos (foo) VALUES (NULL), (1), (2)").unwrap();
+    ///
+    /// #     use self::foos::dsl::*;
+    /// assert_eq!(Ok(vec![None, Some(2), Some(1)]),
+    ///            foos.select(foo).order(foo.desc()).load(&connection));
+    /// assert_eq!(Ok(vec![Some(2), Some(1), None]),
+    ///            foos.select(foo).order(foo.desc().nulls_last()).load(&connection));
+    /// #     connection.execute("DROP TABLE foos").unwrap();
+    /// # }
+    /// ```
+    fn nulls_last(self) -> NullsLast<Self> {
+        NullsLast::new(self)
+    }
+}
+
+impl<T> SortExpressionMethods for Asc<T> {}
+
+impl<T> SortExpressionMethods for Desc<T> {}
