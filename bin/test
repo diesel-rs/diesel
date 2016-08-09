@@ -2,17 +2,17 @@
 set -e
 
 if [ "$1" == "integration" ] && [ "$2" == "sqlite" ]; then
-  (cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --features "unstable sqlite" --no-default-features)
+  (cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --features "unstable_sqlite" --no-default-features)
 elif [ "$1" == "integration" ]; then
-  (cd diesel_tests && cargo test --features "unstable postgres" --no-default-features)
+  (cd diesel_tests && cargo test --features "unstable_postgres" --no-default-features)
 elif [ "$1" == "compile" ]; then
   (cd diesel_compile_tests && cargo test)
 else
   (cd diesel && cargo test --features "unstable chrono sqlite")
   (cd diesel_cli && cargo test --features "postgres" --no-default-features)
   (cd diesel_cli && cargo test --features "sqlite" --no-default-features)
-  (cd diesel_codegen && cargo test --no-default-features --features "nightly postgres")
-  (cd diesel_tests && cargo test --features "unstable postgres" --no-default-features)
-  (cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --features "unstable sqlite" --no-default-features)
+  (cd diesel_codegen_syntex && cargo test --no-default-features --features "postgres")
+  (cd diesel_tests && cargo test --features "unstable_postgres" --no-default-features)
+  (cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --features "unstable_sqlite" --no-default-features)
   (cd diesel_compile_tests && cargo test)
 fi;

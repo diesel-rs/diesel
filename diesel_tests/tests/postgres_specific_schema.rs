@@ -3,7 +3,7 @@ use super::{User, posts, comments, users};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[has_many(comments)]
-#[belongs_to(user)]
+#[belongs_to(User)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,

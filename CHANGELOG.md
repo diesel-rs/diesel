@@ -5,7 +5,17 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+* Added support for PostgreSQL `NULLS FIRST` and `NULLS LAST` when sorting.
+  See http://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html
+  for details.
+
+## [0.7.0] - 2016-08-01
+
 ### Added
+
+* The initial APIs have been added in the form of `#[has_many]` and
+  `#[belongs_to]`. See [the module documentation][associations-module] for more
+  information.
 
 * The `Insertable!` macro can now be used instead of `#[insertable_into]` for
   those wishing to avoid syntax extensions from `diesel_codegen`. See
@@ -19,10 +29,21 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   those wishing to avoid syntax extensions from `diesel_codegen`. See
   http://docs.diesel.rs/diesel/macro.Identifiable!.html for details.
 
+* The `AsChangeset!` macro can now be used instead of `#[changeset_for(table)]`
+  for those wishing to avoid syntax extensions from `diesel_codegen`. See
+  http://docs.diesel.rs/diesel/macro.AsChangeset!.html for details.
+
 * Added support for the PostgreSQL `ALL` operator. See
   http://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
 
 ### Changed
+
+* Diesel now targets `nightly-2016-07-07`. Future releases will update to a
+  newer nightly version on the date that Rust releases.
+
+* `diesel_codegen` has been split into two crates. `diesel_codegen` and
+  `diesel_codegen_syntex`. See [this commit][syntex-split] for migration
+  information.
 
 * Most structs that implement `Queryable` will now also need
   `#[derive(Identifiable)]`.
@@ -44,6 +65,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Structs which implement `Identifiable` can now be passed to `update` and
   `delete`. This means you can now write `delete(&user).execute(&connection)`
   instead of `delete(users.find(user.id)).execute(&connection)`
+
+[associations-module]: http://docs.diesel.rs/diesel/associations/index.html
+[syntex-split]: https://github.com/diesel-rs/diesel/commit/36b8801bf5e9594443743e6a7c62e29d3dce36b7
 
 ### Fixed
 

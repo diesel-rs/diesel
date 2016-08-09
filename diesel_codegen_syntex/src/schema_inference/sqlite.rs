@@ -3,6 +3,7 @@ use diesel::expression::dsl::sql;
 use diesel::sqlite::{SqliteConnection, Sqlite};
 use diesel::types::{HasSqlType, FromSqlRow};
 use syntax::ast;
+use syntax::codemap::Span;
 use syntax::ext::base::*;
 use syntax::ptr::P;
 
@@ -26,7 +27,7 @@ pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
-pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<ast::Ty> {
+pub fn determine_column_type(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation) -> P<ast::Ty> {
     let type_name = attr.type_name.to_lowercase();
     let tpe = if is_bool(&type_name) {
         quote_ty!(cx, ::diesel::types::Bool)
@@ -45,7 +46,7 @@ pub fn determine_column_type(cx: &mut ExtCtxt, attr: &ColumnInformation) -> P<as
     } else if is_double(&type_name) {
         quote_ty!(cx, ::diesel::types::Double)
     } else {
-        cx.span_err(cx.original_span(), &format!("Unsupported type: {}", type_name));
+        cx.span_err(span, &format!("Unsupported type: {}", type_name));
         quote_ty!(cx, ())
     };
 

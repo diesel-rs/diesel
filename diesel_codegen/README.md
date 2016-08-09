@@ -9,11 +9,11 @@ boilerplate needing to be written. It can be used through `rustc_plugin`, or
 Using on nightly
 ----------------
 
-Make sure you're on a nightly from 2016-04-25 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
+Make sure you're on a nightly from 2016-07-07 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
 line to your dependencies section in `Cargo.toml`
 
 ```toml
-diesel_codegen = { version = "0.5.0", default-features = false, features = ["nightly", "postgres"] }
+diesel_codegen = { version = "0.7.0", features = ["postgres"] }
 ```
 
 Then you'll need to add two lines to the root of your crate.
@@ -33,8 +33,8 @@ build any modules using our annotations. Add the following to your
 build-dependencies.
 
 ```toml
-diesel_codegen = "0.5.0"
-syntex = "0.28.0"
+diesel_codegen_syntex = { version = "0.7.0", features = ["postgres"] }
+syntex = "0.38.0"
 ```
 
 You'll need to move any code using annotations into a different file.
@@ -59,7 +59,7 @@ Then create a `build.rs` with the following:
 
 ```rust
 extern crate syntex;
-extern crate diesel_codegen;
+extern crate diesel_codegen_syntex as diesel_codegen;
 
 use std::env;
 use std::path::Path;

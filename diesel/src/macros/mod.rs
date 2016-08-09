@@ -310,25 +310,42 @@ macro_rules! joinable {
 #[doc(hidden)]
 macro_rules! joinable_inner {
     ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
-        impl<JoinType> $crate::JoinTo<$right_table, JoinType> for $left_table {
+        joinable_inner!(
+            left_table_ty = $left_table,
+            right_table_ty = $right_table,
+            right_table_expr = $right_table,
+            foreign_key = $foreign_key,
+            primary_key_ty = <$parent_table as $crate::query_source::Table>::PrimaryKey,
+            primary_key_expr = $parent_table.primary_key(),
+        );
+    };
+
+    (
+        left_table_ty = $left_table_ty:ty,
+        right_table_ty = $right_table_ty:ty,
+        right_table_expr = $right_table_expr:expr,
+        foreign_key = $foreign_key:path,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+    ) => {
+        impl<JoinType> $crate::JoinTo<$right_table_ty, JoinType> for $left_table_ty {
             type JoinClause = $crate::query_builder::nodes::Join<
-                <$left_table as $crate::QuerySource>::FromClause,
-                <$right_table as $crate::QuerySource>::FromClause,
+                <$left_table_ty as $crate::QuerySource>::FromClause,
+                <$right_table_ty as $crate::QuerySource>::FromClause,
                 $crate::expression::helper_types::Eq<
                     $crate::expression::nullable::Nullable<$foreign_key>,
-                    $crate::expression::nullable::Nullable<
-                        <$parent_table as $crate::query_source::Table>::PrimaryKey>,
+                    $crate::expression::nullable::Nullable<$primary_key_ty>,
                 >,
                 JoinType,
             >;
 
             fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::QuerySource;
+                use $crate::{QuerySource, ExpressionMethods};
 
                 $crate::query_builder::nodes::Join::new(
                     self.from_clause(),
-                    $right_table.from_clause(),
-                    $foreign_key.nullable().eq($parent_table.primary_key().nullable()),
+                    $right_table_expr.from_clause(),
+                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
                     join_type,
                 )
             }
@@ -340,38 +357,38 @@ macro_rules! joinable_inner {
 #[doc(hidden)]
 macro_rules! select_column_workaround {
     ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent -> $child $column_name);)+
-        select_column_inner!($parent -> $child star);
+        $(select_column_inner!($parent::table, $child::table, $parent::$column_name);)+
+        select_column_inner!($parent::table, $child::table, $parent::star);
     }
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! select_column_inner {
-    ($parent:ident -> $child:ident $column_name:ident) => {
+    ($parent:ty, $child:ty, $column:ty $(,)*) => {
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child::table, $parent::table>,
-        > for $parent::$column_name
+            $crate::query_source::InnerJoinSource<$child, $parent>,
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
+            $crate::query_source::InnerJoinSource<$parent, $child>,
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child::table, $parent::table>,
-            <<$parent::$column_name as $crate::Expression>::SqlType
+            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
+            <<$column as $crate::Expression>::SqlType
                 as $crate::types::IntoNullable>::Nullable,
-        > for $parent::$column_name
+        > for $column
         {
         }
 
         impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent::table, $child::table>,
-        > for $parent::$column_name
+            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
+        > for $column
         {
         }
     }
@@ -470,6 +487,8 @@ macro_rules! print_sql {
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 
+#[macro_use] mod as_changeset;
+#[macro_use] mod associations;
 #[macro_use] mod identifiable;
 #[macro_use] mod insertable;
 #[macro_use] mod queryable;
