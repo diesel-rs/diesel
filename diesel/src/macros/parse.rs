@@ -293,3 +293,34 @@ macro_rules! __diesel_parse_struct_body {
 macro_rules!  __diesel_parse_as_item {
     ($i:item) => { $i }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __diesel_field_with_column_name {
+    (
+        $headers:tt,
+        callback = $callback:ident,
+        target = $target_column_name:ident,
+        fields = [$({
+            field_name: $field_name:ident,
+            column_name: $column_name:ident,
+            $($field_info:tt)*
+        })*],
+    ) => {
+        $(
+            static_cond! {
+                if $target_column_name == $column_name {
+                    $callback! {
+                        $headers,
+                        found_field_with_column_name = $column_name,
+                        field = {
+                            field_name: $field_name,
+                            column_name: $column_name,
+                            $($field_info)*
+                        },
+                    }
+                }
+            }
+        )*
+    };
+}

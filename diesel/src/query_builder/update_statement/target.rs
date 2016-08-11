@@ -1,4 +1,5 @@
 use associations::Identifiable;
+use helper_types::Find;
 use query_dsl::FindDsl;
 use query_source::Table;
 
@@ -9,7 +10,6 @@ pub struct UpdateTarget<Table, WhereClause> {
     pub where_clause: Option<WhereClause>,
 }
 
-#[doc(hidden)]
 pub trait IntoUpdateTarget {
     type Table: Table;
     type WhereClause;
@@ -18,7 +18,7 @@ pub trait IntoUpdateTarget {
 }
 
 impl<'a, T: Identifiable, V> IntoUpdateTarget for &'a T where
-    <T::Table as FindDsl<&'a T::Id>>::Output: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
+    Find<T::Table, &'a T::Id>: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
 {
     type Table = T::Table;
     type WhereClause = V;
