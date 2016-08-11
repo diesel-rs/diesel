@@ -3,7 +3,17 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.7.1] - 2016-08-11
+
+### Changed
+
+* The `Copy` constraint has been removed from `Identifiable::Id`, and
+  `Identifiable#id` now returns `&Identifiable::Id`.
+
+### Fixed
+
+* `#[belongs_to]` now respects the `foreign_key` option when using
+  `diesel_codegen` or `diesel_codegen_syntex`.
 
 ## [0.7.0] - 2016-08-01
 
