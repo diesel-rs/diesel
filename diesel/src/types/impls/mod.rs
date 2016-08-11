@@ -20,7 +20,7 @@ macro_rules! expression_impls {
                 }
             }
 
-            impl<'a: 'expr, 'expr> $crate::expression::AsExpression<types::$Source> for &'expr $Target {
+            impl<'a, 'expr> $crate::expression::AsExpression<types::$Source> for &'expr $Target {
                 type Expression = $crate::expression::bound::Bound<types::$Source, Self>;
 
                 fn as_expression(self) -> Self::Expression {
@@ -36,7 +36,7 @@ macro_rules! expression_impls {
                 }
             }
 
-            impl<'a: 'expr, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<types::$Source>> for &'a $Target {
+            impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<types::$Source>> for &'a $Target {
                 type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<types::$Source>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
