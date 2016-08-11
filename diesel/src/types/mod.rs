@@ -94,10 +94,21 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
 }
 
-// FIXME: This can be inlined once 1.9 is stable. The parser can't handle the `default` keyword on
-// stable prior to that version
 #[cfg(feature = "unstable")]
-include!("specialization_impls.rs");
+impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
+    T: FromSqlRow<ST, DB>,
+    DB: Backend + HasSqlType<ST>,
+    ST: NotNull,
+{
+    default fn build_from_row<R: Row<DB>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
+        if row.next_is_null(1) {
+            row.take();
+            Ok(None)
+        } else {
+            T::build_from_row(row).map(Some)
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Tiny enum to make the return type of `ToSql` more descriptive
