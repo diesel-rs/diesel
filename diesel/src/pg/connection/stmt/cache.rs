@@ -54,32 +54,36 @@ impl StatementCache {
         bind_types: Vec<u32>,
     ) -> QueryResult<Rc<Query>> {
         use std::borrow::Cow;
+        use std::collections::hash_map::Entry::{Occupied, Vacant};
 
+        let cache_suffix = self.cache.borrow().len() + 1;
         let mut cache = self.cache.borrow_mut();
         let (cache_key, maybe_binds) = try!(cache_key(conn, source, bind_types));
-        // FIXME: This can be cleaned up once https://github.com/rust-lang/rust/issues/32281
-        // is stable
-        if cache.contains_key(&cache_key) {
-            Ok(cache[&cache_key].clone())
-        } else {
-            let name = format!("__diesel_stmt_{}", cache.len() + 1);
-            let statement = {
-                let sql = match cache_key.sql() {
-                    Some(sql) => Cow::Borrowed(sql),
-                    None => Cow::Owned(try!(to_sql(conn, source))),
-                };
-                let bind_types = cache_key.bind_types()
-                    .or(maybe_binds.as_ref()).unwrap();
 
-                Rc::new(try!(Query::prepare(
-                    conn,
-                    &sql,
-                    &name,
-                    &bind_types,
-                )))
-            };
-            let entry = cache.entry(cache_key);
-            Ok(entry.or_insert(statement).clone())
+        match cache.entry(cache_key) {
+            Occupied(entry) => Ok(entry.get().clone()),
+            Vacant(entry) => {
+                let statement = {
+                    let sql = match entry.key().sql() {
+                        Some(sql) => Cow::Borrowed(sql),
+                        None => Cow::Owned(try!(to_sql(conn, source))),
+                    };
+
+                    let name = format!("__diesel_stmt_{}", cache_suffix);
+
+                    let bind_types = entry.key().bind_types()
+                        .or(maybe_binds.as_ref()).unwrap();
+
+                    Rc::new(try!(Query::prepare(
+                        conn,
+                        &sql,
+                        &name,
+                        &bind_types,
+                    )))
+                };
+
+                Ok(entry.insert(statement).clone())
+            }
         }
     }
 
