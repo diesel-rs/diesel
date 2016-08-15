@@ -486,6 +486,7 @@ macro_rules! print_sql {
 // Utililty macros which don't call any others need to come first.
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
+#[macro_use] mod static_cond;
 
 #[macro_use] mod as_changeset;
 #[macro_use] mod associations;

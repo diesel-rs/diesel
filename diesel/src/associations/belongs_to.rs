@@ -8,7 +8,7 @@ use super::Identifiable;
 pub trait BelongsTo<Parent: Identifiable> {
     type ForeignKeyColumn: Column;
 
-    fn foreign_key(&self) -> &Parent::Id;
+    fn foreign_key(&self) -> Option<&Parent::Id>;
     fn foreign_key_column() -> Self::ForeignKeyColumn;
 }
 
@@ -27,8 +27,9 @@ impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
         let id_indices: HashMap<_, _> = parents.iter().enumerate().map(|(i, u)| (u.id(), i)).collect();
         let mut result = parents.iter().map(|_| Vec::new()).collect::<Vec<_>>();
         for child in self {
-            let index = id_indices[child.foreign_key()];
-            result[index].push(child);
+            if let Some(index) = child.foreign_key().map(|i| id_indices[i]) {
+                result[index].push(child);
+            }
         }
         result
     }
