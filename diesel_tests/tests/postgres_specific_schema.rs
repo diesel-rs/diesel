@@ -1,5 +1,4 @@
-use diesel::*;
-use super::{User, posts, comments, users};
+use super::{User, posts, comments};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
 #[has_many(comments)]

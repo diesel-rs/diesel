@@ -404,7 +404,6 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 #[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
-    use std::io::prelude::*;
 
     struct MyInt;
 

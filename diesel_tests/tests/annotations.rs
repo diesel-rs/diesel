@@ -32,7 +32,7 @@ fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
     #[has_many(special_comments)]
     #[belongs_to(User)]
-    struct SpecialPost {
+    pub struct SpecialPost {
         id: i32,
         user_id: i32,
         title: String
@@ -92,7 +92,6 @@ fn association_where_parent_and_child_have_underscores() {
 // This module has no test functions, as it's only to test compilation.
 mod associations_can_have_nullable_foreign_keys {
     #![allow(dead_code)]
-    use diesel::prelude::*;
 
     table! {
         foos{
@@ -146,7 +145,9 @@ mod lifetimes_with_names_other_than_a {
 }
 
 mod custom_foreign_keys_are_respected_on_belongs_to {
-    use schema::{users, User};
+    #![allow(dead_code)]
+
+    use schema::User;
 
     table! { special_posts { id -> Integer, author_id -> Integer, } }
 

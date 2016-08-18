@@ -107,6 +107,7 @@ fn grouping_associations_maintains_ordering() {
     assert_eq!(expected_data, users_and_posts);
 }
 
+#[test]
 fn associations_can_be_grouped_multiple_levels_deep() {
     // I'm manually defining the data rather than loding from the database here,
     // as it makes the tests *way* more readable if I omit setup here. This is
