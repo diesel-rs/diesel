@@ -11,6 +11,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   See http://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html
   for details.
 
+* Added support for the `timestamp with time zone` type in PostgreSQL (referred
+  to as `diesel::types::Timestamptz`)
+
 ## [0.7.1] - 2016-08-11
 
 ### Changed

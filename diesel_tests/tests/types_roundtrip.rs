@@ -1,7 +1,7 @@
 extern crate chrono;
 
 pub use quickcheck::quickcheck;
-use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
+use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, DateTime, UTC};
 use self::chrono::naive::date;
 
 pub use schema::{connection, TestConnection};
@@ -98,6 +98,7 @@ mod pg_types {
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
     test_round_trip!(uuid_roundtrips, Uuid, (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)), mk_uuid);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
@@ -113,6 +114,10 @@ pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
 
 pub fn mk_naive_time(data: (u32, u32)) -> NaiveTime {
     NaiveTime::from_num_seconds_from_midnight(data.0, data.1 / 1000)
+}
+
+pub fn mk_datetime(data: (i64, u32)) -> DateTime<UTC> {
+    DateTime::from_utc(mk_naive_datetime(data), UTC)
 }
 
 pub fn mk_naive_date(days: u32) -> NaiveDate {

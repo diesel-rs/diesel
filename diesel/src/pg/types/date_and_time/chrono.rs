@@ -4,23 +4,27 @@ extern crate chrono;
 
 use std::error::Error;
 use std::io::Write;
-use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime};
+use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime, DateTime, TimeZone, UTC, FixedOffset, Local};
 use self::chrono::naive::date;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
-use types::{self, Date, FromSql, IsNull, Time, Timestamp, ToSql};
+use types::{self, Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
 
 expression_impls! {
     Date -> NaiveDate,
     Time -> NaiveTime,
     Timestamp -> NaiveDateTime,
+    Timestamptz -> DateTime<UTC>,
+    Timestamptz -> DateTime<FixedOffset>,
+    Timestamptz -> DateTime<Local>,
 }
 
 queryable_impls! {
     Date -> NaiveDate,
     Time -> NaiveTime,
     Timestamp -> NaiveDateTime,
+    Timestamptz -> DateTime<UTC>,
 }
 
 // Postgres timestamps start from January 1st 2000.
@@ -51,6 +55,31 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
             }
         };
         ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(time), out)
+    }
+}
+
+impl FromSql<Timestamptz, Pg> for NaiveDateTime {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        FromSql::<Timestamp, Pg>::from_sql(bytes)
+    }
+}
+
+impl ToSql<Timestamptz, Pg> for NaiveDateTime {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Timestamp, Pg>::to_sql(self, out)
+    }
+}
+
+impl FromSql<Timestamptz, Pg> for DateTime<UTC> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        let naive_date_time = try!(<NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes));
+        Ok(DateTime::from_utc(naive_date_time, UTC))
+    }
+}
+
+impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
     }
 }
 
@@ -106,7 +135,7 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, UTC};
+    use self::chrono::{Duration, NaiveDate, NaiveTime, UTC, TimeZone, FixedOffset};
     use self::chrono::naive::date;
     use self::dotenv::dotenv;
 
@@ -114,7 +143,7 @@ mod tests {
     use expression::dsl::{sql, now};
     use pg::PgConnection;
     use prelude::*;
-    use types::{Date, Time, Timestamp};
+    use types::{Date, Time, Timestamp, Timestamptz};
 
     fn connection() -> PgConnection {
         dotenv().ok();
@@ -133,10 +162,35 @@ mod tests {
     }
 
     #[test]
+    fn unix_epoch_encodes_correctly_with_utc_timezone() {
+        let connection = connection();
+        let time = UTC.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let query = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz").eq(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+    }
+
+    #[test]
+    fn unix_epoch_encodes_correctly_with_timezone() {
+        let connection = connection();
+        let time = FixedOffset::west(3600).ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+    }
+
+    #[test]
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
+            .get_result(&connection);
+        assert_eq!(Ok(time), epoch_from_sql);
+    }
+
+    #[test]
+    fn unix_epoch_decodes_correctly_with_timezone() {
+        let connection = connection();
+        let time = UTC.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let epoch_from_sql = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz"))
             .get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
@@ -151,6 +205,16 @@ mod tests {
         let time = UTC::now().naive_utc() - Duration::seconds(60);
         let query = select(now.at_time_zone("utc").gt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
+    }
+
+    #[test]
+    fn times_with_timezones_round_trip_after_conversion() {
+        use expression::AsExpression;
+        let connection = connection();
+        let time = FixedOffset::east(3600).ymd(2016, 1, 2).and_hms(1, 0, 0);
+        let expected = NaiveDate::from_ymd(2016, 1, 1).and_hms(20, 0, 0);
+        let query = select(AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"));
+        assert_eq!(Ok(expected), query.get_result(&connection));
     }
 
     #[test]

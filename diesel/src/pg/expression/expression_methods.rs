@@ -36,11 +36,11 @@ pub trait PgExpressionMethods: Expression + Sized {
 
 impl<T: Expression> PgExpressionMethods for T {}
 
-use super::date_and_time::AtTimeZone;
-use types::{VarChar, Timestamp};
+use super::date_and_time::{AtTimeZone, DateTimeLike};
+use types::VarChar;
 
 #[doc(hidden)]
-pub trait PgTimestampExpressionMethods: Expression<SqlType=Timestamp> + Sized {
+pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// Returns a PostgreSQL "AT TIME ZONE" expression
     fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression> where
         T: AsExpression<VarChar>,
@@ -49,7 +49,9 @@ pub trait PgTimestampExpressionMethods: Expression<SqlType=Timestamp> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Timestamp>> PgTimestampExpressionMethods for T {}
+impl<T: Expression> PgTimestampExpressionMethods for T where
+    T::SqlType: DateTimeLike,
+{}
 
 pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// Compares two arrays for common elements, using the `&&` operator in

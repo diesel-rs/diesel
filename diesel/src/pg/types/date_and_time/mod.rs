@@ -5,6 +5,9 @@ use std::ops::Add;
 use pg::{Pg, PgTypeMetadata};
 use types::{self, FromSql, ToSql, IsNull};
 
+primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
+primitive_impls!(Timestamptz);
+
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 #[cfg(feature = "unstable")]
@@ -66,9 +69,11 @@ impl PgInterval {
 queryable_impls!(Date -> PgDate,);
 queryable_impls!(Time -> PgTime,);
 queryable_impls!(Timestamp -> PgTimestamp,);
+queryable_impls!(Timestamptz -> PgTimestamp,);
 expression_impls!(Date -> PgDate,);
 expression_impls!(Time -> PgTime,);
 expression_impls!(Timestamp -> PgTimestamp,);
+expression_impls!(Timestamptz -> PgTimestamp,);
 
 primitive_impls!(Interval -> (PgInterval, pg: (1186, 1187)));
 
@@ -111,6 +116,18 @@ impl FromSql<types::Timestamp, Pg> for PgTimestamp {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes)
             .map(PgTimestamp)
+    }
+}
+
+impl ToSql<types::Timestamptz, Pg> for PgTimestamp {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Timestamp, Pg>::to_sql(self, out)
+    }
+}
+
+impl FromSql<types::Timestamptz, Pg> for PgTimestamp {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        FromSql::<types::Timestamp, Pg>::from_sql(bytes)
     }
 }
 

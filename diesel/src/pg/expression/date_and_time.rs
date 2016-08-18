@@ -3,7 +3,13 @@ use expression::{Expression, SelectableExpression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use result::QueryResult;
-use types::{Timestamp, VarChar};
+use types::{Timestamp, Timestamptz, Date, VarChar};
+
+/// Marker trait for types which are valid in `AT TIME ZONE` expressions
+pub trait DateTimeLike {}
+impl DateTimeLike for Date {}
+impl DateTimeLike for Timestamp {}
+impl DateTimeLike for Timestamptz {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct AtTimeZone<Ts, Tz> {
@@ -21,10 +27,10 @@ impl<Ts, Tz> AtTimeZone<Ts, Tz> {
 }
 
 impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz> where
-    Ts: Expression<SqlType=Timestamp>,
+    Ts: Expression,
+    Ts::SqlType: DateTimeLike,
     Tz: Expression<SqlType=VarChar>,
 {
-    // FIXME: This should be Timestamptz when we support that type
     type SqlType = Timestamp;
 }
 
