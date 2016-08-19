@@ -45,7 +45,7 @@ pub fn expand_embed_migrations<'cx>(
                 conn.batch_execute(self.up_sql).map_err(Into::into)
             }
 
-            fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+            fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
                 unreachable!()
             }
         }
