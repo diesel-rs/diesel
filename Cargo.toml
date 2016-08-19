@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "diesel",
+    "diesel_cli",
+    "diesel_codegen",
+    "diesel_codegen_syntex",
+    "diesel_compile_tests",
+    "diesel_tests"
+]
