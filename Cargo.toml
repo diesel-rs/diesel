@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "diesel",
+    "diesel_cli",
+    "diesel_codegen",
+    "diesel_codegen_shared",
+    "diesel_codegen_syntex",
+    # FIXME: getting "multiple matching crates for `diesel`" because of the shared build directory
+    # "diesel_compile_tests",
+    "diesel_tests",
+    "examples/getting_started_step_1",
+    "examples/getting_started_step_2",
+    "examples/getting_started_step_3",
+    "examples/getting_started_step_4",
+]

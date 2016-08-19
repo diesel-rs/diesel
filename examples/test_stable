@@ -8,5 +8,5 @@ cd ../examples
 # Only step 4 can be run on stable
 cd getting_started_step_4
 export DATABASE_URL=postgres://localhost/diesel_getting_started_step_4
-../../diesel_cli/target/debug/diesel setup
+../../target/debug/diesel setup
 cargo build --no-default-features --features "with-syntex"
