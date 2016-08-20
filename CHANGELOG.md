@@ -3,6 +3,10 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.7.2] - 2016-08-20
+
+* Updated nightly version and syntex support.
+
 ## [0.7.1] - 2016-08-11
 
 ### Changed
