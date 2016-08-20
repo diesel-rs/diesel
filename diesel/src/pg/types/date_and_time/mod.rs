@@ -10,7 +10,6 @@ primitive_impls!(Timestamptz);
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
-#[cfg(feature = "unstable")]
 mod std_time;
 #[cfg(feature = "chrono")]
 mod chrono;
