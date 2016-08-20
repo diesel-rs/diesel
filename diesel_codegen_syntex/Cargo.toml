@@ -1,6 +1,6 @@
 [package]
 name = "diesel_codegen_syntex"
-version = "0.7.0"
+version = "0.7.2"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
