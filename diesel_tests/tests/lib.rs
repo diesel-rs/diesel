@@ -4,6 +4,7 @@
 extern crate quickcheck;
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate diesel;
+#[macro_use] extern crate lazy_static;
 
 #[cfg(feature = "unstable")]
 include!("lib.in.rs");

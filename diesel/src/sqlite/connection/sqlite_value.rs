@@ -12,6 +12,7 @@ pub struct SqliteValue {
     col_index: libc::c_int,
 }
 
+#[allow(missing_debug_implementations)]
 pub struct SqliteRow {
     value: SqliteValue,
     next_col_index: libc::c_int,

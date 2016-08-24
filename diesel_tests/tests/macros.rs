@@ -2,7 +2,7 @@
 // probably need to change to deal with how SQLite handles functions. I do not
 // think we need to generically support creation of these functions, as it's
 // different enough in SQLite to avoid.
-#![cfg(feature = "postgres")]
+#![cfg(feature = "pg")]
 use schema::*;
 use diesel::*;
 use diesel::types::{VarChar, BigInt};

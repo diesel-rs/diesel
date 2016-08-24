@@ -3,7 +3,9 @@
 //! found on our website.
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
-
+#[cfg(feature = "log")]
+#[macro_use]
+extern crate log;
 #[macro_use]
 mod macros;
 
@@ -32,6 +34,7 @@ pub mod query_source;
 pub mod result;
 #[doc(hidden)]
 pub mod row;
+pub mod debug_connection;
 
 pub mod helper_types {
     //! Provide helper types for concisely writing the return type of functions.

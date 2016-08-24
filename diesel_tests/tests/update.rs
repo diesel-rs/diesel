@@ -71,7 +71,7 @@ fn test_updating_multiple_columns() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))]
+#[cfg(not(feature="sq"))]
 fn update_returning_struct() {
     use schema::users::dsl::*;
 
@@ -85,7 +85,7 @@ fn update_returning_struct() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))]
+#[cfg(not(feature="sq"))]
 fn update_with_custom_returning_clause() {
     use schema::users::dsl::*;
 
@@ -133,6 +133,7 @@ fn update_with_struct_does_not_set_primary_key() {
     assert_eq!(Ok(expected_user), user);
 }
 
+#[cfg(not(feature="sq"))]
 #[test]
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use schema::users::dsl::*;
@@ -146,6 +147,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     assert_eq!(user, user_in_db);
 }
 
+#[cfg(not(feature="sq"))]
 #[test]
 fn option_fields_on_structs_are_not_assigned() {
     use schema::users::dsl::*;
@@ -228,6 +230,7 @@ fn can_update_with_struct_containing_single_field() {
     assert_eq!(expected_post, post);
 }
 
+#[cfg(not(feature="sq"))]
 #[test]
 fn struct_with_option_fields_treated_as_null() {
     #[changeset_for(posts, treat_none_as_null="true")]

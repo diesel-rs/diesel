@@ -13,14 +13,14 @@ use self::test::Bencher;
 use self::schema::{users, NewUser, User, Post, TestConnection, posts, batch_insert};
 use diesel::*;
 
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 fn connection() -> TestConnection {
     let conn = schema::connection();
     conn.execute("TRUNCATE TABLE USERS").unwrap();
     conn
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 fn connection() -> TestConnection {
     schema::connection()
 }

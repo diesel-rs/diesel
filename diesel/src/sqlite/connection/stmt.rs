@@ -3,9 +3,10 @@ extern crate libc;
 extern crate byteorder;
 
 use self::byteorder::{ReadBytesExt, BigEndian};
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::io::{stderr, Write};
 use std::ptr;
+use std::str;
 use std::rc::Rc;
 
 use sqlite::SqliteType;
@@ -13,7 +14,9 @@ use result::*;
 use result::Error::{DatabaseError, QueryBuilderError};
 use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
+use connection::DebugSql;
 
+#[allow(missing_debug_implementations)]
 pub struct Statement {
     raw_connection: Rc<RawConnection>,
     inner_statement: *mut ffi::sqlite3_stmt,
@@ -134,6 +137,16 @@ impl Statement {
     }
 }
 
+impl DebugSql<RawConnection> for Statement {
+    fn get_debug_sql(&self, _raw_connection: &RawConnection) -> String {
+        unsafe {
+            let query = ffi::sqlite3_sql(self.inner_statement);
+            let query = CStr::from_ptr(query);
+            str::from_utf8_unchecked(query.to_bytes()).to_owned()
+        }
+    }
+}
+
 fn ensure_sqlite_ok(code: libc::c_int, raw_connection: &RawConnection) -> QueryResult<()> {
     if code != ffi::SQLITE_OK {
         Err(last_error(raw_connection))
@@ -171,6 +184,7 @@ impl Drop for Statement {
 use std::cell::RefCell;
 use std::ops::Deref;
 
+#[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct StatementUse {
     statement: Rc<RefCell<Statement>>,
@@ -181,6 +195,12 @@ impl StatementUse {
         StatementUse {
             statement: Rc::new(RefCell::new(statement)),
         }
+    }
+}
+
+impl DebugSql<RawConnection> for StatementUse {
+    fn get_debug_sql(&self, raw_connection: &RawConnection) -> String {
+        self.borrow().get_debug_sql(raw_connection)
     }
 }
 

@@ -11,7 +11,7 @@ macro_rules! try_no_coerce {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
+#[cfg(not(feature = "sq"))] // FIXME: This test is only valid when operating on a file and not :memory:
 fn transaction_executes_fn_in_a_sql_transaction() {
     let conn1 = connection_without_transaction();
     let conn2 = connection_without_transaction();

@@ -56,13 +56,13 @@ macro_rules! test_round_trip {
                 test_type_round_trips::<Nullable<types::$sql_type>, _>(val)
             }
 
-            #[cfg(feature = "postgres")]
+            #[cfg(feature = "pg")]
             fn vec_round_trip(val: Vec<$tpe>) -> bool {
                 let val: Vec<_> = val.into_iter().map($map_fn).collect();
                 test_type_round_trips::<types::Array<types::$sql_type>, _>(val)
             }
 
-            #[cfg(not(feature = "postgres"))]
+            #[cfg(not(feature = "pg"))]
             fn vec_round_trip(_: Vec<$tpe>) -> bool {
                 true
             }
@@ -83,7 +83,7 @@ test_round_trip!(string_roundtrips, VarChar, String);
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 mod pg_types {
     extern crate uuid;
     use super::*;
@@ -128,7 +128,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 }
 
 // FIXME: Needs https://github.com/BurntSushi/quickcheck/pull/128
-// #[cfg(all(feature = "unstable", feature = "postgres"))]
+// #[cfg(all(feature = "unstable", feature = "pg"))]
 // mod unstable_types {
 //     use super::*;
 //     use std::time::*;

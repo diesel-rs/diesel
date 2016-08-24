@@ -1,4 +1,4 @@
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(feature = "sq"))]
 mod annotations;
 mod associations;
 mod deserialization;

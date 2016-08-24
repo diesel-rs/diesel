@@ -8,6 +8,7 @@ use self::pq_sys::*;
 use std::ffi::CStr;
 use std::{str, slice, mem};
 
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct PgResult {
     internal_result: *mut PGresult,
 }

@@ -104,7 +104,7 @@ fn filter_by_like() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn filter_by_any() {
     use schema::users::dsl::*;
     use diesel::expression::dsl::any;

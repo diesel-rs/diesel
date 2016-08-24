@@ -31,9 +31,9 @@ use self::diesel::*;
 use self::dotenv::dotenv;
 use std::io;
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 use self::diesel::pg::PgConnection;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 fn connection() -> PgConnection {
     dotenv().ok();
     let database_url = ::std::env::var("DATABASE_URL")
@@ -41,9 +41,10 @@ fn connection() -> PgConnection {
     PgConnection::establish(&database_url).unwrap()
 }
 
-#[cfg(feature = "sqlite")]
+
+#[cfg(feature = "sq")]
 use self::diesel::sqlite::SqliteConnection;
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 fn connection() -> SqliteConnection {
     dotenv().ok();
     let database_url = ::std::env::var("DATABASE_URL")
@@ -52,10 +53,10 @@ fn connection() -> SqliteConnection {
 }
 
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "pg")]
 const MIGRATION_SUBDIR: &'static str = "postgresql";
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "sq")]
 const MIGRATION_SUBDIR: &'static str = "sqlite";
 
 fn main() {
