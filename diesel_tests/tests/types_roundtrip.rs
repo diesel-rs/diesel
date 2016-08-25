@@ -127,23 +127,17 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     earliest_pg_date + Duration::days(days as i64 % num_days_representable)
 }
 
-// FIXME: Needs https://github.com/BurntSushi/quickcheck/pull/128
-// #[cfg(all(feature = "unstable", feature = "postgres"))]
-// mod unstable_types {
-//     use super::*;
-//     use std::time::*;
+#[cfg(feature = "postgres")]
+mod unstable_types {
+    use super::*;
+    use std::time::*;
 
-//     fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {
-//         let res = match time.duration_from_earlier(UNIX_EPOCH) {
-//             Ok(duration) => time - Duration::new(0, duration.subsec_nanos() % 1000),
-//             Err(e) => time + Duration::new(0, e.duration().subsec_nanos() % 1000),
-//         };
-//         work_around_rust_lang_30173(res)
-//     }
+    fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {
+        match time.duration_since(UNIX_EPOCH) {
+            Ok(duration) => time - Duration::new(0, duration.subsec_nanos() % 1000),
+            Err(e) => time + Duration::new(0, e.duration().subsec_nanos() % 1000),
+        }
+    }
 
-//     fn work_around_rust_lang_30173(time: SystemTime) -> SystemTime {
-//         time + Duration::new(0, 1) - Duration::new(0, 1)
-//     }
-
-//     test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision);
-// }
+    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision);
+}
