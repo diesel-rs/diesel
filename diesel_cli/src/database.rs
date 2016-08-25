@@ -15,19 +15,27 @@ use std::{env, fs};
 use std::path::Path;
 
 macro_rules! call_with_conn {
-    ( $database_url:ident,
-      $func:path
+    (
+        $database_url:ident,
+        $($func:ident)::+
+    ) => {{
+        call_with_conn!($database_url, $($func)::+ ())
+    }};
+
+    (
+        $database_url:ident,
+        $($func:ident)::+ ($($args:expr),*)
     ) => {{
         match ::database::backend(&$database_url) {
             #[cfg(feature = "postgres")]
             "postgres" => {
                 let conn = PgConnection::establish(&$database_url).unwrap();
-                $func(&conn)
+                $($func)::+(&conn, $($args),*)
             },
             #[cfg(feature = "sqlite")]
             "sqlite" => {
                 let conn = SqliteConnection::establish(&$database_url).unwrap();
-                $func(&conn)
+                $($func)::+(&conn, $($args),*)
             },
             _ => unreachable!("The backend function should ensure we never get here."),
         }
