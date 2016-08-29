@@ -14,6 +14,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for the `timestamp with time zone` type in PostgreSQL (referred
   to as `diesel::types::Timestamptz`)
 
+* Diesel CLI can now generate bash completion. See [the readme][bash completion]
+  for details.
+
+[bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
+
 ## [0.7.2] - 2016-08-20
 
 * Updated nightly version and syntex support.
