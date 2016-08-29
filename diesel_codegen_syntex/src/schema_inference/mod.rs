@@ -8,17 +8,18 @@ use diesel::{QueryResult, Connection};
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::*;
-use syntax::parse::token::{InternedString, str_to_ident};
+use syntax::parse::token::{self, InternedString, str_to_ident};
 use syntax::ptr::P;
 use syntax::util::small_vector::SmallVector;
-use syntax::tokenstream;
+use syntax::tokenstream::TokenTree;
 
 use self::data_structures::*;
+use util::comma_delimited_tokens;
 
 pub fn expand_load_table<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[tokenstream::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(ref exprs) if exprs.is_empty() => {
@@ -50,7 +51,7 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
 pub fn expand_infer_schema<'cx>(
     cx: &'cx mut ExtCtxt,
     sp: Span,
-    tts: &[tokenstream::TokenTree]
+    tts: &[TokenTree]
 ) -> Box<MacResult+'cx> {
     let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
@@ -100,16 +101,19 @@ fn table_macro_call(
                     return Err(DummyResult::any(sp));
                 }
             };
-            if primary_keys.len() != 1 {
+            if primary_keys.len() == 0 {
                 cx.span_err(sp,
-                    &format!("table {} has {} primary keys, only one is currently supported",
-                        table_name, primary_keys.len()));
+                    &format!("Diesel only supports tables with primary keys.\
+                             table {} has no primary key", table_name));
                 Err(DummyResult::any(sp))
             } else {
                 let tokens = data.iter().map(|a| column_def_tokens(cx, sp, a, &connection))
                     .collect::<Vec<_>>();
                 let table_name = str_to_ident(table_name);
-                let primary_key = str_to_ident(&primary_keys[0]);
+                let primary_key_tokens = primary_keys.iter()
+                    .map(|s| str_to_ident(&s))
+                    .map(token::Ident);
+                let primary_key = comma_delimited_tokens(primary_key_tokens, sp);
                 let item = quote_item!(cx, table! {
                     $table_name ($primary_key) {
                         $tokens
@@ -133,7 +137,7 @@ fn next_str_lit<T: Iterator<Item=P<ast::Expr>>>(
 }
 
 fn column_def_tokens(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation, conn: &InferConnection)
-    -> Vec<tokenstream::TokenTree>
+    -> Vec<TokenTree>
 {
     let column_name = str_to_ident(&attr.column_name);
     let tpe = determine_column_type(cx, span, attr, conn);

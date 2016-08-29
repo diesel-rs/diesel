@@ -120,12 +120,17 @@ pub fn is_option_ty(ty: &ast::Ty) -> bool {
 }
 
 pub fn lifetime_list_tokens(lifetimes: &[ast::LifetimeDef], span: Span) -> Vec<TokenTree> {
-    lifetimes.iter()
-        .map(|ld| {
-            let name = ld.lifetime.name;
-            let lt = token::Lifetime(ast::Ident::with_empty_ctxt(name));
-            [TokenTree::Token(span, lt)]
-        })
+    let lifetime_tokens = lifetimes.iter().map(|ld| {
+        let name = ld.lifetime.name;
+        token::Lifetime(ast::Ident::with_empty_ctxt(name))
+    });
+    comma_delimited_tokens(lifetime_tokens, span)
+}
+
+pub fn comma_delimited_tokens<T>(tokens: T, span: Span) -> Vec<TokenTree> where
+    T: IntoIterator<Item=token::Token>,
+{
+    tokens.into_iter().map(|token| [TokenTree::Token(span, token)])
         .collect::<Vec<_>>()
         .join(&TokenTree::Token(span, token::Comma))
 }

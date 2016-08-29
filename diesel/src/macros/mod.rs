@@ -85,7 +85,8 @@ macro_rules! column {
 /// ```
 ///
 /// You may also specify a primary key if it's called something other than `id`.
-/// Tables with no primary key, or composite primary keys aren't yet supported.
+/// Tables with no primary key, or composite primary containing more than 3
+/// columns are not supported.
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -97,6 +98,27 @@ macro_rules! column {
 ///     }
 /// }
 /// # fn main() {}
+/// ```
+///
+/// For tables with composite primary keys, list all of the columns in the
+/// primary key.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// table! {
+///     followings (user_id, post_id) {
+///         user_id -> Integer,
+///         post_id -> Integer,
+///         favorited -> Bool,
+///     }
+/// }
+/// # fn main() {
+/// #     use diesel::prelude::*;
+/// #     use self::followings::dsl::*;
+/// #     // Poor man's assert_eq! -- since this is type level this would fail
+/// #     // to compile if the wrong primary key were generated
+/// #     let (user_id {}, post_id {}) = followings.primary_key();
+/// # }
 /// ```
 ///
 /// This module will also contain several helper types:
@@ -155,6 +177,7 @@ macro_rules! table {
             }
         }
     };
+
     (
         $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
@@ -162,6 +185,18 @@ macro_rules! table {
     ) => {
         table_body! {
             $name ($pk) {
+                $($column_name -> $Type,)+
+            }
+        }
+    };
+
+    (
+        $name:ident ($pk:ident, $($composite_pk:ident),+) {
+            $($column_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        table_body! {
+            $name ($pk, $($composite_pk,)+) {
                 $($column_name -> $Type,)+
             }
         }
@@ -176,7 +211,34 @@ macro_rules! table_body {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
-        pub mod $name {
+        table_body! {
+            table_name = $name,
+            primary_key_ty = columns::$pk,
+            primary_key_expr = columns::$pk,
+            columns = [$($column_name -> $Type,)+],
+        }
+    };
+
+    (
+        $name:ident ($($pk:ident,)+) {
+            $($column_name:ident -> $Type:ty,)+
+        }
+    ) => {
+        table_body! {
+            table_name = $name,
+            primary_key_ty = ($(columns::$pk,)+),
+            primary_key_expr = ($(columns::$pk,)+),
+            columns = [$($column_name -> $Type,)+],
+        }
+    };
+
+    (
+        table_name = $table_name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $column_ty:ty,)+],
+    ) => {
+        pub mod $table_name {
             use $crate::{
                 QuerySource,
                 Table,
@@ -188,7 +250,7 @@ macro_rules! table_body {
 
             pub mod dsl {
                 pub use super::columns::{$($column_name),+};
-                pub use super::table as $name;
+                pub use super::table as $table_name;
             }
 
             #[allow(non_upper_case_globals, dead_code)]
@@ -205,7 +267,7 @@ macro_rules! table_body {
                 }
             }
 
-            pub type SqlType = ($($Type,)+);
+            pub type SqlType = ($($column_ty,)+);
 
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
@@ -213,7 +275,7 @@ macro_rules! table_body {
                 type FromClause = Identifier<'static>;
 
                 fn from_clause(&self) -> Self::FromClause {
-                    Identifier(stringify!($name))
+                    Identifier(stringify!($table_name))
                 }
             }
 
@@ -227,15 +289,15 @@ macro_rules! table_body {
             }
 
             impl Table for table {
-                type PrimaryKey = columns::$pk;
+                type PrimaryKey = $primary_key_ty;
                 type AllColumns = ($($column_name,)+);
 
                 fn name() -> &'static str {
-                    stringify!($name)
+                    stringify!($table_name)
                 }
 
                 fn primary_key(&self) -> Self::PrimaryKey {
-                    columns::$pk
+                    $primary_key_expr
                 }
 
                 fn all_columns() -> Self::AllColumns {
@@ -291,7 +353,7 @@ macro_rules! table_body {
 
                 impl SelectableExpression<table> for star {}
 
-                $(column!(table, $column_name -> $Type);)+
+                $(column!(table, $column_name -> $column_ty);)+
             }
         }
     }
