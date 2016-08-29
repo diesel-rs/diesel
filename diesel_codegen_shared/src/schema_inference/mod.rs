@@ -96,6 +96,12 @@ pub fn get_primary_keys(
     if primary_keys.is_empty() {
         Err(format!("Diesel only supports tables with primary keys. \
                     Table {} has no primary key", table_name).into())
+    } else if primary_keys.len() > 4 {
+        Err(format!("Diesel does not currently support tables with \
+                     primary keys consisting of more than 4 columns. \
+                     Table {} has {} columns in its primary key. \
+                     Please open an issue and we will increase the \
+                     limit.", table_name, primary_keys.len()).into())
     } else {
         Ok(primary_keys)
     }

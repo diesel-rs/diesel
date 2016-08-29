@@ -61,6 +61,17 @@ macro_rules! __diesel_column {
                 stringify!($column_name)
             }
         }
+
+        impl<T> $crate::EqAll<T> for $column_name where
+            T: $crate::expression::AsExpression<$Type>,
+            $crate::expression::helper_types::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::types::Bool>,
+        {
+            type Output = $crate::expression::helper_types::Eq<Self, T>;
+
+            fn eq_all(self, rhs: T) -> Self::Output {
+                $crate::ExpressionMethods::eq(self, rhs)
+            }
+        }
     }
 }
 

@@ -49,8 +49,8 @@ impl Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable)]
+#[table_name="followings"]
 pub struct Following {
     pub user_id: i32,
     pub post_id: i32,

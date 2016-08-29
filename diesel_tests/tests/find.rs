@@ -35,3 +35,20 @@ fn find_with_non_serial_pk() {
     assert_eq!(Ok(("Tess".to_string(),)), users.find("Tess".to_string()).first(&connection));
     assert_eq!(Ok(None::<(String,)>), users.find("Wibble").first(&connection).optional());
 }
+
+#[test]
+fn find_with_composite_pk() {
+    use schema::followings::dsl::*;
+
+    let first_following = Following { user_id: 1, post_id: 1, email_notifications: true };
+    let second_following = Following { user_id: 1, post_id: 2, email_notifications: false };
+    let third_following = Following { user_id: 2, post_id: 1, email_notifications: false };
+
+    let connection = connection();
+    batch_insert(&[first_following, second_following, third_following], followings, &connection);
+
+    assert_eq!(Ok(first_following), followings.find((1, 1)).first(&connection));
+    assert_eq!(Ok(second_following), followings.find((1, 2)).first(&connection));
+    assert_eq!(Ok(third_following), followings.find((2, 1)).first(&connection));
+    assert_eq!(Ok(None::<Following>), followings.find((2, 2)).first(&connection).optional());
+}

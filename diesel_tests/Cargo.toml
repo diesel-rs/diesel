@@ -31,10 +31,6 @@ stable_sqlite = ["with-syntex", "sqlite", "diesel_codegen_syntex/sqlite"]
 unstable_postgres = ["unstable", "postgres", "diesel_codegen/postgres"]
 unstable_sqlite = ["unstable", "sqlite", "diesel_codegen/sqlite"]
 
-[lib]
-name = "integration_tests"
-path = "tests/lib.rs"
-
 [[test]]
 name = "integration_tests"
 path = "tests/lib.rs"

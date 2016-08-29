@@ -57,10 +57,8 @@ impl<T: Table> NotFiltered for T {}
 impl<Left, Right> NotFiltered for InnerJoinSource<Left, Right> {}
 impl<Left, Right> NotFiltered for LeftOuterJoinSource<Left, Right> {}
 
-use expression::AsExpression;
 use expression::expression_methods::*;
-use expression::helper_types::Eq;
-use helper_types::FindBy;
+use helper_types::Filter;
 
 /// Attempts to find a single record from the given table by primary key.
 ///
@@ -95,13 +93,13 @@ pub trait FindDsl<PK>: AsQuery {
 }
 
 impl<T, PK> FindDsl<PK> for T where
-    T: Table + FilterDsl<Eq<<T as Table>::PrimaryKey, PK>>,
-    PK: AsExpression<<T::PrimaryKey as Expression>::SqlType>,
+    T: Table + FilterDsl<<<T as Table>::PrimaryKey as EqAll<PK>>::Output>,
+    T::PrimaryKey: EqAll<PK>,
 {
-    type Output = FindBy<Self, T::PrimaryKey, PK>;
+    type Output = Filter<Self, <T::PrimaryKey as EqAll<PK>>::Output>;
 
     fn find(self, id: PK) -> Self::Output {
         let primary_key = self.primary_key();
-        self.filter(primary_key.eq(id))
+        self.filter(primary_key.eq_all(id))
     }
 }

@@ -8,11 +8,15 @@ pub mod bool_expression_methods;
 pub mod escape_expression_methods;
 pub mod global_expression_methods;
 pub mod text_expression_methods;
+#[doc(hidden)]
+pub mod eq_all;
 
 pub use self::bool_expression_methods::BoolExpressionMethods;
 pub use self::escape_expression_methods::EscapeExpressionMethods;
 pub use self::global_expression_methods::ExpressionMethods;
 pub use self::text_expression_methods::TextExpressionMethods;
+#[doc(hidden)]
+pub use self::eq_all::EqAll;
 
 #[cfg(feature = "postgres")]
 pub use pg::expression::expression_methods::*;
