@@ -85,7 +85,8 @@ macro_rules! column {
 /// ```
 ///
 /// You may also specify a primary key if it's called something other than `id`.
-/// Tables with no primary key, or composite primary keys aren't yet supported.
+/// Tables with no primary key, or composite primary containing more than 3
+/// columns are not supported.
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -97,6 +98,27 @@ macro_rules! column {
 ///     }
 /// }
 /// # fn main() {}
+/// ```
+///
+/// For tables with composite primary keys, list all of the columns in the
+/// primary key.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// table! {
+///     followings (user_id, post_id) {
+///         user_id -> Integer,
+///         post_id -> Integer,
+///         favorited -> Bool,
+///     }
+/// }
+/// # fn main() {
+/// #     use diesel::prelude::*;
+/// #     use self::followings::dsl::*;
+/// #     // Poor man's assert_eq! -- since this is type level this would fail
+/// #     // to compile if the wrong primary key were generated
+/// #     let (user_id {}, post_id {}) = followings.primary_key();
+/// # }
 /// ```
 ///
 /// This module will also contain several helper types:
