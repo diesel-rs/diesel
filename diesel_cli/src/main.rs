@@ -6,9 +6,10 @@ extern crate dotenv;
 mod database_error;
 #[macro_use]
 mod database;
+mod cli;
 
 use chrono::*;
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{ArgMatches,Shell};
 #[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
@@ -27,87 +28,13 @@ fn main() {
     use self::dotenv::dotenv;
     dotenv().ok();
 
-    let database_arg = Arg::with_name("DATABASE_URL")
-        .long("database-url")
-        .help("Specifies the database URL to connect to. Falls back to \
-                   the DATABASE_URL environment variable if unspecified.")
-        .global(true)
-        .takes_value(true);
-
-    let migration_subcommand = SubCommand::with_name("migration")
-        .about("A group of commands for generating, running, and reverting \
-                migrations.")
-        .setting(AppSettings::VersionlessSubcommands)
-        .arg(Arg::with_name("MIGRATION_DIRECTORY")
-            .long("migration-dir")
-            .help("The location of your migration directory. By default this \
-                   will look for a directory called `migrations` in the \
-                   current directory and its parents.")
-            .takes_value(true)
-            .global(true)
-        ).subcommand(
-            SubCommand::with_name("run")
-                .about("Runs all pending migrations")
-        ).subcommand(
-            SubCommand::with_name("revert")
-                .about("Reverts the latest run migration")
-        ).subcommand(
-            SubCommand::with_name("redo")
-                .about("Reverts and re-runs the latest migration. Useful \
-                      for testing that a migration can in fact be reverted.")
-        ).subcommand(
-            SubCommand::with_name("generate")
-                .about("Generate a new migration with the given name, and \
-                      the current timestamp as the version")
-                .arg(Arg::with_name("MIGRATION_NAME")
-                     .help("The name of the migration to create")
-                     .required(true)
-                 )
-                .arg(Arg::with_name("MIGRATION_VERSION")
-                     .long("version")
-                     .help("The version number to use when generating the migration. \
-                            Defaults to the current timestamp, which should suffice \
-                            for most use cases.")
-                     .takes_value(true)
-                )
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
-
-    let setup_subcommand = SubCommand::with_name("setup")
-        .about("Creates the migrations directory, creates the database \
-                specified in your DATABASE_URL, and runs existing migrations.");
-
-    let database_subcommand = SubCommand::with_name("database")
-        .about("A group of commands for setting up and resetting your database.")
-        .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(
-            SubCommand::with_name("setup")
-                .about("Creates the database specified in your DATABASE_URL, \
-                        and then runs any existing migrations.")
-        ).subcommand(
-            SubCommand::with_name("reset")
-                .about("Resets your database by dropping the database specified \
-                        in your DATABASE_URL and then running `diesel database setup`.")
-        ).subcommand(
-            SubCommand::with_name("drop")
-                .about("Drops the database specified in your DATABASE_URL.")
-                .setting(AppSettings::Hidden)
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
-
-    let matches = App::new("diesel")
-        .version(env!("CARGO_PKG_VERSION"))
-        .setting(AppSettings::VersionlessSubcommands)
-        .after_help("You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")
-        .arg(database_arg)
-        .subcommand(migration_subcommand)
-        .subcommand(setup_subcommand)
-        .subcommand(database_subcommand)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .get_matches();
+    let matches = cli::build_cli().get_matches();
 
     match matches.subcommand() {
         ("migration", Some(matches)) => run_migration_command(matches),
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches),
+        ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -185,6 +112,10 @@ fn run_database_command(matches: &ArgMatches) {
         ("drop", Some(args)) => database::drop_database_command(args).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
+}
+
+fn generate_bash_completion_command(_: &ArgMatches) {
+    cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
