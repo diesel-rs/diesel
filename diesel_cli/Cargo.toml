@@ -14,7 +14,7 @@ name = "diesel"
 
 [dependencies]
 chrono = "0.2.17"
-clap = "1.5.5"
+clap = "2.11"
 diesel = { version = "0.7.0", default-features = false }
 dotenv = "0.8.0"
 
