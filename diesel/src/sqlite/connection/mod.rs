@@ -157,25 +157,27 @@ impl SqliteConnection {
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
         -> QueryResult<StatementUse>
     {
+        use std::collections::hash_map::Entry::{Occupied, Vacant};
+
         let cache_key = try!(cache_key(source));
-
         let mut cache = self.statement_cache.borrow_mut();
-        // FIXME: This can be cleaned up once https://github.com/rust-lang/rust/issues/32281
-        // is stable
-        if cache.contains_key(&cache_key) {
-            Ok(cache[&cache_key].clone())
-        } else {
-            let statement = {
-                let sql = try!(sql_from_cache_key(&cache_key, source));
 
-                Statement::prepare(&self.raw_connection, &sql)
-                    .map(StatementUse::new)
-            };
-            if !source.is_safe_to_cache_prepared() {
-                return statement;
+        match cache.entry(cache_key) {
+            Occupied(entry) => Ok(entry.get().clone()),
+            Vacant(entry) => {
+                let statement = {
+                    let sql = try!(sql_from_cache_key(&cache_key, source));
+
+                    Statement::prepare(&self.raw_connection, &sql)
+                        .map(StatementUse::new)
+                };
+
+                if !source.is_safe_to_cache_prepared() {
+                    return statement;
+                }
+
+                Ok(entry.insert(statement).clone())
             }
-            let entry = cache.entry(cache_key);
-            Ok(entry.or_insert(try!(statement)).clone())
         }
     }
 }
