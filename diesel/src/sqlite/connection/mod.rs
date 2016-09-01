@@ -166,7 +166,7 @@ impl SqliteConnection {
             Occupied(entry) => Ok(entry.get().clone()),
             Vacant(entry) => {
                 let statement = {
-                    let sql = try!(sql_from_cache_key(&cache_key, source));
+                    let sql = try!(sql_from_cache_key(&entry.key(), source));
 
                     Statement::prepare(&self.raw_connection, &sql)
                         .map(StatementUse::new)
@@ -176,7 +176,7 @@ impl SqliteConnection {
                     return statement;
                 }
 
-                Ok(entry.insert(statement).clone())
+                Ok(entry.insert(try!(statement)).clone())
             }
         }
     }
