@@ -57,6 +57,62 @@ macro_rules! column {
     }
 }
 
+#[macro_export]
+#[doc(hidden)]
+macro_rules! column2 {
+    ($($table:ident)::*, $column_name:ident as $column_str:expr => $Type:ty) => {
+        
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(Debug, Clone, Copy)]
+        pub struct $column_name;
+
+        impl $crate::expression::Expression for $column_name {
+            type SqlType = $Type;
+        }
+
+        impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
+            DB: $crate::backend::Backend,
+        {
+            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
+                try!(out.push_identifier($($table)::*::name()));
+                out.push_sql(".");
+                out.push_identifier($column_str)
+            }
+
+            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+                Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
+        }
+
+        impl_query_id!($column_name);
+
+        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
+
+        impl<'a, ST, Left, Right> SelectableExpression<
+            $crate::WithQuerySource<'a, Left, Right>, ST> for $column_name where
+            $column_name: SelectableExpression<Left, ST>
+        {
+        }
+
+        impl $crate::expression::NonAggregate for $column_name {}
+
+        impl $crate::query_source::Column for $column_name {
+            type Table = $($table)::*;
+
+            fn name() -> &'static str {
+                $column_str
+            }
+        }
+    };
+    ($($table:ident)::*, $column_name:ident => $Type:ty) => {
+         column2!($($table)::*, $column_name as stringify!($column_name) => $Type);
+    };
+}
+
 /// Specifies that a table exists, and what columns it has. This will create a
 /// new public module, with the same name, as the name of the table. In this
 /// module, you'll find a unit struct named `table`, and a unit struct with the
@@ -201,6 +257,47 @@ macro_rules! table {
             }
         }
     };
+
+}
+
+#[macro_export]
+macro_rules! table2 {
+    (
+        $name:ident $(as [$name_str:expr])* {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table2! {
+            $name $(as [$name_str])* (id) {
+                $($column_name $(as $column_str)* => $Type,)+
+            }
+        }
+    };
+
+    (
+        $name:ident $(as [$name_str:expr])* ($pk:ident) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            $name $(as [$name_str])* ($pk) {
+                $($column_name $(as $column_str)* => $Type,)+
+            }
+        }
+    };
+
+    (
+        $name:ident $(as [$name_str:expr])* ($pk:ident, $($composite_pk:ident),+) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            $name $(as [$name_str])* ($pk, $($composite_pk,)+) {
+                $($column_name $(as $column_str)* => $Type,)+
+            }
+        }
+    };
+
 }
 
 #[macro_export]
@@ -358,6 +455,194 @@ macro_rules! table_body {
         }
     }
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! table_body2 {
+    (
+        $name:ident ($pk:ident) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            table_name = $name,
+            table_name_str = stringify!($name),
+            primary_key_ty = columns::$pk,
+            primary_key_expr = columns::$pk,
+            columns = [$($column_name $(as $column_str)* => $Type,)+],
+        }
+    };
+
+    (
+        $name:ident ($($pk:ident,)+) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            table_name = $name,
+            table_name_str = stringify!($name),
+            primary_key_ty = ($(columns::$pk,)+),
+            primary_key_expr = ($(columns::$pk,)+),
+            columns = [$($column_name $(as $column_str)* => $Type,)+],
+        }
+    };
+
+    (
+        $name:ident as [$name_str:expr] ($pk:ident) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            table_name = $name,
+            table_name_str = $name_str,
+            primary_key_ty = columns::$pk,
+            primary_key_expr = columns::$pk,
+            columns = [$($column_name $(as $column_str)* => $Type,)+],
+        }
+    };
+
+    (
+        $name:ident as [$name_str:expr] ($($pk:ident,)+) {
+            $($column_name:ident $(as $column_str:expr)* => $Type:ty,)+
+        }
+    ) => {
+        table_body2! {
+            table_name = $name,
+            table_name_str = $name_str,
+            primary_key_ty = ($(columns::$pk,)+),
+            primary_key_expr = ($(columns::$pk,)+),
+            columns = [$($column_name $(as $column_str)* => $Type,)+],
+        }
+    };
+
+    (
+        table_name = $table_name:ident,
+        table_name_str = $table_name_str:expr,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident $(as $column_str:expr)* => $column_ty:ty,)+],
+    ) => {
+        pub mod $table_name {
+            use $crate::{
+                QuerySource,
+                Table,
+            };
+            use $crate::query_builder::*;
+            use $crate::query_builder::nodes::Identifier;
+            use $crate::types::*;
+            pub use self::columns::*;
+
+            pub mod dsl {
+                pub use super::columns::{$($column_name),+};
+                pub use super::table as $table_name;
+            }
+
+            #[allow(non_upper_case_globals, dead_code)]
+            pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
+
+            #[allow(non_camel_case_types, missing_debug_implementations)]
+            #[derive(Clone, Copy)]
+            pub struct table;
+
+            impl table {
+                #[allow(dead_code)]
+                pub fn star(&self) -> star {
+                    star
+                }
+            }
+
+            pub type SqlType = ($($column_ty,)+);
+
+            pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
+
+            impl QuerySource for table {
+                type FromClause = Identifier<'static>;
+
+                fn from_clause(&self) -> Self::FromClause {
+                    Identifier(stringify!($table_name))
+                }
+            }
+
+            impl AsQuery for table {
+                type SqlType = SqlType;
+                type Query = SelectStatement<SqlType, ($($column_name,)+), Self>;
+
+                fn as_query(self) -> Self::Query {
+                    SelectStatement::simple(all_columns, self)
+                }
+            }
+
+            impl Table for table {
+                type PrimaryKey = $primary_key_ty;
+                type AllColumns = ($($column_name,)+);
+
+                fn name() -> &'static str {
+                    $table_name_str
+                }
+
+                fn primary_key(&self) -> Self::PrimaryKey {
+                    $primary_key_expr
+                }
+
+                fn all_columns() -> Self::AllColumns {
+                    ($($column_name,)+)
+                }
+            }
+
+            impl IntoUpdateTarget for table {
+                type Table = Self;
+                type WhereClause = ();
+
+                fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
+                    UpdateTarget {
+                        table: self,
+                        where_clause: None,
+                    }
+                }
+            }
+
+            impl_query_id!(table);
+
+            pub mod columns {
+                use super::table;
+                use $crate::{Table, Expression, SelectableExpression};
+                use $crate::backend::Backend;
+                use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::result::QueryResult;
+                use $crate::types::*;
+
+                #[allow(non_camel_case_types, dead_code)]
+                #[derive(Debug, Clone, Copy)]
+                pub struct star;
+
+                impl Expression for star {
+                    type SqlType = ();
+                }
+
+                impl<DB: Backend> QueryFragment<DB> for star {
+                    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                        try!(out.push_identifier(table::name()));
+                        out.push_sql(".*");
+                        Ok(())
+                    }
+
+                    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+                        Ok(())
+                    }
+
+                    fn is_safe_to_cache_prepared(&self) -> bool {
+                        true
+                    }
+                }
+
+                impl SelectableExpression<table> for star {}
+
+                $(column2!(table, $column_name $(as $column_str)* => $column_ty);)+
+            }
+        }
+    }
+}
+
 
 #[macro_export]
 #[doc(hidden)]
