@@ -559,7 +559,7 @@ macro_rules! table_body2 {
                 type FromClause = Identifier<'static>;
 
                 fn from_clause(&self) -> Self::FromClause {
-                    Identifier(stringify!($table_name))
+                    Identifier($table_name_str)
                 }
             }
 
