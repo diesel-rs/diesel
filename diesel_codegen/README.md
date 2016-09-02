@@ -9,8 +9,11 @@ boilerplate needing to be written. It can be used through `rustc_plugin`, or
 Using on nightly
 ----------------
 
-Make sure you're on a nightly from 2016-07-07 or later, we don't compile on earlier versions. To use with nightly, you'll want to turn off the default features. Add this
-line to your dependencies section in `Cargo.toml`
+Make sure you're using nightly-2016-08-18, we don't test against earlier or
+later versions. We update our supported nightly version to the latest nightly
+once every 6 weeks, coinciding with Rust releases.
+
+Add this line to your dependencies section in `Cargo.toml`
 
 ```toml
 diesel_codegen = { version = "0.7.0", features = ["postgres"] }
