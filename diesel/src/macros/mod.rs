@@ -201,7 +201,7 @@ macro_rules! table {
     ) => {
         table_body! {
             $name $(as [$name_str])* ($pk, $($composite_pk,)+) {
-                $($column_name $(as [$column_str])* => $Type,)+
+                $($column_name $(as [$column_str])* -> $Type,)+
             }
         }
     };
