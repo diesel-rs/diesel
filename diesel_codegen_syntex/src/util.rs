@@ -37,8 +37,8 @@ fn single_arg_value_of_attr(
             if items.len() != 1 {
                 return usage_err();
             }
-            match items[0].node {
-                ast::MetaItemKind::Word(ref value) => Some(str_to_ident(&value)),
+            match items[0].word() {
+                Some(word) => Some(str_to_ident(&word.name())),
                 _ => usage_err(),
             }
         }

@@ -1,4 +1,4 @@
-use syntax::ast::{self, MetaItem, MetaItemKind, TyKind};
+use syntax::ast::{self, MetaItem, NestedMetaItem, MetaItemKind, TyKind};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -41,21 +41,21 @@ fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<Changeset
                 treat_none_as_null: treat_none_as_null,
             })
         }
-        _ => usage_error(cx, meta_item),
+        _ => usage_error(cx, meta_item.span()),
     }
 }
 
-fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<InternedString, ()> {
-    match meta_item.node {
-        MetaItemKind::Word(ref word) => Ok(word.clone()),
-        _ => usage_error(cx, meta_item),
+fn table_name(cx: &mut ExtCtxt, meta_item: &NestedMetaItem) -> Result<InternedString, ()> {
+    match meta_item.word() {
+        Some(word) => Ok(word.name().clone()),
+        _ => usage_error(cx, meta_item.span()),
     }
 }
 
-fn boolean_option(cx: &mut ExtCtxt, meta_items: &[P<MetaItem>], option_name: &str)
+fn boolean_option(cx: &mut ExtCtxt, meta_items: &[NestedMetaItem], option_name: &str)
     -> Result<Option<bool>, ()>
 {
-    if let Some(item) = meta_items.iter().find(|item| item.name() == option_name) {
+    if let Some(item) = meta_items.iter().find(|item| item.check_name(option_name)) {
         match item.value_str() {
             Some(ref s) if *s == "true" => Ok(Some(true)),
             Some(ref s) if *s == "false" => Ok(Some(false)),
@@ -71,8 +71,8 @@ fn boolean_option(cx: &mut ExtCtxt, meta_items: &[P<MetaItem>], option_name: &st
     }
 }
 
-fn usage_error<T>(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<T, ()> {
-    cx.span_err(meta_item.span,
+fn usage_error<T>(cx: &mut ExtCtxt, span: Span) -> Result<T, ()> {
+    cx.span_err(span,
         "`changeset_for` must be used in the form `#[changeset_for(table1)]`");
     Err(())
 }
