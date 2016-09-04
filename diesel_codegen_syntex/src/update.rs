@@ -1,5 +1,4 @@
 use syntax::ast::{self, MetaItem, MetaItemKind, TyKind};
-use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;

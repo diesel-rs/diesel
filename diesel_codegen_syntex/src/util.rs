@@ -1,6 +1,5 @@
 use syntax::ast::TyKind;
 use syntax::ast;
-use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::ExtCtxt;
 use syntax::ext::build::AstBuilder;
