@@ -5,6 +5,8 @@ mod ord;
 #[macro_use]
 #[doc(hidden)]
 pub mod impls;
+#[macro_use]
+pub mod custom_type;
 mod fold;
 
 #[doc(hidden)]
@@ -25,6 +27,8 @@ pub use self::ord::SqlOrd;
 
 /// Marker trait for types which can be folded for a sum.
 pub use self::fold::Foldable;
+
+pub use self::custom_type::CustomSqlType;
 
 use backend::{Backend, TypeMetadata};
 use row::Row;
