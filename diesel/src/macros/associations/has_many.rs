@@ -44,14 +44,25 @@
 ///
 /// [custom_derive]: https://crates.io/crates/custom_derive
 ///
-/// ```ignore
+/// ```no_run
+/// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate custom_derive;
+/// # table! { users { id -> Integer, } }
+/// # table! { posts { id -> Integer, user_id -> Integer, } }
+/// # custom_derive!{
+/// #     #[derive(Identifiable(posts))]
+/// #     pub struct Post {
+/// #         id: i32,
+/// #         user_id: i32,
+/// #     }
+/// # }
 /// custom_derive! {
-///     #[derive(HasMany(posts, foreign_key = user_id)]
-///     #[table_name(users)]
+///     #[derive(HasMany(posts, foreign_key = user_id, table = users), Identifiable(users))]
 ///     struct User {
 ///         id: i32,
 ///     }
 /// }
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! HasMany {
@@ -62,6 +73,20 @@ macro_rules! HasMany {
     ) => {
         HasMany! {
             (
+                child_table = $child_table_name::table,
+                foreign_key = $child_table_name::$foreign_key_name,
+            )
+            $($rest)*
+        }
+    };
+    // Format arguments
+    (
+        ($child_table_name:ident, foreign_key = $foreign_key_name:ident, table = $table_name:ident)
+        $($rest:tt)*
+    ) => {
+        HasMany! {
+            (
+                parent_table_name = $table_name,
                 child_table = $child_table_name::table,
                 foreign_key = $child_table_name::$foreign_key_name,
             )
