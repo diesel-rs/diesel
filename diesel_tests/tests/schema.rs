@@ -1,6 +1,6 @@
 use diesel::*;
 
-infer_schema!(dotenv!("DATABASE_URL"));
+infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[has_many(posts)]

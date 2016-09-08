@@ -10,10 +10,11 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
-diesel_codegen_syntex = { version = "0.7.0", default-features = false }
+diesel_codegen_syntex = { path = "../diesel_codegen_syntex", default-features = false }
 
 [features]
-default = ["postgres"]
+default = ["postgres", "dotenv"]
+dotenv = ["diesel_codegen_syntex/dotenv"]
 postgres = ["diesel_codegen_syntex/postgres"]
 sqlite = ["diesel_codegen_syntex/sqlite"]
 

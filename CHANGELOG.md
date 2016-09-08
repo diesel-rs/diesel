@@ -20,6 +20,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel CLI can now generate bash completion. See [the readme][bash completion]
   for details.
 
+* `infer_schema!` and `infer_table_from_schema!` can now take `"env:foo"`
+  instead of `env!("foo")` and `"dotenv:foo"` instead of `dotenv!("foo")`. The
+  use of `dotenv` requires the `dotenv` feature on `diesel_codegen`, which is
+  included by default. Using `env!` and `dotenv!` will no longer work with
+  `diesel_codegen`. They continue to work with `diesel_codgen_syntex`, but that
+  crate will be deprecated when Macros 1.1 is in the beta channel for Rust.
+
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
 
 ### Changed

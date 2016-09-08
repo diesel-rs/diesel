@@ -1,4 +1,5 @@
 mod data_structures;
+mod database_url;
 #[cfg(feature = "postgres")]
 mod pg;
 #[cfg(feature = "sqlite")]
@@ -14,6 +15,7 @@ use syntax::util::small_vector::SmallVector;
 use syntax::tokenstream::TokenTree;
 
 use self::data_structures::*;
+use self::database_url::extract_database_url;
 use util::comma_delimited_tokens;
 
 pub fn expand_load_table<'cx>(
@@ -41,7 +43,7 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
     sp: Span,
     exprs: &mut T,
 ) -> Result<Box<MacResult>, Box<MacResult>> {
-    let database_url = try!(next_str_lit(cx, sp, exprs));
+    let database_url = try!(database_url(cx, sp, exprs));
     let table_name = try!(next_str_lit(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
     table_macro_call(cx, sp, &connection, &table_name)
@@ -69,7 +71,7 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     sp: Span,
     exprs: &mut T,
 ) -> Result<Box<MacResult>, Box<MacResult>> {
-    let database_url = try!(next_str_lit(cx, sp, exprs));
+    let database_url = try!(database_url(cx, sp, exprs));
     let connection = try!(establish_connection(cx, sp, &database_url));
     let table_names = load_table_names(&connection).unwrap();
     let impls = table_names.into_iter()
@@ -224,5 +226,20 @@ fn get_primary_keys(conn: &InferConnection, table_name: &str) -> QueryResult<Vec
         InferConnection::Sqlite(ref c) => sqlite::get_primary_keys(c, table_name),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => pg::get_primary_keys(c, table_name),
+    }
+}
+
+fn database_url<T: Iterator<Item=P<ast::Expr>>>(
+    cx: &mut ExtCtxt,
+    sp: Span,
+    exprs: &mut T,
+) -> Result<String, Box<MacResult>> {
+    let database_url = try!(next_str_lit(cx, sp, exprs));
+    match extract_database_url(&database_url) {
+        Ok(s) => Ok(s.into_owned()),
+        Err(msg) => {
+            cx.span_err(sp, &msg);
+            Err(DummyResult::any(sp))
+        }
     }
 }
