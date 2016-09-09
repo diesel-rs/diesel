@@ -8,40 +8,24 @@ extern crate syn;
 mod ast_builder;
 mod attr;
 mod model;
+mod queryable;
 mod util;
 
 use rustc_macro::TokenStream;
 use std::str::FromStr;
 use syn::parse_item;
 
-use self::attr::Attr;
-use self::model::Model;
-
 #[rustc_macro_derive(Queryable)]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
+    expand_derive(input, queryable::derive_queryable)
+}
+
+fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> TokenStream {
     let input = input.to_string();
+    // FIXME: https://github.com/rust-lang/rust/issues/35900#issuecomment-245971366
     let input = input.replace("#[structural_match]", "");
 
     let item = parse_item(&input);
-    let model = match Model::from_item(&item) {
-        Ok(m) => m,
-        Err(e) => panic!("#[derive(Queryable)] {}", e),
-    };
-
-    let struct_ty = &model.ty;
-    let struct_name = &model.name;
-    let ty_params = &model.generics.ty_params;
-    let attrs = model.attrs;
-    let lifetimes = &model.generics.lifetimes;
-
-    let impl_tokens = quote!(Queryable! {
-        (
-            struct_name = #struct_name,
-            struct_ty = #struct_ty,
-            generics = (#(ty_params),*),
-            lifetimes = (#(lifetimes),*),
-        ),
-        fields = [#(attrs)*],
-    });
-    TokenStream::from_str(&format!("{} {}", input, impl_tokens)).unwrap()
+    let output = f(item);
+    TokenStream::from_str(&format!("{} {}", input, output)).unwrap()
 }
