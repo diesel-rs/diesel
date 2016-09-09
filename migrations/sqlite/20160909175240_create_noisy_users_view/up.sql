@@ -1,0 +1,10 @@
+CREATE TABLE stuff (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name VARCHAR NOT NULL,
+  important BOOLEAN NOT NULL DEFAULT 0
+);
+
+CREATE VIEW important_stuff AS
+  SELECT id, name
+  FROM stuff
+  WHERE important = 1;
