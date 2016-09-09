@@ -24,6 +24,13 @@ pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
     })
 }
 
+pub fn str_value_of_attr_with_name<'a>(
+    attrs: &'a [Attribute],
+    name: &str,
+) -> Option<&'a str> {
+    attr_with_name(attrs, name).map(|attr| str_value_of_attr(attr, name))
+}
+
 pub fn ident_value_of_attr_with_name<'a>(
     attrs: &'a [Attribute],
     name: &str,
@@ -44,6 +51,13 @@ pub fn attr_name(attr: &Attribute) -> &Ident {
         MetaItem::Word(ref name) => name,
         MetaItem::List(ref name, _) => name,
         MetaItem::NameValue(ref name, _) => name,
+    }
+}
+
+fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
+    match attr.value {
+        MetaItem::NameValue(_, ref value) => &*value,
+        _ => panic!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name),
     }
 }
 

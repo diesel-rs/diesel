@@ -4,10 +4,7 @@ use syn;
 use model::Model;
 
 pub fn derive_queryable(item: syn::Item) -> Tokens {
-    let model = match Model::from_item(&item) {
-        Ok(m) => m,
-        Err(e) => panic!("#[derive(Queryable)] {}", e),
-    };
+    let model = t!(Model::from_item(&item, "Queryable"));
 
     let struct_ty = &model.ty;
     let struct_name = &model.name;
