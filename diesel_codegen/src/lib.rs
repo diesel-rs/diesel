@@ -26,10 +26,6 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
         intern("derive_Insertable"),
         MultiDecorator(Box::new(insertable::expand_derive_insertable))
     );
-    reg.register_syntax_extension(
-        intern("derive_Queryable"),
-        MultiDecorator(Box::new(queryable::expand_derive_queryable))
-    );
     reg.register_macro("embed_migrations", migrations::expand_embed_migrations);
     reg.register_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.register_macro("infer_schema", schema_inference::expand_infer_schema);

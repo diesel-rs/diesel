@@ -1,0 +1,11 @@
+[package]
+name = "diesel_codegen_new"
+version = "0.8.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[dependencies]
+syn = "0.4.0"
+quote = "0.1.1"
+
+[lib]
+rustc-macro = true
