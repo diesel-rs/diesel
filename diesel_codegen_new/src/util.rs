@@ -1,3 +1,4 @@
+use std::mem;
 use syn::*;
 
 use ast_builder::ty_ident;
@@ -36,6 +37,13 @@ pub fn ident_value_of_attr_with_name<'a>(
     name: &str,
 ) -> Option<&'a Ident> {
     attr_with_name(attrs, name).map(|attr| single_arg_value_of_attr(attr, name))
+}
+
+pub fn list_value_of_attr_with_name<'a>(
+    attrs: &'a [Attribute],
+    name: &str,
+) -> Option<Vec<&'a Ident>> {
+    attr_with_name(attrs, name).map(|attr| list_value_of_attr(attr, name))
 }
 
 pub fn attr_with_name<'a>(
@@ -77,6 +85,18 @@ fn single_arg_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a Ident {
     }
 }
 
+fn list_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Vec<&'a Ident> {
+    match attr.value {
+        MetaItem::List(_, ref items) => {
+            items.iter().map(|item| match *item {
+                MetaItem::Word(ref name) => name,
+                _ => panic!("`{}` must be in the form `#[{}(something, something_else)]`", name, name),
+            }).collect()
+        }
+        _ => panic!("`{}` must be in the form `#[{}(something, something_else)]`", name, name),
+    }
+}
+
 pub fn is_option_ty(ty: &Ty) -> bool {
     let option_ident = Ident::new("Option");
     match *ty {
@@ -86,5 +106,23 @@ pub fn is_option_ty(ty: &Ty) -> bool {
                 .unwrap_or(false)
         }
         _ => false,
+    }
+}
+
+pub fn strip_attributes(attrs: Vec<Attribute>, names_to_strip: &[&str]) -> Vec<Attribute> {
+    attrs.into_iter().filter(|attr| {
+        let attr_name = attr_name(attr);
+        !names_to_strip.contains(&attr_name.as_ref())
+    }).collect()
+}
+
+pub fn strip_field_attributes(item: &mut Item, names_to_strip: &[&str]) {
+    if let Body::Struct(_, ref mut fields) = item.body {
+        let mut attrs = Vec::new();
+        for field in fields {
+            mem::swap(&mut attrs, &mut field.attrs);
+            attrs = strip_attributes(attrs, names_to_strip);
+            mem::swap(&mut attrs, &mut field.attrs);
+        }
     }
 }

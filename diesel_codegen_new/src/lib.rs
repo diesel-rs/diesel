@@ -26,6 +26,22 @@ use rustc_macro::TokenStream;
 use std::str::FromStr;
 use syn::parse_item;
 
+use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
+
+const KNOWN_CUSTOM_DERIVES: &'static [&'static str] = &[
+    "Queryable",
+    "Identifiable",
+    "Insertable",
+];
+
+const KNOWN_CUSTOM_ATTRIBUTES: &'static [&'static str] = &[
+    "table_name",
+];
+
+const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
+    "column_name",
+];
+
 #[rustc_macro_derive(Queryable)]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
@@ -46,7 +62,22 @@ fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> Token
     // FIXME: https://github.com/rust-lang/rust/issues/35900#issuecomment-245971366
     let input = input.replace("#[structural_match]", "");
 
-    let item = parse_item(&input);
-    let output = f(item);
+    let mut item = parse_item(&input);
+    let output = f(item.clone());
+
+    let finished_deriving_diesel_traits = {
+        let remaining_derives = list_value_of_attr_with_name(&item.attrs, "derive");
+        !remaining_derives
+            .unwrap_or(Vec::new())
+            .iter()
+            .any(|trait_name| KNOWN_CUSTOM_DERIVES.contains(&trait_name.as_ref()))
+    };
+
+    if finished_deriving_diesel_traits {
+        item.attrs = strip_attributes(item.attrs, KNOWN_CUSTOM_ATTRIBUTES);
+        strip_field_attributes(&mut item, KNOWN_FIELD_ATTRIBUTES);
+    }
+    let input = quote!(#item);
+
     TokenStream::from_str(&format!("{} {}", input, output)).unwrap()
 }
