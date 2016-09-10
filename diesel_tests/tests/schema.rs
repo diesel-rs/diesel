@@ -65,7 +65,6 @@ select_column_workaround!(comments -> users (id, post_id, text));
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
-#[table_name = "users"]
 #[table_name="users"]
 pub struct NewUser {
     pub name: String,

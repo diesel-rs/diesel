@@ -14,6 +14,7 @@ extern crate quote;
 extern crate rustc_macro;
 extern crate syn;
 
+mod as_changeset;
 mod ast_builder;
 mod attr;
 mod identifiable;
@@ -29,13 +30,15 @@ use syn::parse_item;
 use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
 
 const KNOWN_CUSTOM_DERIVES: &'static [&'static str] = &[
-    "Queryable",
+    "AsChangeset",
     "Identifiable",
     "Insertable",
+    "Queryable",
 ];
 
 const KNOWN_CUSTOM_ATTRIBUTES: &'static [&'static str] = &[
     "table_name",
+    "changeset_options"
 ];
 
 const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
@@ -55,6 +58,11 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 #[rustc_macro_derive(Insertable)]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
+}
+
+#[rustc_macro_derive(AsChangeset)]
+pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
+    expand_derive(input, as_changeset::derive_as_changeset)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> TokenStream {
