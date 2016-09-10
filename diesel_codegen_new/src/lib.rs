@@ -17,6 +17,7 @@ extern crate syn;
 mod ast_builder;
 mod attr;
 mod identifiable;
+mod insertable;
 mod model;
 mod queryable;
 mod util;
@@ -33,6 +34,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 #[rustc_macro_derive(Identifiable)]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive_identifiable)
+}
+
+#[rustc_macro_derive(Insertable)]
+pub fn derive_insertable(input: TokenStream) -> TokenStream {
+    expand_derive(input, insertable::derive_insertable)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> TokenStream {

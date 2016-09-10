@@ -4,7 +4,7 @@ infer_schema!(dotenv!("DATABASE_URL"));
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[has_many(posts)]
-#[table_name = "users"]
+#[table_name="users"]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -66,6 +66,7 @@ join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[table_name = "users"]
+#[table_name="users"]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
