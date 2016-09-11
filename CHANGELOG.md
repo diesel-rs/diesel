@@ -102,6 +102,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `&&[T]` can now be used in queries. This allows using slices with things like
   `#[insertable_into]`.
 
+*  The `infer_schema!` macro will no longer fetch views alongside with tables.
+   This was a source of trouble for people that had created views or are using
+   any extension that automatically creates views (e.g. PostGIS)
+
 ## [0.6.1] 2016-04-14
 
 ### Added
