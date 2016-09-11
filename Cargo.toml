@@ -5,5 +5,9 @@ members = [
     "diesel_codegen",
     "diesel_codegen_syntex",
     "diesel_compile_tests",
-    "diesel_tests"
+    "diesel_tests",
+    "examples/getting_started_step_1",
+    "examples/getting_started_step_2",
+    "examples/getting_started_step_3",
+    "examples/getting_started_step_4",
 ]
