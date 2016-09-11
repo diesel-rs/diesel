@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use sqlite::SqliteType;
 use result::*;
-use result::Error::{DatabaseError, QueryBuilderError};
+use result::Error::{DatabaseError, DeserializationError};
 use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
 
@@ -72,7 +72,7 @@ impl Statement {
                 ),
             (SqliteType::Float, Some(bytes)) => {
                 let value = try!((&bytes[..]).read_f32::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                    .map_err(|e| DeserializationError(Box::new(e))));
                 ffi::sqlite3_bind_double(
                     self.inner_statement,
                     self.bind_index,
@@ -81,7 +81,7 @@ impl Statement {
             }
             (SqliteType::Double, Some(bytes)) => {
                 let value = try!((&bytes[..]).read_f64::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                    .map_err(|e| DeserializationError(Box::new(e))));
                 ffi::sqlite3_bind_double(
                     self.inner_statement,
                     self.bind_index,
@@ -90,7 +90,7 @@ impl Statement {
             }
             (SqliteType::SmallInt, Some(bytes)) => {
                 let value = try!((&bytes[..]).read_i16::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                    .map_err(|e| DeserializationError(Box::new(e))));
                 ffi::sqlite3_bind_int(
                     self.inner_statement,
                     self.bind_index,
@@ -99,7 +99,7 @@ impl Statement {
             }
             (SqliteType::Integer, Some(bytes)) => {
                 let value = try!((&bytes[..]).read_i32::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                    .map_err(|e| DeserializationError(Box::new(e))));
                 ffi::sqlite3_bind_int(
                     self.inner_statement,
                     self.bind_index,
@@ -108,7 +108,7 @@ impl Statement {
             }
             (SqliteType::Long, Some(bytes)) => {
                 let value = try!((&bytes[..]).read_i64::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                    .map_err(|e| DeserializationError(Box::new(e))));
                 ffi::sqlite3_bind_int64(
                     self.inner_statement,
                     self.bind_index,
