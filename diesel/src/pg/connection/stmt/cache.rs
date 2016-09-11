@@ -8,7 +8,6 @@ use std::rc::Rc;
 use pg::{Pg, PgQueryBuilder};
 use query_builder::{QueryFragment, QueryId};
 use result::QueryResult;
-use result::Error::QueryBuilderError;
 use super::{Query, RawConnection};
 
 pub struct StatementCache {
@@ -108,7 +107,7 @@ fn to_sql<T: QueryFragment<Pg>>(conn: &Rc<RawConnection>, source: &T)
     -> QueryResult<String>
 {
     let mut query_builder = PgQueryBuilder::new(conn);
-    try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
+    try!(source.to_sql(&mut query_builder));
     Ok(query_builder.sql)
 }
 

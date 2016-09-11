@@ -38,14 +38,14 @@ pub use self::update_statement::{
 #[doc(inline)]
 pub use self::insert_statement::IncompleteInsertStatement;
 
-use std::error::Error;
+use super::result::Error;
 
 use backend::Backend;
 use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
-pub type BuildQueryResult = Result<(), Box<Error+Send>>;
+pub type BuildQueryResult = Result<(), Error>;
 
 /// Apps should not need to concern themselves with this trait.
 ///

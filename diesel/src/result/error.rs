@@ -21,10 +21,6 @@ quick_error! {
         NotFound {
             description("Record not found")
         }
-        QueryBuilderError(err: Box<StdError+Send>) {
-            description(err.description())
-            display("Query builder error: {}", err)
-        }
         DeserializationError(err: Box<StdError+Send+Sync>) {
             description(err.description())
             display("Deserialization error: {}", err)
