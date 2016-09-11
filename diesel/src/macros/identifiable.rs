@@ -31,15 +31,18 @@
 ///
 /// [custom_derive]: https://crates.io/crates/custom_derive
 ///
-/// ```ignore
+/// ```no_run
+/// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate custom_derive;
+/// # table! { users { id -> Integer, } }
 /// custom_derive! {
-///     #[derive(Identifiable)]
-///     #[table_name(users)]
+///     #[derive(Identifiable(users))]
 ///     struct User {
 ///         id: i32,
 ///         name: String,
 ///     }
 /// }
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! Identifiable {
@@ -47,6 +50,16 @@ macro_rules! Identifiable {
     (
         $(())*
         #[table_name($table_name:ident)]
+        $($rest:tt)*
+    ) => {
+        Identifiable! {
+            (table_name = $table_name,)
+            $($rest)*
+        }
+    };
+    // custom_derive does not pass any meta items
+    (
+        ($table_name:ident)
         $($rest:tt)*
     ) => {
         Identifiable! {
