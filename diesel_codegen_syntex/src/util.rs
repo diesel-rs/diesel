@@ -115,10 +115,6 @@ pub fn ty_param_of_option(ty: &ast::Ty) -> Option<&P<ast::Ty>> {
     }
 }
 
-pub fn is_option_ty(ty: &ast::Ty) -> bool {
-    ty_param_of_option(ty).is_some()
-}
-
 pub fn lifetime_list_tokens(lifetimes: &[ast::LifetimeDef], span: Span) -> Vec<TokenTree> {
     let lifetime_tokens = lifetimes.iter().map(|ld| {
         let name = ld.lifetime.name;
