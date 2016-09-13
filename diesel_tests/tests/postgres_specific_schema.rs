@@ -1,6 +1,6 @@
 use super::{User, posts, comments};
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 #[has_many(comments)]
 #[belongs_to(User)]
 pub struct Post {

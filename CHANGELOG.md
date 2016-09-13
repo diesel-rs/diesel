@@ -21,6 +21,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
 
+### Changed
+
+* Structs annotated with `#[has_many]` or `#[belongs_to]` now require
+  `#[derive(Associations)]`. This is to allow them to work with Macros 1.1.
+
 ### Fixed
 
 * `diesel migrations run` will now respect migration directories overridden by

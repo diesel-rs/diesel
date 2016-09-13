@@ -9,8 +9,26 @@ use model::{infer_association_name, Model};
 mod has_many;
 mod belongs_to;
 
-pub use self::has_many::expand_has_many;
-pub use self::belongs_to::expand_belongs_to;
+use self::has_many::expand_has_many;
+use self::belongs_to::expand_belongs_to;
+
+pub fn expand_derive_associations(
+    cx: &mut ExtCtxt,
+    span: Span,
+    _: &MetaItem,
+    annotatable: &Annotatable,
+    push: &mut FnMut(Annotatable)
+) {
+    for attr in annotatable.attrs() {
+        if attr.check_name("has_many") {
+            expand_has_many(cx, span, &attr.node.value, annotatable, push);
+        }
+
+        if attr.check_name("belongs_to") {
+            expand_belongs_to(cx, span, &attr.node.value, annotatable, push);
+        }
+    }
+}
 
 fn parse_association_options(
     association_kind: &str,

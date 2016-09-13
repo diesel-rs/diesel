@@ -47,7 +47,7 @@ mod eager_loading_with_string_keys {
         id: String,
     }
 
-    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations)]
     #[belongs_to(User)]
     pub struct Post {
         id: String,

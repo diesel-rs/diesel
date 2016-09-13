@@ -30,10 +30,9 @@ pub fn register(reg: &mut syntex::Registry) {
 
     reg.add_decorator("derive_Queryable", queryable::expand_derive_queryable);
     reg.add_decorator("derive_Identifiable", identifiable::expand_derive_identifiable);
+    reg.add_decorator("derive_Associations", associations::expand_derive_associations);
     reg.add_decorator("insertable_into", insertable::expand_insert);
     reg.add_decorator("changeset_for", update::expand_changeset_for);
-    reg.add_decorator("has_many", associations::expand_has_many);
-    reg.add_decorator("belongs_to", associations::expand_belongs_to);
     reg.add_macro("embed_migrations", migrations::expand_embed_migrations);
     reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
