@@ -27,3 +27,18 @@ fn delete_single_record() {
 
     assert_eq!(Ok(vec![tess]), users.load(&connection));
 }
+
+#[test]
+#[cfg(not(feature = "sqlite"))]
+fn return_deleted_records() {
+    use schema::users::dsl::*;
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let deleted_name = delete(users.filter(name.eq("Sean")))
+        .returning(name)
+        .get_result(&connection);
+    assert_eq!(Ok("Sean".to_string()), deleted_name);
+
+    let num_users = users.count().first(&connection);
+    assert_eq!(Ok(1), num_users);
+}
