@@ -69,6 +69,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for the PostgreSQL `ALL` operator. See
   http://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
 
+* Added support for `RETURNING` expressions in `DELETE` statements. Implicitly
+  these queries will use `RETURNING *`.
+
 ### Changed
 
 * Diesel now targets `nightly-2016-07-07`. Future releases will update to a
