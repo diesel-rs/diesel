@@ -41,9 +41,10 @@ fn main() {
 
 fn run_migration_command(matches: &ArgMatches) {
     match matches.subcommand() {
-        ("run", Some(_)) => {
+        ("run", Some(args)) => {
             let database_url = database::database_url(matches);
-            call_with_conn!(database_url, migrations::run_pending_migrations)
+            let dir = migrations_dir(args);
+            call_with_conn!(database_url, migrations::run_pending_migrations_in_directory(&dir, &mut stdout()))
                 .unwrap_or_else(handle_error);
         }
         ("revert", Some(_)) => {
