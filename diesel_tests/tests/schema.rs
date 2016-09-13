@@ -2,10 +2,10 @@ use diesel::*;
 
 infer_schema!(dotenv!("DATABASE_URL"));
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[changeset_for(users)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, AsChangeset, Associations)]
 #[insertable_into(users)]
 #[has_many(posts)]
+#[table_name = "users"]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -65,9 +65,9 @@ select_column_workaround!(comments -> users (id, post_id, text));
 
 join_through!(users -> posts -> comments);
 
-#[derive(Debug, PartialEq, Eq, Queryable, Clone)]
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, AsChangeset)]
 #[insertable_into(users)]
-#[changeset_for(users)]
+#[table_name = "users"]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,

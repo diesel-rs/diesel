@@ -30,11 +30,11 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_attr("feature(custom_derive)");
     reg.add_attr("feature(custom_attribute)");
 
-    reg.add_decorator("derive_Queryable", queryable::expand_derive_queryable);
-    reg.add_decorator("derive_Identifiable", identifiable::expand_derive_identifiable);
+    reg.add_decorator("derive_AsChangeset", update::expand_derive_as_changeset);
     reg.add_decorator("derive_Associations", associations::expand_derive_associations);
+    reg.add_decorator("derive_Identifiable", identifiable::expand_derive_identifiable);
+    reg.add_decorator("derive_Queryable", queryable::expand_derive_queryable);
     reg.add_decorator("insertable_into", insertable::expand_insert);
-    reg.add_decorator("changeset_for", update::expand_changeset_for);
     reg.add_macro("embed_migrations", migrations::expand_embed_migrations);
     reg.add_macro("infer_table_from_schema", schema_inference::expand_load_table);
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);

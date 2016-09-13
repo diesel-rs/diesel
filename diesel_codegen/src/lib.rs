@@ -15,20 +15,20 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
         MultiDecorator(Box::new(associations::expand_derive_associations)),
     );
     reg.register_syntax_extension(
-        intern("derive_Queryable"),
-        MultiDecorator(Box::new(queryable::expand_derive_queryable))
+        intern("derive_AsChangeset"),
+        MultiDecorator(Box::new(update::expand_derive_as_changeset)),
     );
     reg.register_syntax_extension(
         intern("derive_Identifiable"),
         MultiDecorator(Box::new(identifiable::expand_derive_identifiable))
     );
     reg.register_syntax_extension(
-        intern("insertable_into"),
-        MultiDecorator(Box::new(insertable::expand_insert))
+        intern("derive_Queryable"),
+        MultiDecorator(Box::new(queryable::expand_derive_queryable))
     );
     reg.register_syntax_extension(
-        intern("changeset_for"),
-        MultiDecorator(Box::new(update::expand_changeset_for)),
+        intern("insertable_into"),
+        MultiDecorator(Box::new(insertable::expand_insert))
     );
     reg.register_macro("embed_migrations", migrations::expand_embed_migrations);
     reg.register_macro("infer_table_from_schema", schema_inference::expand_load_table);

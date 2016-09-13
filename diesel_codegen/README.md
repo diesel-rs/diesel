@@ -100,20 +100,23 @@ item, targeting the given table. Can only annotate structs and tuple structs.
 Enums are not supported. See [field annotations][#field-annotations] for
 additional configurations.
 
-### `#[changeset_for(table_name)]`
+### `#[derive(AsChangeset)]`
 
 Adds an implementation of the [`AsChangeset`][as_changeset] trait to the
 annotated item, targeting the given table. At this time, it only supports
 structs with named fields. Tuple structs and enums are not supported. See [field
 annotations][#field-annotations] for additional configurations.
 
+Structs which derive `AsChangeset` must have a table name annotation like so:
+`#[table_name = "something"]`
+
 Any fields which are of the type `Option` will be skipped when their value is
 `None`. This makes it easy to support APIs where you may not want to update all
 of the fields of a record on every request.
 
 If you'd like `None` to change a field to `NULL`, instead of skipping it, you
-can pass the `treat_none_as_null` option like so: `#[changeset_for(posts,
-treat_none_as_null="true")]`
+can pass the `treat_none_as_null` option like so:
+`#[changeset_options(treat_none_as_null = "true")]`
 
 If the struct has a field for the primary key, an additional function,
 `save_changes<T: Queryable<..>>(&self, connection: &Connection) ->

@@ -5,8 +5,12 @@ use result::QueryResult;
 
 /// Types which can be passed to
 /// [`update.set`](struct.IncompleteUpdateStatement.html#method.set). This can
-/// be automatically generated for structs by
-/// [`#[changeset_for]`](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen#changeset_fortable_name).
+/// be automatically generated for structs by `#[derive(AsChangeset)]`.
+///
+/// Structs which derive this trait must be annotated with `#[table_name = "something"]`. By
+/// default, any option fields on the struct are skipped if their value is `None`. If you would
+/// like to assign `NULL` to the field instead, you can annotate your struct with
+/// `#[changeset_options(treat_none_as_null = "true")]`
 pub trait AsChangeset {
     type Target: QuerySource;
     type Changeset;
