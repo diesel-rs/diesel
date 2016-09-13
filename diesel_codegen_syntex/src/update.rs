@@ -1,14 +1,13 @@
-use syntax::ast::{self, MetaItem, MetaItemKind, TyKind};
+use syntax::ast::{self, MetaItem, MetaItemKind};
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
 use syntax::parse::token::{InternedString, str_to_ident};
+use syntax::tokenstream::TokenTree;
 
-use attr::Attr;
 use model::Model;
-use util::{ty_param_of_option, is_option_ty};
+use util::lifetime_list_tokens;
 
 pub fn expand_changeset_for(
     cx: &mut ExtCtxt,
@@ -22,21 +21,20 @@ pub fn expand_changeset_for(
         push(Annotatable::Item(changeset_impl(cx, span, &options, &model).unwrap()));
     } else {
         cx.span_err(meta_item.span,
-            "`changeset_for` may only be apllied to enums and structs");
+            "`changeset_for` may only be applied to enums and structs");
     }
 }
 
 struct ChangesetOptions {
     table_name: ast::Ident,
-    treat_none_as_null: bool,
+    treat_none_as_null: Vec<TokenTree>,
 }
 
 fn changeset_options(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<ChangesetOptions, ()> {
     match meta_item.node {
         MetaItemKind::List(_, ref meta_items) => {
             let table_name = try!(table_name(cx, &meta_items[0]));
-            let treat_none_as_null = try!(boolean_option(cx, &meta_items[1..], "treat_none_as_null"))
-                .unwrap_or(false);
+            let treat_none_as_null = try!(boolean_option(cx, &meta_items[1..], "treat_none_as_null"));
             Ok(ChangesetOptions {
                 table_name: str_to_ident(&table_name),
                 treat_none_as_null: treat_none_as_null,
@@ -53,13 +51,14 @@ fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Result<InternedString, 
     }
 }
 
+#[allow(unused_imports)] // quote_tokens! generates warnings
 fn boolean_option(cx: &mut ExtCtxt, meta_items: &[P<MetaItem>], option_name: &str)
-    -> Result<Option<bool>, ()>
+    -> Result<Vec<TokenTree>, ()>
 {
     if let Some(item) = meta_items.iter().find(|item| item.name() == option_name) {
         match item.value_str() {
-            Some(ref s) if *s == "true" => Ok(Some(true)),
-            Some(ref s) if *s == "false" => Ok(Some(false)),
+            Some(ref s) if *s == "true" => Ok(quote_tokens!(cx, "true")),
+            Some(ref s) if *s == "false" => Ok(quote_tokens!(cx, "false")),
             _ => {
                 cx.span_err(item.span,
                     &format!("Expected {} to be in the form `option=\"true\"` or \
@@ -68,7 +67,7 @@ fn boolean_option(cx: &mut ExtCtxt, meta_items: &[P<MetaItem>], option_name: &st
             }
         }
     } else {
-        Ok(None)
+        Ok(quote_tokens!(cx, "false"))
     }
 }
 
@@ -84,76 +83,26 @@ fn changeset_impl(
     options: &ChangesetOptions,
     model: &Model,
 ) -> Option<P<ast::Item>> {
-    let ref struct_name = model.ty;
-    let pk = model.primary_key_name();
+    let struct_name = model.name;
     let table_name = options.table_name;
-    let attrs_for_changeset = model.attrs.iter().filter(|a| a.column_name.name != pk.name)
+    let treat_none_as_null = &options.treat_none_as_null;
+    let struct_ty = &model.ty;
+    let lifetimes = lifetime_list_tokens(&model.generics.lifetimes, span);
+
+    let pk = model.primary_key_name();
+    let fields = model.attrs.iter()
+        .filter(|a| a.column_name.name != pk.name)
+        .map(|a| a.to_stable_macro_tokens(cx))
         .collect::<Vec<_>>();
-    let changeset_ty = cx.ty(span, TyKind::Tup(
-        attrs_for_changeset.iter()
-              .map(|a| changeset_ty(cx, span, &options, a))
-              .collect()
-    ));
-    let changeset_body = cx.expr_tuple(span, attrs_for_changeset.iter()
-        .map(|a| changeset_expr(cx, span, &options, a))
-        .collect());
-    quote_item!(cx,
-        impl<'a: 'update, 'update> ::diesel::query_builder::AsChangeset for
-            &'update $struct_name
-        {
-            type Target = $table_name::table;
-            type Changeset = $changeset_ty;
 
-            fn as_changeset(self) -> Self::Changeset {
-                $changeset_body
-            }
-        }
-    )
-}
-
-fn changeset_ty(
-    cx: &ExtCtxt,
-    span: Span,
-    options: &ChangesetOptions,
-    attr: &Attr,
-) -> P<ast::Ty> {
-    let column = cx.path(span, vec![options.table_name, attr.column_name]);
-    match (options.treat_none_as_null, ty_param_of_option(&attr.ty)) {
-        (false, Some(ty)) => {
-            let inner_ty = inner_changeset_ty(cx, column, &ty);
-            quote_ty!(cx, Option<$inner_ty>)
-        }
-        _ => inner_changeset_ty(cx, column, &attr.ty),
-    }
-}
-
-fn inner_changeset_ty(
-    cx: &ExtCtxt,
-    column: ast::Path,
-    field_ty: &ast::Ty,
-) -> P<ast::Ty> {
-    quote_ty!(cx,
-        ::diesel::expression::predicates::Eq<
-            $column,
-            ::diesel::expression::bound::Bound<
-                <$column as ::diesel::expression::Expression>::SqlType,
-                &'update $field_ty,
-            >,
-        >
-    )
-}
-
-fn changeset_expr(
-    cx: &ExtCtxt,
-    span: Span,
-    options: &ChangesetOptions,
-    attr: &Attr,
-) -> P<ast::Expr> {
-    let column = cx.path(span, vec![options.table_name, attr.column_name]);
-    let field_name = &attr.field_name.unwrap();
-    if !options.treat_none_as_null && is_option_ty(&attr.ty) {
-        quote_expr!(cx, self.$field_name.as_ref().map(|f| $column.eq(f)))
-    } else {
-        quote_expr!(cx, $column.eq(&self.$field_name))
-    }
+    quote_item!(cx, AsChangeset! {
+        (
+            struct_name = $struct_name,
+            table_name = $table_name,
+            treat_none_as_null = $treat_none_as_null,
+            struct_ty = $struct_ty,
+            lifetimes = ($lifetimes),
+        ),
+        fields = [$fields],
+    })
 }
