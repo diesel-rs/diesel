@@ -3,7 +3,6 @@ pub mod expression;
 mod backend;
 mod query_builder;
 mod connection;
-#[doc(hidden)]
 pub mod types;
 
 pub use self::backend::{Pg, PgTypeMetadata};
