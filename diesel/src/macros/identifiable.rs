@@ -25,22 +25,6 @@
 /// }
 /// # fn main() {}
 /// ```
-///
-/// To avoid copying your struct definition, you can use the
-/// [custom_derive crate][custom_derive].
-///
-/// [custom_derive]: https://crates.io/crates/custom_derive
-///
-/// ```ignore
-/// custom_derive! {
-///     #[derive(Identifiable)]
-///     #[table_name(users)]
-///     struct User {
-///         id: i32,
-///         name: String,
-///     }
-/// }
-/// ```
 #[macro_export]
 macro_rules! Identifiable {
     // Extract table name from meta item
