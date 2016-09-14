@@ -38,21 +38,6 @@
 /// }
 /// # fn main() {}
 /// ```
-///
-/// To avoid copying your struct definition, you can use the
-/// [custom_derive crate][custom_derive].
-///
-/// [custom_derive]: https://crates.io/crates/custom_derive
-///
-/// ```ignore
-/// custom_derive! {
-///     #[derive(HasMany(posts, foreign_key = user_id)]
-///     #[table_name(users)]
-///     struct User {
-///         id: i32,
-///     }
-/// }
-/// ```
 #[macro_export]
 macro_rules! HasMany {
     // Format arguments

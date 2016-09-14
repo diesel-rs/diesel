@@ -20,21 +20,6 @@
 /// }
 /// # fn main() {}
 /// ```
-///
-/// To avoid copying your struct definition, you can use the
-/// [custom_derive crate][custom_derive].
-///
-/// [custom_derive]: https://crates.io/crates/custom_derive
-///
-/// ```ignore
-/// custom_derive! {
-///     #[derive(Queryable)]
-///     struct User {
-///         name: String,
-///         hair_color: Option<String>,
-///     }
-/// }
-/// ```
 #[macro_export]
 macro_rules! Queryable {
     // Strip empty argument list if given (Passed by custom_derive macro)

@@ -1,1 +1,1 @@
-paths = ["diesel", "diesel_codegen_syntex"]
+paths = ["diesel", "diesel_codegen", "diesel_codegen_syntex"]

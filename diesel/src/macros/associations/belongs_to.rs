@@ -39,23 +39,6 @@
 /// }
 /// # fn main() {}
 /// ```
-///
-/// To avoid copying your struct definition, you can use the
-/// [custom_derive crate][custom_derive].
-///
-/// [custom_derive]: https://crates.io/crates/custom_derive
-///
-/// ```ignore
-/// custom_derive! {
-///     #[derive(BelongsTo(User, foreign_key = user_id)]
-///     #[table_name(posts)]
-///     struct Post {
-///         id: i32,
-///         user_id: i32,
-///     }
-/// }
-/// ```
-///
 /// This macro cannot be used with tuple structs.
 #[macro_export]
 macro_rules! BelongsTo {
