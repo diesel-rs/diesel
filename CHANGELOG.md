@@ -1,4 +1,5 @@
 # Change Log
+
 All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
@@ -25,6 +26,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `diesel migrations run` will now respect migration directories overridden by
   command line argument or environment variable
+* The `infer_schema!` macro will no longer fetch views alongside with tables.
+  This was a source of trouble for people that had created views or are using
+  any extension that automatically creates views (e.g. PostGIS)
 
 ## [0.7.2] - 2016-08-20
 
