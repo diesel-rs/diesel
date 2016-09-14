@@ -1,4 +1,4 @@
-use syntax::ast::{self, MetaItem, NestedMetaItem, MetaItemKind, TyKind};
+use syntax::ast::{self, MetaItem, NestedMetaItem, MetaItemKind};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
@@ -50,8 +50,9 @@ fn table_name(cx: &mut ExtCtxt, meta_item: &NestedMetaItem) -> Result<InternedSt
     }
 }
 
+#[allow(unused_imports)] // for quote_tokens!
 fn boolean_option(cx: &mut ExtCtxt, meta_items: &[NestedMetaItem], option_name: &str)
-    -> Result<Option<bool>, ()>
+    -> Result<Vec<TokenTree>, ()>
 {
     if let Some(item) = meta_items.iter().find(|item| item.check_name(option_name)) {
         match item.value_str() {

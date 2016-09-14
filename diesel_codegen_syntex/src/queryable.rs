@@ -1,9 +1,4 @@
-use syntax::ast::{
-    self,
-    Item,
-    MetaItem,
-    TyKind,
-};
+use syntax::ast::{self, Item, MetaItem, TyKind};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
