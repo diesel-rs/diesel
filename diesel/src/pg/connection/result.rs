@@ -6,7 +6,7 @@ use super::row::PgRow;
 
 use self::pq_sys::*;
 use std::ffi::CStr;
-use std::{str, slice, mem};
+use std::{str, slice};
 
 pub struct PgResult {
     internal_result: *mut PGresult,
@@ -59,8 +59,7 @@ impl PgResult {
             let row_idx = row_idx as libc::c_int;
             let col_idx = col_idx as libc::c_int;
             unsafe {
-                let value_ptr = PQgetvalue(self.internal_result, row_idx, col_idx);
-                let value_ptr = mem::transmute::<_, *const u8>(value_ptr);
+                let value_ptr = PQgetvalue(self.internal_result, row_idx, col_idx) as *const u8;
                 let num_bytes = PQgetlength(self.internal_result, row_idx, col_idx);
                 Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
             }
