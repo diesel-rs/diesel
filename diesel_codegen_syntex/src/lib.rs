@@ -3,6 +3,8 @@
 
 #[macro_use] extern crate diesel;
 
+#[cfg(test)] extern crate dotenv;
+
 #[cfg(feature = "with-syntex")]
 extern crate syntex;
 

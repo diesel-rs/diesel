@@ -21,6 +21,7 @@ diesel = { version = "0.7.0", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3.4"
+dotenv = "0.8.0"
 
 [features]
 default = ["with-syntex", "postgres"]
