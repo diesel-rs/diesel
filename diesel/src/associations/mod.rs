@@ -14,14 +14,14 @@
 //! `#[belongs_to]`.
 //!
 //! ```ignore
-//! #[derive(Identifiable, Queryable)]
+//! #[derive(Identifiable, Queryable, Associations)]
 //! #[has_many(posts)]
 //! pub struct User {
 //!     id: i32,
 //!     name: String,
 //! }
 //!
-//! #[derive(Identifiable, Queryable)]
+//! #[derive(Identifiable, Queryable, Associations)]
 //! #[belongs_to(User)]
 //! pub struct Post {
 //!     id: i32,
@@ -29,6 +29,9 @@
 //!     title: String,
 //! }
 //! ```
+//!
+//! Note that in addition to the `#[has_many]` and `#[belongs_to]` annotations, we also need to
+//! `#[derive(Associations)]`
 //!
 //! `#[has_many]` should be passed the name of the table that the children will be loaded from,
 //! while `#[belongs_to]` is given the name of the struct that represents the parent. Both types
