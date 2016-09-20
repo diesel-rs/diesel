@@ -174,3 +174,12 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     let table_names = load_table_names(&conn);
     assert_eq!(Ok(vec![String::from("users")]), table_names);
 }
+
+#[test]
+fn load_table_names_excludes_views() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
+    let table_names = load_table_names(&conn);
+    assert_eq!(Ok(vec![String::from("users")]), table_names);
+}

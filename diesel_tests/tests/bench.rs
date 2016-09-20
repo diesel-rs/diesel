@@ -10,13 +10,20 @@ extern crate test;
 mod schema;
 
 use self::test::Bencher;
-use self::schema::{users, NewUser, User, Post, TestConnection, posts, batch_insert};
+use self::schema::{
+    users, posts, comments,
+    NewUser, NewPost, NewComment,
+    User, Post, Comment,
+    TestConnection, batch_insert,
+};
 use diesel::*;
 
 #[cfg(not(feature = "sqlite"))]
 fn connection() -> TestConnection {
     let conn = schema::connection();
-    conn.execute("TRUNCATE TABLE USERS").unwrap();
+    conn.execute("TRUNCATE TABLE users").unwrap();
+    conn.execute("TRUNCATE TABLE posts").unwrap();
+    conn.execute("TRUNCATE TABLE comments").unwrap();
     conn
 }
 
@@ -57,8 +64,8 @@ macro_rules! bench_trivial_query {
     };
 }
 
-bench_trivial_query!(0,
-    bench_trivial_query_selecting______0_rows, bench_trivial_query_selecting______0_rows_boxed);
+// bench_trivial_query!(0,
+//     bench_trivial_query_selecting______0_rows, bench_trivial_query_selecting______0_rows_boxed);
 bench_trivial_query!(1,
     bench_trivial_query_selecting______1_row, bench_trivial_query_selecting______1_row_boxed);
 bench_trivial_query!(10,
@@ -113,8 +120,8 @@ macro_rules! bench_medium_complex_query {
     };
 }
 
-bench_medium_complex_query!(0,
-    bench_medium_complex_query_selecting______0_rows, bench_medium_complex_query_selecting______0_rows_boxed);
+// bench_medium_complex_query!(0,
+//     bench_medium_complex_query_selecting______0_rows, bench_medium_complex_query_selecting______0_rows_boxed);
 bench_medium_complex_query!(1,
     bench_medium_complex_query_selecting______1_row, bench_medium_complex_query_selecting______1_row_boxed);
 bench_medium_complex_query!(10,
@@ -125,3 +132,45 @@ bench_medium_complex_query!(1_000,
     bench_medium_complex_query_selecting__1_000_rows, bench_medium_complex_query_selecting__1_000_rows_boxed);
 bench_medium_complex_query!(10_000,
     bench_medium_complex_query_selecting_10_000_rows, bench_medium_complex_query_selecting_10_000_rows_boxed);
+
+#[bench]
+fn loading_associations_sequentially(b: &mut Bencher) {
+    // SETUP A FUCK TON OF DATA
+    let conn = connection();
+    let data: Vec<_> = (0..100).map(|i| {
+        let hair_color = if i % 2 == 0 { "black" } else { "brown" };
+        NewUser::new(&format!("User {}", i), Some(hair_color))
+    }).collect();
+    batch_insert(&data, users::table, &conn);
+    let all_users = users::table.load::<User>(&conn).unwrap();
+    let data: Vec<_> = all_users.iter().flat_map(|user| {
+        let user_id = user.id;
+        (0..10).map(move |i| {
+            let title = format!("Post {} by user {}", i, user_id);
+            NewPost::new(user_id, &title, None)
+        })
+    }).collect();
+    batch_insert(&data, posts::table, &conn);
+    let all_posts = posts::table.load::<Post>(&conn).unwrap();
+    let data: Vec<_> = all_posts.iter().flat_map(|post| {
+        let post_id = post.id;
+        (0..10).map(move |i| {
+            let title = format!("Comment {} on post {}", i, post_id);
+            (title, post_id)
+        })
+    }).collect();
+    let comment_data: Vec<_> = data.iter().map(|&(ref title, post_id)| {
+        NewComment(post_id, &title)
+    }).collect();
+    batch_insert(&comment_data, comments::table, &conn);
+
+    // ACTUAL BENCHMARK
+    b.iter(|| {
+        let users = users::table.load::<User>(&conn).unwrap();
+        let posts = Post::belonging_to(&users).load::<Post>(&conn).unwrap();
+        let comments = Comment::belonging_to(&posts).load::<Comment>(&conn).unwrap()
+            .grouped_by(&posts);
+        let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);
+        let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users.into_iter().zip(posts_and_comments).collect();
+    })
+}

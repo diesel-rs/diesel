@@ -1,4 +1,5 @@
 # Change Log
+
 All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
@@ -20,6 +21,19 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   for details.
 
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
+
+### Changed
+
+* Structs annotated with `#[has_many]` or `#[belongs_to]` now require
+  `#[derive(Associations)]`. This is to allow them to work with Macros 1.1.
+
+### Fixed
+
+* `diesel migrations run` will now respect migration directories overridden by
+  command line argument or environment variable
+* The `infer_schema!` macro will no longer fetch views alongside with tables.
+  This was a source of trouble for people that had created views or are using
+  any extension that automatically creates views (e.g. PostGIS)
 
 ## [0.7.2] - 2016-08-20
 
@@ -63,6 +77,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the PostgreSQL `ALL` operator. See
   http://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
+
+* Added support for `RETURNING` expressions in `DELETE` statements. Implicitly
+  these queries will use `RETURNING *`.
 
 ### Changed
 

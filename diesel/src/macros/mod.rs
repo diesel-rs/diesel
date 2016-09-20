@@ -45,6 +45,13 @@ macro_rules! column {
         {
         }
 
+        impl<ST, Source, Predicate> SelectableExpression<
+            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>, ST>
+            for $column_name where
+                $column_name: SelectableExpression<Source, ST>
+        {
+        }
+
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {

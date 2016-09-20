@@ -196,7 +196,7 @@ macro_rules! AsChangeset {
     ) => {
         AsChangeset! {
             $($headers)*
-            self_to_columns = $struct_name { $($field_name: ref $column_name),+ },
+            self_to_columns = $struct_name { $($field_name: ref $column_name,)+ ..},
             columns = ($($column_name, $field_kind),+),
             field_names = [$($field_name)+],
             changeset_ty = $changeset_ty,

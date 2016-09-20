@@ -6,6 +6,10 @@ rust:
   - beta
   - nightly-2016-08-18
   - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+cache: cargo
 addons:
   postgresql: '9.4'
 before_script:
@@ -14,11 +18,18 @@ before_script:
   - psql -c 'create database diesel_schema;' -U postgres
 script:
 - |
-  (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono" && echo "docs.diesel.rs" > target/doc/CNAME) &&
+  (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono uuid" && echo "docs.diesel.rs" > target/doc/CNAME) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel && travis-cargo test -- --no-default-features --features "unstable chrono $BACKEND")
   else
     (cd diesel && travis-cargo test -- --no-default-features --features "chrono $BACKEND")
+  fi &&
+  if [[ "$BACKEND" == postgres ]]; then
+    if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
+      (cd examples && ./test_nightly)
+    else
+      (cd examples && ./test_stable)
+    fi
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
@@ -43,9 +54,6 @@ env:
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
     - secure: NmCM1VNEzid6bROA7tXV1R63n9S9KvY1etXsDzd1608cvjRnG3ZDAWXISbY1BxqrvleElreUJOvz/3TSQCHivpT2ezeyk2sntYtZpw0TWbz1SQMAPNWPTjP3bNQzpmNwfU4p6ui6qIOnQza4JxOu3SZSveNlehDBPkkS+52R7Zw/EPdwi9jTYJArV2+8pnEsQECAdRLttbtA2JBl3hZ4VHfGpHRZyeULn63UzyVbQVzQ3NVhqyQUKTPdpUciQTI3fZEkfaWuLV8QPPa5026/yJEEi2Fsl3r7fyY8ia67k4Zo9THlPVD0YOUlkWuZWwvkxNA8RQSVPv4FidEpwbxG8y6nAra4CjwiEChcpFhZJtrH7ZrXO/tJk7vtc5CFVWUsQtNX92QY1QFdPxwYNBSICLyUN+A+BQURwvQgxdcJsJyQmh5Ed7yuavcAinVq7fPeOyBWcPL5mt17no16aG1rzvXSUnD0aH7F3S3DHkoM9P9iHgJMLk+2YNmJtFescBxCeG8bA7t5bw0kQNH5KUWAD1uYpC9ikB3NVdlc+q17dKTAe4rcYA+sIO+UGudvpmLWT0lXtEMqDfxfCmyICDESs9bNfueCGJEAnfTBNunsJqR7rMUvjNndS2/Ssok6c/0Yfb9X8cM9nI4QLAj/+hClqdYphmpCjuC34bWxFSt/KJI=
-matrix:
-  allow_failures:
-    - rust: nightly
 after_success:
   - "(cd diesel && travis-cargo --only stable doc-upload)"
 branches:

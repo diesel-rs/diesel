@@ -9,25 +9,19 @@
 //! [gitter]: https://gitter.im/diesel-rs/diesel
 //!
 //! Note: This guide is written assuming the usage of `diesel_codegen` or `diesel_codegen_syntex`.
-//! If you are using [`custom_derive`][custom-derive] instead, you will need to replace
-//! `#[belongs_to(Foo)]` with `#[derive(BelongsTo(Foo, foreign_key = foo_id))]` and
-//! `#[has_many(bars)]` with `#[derive(HasMany(bars, foreign_key = bar_id))]`.
-//!
-//! [custom-derive]: https://crates.io/crates/custom_derive
-//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with `#[has_many]` and
 //! `#[belongs_to]`.
 //!
 //! ```ignore
-//! #[derive(Identifiable, Queryable)]
+//! #[derive(Identifiable, Queryable, Associations)]
 //! #[has_many(posts)]
 //! pub struct User {
 //!     id: i32,
 //!     name: String,
 //! }
 //!
-//! #[derive(Identifiable, Queryable)]
+//! #[derive(Identifiable, Queryable, Associations)]
 //! #[belongs_to(User)]
 //! pub struct Post {
 //!     id: i32,
@@ -35,6 +29,9 @@
 //!     title: String,
 //! }
 //! ```
+//!
+//! Note that in addition to the `#[has_many]` and `#[belongs_to]` annotations, we also need to
+//! `#[derive(Associations)]`
 //!
 //! `#[has_many]` should be passed the name of the table that the children will be loaded from,
 //! while `#[belongs_to]` is given the name of the struct that represents the parent. Both types
