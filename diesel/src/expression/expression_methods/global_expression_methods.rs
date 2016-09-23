@@ -241,7 +241,7 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 
     /// Creates a SQL `ASC` expression, representing this expression in
-    /// descending order.
+    /// ascending order.
     ///
     /// This is the same as leaving the direction unspecified. It is useful if
     /// you need to provide an unknown ordering, and need to box the return
