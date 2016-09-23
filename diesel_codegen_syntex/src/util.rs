@@ -69,10 +69,11 @@ pub fn ident_value_of_attr_with_name(
 
 #[cfg(feature = "with-syntex")]
 const KNOWN_ATTRIBUTES: &'static [&'static str] = &[
-    "table_name",
+    "belongs_to",
+    "changeset_options",
     "column_name",
     "has_many",
-    "belongs_to",
+    "table_name",
 ];
 
 #[cfg(feature = "with-syntex")]

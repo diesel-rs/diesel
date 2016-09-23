@@ -35,6 +35,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   This was a source of trouble for people that had created views or are using
   any extension that automatically creates views (e.g. PostGIS)
 
+### Changed
+
+* `#[changeset_for(foo)]` should now be written as
+  `#[derive(AsChangeset)] #[table_name="foo"]`. If you were specifying
+  `treat_none_as_null = "true"`, you should additionally have
+  `#[changeset_options(treat_none_as_null = "true")]`.
+
 ## [0.7.2] - 2016-08-20
 
 * Updated nightly version and syntex support.
