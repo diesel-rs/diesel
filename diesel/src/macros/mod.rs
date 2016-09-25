@@ -8,7 +8,8 @@ macro_rules! diesel_internal_expr_conversion {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! column {
-    ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
+    ($($table:ident)::*, $column_name:ident as [$column_str:expr] -> $Type:ty) => {
+        
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy)]
         pub struct $column_name;
@@ -23,7 +24,7 @@ macro_rules! column {
             fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 try!(out.push_identifier($($table)::*::name()));
                 out.push_sql(".");
-                out.push_identifier(stringify!($column_name))
+                out.push_identifier($column_str)
             }
 
             fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
@@ -58,10 +59,13 @@ macro_rules! column {
             type Table = $($table)::*;
 
             fn name() -> &'static str {
-                stringify!($column_name)
+                $column_str
             }
         }
-    }
+    };
+    ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
+         column!($($table)::*, $column_name as [stringify!($column_name)] -> $Type);
+    };
 }
 
 /// Specifies that a table exists, and what columns it has. This will create a
@@ -174,40 +178,41 @@ macro_rules! column {
 #[macro_export]
 macro_rules! table {
     (
-        $name:ident {
-            $($column_name:ident -> $Type:ty,)+
+        $name:ident $(as [$name_str:expr])* {
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
         }
     ) => {
         table! {
-            $name (id) {
-                $($column_name -> $Type,)+
+            $name $(as [$name_str])* (id) {
+                $($column_name $(as [$column_str])* -> $Type,)+
             }
         }
     };
 
     (
-        $name:ident ($pk:ident) {
-            $($column_name:ident -> $Type:ty,)+
+        $name:ident $(as [$name_str:expr])* ($pk:ident) {
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
         }
     ) => {
         table_body! {
-            $name ($pk) {
-                $($column_name -> $Type,)+
+            $name $(as [$name_str])* ($pk) {
+                $($column_name $(as [$column_str])* -> $Type,)+
             }
         }
     };
 
     (
-        $name:ident ($pk:ident, $($composite_pk:ident),+) {
-            $($column_name:ident -> $Type:ty,)+
+        $name:ident $(as [$name_str:expr])* ($pk:ident, $($composite_pk:ident),+) {
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
         }
     ) => {
         table_body! {
-            $name ($pk, $($composite_pk,)+) {
-                $($column_name -> $Type,)+
+            $name $(as [$name_str])* ($pk, $($composite_pk,)+) {
+                $($column_name $(as [$column_str])* -> $Type,)+
             }
         }
     };
+
 }
 
 #[macro_export]
@@ -215,35 +220,66 @@ macro_rules! table {
 macro_rules! table_body {
     (
         $name:ident ($pk:ident) {
-            $($column_name:ident -> $Type:ty,)+
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
         }
     ) => {
         table_body! {
             table_name = $name,
+            table_name_str = stringify!($name),
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
-            columns = [$($column_name -> $Type,)+],
+            columns = [$($column_name $(as [$column_str])* -> $Type,)+],
         }
     };
 
     (
         $name:ident ($($pk:ident,)+) {
-            $($column_name:ident -> $Type:ty,)+
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
         }
     ) => {
         table_body! {
             table_name = $name,
+            table_name_str = stringify!($name),
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
-            columns = [$($column_name -> $Type,)+],
+            columns = [$($column_name $(as [$column_str])* -> $Type,)+],
+        }
+    };
+
+    (
+        $name:ident as [$name_str:expr] ($pk:ident) {
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
+        }
+    ) => {
+        table_body! {
+            table_name = $name,
+            table_name_str = $name_str,
+            primary_key_ty = columns::$pk,
+            primary_key_expr = columns::$pk,
+            columns = [$($column_name $(as [$column_str])* -> $Type,)+],
+        }
+    };
+
+    (
+        $name:ident as [$name_str:expr] ($($pk:ident,)+) {
+            $($column_name:ident $(as [$column_str:expr])* -> $Type:ty,)+
+        }
+    ) => {
+        table_body! {
+            table_name = $name,
+            table_name_str = $name_str,
+            primary_key_ty = ($(columns::$pk,)+),
+            primary_key_expr = ($(columns::$pk,)+),
+            columns = [$($column_name $(as [$column_str])* -> $Type,)+],
         }
     };
 
     (
         table_name = $table_name:ident,
+        table_name_str = $table_name_str:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $column_ty:ty,)+],
+        columns = [$($column_name:ident $(as [$column_str:expr])* -> $column_ty:ty,)+],
     ) => {
         pub mod $table_name {
             use $crate::{
@@ -282,7 +318,7 @@ macro_rules! table_body {
                 type FromClause = Identifier<'static>;
 
                 fn from_clause(&self) -> Self::FromClause {
-                    Identifier(stringify!($table_name))
+                    Identifier($table_name_str)
                 }
             }
 
@@ -300,7 +336,7 @@ macro_rules! table_body {
                 type AllColumns = ($($column_name,)+);
 
                 fn name() -> &'static str {
-                    stringify!($table_name)
+                    $table_name_str
                 }
 
                 fn primary_key(&self) -> Self::PrimaryKey {
@@ -360,11 +396,12 @@ macro_rules! table_body {
 
                 impl SelectableExpression<table> for star {}
 
-                $(column!(table, $column_name -> $column_ty);)+
+                $(column!(table, $column_name $(as [$column_str])* -> $column_ty);)+
             }
         }
     }
 }
+
 
 #[macro_export]
 #[doc(hidden)]
