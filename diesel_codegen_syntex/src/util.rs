@@ -67,6 +67,15 @@ pub fn ident_value_of_attr_with_name(
 }
 
 #[cfg(feature = "with-syntex")]
+const KNOWN_ATTRIBUTES: &'static [&'static str] = &[
+    "belongs_to",
+    "changeset_options",
+    "column_name",
+    "has_many",
+    "table_name",
+];
+
+#[cfg(feature = "with-syntex")]
 pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
     use syntax::fold;
 
@@ -74,7 +83,7 @@ pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
 
     impl fold::Folder for StripAttributeFolder {
         fn fold_attribute(&mut self, attr: ast::Attribute) -> Option<ast::Attribute> {
-            if attr.check_name("table_name") || attr.check_name("column_name") {
+            if KNOWN_ATTRIBUTES.iter().any(|name| attr.check_name(name)) {
                 None
             } else {
                 Some(attr)

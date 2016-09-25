@@ -163,7 +163,8 @@ fn option_fields_on_structs_are_not_assigned() {
 
 #[test]
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
-    #[changeset_for(users)]
+    #[derive(AsChangeset)]
+    #[table_name="users"]
     struct Changes {
         hair_color: Option<String>,
         name: String,
@@ -182,7 +183,8 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
 
 #[test]
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
-    #[changeset_for(posts)]
+    #[derive(AsChangeset)]
+    #[table_name="posts"]
     struct Changes {
         user_id: i32,
         title: Option<String>,
@@ -207,7 +209,8 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
 
 #[test]
 fn can_update_with_struct_containing_single_field() {
-    #[changeset_for(posts)]
+    #[derive(AsChangeset)]
+    #[table_name="posts"]
     struct SetBody {
         body: String,
     }
@@ -230,9 +233,9 @@ fn can_update_with_struct_containing_single_field() {
 
 #[test]
 fn struct_with_option_fields_treated_as_null() {
-    #[changeset_for(posts, treat_none_as_null="true")]
-    #[derive(Identifiable)]
+    #[derive(Identifiable, AsChangeset)]
     #[table_name="posts"]
+    #[changeset_options(treat_none_as_null="true")]
     struct UpdatePost {
         id: i32,
         title: String,

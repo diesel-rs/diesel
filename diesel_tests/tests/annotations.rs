@@ -6,7 +6,7 @@ use schema::*;
 // impls
 // #[test]
 // fn association_where_struct_name_doesnt_match_table_name() {
-//     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
+//     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 //     #[belongs_to(Post)]
 //     #[table_name(comments)]
 //     struct OtherComment {
@@ -29,7 +29,7 @@ use schema::*;
 
 #[test]
 fn association_where_parent_and_child_have_underscores() {
-    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
+    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[has_many(special_comments)]
     #[belongs_to(User)]
     pub struct SpecialPost {
@@ -53,7 +53,7 @@ fn association_where_parent_and_child_have_underscores() {
         }
     }
 
-    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable)]
+    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[belongs_to(SpecialPost)]
     struct SpecialComment {
         id: i32,
@@ -107,13 +107,13 @@ mod associations_can_have_nullable_foreign_keys {
     }
     // This test has no assertions, as it is for compilation purposes only.
     #[has_many(bars)]
-    #[derive(Identifiable)]
+    #[derive(Identifiable, Associations)]
     pub struct Foo {
         id: i32,
     }
 
     #[belongs_to(Foo)]
-    #[derive(Identifiable)]
+    #[derive(Identifiable, Associations)]
     pub struct Bar {
         id: i32,
         foo_id: Option<i32>,
@@ -151,7 +151,7 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
 
     table! { special_posts { id -> Integer, author_id -> Integer, } }
 
-    #[derive(Identifiable)]
+    #[derive(Identifiable, Associations)]
     #[belongs_to(User, foreign_key = "author_id")]
     pub struct SpecialPost {
         id: i32,

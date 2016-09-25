@@ -22,6 +22,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
 
+### Changed
+
+* Structs annotated with `#[has_many]` or `#[belongs_to]` now require
+  `#[derive(Associations)]`. This is to allow them to work with Macros 1.1.
+
 ### Fixed
 
 * `diesel migrations run` will now respect migration directories overridden by
@@ -29,6 +34,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `infer_schema!` macro will no longer fetch views alongside with tables.
   This was a source of trouble for people that had created views or are using
   any extension that automatically creates views (e.g. PostGIS)
+
+### Changed
+
+* `#[changeset_for(foo)]` should now be written as
+  `#[derive(AsChangeset)] #[table_name="foo"]`. If you were specifying
+  `treat_none_as_null = "true"`, you should additionally have
+  `#[changeset_options(treat_none_as_null = "true")]`.
 
 ## [0.7.2] - 2016-08-20
 
