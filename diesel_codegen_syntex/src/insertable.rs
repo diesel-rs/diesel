@@ -1,9 +1,4 @@
-use syntax::ast::{
-    self,
-    Item,
-    MetaItem,
-    MetaItemKind,
-};
+use syntax::ast::{self, Item, MetaItem, MetaItemKind, NestedMetaItem};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
@@ -35,19 +30,19 @@ fn insertable_tables(cx: &mut ExtCtxt, meta_item: &MetaItem) -> Vec<InternedStri
         MetaItemKind::List(_, ref meta_items) => {
             meta_items.iter().map(|i| table_name(cx, i)).collect()
         }
-        _ => usage_error(cx, meta_item),
+        _ => usage_error(cx, meta_item.span()),
     }
 }
 
-fn table_name(cx: &mut ExtCtxt, meta_item: &MetaItem) -> InternedString {
-    match meta_item.node {
-        MetaItemKind::Word(ref word) => word.clone(),
-        _ => usage_error(cx, meta_item),
+fn table_name(cx: &mut ExtCtxt, meta_item: &NestedMetaItem) -> InternedString {
+    match meta_item.word() {
+        Some(word) => word.name().clone(),
+        _ => usage_error(cx, meta_item.span()),
     }
 }
 
-fn usage_error(cx: &mut ExtCtxt, meta_item: &MetaItem) -> ! {
-    cx.span_err(meta_item.span,
+fn usage_error(cx: &mut ExtCtxt, span: Span) -> ! {
+    cx.span_err(span,
         "`insertable_into` must be used in the form `#[insertable_into(table1, table2)]`");
     panic!()
 }
