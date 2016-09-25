@@ -1,4 +1,5 @@
 use syntax::ast::{self, MetaItem, NestedMetaItem, MetaItemKind};
+use syntax::attr::HasAttrs;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ptr::P;
@@ -51,7 +52,7 @@ fn extract_treat_none_as_null(cx: &mut ExtCtxt, attr: &ast::Attribute) -> Result
     match attr.node.value.node {
         MetaItemKind::List(_, ref items) if items.len() == 1 => {
             if items[0].check_name("treat_none_as_null") {
-                boolean_option(cx, &*items[0])
+                boolean_option(cx, &items[0])
             } else {
                 options_usage_error(cx, attr.span)
             }
