@@ -93,17 +93,20 @@ Adds an implementation of the [`Queryable`][queryable] trait to the annotated
 item. At this time it only supports structs with named fields. Enums and tuple
 structs are not supported.
 
-### `#[insertable_into(table_name)]`
+### `#[derive(Insertable)]`
 
 Adds an implementation of the [`Insertable`][insertable] trait to the annotated
 item, targeting the given table. Can only annotate structs and tuple structs.
 Enums are not supported. See [field annotations][#field-annotations] for
 additional configurations.
 
+Structs which derive `Insertable` must have a table name annotation like so:
+`#[table_name = "something"]`
+
 ### `#[derive(AsChangeset)]`
 
 Adds an implementation of the [`AsChangeset`][as_changeset] trait to the
-annotated item, targeting the given table. At this time, it only supports
+annotated item, targeting the given table. at this time, it only supports
 structs with named fields. Tuple structs and enums are not supported. See [field
 annotations][#field-annotations] for additional configurations.
 

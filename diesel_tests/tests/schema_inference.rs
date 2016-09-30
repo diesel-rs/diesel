@@ -3,8 +3,8 @@ mod sqlite {
     use diesel::*;
     use schema::*;
 
-    #[derive(Queryable, PartialEq, Debug)]
-    #[insertable_into(infer_all_the_ints)]
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="infer_all_the_ints"]
     struct InferredInts {
         col1: i32,
         col2: i32,
@@ -45,8 +45,8 @@ mod sqlite {
         assert_eq!(Ok(vec![inferred_ints]), infer_all_the_ints::table.load(&conn));
     }
 
-    #[derive(Queryable, PartialEq, Debug)]
-    #[insertable_into(infer_all_the_bools)]
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="infer_all_the_bools"]
     struct InferredBools {
         col1: bool,
         col2: bool,
@@ -69,8 +69,8 @@ mod sqlite {
         assert_eq!(Ok(vec![inferred_bools]), infer_all_the_bools::table.load(&conn));
     }
 
-    #[derive(Queryable, PartialEq, Debug)]
-    #[insertable_into(infer_all_the_strings)]
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="infer_all_the_strings"]
     struct InferredStrings {
         col1: String,
         col2: String,
@@ -105,8 +105,8 @@ mod sqlite {
         assert_eq!(Ok(vec![inferred_strings]), infer_all_the_strings::table.load(&conn));
     }
 
-    #[derive(Queryable, PartialEq, Debug)]
-    #[insertable_into(infer_all_the_floats)]
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="infer_all_the_floats"]
     struct InferredFloats {
         col1: f32,
         col2: f32,

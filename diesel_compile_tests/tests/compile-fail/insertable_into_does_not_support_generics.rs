@@ -11,7 +11,9 @@ table! {
     }
 }
 
-#[insertable_into(users)]
-pub struct NewUser<T> { //~ ERROR #[insertable_into] does not support generic types
+#[derive(Insertable)]
+//~^ ERROR #[derive(Insertable)] does not support generic types
+#[table_name="users"]
+pub struct NewUser<T> {
     name: T,
 }

@@ -41,6 +41,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `#[derive(AsChangeset)] #[table_name="foo"]`. If you were specifying
   `treat_none_as_null = "true"`, you should additionally have
   `#[changeset_options(treat_none_as_null = "true")]`.
+* `#[insertable_into(foo)]` should now be written as
+  `#[derive(Insertable)] #[table_name="foo"]`.
 
 ## [0.7.2] - 2016-08-20
 

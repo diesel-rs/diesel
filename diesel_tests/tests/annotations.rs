@@ -38,7 +38,8 @@ fn association_where_parent_and_child_have_underscores() {
         title: String
     }
 
-    #[insertable_into(special_posts)]
+    #[derive(Insertable)]
+    #[table_name="special_posts"]
     struct NewSpecialPost {
         user_id: i32,
         title: String
@@ -68,7 +69,8 @@ fn association_where_parent_and_child_have_underscores() {
         }
     }
 
-    #[insertable_into(special_comments)]
+    #[derive(Insertable)]
+    #[table_name="special_comments"]
     struct NewSpecialComment {
         special_post_id: i32
     }
@@ -125,7 +127,8 @@ mod multiple_lifetimes_in_insertable_struct_definition {
     #![allow(dead_code)]
     use schema::posts;
 
-    #[insertable_into(posts)]
+    #[derive(Insertable)]
+    #[table_name="posts"]
     pub struct MyPost<'a> {
         title: &'a str,
         body: &'a str,
@@ -136,7 +139,8 @@ mod lifetimes_with_names_other_than_a {
     #![allow(dead_code)]
     use schema::posts;
 
-    #[insertable_into(posts)]
+    #[derive(Insertable)]
+    #[table_name="posts"]
     pub struct MyPost<'a, 'b> {
         id: i32,
         title: &'b str,

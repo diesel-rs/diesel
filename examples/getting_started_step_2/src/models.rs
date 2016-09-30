@@ -8,7 +8,8 @@ pub struct Post {
     pub published: bool,
 }
 
-#[insertable_into(posts)]
+#[derive(Insertable)]
+#[table_name="posts"]
 pub struct NewPost<'a> {
     pub title: &'a str,
     pub body: &'a str,

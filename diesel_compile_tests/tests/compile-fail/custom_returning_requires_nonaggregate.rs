@@ -13,7 +13,8 @@ table! {
     }
 }
 
-#[insertable_into(users)]
+#[derive(Insertable)]
+#[table_name="users"]
 pub struct NewUser {
     name: String,
 }

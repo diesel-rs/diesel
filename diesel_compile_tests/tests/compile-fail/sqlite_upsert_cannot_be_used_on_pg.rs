@@ -13,7 +13,8 @@ table! {
     }
 }
 
-#[insertable_into(users)]
+#[derive(Insertable)]
+#[table_name="users"]
 struct User {
     id: i32,
 }

@@ -132,12 +132,14 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     assert_eq!(1, second_count);
 }
 
-#[insertable_into(users)]
+#[derive(Insertable)]
+#[table_name="users"]
 struct BaldUser {
     name: String,
 }
 
-#[insertable_into(users)]
+#[derive(Insertable)]
+#[table_name="users"]
 struct BorrowedUser<'a> {
     name: &'a str,
 }
