@@ -7,7 +7,7 @@ macro_rules! diesel_internal_expr_conversion {
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! column {
+macro_rules! __diesel_column {
     ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy)]
@@ -360,7 +360,7 @@ macro_rules! table_body {
 
                 impl SelectableExpression<table> for star {}
 
-                $(column!(table, $column_name -> $column_ty);)+
+                $(__diesel_column!(table, $column_name -> $column_ty);)+
             }
         }
     }
