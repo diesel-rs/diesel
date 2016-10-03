@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "nightly", feature(custom_derive, custom_attribute, plugin, rustc_macro))]
+#![cfg_attr(feature = "nightly", feature(plugin, rustc_macro))]
 #![cfg_attr(feature = "nightly", plugin(diesel_codegen_old, dotenv_macros))]
 
 #[macro_use] extern crate diesel;

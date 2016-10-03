@@ -1,5 +1,4 @@
-#![feature(custom_derive, plugin, custom_attribute, rustc_macro)]
-#![plugin(diesel_codegen_old)]
+#![feature(rustc_macro)]
 
 #[macro_use]
 extern crate diesel;
@@ -15,7 +14,7 @@ table! {
     }
 }
 
-#[derive(Insertable)] //~ WARNING
+#[derive(Insertable)]
 #[table_name="users"]
 struct User {
     id: i32,

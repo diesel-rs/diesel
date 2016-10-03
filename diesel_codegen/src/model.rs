@@ -39,6 +39,10 @@ impl Model {
             syn::Ident::new(infer_table_name(self.name.as_ref()))
         })
     }
+
+    pub fn has_table_name_annotation(&self) -> bool {
+        self.table_name_from_annotation.is_some()
+    }
 }
 
 pub fn infer_association_name(name: &str) -> String {

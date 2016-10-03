@@ -1,4 +1,4 @@
-#![feature(custom_derive, custom_attribute, plugin, rustc_macro)]
+#![feature(plugin, rustc_macro)]
 #![plugin(diesel_codegen_old, dotenv_macros)]
 
 #[macro_use] extern crate diesel;

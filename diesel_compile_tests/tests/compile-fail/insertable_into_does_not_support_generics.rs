@@ -1,5 +1,4 @@
-#![feature(custom_derive, plugin, custom_attribute, rustc_macro)]
-#![plugin(diesel_codegen_old)]
+#![feature(rustc_macro)]
 
 #[macro_use]
 extern crate diesel;
@@ -13,8 +12,9 @@ table! {
     }
 }
 
-#[derive(Insertable)] //~ WARNING
-//~^ ERROR #[derive(Insertable)] does not support generic types
+#[derive(Insertable)]
+//~^ ERROR custom derive attribute panicked
+//~| HELP `#[derive(Insertable)]` does not support generic types
 #[table_name="users"]
 pub struct NewUser<T> {
     name: T,

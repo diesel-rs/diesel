@@ -1,3 +1,4 @@
+use std::mem;
 use syn::*;
 
 use ast_builder::ty_ident;
@@ -103,4 +104,19 @@ pub fn strip_attributes(attrs: Vec<Attribute>, names_to_strip: &[&str]) -> Vec<A
     attrs.into_iter().filter(|attr| {
         !names_to_strip.contains(&attr.name())
     }).collect()
+}
+
+pub fn strip_field_attributes(item: &mut MacroInput, names_to_strip: &[&str]) {
+    let fields = match item.body {
+        Body::Struct(VariantData::Struct(ref mut fields)) |
+        Body::Struct(VariantData::Tuple(ref mut fields)) => fields,
+        _ => return,
+    };
+
+    let mut attrs = Vec::new();
+    for field in fields {
+        mem::swap(&mut attrs, &mut field.attrs);
+        attrs = strip_attributes(attrs, names_to_strip);
+        mem::swap(&mut attrs, &mut field.attrs);
+    }
 }
