@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "unstable", feature(custom_derive, plugin, custom_attribute, rustc_macro))]
+#![cfg_attr(feature = "unstable", feature(plugin, rustc_macro))]
 #![cfg_attr(feature = "unstable", plugin(diesel_codegen_old, dotenv_macros))]
 
 extern crate quickcheck;

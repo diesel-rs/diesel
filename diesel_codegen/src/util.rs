@@ -54,7 +54,11 @@ pub fn attr_with_name<'a>(
 }
 
 fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
-    match attr.value {
+    str_value_of_meta_item(&attr.value, name)
+}
+
+pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
+    match *item {
         MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
         _ => panic!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name),
     }
