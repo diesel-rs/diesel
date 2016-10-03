@@ -8,7 +8,7 @@ rust:
   - nightly
 matrix:
   allow_failure:
-    - nightly
+    - rust: nightly
 cache: cargo
 addons:
   postgresql: '9.4'
