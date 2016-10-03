@@ -5,7 +5,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 build = "build.rs"
 
 [build-dependencies]
-syntex = { version = "0.42.0", optional = true }
+syntex = { version = "0.44.0", optional = true }
 diesel_codegen_syntex = { version = "0.7.2", features = ["postgres"], optional = true }
 dotenv_codegen = { version = "0.9.2",  optional = true }
 
