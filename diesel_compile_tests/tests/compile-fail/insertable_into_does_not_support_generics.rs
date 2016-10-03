@@ -1,8 +1,10 @@
-#![feature(custom_derive, custom_attribute, plugin)]
+#![feature(custom_derive, plugin, custom_attribute, rustc_macro)]
 #![plugin(diesel_codegen_old)]
 
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 
 table! {
     users {
