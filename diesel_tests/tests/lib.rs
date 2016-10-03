@@ -4,6 +4,7 @@
 extern crate quickcheck;
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate diesel;
+#[cfg(feature = "unstable")]
 #[macro_use] extern crate diesel_codegen;
 
 #[cfg(feature = "unstable")]
