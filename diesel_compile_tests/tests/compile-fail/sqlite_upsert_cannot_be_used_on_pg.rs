@@ -13,7 +13,7 @@ table! {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Insertable)] //~ WARNING
 #[table_name="users"]
 struct User {
     id: i32,

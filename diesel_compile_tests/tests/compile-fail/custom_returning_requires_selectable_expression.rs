@@ -19,7 +19,7 @@ table! {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Insertable)] //~ WARNING
 #[table_name="users"]
 pub struct NewUser {
     name: String,

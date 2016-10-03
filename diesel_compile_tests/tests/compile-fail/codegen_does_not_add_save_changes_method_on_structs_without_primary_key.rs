@@ -14,7 +14,7 @@ table! {
     }
 }
 
-#[derive(Queryable, AsChangeset)]
+#[derive(Queryable, AsChangeset)] //~ WARNING
 #[table_name = "users"]
 pub struct User {
     name: String,

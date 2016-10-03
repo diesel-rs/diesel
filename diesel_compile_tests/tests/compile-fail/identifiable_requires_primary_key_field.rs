@@ -5,6 +5,7 @@
 extern crate diesel;
 
 #[derive(Identifiable)] //~ ERROR Could not find a field named `id` on `User`
+//~^ WARNING
 pub struct User {
     name: String,
     hair_color: Option<String>,

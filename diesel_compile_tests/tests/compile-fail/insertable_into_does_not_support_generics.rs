@@ -11,7 +11,7 @@ table! {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Insertable)] //~ WARNING
 //~^ ERROR #[derive(Insertable)] does not support generic types
 #[table_name="users"]
 pub struct NewUser<T> {
