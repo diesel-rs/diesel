@@ -1,13 +1,13 @@
-#![feature(custom_derive, plugin, custom_attribute, rustc_macro)]
-#![plugin(diesel_codegen_old)]
+#![feature(rustc_macro)]
 
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
 
-#[derive(Identifiable)] //~ ERROR Could not find a field named `id` on `User`
-//~^ WARNING
+#[derive(Identifiable)]
+//~^ ERROR custom derive attribute panicked
+//~| HELP Could not find a field named `id` on `User`
 pub struct User {
     name: String,
     hair_color: Option<String>,

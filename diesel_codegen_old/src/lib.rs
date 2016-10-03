@@ -19,10 +19,6 @@ pub fn register(reg: &mut rustc_plugin::Registry) {
         MultiDecorator(Box::new(update::expand_derive_as_changeset)),
     );
     reg.register_syntax_extension(
-        intern("derive_Identifiable"),
-        MultiDecorator(Box::new(identifiable::expand_derive_identifiable))
-    );
-    reg.register_syntax_extension(
         intern("derive_Insertable"),
         MultiDecorator(Box::new(insertable::expand_derive_insertable))
     );
