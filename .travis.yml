@@ -7,7 +7,7 @@ rust:
   - nightly-2016-09-29
   - nightly
 matrix:
-  allow_failures:
+  allow_failure:
     - nightly
 cache: cargo
 addons:
