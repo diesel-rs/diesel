@@ -24,8 +24,7 @@ mod queryable;
 mod util;
 
 use rustc_macro::TokenStream;
-use std::str::FromStr;
-use syn::parse_item;
+use syn::parse_macro_input;
 
 use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
 
@@ -65,12 +64,8 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }
 
-fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> TokenStream {
-    let input = input.to_string();
-    // FIXME: https://github.com/rust-lang/rust/issues/35900#issuecomment-245971366
-    let input = input.replace("#[structural_match]", "");
-
-    let mut item = parse_item(&input);
+fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) -> TokenStream {
+    let mut item = parse_macro_input(&input.to_string()).unwrap();
     let output = f(item.clone());
 
     let finished_deriving_diesel_traits = {
@@ -85,7 +80,6 @@ fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> Token
         item.attrs = strip_attributes(item.attrs, KNOWN_CUSTOM_ATTRIBUTES);
         strip_field_attributes(&mut item, KNOWN_FIELD_ATTRIBUTES);
     }
-    let input = quote!(#item);
 
-    TokenStream::from_str(&format!("{} {}", input, output)).unwrap()
+    quote!(#item #output).to_string().parse().unwrap()
 }

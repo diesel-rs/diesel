@@ -4,7 +4,7 @@ use quote;
 use model::Model;
 use util::attr_with_name;
 
-pub fn derive_as_changeset(item: syn::Item) -> quote::Tokens {
+pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
     let treat_none_as_null = format!("{}", treat_none_as_null(&item.attrs));
     let model = t!(Model::from_item(&item, "AsChangeset"));
 
@@ -17,12 +17,7 @@ pub fn derive_as_changeset(item: syn::Item) -> quote::Tokens {
         .collect::<Vec<_>>();
 
     if lifetimes.is_empty() {
-        lifetimes.push(syn::LifetimeDef {
-            lifetime: syn::Lifetime {
-                ident: syn::Ident::new("'a"),
-            },
-            bounds: Vec::new(),
-        });
+        lifetimes.push(syn::LifetimeDef::new("'a"));
     }
 
     quote!(AsChangeset! {
@@ -52,8 +47,8 @@ fn treat_none_as_null(attrs: &[syn::Attribute]) -> bool {
                 usage_err();
             }
             match values[0] {
-                syn::MetaItem::NameValue(ref name, ref value)
-                    if name.as_ref() == "treat_none_as_null" => value == "true",
+                syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _))
+                    if name == "treat_none_as_null" => value == "true",
                 _ => usage_err(),
             }
         }

@@ -3,7 +3,7 @@ use syn;
 
 use model::Model;
 
-pub fn derive_queryable(item: syn::Item) -> Tokens {
+pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     let model = t!(Model::from_item(&item, "Queryable"));
 
     let struct_ty = &model.ty;

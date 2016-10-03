@@ -50,21 +50,12 @@ pub fn attr_with_name<'a>(
     attrs: &'a [Attribute],
     name: &str,
 ) -> Option<&'a Attribute> {
-    let ident_name = Ident::new(name);
-    attrs.into_iter().find(|attr| *attr_name(attr) == ident_name)
-}
-
-pub fn attr_name(attr: &Attribute) -> &Ident {
-    match attr.value {
-        MetaItem::Word(ref name) => name,
-        MetaItem::List(ref name, _) => name,
-        MetaItem::NameValue(ref name, _) => name,
-    }
+    attrs.into_iter().find(|attr| attr.name() == name)
 }
 
 fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
     match attr.value {
-        MetaItem::NameValue(_, ref value) => &*value,
+        MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
         _ => panic!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name),
     }
 }
@@ -111,18 +102,21 @@ pub fn is_option_ty(ty: &Ty) -> bool {
 
 pub fn strip_attributes(attrs: Vec<Attribute>, names_to_strip: &[&str]) -> Vec<Attribute> {
     attrs.into_iter().filter(|attr| {
-        let attr_name = attr_name(attr);
-        !names_to_strip.contains(&attr_name.as_ref())
+        !names_to_strip.contains(&attr.name())
     }).collect()
 }
 
-pub fn strip_field_attributes(item: &mut Item, names_to_strip: &[&str]) {
-    if let Body::Struct(_, ref mut fields) = item.body {
-        let mut attrs = Vec::new();
-        for field in fields {
-            mem::swap(&mut attrs, &mut field.attrs);
-            attrs = strip_attributes(attrs, names_to_strip);
-            mem::swap(&mut attrs, &mut field.attrs);
-        }
+pub fn strip_field_attributes(item: &mut MacroInput, names_to_strip: &[&str]) {
+    let fields = match item.body {
+        Body::Struct(VariantData::Struct(ref mut fields)) |
+        Body::Struct(VariantData::Tuple(ref mut fields)) => fields,
+        _ => return,
+    };
+
+    let mut attrs = Vec::new();
+    for field in fields {
+        mem::swap(&mut attrs, &mut field.attrs);
+        attrs = strip_attributes(attrs, names_to_strip);
+        mem::swap(&mut attrs, &mut field.attrs);
     }
 }

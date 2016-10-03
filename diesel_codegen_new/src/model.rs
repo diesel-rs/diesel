@@ -12,11 +12,11 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn from_item(item: &syn::Item, derived_from: &str) -> Result<Self, String> {
+    pub fn from_item(item: &syn::MacroInput, derived_from: &str) -> Result<Self, String> {
         let fields = match item.body {
             syn::Body::Enum(..) => return Err(format!(
                 "#[derive({})] cannot be used with enums", derived_from)),
-            syn::Body::Struct(_, ref fields) => fields,
+            syn::Body::Struct(ref fields) => fields.fields(),
         };
         let attrs = fields.into_iter().map(Attr::from_struct_field).collect();
         let ty = struct_ty(item.ident.clone(), &item.generics);
