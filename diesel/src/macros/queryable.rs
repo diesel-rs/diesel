@@ -104,11 +104,12 @@ macro_rules! Queryable {
     (
         struct_ty = $struct_ty:ty,
         generics = ($($generics:ident),*),
+        lifetimes = ($($lifetimes:tt),*),
         row_ty = $row_ty:ty,
         row_pat = $row_pat:pat,
         build_expr = $build_expr:expr,
     ) => {
-        impl<$($generics,)* __DB, __ST> $crate::Queryable<__ST, __DB> for $struct_ty where
+        impl<$($lifetimes,)* $($generics,)* __DB, __ST> $crate::Queryable<__ST, __DB> for $struct_ty where
             __DB: $crate::backend::Backend + $crate::types::HasSqlType<__ST>,
             $row_ty: $crate::types::FromSqlRow<__ST, __DB>,
         {
@@ -131,6 +132,7 @@ macro_rules! Queryable {
                 struct_name = $struct_name,
                 struct_ty = $struct_name<$($generics),*>,
                 generics = ($($generics),*),
+                lifetimes = (),
             ),
             callback = Queryable,
             body = $body,
@@ -147,6 +149,7 @@ macro_rules! Queryable {
                 struct_name = $struct_name,
                 struct_ty = $struct_name,
                 generics = (),
+                lifetimes = (),
             ),
             callback = Queryable,
             body = $body,
