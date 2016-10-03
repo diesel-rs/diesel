@@ -66,19 +66,6 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-pub fn load_table_names(connection: &PgConnection) -> QueryResult<Vec<String>> {
-    use diesel::prelude::*;
-    use diesel::expression::dsl::sql;
-
-    let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
-        .filter(sql::<types::Bool>("\
-            table_schema = 'public' AND \
-            table_name NOT LIKE '\\_\\_%' AND \
-            table_type LIKE 'BASE TABLE'\
-        "));
-    query.load(connection)
-}
-
 pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>> {
     use self::pg_attribute::dsl::*;
     use self::pg_type::dsl::{pg_type, typname};
@@ -112,21 +99,21 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
         .load(conn)
 }
 
-#[test]
-fn skip_views() {
-    use ::dotenv::dotenv;
-    dotenv().ok();
+// #[test]
+// fn skip_views() {
+//     use ::dotenv::dotenv;
+//     dotenv().ok();
 
-    let connection_url = ::std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in order to run tests");
-    let connection = PgConnection::establish(&connection_url).unwrap();
-    connection.begin_test_transaction().unwrap();
+//     let connection_url = ::std::env::var("DATABASE_URL")
+//         .expect("DATABASE_URL must be set in order to run tests");
+//     let connection = PgConnection::establish(&connection_url).unwrap();
+//     connection.begin_test_transaction().unwrap();
 
-    connection.execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)").unwrap();
-    connection.execute("CREATE VIEW a_view AS SELECT 42").unwrap();
+//     connection.execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)").unwrap();
+//     connection.execute("CREATE VIEW a_view AS SELECT 42").unwrap();
 
-    let table_names = load_table_names(&connection).unwrap();
+//     let table_names = load_table_names(&connection).unwrap();
 
-    assert!(table_names.contains(&"a_regular_table".to_string()));
-    assert!(!table_names.contains(&"a_view".to_string()));
-}
+//     assert!(table_names.contains(&"a_regular_table".to_string()));
+//     assert!(!table_names.contains(&"a_view".to_string()));
+// }

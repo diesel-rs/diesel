@@ -1,11 +1,11 @@
 mod data_structures;
-mod database_url;
 #[cfg(feature = "postgres")]
 mod pg;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 
 use diesel::{QueryResult, Connection};
+use diesel_codegen_shared::{load_table_names, extract_database_url, InferConnection};
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::*;
@@ -15,7 +15,6 @@ use syntax::util::small_vector::SmallVector;
 use syntax::tokenstream::TokenTree;
 
 use self::data_structures::*;
-use self::database_url::extract_database_url;
 use util::comma_delimited_tokens;
 
 pub fn expand_load_table<'cx>(
@@ -71,13 +70,12 @@ pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     sp: Span,
     exprs: &mut T,
 ) -> Result<Box<MacResult>, Box<MacResult>> {
-    let database_url = try!(database_url(cx, sp, exprs));
-    let connection = try!(establish_connection(cx, sp, &database_url));
-    let table_names = load_table_names(&connection).unwrap();
+    let database_url = try!(next_str_lit(cx, sp, exprs));
+    let table_names = load_table_names(&database_url).unwrap();
     let impls = table_names.into_iter()
-        .map(|n| table_macro_call(cx, sp, &connection, &n))
+        .map(|n| quote_item!(cx, infer_table_from_schema!($database_url, $n);).unwrap())
         .collect();
-    Ok(MacEager::items(SmallVector::many(try!(impls))))
+    Ok(MacEager::items(SmallVector::many(impls)))
 }
 
 fn table_macro_call(
@@ -197,15 +195,6 @@ fn get_table_data(conn: &InferConnection, table_name: &str)
         InferConnection::Sqlite(ref c) => sqlite::get_table_data(c, table_name),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => pg::get_table_data(c, table_name),
-    }
-}
-
-fn load_table_names(connection: &InferConnection) -> QueryResult<Vec<String>> {
-    match *connection {
-        #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => sqlite::load_table_names(c),
-        #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => pg::load_table_names(c),
     }
 }
 

@@ -18,14 +18,14 @@ syntex_syntax = { version = "0.44.0", optional = true }
 syntex = { version = "0.44.0", optional = true }
 syntex_syntax = { version = "0.44.0", optional = true }
 diesel = { version = "0.7.0", default-features = false }
-dotenv = { version = "0.8.0", optional = true }
+diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3.4"
-dotenv = "0.8.0"
 
 [features]
 default = ["with-syntex", "postgres", "dotenv"]
+dotenv = ["diesel_codegen_shared/dotenv"]
 with-syntex = ["syntex", "syntex_syntax"]
-postgres = ["diesel/postgres"]
-sqlite = ["diesel/sqlite"]
+postgres = ["diesel/postgres", "diesel_codegen_shared/postgres"]
+sqlite = ["diesel/sqlite", "diesel_codegen_shared/sqlite"]

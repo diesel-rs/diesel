@@ -30,8 +30,8 @@ postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
 stable_postgres = ["with-syntex", "postgres", "diesel_codegen_syntex/postgres"]
 stable_sqlite = ["with-syntex", "sqlite", "diesel_codegen_syntex/sqlite"]
-unstable_postgres = ["unstable", "postgres", "diesel_codegen_old/postgres"]
-unstable_sqlite = ["unstable", "sqlite", "diesel_codegen_old/sqlite"]
+unstable_postgres = ["unstable", "postgres", "diesel_codegen/postgres", "diesel_codegen_old/postgres"]
+unstable_sqlite = ["unstable", "sqlite", "diesel_codegen/sqlite", "diesel_codegen_old/sqlite"]
 
 [[test]]
 name = "integration_tests"

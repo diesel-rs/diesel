@@ -1,12 +1,8 @@
 use diesel::*;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
-#[cfg(feature = "postgres")]
-use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
-#[cfg(feature = "sqlite")]
-use diesel::sqlite::SqliteConnection;
 use diesel::types::{HasSqlType, FromSqlRow};
 
 #[derive(Debug, Clone)]
@@ -46,20 +42,4 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
             nullable: !row.3,
         }
     }
-}
-
-#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
-pub enum InferConnection {
-    Sqlite(SqliteConnection),
-}
-
-#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-pub enum InferConnection {
-    Pg(PgConnection),
-}
-
-#[cfg(all(feature = "sqlite", feature = "postgres"))]
-pub enum InferConnection {
-    Sqlite(SqliteConnection),
-    Pg(PgConnection),
 }

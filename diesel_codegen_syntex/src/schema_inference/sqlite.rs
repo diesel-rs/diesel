@@ -92,22 +92,6 @@ fn is_double(type_name: &str) -> bool {
         type_name.contains("dec")
 }
 
-table! {
-    sqlite_master (name) {
-        name -> VarChar,
-    }
-}
-
-pub fn load_table_names(connection: &SqliteConnection) -> QueryResult<Vec<String>> {
-    use self::sqlite_master::dsl::*;
-
-    sqlite_master.select(name)
-        .filter(name.not_like("\\_\\_%").escape('\\'))
-        .filter(name.not_like("sqlite%"))
-        .filter(sql("type='table'"))
-        .load(connection)
-}
-
 struct FullTableInfo {
     _cid: i32,
     name: String,

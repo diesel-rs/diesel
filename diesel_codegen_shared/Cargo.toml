@@ -1,0 +1,18 @@
+[package]
+name = "diesel_codegen_shared"
+version = "0.7.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+description = "Shared code between `diesel_codegen` and `diesel_codegen_syntex`"
+documentation = "http://docs.diesel.rs"
+homepage = "http://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel"
+
+[dependencies]
+diesel = { version = "0.7.0", default-features = false }
+dotenv = { version = "0.8.0", optional = true }
+
+[features]
+default = ["dotenv"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]

@@ -10,6 +10,8 @@ macro_rules! t {
     };
 }
 
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+extern crate diesel_codegen_shared;
 #[macro_use]
 extern crate quote;
 extern crate rustc_macro;
@@ -23,6 +25,7 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
+mod schema_inference;
 mod util;
 
 use rustc_macro::TokenStream;
@@ -72,6 +75,13 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 #[rustc_macro_derive(Associations)]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
+}
+
+#[rustc_macro_derive(InferSchema)]
+pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
+    let item = parse_macro_input(&input.to_string()).unwrap();
+    schema_inference::derive_infer_schema(item)
+        .to_string().parse().unwrap()
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) -> TokenStream {
