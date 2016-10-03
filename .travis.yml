@@ -4,7 +4,11 @@ dist: trusty
 rust:
   - stable
   - beta
+  - nightly-2016-09-29
   - nightly
+matrix:
+  allow_failures:
+    - nightly
 cache: cargo
 addons:
   postgresql: '9.4'
