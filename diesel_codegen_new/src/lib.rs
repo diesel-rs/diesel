@@ -1,0 +1,91 @@
+#![feature(rustc_macro, rustc_macro_lib)]
+
+macro_rules! t {
+    ($expr:expr) => {
+        match $expr {
+            Ok(val) => val,
+            Err(e) => panic!("{}", e),
+        }
+    };
+}
+
+#[macro_use]
+extern crate quote;
+extern crate rustc_macro;
+extern crate syn;
+
+mod as_changeset;
+mod ast_builder;
+mod attr;
+mod identifiable;
+mod insertable;
+mod model;
+mod queryable;
+mod util;
+
+use rustc_macro::TokenStream;
+use std::str::FromStr;
+use syn::parse_item;
+
+use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
+
+const KNOWN_CUSTOM_DERIVES: &'static [&'static str] = &[
+    "AsChangeset",
+    "Identifiable",
+    "Insertable",
+    "Queryable",
+];
+
+const KNOWN_CUSTOM_ATTRIBUTES: &'static [&'static str] = &[
+    "table_name",
+    "changeset_options"
+];
+
+const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
+    "column_name",
+];
+
+#[rustc_macro_derive(Queryable)]
+pub fn derive_queryable(input: TokenStream) -> TokenStream {
+    expand_derive(input, queryable::derive_queryable)
+}
+
+#[rustc_macro_derive(Identifiable)]
+pub fn derive_identifiable(input: TokenStream) -> TokenStream {
+    expand_derive(input, identifiable::derive_identifiable)
+}
+
+#[rustc_macro_derive(Insertable)]
+pub fn derive_insertable(input: TokenStream) -> TokenStream {
+    expand_derive(input, insertable::derive_insertable)
+}
+
+#[rustc_macro_derive(AsChangeset)]
+pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
+    expand_derive(input, as_changeset::derive_as_changeset)
+}
+
+fn expand_derive(input: TokenStream, f: fn(syn::Item) -> quote::Tokens) -> TokenStream {
+    let input = input.to_string();
+    // FIXME: https://github.com/rust-lang/rust/issues/35900#issuecomment-245971366
+    let input = input.replace("#[structural_match]", "");
+
+    let mut item = parse_item(&input);
+    let output = f(item.clone());
+
+    let finished_deriving_diesel_traits = {
+        let remaining_derives = list_value_of_attr_with_name(&item.attrs, "derive");
+        !remaining_derives
+            .unwrap_or(Vec::new())
+            .iter()
+            .any(|trait_name| KNOWN_CUSTOM_DERIVES.contains(&trait_name.as_ref()))
+    };
+
+    if finished_deriving_diesel_traits {
+        item.attrs = strip_attributes(item.attrs, KNOWN_CUSTOM_ATTRIBUTES);
+        strip_field_attributes(&mut item, KNOWN_FIELD_ATTRIBUTES);
+    }
+    let input = quote!(#item);
+
+    TokenStream::from_str(&format!("{} {}", input, output)).unwrap()
+}
