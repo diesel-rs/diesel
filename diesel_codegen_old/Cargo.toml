@@ -1,5 +1,5 @@
 [package]
-name = "diesel_codegen"
+name = "diesel_codegen_old"
 version = "0.7.2"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"

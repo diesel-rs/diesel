@@ -1,5 +1,5 @@
 #![feature(custom_derive, plugin, custom_attribute)]
-#![plugin(diesel_codegen)]
+#![plugin(diesel_codegen_old)]
 #[macro_use]
 extern crate diesel;
 
