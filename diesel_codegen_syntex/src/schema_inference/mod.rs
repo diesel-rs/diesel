@@ -1,20 +1,13 @@
-mod data_structures;
-#[cfg(feature = "postgres")]
-mod pg;
-#[cfg(feature = "sqlite")]
-mod sqlite;
-
-use diesel::{QueryResult, Connection};
-use diesel_codegen_shared::{load_table_names, extract_database_url, InferConnection};
+use diesel_codegen_shared::*;
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::*;
+use syntax::ext::build::AstBuilder;
 use syntax::parse::token::{self, InternedString, str_to_ident};
 use syntax::ptr::P;
 use syntax::util::small_vector::SmallVector;
 use syntax::tokenstream::TokenTree;
 
-use self::data_structures::*;
 use util::comma_delimited_tokens;
 
 pub fn expand_load_table<'cx>(
@@ -44,7 +37,13 @@ pub fn load_table_body<T: Iterator<Item=P<ast::Expr>>>(
 ) -> Result<Box<MacResult>, Box<MacResult>> {
     let database_url = try!(database_url(cx, sp, exprs));
     let table_name = try!(next_str_lit(cx, sp, exprs));
-    let connection = try!(establish_connection(cx, sp, &database_url));
+    let connection = match establish_connection(&database_url) {
+        Ok(conn) => conn,
+        Err(e) => {
+            cx.span_err(sp, &e.to_string());
+            return Err(DummyResult::any(sp));
+        }
+    };
     table_macro_call(cx, sp, &connection, &table_name)
         .map(|item| MacEager::items(SmallVector::one(item)))
 }
@@ -85,42 +84,31 @@ fn table_macro_call(
     table_name: &str,
 ) -> Result<P<ast::Item>, Box<MacResult>> {
     match get_table_data(connection, table_name) {
-        Err(::diesel::result::Error::NotFound) => {
-            cx.span_err(sp, &format!("no table exists named {}", table_name));
-            Err(DummyResult::any(sp))
-        }
-        Err(_) => {
-            cx.span_err(sp, "error loading schema");
+        Err(e) => {
+            cx.span_err(sp, &e.to_string());
             Err(DummyResult::any(sp))
         }
         Ok(data) => {
             let primary_keys = match get_primary_keys(connection, table_name) {
                 Ok(keys) => keys,
-                Err(_) =>{
-                    cx.span_err(sp, "error loading schema");
+                Err(e) => {
+                    cx.span_err(sp, &e.to_string());
                     return Err(DummyResult::any(sp));
                 }
             };
-            if primary_keys.len() == 0 {
-                cx.span_err(sp,
-                    &format!("Diesel only supports tables with primary keys.\
-                             table {} has no primary key", table_name));
-                Err(DummyResult::any(sp))
-            } else {
-                let tokens = data.iter().map(|a| column_def_tokens(cx, sp, a, &connection))
-                    .collect::<Vec<_>>();
-                let table_name = str_to_ident(table_name);
-                let primary_key_tokens = primary_keys.iter()
-                    .map(|s| str_to_ident(&s))
-                    .map(token::Ident);
-                let primary_key = comma_delimited_tokens(primary_key_tokens, sp);
-                let item = quote_item!(cx, table! {
-                    $table_name ($primary_key) {
-                        $tokens
-                    }
-                }).unwrap();
-                Ok(item)
-            }
+            let tokens = data.iter().map(|a| column_def_tokens(cx, sp, a, &connection))
+                .collect::<Vec<_>>();
+            let table_name = str_to_ident(table_name);
+            let primary_key_tokens = primary_keys.iter()
+                .map(|s| str_to_ident(&s))
+                .map(token::Ident);
+            let primary_key = comma_delimited_tokens(primary_key_tokens, sp);
+            let item = quote_item!(cx, table! {
+                $table_name ($primary_key) {
+                    $tokens
+                }
+            }).unwrap();
+            Ok(item)
         }
     }
 }
@@ -140,82 +128,25 @@ fn column_def_tokens(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation, con
     -> Vec<TokenTree>
 {
     let column_name = str_to_ident(&attr.column_name);
-    let tpe = determine_column_type(cx, span, attr, conn);
+    let tpe = match determine_column_type(attr, conn) {
+        Ok(ty) => {
+            let idents = ty.path.iter().map(|a| str_to_ident(&a)).collect();
+            let path = cx.path_global(span, idents);
+            let mut path = quote_ty!(cx, $path);
+            if ty.is_array {
+                path = quote_ty!(cx, Array<$path>);
+            }
+            if ty.is_nullable {
+                path = quote_ty!(cx, Nullable<$path>);
+            }
+            path
+        }
+        Err(e) => {
+            cx.span_err(span, &e.to_string());
+            quote_ty!(cx, ())
+        }
+    };
     quote_tokens!(cx, $column_name -> $tpe,)
-}
-
-fn establish_real_connection<Conn>(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    database_url: &str,
-) -> Result<Conn, Box<MacResult>> where
-    Conn: Connection,
-{
-    Conn::establish(database_url).map_err(|error| {
-        let error_message = format!(
-            "Failed to establish a database connection at {}. Error: {:?}",
-            database_url,
-            error,
-        );
-        cx.span_err(sp, &error_message);
-        DummyResult::any(sp)
-    })
-}
-
-fn establish_connection(
-    cx: &mut ExtCtxt,
-    sp: Span,
-    database_url: &str,
-) -> Result<InferConnection, Box<MacResult>> {
-    match database_url {
-        #[cfg(feature = "postgres")]
-        _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") => {
-            establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Pg(c))
-        }
-        #[cfg(feature = "sqlite")]
-        _ => establish_real_connection(cx, sp, database_url).map(|c| InferConnection::Sqlite(c)),
-        #[cfg(not(feature = "sqlite"))]
-        _ => {
-            let error_message = format!(
-                "{} is not a valid PG database URL. \
-                It must start with postgres:// or postgresql://",
-                database_url,
-            );
-            cx.span_err(sp, &error_message);
-            Err(DummyResult::any(sp))
-        }
-    }
-}
-
-fn get_table_data(conn: &InferConnection, table_name: &str)
-    -> QueryResult<Vec<ColumnInformation>>
-{
-    match *conn {
-        #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => sqlite::get_table_data(c, table_name),
-        #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => pg::get_table_data(c, table_name),
-    }
-}
-
-fn determine_column_type(cx: &mut ExtCtxt, span: Span, attr: &ColumnInformation, conn: &InferConnection)
-    -> P<ast::Ty>
-{
-    match *conn {
-        #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(_) => sqlite::determine_column_type(cx, span, attr),
-        #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => pg::determine_column_type(cx, span, attr),
-    }
-}
-
-fn get_primary_keys(conn: &InferConnection, table_name: &str) -> QueryResult<Vec<String>> {
-    match *conn {
-        #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => sqlite::get_primary_keys(c, table_name),
-        #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => pg::get_primary_keys(c, table_name),
-    }
 }
 
 fn database_url<T: Iterator<Item=P<ast::Expr>>>(

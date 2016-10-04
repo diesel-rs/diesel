@@ -14,7 +14,7 @@ mod schema_inference;
 
 pub use self::database_url::extract_database_url;
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
-pub use self::schema_inference::load_table_names;
+pub use self::schema_inference::*;
 
 #[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 pub enum InferConnection {

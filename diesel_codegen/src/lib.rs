@@ -25,6 +25,7 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
 mod util;
 
@@ -78,9 +79,18 @@ pub fn derive_associations(input: TokenStream) -> TokenStream {
 }
 
 #[rustc_macro_derive(InferSchema)]
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
     schema_inference::derive_infer_schema(item)
+        .to_string().parse().unwrap()
+}
+
+#[rustc_macro_derive(InferTableFromSchema)]
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
+pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
+    let item = parse_macro_input(&input.to_string()).unwrap();
+    schema_inference::derive_infer_table_from_schema(item)
         .to_string().parse().unwrap()
 }
 

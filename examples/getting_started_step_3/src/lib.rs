@@ -1,5 +1,5 @@
 #![feature(plugin, rustc_macro)]
-#![plugin(diesel_codegen_old, dotenv_macros)]
+#![plugin(diesel_codegen_old)]
 
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;

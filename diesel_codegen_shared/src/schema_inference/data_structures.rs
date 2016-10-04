@@ -12,6 +12,12 @@ pub struct ColumnInformation {
     pub nullable: bool,
 }
 
+pub struct ColumnType {
+    pub path: Vec<String>,
+    pub is_array: bool,
+    pub is_nullable: bool,
+}
+
 #[cfg(feature = "postgres")]
 impl<ST> Queryable<ST, Pg> for ColumnInformation where
     Pg: HasSqlType<ST>,

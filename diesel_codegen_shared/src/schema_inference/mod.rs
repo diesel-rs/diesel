@@ -1,13 +1,16 @@
+mod data_structures;
 #[cfg(feature = "postgres")]
 mod pg;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 
 use diesel::Connection;
+use diesel::result::Error::NotFound;
 use std::error::Error;
 
-use database_url::extract_database_url;
 use InferConnection;
+use database_url::extract_database_url;
+pub use self::data_structures::{ColumnInformation, ColumnType};
 
 pub fn load_table_names(database_url: &str) -> Result<Vec<String>, Box<Error>> {
     let connection = try!(establish_connection(database_url));
@@ -20,7 +23,7 @@ pub fn load_table_names(database_url: &str) -> Result<Vec<String>, Box<Error>> {
     }
 }
 
-fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
+pub fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
     let database_url = try!(extract_database_url(database_url));
     match database_url {
         #[cfg(feature = "postgres")]
@@ -50,5 +53,51 @@ fn establish_real_connection<Conn>(database_url: &str) -> Result<Conn, Box<Error
             error,
         ).into()
     })
+}
+
+pub fn get_table_data(conn: &InferConnection, table_name: &str)
+    -> Result<Vec<ColumnInformation>, Box<Error>>
+{
+    let column_info = match *conn {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(ref c) => sqlite::get_table_data(c, table_name),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(ref c) => pg::get_table_data(c, table_name),
+    };
+    if let Err(NotFound) = column_info {
+        Err(format!("no table exists named {}", table_name).into())
+    } else {
+        column_info.map_err(Into::into)
+    }
+}
+
+pub fn determine_column_type(
+    attr: &ColumnInformation,
+    conn: &InferConnection,
+) -> Result<ColumnType, Box<Error>> {
+    match *conn {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => sqlite::determine_column_type(attr),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => pg::determine_column_type(attr),
+    }
+}
+
+pub fn get_primary_keys(
+    conn: &InferConnection,
+    table_name: &str,
+) -> Result<Vec<String>, Box<Error>> {
+    let primary_keys = try!(match *conn {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(ref c) => sqlite::get_primary_keys(c, table_name),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(ref c) => pg::get_primary_keys(c, table_name),
+    });
+    if primary_keys.is_empty() {
+        Err(format!("Diesel only supports tables with primary keys. \
+                    Table {} has no primary key", table_name).into())
+    } else {
+        Ok(primary_keys)
+    }
 }
 

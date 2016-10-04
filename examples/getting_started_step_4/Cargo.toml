@@ -7,16 +7,14 @@ build = "build.rs"
 [build-dependencies]
 syntex = { version = "0.44.0", optional = true }
 diesel_codegen_syntex = { version = "0.7.2", features = ["postgres"], optional = true }
-dotenv_codegen = { version = "0.9.2",  optional = true }
 
 [dependencies]
 diesel = "0.7.1"
-diesel_codegen = { version = "0.7.2", optional = true }
+diesel_codegen = { version = "0.7.2", features = ["postgres"], optional = true }
 diesel_codegen_old = { path = "../../diesel_codegen_old", features = ["postgres"], optional = true }
 dotenv = "0.8.0"
-dotenv_macros = { version = "0.9.0", optional = true }
 
 [features]
 default = ["nightly"]
-with-syntex = ["syntex", "diesel_codegen_syntex", "dotenv_codegen"]
-nightly = ["diesel/unstable", "diesel_codegen", "diesel_codegen_old", "dotenv_macros"]
+with-syntex = ["syntex", "diesel_codegen_syntex"]
+nightly = ["diesel/unstable", "diesel_codegen", "diesel_codegen_old"]
