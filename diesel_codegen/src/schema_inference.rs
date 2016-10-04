@@ -1,7 +1,7 @@
 use syn;
 use quote;
 
-use diesel_codegen_shared::load_table_names;
+use ::diesel_codegen_shared::load_table_names;
 
 use util::str_value_of_meta_item;
 
