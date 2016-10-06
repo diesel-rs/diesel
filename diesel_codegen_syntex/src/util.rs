@@ -66,7 +66,6 @@ pub fn ident_value_of_attr_with_name(
         .and_then(|a| single_arg_value_of_attr(cx, &a, name))
 }
 
-#[cfg(feature = "with-syntex")]
 const KNOWN_ATTRIBUTES: &'static [&'static str] = &[
     "belongs_to",
     "changeset_options",
@@ -75,7 +74,6 @@ const KNOWN_ATTRIBUTES: &'static [&'static str] = &[
     "table_name",
 ];
 
-#[cfg(feature = "with-syntex")]
 pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {
     use syntax::fold;
 
