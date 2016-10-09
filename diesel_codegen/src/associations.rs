@@ -98,6 +98,6 @@ fn to_foreign_key(model_name: &str) -> syn::Ident {
 
 #[test]
 fn to_foreign_key_properly_handles_underscores() {
-    assert_eq!(str_to_ident("foo_bar_id"), to_foreign_key("FooBar"));
-    assert_eq!(str_to_ident("foo_bar_baz_id"), to_foreign_key("FooBarBaz"));
+    assert_eq!(syn::Ident::new("foo_bar_id"), to_foreign_key("FooBar"));
+    assert_eq!(syn::Ident::new("foo_bar_baz_id"), to_foreign_key("FooBarBaz"));
 }

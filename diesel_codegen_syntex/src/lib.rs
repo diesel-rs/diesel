@@ -4,23 +4,11 @@
 #[macro_use] extern crate diesel;
 extern crate diesel_codegen_shared;
 
-#[cfg(feature = "with-syntex")]
 extern crate syntex;
-
-#[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
-
-#[cfg(not(feature = "with-syntex"))]
-extern crate syntax;
-
-#[cfg(not(feature = "with-syntex"))]
-extern crate rustc_plugin;
 
 #[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/lib.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("lib.in.rs");
 
 mod util;
 

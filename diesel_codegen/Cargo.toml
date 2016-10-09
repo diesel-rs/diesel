@@ -7,6 +7,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 syn = "0.8.5"
 quote = "0.2.1"
 diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
+diesel = {version = "0.7", default-features = false }
+
 
 [lib]
 rustc-macro = true
