@@ -7,3 +7,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 diesel = { version = "0.7.1", features = ["sqlite", "postgres"] }
 diesel_codegen = { version = "0.7.2" }
 compiletest_rs = "0.2.1"
+
+
+[replace]
+"diesel:0.7.1" = { path = "../diesel" }
+"diesel_codegen:0.7.2" = { path = "../diesel_codegen" }

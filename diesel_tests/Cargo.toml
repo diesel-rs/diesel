@@ -40,3 +40,8 @@ harness = true
 name = "benchmarks"
 path = "tests/bench.rs"
 bench = true
+
+[replace]
+"diesel:0.7.1" = { path = "../diesel" }
+"diesel_codegen:0.7.2" = { path = "../diesel_codegen" }
+"diesel_codegen_syntex:0.7.2" = { path = "../diesel_codegen_syntex" }
