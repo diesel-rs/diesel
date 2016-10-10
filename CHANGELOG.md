@@ -4,11 +4,11 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.8.0] - 2016-10-10
 
 ### Added
 
-* Added support for composite primary keys.
+* Added partial support for composite primary keys.
 
 * Added support for PostgreSQL `NULLS FIRST` and `NULLS LAST` when sorting.
   See http://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html

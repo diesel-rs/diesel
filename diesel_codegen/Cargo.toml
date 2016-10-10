@@ -1,13 +1,19 @@
 [package]
 name = "diesel_codegen"
-version = "0.7.2"
+version = "0.8.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+description = "Custom derive and procedural macros for Diesel"
+documentation = "http://docs.diesel.rs"
+homepage = "http://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
+keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
 syn = "0.8.5"
 quote = "0.2.1"
-diesel = { version = "0.7.1", default-features = false }
-diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
+diesel = { version = "0.8.0", default-features = false }
+diesel_codegen_shared = { version = "0.8.0", default-features = false }
 
 [lib]
 proc-macro = true
