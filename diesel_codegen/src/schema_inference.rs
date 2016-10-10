@@ -3,7 +3,7 @@ use quote;
 
 use diesel_codegen_shared::*;
 
-use util::str_value_of_meta_item;
+use util::{get_options_from_input, get_option};
 
 pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     fn bug() -> ! {
@@ -11,7 +11,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
                with your invocation of `infer_schema!");
     }
 
-    let options = get_options_from_input(&input.attrs, bug);
+    let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
 
     let table_names = load_table_names(&database_url).unwrap();
@@ -28,7 +28,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
                with your invocation of `infer_table_from_schema!");
     }
 
-    let options = get_options_from_input(&input.attrs, bug);
+    let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
     let database_url = get_option(options, "database_url", bug);
     let table_name = get_option(options, "table_name", bug);
 
@@ -68,22 +68,4 @@ fn column_def_tokens(
         tpe = quote!(Nullable<#tpe>);
     }
     quote!(#column_name -> #tpe)
-}
-
-fn get_options_from_input(attrs: &[syn::Attribute], on_bug: fn() -> !) -> &[syn::MetaItem] {
-    let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
-    match options {
-        Some(&syn::MetaItem::List(_, ref options)) => options,
-        _ => on_bug(),
-    }
-}
-
-fn get_option<'a>(
-    options: &'a [syn::MetaItem],
-    option_name: &str,
-    on_bug: fn() -> !,
-) -> &'a str {
-    options.iter().find(|a| a.name() == option_name)
-        .map(|a| str_value_of_meta_item(a, option_name))
-        .unwrap_or_else(|| on_bug())
 }

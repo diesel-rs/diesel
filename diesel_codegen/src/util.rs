@@ -124,3 +124,24 @@ pub fn strip_field_attributes(item: &mut MacroInput, names_to_strip: &[&str]) {
         mem::swap(&mut attrs, &mut field.attrs);
     }
 }
+
+pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
+    -> Option<&[MetaItem]>
+{
+    let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
+    match options {
+        Some(&MetaItem::List(_, ref options)) => Some(options),
+        Some(_) => on_bug(),
+        None => None,
+    }
+}
+
+pub fn get_option<'a>(
+    options: &'a [MetaItem],
+    option_name: &str,
+    on_bug: fn() -> !,
+) -> &'a str {
+    options.iter().find(|a| a.name() == option_name)
+        .map(|a| str_value_of_meta_item(a, option_name))
+        .unwrap_or_else(|| on_bug())
+}

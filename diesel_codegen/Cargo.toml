@@ -6,6 +6,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 syn = "0.8.5"
 quote = "0.2.1"
+diesel = { version = "0.7.1", default-features = false }
 diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
 
 [lib]

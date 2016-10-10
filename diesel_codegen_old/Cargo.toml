@@ -9,14 +9,11 @@ homepage = "http://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
-[dependencies]
-diesel_codegen_syntex = { path = "../diesel_codegen_syntex", default-features = false }
-
 [features]
 default = ["postgres", "dotenv"]
-dotenv = ["diesel_codegen_syntex/dotenv"]
-postgres = ["diesel_codegen_syntex/postgres"]
-sqlite = ["diesel_codegen_syntex/sqlite"]
+dotenv = []
+postgres = []
+sqlite = []
 
 [lib]
 plugin = true

@@ -9,10 +9,12 @@ use diesel::pg::PgConnection;
 use diesel::sqlite::SqliteConnection;
 
 mod database_url;
+mod migrations;
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 mod schema_inference;
 
 pub use self::database_url::extract_database_url;
+pub use self::migrations::*;
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub use self::schema_inference::*;
 

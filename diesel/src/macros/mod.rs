@@ -552,37 +552,12 @@ macro_rules! print_sql {
     };
 }
 
-#[macro_export]
-/// This macro can only be used in combination with the `diesel_codegen` or
-/// `diesel_codegen_syntex` crates. It will not work on its own.
-///
-/// FIXME: Oh look we have a place to actually document this now.
-macro_rules! infer_schema {
-    ($database_url: expr) => {
-        #[derive(InferSchema)]
-        #[options(database_url=$database_url)]
-        struct _Dummy;
-    }
-}
-
-#[macro_export]
-/// This macro can only be used in combination with the `diesel_codegen` or
-/// `diesel_codegen_syntex` crates. It will not work on its own.
-///
-/// FIXME: Oh look we have a place to actually document this now.
-macro_rules! infer_table_from_schema {
-    ($database_url: expr, $table_name: expr) => {
-        #[derive(InferTableFromSchema)]
-        #[options(database_url=$database_url, table_name=$table_name)]
-        struct _Dummy;
-    }
-}
-
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 #[macro_use] mod static_cond;
+#[macro_use] mod macros_from_codegen;
 
 #[macro_use] mod as_changeset;
 #[macro_use] mod associations;
