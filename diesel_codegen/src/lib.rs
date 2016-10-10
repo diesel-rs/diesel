@@ -1,5 +1,6 @@
 #![feature(rustc_macro, rustc_macro_lib)]
 #![deny(warnings)]
+#![recursion_limit = "512"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -10,7 +11,6 @@ macro_rules! t {
     };
 }
 
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
 extern crate diesel_codegen_shared;
 #[macro_use]
 extern crate quote;
@@ -28,6 +28,7 @@ mod queryable;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
 mod util;
+mod migrations;
 
 use rustc_macro::TokenStream;
 use syn::parse_macro_input;
@@ -53,32 +54,32 @@ const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
     "column_name",
 ];
 
-#[rustc_macro_derive(Queryable)]
+#[cfg_attr(not(test), rustc_macro_derive(Queryable))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }
 
-#[rustc_macro_derive(Identifiable)]
+#[cfg_attr(not(test), rustc_macro_derive(Identifiable))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive_identifiable)
 }
 
-#[rustc_macro_derive(Insertable)]
+#[cfg_attr(not(test), rustc_macro_derive(Insertable))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
 }
 
-#[rustc_macro_derive(AsChangeset)]
+#[cfg_attr(not(test), rustc_macro_derive(AsChangeset))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }
 
-#[rustc_macro_derive(Associations)]
+#[cfg_attr(not(test), rustc_macro_derive(Associations))]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
 }
 
-#[rustc_macro_derive(InferSchema)]
+#[cfg_attr(not(test), rustc_macro_derive(InferSchema))]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
@@ -86,11 +87,18 @@ pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
         .to_string().parse().unwrap()
 }
 
-#[rustc_macro_derive(InferTableFromSchema)]
+#[cfg_attr(not(test), rustc_macro_derive(InferTableFromSchema))]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
     schema_inference::derive_infer_table_from_schema(item)
+        .to_string().parse().unwrap()
+}
+
+#[cfg_attr(not(test), rustc_macro_derive(EmbeddedMigrations))]
+pub fn derive_embedded_migrations(input: TokenStream) -> TokenStream {
+    let item = parse_macro_input(&input.to_string()).unwrap();
+    migrations::derive_embedded_migrations(item)
         .to_string().parse().unwrap()
 }
 

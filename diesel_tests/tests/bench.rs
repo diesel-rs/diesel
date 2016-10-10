@@ -1,11 +1,12 @@
-#![feature(custom_derive, plugin, custom_attribute, test)]
-#![plugin(diesel_codegen_old, dotenv_macros)]
+#![feature(plugin, test, rustc_macro)]
+#![plugin(dotenv_macros)]
 
 #![allow(non_snake_case)]
 
 #[macro_use]
 extern crate diesel;
 extern crate test;
+#[macro_use] extern crate diesel_codegen;
 
 mod schema;
 

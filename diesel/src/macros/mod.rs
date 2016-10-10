@@ -578,6 +578,35 @@ macro_rules! infer_table_from_schema {
     }
 }
 
+#[macro_export]
+/// This macro will read your migrations at compile time, and embed a module you can
+/// use to execute them at runtime without the migration files being present on the
+/// file system. This is useful if you would like to use Diesel's migration
+/// infrastructure, but want to ship a single executable file (such as for embedded
+/// applications). It can also be used to apply migrations to an in memory database
+/// (Diesel does this for its own test suite).
+///
+/// You can optionally pass the path to the migrations directory to this macro. When
+/// left unspecified, Diesel Codegen will search for the migrations directory in the
+/// same way that Diesel CLI does. If specified, the path should be relative to the
+/// directory containing your Cargo.toml (CARGO_MANIFEST_HOME)
+///
+/// This macro can only be used in combination with the `diesel_codegen` or
+/// `diesel_codegen_syntex` crates. It will not work on its own.
+///
+/// FIXME: Oh look we have a place to actually document this now.
+macro_rules! embed_migrations {
+    () => {
+        #[derive(Embed_Migrations)]
+        struct Migrations;
+    };
+    ($migration_path: expr) => {
+        #[derive(EmbeddedMigrations)]
+        #[options(migration_path=$migration_path)]
+        struct Migrations; 
+    }
+}
+
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
 #[macro_use] mod parse;

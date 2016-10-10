@@ -61,6 +61,8 @@ pub mod connection;
 mod migration_error;
 #[doc(hidden)]
 pub mod schema;
+mod embedded_migration;
+pub use self::embedded_migration::EmbeddedMigration;
 
 #[doc(inline)]
 pub use self::connection::MigrationConnection;
