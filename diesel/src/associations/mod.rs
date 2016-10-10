@@ -122,6 +122,19 @@ use query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 
+/// Represents a struct which can be identified on a single table in the
+/// database. This must be implemented to use associations, and some features of
+/// updating.
+///
+/// ### Deriving
+///
+/// This trait can be automatically derived using `diesel_codegen` by adding
+/// `#[derive(Identifiable)]` to your struct. The primary key will be assumed to be a field and
+/// column called `id`. By default the table will be assumed to be the plural form of the struct
+/// name (using *very* dumb pluralization -- it just adds an `s` at the end). If your table name
+/// differs from that convention, or requires complex pluralization, it can be specified using
+/// `#[table_name = "some_table_name"]`. The inferred table name is considered public API and will
+/// never change without a major version bump.
 pub trait Identifiable {
     type Id: Hash + Eq;
     type Table: Table + for<'a> FindDsl<&'a Self::Id>;

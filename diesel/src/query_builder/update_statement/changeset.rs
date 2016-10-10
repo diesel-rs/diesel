@@ -4,13 +4,20 @@ use query_source::QuerySource;
 use result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set). This can
-/// be automatically generated for structs by `#[derive(AsChangeset)]`.
+/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set).
 ///
-/// Structs which derive this trait must be annotated with `#[table_name = "something"]`. By
-/// default, any option fields on the struct are skipped if their value is `None`. If you would
-/// like to assign `NULL` to the field instead, you can annotate your struct with
-/// `#[changeset_options(treat_none_as_null = "true")]`
+/// ### Deriving
+///
+/// This trait can be automatically derived using `diesel_codegen` by adding
+/// `#[derive(AsChangeset)]` to your struct.  Structs which derive this trait
+/// must be annotated with `#[table_name = "something"]`. If the field name of
+/// your struct differs from the name of the column, you can annotate the field
+/// with `#[column_name = "some_column_name"]`.
+///
+/// By default, any `Option` fields on the struct are skipped if their value is
+/// `None`. If you would like to assign `NULL` to the field instead, you can
+/// annotate your struct with `#[changeset_options(treat_none_as_null =
+/// "true")]`.
 pub trait AsChangeset {
     type Target: QuerySource;
     type Changeset;
