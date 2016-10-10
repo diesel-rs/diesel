@@ -6,4 +6,4 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 diesel = { version = "0.7.1", features = ["sqlite", "postgres"] }
 diesel_codegen = { version = "0.7.2" }
-compiletest_rs = "0.2.1"
+compiletest_rs = "=0.2.3"
