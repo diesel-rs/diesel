@@ -1,5 +1,6 @@
 use diesel::migrations::search_for_migrations_directory;
 use std::error::Error;
+use std::env;
 use std::path::{Path, PathBuf};
 use syntax::ast;
 use syntax::codemap::Span;
@@ -70,7 +71,7 @@ fn migrations_directory_from_args(
     sp: Span,
     tts: &[tokenstream::TokenTree],
 ) -> Result<PathBuf, Box<Error>> {
-    let callsite_file = cx.codemap().span_to_filename(sp);
+    let cargo_toml_directory = try!(env::var("CARGO_MANIFEST_DIR"));
     let relative_path_to_migrations = if tts.is_empty() {
         None
     } else {
@@ -79,20 +80,23 @@ fn migrations_directory_from_args(
             value => value,
         }
     };
-    let callsite_path = Path::new(&callsite_file);
+    let cargo_manifest_path = Path::new(&cargo_toml_directory);
     let migrations_path = relative_path_to_migrations.as_ref().map(Path::new);
-    resolve_migrations_directory(callsite_path, migrations_path)
+    resolve_migrations_directory(cargo_manifest_path, migrations_path)
 }
 
 fn resolve_migrations_directory(
-    callsite: &Path,
+    cargo_manifest_dir: &Path,
     relative_path_to_migrations: Option<&Path>,
 ) -> Result<PathBuf, Box<Error>> {
-    let callsite_dir = callsite.parent().unwrap();
-
     let result = match relative_path_to_migrations {
-        Some(dir) => callsite_dir.join(dir),
-        None => try!(search_for_migrations_directory(&callsite_dir)),
+        Some(dir) => cargo_manifest_dir.join(dir),
+        None => {
+            // People commonly put their migrations in src/migrations
+            // so start the search there rather than the project root
+            let src_dir = cargo_manifest_dir.join("src");
+            try!(search_for_migrations_directory(&src_dir))
+        }
     };
 
     result.canonicalize().map_err(Into::into)
@@ -137,15 +141,15 @@ mod tests {
     use super::resolve_migrations_directory;
 
     #[test]
-    fn migrations_directory_resolved_relative_to_callsite_dir() {
+    fn migrations_directory_resolved_relative_to_cargo_manifest_dir() {
         let tempdir = TempDir::new("diesel").unwrap();
         fs::create_dir_all(tempdir.path().join("foo/special_migrations")).unwrap();
-        let callsite = tempdir.path().join("foo/bar.rs");
+        let cargo_manifest_dir = tempdir.path().join("foo");
         let relative_path = Some(Path::new("special_migrations"));
 
         assert_eq!(
             tempdir.path().join("foo/special_migrations").canonicalize().ok(),
-            resolve_migrations_directory(&callsite, relative_path).ok()
+            resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }
 
@@ -154,12 +158,12 @@ mod tests {
         let tempdir = TempDir::new("diesel").unwrap();
         fs::create_dir_all(tempdir.path().join("foo/migrations/bar")).unwrap();
         fs::create_dir_all(tempdir.path().join("foo/bar")).unwrap();
-        let callsite = tempdir.path().join("foo/bar/baz.rs");
+        let cargo_manifest_dir = tempdir.path().join("foo/bar");
         let relative_path = Some(Path::new("../migrations/bar"));
 
         assert_eq!(
             tempdir.path().join("foo/migrations/bar").canonicalize().ok(),
-            resolve_migrations_directory(&callsite, relative_path).ok()
+            resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }
 
@@ -168,23 +172,36 @@ mod tests {
         let tempdir = TempDir::new("diesel").unwrap();
         fs::create_dir_all(tempdir.path().join("foo/migrations")).unwrap();
         fs::create_dir_all(tempdir.path().join("foo/bar")).unwrap();
-        let callsite = tempdir.path().join("foo/bar/baz.rs");
+        let cargo_manifest_dir = tempdir.path().join("foo/bar");
 
         assert_eq!(
             tempdir.path().join("foo/migrations").canonicalize().ok(),
-            resolve_migrations_directory(&callsite, None).ok()
+            resolve_migrations_directory(&cargo_manifest_dir, None).ok()
         );
     }
 
     #[test]
-    fn migrations_directory_allows_no_parent_dir_for_callsite() {
+    fn migrations_directory_searches_src_migrations_if_present() {
+        let tempdir = TempDir::new("diesel").unwrap();
+        fs::create_dir_all(tempdir.path().join("foo/src/migrations")).unwrap();
+        fs::create_dir_all(tempdir.path().join("foo/migrations")).unwrap();
+        let cargo_manifest_dir = tempdir.path().join("foo");
+
+        assert_eq!(
+            tempdir.path().join("foo/src/migrations").canonicalize().ok(),
+            resolve_migrations_directory(&cargo_manifest_dir, None).ok()
+        );
+    }
+
+    #[test]
+    fn migrations_directory_allows_no_parent_dir_for_cargo_manifest_dir() {
         let tempdir = TempDir::new("diesel").unwrap();
         fs::create_dir_all(tempdir.path().join("special_migrations")).unwrap();
-        let callsite = tempdir.path().join("bar.rs");
+        let cargo_manifest_dir = tempdir.path().to_owned();
         let relative_path = Some(Path::new("special_migrations"));
         assert_eq!(
             tempdir.path().join("special_migrations").canonicalize().ok(),
-            resolve_migrations_directory(&callsite, relative_path).ok()
+            resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }
 }

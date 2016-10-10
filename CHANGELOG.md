@@ -34,6 +34,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Structs annotated with `#[has_many]` or `#[belongs_to]` now require
   `#[derive(Associations)]`. This is to allow them to work with Macros 1.1.
 
+* `embed_migrations!` now resolves paths relative to `Cargo.toml` instead of the
+  file the macro was called from. This change is required to allow this macro to
+  work with Macros 1.1.
+
 ### Fixed
 
 * `diesel migrations run` will now respect migration directories overridden by
