@@ -10,7 +10,6 @@ macro_rules! t {
     };
 }
 
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
 extern crate diesel_codegen_shared;
 extern crate diesel;
 #[macro_use]
@@ -97,7 +96,7 @@ pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
 }
 
 #[rustc_macro_derive(EmbedMigrations)]
-pub fn derive_embed_migratoins(input: TokenStream) -> TokenStream {
+pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
     embed_migrations::derive_embed_migrations(item)
         .to_string().parse().unwrap()
