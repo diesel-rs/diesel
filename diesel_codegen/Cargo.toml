@@ -10,7 +10,7 @@ diesel = { version = "0.7.1", default-features = false }
 diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
 
 [lib]
-rustc-macro = true
+proc-macro = true
 
 [features]
 default = ["dotenv"]

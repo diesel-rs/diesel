@@ -1,30 +1,15 @@
-#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private, quote))]
 #![deny(warnings)]
 
 #[macro_use] extern crate diesel;
 extern crate diesel_codegen_shared;
 
-#[cfg(feature = "with-syntex")]
 extern crate syntex;
-
-#[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
 
-#[cfg(not(feature = "with-syntex"))]
-extern crate syntax;
-
-#[cfg(not(feature = "with-syntex"))]
-extern crate rustc_plugin;
-
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/lib.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("lib.in.rs");
 
 mod util;
 
-#[cfg(feature = "with-syntex")]
 pub fn register(reg: &mut syntex::Registry) {
     reg.add_attr("feature(custom_derive)");
     reg.add_attr("feature(custom_attribute)");

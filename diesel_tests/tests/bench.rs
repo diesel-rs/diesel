@@ -1,5 +1,4 @@
-#![feature(custom_derive, plugin, custom_attribute, test)]
-#![plugin(diesel_codegen_old, dotenv_macros)]
+#![feature(proc_macro)]
 
 #![allow(non_snake_case)]
 

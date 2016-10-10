@@ -1,4 +1,4 @@
-#![feature(rustc_macro)]
+#![feature(proc_macro)]
 
 #[macro_use]
 extern crate diesel;

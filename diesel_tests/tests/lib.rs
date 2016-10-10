@@ -1,11 +1,11 @@
-#![cfg_attr(feature = "unstable", feature(plugin, rustc_macro))]
-#![cfg_attr(feature = "unstable", plugin(diesel_codegen_old, dotenv_macros))]
+#![cfg_attr(feature = "unstable", feature(proc_macro))]
 
 extern crate quickcheck;
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate diesel;
 #[cfg(feature = "unstable")]
 #[macro_use] extern crate diesel_codegen;
+extern crate dotenv;
 
 #[cfg(feature = "unstable")]
 include!("lib.in.rs");

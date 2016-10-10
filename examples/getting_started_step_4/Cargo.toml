@@ -11,10 +11,14 @@ diesel_codegen_syntex = { version = "0.7.2", features = ["postgres"], optional =
 [dependencies]
 diesel = "0.7.1"
 diesel_codegen = { version = "0.7.2", features = ["postgres"], optional = true }
-diesel_codegen_old = { path = "../../diesel_codegen_old", features = ["postgres"], optional = true }
 dotenv = "0.8.0"
 
 [features]
 default = ["nightly"]
 with-syntex = ["syntex", "diesel_codegen_syntex"]
-nightly = ["diesel/unstable", "diesel_codegen", "diesel_codegen_old"]
+nightly = ["diesel/unstable", "diesel_codegen"]
+
+[replace]
+"diesel:0.7.1" = { path = "../../diesel" }
+"diesel_codegen:0.7.2" = { path = "../../diesel_codegen" }
+"diesel_codegen_syntex:0.7.2" = { path = "../../diesel_codegen_syntex" }

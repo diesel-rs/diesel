@@ -1,4 +1,4 @@
-#![feature(rustc_macro, rustc_macro_lib)]
+#![feature(proc_macro, proc_macro_lib)]
 #![deny(warnings)]
 
 macro_rules! t {
@@ -14,7 +14,7 @@ extern crate diesel_codegen_shared;
 extern crate diesel;
 #[macro_use]
 extern crate quote;
-extern crate rustc_macro;
+extern crate proc_macro;
 extern crate syn;
 
 mod as_changeset;
@@ -30,7 +30,7 @@ mod queryable;
 mod schema_inference;
 mod util;
 
-use rustc_macro::TokenStream;
+use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
 use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
@@ -54,32 +54,32 @@ const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
     "column_name",
 ];
 
-#[rustc_macro_derive(Queryable)]
+#[proc_macro_derive(Queryable)]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }
 
-#[rustc_macro_derive(Identifiable)]
+#[proc_macro_derive(Identifiable)]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive_identifiable)
 }
 
-#[rustc_macro_derive(Insertable)]
+#[proc_macro_derive(Insertable)]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
 }
 
-#[rustc_macro_derive(AsChangeset)]
+#[proc_macro_derive(AsChangeset)]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }
 
-#[rustc_macro_derive(Associations)]
+#[proc_macro_derive(Associations)]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
 }
 
-#[rustc_macro_derive(InferSchema)]
+#[proc_macro_derive(InferSchema)]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
@@ -87,7 +87,7 @@ pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
         .to_string().parse().unwrap()
 }
 
-#[rustc_macro_derive(InferTableFromSchema)]
+#[proc_macro_derive(InferTableFromSchema)]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
@@ -95,7 +95,7 @@ pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
         .to_string().parse().unwrap()
 }
 
-#[rustc_macro_derive(EmbedMigrations)]
+#[proc_macro_derive(EmbedMigrations)]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     let item = parse_macro_input(&input.to_string()).unwrap();
     embed_migrations::derive_embed_migrations(item)

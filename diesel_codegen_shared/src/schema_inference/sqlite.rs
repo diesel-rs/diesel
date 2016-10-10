@@ -136,7 +136,7 @@ fn is_double(type_name: &str) -> bool {
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    assert_eq!(Ok(vec![]), load_table_names(&conn));
+    assert_eq!(Vec::<String>::new(), load_table_names(&conn).unwrap());
 }
 
 #[test]
@@ -161,7 +161,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn);
-    assert_eq!(Ok(vec![String::from("users")]), table_names);
+    assert_eq!(vec![String::from("users")], table_names.unwrap());
 }
 
 #[test]
@@ -170,5 +170,5 @@ fn load_table_names_excludes_views() {
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
     let table_names = load_table_names(&conn);
-    assert_eq!(Ok(vec![String::from("users")]), table_names);
+    assert_eq!(vec![String::from("users")], table_names.unwrap());
 }

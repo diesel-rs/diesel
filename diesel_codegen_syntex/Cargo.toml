@@ -11,21 +11,17 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [build-dependencies]
-syntex = { version = "0.44.0", optional = true }
-syntex_syntax = { version = "0.44.0", optional = true }
+syntex = { version = "0.44.0" }
+syntex_syntax = { version = "0.44.0" }
 
 [dependencies]
-syntex = { version = "0.44.0", optional = true }
-syntex_syntax = { version = "0.44.0", optional = true }
+syntex = { version = "0.44.0" }
+syntex_syntax = { version = "0.44.0" }
 diesel = { version = "0.7.0", default-features = false }
 diesel_codegen_shared = { path = "../diesel_codegen_shared", default-features = false }
 
-[dev-dependencies]
-tempdir = "0.3.4"
-
 [features]
-default = ["with-syntex", "postgres", "dotenv"]
+default = ["postgres", "dotenv"]
 dotenv = ["diesel_codegen_shared/dotenv"]
-with-syntex = ["syntex", "syntex_syntax"]
 postgres = ["diesel/postgres", "diesel_codegen_shared/postgres"]
 sqlite = ["diesel/sqlite", "diesel_codegen_shared/sqlite"]

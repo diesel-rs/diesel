@@ -6,5 +6,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 diesel = "0.7.1"
 diesel_codegen = { version = "0.7.2", features = ["postgres"] }
-diesel_codegen_old = { path = "../../diesel_codegen_old", features = ["postgres"] }
 dotenv = "0.8.0"
+
+[replace]
+"diesel:0.7.1" = { path = "../../diesel" }
+"diesel_codegen:0.7.2" = { path = "../../diesel_codegen" }

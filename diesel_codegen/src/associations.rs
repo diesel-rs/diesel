@@ -95,9 +95,3 @@ fn to_foreign_key(model_name: &str) -> syn::Ident {
     let lower_cased = infer_association_name(model_name);
     syn::Ident::new(format!("{}_id", &lower_cased))
 }
-
-#[test]
-fn to_foreign_key_properly_handles_underscores() {
-    assert_eq!(str_to_ident("foo_bar_id"), to_foreign_key("FooBar"));
-    assert_eq!(str_to_ident("foo_bar_baz_id"), to_foreign_key("FooBarBaz"));
-}

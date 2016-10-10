@@ -1,4 +1,6 @@
 use diesel::*;
+use dotenv::dotenv;
+use std::env;
 
 infer_schema!("dotenv:DATABASE_URL");
 
@@ -122,8 +124,9 @@ pub fn connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
-    let connection_url = dotenv!("DATABASE_URL",
-        "DATABASE_URL must be set in order to run tests");
+    dotenv().ok();
+    let connection_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set in order to run tests");
     ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }
 
