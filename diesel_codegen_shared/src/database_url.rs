@@ -41,14 +41,14 @@ fn extract_database_url_returns_the_given_string() {
 
 #[test]
 fn extract_database_url_returns_env_vars() {
-    env::set_var("foo", "lololol");
-    env::set_var("bar", "trolololol");
-    assert_eq!("lololol", extract_database_url("env:foo").unwrap());
-    assert_eq!("trolololol", extract_database_url("env:bar").unwrap());
+    env::set_var("lolvar", "lololol");
+    env::set_var("trolvar", "trolololol");
+    assert_eq!("lololol", extract_database_url("env:lolvar").unwrap());
+    assert_eq!("trolololol", extract_database_url("env:trolvar").unwrap());
 }
 
 #[test]
 fn extract_database_url_errors_if_env_var_is_unset() {
-    env::remove_var("foo");
-    assert!(extract_database_url("env:foo").is_err());
+    env::remove_var("selfdestructvar");
+    assert!(extract_database_url("env:selfdestructvar").is_err());
 }
