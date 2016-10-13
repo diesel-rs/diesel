@@ -82,14 +82,22 @@ test_round_trip!(f64_roundtrips, Double, f64);
 test_round_trip!(string_roundtrips, VarChar, String);
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
+test_round_trip!(bool_roundtrips, Bool, bool);
+
+#[cfg(feature = "sqlite")]
+mod sqlite_types {
+    use super::*;
+
+    test_round_trip!(date_roundtrips, Date, String);
+    test_round_trip!(time_roundtrips, Time, String);
+    test_round_trip!(timestamp_roundtrips, Timestamp, String);
+}
 
 #[cfg(feature = "postgres")]
 mod pg_types {
     extern crate uuid;
     use super::*;
 
-    test_round_trip!(bool_roundtrips, Bool, bool);
-    test_round_trip!(bytea_roundtrips, Bytea, Vec<u8>);
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
     test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp);

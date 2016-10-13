@@ -1,6 +1,5 @@
-use schema::connection;
+use schema::{connection, TestConnection};
 use diesel::*;
-use diesel::pg::PgConnection;
 use diesel::data_types::*;
 use diesel::expression::dsl::*;
 
@@ -21,6 +20,7 @@ table! {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
 
@@ -39,6 +39,28 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn now_executes_sql_function_now() {
+    use self::has_timestamps::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection.execute("INSERT INTO has_timestamps (created_at) VALUES
+                        (DATETIME('now', '-1 day')), (DATETIME('now', '+1 day'))")
+        .unwrap();
+
+    let before_today = has_timestamps.select(id)
+        .filter(created_at.lt(now))
+        .load::<i32>(&connection);
+    let after_today = has_timestamps.select(id)
+        .filter(created_at.gt(now))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
+}
+
 
 #[test]
 fn date_uses_sql_function_date() {
@@ -60,6 +82,7 @@ fn date_uses_sql_function_date() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn time_is_deserialized_properly() {
     use self::has_time::dsl::*;
 
@@ -78,6 +101,7 @@ fn time_is_deserialized_properly() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn interval_is_deserialized_properly() {
     use diesel::expression::dsl::sql;
     let connection = connection();
@@ -97,6 +121,7 @@ fn interval_is_deserialized_properly() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn adding_interval_to_timestamp() {
     use self::has_timestamps::dsl::*;
     use diesel::expression::dsl::sql;
@@ -113,14 +138,17 @@ fn adding_interval_to_timestamp() {
     assert_eq!(expected_data, actual_data);
 }
 
-fn setup_test_table(conn: &PgConnection) {
-    conn.execute("CREATE TABLE has_timestamps (
-        id SERIAL PRIMARY KEY,
-        created_at TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-    )").unwrap();
-    conn.execute("CREATE TABLE has_time (
-        id SERIAL PRIMARY KEY,
-        \"time\" TIME NOT NULL
-    )").unwrap();
+fn setup_test_table(conn: &TestConnection) {
+    use schema_dsl::*;
+
+    create_table("has_timestamps", (
+        integer("id").primary_key().auto_increment(),
+        timestamp("created_at").not_null(),
+        timestamp("updated_at").not_null().default("CURRENT_TIMESTAMP"),
+    )).execute(conn).unwrap();
+
+    create_table("has_time", (
+        integer("id").primary_key().auto_increment(),
+        time("time").not_null(),
+    )).execute(conn).unwrap();
 }

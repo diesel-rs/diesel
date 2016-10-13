@@ -1,4 +1,3 @@
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
 mod date_and_time;
 mod ops;
 

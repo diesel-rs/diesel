@@ -1,10 +1,10 @@
 [root]
 name = "diesel_cli"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "chrono 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "diesel 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "diesel 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.73 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempdir 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -61,7 +61,7 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -264,7 +264,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum byteorder 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)" = "29b2aa490a8f546381308d68fc79e6bd753cd3ad839f7a7172897f1feedfa175"
 "checksum chrono 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "9213f7cd7c27e95c2b57c49f0e69b1ea65b27138da84a170133fd21b07659c00"
 "checksum clap 2.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "62db8e9e3ab6792670f99338be3dbc416f8728ba5d874c33e27aa9933e534512"
-"checksum diesel 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "57577c0fd5ad12d03ce0f4496299e41af842e8795caf5f260a20505d3554411a"
+"checksum diesel 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "75b880427c062e85b2921e4f42a59001f09ecd88cbd7039579935c0fa029abda"
 "checksum dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "eea1395d2df3b5344dc577809296d9578303296e8d105c408aa80ed67d598ef1"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)" = "23e3757828fa702a20072c37ff47938e9dd331b92fac6e223d26d4b7a55f7ee2"
