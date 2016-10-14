@@ -69,17 +69,26 @@ impl Connection for PgConnection {
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
-        let (query, params) = try!(self.prepare_query(&source.as_query()));
-        query.execute(&self.raw_connection, &params)
-            .and_then(|r| Cursor::new(r).collect())
+        let q = source.as_query();
+        if q.is_empty() {
+            Ok(Vec::new())
+        } else {
+            let (query, params) = try!(self.prepare_query(&q));
+            query.execute(&self.raw_connection, &params)
+                .and_then(|r| Cursor::new(r).collect())
+        }
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Pg> + QueryId,
     {
-        let (query, params) = try!(self.prepare_query(source));
-        query.execute(&self.raw_connection, &params)
-            .map(|r| r.rows_affected())
+        if source.is_empty() {
+            Ok(0)
+        } else {
+            let (query, params) = try!(self.prepare_query(source));
+            query.execute(&self.raw_connection, &params)
+                .map(|r| r.rows_affected())
+        }
     }
 
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {

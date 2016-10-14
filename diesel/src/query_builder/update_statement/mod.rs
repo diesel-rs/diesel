@@ -74,6 +74,10 @@ impl<T, U, V, DB> QueryFragment<DB> for UpdateStatement<T, U, V> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         false
     }
+
+    fn is_empty(&self) -> bool {
+        self.where_clause.as_ref().map(|w| w.is_empty()).unwrap_or(false)
+    }
 }
 
 impl_query_id!(noop: UpdateStatement<T, U, V>);
@@ -168,6 +172,10 @@ impl<T, U, DB> QueryFragment<DB> for UpdateQuery<T, U> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         false
+    }
+
+    fn is_empty(&self) -> bool {
+        self.statement.is_empty()
     }
 }
 

@@ -79,6 +79,9 @@ pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
     fn is_safe_to_cache_prepared(&self) -> bool;
+    fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
@@ -96,6 +99,10 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         QueryFragment::is_safe_to_cache_prepared(&**self)
     }
+
+    fn is_empty(&self) -> bool {
+        QueryFragment::is_empty(&**self)
+    }
 }
 
 impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
@@ -112,6 +119,10 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         QueryFragment::is_safe_to_cache_prepared(&**self)
+    }
+
+    fn is_empty(&self) -> bool {
+        QueryFragment::is_empty(&**self)
     }
 }
 

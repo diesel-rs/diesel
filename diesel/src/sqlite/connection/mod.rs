@@ -76,17 +76,26 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        let statement = try!(self.prepare_query(&source.as_query()));
-        let mut statement_ref = statement.borrow_mut();
-        StatementIterator::new(&mut statement_ref).collect()
+        let q = source.as_query();
+        if q.is_empty() {
+            Ok(Vec::new())
+        } else {
+            let statement = try!(self.prepare_query(&q));
+            let mut statement_ref = statement.borrow_mut();
+            StatementIterator::new(&mut statement_ref).collect()
+        }
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let stmt = try!(self.prepare_query(source));
-        try!(stmt.borrow().run());
-        Ok(self.raw_connection.rows_affected_by_last_query())
+        if source.is_empty() {
+            Ok(0)
+        } else {
+            let stmt = try!(self.prepare_query(source));
+            try!(stmt.borrow().run());
+            Ok(self.raw_connection.rows_affected_by_last_query())
+        }
     }
 
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {

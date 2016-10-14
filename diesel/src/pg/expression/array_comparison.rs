@@ -122,6 +122,10 @@ impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.expr.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.expr.is_empty()
+    }
 }
 
 impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
@@ -141,6 +145,10 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.expr.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.expr.is_empty()
     }
 }
 
@@ -200,6 +208,10 @@ impl<Expr, ST> QueryFragment<Pg> for All<Expr, ST> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.expr.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.expr.is_empty()
+    }
 }
 
 impl<Expr, ST> QueryFragment<Debug> for All<Expr, ST> where
@@ -219,6 +231,10 @@ impl<Expr, ST> QueryFragment<Debug> for All<Expr, ST> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.expr.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.expr.is_empty()
     }
 }
 

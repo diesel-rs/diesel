@@ -187,6 +187,10 @@ impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
             self.limit.is_safe_to_cache_prepared() &&
             self.offset.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.where_clause.is_empty()
+    }
 }
 
 impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
@@ -231,6 +235,10 @@ impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
             self.order.is_safe_to_cache_prepared() &&
             self.limit.is_safe_to_cache_prepared() &&
             self.offset.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.where_clause.is_empty()
     }
 }
 

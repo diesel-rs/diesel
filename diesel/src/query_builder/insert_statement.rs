@@ -71,6 +71,10 @@ impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         false
     }
+
+    fn is_empty(&self) -> bool {
+        self.records.values().is_empty()
+    }
 }
 
 impl_query_id!(noop: InsertStatement<T, U, Op>);
@@ -168,6 +172,10 @@ impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         false
+    }
+
+    fn is_empty(&self) -> bool {
+        self.statement.is_empty()
     }
 }
 
