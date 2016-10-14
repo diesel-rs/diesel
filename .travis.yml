@@ -23,7 +23,7 @@ script:
     if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
       (cd examples && ./test_nightly)
     else
-      (cd examples && TRAVIS_RUST_VERSION=$TRAVIS_RUST_VERSION./test_stable)
+      (cd examples && ./test_stable)
     fi
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&

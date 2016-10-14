@@ -8,10 +8,5 @@ cd ../examples
 # Only step 4 can be run on stable
 cd getting_started_step_4
 export DATABASE_URL=postgres://localhost/diesel_getting_started_step_4
-# FIXME: remove this conditional once cargo workspaces are on stable
-if [[ "$TRAVIS_RUST_VERSION" == beta* ]]; then
-  ../../target/debug/diesel setup
-else
-  ../../diesel_cli/target/debug/diesel setup
-fi
+../../target/debug/diesel setup
 cargo build --no-default-features --features "with-syntex"

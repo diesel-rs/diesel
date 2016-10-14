@@ -3,6 +3,8 @@ name = "diesel_compile_tests"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
+[workspace]
+
 [dependencies]
 diesel = { version = "0.8.0", features = ["sqlite", "postgres"] }
 diesel_codegen = { version = "0.8.0" }
