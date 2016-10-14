@@ -65,11 +65,13 @@ impl Connection for SqliteConnection {
         })
     }
 
+    #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize> {
         try!(self.batch_execute(query));
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
+    #[doc(hidden)]
     fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
@@ -81,6 +83,7 @@ impl Connection for SqliteConnection {
         StatementIterator::new(&mut statement_ref).collect()
     }
 
+    #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend> + QueryId,
     {
@@ -89,10 +92,12 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
+    #[doc(hidden)]
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
         f()
     }
 
+    #[doc(hidden)]
     fn begin_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(1, if transaction_depth == 0 {
@@ -102,6 +107,7 @@ impl Connection for SqliteConnection {
         })
     }
 
+    #[doc(hidden)]
     fn rollback_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth == 1 {
@@ -112,6 +118,7 @@ impl Connection for SqliteConnection {
         })
     }
 
+    #[doc(hidden)]
     fn commit_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth <= 1 {
@@ -122,10 +129,12 @@ impl Connection for SqliteConnection {
         })
     }
 
+    #[doc(hidden)]
     fn get_transaction_depth(&self) -> i32 {
         self.transaction_depth.get()
     }
 
+    #[doc(hidden)]
     fn setup_helper_functions(&self) {
         // this will be implemented at least when timestamps are supported in SQLite
     }
