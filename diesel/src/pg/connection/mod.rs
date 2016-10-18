@@ -59,10 +59,12 @@ impl Connection for PgConnection {
         })
     }
 
+    #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize> {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
+    #[doc(hidden)]
     fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Pg> + QueryId,
@@ -74,6 +76,7 @@ impl Connection for PgConnection {
             .and_then(|r| Cursor::new(r).collect())
     }
 
+    #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Pg> + QueryId,
     {
@@ -82,6 +85,7 @@ impl Connection for PgConnection {
             .map(|r| r.rows_affected())
     }
 
+    #[doc(hidden)]
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
         self.raw_connection.set_notice_processor(noop_notice_processor);
         let result = f();
@@ -89,6 +93,7 @@ impl Connection for PgConnection {
         result
     }
 
+    #[doc(hidden)]
     fn begin_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(1, if transaction_depth == 0 {
@@ -98,6 +103,7 @@ impl Connection for PgConnection {
         })
     }
 
+    #[doc(hidden)]
     fn rollback_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth == 1 {
@@ -108,6 +114,7 @@ impl Connection for PgConnection {
         })
     }
 
+    #[doc(hidden)]
     fn commit_transaction(&self) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
         self.change_transaction_depth(-1, if transaction_depth <= 1 {
@@ -118,10 +125,12 @@ impl Connection for PgConnection {
         })
     }
 
+    #[doc(hidden)]
     fn get_transaction_depth(&self) -> i32 {
         self.transaction_depth.get()
     }
 
+    #[doc(hidden)]
     fn setup_helper_functions(&self) {
         self.batch_execute(
             include_str!("setup/timestamp_helpers.sql")
