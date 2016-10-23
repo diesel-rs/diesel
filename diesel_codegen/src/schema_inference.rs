@@ -3,6 +3,7 @@ use quote;
 
 use diesel_codegen_shared::*;
 
+use constants::custom_attr_options::{DATABASE_URL, TABLE_NAME};
 use util::{get_options_from_input, get_option};
 
 pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
@@ -12,7 +13,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     }
 
     let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
-    let database_url = get_option(&options, "database_url", bug);
+    let database_url = get_option(&options, DATABASE_URL, bug);
 
     let table_names = load_table_names(&database_url).unwrap();
     let schema_inferences = table_names.into_iter().map(|table_name| {
@@ -29,8 +30,8 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     }
 
     let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
-    let database_url = get_option(options, "database_url", bug);
-    let table_name = get_option(options, "table_name", bug);
+    let database_url = get_option(options, DATABASE_URL, bug);
+    let table_name = get_option(options, TABLE_NAME, bug);
 
     let connection = establish_connection(database_url).unwrap();
     let data = get_table_data(&connection, table_name).unwrap();

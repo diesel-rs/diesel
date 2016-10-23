@@ -1,6 +1,8 @@
 use syn;
 
 use attr::Attr;
+use constants::attrs::DERIVE;
+use constants::custom_attrs::TABLE_NAME;
 use util::{struct_ty, str_value_of_attr_with_name};
 
 pub struct Model {
@@ -15,7 +17,7 @@ impl Model {
     pub fn from_item(item: &syn::MacroInput, derived_from: &str) -> Result<Self, String> {
         let fields = match item.body {
             syn::Body::Enum(..) => return Err(format!(
-                "#[derive({})] cannot be used with enums", derived_from)),
+                "#[{}({})] cannot be used with enums", DERIVE, derived_from)),
             syn::Body::Struct(ref fields) => fields.fields(),
         };
         let attrs = fields.into_iter().map(Attr::from_struct_field).collect();
@@ -23,7 +25,7 @@ impl Model {
         let name = item.ident.clone();
         let generics = item.generics.clone();
         let table_name_from_annotation = str_value_of_attr_with_name(
-            &item.attrs, "table_name").map(syn::Ident::new);
+            &item.attrs, TABLE_NAME).map(syn::Ident::new);
 
         Ok(Model {
             ty: ty,

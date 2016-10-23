@@ -2,6 +2,8 @@ use std::mem;
 use syn::*;
 
 use ast_builder::ty_ident;
+use constants::attrs::OPTIONS;
+use constants::syntax::OPTION_TY;
 
 pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
     let lifetimes = generics.lifetimes.iter().map(|lt| lt.lifetime.clone()).collect();
@@ -93,7 +95,7 @@ fn list_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Vec<&'a Ident> {
 }
 
 pub fn is_option_ty(ty: &Ty) -> bool {
-    let option_ident = Ident::new("Option");
+    let option_ident = Ident::new(OPTION_TY);
     match *ty {
         Ty::Path(_, ref path) => {
             path.segments.first()
@@ -128,7 +130,7 @@ pub fn strip_field_attributes(item: &mut MacroInput, names_to_strip: &[&str]) {
 pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
     -> Option<&[MetaItem]>
 {
-    let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
+    let options = attrs.iter().find(|a| a.name() == OPTIONS).map(|a| &a.value);
     match options {
         Some(&MetaItem::List(_, ref options)) => Some(options),
         Some(_) => on_bug(),
