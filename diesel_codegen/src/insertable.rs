@@ -1,21 +1,21 @@
 use syn;
 use quote;
 
-use constants::attrs::DERIVE;
-use constants::custom_attrs::TABLE_NAME;
-use constants::custom_derives::INSERTABLE;
+use constants::{attrs, custom_attrs, custom_derives};
 use model::Model;
 
 pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
-    let model = t!(Model::from_item(&item, INSERTABLE));
+    let model = t!(Model::from_item(&item, custom_derives::INSERTABLE));
 
     if !model.has_table_name_annotation() {
         panic!(r#"`#[{}({})]` requires the struct to be annotated \
-            with `#[{}="something"]`"#, DERIVE, INSERTABLE, TABLE_NAME);
+            with `#[{}="something"]`"#, attrs::DERIVE, custom_derives::INSERTABLE,
+            custom_attrs::TABLE_NAME);
     }
 
     if !model.generics.ty_params.is_empty() {
-        panic!("`#[{}({})]` does not support generic types", DERIVE, INSERTABLE);
+        panic!("`#[{}({})]` does not support generic types", attrs::DERIVE,
+            custom_derives::INSERTABLE);
     }
 
     let struct_name = &model.name;

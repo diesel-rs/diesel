@@ -35,7 +35,7 @@ use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
 use constants::{KNOWN_CUSTOM_ATTRS, KNOWN_CUSTOM_DERIVES, KNOWN_FIELD_ATTRS};
-use constants::attrs::DERIVE;
+use constants::attrs;
 use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
 
 #[proc_macro_derive(Queryable)]
@@ -91,7 +91,7 @@ fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) ->
     let output = f(item.clone());
 
     let finished_deriving_diesel_traits = {
-        let remaining_derives = list_value_of_attr_with_name(&item.attrs, DERIVE);
+        let remaining_derives = list_value_of_attr_with_name(&item.attrs, attrs::DERIVE);
         !remaining_derives
             .unwrap_or(Vec::new())
             .iter()

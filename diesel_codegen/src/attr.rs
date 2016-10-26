@@ -1,9 +1,7 @@
 use quote;
 use syn;
 
-use constants::field_attrs::COLUMN_NAME;
-use constants::field_types::*;
-use constants::syntax;
+use constants::{field_attrs, field_types, syntax};
 use util::{ident_value_of_attr_with_name, is_option_ty};
 
 pub struct Attr {
@@ -15,7 +13,7 @@ pub struct Attr {
 impl Attr {
     pub fn from_struct_field(field: &syn::Field) -> Self {
         let field_name = field.ident.clone();
-        let column_name = ident_value_of_attr_with_name(&field.attrs, COLUMN_NAME)
+        let column_name = ident_value_of_attr_with_name(&field.attrs, field_attrs::COLUMN_NAME)
             .map(Clone::clone)
             .or_else(|| field_name.clone());
         let ty = field.ty.clone();
@@ -29,11 +27,11 @@ impl Attr {
 
     fn field_kind(&self) -> &str {
         if is_option_ty(&self.ty) {
-            OPTION
+            field_types::OPTION
         } else if self.column_name.is_none() && self.field_name.is_none() {
-            BARE
+            field_types::BARE
         } else {
-            REGULAR
+            field_types::REGULAR
         }
     }
 }
