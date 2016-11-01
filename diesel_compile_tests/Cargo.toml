@@ -4,10 +4,10 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
-diesel = { version = "0.8.0", features = ["sqlite", "postgres"] }
-diesel_codegen = { version = "0.8.0" }
+diesel = { version = "0.8.1", features = ["sqlite", "postgres"] }
+diesel_codegen = { version = "0.8.1" }
 compiletest_rs = "0.2.3"
 
 [replace]
-"diesel:0.8.0" = { path = "../diesel" }
-"diesel_codegen:0.8.0" = { path = "../diesel_codegen" }
+"diesel:0.8.1" = { path = "../diesel" }
+"diesel_codegen:0.8.1" = { path = "../diesel_codegen" }

@@ -4,6 +4,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.8.1] - 2016-11-01
+
+### Added
+
+* SQLite date and time columns can be deserialized to/from strings.
+
+### Fixed
+
+* Fixed an issue with `diesel_codegen` on nightlies >= 2016-10-20
+
 ## [0.8.0] - 2016-10-10
 
 ### Added
