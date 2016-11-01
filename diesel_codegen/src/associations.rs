@@ -1,21 +1,22 @@
 use syn;
 use quote;
 
+use constants::{custom_attrs, custom_attr_options, custom_derives};
 use model::{Model, infer_association_name};
 use util::str_value_of_meta_item;
 
 pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
     let mut derived_associations = Vec::new();
-    let model = t!(Model::from_item(&input, "Associations"));
+    let model = t!(Model::from_item(&input, custom_derives::ASSOCIATIONS));
 
     for attr in &input.attrs {
-        if attr.name() == "has_many" {
-            let options = t!(build_association_options(attr, "has_many"));
+        if attr.name() == custom_attrs::HAS_MANY {
+            let options = t!(build_association_options(attr, custom_attrs::HAS_MANY));
             derived_associations.push(expand_has_many(&model, options))
         }
 
-        if attr.name() == "belongs_to" {
-            let options = t!(build_association_options(attr, "belongs_to"));
+        if attr.name() == custom_attrs::BELONGS_TO {
+            let options = t!(build_association_options(attr, custom_attrs::BELONGS_TO));
             derived_associations.push(expand_belongs_to(&model, options))
         }
     }
@@ -70,16 +71,17 @@ fn build_association_options(
     association_kind: &str,
 ) -> Result<AssociationOptions, String> {
     let usage_error = Err(format!(
-            "`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
-            association_kind, association_kind));
+            "`#[{}]` must be in the form `#[{}({}, option=value)]`",
+            association_kind, association_kind, custom_attr_options::TABLE_NAME));
     match attr.value {
         syn::MetaItem::List(_, ref options) if options.len() >= 1 => {
             let association_name = match options[0] {
                 syn::MetaItem::Word(ref name) => name.clone(),
                 _ => return usage_error,
             };
-            let foreign_key_name = options.iter().find(|a| a.name() == "foreign_key")
-                .map(|a| str_value_of_meta_item(a, "foreign_key"))
+            let foreign_key_name = options.iter()
+                .find(|a| a.name() == custom_attr_options::FOREIGN_KEY)
+                .map(|a| str_value_of_meta_item(a, custom_attr_options::FOREIGN_KEY))
                 .map(syn::Ident::new);
 
             Ok(AssociationOptions {

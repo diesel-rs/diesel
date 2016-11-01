@@ -21,6 +21,7 @@ mod as_changeset;
 mod associations;
 mod ast_builder;
 mod attr;
+mod constants;
 mod embed_migrations;
 mod identifiable;
 mod insertable;
@@ -33,26 +34,9 @@ mod util;
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
+use constants::{KNOWN_CUSTOM_ATTRS, KNOWN_CUSTOM_DERIVES, KNOWN_FIELD_ATTRS};
+use constants::attrs;
 use self::util::{list_value_of_attr_with_name, strip_attributes, strip_field_attributes};
-
-const KNOWN_CUSTOM_DERIVES: &'static [&'static str] = &[
-    "AsChangeset",
-    "Associations",
-    "Identifiable",
-    "Insertable",
-    "Queryable",
-];
-
-const KNOWN_CUSTOM_ATTRIBUTES: &'static [&'static str] = &[
-    "belongs_to",
-    "changeset_options",
-    "has_many",
-    "table_name",
-];
-
-const KNOWN_FIELD_ATTRIBUTES: &'static [&'static str] = &[
-    "column_name",
-];
 
 #[proc_macro_derive(Queryable)]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
@@ -107,7 +91,7 @@ fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) ->
     let output = f(item.clone());
 
     let finished_deriving_diesel_traits = {
-        let remaining_derives = list_value_of_attr_with_name(&item.attrs, "derive");
+        let remaining_derives = list_value_of_attr_with_name(&item.attrs, attrs::DERIVE);
         !remaining_derives
             .unwrap_or(Vec::new())
             .iter()
@@ -115,8 +99,8 @@ fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) ->
     };
 
     if finished_deriving_diesel_traits {
-        item.attrs = strip_attributes(item.attrs, KNOWN_CUSTOM_ATTRIBUTES);
-        strip_field_attributes(&mut item, KNOWN_FIELD_ATTRIBUTES);
+        item.attrs = strip_attributes(item.attrs, KNOWN_CUSTOM_ATTRS);
+        strip_field_attributes(&mut item, KNOWN_FIELD_ATTRS);
     }
 
     quote!(#item #output).to_string().parse().unwrap()
