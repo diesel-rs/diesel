@@ -22,9 +22,17 @@
 /// ```
 #[macro_export]
 macro_rules! Queryable {
+    ($($args:tt)*) => {
+        _Queryable!($($args)*);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _Queryable {
     // Strip empty argument list if given (Passed by custom_derive macro)
     (() $($body:tt)*) => {
-        Queryable! {
+        _Queryable! {
             $($body)*
         }
     };
@@ -34,7 +42,7 @@ macro_rules! Queryable {
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        Queryable! {
+        _Queryable! {
             $($body)*
         }
     };
@@ -53,7 +61,7 @@ macro_rules! Queryable {
             field_kind: $field_kind:ident,
         })+],
     ) => {
-        Queryable! {
+        _Queryable! {
             $($headers)*
             row_ty = ($($field_ty,)+),
             row_pat = ($($field_name,)+),
@@ -72,7 +80,7 @@ macro_rules! Queryable {
             field_kind: $field_kind:ident,
         })+],
     ) => {
-        Queryable! {
+        _Queryable! {
             $headers,
             fields = [$({
                 field_ty: $field_ty,
@@ -92,7 +100,7 @@ macro_rules! Queryable {
             field_kind: $field_kind:ident,
         })+],
     ) => {
-        Queryable! {
+        _Queryable! {
             $($headers)*
             row_ty = ($($field_ty,)+),
             row_pat = ($($field_kind,)+),
@@ -134,7 +142,7 @@ macro_rules! Queryable {
                 generics = ($($generics),*),
                 lifetimes = (),
             ),
-            callback = Queryable,
+            callback = _Queryable,
             body = $body,
         }
     };
@@ -151,7 +159,7 @@ macro_rules! Queryable {
                 generics = (),
                 lifetimes = (),
             ),
-            callback = Queryable,
+            callback = _Queryable,
             body = $body,
         }
     };

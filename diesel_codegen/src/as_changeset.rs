@@ -20,7 +20,7 @@ pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
         lifetimes.push(syn::LifetimeDef::new("'a"));
     }
 
-    quote!(AsChangeset! {
+    quote!(_AsChangeset! {
         (
             struct_name = #struct_name,
             table_name = #table_name,

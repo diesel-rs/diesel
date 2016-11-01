@@ -27,13 +27,21 @@
 /// ```
 #[macro_export]
 macro_rules! Identifiable {
+    ($($args:tt)*) => {
+        _Identifiable!($($args)*);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _Identifiable {
     // Extract table name from meta item
     (
         $(())*
         #[table_name($table_name:ident)]
         $($rest:tt)*
     ) => {
-        Identifiable! {
+        _Identifiable! {
             (table_name = $table_name,)
             $($rest)*
         }
@@ -45,7 +53,7 @@ macro_rules! Identifiable {
         #[$ignore:meta]
         $($rest:tt)*
     ) => {
-        Identifiable!($args $($rest)*);
+        _Identifiable!($args $($rest)*);
     };
 
     // Strip pub (if present) and struct from definition
@@ -54,7 +62,7 @@ macro_rules! Identifiable {
         $args:tt
         $(pub)* struct $($body:tt)*
     ) => {
-        Identifiable!($args $($body)*);
+        _Identifiable!($args $($body)*);
     };
 
     // We found the `id` field, return the final impl
@@ -94,7 +102,7 @@ macro_rules! Identifiable {
             field_kind: $field_kind:ident,
         } $($fields:tt)*],
     ) => {
-        Identifiable! {
+        _Identifiable! {
             $args,
             fields = [$($fields)*],
         }
@@ -111,7 +119,7 @@ macro_rules! Identifiable {
                 $($args)*
                 struct_ty = $struct_name,
             ),
-            callback = Identifiable,
+            callback = _Identifiable,
             body = $body,
         }
     };
