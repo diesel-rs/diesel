@@ -71,12 +71,20 @@
 /// ```
 #[macro_export]
 macro_rules! AsChangeset {
+    ($($args:tt)*) => {
+        _AsChangeset!($($args)*);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _AsChangeset {
     // Provide a default value for treat_none_as_null if not provided
     (
         ($table_name:ident)
         $($body:tt)*
     ) => {
-        AsChangeset! {
+        _AsChangeset! {
             ($table_name, treat_none_as_null="false")
             $($body)*
         }
@@ -88,7 +96,7 @@ macro_rules! AsChangeset {
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        AsChangeset! {
+        _AsChangeset! {
             $args
             $($body)*
         }
@@ -108,7 +116,7 @@ macro_rules! AsChangeset {
                 struct_ty = $struct_name<$($lifetime),*>,
                 lifetimes = ($($lifetime),*),
             ),
-            callback = AsChangeset,
+            callback = _AsChangeset,
             body = $body,
         }
     };
@@ -128,7 +136,7 @@ macro_rules! AsChangeset {
                 struct_ty = $struct_name,
                 lifetimes = ('a),
             ),
-            callback = AsChangeset,
+            callback = _AsChangeset,
             body = $body,
         }
     };
@@ -171,7 +179,7 @@ macro_rules! AsChangeset {
         ),
         changeset_ty = $changeset_ty:ty,
     ) => {
-        AsChangeset! {
+        _AsChangeset! {
             $($headers)*
             self_to_columns = $struct_name($(ref $column_name),+),
             columns = ($($column_name, $field_kind),+),
@@ -194,7 +202,7 @@ macro_rules! AsChangeset {
         ),
         changeset_ty = $changeset_ty:ty,
     ) => {
-        AsChangeset! {
+        _AsChangeset! {
             $($headers)*
             self_to_columns = $struct_name { $($field_name: ref $column_name,)+ ..},
             columns = ($($column_name, $field_kind),+),
@@ -311,7 +319,7 @@ macro_rules! AsChangeset_construct_changeset_ty {
         fields = [],
         changeset_ty = $changeset_ty:ty,
     ) => {
-        AsChangeset!($headers, changeset_ty = $changeset_ty,);
+        _AsChangeset!($headers, changeset_ty = $changeset_ty,);
     }
 }
 

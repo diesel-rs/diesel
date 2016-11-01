@@ -61,13 +61,21 @@
 /// ```
 #[macro_export]
 macro_rules! Insertable {
+    ($($args:tt)*) => {
+        _Insertable!($($args)*);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _Insertable {
     // Strip meta items, pub (if present) and struct from definition
     (
         ($table_name:ident)
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        Insertable! {
+        _Insertable! {
             ($table_name)
             $($body)*
         }
@@ -86,7 +94,7 @@ macro_rules! Insertable {
                 struct_ty = $struct_name<$($lifetime),*>,
                 lifetimes = ($($lifetime),*),
             ),
-            callback = Insertable,
+            callback = _Insertable,
             body = $body,
         }
     };
@@ -104,7 +112,7 @@ macro_rules! Insertable {
                 struct_ty = $struct_name,
                 lifetimes = (),
             ),
-            callback = Insertable,
+            callback = _Insertable,
             body = $body,
         }
     };
@@ -121,7 +129,7 @@ macro_rules! Insertable {
             field_kind: $field_kind:ident,
         })+],
     ) => {
-        Insertable! {
+        _Insertable! {
             $($headers)*
             self_to_columns = $struct_name($(ref $column_name),+),
             columns = ($($column_name, $field_ty, $field_kind),+),
@@ -141,7 +149,7 @@ macro_rules! Insertable {
             field_kind: $field_kind:ident,
         })+],
     ) => {
-        Insertable! {
+        _Insertable! {
             $($headers)*
             self_to_columns = $struct_name { $($field_name: ref $column_name),+ },
             columns = ($($column_name, $field_ty, $field_kind),+),

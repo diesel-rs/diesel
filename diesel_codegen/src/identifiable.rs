@@ -12,7 +12,7 @@ pub fn derive_identifiable(item: syn::MacroInput) -> Tokens {
         panic!("Could not find a field named `id` on `{}`", &model.name);
     }
 
-    quote!(Identifiable! {
+    quote!(_Identifiable! {
         (
             table_name = #table_name,
             struct_ty = #struct_ty,
