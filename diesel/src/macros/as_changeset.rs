@@ -149,20 +149,23 @@ macro_rules! _AsChangeset {
             treat_none_as_null = $treat_none_as_null:tt,
             $($headers:tt)*
         ),
-        fields = $fields:tt,
+        fields = [$($field:tt)+],
     ) => {
-        AsChangeset_construct_changeset_ty! {
+        _AsChangeset! {
             (
-                fields = $fields,
+                fields = [$($field)+],
                 struct_name = $struct_name,
                 table_name = $table_name,
                 treat_none_as_null = $treat_none_as_null,
                 $($headers)*
             ),
-            table_name = $table_name,
-            treat_none_as_null = $treat_none_as_null,
-            fields = $fields,
-            changeset_ty = (),
+            changeset_ty = ($(
+                AsChangeset_changeset_ty! {
+                    table_name = $table_name,
+                    treat_none_as_null = $treat_none_as_null,
+                    field = $field,
+                }
+            ,)+),
         }
     };
 
@@ -248,83 +251,50 @@ macro_rules! _AsChangeset {
     };
 }
 
-// FIXME: This can be cleaned up significantly when https://github.com/rust-lang/rust/issues/27245
-// is stable
 #[doc(hidden)]
 #[macro_export]
-macro_rules! AsChangeset_construct_changeset_ty {
+macro_rules! AsChangeset_changeset_ty {
     // Handle option field when treat none as null is false
     (
-        $headers:tt,
         table_name = $table_name:ident,
         treat_none_as_null = "false",
-        fields = [{
+        field = {
             $(field_name: $field_name:ident,)*
             column_name: $column_name:ident,
             field_ty: $ignore:ty,
             field_kind: option,
             inner_field_ty: $field_ty:ty,
             $($rest:tt)*
-        } $($tail:tt)*],
-        changeset_ty = ($($changeset_ty:ty,)*),
+        },
     ) => {
-        AsChangeset_construct_changeset_ty! {
-            $headers,
-            table_name = $table_name,
-            treat_none_as_null = "false",
-            fields = [$($tail)*],
-            changeset_ty = ($($changeset_ty,)*
-                Option<$crate::expression::predicates::Eq<
-                    $table_name::$column_name,
-                    $crate::expression::bound::Bound<
-                        <$table_name::$column_name as $crate::expression::Expression>::SqlType,
-                        &'update $field_ty,
-                    >,
-                >>,
-            ),
-        }
+        Option<$crate::expression::predicates::Eq<
+            $table_name::$column_name,
+            $crate::expression::bound::Bound<
+                <$table_name::$column_name as $crate::expression::Expression>::SqlType,
+                &'update $field_ty,
+            >,
+        >>
     };
 
     // Handle normal field or option when treat none as null is true
     (
-        $headers:tt,
         table_name = $table_name:ident,
         treat_none_as_null = $treat_none_as_null:tt,
-        fields = [{
+        field = {
             $(field_name: $field_name:ident,)*
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             $($ignore:tt)*
-        } $($tail:tt)*],
-        changeset_ty = ($($changeset_ty:ty,)*),
+        },
     ) => {
-        AsChangeset_construct_changeset_ty! {
-            $headers,
-            table_name = $table_name,
-            treat_none_as_null = $treat_none_as_null,
-            fields = [$($tail)*],
-            changeset_ty = ($($changeset_ty,)*
-                $crate::expression::predicates::Eq<
-                    $table_name::$column_name,
-                    $crate::expression::bound::Bound<
-                        <$table_name::$column_name as $crate::expression::Expression>::SqlType,
-                        &'update $field_ty,
-                    >,
-                >,
-            ),
-        }
+        $crate::expression::predicates::Eq<
+            $table_name::$column_name,
+            $crate::expression::bound::Bound<
+                <$table_name::$column_name as $crate::expression::Expression>::SqlType,
+                &'update $field_ty,
+            >,
+        >
     };
-
-    // Finished parsing
-    (
-        $headers:tt,
-        table_name = $table_name:ident,
-        treat_none_as_null = $treat_none_as_null:tt,
-        fields = [],
-        changeset_ty = $changeset_ty:ty,
-    ) => {
-        _AsChangeset!($headers, changeset_ty = $changeset_ty,);
-    }
 }
 
 #[doc(hidden)]
