@@ -16,7 +16,13 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
 
     let table_names = load_table_names(&database_url).unwrap();
     let schema_inferences = table_names.into_iter().map(|table_name| {
-        quote!(infer_table_from_schema!(#database_url, #table_name);)
+        let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
+        quote! {
+            mod #mod_ident {
+                infer_table_from_schema!(#database_url, #table_name);
+            }
+            pub use self::#mod_ident::*;
+        }
     });
 
     quote!(#(schema_inferences)*)
