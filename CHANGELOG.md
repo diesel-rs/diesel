@@ -4,13 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.8.2] - 2016-11-22
 
 ### Changed
 
-* Fixed support for nightlies later than ???
+* Fixed support for nightlies later than 2016-11-07
 
-* Removed support for nightlies earlier than ???
+* Removed support for nightlies earlier than 2016-11-07
 
 * Calls to `infer_table_from_schema!` will need to be wrapped in a module if
   called more than once. This change is to work around further limitations of
