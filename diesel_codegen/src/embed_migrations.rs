@@ -57,7 +57,7 @@ pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
         }
     );
 
-    quote!(mod embedded_migrations {
+    quote! {
         extern crate diesel;
 
         use self::diesel::migrations::*;
@@ -69,7 +69,7 @@ pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
         #embedded_migration_def
 
         #run_fns
-    })
+    }
 }
 
 fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<Error>> {

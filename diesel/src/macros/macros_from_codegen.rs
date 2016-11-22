@@ -11,9 +11,12 @@
 /// `diesel_codegen_syntex` crates. It will not work on its own.
 macro_rules! infer_schema {
     ($database_url: expr) => {
-        #[derive(InferSchema)]
-        #[options(database_url=$database_url)]
-        struct _Dummy;
+        mod __diesel_infer_schema {
+            #[derive(InferSchema)]
+            #[options(database_url=$database_url)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_schema::*;
     }
 }
 
@@ -36,7 +39,7 @@ macro_rules! infer_table_from_schema {
     ($database_url: expr, $table_name: expr) => {
         #[derive(InferTableFromSchema)]
         #[options(database_url=$database_url, table_name=$table_name)]
-        struct _Dummy;
+        struct __DieselInferTableFromSchema;
     }
 }
 
@@ -56,13 +59,17 @@ macro_rules! infer_table_from_schema {
 /// `diesel_codegen_syntex` crates. It will not work on its own.
 macro_rules! embed_migrations {
     () => {
-        #[derive(EmbedMigrations)]
-        struct _Dummy;
+        mod embedded_migrations {
+            #[derive(EmbedMigrations)]
+            struct _Dummy;
+        }
     };
 
     ($migrations_path: expr) => {
-        #[derive(EmbedMigrations)]
-        #[options(migrations_path=$migrations_path)]
-        struct _Dummy;
+        mod embedded_migrations {
+            #[derive(EmbedMigrations)]
+            #[options(migrations_path=$migrations_path)]
+            struct _Dummy;
+        }
     }
 }
