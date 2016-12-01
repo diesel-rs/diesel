@@ -27,7 +27,7 @@ pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
 pub fn str_value_of_attr_with_name<'a>(
     attrs: &'a [Attribute],
     name: &str,
-) -> Option<&'a str> {
+) -> Option<String> {
     attr_with_name(attrs, name).map(|attr| str_value_of_attr(attr, name))
 }
 
@@ -45,13 +45,13 @@ pub fn attr_with_name<'a>(
     attrs.into_iter().find(|attr| attr.name() == name)
 }
 
-fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
+fn str_value_of_attr(attr: &Attribute, name: &str) -> String {
     str_value_of_meta_item(&attr.value, name)
 }
 
-pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
+pub fn str_value_of_meta_item(item: &MetaItem, name: &str) -> String {
     match *item {
-        MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
+        MetaItem::NameValue(_, Lit::Str(ref value, _)) => value.clone(),
         _ => panic!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name),
     }
 }
@@ -64,7 +64,7 @@ fn single_arg_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a Ident {
                 return usage_err();
             }
             match items[0] {
-                MetaItem::Word(ref name) => name,
+                NestedMetaItem::MetaItem(MetaItem::Word(ref name)) => name,
                 _ => usage_err(),
             }
         }
@@ -101,22 +101,29 @@ pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
     }
 }
 
-pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
-    -> Option<&[MetaItem]>
+pub fn get_options_from_input(attrs: &Vec<Attribute>, on_bug: fn() -> !)
+    -> Option<Vec<MetaItem>>
 {
     let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
     match options {
-        Some(&MetaItem::List(_, ref options)) => Some(options),
+        Some(&MetaItem::List(_, ref options)) => {
+            Some(options.iter().map(|o| {
+                match o {
+                   &NestedMetaItem::MetaItem(ref m) => m.clone(),
+                   _ => on_bug(),
+                }
+            }).collect())
+        }
         Some(_) => on_bug(),
         None => None,
     }
 }
 
-pub fn get_option<'a>(
-    options: &'a [MetaItem],
+pub fn get_option(
+    options: &Vec<MetaItem>,
     option_name: &str,
     on_bug: fn() -> !,
-) -> &'a str {
+) -> String {
     options.iter().find(|a| a.name() == option_name)
         .map(|a| str_value_of_meta_item(a, option_name))
         .unwrap_or_else(|| on_bug())

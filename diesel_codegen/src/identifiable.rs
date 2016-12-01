@@ -19,6 +19,6 @@ pub fn derive_identifiable(item: syn::MacroInput) -> Tokens {
             struct_ty = #struct_ty,
             lifetimes = (#(lifetimes),*),
         ),
-        fields = [#(fields)*],
+        fields = [#(#fields)*],
     })
 }

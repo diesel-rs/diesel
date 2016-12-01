@@ -26,8 +26,8 @@ pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
             struct_name = #struct_name,
             table_name = #table_name,
             struct_ty = #struct_ty,
-            lifetimes = (#(lifetimes),*),
+            lifetimes = (#(#lifetimes),*),
         ),
-        fields = [#(fields)*],
+        fields = [#(#fields)*],
     })
 }

@@ -11,6 +11,6 @@ pub fn ty_path(path: Path) -> Ty {
 pub fn path_ident(ident: Ident) -> Path {
     Path {
         global: false,
-        segments: vec![PathSegment::ident(ident)],
+        segments: vec![PathSegment::from(ident)],
     }
 }

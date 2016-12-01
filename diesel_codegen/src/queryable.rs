@@ -16,9 +16,9 @@ pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
         (
             struct_name = #struct_name,
             struct_ty = #struct_ty,
-            generics = (#(ty_params),*),
-            lifetimes = (#(lifetimes),*),
+            generics = (#(#ty_params),*),
+            lifetimes = (#(#lifetimes),*),
         ),
-        fields = [#(attrs)*],
+        fields = [#(#attrs)*],
     })
 }
