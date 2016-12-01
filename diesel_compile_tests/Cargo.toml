@@ -9,5 +9,5 @@ diesel_codegen = { version = "0.8.1" }
 compiletest_rs = "0.2.3"
 
 [replace]
-"diesel:0.8.1" = { path = "../diesel" }
-"diesel_codegen:0.8.1" = { path = "../diesel_codegen" }
+"diesel:0.8.2" = { path = "../diesel" }
+"diesel_codegen:0.8.2" = { path = "../diesel_codegen" }

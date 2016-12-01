@@ -32,14 +32,12 @@ impl<'a, T, ST, Conn> SaveChangesDsl<Conn, ST> for &'a T where
 
 #[cfg(feature = "sqlite")]
 use sqlite::{SqliteConnection, Sqlite};
-#[cfg(feature = "sqlite")]
-use query_builder::AsQuery;
 
 #[cfg(feature = "sqlite")]
 impl<'a, T, ST> SaveChangesDsl<SqliteConnection, ST> for &'a T where
     Sqlite: HasSqlType<ST>,
     T: Identifiable,
-    T::Table: AsQuery<SqlType=ST>,
+    T::Table: FindDsl<&'a T::Id, SqlType=ST>,
     &'a T: AsChangeset<Target=T::Table> + IntoUpdateTarget<Table=T::Table>,
     Update<&'a T, &'a T>: ExecuteDsl<SqliteConnection>,
     Find<T::Table, &'a T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
