@@ -251,6 +251,7 @@ macro_rules! table_body {
                 QuerySource,
                 Table,
             };
+            use $crate::associations::HasTable;
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
             use $crate::types::*;
@@ -313,8 +314,15 @@ macro_rules! table_body {
                 }
             }
 
-            impl IntoUpdateTarget for table {
+            impl HasTable for table {
                 type Table = Self;
+
+                fn table() -> Self::Table {
+                    table
+                }
+            }
+
+            impl IntoUpdateTarget for table {
                 type WhereClause = ();
 
                 fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {

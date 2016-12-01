@@ -78,13 +78,16 @@ macro_rules! _Identifiable {
             field_kind: $field_kind:ident,
         } $($fields:tt)*],
     ) => {
-        impl $crate::associations::Identifiable for $struct_ty {
-            type Id = $field_ty;
+        impl $crate::associations::HasTable for $struct_ty {
             type Table = $table_name::table;
 
             fn table() -> Self::Table {
                 $table_name::table
             }
+        }
+
+        impl $crate::associations::Identifiable for $struct_ty {
+            type Id = $field_ty;
 
             fn id(&self) -> &Self::Id {
                 &self.id
