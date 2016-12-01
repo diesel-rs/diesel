@@ -94,6 +94,7 @@ macro_rules! HasMany {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         joinable_inner! {

@@ -65,13 +65,16 @@ impl Attr {
     pub fn to_stable_macro_tokens(&self, cx: &mut ExtCtxt) -> Vec<TokenTree> {
         let field_kind;
         let field_ty;
+        let inner_field_ty;
         if let Some(option_ty) = ty_param_of_option(&self.ty) {
             field_kind = str_to_ident("option");
             field_ty = quote_tokens!(cx, Option<$option_ty>);
+            inner_field_ty = quote_tokens!(cx, $option_ty);
         } else {
             let ty = &self.ty;
             field_kind = str_to_ident("regular");
             field_ty = quote_tokens!(cx, $ty);
+            inner_field_ty = quote_tokens!(cx, $ty);
         }
 
         let column_name = self.column_name;
@@ -81,11 +84,13 @@ impl Attr {
                 column_name: $column_name,
                 field_ty: $field_ty,
                 field_kind: $field_kind,
+                inner_field_ty: $inner_field_ty,
             }),
             None => quote_tokens!(cx, {
                 column_name: $column_name,
                 field_ty: $field_ty,
                 field_kind: $field_kind,
+                inner_field_ty: $inner_field_ty,
             }),
         }
     }

@@ -59,6 +59,7 @@ macro_rules! _Queryable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         _Queryable! {
@@ -78,6 +79,7 @@ macro_rules! _Queryable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         _Queryable! {
@@ -85,6 +87,7 @@ macro_rules! _Queryable {
             fields = [$({
                 field_ty: $field_ty,
                 field_kind: $field_kind,
+                $($rest:tt)*
             })+],
         }
     };
@@ -98,6 +101,7 @@ macro_rules! _Queryable {
         fields = [$({
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         _Queryable! {

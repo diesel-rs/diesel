@@ -76,6 +76,7 @@ macro_rules! _Identifiable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         } $($fields:tt)*],
     ) => {
         impl $crate::associations::HasTable for $struct_ty {
@@ -103,6 +104,7 @@ macro_rules! _Identifiable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         } $($fields:tt)*],
     ) => {
         _Identifiable! {

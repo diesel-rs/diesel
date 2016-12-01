@@ -84,6 +84,23 @@ pub fn is_option_ty(ty: &Ty) -> bool {
     }
 }
 
+pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
+    use syn::PathParameters::AngleBracketed;
+
+    if !is_option_ty(ty) {
+        return None;
+    }
+
+    match *ty {
+        Ty::Path(_, Path { ref segments, .. }) =>
+            match segments[0].parameters {
+                AngleBracketed(ref data) => data.types.first(),
+                _ => None,
+            },
+        _ => None,
+    }
+}
+
 pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
     -> Option<&[MetaItem]>
 {
