@@ -127,6 +127,7 @@ macro_rules! _Insertable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         _Insertable! {
@@ -147,6 +148,7 @@ macro_rules! _Insertable {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         _Insertable! {

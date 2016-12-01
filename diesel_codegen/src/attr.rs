@@ -1,7 +1,7 @@
 use quote;
 use syn;
 
-use util::{ident_value_of_attr_with_name, is_option_ty};
+use util::*;
 
 pub struct Attr {
     pub column_name: Option<syn::Ident>,
@@ -53,6 +53,11 @@ impl quote::ToTokens for Attr {
         tokens.append(", ");
         tokens.append("field_kind: ");
         tokens.append(self.field_kind());
+        tokens.append(", ");
+        tokens.append("inner_field_ty: ");
+        inner_of_option_ty(&self.ty)
+            .unwrap_or(&self.ty)
+            .to_tokens(tokens);
         tokens.append(", ");
         tokens.append("}");
     }

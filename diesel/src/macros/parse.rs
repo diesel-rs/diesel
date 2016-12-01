@@ -51,16 +51,19 @@
 ///         column_name: foo,
 ///         field_ty: i32,
 ///         field_kind: regular,
+///         inner_field_ty: i32,
 ///     }, {
 ///         field_name: bar,
 ///         column_name: bar,
 ///         field_ty: Option<i32>,
 ///         field_kind: option,
+///         inner_field_ty: i32,
 ///     }, {
 ///         field_name: baz,
 ///         column_name: other,
 ///         field_ty: String,
 ///         field_kind: regular,
+///         inner_field_ty: String,
 ///     }],
 /// }
 #[macro_export]
@@ -146,6 +149,7 @@ macro_rules! __diesel_parse_struct_body {
                 column_name: $column_name,
                 field_ty: Option<$field_ty>,
                 field_kind: option,
+                inner_field_ty: $field_ty,
             }],
             body = ($($tail)*),
         }
@@ -168,6 +172,7 @@ macro_rules! __diesel_parse_struct_body {
                 column_name: $column_name,
                 field_ty: $field_ty,
                 field_kind: regular,
+                inner_field_ty: $field_ty,
             }],
             body = ($($tail)*),
         }
@@ -221,6 +226,7 @@ macro_rules! __diesel_parse_struct_body {
                 column_name: $column_name,
                 field_ty: Option<$field_ty>,
                 field_kind: option,
+                inner_field_ty: $field_ty,
             }],
             body = ($($tail)*),
         }
@@ -241,6 +247,7 @@ macro_rules! __diesel_parse_struct_body {
                 column_name: $column_name,
                 field_ty: $field_ty,
                 field_kind: regular,
+                inner_field_ty: $field_ty,
             }],
             body = ($($tail)*),
         }
@@ -265,6 +272,7 @@ macro_rules! __diesel_parse_struct_body {
             fields = [$($fields)* {
                 field_ty: $field_ty,
                 field_kind: bare,
+                inner_field_ty: $field_ty,
             }],
             body = ($($tail)*),
         }

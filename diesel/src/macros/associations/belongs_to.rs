@@ -121,6 +121,7 @@ macro_rules! BelongsTo {
             column_name: $ignore3:ident,
             field_ty: $ignore4:ty,
             field_kind: $foreign_key_kind:ident,
+            $($rest:tt)*
         },
     ) => {
         BelongsTo! {
@@ -216,6 +217,7 @@ macro_rules! BelongsTo {
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
+            $($rest:tt)*
         })+],
     ) => {
         joinable_inner!(

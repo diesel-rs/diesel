@@ -173,6 +173,7 @@ macro_rules! _AsChangeset {
                 column_name: $column_name:ident,
                 field_ty: $field_ty:ty,
                 field_kind: $field_kind:ident,
+                $($rest:tt)*
             })+],
             struct_name = $struct_name:ident,
             $($headers:tt)*
@@ -196,6 +197,7 @@ macro_rules! _AsChangeset {
                 column_name: $column_name:ident,
                 field_ty: $field_ty:ty,
                 field_kind: $field_kind:ident,
+                $($rest:tt)*
             })+],
             struct_name = $struct_name:ident,
             $($headers:tt)*
@@ -259,8 +261,10 @@ macro_rules! AsChangeset_construct_changeset_ty {
         fields = [{
             $(field_name: $field_name:ident,)*
             column_name: $column_name:ident,
-            field_ty: Option<$field_ty:ty>,
+            field_ty: $ignore:ty,
             field_kind: option,
+            inner_field_ty: $field_ty:ty,
+            $($rest:tt)*
         } $($tail:tt)*],
         changeset_ty = ($($changeset_ty:ty,)*),
     ) => {
