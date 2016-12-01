@@ -1,4 +1,4 @@
-use associations::{BelongsTo, Identifiable};
+use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{ColumnInsertValue, InsertValues};
@@ -282,7 +282,6 @@ macro_rules! tuple_impls {
 
             impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
                 A: BelongsTo<Parent>,
-                Parent: Identifiable,
             {
                 type ForeignKey = A::ForeignKey;
                 type ForeignKeyColumn = A::ForeignKeyColumn;

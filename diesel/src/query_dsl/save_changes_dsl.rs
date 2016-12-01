@@ -1,4 +1,4 @@
-use associations::Identifiable;
+use associations::HasTable;
 use backend::SupportsReturningClause;
 use connection::Connection;
 use helper_types::*;
@@ -16,12 +16,11 @@ pub trait SaveChangesDsl<Conn, ST> where
         T: Queryable<ST, Conn::Backend>;
 }
 
-impl<'a, T, ST, Conn> SaveChangesDsl<Conn, ST> for &'a T where
+impl<T, ST, Conn> SaveChangesDsl<Conn, ST> for T where
     Conn: Connection,
     Conn::Backend: HasSqlType<ST> + SupportsReturningClause,
-    T: Identifiable,
-    &'a T: AsChangeset<Target=T::Table> + IntoUpdateTarget<Table=T::Table>,
-    Update<&'a T, &'a T>: LoadDsl<Conn, SqlType=ST>,
+    T: Copy + AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+    Update<T, T>: LoadDsl<Conn, SqlType=ST>,
 {
     fn save_changes<U>(self, conn: &Conn) -> QueryResult<U> where
         U: Queryable<ST, Conn::Backend>,
@@ -32,15 +31,17 @@ impl<'a, T, ST, Conn> SaveChangesDsl<Conn, ST> for &'a T where
 
 #[cfg(feature = "sqlite")]
 use sqlite::{SqliteConnection, Sqlite};
+#[cfg(feature = "sqlite")]
+use associations::Identifiable;
 
 #[cfg(feature = "sqlite")]
-impl<'a, T, ST> SaveChangesDsl<SqliteConnection, ST> for &'a T where
+impl<T, ST> SaveChangesDsl<SqliteConnection, ST> for T where
     Sqlite: HasSqlType<ST>,
-    T: Identifiable,
-    T::Table: FindDsl<&'a T::Id, SqlType=ST>,
-    &'a T: AsChangeset<Target=T::Table> + IntoUpdateTarget<Table=T::Table>,
-    Update<&'a T, &'a T>: ExecuteDsl<SqliteConnection>,
-    Find<T::Table, &'a T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
+    T: Copy + Identifiable,
+    T: AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+    T::Table: FindDsl<T::Id, SqlType=ST>,
+    Update<T, T>: ExecuteDsl<SqliteConnection>,
+    Find<T::Table, T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
 {
     fn save_changes<U>(self, conn: &SqliteConnection) -> QueryResult<U> where
         U: Queryable<ST, Sqlite>,

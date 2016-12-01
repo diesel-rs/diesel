@@ -1,5 +1,6 @@
-/// Implements the [`Identifiable`][identifiable] trait for a given struct. This
-/// macro should be called by copy/pasting the definition of the struct into it.
+/// Implements the [`Identifiable`][identifiable] trait for a reference to a
+/// given struct. This macro should be called by copy/pasting the definition of
+/// the struct into it.
 ///
 /// The struct must have a field called `id`, and the type of that field must be
 /// `Copy`. This macro does not work with tuple structs.
@@ -87,10 +88,10 @@ macro_rules! _Identifiable {
             }
         }
 
-        impl $crate::associations::Identifiable for $struct_ty {
-            type Id = $field_ty;
+        impl<'a> $crate::associations::Identifiable for &'a $struct_ty {
+            type Id = &'a $field_ty;
 
-            fn id(&self) -> &Self::Id {
+            fn id(self) -> Self::Id {
                 &self.id
             }
         }
@@ -146,6 +147,7 @@ table! {
 fn derive_identifiable_on_simple_struct() {
     use associations::Identifiable;
 
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
     struct Foo {
         id: i32,
         #[allow(dead_code)]
@@ -170,6 +172,7 @@ fn derive_identifiable_on_simple_struct() {
 fn derive_identifiable_when_id_is_not_first_field() {
     use associations::Identifiable;
 
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
     struct Foo {
         #[allow(dead_code)]
         foo: i32,
@@ -194,6 +197,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
 fn derive_identifiable_on_struct_with_non_integer_pk() {
     use associations::Identifiable;
 
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
     struct Foo {
         id: &'static str,
         #[allow(dead_code)]

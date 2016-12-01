@@ -15,9 +15,9 @@ pub trait IntoUpdateTarget: HasTable {
     fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause>;
 }
 
-impl<'a, T: Identifiable, V> IntoUpdateTarget for &'a T where
-    T::Table: FindDsl<&'a T::Id>,
-    Find<T::Table, &'a T::Id>: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
+impl<T: Identifiable, V> IntoUpdateTarget for T where
+    T::Table: FindDsl<T::Id>,
+    Find<T::Table, T::Id>: IntoUpdateTarget<Table=T::Table, WhereClause=V>,
 {
     type WhereClause = V;
 

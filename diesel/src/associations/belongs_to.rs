@@ -16,17 +16,19 @@ pub trait BelongsTo<Parent> {
     fn foreign_key_column() -> Self::ForeignKeyColumn;
 }
 
-pub trait GroupedBy<Parent>: IntoIterator + Sized {
-    fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Self::Item>>;
+pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
+    fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;
 }
 
-impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
+type Id<T> = <T as Identifiable>::Id;
+
+impl<'a, Parent: 'a, Child, Iter> GroupedBy<'a, Parent> for Iter where
     Iter: IntoIterator<Item=Child>,
     Child: BelongsTo<Parent>,
-    Parent: Identifiable,
-    for<'a> &'a Parent::Id: Borrow<Child::ForeignKey>,
+    &'a Parent: Identifiable,
+    Id<&'a Parent>: Borrow<Child::ForeignKey>,
 {
-    fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Child>> {
+    fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;
 
         let id_indices: HashMap<_, _> = parents.iter().enumerate().map(|(i, u)| (u.id(), i)).collect();
@@ -41,15 +43,15 @@ impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
 }
 
 impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child where
-    Parent: Identifiable,
+    &'a Parent: Identifiable,
     Child: HasTable + BelongsTo<Parent>,
-    &'a Parent::Id: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
-    <Child as HasTable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, &'a Parent::Id>>,
+    Id<&'a Parent>: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
+    <Child as HasTable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
 {
     type Output = FindBy<
         Child::Table,
         Child::ForeignKeyColumn,
-        &'a Parent::Id,
+        Id<&'a Parent>,
     >;
 
     fn belonging_to(parent: &'a Parent) -> Self::Output {
@@ -58,21 +60,21 @@ impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child where
 }
 
 impl<'a, Parent, Child> BelongingToDsl<&'a [Parent]> for Child where
-    Parent: Identifiable,
+    &'a Parent: Identifiable,
     Child: HasTable + BelongsTo<Parent>,
-    Vec<&'a Parent::Id>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
-    <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<&'a Parent::Id>>>,
+    Vec<Id<&'a Parent>>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
+    <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>,
 {
     type Output = Filter<
         Child::Table,
         EqAny<
             Child::ForeignKeyColumn,
-            Vec<&'a Parent::Id>,
+            Vec<Id<&'a Parent>>,
         >,
     >;
 
     fn belonging_to(parents: &'a [Parent]) -> Self::Output {
-        let ids = parents.iter().map(Parent::id).collect::<Vec<_>>();
+        let ids = parents.iter().map(Identifiable::id).collect::<Vec<_>>();
         Child::table().filter(Child::foreign_key_column().eq_any(ids))
     }
 }
