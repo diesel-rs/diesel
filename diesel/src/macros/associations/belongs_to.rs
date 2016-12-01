@@ -121,11 +121,13 @@ macro_rules! BelongsTo {
             column_name: $ignore3:ident,
             field_ty: $ignore4:ty,
             field_kind: $foreign_key_kind:ident,
+            inner_field_ty: $foreign_key_ty:ty,
             $($rest:tt)*
         },
     ) => {
         BelongsTo! {
             (
+                foreign_key_ty = $foreign_key_ty,
                 foreign_key_kind = $foreign_key_kind,
                 $($remaining_args)*
             ),
@@ -136,6 +138,7 @@ macro_rules! BelongsTo {
     // Generate code when FK is not optional
     (
         (
+            foreign_key_ty = $foreign_key_ty:ty,
             foreign_key_kind = regular,
             struct_name = $struct_name:ident,
             parent_struct = $parent_struct:ident,
@@ -145,9 +148,10 @@ macro_rules! BelongsTo {
         $($rest:tt)*
     ) => {
         impl $crate::associations::BelongsTo<$parent_struct> for $struct_name {
+            type ForeignKey = $foreign_key_ty;
             type ForeignKeyColumn = $child_table_name::$foreign_key_name;
 
-            fn foreign_key(&self) -> Option<&<$parent_struct as $crate::associations::Identifiable>::Id> {
+            fn foreign_key(&self) -> Option<&$foreign_key_ty> {
                 Some(&self.$foreign_key_name)
             }
 
@@ -171,6 +175,7 @@ macro_rules! BelongsTo {
     // Generate code when FK is optional
     (
         (
+            foreign_key_ty = $foreign_key_ty:ty,
             foreign_key_kind = option,
             struct_name = $struct_name:ident,
             parent_struct = $parent_struct:ident,
@@ -180,9 +185,10 @@ macro_rules! BelongsTo {
         $($rest:tt)*
     ) => {
         impl $crate::associations::BelongsTo<$parent_struct> for $struct_name {
+            type ForeignKey = $foreign_key_ty;
             type ForeignKeyColumn = $child_table_name::$foreign_key_name;
 
-            fn foreign_key(&self) -> Option<&<$parent_struct as $crate::associations::Identifiable>::Id> {
+            fn foreign_key(&self) -> Option<&$foreign_key_ty> {
                 self.$foreign_key_name.as_ref()
             }
 
