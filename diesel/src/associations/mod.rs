@@ -117,7 +117,6 @@ mod belongs_to;
 
 use std::hash::Hash;
 
-use query_dsl::FindDsl;
 use query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
@@ -137,7 +136,7 @@ pub use self::belongs_to::{BelongsTo, GroupedBy};
 /// never change without a major version bump.
 pub trait Identifiable {
     type Id: Hash + Eq;
-    type Table: Table + for<'a> FindDsl<&'a Self::Id>;
+    type Table: Table;
 
     fn table() -> Self::Table;
     fn id(&self) -> &Self::Id;
