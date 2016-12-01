@@ -121,6 +121,20 @@ use query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 
+pub trait HasTable {
+    type Table: Table;
+
+    fn table() -> Self::Table;
+}
+
+impl<'a, T: HasTable> HasTable for &'a T {
+    type Table = T::Table;
+
+    fn table() -> Self::Table {
+        T::table()
+    }
+}
+
 /// Represents a struct which can be identified on a single table in the
 /// database. This must be implemented to use associations, and some features of
 /// updating.
@@ -134,10 +148,8 @@ pub use self::belongs_to::{BelongsTo, GroupedBy};
 /// differs from that convention, or requires complex pluralization, it can be specified using
 /// `#[table_name = "some_table_name"]`. The inferred table name is considered public API and will
 /// never change without a major version bump.
-pub trait Identifiable {
+pub trait Identifiable: HasTable {
     type Id: Hash + Eq;
-    type Table: Table;
 
-    fn table() -> Self::Table;
     fn id(&self) -> &Self::Id;
 }

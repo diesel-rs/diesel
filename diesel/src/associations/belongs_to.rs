@@ -3,7 +3,7 @@ use expression::helper_types::{Eq, EqAny};
 use expression::array_comparison::AsInExpression;
 use helper_types::{FindBy, Filter};
 use prelude::*;
-use super::Identifiable;
+use super::{Identifiable, HasTable};
 
 pub trait BelongsTo<Parent: Identifiable> {
     type ForeignKeyColumn: Column;
@@ -37,9 +37,9 @@ impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
 
 impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child where
     Parent: Identifiable,
-    Child: Identifiable + BelongsTo<Parent>,
+    Child: HasTable + BelongsTo<Parent>,
     &'a Parent::Id: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
-    <Child as Identifiable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, &'a Parent::Id>>,
+    <Child as HasTable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, &'a Parent::Id>>,
 {
     type Output = FindBy<
         Child::Table,
@@ -54,9 +54,9 @@ impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child where
 
 impl<'a, Parent, Child> BelongingToDsl<&'a [Parent]> for Child where
     Parent: Identifiable,
-    Child: Identifiable + BelongsTo<Parent>,
+    Child: HasTable + BelongsTo<Parent>,
     Vec<&'a Parent::Id>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
-    <Child as Identifiable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<&'a Parent::Id>>>,
+    <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<&'a Parent::Id>>>,
 {
     type Output = Filter<
         Child::Table,

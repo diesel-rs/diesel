@@ -1,10 +1,11 @@
+use associations::HasTable;
 use expression::{SelectableExpression, NonAggregate};
 use expression::expression_methods::*;
 use expression::predicates::And;
 use helper_types::Filter;
 use query_builder::*;
 use query_dsl::FilterDsl;
-use query_source::{QuerySource, Table};
+use query_source::QuerySource;
 use types::Bool;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -62,16 +63,25 @@ impl<Source, Predicate> QuerySource for FilteredQuerySource<Source, Predicate> w
 
 impl_query_id!(FilteredQuerySource<Source, Predicate>);
 
+impl<Source, Predicate> HasTable for FilteredQuerySource<Source, Predicate> where
+    Source: HasTable,
+{
+    type Table = Source::Table;
+
+    fn table() -> Self::Table {
+        Source::table()
+    }
+}
+
 impl<Source, Predicate> IntoUpdateTarget for FilteredQuerySource<Source, Predicate> where
-    Source: Table,
+    FilteredQuerySource<Source, Predicate>: HasTable,
     Predicate: SelectableExpression<Source, SqlType=Bool>,
 {
-    type Table = Source;
     type WhereClause = Predicate;
 
     fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
         UpdateTarget {
-            table: self.source,
+            table: Self::table(),
             where_clause: Some(self.predicate),
         }
     }

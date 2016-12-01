@@ -75,10 +75,11 @@ pub mod helper_types {
     /// Represents the return type of `.with(aliased_expr)`
     pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 
+    use super::associations::HasTable;
     use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};
     /// Represents the return type of `update(lhs).set(rhs)`
     pub type Update<Target, Changes> = UpdateStatement<
-        <Target as IntoUpdateTarget>::Table,
+        <Target as HasTable>::Table,
         <Target as IntoUpdateTarget>::WhereClause,
         <Changes as AsChangeset>::Changeset,
     >;
