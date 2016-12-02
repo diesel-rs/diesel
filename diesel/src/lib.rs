@@ -4,6 +4,8 @@
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
 
+#[macro_use] extern crate quick_error;
+
 #[macro_use]
 mod macros;
 

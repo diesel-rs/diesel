@@ -29,7 +29,7 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult {
         let escaped_identifier = match self.conn.escape_identifier(identifier) {
             Ok(v) => v,
-            Err(e) => return Err(Box::new(e)),
+            Err(e) => return Err(e),
         };
         Ok(self.push_sql(&escaped_identifier))
     }

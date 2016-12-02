@@ -155,7 +155,7 @@ impl PgConnection {
             ))
         } else {
             let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
-            try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
+            try!(source.to_sql(&mut query_builder));
             Rc::new(try!(Query::sql(&query_builder.sql, Some(bind_types))))
         };
 

@@ -20,7 +20,6 @@ use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::*;
 use result::*;
-use result::Error::QueryBuilderError;
 use self::raw::RawConnection;
 use self::statement_iterator::StatementIterator;
 use self::stmt::{Statement, StatementUse};
@@ -211,7 +210,7 @@ fn sql_from_cache_key<'a, T: QueryFragment<Sqlite>>(key: &'a QueryCacheKey, sour
 
 fn to_sql<T: QueryFragment<Sqlite>>(source: &T) -> QueryResult<String> {
     let mut query_builder = SqliteQueryBuilder::new();
-    try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
+    try!(source.to_sql(&mut query_builder));
     Ok(query_builder.sql)
 }
 
