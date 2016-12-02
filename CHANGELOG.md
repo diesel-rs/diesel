@@ -6,6 +6,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## [0.8.2] - 2016-11-22
 
+### Added
+
+* Added support for SQL `NOT IN` using the `ne_any` method.
+
 ### Changed
 
 * Fixed support for nightlies later than 2016-11-07
