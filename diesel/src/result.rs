@@ -12,6 +12,7 @@ pub enum Error {
     DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send>),
     NotFound,
     QueryBuilderError(Box<StdError+Send>),
+    EmptyQuery,
     DeserializationError(Box<StdError+Send+Sync>),
     SerializationError(Box<StdError+Send+Sync>),
     #[doc(hidden)]
@@ -121,6 +122,7 @@ impl Display for Error {
             &Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
             &Error::NotFound => f.write_str("NotFound"),
             &Error::QueryBuilderError(ref e) => e.fmt(f),
+            &Error::EmptyQuery => f.write_str("EmptyQuery"),
             &Error::DeserializationError(ref e) => e.fmt(f),
             &Error::SerializationError(ref e) => e.fmt(f),
             &Error::__Nonexhaustive => unreachable!(),
@@ -135,6 +137,7 @@ impl StdError for Error {
             &Error::DatabaseError(_, ref e) => e.message(),
             &Error::NotFound => "Record not found",
             &Error::QueryBuilderError(ref e) => e.description(),
+            &Error::EmptyQuery => "Empty query",
             &Error::DeserializationError(ref e) => e.description(),
             &Error::SerializationError(ref e) => e.description(),
             &Error::__Nonexhaustive => unreachable!(),

@@ -23,10 +23,21 @@ pub trait Insertable<T: Table, DB: Backend> {
     fn values(self) -> Self::Values;
 }
 
+/// Values that can be inserted into a row
 pub trait InsertValues<DB: Backend> {
+    /// Add column names to `out` query
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+
+    /// Add list of values to `out` query
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+
+    /// Add value bind params to `out` bind collector
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
+
+    /// Determine if this list of values is actually empty
+    ///
+    /// This will be used to determine whether the `INSERT` can be skipped
+    fn is_empty(&self) -> bool { false }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -66,6 +77,7 @@ impl<'a, T, U, DB> Insertable<T, DB> for &'a Vec<U> where
     }
 }
 
+/// Represents multiple rows that will be inserted at the same time
 #[derive(Debug, Copy, Clone)]
 pub struct BatchInsertValues<'a, T, U: 'a, DB> {
     values: &'a [U],
@@ -96,5 +108,9 @@ impl<'a, T, U: 'a, DB> InsertValues<DB> for BatchInsertValues<'a, T, U, DB> wher
             try!(record.values().values_bind_params(out));
         }
         Ok(())
+    }
+
+    fn is_empty(&self) -> bool {
+        self.values.is_empty()
     }
 }

@@ -3,7 +3,7 @@ use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{Insertable, InsertValues};
 use query_builder::*;
 use query_source::Table;
-use result::QueryResult;
+use result::{QueryResult};
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
@@ -50,6 +50,12 @@ impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let values = self.records.values();
+
+        if values.is_empty() {
+            // return Err(Box::new(Error::QueryAborted));
+            return Ok(());
+        }
+
         try!(self.operator.to_sql(out));
         out.push_sql(" INTO ");
         try!(self.target.from_clause().to_sql(out));

@@ -76,8 +76,13 @@ impl<'a, T: Query> Query for &'a T {
 /// [`Connection`](../struct.Connection.html) that execute a query require this
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
+    /// Convert this query fragment to SQL and add it to the query builder
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+
+    /// Collect param bindings and add them to the bind collector
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
+
+    /// Determine whether this query fragment can be cached
     fn is_safe_to_cache_prepared(&self) -> bool;
 }
 
