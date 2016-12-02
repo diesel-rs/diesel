@@ -1,6 +1,6 @@
 use expression::{Expression, AsExpression, nullable};
 use expression::aliased::Aliased;
-use expression::array_comparison::{In, AsInExpression};
+use expression::array_comparison::{In, NotIn, AsInExpression};
 use expression::predicates::*;
 
 pub trait ExpressionMethods: Expression + Sized {
@@ -107,6 +107,41 @@ pub trait ExpressionMethods: Expression + Sized {
         T: AsInExpression<Self::SqlType>,
     {
         In::new(self, values.as_in_expression())
+    }
+
+    /// Creates a SQL `NOT IN` statement. Queries using this method will not be
+    /// placed in the prepared statement cache. On PostgreSQL, you should use
+    /// `ne(any())` instead. This method may change in the future to
+    /// automatically perform `!= ANY` on PostgreSQL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("INSERT INTO users (name) VALUES
+    /// #         ('Jim')").unwrap();
+    /// let data = users.select(id).filter(name.ne_any(vec!["Sean", "Jim"]));
+    /// assert_eq!(Ok(vec![2]), data.load(&connection));
+    /// let data = users.select(id).filter(name.ne_any(vec!["Tess"]));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// # }
+    /// ```
+    fn ne_any<T>(self, values: T) -> NotIn<Self, T::InExpression> where
+        T: AsInExpression<Self::SqlType>,
+    {
+        NotIn::new(self, values.as_in_expression())
     }
 
     /// Creates a SQL `IS NULL` expression.

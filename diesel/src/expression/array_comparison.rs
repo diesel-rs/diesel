@@ -11,13 +11,27 @@ pub struct In<T, U> {
     values: U,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct NotIn<T, U> {
+    in_expr: In<T, U>
+}
+
 pub type EqAny<T, U> = In<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
+pub type NeAny<T, U> = NotIn<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
 
 impl<T, U> In<T, U> {
     pub fn new(left: T, values: U) -> Self {
         In {
             left: left,
             values: values,
+        }
+    }
+}
+
+impl<T, U> NotIn<T, U> {
+    pub fn new(left: T, values: U) -> Self {
+        NotIn {
+            in_expr: In::new(left, values),
         }
     }
 }
@@ -29,6 +43,11 @@ impl<T, U> Expression for In<T, U> where
     type SqlType = Bool;
 }
 
+impl<T, U> Expression for NotIn<T, U> where In<T, U>: Expression,
+{
+    type SqlType = Bool;
+}
+
 impl<T, U, QS> SelectableExpression<QS> for In<T, U> where
     In<T, U>: Expression,
     T: SelectableExpression<QS>,
@@ -36,8 +55,18 @@ impl<T, U, QS> SelectableExpression<QS> for In<T, U> where
 {
 }
 
+impl<T, U, QS> SelectableExpression<QS> for NotIn<T, U> where
+    In<T, U>: SelectableExpression<QS>,
+{
+}
+
 impl<T, U> NonAggregate for In<T, U> where
     In<T, U>: Expression,
+{
+}
+
+impl<T, U> NonAggregate for NotIn<T, U> where
+    NotIn<T, U>: Expression,
 {
 }
 
@@ -66,7 +95,26 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
     }
 }
 
+impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
+    DB: Backend,
+    In<T, U>: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql("NOT ");
+        self.in_expr.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.in_expr.collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.in_expr.is_safe_to_cache_prepared()
+    }
+}
+
 impl_query_id!(In<T, U>);
+impl_query_id!(NotIn<T, U>);
 
 use std::marker::PhantomData;
 use query_builder::SelectStatement;
