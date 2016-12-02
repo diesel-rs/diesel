@@ -5,10 +5,14 @@ use helper_types::{FindBy, Filter};
 use prelude::*;
 use super::{Identifiable, HasTable};
 
-pub trait BelongsTo<Parent: Identifiable> {
+use std::borrow::Borrow;
+use std::hash::Hash;
+
+pub trait BelongsTo<Parent> {
+    type ForeignKey: Hash + ::std::cmp::Eq;
     type ForeignKeyColumn: Column;
 
-    fn foreign_key(&self) -> Option<&Parent::Id>;
+    fn foreign_key(&self) -> Option<&Self::ForeignKey>;
     fn foreign_key_column() -> Self::ForeignKeyColumn;
 }
 
@@ -20,6 +24,7 @@ impl<Parent, Child, Iter> GroupedBy<Parent> for Iter where
     Iter: IntoIterator<Item=Child>,
     Child: BelongsTo<Parent>,
     Parent: Identifiable,
+    for<'a> &'a Parent::Id: Borrow<Child::ForeignKey>,
 {
     fn grouped_by(self, parents: &[Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;

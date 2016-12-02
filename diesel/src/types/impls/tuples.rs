@@ -284,9 +284,10 @@ macro_rules! tuple_impls {
                 A: BelongsTo<Parent>,
                 Parent: Identifiable,
             {
+                type ForeignKey = A::ForeignKey;
                 type ForeignKeyColumn = A::ForeignKeyColumn;
 
-                fn foreign_key(&self) -> Option<&Parent::Id> {
+                fn foreign_key(&self) -> Option<&Self::ForeignKey> {
                     self.0.foreign_key()
                 }
 
