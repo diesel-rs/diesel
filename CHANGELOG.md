@@ -6,15 +6,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for SQL `NOT IN` using the `ne_any` method.
+
 ### Fixed
 
 * `#[derive(Identifiable)]` now works on structs with lifetimes
 
 ## [0.8.2] - 2016-11-22
-
-### Added
-
-* Added support for SQL `NOT IN` using the `ne_any` method.
 
 ### Changed
 
