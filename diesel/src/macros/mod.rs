@@ -19,9 +19,10 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
+            <$($table)::* as QuerySource>::FromClause: QueryFragment<DB>,
         {
             fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
-                try!(out.push_identifier($($table)::*::name()));
+                try!($($table)::*.from_clause().to_sql(out));
                 out.push_sql(".");
                 out.push_identifier(stringify!($column_name))
             }
@@ -185,36 +186,44 @@ macro_rules! __diesel_column {
 #[macro_export]
 macro_rules! table {
     (
-        $name:ident {
-            $($column_name:ident -> $Type:ty,)+
-        }
+        $name:ident $body:tt
     ) => {
         table! {
-            $name (id) {
-                $($column_name -> $Type,)+
-            }
+            public . $name (id) $body
         }
     };
 
     (
-        $name:ident ($pk:ident) {
-            $($column_name:ident -> $Type:ty,)+
-        }
+        $schema_name:ident . $name:ident $body:tt
     ) => {
-        table_body! {
-            $name ($pk) {
-                $($column_name -> $Type,)+
-            }
+        table! {
+            $schema_name . $name (id) $body
         }
     };
 
     (
-        $name:ident ($pk:ident, $($composite_pk:ident),+) {
+        $name:ident $pk:tt $body:tt
+    ) => {
+        table! {
+            public . $name $pk $body
+        }
+    };
+
+    (
+        $schema_name:ident . $name:ident ($pk:ident) $body:tt
+    ) => {
+        table_body! {
+            $schema_name . $name ($pk) $body
+        }
+    };
+
+    (
+        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
         table_body! {
-            $name ($pk, $($composite_pk,)+) {
+            $schema_name . $name ($pk, $($composite_pk,)+) {
                 $($column_name -> $Type,)+
             }
         }
@@ -225,11 +234,12 @@ macro_rules! table {
 #[doc(hidden)]
 macro_rules! table_body {
     (
-        $name:ident ($pk:ident) {
+        $schema_name:ident . $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
         table_body! {
+            schema_name = $schema_name,
             table_name = $name,
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
@@ -238,11 +248,12 @@ macro_rules! table_body {
     };
 
     (
-        $name:ident ($($pk:ident,)+) {
+        $schema_name:ident . $name:ident ($($pk:ident,)+) {
             $($column_name:ident -> $Type:ty,)+
         }
     ) => {
         table_body! {
+            schema_name = $schema_name,
             table_name = $name,
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
@@ -251,6 +262,7 @@ macro_rules! table_body {
     };
 
     (
+        schema_name = $schema_name:ident,
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
@@ -264,7 +276,7 @@ macro_rules! table_body {
             };
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
-            use $crate::query_builder::nodes::Identifier;
+            use $crate::query_builder::nodes::{Identifier, InfixNode};
             use $crate::types::*;
             pub use self::columns::*;
 
@@ -291,13 +303,7 @@ macro_rules! table_body {
 
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
-            impl QuerySource for table {
-                type FromClause = Identifier<'static>;
-
-                fn from_clause(&self) -> Self::FromClause {
-                    Identifier(stringify!($table_name))
-                }
-            }
+            __diesel_table_query_source_impl!(table, $schema_name, $table_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
@@ -311,10 +317,6 @@ macro_rules! table_body {
             impl Table for table {
                 type PrimaryKey = $primary_key_ty;
                 type AllColumns = ($($column_name,)+);
-
-                fn name() -> &'static str {
-                    stringify!($table_name)
-                }
 
                 fn primary_key(&self) -> Self::PrimaryKey {
                     $primary_key_expr
@@ -348,7 +350,7 @@ macro_rules! table_body {
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Expression, SelectableExpression};
+                use $crate::{Table, Expression, SelectableExpression, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::result::QueryResult;
@@ -362,9 +364,11 @@ macro_rules! table_body {
                     type SqlType = ();
                 }
 
-                impl<DB: Backend> QueryFragment<DB> for star {
+                impl<DB: Backend> QueryFragment<DB> for star where
+                    <table as QuerySource>::FromClause: QueryFragment<DB>,
+                {
                     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                        try!(out.push_identifier(table::name()));
+                        try!(table.from_clause().to_sql(out));
                         out.push_sql(".*");
                         Ok(())
                     }
@@ -384,6 +388,34 @@ macro_rules! table_body {
             }
         }
     }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_table_query_source_impl {
+    ($table_struct:ident, public, $table_name:ident) => {
+        impl QuerySource for $table_struct {
+            type FromClause = Identifier<'static>;
+
+            fn from_clause(&self) -> Self::FromClause {
+                Identifier(stringify!($table_name))
+            }
+        }
+    };
+
+    ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
+        impl QuerySource for $table_struct {
+            type FromClause = InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+
+            fn from_clause(&self) -> Self::FromClause {
+                InfixNode::new(
+                    Identifier(stringify!($schema_name)),
+                    Identifier(stringify!($table_name)),
+                    ".",
+                )
+            }
+        }
+    };
 }
 
 #[macro_export]
@@ -583,3 +615,21 @@ macro_rules! print_sql {
 #[macro_use] mod identifiable;
 #[macro_use] mod insertable;
 #[macro_use] mod queryable;
+
+#[cfg(test)]
+mod tests {
+    use prelude::*;
+
+    table! {
+        foo.bars {
+            id -> Integer,
+            baz -> Text,
+        }
+    }
+
+    #[test]
+    fn table_with_custom_schema() {
+        let expected_sql = "SELECT `foo`.`bars`.`baz` FROM `foo`.`bars`";
+        assert_eq!(expected_sql, debug_sql!(bars::table.select(bars::baz)));
+    }
+}

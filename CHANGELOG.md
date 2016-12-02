@@ -10,6 +10,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for SQL `NOT IN` using the `ne_any` method.
 
+* The `table!` macro now allows custom schemas to be specified. Example:
+
+  ```rust
+  table! {
+    schema_1.table_1 {
+      id -> Integer,
+    }
+  }
+  ```
+
+  The generated module will still be called `table_1`.
+
 ### Fixed
 
 * `#[derive(Identifiable)]` now works on structs with lifetimes

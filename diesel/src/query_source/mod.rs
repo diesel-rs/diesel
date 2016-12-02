@@ -46,7 +46,6 @@ pub trait Table: QuerySource + AsQuery + Sized {
     type PrimaryKey: SelectableExpression<Self> + NonAggregate;
     type AllColumns: SelectableExpression<Self> + NonAggregate;
 
-    fn name() -> &'static str;
     fn primary_key(&self) -> Self::PrimaryKey;
     fn all_columns() -> Self::AllColumns;
 
