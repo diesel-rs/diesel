@@ -14,7 +14,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
 
-    let table_names = load_table_names(database_url.as_str()).unwrap();
+    let table_names = load_table_names(&database_url).unwrap();
     let schema_inferences = table_names.into_iter().map(|table_name| {
         let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
         quote! {
@@ -38,9 +38,9 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     let database_url = get_option(&options, "database_url", bug);
     let table_name = get_option(&options, "table_name", bug);
 
-    let connection = establish_connection(database_url.as_str()).unwrap();
-    let data = get_table_data(&connection, table_name.as_str()).unwrap();
-    let primary_keys = get_primary_keys(&connection, table_name.as_str()).unwrap()
+    let connection = establish_connection(&database_url).unwrap();
+    let data = get_table_data(&connection, &table_name).unwrap();
+    let primary_keys = get_primary_keys(&connection, &table_name).unwrap()
         .into_iter().map(syn::Ident::new);
     let table_name = syn::Ident::new(table_name);
 

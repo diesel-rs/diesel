@@ -24,8 +24,8 @@ pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
     })
 }
 
-pub fn str_value_of_attr_with_name<'a>(
-    attrs: &'a [Attribute],
+pub fn str_value_of_attr_with_name(
+    attrs: &[Attribute],
     name: &str,
 ) -> Option<String> {
     attr_with_name(attrs, name).map(|attr| str_value_of_attr(attr, name))
@@ -101,7 +101,7 @@ pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
     }
 }
 
-pub fn get_options_from_input(attrs: &Vec<Attribute>, on_bug: fn() -> !)
+pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
     -> Option<Vec<MetaItem>>
 {
     let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
@@ -120,7 +120,7 @@ pub fn get_options_from_input(attrs: &Vec<Attribute>, on_bug: fn() -> !)
 }
 
 pub fn get_option(
-    options: &Vec<MetaItem>,
+    options: &[MetaItem],
     option_name: &str,
     on_bug: fn() -> !,
 ) -> String {
