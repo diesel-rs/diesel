@@ -4,6 +4,12 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Fixed
+
+* `#[derive(Identifiable)]` now works on structs with lifetimes
+
 ## [0.8.2] - 2016-11-22
 
 ### Added

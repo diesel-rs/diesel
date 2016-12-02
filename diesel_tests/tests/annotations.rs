@@ -162,3 +162,13 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
         author_id: i32,
     }
 }
+
+mod derive_identifiable_with_lifetime {
+    #![allow(dead_code)]
+    use schema::posts;
+
+    #[derive(Identifiable)]
+    pub struct Post<'a> {
+        id: &'a i32
+    }
+}

@@ -71,6 +71,7 @@ macro_rules! _Identifiable {
         (
             table_name = $table_name:ident,
             struct_ty = $struct_ty:ty,
+            lifetimes = ($($lifetimes:tt),*),
         ),
         fields = [{
             field_name: id,
@@ -80,7 +81,7 @@ macro_rules! _Identifiable {
             $($rest:tt)*
         } $($fields:tt)*],
     ) => {
-        impl $crate::associations::HasTable for $struct_ty {
+        impl<$($lifetimes),*> $crate::associations::HasTable for $struct_ty {
             type Table = $table_name::table;
 
             fn table() -> Self::Table {
@@ -88,8 +89,8 @@ macro_rules! _Identifiable {
             }
         }
 
-        impl<'a> $crate::associations::Identifiable for &'a $struct_ty {
-            type Id = &'a $field_ty;
+        impl<'ident $(,$lifetimes)*> $crate::associations::Identifiable for &'ident $struct_ty {
+            type Id = &'ident $field_ty;
 
             fn id(self) -> Self::Id {
                 &self.id
@@ -114,6 +115,23 @@ macro_rules! _Identifiable {
         }
     };
 
+    // Handle struct with generic lifetimes
+    (
+        ($($args:tt)*)
+        $struct_name:ident <$($lifetimes:tt),*>
+        $body:tt $(;)*
+    ) => {
+        __diesel_parse_struct_body! {
+            (
+                $($args)*
+                struct_ty = $struct_name<$($lifetimes),*>,
+                lifetimes = ($($lifetimes),*),
+            ),
+            callback = _Identifiable,
+            body = $body,
+        }
+    };
+
     // Handle struct with no generics
     (
         ($($args:tt)*)
@@ -124,6 +142,7 @@ macro_rules! _Identifiable {
             (
                 $($args)*
                 struct_ty = $struct_name,
+                lifetimes = (),
             ),
             callback = _Identifiable,
             body = $body,
@@ -208,6 +227,31 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
         #[table_name(bars)]
         struct Foo {
             id: &'static str,
+            foo: i32,
+        }
+    }
+
+    let foo1 = Foo { id: "hi", foo: 2 };
+    let foo2 = Foo { id: "there", foo: 3 };
+    assert_eq!(&"hi", foo1.id());
+    assert_eq!(&"there", foo2.id());
+}
+
+#[test]
+fn derive_identifiable_on_struct_with_lifetime() {
+    use associations::Identifiable;
+
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
+    struct Foo<'a> {
+        id: &'a str,
+        #[allow(dead_code)]
+        foo: i32,
+    }
+
+    Identifiable! {
+        #[table_name(bars)]
+        struct Foo<'a> {
+            id: &'a str,
             foo: i32,
         }
     }
