@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use schema::*;
 use diesel::*;
 
@@ -256,4 +258,19 @@ fn struct_with_option_fields_treated_as_null() {
 
     assert_eq!(Ok(&expected_post), updated_post.as_ref());
     assert_eq!(Ok(&expected_post), post_in_database.as_ref());
+}
+
+#[test]
+#[should_panic="There are no changes to save."]
+fn update_with_no_changes() {
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    struct Changes {
+        name: Option<String>,
+        hair_color: Option<String>,
+    }
+
+    let connection = connection();
+    let changes = Changes { name: None, hair_color: None, };
+    update(users::table).set(&changes).execute(&connection).unwrap();
 }

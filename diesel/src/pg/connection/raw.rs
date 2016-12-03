@@ -35,7 +35,7 @@ impl RawConnection {
         last_error_message(self.internal_connection)
     }
 
-    pub fn escape_identifier(&self, identifier: &str) -> QueryResult<PgString> {
+    pub fn escape_identifier(&self, identifier: &str) -> Result<PgString, String> {
         let result_ptr = unsafe { PQescapeIdentifier(
             self.internal_connection,
             identifier.as_ptr() as *const libc::c_char,
@@ -43,10 +43,7 @@ impl RawConnection {
         ) };
 
         if result_ptr.is_null() {
-            Err(Error::DatabaseError(
-                DatabaseErrorKind::__Unknown,
-                Box::new(last_error_message(self.internal_connection)),
-            ))
+            Err(last_error_message(self.internal_connection))
         } else {
             unsafe {
                 Ok(PgString::new(result_ptr))

@@ -11,7 +11,7 @@ pub enum Error {
     InvalidCString(NulError),
     DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send>),
     NotFound,
-    QueryBuilderError(Box<StdError+Send>),
+    QueryBuilderError(Box<StdError+Send+Sync>),
     DeserializationError(Box<StdError+Send+Sync>),
     SerializationError(Box<StdError+Send+Sync>),
     #[doc(hidden)]

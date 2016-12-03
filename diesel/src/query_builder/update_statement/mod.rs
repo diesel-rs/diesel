@@ -51,6 +51,11 @@ impl<T, U, V, DB> QueryFragment<DB> for UpdateStatement<T, U, V> where
     V: changeset::Changeset<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        if self.values.is_noop() {
+            return Err("There are no changes to save. This \
+                       query cannot be built".into())
+        }
+
         out.push_sql("UPDATE ");
         try!(self.table.from_clause().to_sql(out));
         out.push_sql(" SET ");

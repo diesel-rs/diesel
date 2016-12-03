@@ -45,7 +45,7 @@ use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
-pub type BuildQueryResult = Result<(), Box<Error+Send>>;
+pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
 
 /// Apps should not need to concern themselves with this trait.
 ///
