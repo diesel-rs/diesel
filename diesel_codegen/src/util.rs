@@ -24,10 +24,10 @@ pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
     })
 }
 
-pub fn str_value_of_attr_with_name(
-    attrs: &[Attribute],
+pub fn str_value_of_attr_with_name<'a>(
+    attrs: &'a [Attribute],
     name: &str,
-) -> Option<String> {
+) -> Option<&'a str> {
     attr_with_name(attrs, name).map(|attr| str_value_of_attr(attr, name))
 }
 
@@ -45,13 +45,13 @@ pub fn attr_with_name<'a>(
     attrs.into_iter().find(|attr| attr.name() == name)
 }
 
-fn str_value_of_attr(attr: &Attribute, name: &str) -> String {
+fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
     str_value_of_meta_item(&attr.value, name)
 }
 
-pub fn str_value_of_meta_item(item: &MetaItem, name: &str) -> String {
+pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
     match *item {
-        MetaItem::NameValue(_, Lit::Str(ref value, _)) => value.clone(),
+        MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
         _ => panic!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name),
     }
 }
@@ -107,11 +107,9 @@ pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
     let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
     match options {
         Some(&MetaItem::List(_, ref options)) => {
-            Some(options.iter().map(|o| {
-                match o {
-                   &NestedMetaItem::MetaItem(ref m) => m.clone(),
-                   _ => on_bug(),
-                }
+            Some(options.iter().map(|o| match o {
+                &NestedMetaItem::MetaItem(ref m) => m.clone(),
+                _ => on_bug(),
             }).collect())
         }
         Some(_) => on_bug(),
@@ -119,11 +117,11 @@ pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
     }
 }
 
-pub fn get_option(
-    options: &[MetaItem],
+pub fn get_option<'a>(
+    options: &'a [MetaItem],
     option_name: &str,
     on_bug: fn() -> !,
-) -> String {
+) -> &'a str {
     options.iter().find(|a| a.name() == option_name)
         .map(|a| str_value_of_meta_item(a, option_name))
         .unwrap_or_else(|| on_bug())

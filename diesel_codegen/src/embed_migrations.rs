@@ -15,8 +15,8 @@ pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
     }
 
     let options = get_options_from_input(&input.attrs, bug);
-    let migrations_path_opt = options.map(|o| get_option(&o, "migrations_path", bug));
-    let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_ref().map(|s| s.as_str()))
+    let migrations_path_opt = options.as_ref().map(|o| get_option(&o, "migrations_path", bug));
+    let migrations_expr = migration_directory_from_given_path(migrations_path_opt)
         .and_then(|path| migration_literals_from_path(&path));
     let migrations_expr = match migrations_expr {
         Ok(v) => v,

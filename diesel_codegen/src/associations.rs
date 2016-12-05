@@ -79,11 +79,9 @@ fn build_association_options(
                 _ => return usage_error,
             };
             let foreign_key_name = options.iter()
-                .filter_map(|o| {
-                    match o {
-                        &syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
-                        _ => None
-                    }
+                .filter_map(|o| match o {
+                    &syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
+                    _ => None
                 })
                 .find(|a| a.name() == "foreign_key")
                 .map(|a| str_value_of_meta_item(a, "foreign_key"))
