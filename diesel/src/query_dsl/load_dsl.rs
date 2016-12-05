@@ -1,3 +1,4 @@
+use backend::Backend;
 use connection::Connection;
 use helper_types::Limit;
 use query_builder::{QueryFragment, AsQuery, QueryId};
@@ -8,9 +9,11 @@ use types::HasSqlType;
 
 /// Methods to execute a query given a connection. These are automatically implemented for the
 /// various query types.
-pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
+pub trait LoadDsl<Conn: Connection>: Sized where
     Conn::Backend: HasSqlType<Self::SqlType>,
 {
+    type SqlType;
+
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
     fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
@@ -22,8 +25,8 @@ pub trait LoadDsl<Conn: Connection>: AsQuery + Sized where
     /// `Result<Option<U>>`.
     fn first<U>(self, conn: &Conn) -> QueryResult<U> where
         Self: LimitDsl,
-        Limit<Self>: LoadDsl<Conn, SqlType=Self::SqlType>,
-        U: Queryable<Self::SqlType, Conn::Backend>,
+        Limit<Self>: LoadDsl<Conn, SqlType=<Self as LoadDsl<Conn>>::SqlType>,
+        U: Queryable<<Self as LoadDsl<Conn>>::SqlType, Conn::Backend>,
     {
         self.limit(1).get_result(conn)
     }
@@ -47,6 +50,8 @@ impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
     T::Query: QueryFragment<Conn::Backend> + QueryId,
     Conn::Backend: HasSqlType<T::SqlType>,
 {
+    type SqlType = <Self as AsQuery>::SqlType;
+
     fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
         U: Queryable<Self::SqlType, Conn::Backend> + 'a,
     {
@@ -60,18 +65,19 @@ impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
     }
 }
 
-pub trait ExecuteDsl<Conn: Connection>: Sized + QueryFragment<Conn::Backend> + QueryId {
+pub trait ExecuteDsl<Conn: Connection<Backend=DB>, DB: Backend = <Conn as Connection>::Backend>: Sized {
     /// Executes the given command, returning the number of rows affected. Used
     /// in conjunction with
     /// [`update`](../query_builder/fn.update.html) and
     /// [`delete`](../query_builder/fn.delete.html)
-    fn execute(&self, conn: &Conn) -> QueryResult<usize> {
-        conn.execute_returning_count(self)
-    }
+    fn execute(self, conn: &Conn) -> QueryResult<usize>;
 }
 
 impl<Conn, T> ExecuteDsl<Conn> for T where
     Conn: Connection,
     T: QueryFragment<Conn::Backend> + QueryId,
 {
+    fn execute(self, conn: &Conn) -> QueryResult<usize> {
+        conn.execute_returning_count(&self)
+    }
 }

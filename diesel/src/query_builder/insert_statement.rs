@@ -1,10 +1,13 @@
-use backend::Backend;
+use backend::{Backend, SupportsDefaultKeyword};
+use connection::Connection;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{Insertable, InsertValues};
 use query_builder::*;
-use query_source::Table;
+use query_dsl::{ExecuteDsl, LoadDsl};
+use query_source::{Queryable, Table};
 use result::QueryResult;
 use super::returning_clause::*;
+use types::HasSqlType;
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
@@ -24,24 +27,62 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> InsertStatement<S, T, Op> where
-        InsertStatement<S, T, Op>: AsQuery,
+    pub fn into<S>(self, target: S) -> T::InsertStatement where
+        T: IntoInsertStatement<S, Op, NoReturningClause>,
     {
-        InsertStatement {
-            operator: self.operator,
+        self.records.into_insert_statement(target, self.operator, NoReturningClause)
+    }
+}
+
+pub trait IntoInsertStatement<Tab, Op=Insert, Ret=NoReturningClause> {
+    type InsertStatement;
+
+    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+        -> Self::InsertStatement;
+}
+
+impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a [T] {
+    type InsertStatement = BatchInsertStatement<Tab, Self, Op, Ret>;
+
+    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+        -> Self::InsertStatement
+    {
+        BatchInsertStatement {
+            operator: operator,
             target: target,
-            records: self.records,
-            returning: NoReturningClause,
+            records: self,
+            returning: returning,
         }
     }
 }
 
+impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a Vec<T> {
+    type InsertStatement = <&'a [T] as IntoInsertStatement<Tab, Op, Ret>>::InsertStatement;
+
+    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+        -> Self::InsertStatement
+    {
+        (&**self).into_insert_statement(target, operator, returning)
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
-pub struct InsertStatement<T, U, Op, Ret=NoReturningClause> {
+pub struct InsertStatement<T, U, Op=Insert, Ret=NoReturningClause> {
     operator: Op,
     target: T,
     records: U,
     returning: Ret,
+}
+
+impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
+    pub fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
+        InsertStatement {
+            operator: operator,
+            target: target,
+            records: records,
+            returning: returning,
+        }
+    }
 }
 
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret> where
@@ -144,6 +185,140 @@ impl<T, U, Op> InsertStatement<T, U, Op, NoReturningClause> {
             target: self.target,
             records: self.records,
             returning: ReturningClause(returns),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+/// The result of calling `insert(records).into(some_table)` when `records` is
+/// a slice or a `Vec`. When calling methods from `ExecuteDsl` or `LoadDsl`.
+/// When the given slice is empty, this struct will not execute any queries.
+/// When the given slice is not empty, this will execute a single bulk insert
+/// on backends which support the `DEFAULT` keyword, and one query per record
+/// on backends which do not (SQLite).
+pub struct BatchInsertStatement<T, U, Op=Insert, Ret=NoReturningClause> {
+    operator: Op,
+    target: T,
+    records: U,
+    returning: Ret,
+}
+
+impl<T, U, Op, Ret> BatchInsertStatement<T, U, Op, Ret> {
+    fn into_insert_statement(self) -> InsertStatement<T, U, Op, Ret> {
+        InsertStatement::new(
+            self.target,
+            self.records,
+            self.operator,
+            self.returning,
+        )
+    }
+}
+
+impl<T, U, Op> BatchInsertStatement<T, U, Op> {
+    /// Specify what expression is returned after execution of the `insert`.
+    /// # Examples
+    ///
+    /// ### Inserting records:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let new_users = vec![
+    ///     NewUser { name: "Timmy".to_string(), },
+    ///     NewUser { name: "Jimmy".to_string(), },
+    /// ];
+    ///
+    /// let inserted_names = diesel::insert(&new_users)
+    ///     .into(users)
+    ///     .returning(name)
+    ///     .get_results(&connection);
+    /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    pub fn returning<E>(self, returns: E)
+        -> BatchInsertStatement<T, U, Op, ReturningClause<E>>
+    {
+        BatchInsertStatement {
+            operator: self.operator,
+            target: self.target,
+            records: self.records,
+            returning: ReturningClause(returns),
+        }
+    }
+}
+
+impl<'a, T, U, Op, Ret, Conn, DB> ExecuteDsl<Conn, DB>
+    for BatchInsertStatement<T, &'a [U], Op, Ret> where
+        Conn: Connection<Backend=DB>,
+        DB: Backend + SupportsDefaultKeyword,
+        InsertStatement<T, &'a [U], Op, Ret>: ExecuteDsl<Conn>,
+{
+    fn execute(self, conn: &Conn) -> QueryResult<usize> {
+        if self.records.is_empty() {
+            Ok(0)
+        } else {
+            self.into_insert_statement().execute(conn)
+        }
+    }
+}
+
+#[cfg(feature="sqlite")]
+impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
+    for BatchInsertStatement<T, &'a [U], Op, Ret> where
+        InsertStatement<T, &'a U, Op, Ret>: ExecuteDsl<::sqlite::SqliteConnection>,
+        T: Copy,
+        Op: Copy,
+        Ret: Copy,
+{
+    fn execute(self, conn: &::sqlite::SqliteConnection) -> QueryResult<usize> {
+        let mut result = 0;
+        for record in self.records {
+            result += InsertStatement::new(self.target, record, self.operator, self.returning)
+                .execute(conn)?;
+        }
+        Ok(result)
+    }
+}
+
+impl<'a, T, U, Op, Ret, Conn, ST> LoadDsl<Conn>
+    for BatchInsertStatement<T, &'a [U], Op, Ret> where
+        Conn: Connection,
+        Conn::Backend: HasSqlType<ST>,
+        InsertStatement<T, &'a [U], Op, Ret>: LoadDsl<Conn, SqlType=ST>,
+{
+    type SqlType = ST;
+
+    fn load<'b, V>(self, conn: &Conn) -> QueryResult<Vec<V>> where
+        V: Queryable<Self::SqlType, Conn::Backend> + 'b,
+    {
+        if self.records.is_empty() {
+            Ok(Vec::new())
+        } else {
+            self.into_insert_statement().load(conn)
+        }
+    }
+
+    fn get_result<V>(self, conn: &Conn) -> QueryResult<V> where
+        V: Queryable<Self::SqlType, Conn::Backend>,
+    {
+        if self.records.is_empty() {
+            Err(::result::Error::NotFound)
+        } else {
+            self.into_insert_statement().get_result(conn)
         }
     }
 }

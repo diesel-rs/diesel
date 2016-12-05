@@ -166,32 +166,16 @@ pub fn connection_without_transaction() -> TestConnection {
     connection
 }
 
-use diesel::query_builder::insert_statement::{InsertStatement, Insert};
-use diesel::query_builder::QueryFragment;
+use diesel::query_builder::insert_statement::IntoInsertStatement;
 
-#[cfg(not(feature = "sqlite"))]
 pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
     -> usize where
         T: Table,
         Conn: Connection,
-        &'a [U]: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a [U], Insert>: QueryFragment<Conn::Backend>,
+        &'a [U]: IntoInsertStatement<T>,
+        <&'a [U] as IntoInsertStatement<T>>::InsertStatement: ExecuteDsl<Conn>,
 {
     insert(records).into(table).execute(connection).unwrap()
-}
-
-#[cfg(feature = "sqlite")]
-pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
-    -> usize where
-        T: Table + Copy,
-        Conn: Connection,
-        &'a U: Insertable<T, Conn::Backend>,
-        InsertStatement<T, &'a U, Insert>: QueryFragment<Conn::Backend>,
-{
-    for record in records {
-        insert(record).into(table).execute(connection).unwrap();
-    }
-    records.len()
 }
 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
