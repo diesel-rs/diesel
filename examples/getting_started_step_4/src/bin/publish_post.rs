@@ -1,13 +1,13 @@
-extern crate diesel_demo;
+extern crate diesel_demo_step_4;
 extern crate diesel;
 
 use diesel::prelude::*;
-use diesel_demo::*;
-use diesel_demo::models::Post;
+use diesel_demo_step_4::*;
+use diesel_demo_step_4::models::Post;
 use std::env::args;
 
 fn main() {
-    use diesel_demo::schema::posts::dsl::{posts, published};
+    use diesel_demo_step_4::schema::posts::dsl::{posts, published};
 
     let id = args().nth(1).expect("publish_post requires a post id")
         .parse::<i32>().expect("Invalid ID");

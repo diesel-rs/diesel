@@ -8,7 +8,7 @@ export DATABASE_URL="postgres://localhost/diesel_examples"
 
 for dir in $(find . -type d -maxdepth 1 -mindepth 1); do
   cd $dir
-  ../../diesel_cli/target/debug/diesel database reset
+  ../../target/debug/diesel database reset
   cargo build
   cd ..
 done
