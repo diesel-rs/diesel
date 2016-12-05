@@ -8,7 +8,7 @@ pub use schema::{connection, TestConnection};
 pub use diesel::*;
 pub use diesel::result::Error;
 pub use diesel::data_types::*;
-pub use diesel::types::{HasSqlType, ToSql, Nullable};
+pub use diesel::types::{HasSqlType, ToSql};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
@@ -53,7 +53,7 @@ macro_rules! test_round_trip {
 
             fn option_round_trip(val: Option<$tpe>) -> bool {
                 let val = val.map($map_fn);
-                test_type_round_trips::<Nullable<types::$sql_type>, _>(val)
+                test_type_round_trips::<types::Nullable<types::$sql_type>, _>(val)
             }
 
             #[cfg(feature = "postgres")]
@@ -137,7 +137,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "postgres")]
 mod unstable_types {
-    use super::*;
+    use super::{quickcheck, types, test_type_round_trips};
     use std::time::*;
 
     fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {
