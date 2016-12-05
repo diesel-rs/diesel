@@ -261,7 +261,7 @@ fn struct_with_option_fields_treated_as_null() {
 }
 
 #[test]
-#[should_panic="There are no changes to save."]
+#[should_panic(expected="There are no changes to save.")]
 fn update_with_no_changes() {
     #[derive(AsChangeset)]
     #[table_name="users"]
