@@ -1,9 +1,10 @@
-use backend::{Backend, SupportsReturningClause};
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use persistable::{Insertable, InsertValues};
 use query_builder::*;
 use query_source::Table;
 use result::QueryResult;
+use super::returning_clause::*;
 
 /// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
 /// is call `into`.
@@ -30,23 +31,26 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
             operator: self.operator,
             target: target,
             records: self.records,
+            returning: NoReturningClause,
         }
     }
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct InsertStatement<T, U, Op> {
+pub struct InsertStatement<T, U, Op, Ret=NoReturningClause> {
     operator: Op,
     target: T,
     records: U,
+    returning: Ret,
 }
 
-impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
+impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret> where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: Insertable<T, DB> + Copy,
     Op: QueryFragment<DB>,
+    Ret: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         let values = self.records.values();
@@ -57,6 +61,7 @@ impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
         try!(values.column_names(out));
         out.push_sql(") VALUES ");
         try!(values.values_clause(out));
+        try!(self.returning.to_sql(out));
         Ok(())
     }
 
@@ -65,6 +70,7 @@ impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
         try!(self.operator.collect_binds(out));
         try!(self.target.from_clause().collect_binds(out));
         try!(values.values_bind_params(out));
+        try!(self.returning.collect_binds(out));
         Ok(())
     }
 
@@ -73,25 +79,30 @@ impl<T, U, Op, DB> QueryFragment<DB> for InsertStatement<T, U, Op> where
     }
 }
 
-impl_query_id!(noop: InsertStatement<T, U, Op>);
+impl_query_id!(noop: InsertStatement<T, U, Op, Ret>);
 
-impl<T, U, Op> AsQuery for InsertStatement<T, U, Op> where
+impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause> where
     T: Table,
-    InsertQuery<T::AllColumns, InsertStatement<T, U, Op>>: Query,
+    InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
-    type Query = InsertQuery<T::AllColumns, Self>;
+    type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
 
     fn as_query(self) -> Self::Query {
-        InsertQuery {
-            returning: T::all_columns(),
-            statement: self,
-        }
+        self.returning(T::all_columns())
     }
 }
 
-impl<T, U, Op> InsertStatement<T, U, Op> {
+impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>> where
+    Ret: Expression + SelectableExpression<T> + NonAggregate,
+{
+    type SqlType = Ret::SqlType;
+}
+
+impl<T, U, Op> InsertStatement<T, U, Op, NoReturningClause> {
     /// Specify what expression is returned after execution of the `insert`.
+    /// This method can only be called once.
+    ///
     /// # Examples
     ///
     /// ### Inserting a record:
@@ -124,54 +135,18 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> InsertQuery<E, Self> where
-        E: Expression + SelectableExpression<T>,
-        InsertQuery<E, Self>: Query,
+    pub fn returning<E>(self, returns: E)
+        -> InsertStatement<T, U, Op, ReturningClause<E>> where
+            InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     {
-        InsertQuery {
-            returning: returns,
-            statement: self,
+        InsertStatement {
+            operator: self.operator,
+            target: self.target,
+            records: self.records,
+            returning: ReturningClause(returns),
         }
     }
 }
-
-#[doc(hidden)]
-#[derive(Debug, Copy, Clone)]
-pub struct InsertQuery<T, U> {
-    returning: T,
-    statement: U,
-}
-
-impl<T, U> Query for InsertQuery<T, U> where
-    T: Expression + NonAggregate,
-{
-    type SqlType = T::SqlType;
-}
-
-impl<T, U, DB> QueryFragment<DB> for InsertQuery<T, U> where
-    DB: Backend + SupportsReturningClause,
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
-{
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.statement.to_sql(out));
-        out.push_sql(" RETURNING ");
-        try!(self.returning.to_sql(out));
-        Ok(())
-    }
-
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.statement.collect_binds(out));
-        try!(self.returning.collect_binds(out));
-        Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
-    }
-}
-
-impl_query_id!(noop: InsertQuery<T, U>);
 
 #[derive(Debug, Copy, Clone)]
 pub struct Insert;

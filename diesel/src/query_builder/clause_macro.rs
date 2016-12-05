@@ -1,5 +1,9 @@
 macro_rules! simple_clause {
     ($no_clause:ident, $clause:ident, $sql:expr) => {
+        simple_clause!($no_clause, $clause, $sql, backend_bounds = );
+    };
+
+    ($no_clause:ident, $clause:ident, $sql:expr, backend_bounds = $($backend_bounds:ident),*) => {
         use backend::Backend;
         use result::QueryResult;
         use super::{QueryFragment, QueryBuilder, BuildQueryResult};
@@ -27,7 +31,7 @@ macro_rules! simple_clause {
         pub struct $clause<Expr>(pub Expr);
 
         impl<Expr, DB> QueryFragment<DB> for $clause<Expr> where
-            DB: Backend,
+            DB: Backend $(+ $backend_bounds)*,
             Expr: QueryFragment<DB>,
         {
             fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {

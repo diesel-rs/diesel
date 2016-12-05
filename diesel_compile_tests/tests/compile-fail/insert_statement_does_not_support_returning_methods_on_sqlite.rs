@@ -51,6 +51,6 @@ fn main() {
     insert(&NewUser("Hello".into()))
         .into(users::table)
         .returning(users::name)
-        .get_result(&connection);
+        .get_result::<String>(&connection);
     //~^ ERROR: SupportsReturningClause
 }
