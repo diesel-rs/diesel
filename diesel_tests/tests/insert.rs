@@ -64,16 +64,18 @@ fn insert_records_with_custom_returning_clause() {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))]
 fn batch_insert_with_defaults() {
     use schema::users::table as users;
+    use schema_dsl::*;
+
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    connection.execute("CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR NOT NULL,
-        hair_color VARCHAR NOT NULL DEFAULT 'Green'
-    )").unwrap();
+    create_table("users", (
+        integer("id").primary_key().auto_increment(),
+        string("name").not_null(),
+        string("hair_color").not_null().default("'Green'"),
+    )).execute(&connection).unwrap();
+
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
@@ -181,4 +183,31 @@ fn insert_on_conflict_replace() {
     let expected_names = vec!["Jim".into(), "Tess".into()];
     let names = users.select(name).order(id).load::<String>(&connection);
     assert_eq!(Ok(expected_names), names);
+}
+
+#[test]
+fn insert_empty_slice() {
+    let connection = connection();
+
+    let inserted_records = insert(&Vec::<NewUser>::new())
+        .into(users::table)
+        .execute(&connection);
+
+    assert_eq!(Ok(0), inserted_records);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn insert_empty_slice_with_returning() {
+    let connection = connection();
+
+    let insert_one = insert(&Vec::<NewUser>::new())
+        .into(users::table)
+        .get_result::<User>(&connection);
+    let insert_all = insert(&Vec::<NewUser>::new())
+        .into(users::table)
+        .get_results::<User>(&connection);
+
+    assert_eq!(Ok(None), insert_one.optional());
+    assert_eq!(Ok(vec![]), insert_all);
 }
