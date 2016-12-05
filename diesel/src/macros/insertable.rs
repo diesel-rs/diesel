@@ -201,10 +201,8 @@ macro_rules! _Insertable {
         }
 
     } __diesel_parse_as_item! {
-        impl<$($lifetime,)* 'insert, Op, Ret> $crate::query_builder::insert_statement::IntoInsertStatement<$table_name::table, Op, Ret>
-            for &'insert $struct_ty where
-                $('insert: $lifetime,)*
-                $crate::query_builder::insert_statement::InsertStatement<$table_name::table, &'insert $struct_ty, Op, Ret>: $crate::query_builder::AsQuery,
+        impl<$($lifetime: 'insert,)* 'insert, Op, Ret> $crate::query_builder::insert_statement::IntoInsertStatement<$table_name::table, Op, Ret>
+            for &'insert $struct_ty
         {
             type InsertStatement = $crate::query_builder::insert_statement::InsertStatement<$table_name::table, Self, Op, Ret>;
 
