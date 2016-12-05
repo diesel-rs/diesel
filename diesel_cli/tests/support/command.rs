@@ -70,6 +70,7 @@ impl CommandResult {
 
 fn path_to_diesel_cli() -> PathBuf {
     Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap())
+        .parent().unwrap()
         .join("target")
         .join("debug")
         .join("diesel")
