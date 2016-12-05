@@ -47,6 +47,10 @@ macro_rules! fold_function {
             fn is_safe_to_cache_prepared(&self) -> bool {
                 self.target.is_safe_to_cache_prepared()
             }
+
+            fn is_empty(&self) -> bool {
+                self.target.is_empty()
+            }
         }
 
         impl_query_id!($type_name<T>);

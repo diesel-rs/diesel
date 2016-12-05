@@ -156,6 +156,10 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
+
+                fn is_empty(&self) -> bool {
+                    false
+                }
             }
 
             #[cfg(feature = "sqlite")]
@@ -216,6 +220,10 @@ macro_rules! tuple_impls {
                         }
                     )+
                     Ok(())
+                }
+
+                fn is_empty(&self) -> bool {
+                    false
                 }
             }
 

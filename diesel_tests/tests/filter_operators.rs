@@ -139,6 +139,52 @@ fn filter_by_in() {
         users.filter(name.eq_any(borrowed_names)).load(&connection).unwrap());
 }
 
+#[test]
+fn filter_by_in_empty() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_3_users();
+
+    let owned_names = Vec::<&str>::new();
+    let borrowed_names: &[&str] = &[];
+    print_sql!(select(name.eq_any(owned_names.clone())));
+    assert_eq!(Vec::<User>::new(),
+        users.filter(name.eq_any(owned_names)).load(&connection).unwrap());
+    assert_eq!(Vec::<User>::new(),
+        users.filter(name.eq_any(borrowed_names)).load(&connection).unwrap());
+}
+
+#[test]
+fn filter_by_in_empty_and() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_3_users();
+
+    let owned_names = Vec::<&str>::new();
+    let borrowed_names: &[&str] = &[];
+    print_sql!(select(name.eq_any(owned_names.clone()).and(name.eq("Jim"))));
+    assert_eq!(Vec::<User>::new(),
+        users.filter(name.eq_any(owned_names).and(name.eq("Jim"))).load(&connection).unwrap());
+    assert_eq!(Vec::<User>::new(),
+        users.filter(name.eq_any(borrowed_names).and((name.eq("Jim")))).load(&connection).unwrap());
+}
+
+#[test]
+fn filter_by_in_empty_or() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_3_users();
+    let r = vec![User::new(3, "Jim")];
+
+    let owned_names = Vec::<&str>::new();
+    let borrowed_names: &[&str] = &[];
+    print_sql!(select(name.eq_any(owned_names.clone()).or(name.eq("Jim"))));
+    assert_eq!(r,
+        users.filter(name.eq_any(owned_names).or(name.eq("Jim"))).load(&connection).unwrap());
+    assert_eq!(r,
+        users.filter(name.eq_any(borrowed_names).or(name.eq("Jim"))).load(&connection).unwrap());
+}
+
 fn connection_with_3_users() -> TestConnection {
     let connection = connection_with_sean_and_tess_in_users_table();
     connection.execute("INSERT INTO users (id, name) VALUES (3, 'Jim')").unwrap();

@@ -93,6 +93,10 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
         self.left.is_safe_to_cache_prepared() &&
             self.values.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
 }
 
 impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
@@ -167,9 +171,13 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
     T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0[0].to_sql(out));
-        for value in self.0[1..].iter() {
-            out.push_sql(", ");
+        let mut first = true;
+        for value in self.0.iter() {
+            if first {
+                first = false;
+            } else {
+                out.push_sql(", ");
+            }
             try!(value.to_sql(out));
         }
         Ok(())
@@ -184,6 +192,10 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         false
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 
@@ -219,6 +231,10 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.values.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.values.is_empty()
     }
 }
 

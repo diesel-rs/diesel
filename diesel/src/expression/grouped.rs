@@ -26,6 +26,10 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.0.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl_query_id!(Grouped<T>);

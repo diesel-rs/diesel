@@ -27,6 +27,7 @@ pub trait InsertValues<DB: Backend> {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
+    fn is_empty(&self) -> bool;
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -96,5 +97,9 @@ impl<'a, T, U: 'a, DB> InsertValues<DB> for BatchInsertValues<'a, T, U, DB> wher
             try!(record.values().values_bind_params(out));
         }
         Ok(())
+    }
+
+    fn is_empty(&self) -> bool {
+        self.values.is_empty()
     }
 }

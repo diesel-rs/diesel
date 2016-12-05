@@ -42,6 +42,10 @@ impl<T, U, DB> QueryFragment<DB> for DeleteStatement<T, U> where
         self.0.table.from_clause().is_safe_to_cache_prepared() &&
             self.0.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true)
     }
+
+    fn is_empty(&self) -> bool {
+        self.0.where_clause.as_ref().map(|w| w.is_empty()).unwrap_or(false)
+    }
 }
 
 impl_query_id!(noop: DeleteStatement<T, U>);
@@ -137,6 +141,10 @@ impl<T, U, DB> QueryFragment<DB> for DeleteQuery<T, U> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.statement.is_safe_to_cache_prepared() &&
             self.returning.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.statement.is_empty()
     }
 }
 

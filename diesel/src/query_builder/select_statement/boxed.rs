@@ -107,6 +107,10 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
             self.limit.is_safe_to_cache_prepared() &&
             self.offset.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.where_clause.as_ref().map(|w| w.is_empty()).unwrap_or(false)
+    }
 }
 
 impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {

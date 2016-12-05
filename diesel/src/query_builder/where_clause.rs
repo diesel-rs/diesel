@@ -66,6 +66,10 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.0.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl_query_id!(WhereClause<T>);

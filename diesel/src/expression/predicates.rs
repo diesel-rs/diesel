@@ -1,6 +1,10 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! infix_predicate_body {
+    ($name:ident, $operator:expr) => {
+        infix_predicate_body!($name, $operator, $crate::types::Bool);
+    };
+
     ($name:ident, $operator:expr, $return_type:ty) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name<T, U> {
@@ -244,7 +248,7 @@ macro_rules! postfix_expression {
     }
 }
 
-infix_predicate!(And, " AND ");
+infix_predicate_body!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
 infix_predicate!(Escape, " ESCAPE ");
 infix_predicate!(Eq, " = ");
@@ -256,7 +260,7 @@ infix_predicate!(LtEq, " <= ");
 infix_predicate!(NotBetween, " NOT BETWEEN ");
 infix_predicate!(NotEq, " != ");
 infix_predicate!(NotLike, " NOT LIKE ");
-infix_predicate!(Or, " OR ");
+infix_predicate_body!(Or, " OR ");
 
 postfix_predicate!(IsNull, " IS NULL");
 postfix_predicate!(IsNotNull, " IS NOT NULL");
@@ -298,5 +302,71 @@ impl<T, U> AsChangeset for Eq<T, U> where
 
     fn as_changeset(self) -> Self {
         self
+    }
+}
+
+
+impl<T, U, DB> QueryFragment<DB> for And<T, U> where
+    DB: Backend,
+    T: QueryFragment<DB>,
+    U: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        try!(self.left.to_sql(out));
+        out.push_sql(" AND ");
+        self.right.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.left.collect_binds(out));
+        try!(self.right.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.left.is_safe_to_cache_prepared() &&
+            self.right.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.left.is_empty() || self.right.is_empty()
+    }
+}
+
+impl<T, U, DB> QueryFragment<DB> for Or<T, U> where
+    DB: Backend,
+    T: QueryFragment<DB>,
+    U: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        match (self.left.is_empty(), self.right.is_empty()){
+            (true, true) => Ok(()),
+            (true, false) =>{
+                self.right.to_sql(out)
+            },
+            (false, true) => {
+                self.left.to_sql(out)
+            },
+            (false, false) =>{
+                try!(self.left.to_sql(out));
+                out.push_sql(" OR ");
+                self.right.to_sql(out)
+            }
+        }
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.left.collect_binds(out));
+        try!(self.right.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.left.is_safe_to_cache_prepared() &&
+            self.right.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.left.is_empty() && self.right.is_empty()
     }
 }

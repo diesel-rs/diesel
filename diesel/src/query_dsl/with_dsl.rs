@@ -82,6 +82,10 @@ impl<T: QueryFragment<Pg>> QueryFragment<Pg> for PgOnly<T> {
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.0.is_safe_to_cache_prepared()
     }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 use backend::*;
@@ -97,5 +101,9 @@ impl<T: QueryFragment<Debug>> QueryFragment<Debug> for PgOnly<T> {
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.0.is_safe_to_cache_prepared()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
