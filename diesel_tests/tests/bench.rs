@@ -13,7 +13,7 @@ use self::schema::{
     users, posts, comments,
     NewUser, NewPost, NewComment,
     User, Post, Comment,
-    TestConnection, batch_insert,
+    TestConnection,
 };
 use diesel::*;
 
@@ -40,7 +40,7 @@ macro_rules! bench_trivial_query {
             let data: Vec<_> = (0..$n).map(|i| {
                 NewUser::new(&format!("User {}", i), None)
             }).collect();
-            batch_insert(&data, users::table, &conn);
+            insert(&data).into(users::table).execute(&conn).unwrap();
 
             b.iter(|| {
                 users::table.load::<User>(&conn).unwrap()
@@ -54,7 +54,7 @@ macro_rules! bench_trivial_query {
             let data: Vec<_> = (0..$n).map(|i| {
                 NewUser::new(&format!("User {}", i), None)
             }).collect();
-            batch_insert(&data, users::table, &conn);
+            insert(&data).into(users::table).execute(&conn).unwrap();
 
             b.iter(|| {
                 users::table.into_boxed().load::<User>(&conn).unwrap()
@@ -86,7 +86,7 @@ macro_rules! bench_medium_complex_query {
                 let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                 NewUser::new(&format!("User {}", i), Some(hair_color))
             }).collect();
-            batch_insert(&data, users::table, &conn);
+            insert(&data).into(users::table).execute(&conn).unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
@@ -105,7 +105,7 @@ macro_rules! bench_medium_complex_query {
                 let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                 NewUser::new(&format!("User {}", i), Some(hair_color))
             }).collect();
-            batch_insert(&data, users::table, &conn);
+            insert(&data).into(users::table).execute(&conn).unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
@@ -140,7 +140,7 @@ fn loading_associations_sequentially(b: &mut Bencher) {
         let hair_color = if i % 2 == 0 { "black" } else { "brown" };
         NewUser::new(&format!("User {}", i), Some(hair_color))
     }).collect();
-    batch_insert(&data, users::table, &conn);
+    insert(&data).into(users::table).execute(&conn).unwrap();
     let all_users = users::table.load::<User>(&conn).unwrap();
     let data: Vec<_> = all_users.iter().flat_map(|user| {
         let user_id = user.id;
@@ -149,7 +149,7 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             NewPost::new(user_id, &title, None)
         })
     }).collect();
-    batch_insert(&data, posts::table, &conn);
+    insert(&data).into(posts::table).execute(&conn).unwrap();
     let all_posts = posts::table.load::<Post>(&conn).unwrap();
     let data: Vec<_> = all_posts.iter().flat_map(|post| {
         let post_id = post.id;
@@ -161,7 +161,7 @@ fn loading_associations_sequentially(b: &mut Bencher) {
     let comment_data: Vec<_> = data.iter().map(|&(ref title, post_id)| {
         NewComment(post_id, &title)
     }).collect();
-    batch_insert(&comment_data, comments::table, &conn);
+    insert(&comment_data).into(comments::table).execute(&conn).unwrap();
 
     // ACTUAL BENCHMARK
     b.iter(|| {

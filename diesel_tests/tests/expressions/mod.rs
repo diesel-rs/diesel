@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, batch_insert, connection_with_sean_and_tess_in_users_table};
+use schema::{connection, NewUser, connection_with_sean_and_tess_in_users_table};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -79,7 +79,7 @@ fn max_returns_same_type_as_expression_being_maximized() {
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    batch_insert(data, users, &connection);
+    insert(data).into(users).execute(&connection).unwrap();
     assert_eq!(Ok("C".to_string()), source.first(&connection));
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
     assert_eq!(Ok("B".to_string()), source.first(&connection));
@@ -161,7 +161,7 @@ fn function_with_multiple_arguments() {
 
     let connection = connection();
     let new_users = vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)];
-    batch_insert(&new_users, users, &connection);
+    insert(&new_users).into(users).execute(&connection).unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
     let data = users.select(coalesce(hair_color, name))

@@ -166,18 +166,6 @@ pub fn connection_without_transaction() -> TestConnection {
     connection
 }
 
-use diesel::query_builder::insert_statement::IntoInsertStatement;
-
-pub fn batch_insert<'a, T, U: 'a, Conn>(records: &'a [U], table: T, connection: &Conn)
-    -> usize where
-        T: Table,
-        Conn: Connection,
-        &'a [U]: IntoInsertStatement<T>,
-        <&'a [U] as IntoInsertStatement<T>>::InsertStatement: ExecuteDsl<Conn>,
-{
-    insert(records).into(table).execute(connection).unwrap()
-}
-
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {

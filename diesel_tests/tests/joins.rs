@@ -220,15 +220,15 @@ fn join_through_other() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
-    batch_insert(&vec![
+    insert(&vec![
         NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
         NewPost::new(1, "Hello again!", None),
-    ], posts::table, &connection);
+    ]).into(posts::table).execute(&connection).unwrap();
     let posts = posts::table.load::<Post>(&connection).unwrap();
-    batch_insert(&vec![
+    insert(&vec![
         NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
         NewComment(posts[2].id, "Best post ever!!!")
-    ], comments::table, &connection);
+    ]).into(comments::table).execute(&connection).unwrap();
     let comments = comments::table.load::<Comment>(&connection).unwrap();
 
     let data = users.inner_join(comments::table).load(&connection)

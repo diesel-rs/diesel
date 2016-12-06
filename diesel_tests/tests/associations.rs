@@ -142,11 +142,11 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let tess = find_user_by_name("Tess", &connection);
     let jim = find_user_by_name("Jim", &connection);
     let new_posts = vec![sean.new_post("Hello", None), sean.new_post("World", None)];
-    batch_insert(&new_posts, posts::table, &connection);
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
     let new_posts = vec![tess.new_post("Hello 2", None), tess.new_post("World 2", None)];
-    batch_insert(&new_posts, posts::table, &connection);
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
     let new_posts = vec![jim.new_post("Hello 3", None), jim.new_post("World 3", None)];
-    batch_insert(&new_posts, posts::table, &connection);
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
 
     (connection, sean, tess, jim)
 }

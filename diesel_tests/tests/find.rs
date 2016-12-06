@@ -45,7 +45,10 @@ fn find_with_composite_pk() {
     let third_following = Following { user_id: 2, post_id: 1, email_notifications: false };
 
     let connection = connection();
-    batch_insert(&[first_following, second_following, third_following], followings, &connection);
+    insert(&vec![first_following, second_following, third_following])
+        .into(followings)
+        .execute(&connection)
+        .unwrap();
 
     assert_eq!(Ok(first_following), followings.find((1, 1)).first(&connection));
     assert_eq!(Ok(second_following), followings.find((1, 2)).first(&connection));

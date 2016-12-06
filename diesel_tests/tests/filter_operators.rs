@@ -91,7 +91,7 @@ fn filter_by_like() {
         NewUser::new("Tess Griffin", None),
         NewUser::new("Jim", None),
     ];
-    batch_insert(&data, users, &connection);
+    insert(&data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
     let sean = data[0].clone();
     let tess = data[1].clone();

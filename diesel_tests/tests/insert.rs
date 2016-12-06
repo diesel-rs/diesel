@@ -10,7 +10,7 @@ fn insert_records() {
         NewUser::new("Tess", None),
     ];
 
-    batch_insert(new_users, users, &connection);
+    insert(new_users).into(users).execute(&connection).unwrap();
     let actual_users = users.load::<User>(&connection).unwrap();
 
     let expected_users = vec![
@@ -127,7 +127,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         BaldUser { name: "Sean".to_string() },
         BaldUser { name: "Tess".to_string() },
     ];
-    let count = batch_insert(new_users, users, &connection);
+    let count = insert(new_users).into(users).execute(&connection).unwrap();
     let second_count = insert(&BaldUser { name: "Guy".to_string() }).into(users).execute(&connection).unwrap();
 
     assert_eq!(2, count);
@@ -154,7 +154,7 @@ fn insert_borrowed_content() {
         BorrowedUser { name: "Sean" },
         BorrowedUser { name: "Tess" },
     ];
-    batch_insert(new_users, users, &connection);
+    insert(new_users).into(users).execute(&connection).unwrap();
 
     let actual_users = users.load::<User>(&connection).unwrap();
     let expected_users = vec![

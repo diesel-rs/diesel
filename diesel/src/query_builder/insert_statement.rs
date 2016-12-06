@@ -34,7 +34,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 }
 
-pub trait IntoInsertStatement<Tab, Op=Insert, Ret=NoReturningClause> {
+pub trait IntoInsertStatement<Tab, Op, Ret> {
     type InsertStatement;
 
     fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
