@@ -101,6 +101,10 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #         ('Jim')").unwrap();
     /// let data = users.select(id).filter(name.eq_any(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    ///
+    /// // Calling `eq_any` with an empty array is the same as doing `WHERE 1=0`
+    /// let data = users.select(id).filter(name.eq_any(Vec::<String>::new()));
+    /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
     /// # }
     /// ```
     fn eq_any<T>(self, values: T) -> In<Self, T::InExpression> where
@@ -134,8 +138,13 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #         ('Jim')").unwrap();
     /// let data = users.select(id).filter(name.ne_any(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![2]), data.load(&connection));
+    ///
     /// let data = users.select(id).filter(name.ne_any(vec!["Tess"]));
     /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    ///
+    /// // Calling `ne_any` with an empty array is the same as doing `WHERE 1=1`
+    /// let data = users.select(id).filter(name.ne_any(Vec::<String>::new()));
+    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
     /// # }
     /// ```
     fn ne_any<T>(self, values: T) -> NotIn<Self, T::InExpression> where

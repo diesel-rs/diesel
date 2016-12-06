@@ -22,9 +22,27 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
   The generated module will still be called `table_1`.
 
+* Added support for batch insert on SQLite. This means that you can now pass a
+  slice or vector to [`diesel::insert`][insert] on all backends.
+
+[insert]: http://docs.diesel.rs/diesel/fn.insert.html
+
 ### Fixed
 
 * `#[derive(Identifiable)]` now works on structs with lifetimes
+
+* Attempting to insert an empty slice will no longer panic. It does not execute
+  any queries, but the result will indicate that we successfully inserted 0
+  rows.
+
+* Attempting to update a record with no changes will no longer generate invalid
+  SQL. The result of attempting to execute the query will still be an error, but
+  but it will be a `Error::QueryBuilderError`, rather than a database error.
+  This means that it will not abort the current transaction, and can be handled
+  by applications.
+
+* Calling `eq_any` or `ne_any` with an empty array no longer panics.
+  `eq_any(vec![])` will return no rows. `ne_any(vec![])` will return all rows.
 
 ## [0.8.2] - 2016-11-22
 

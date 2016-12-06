@@ -73,13 +73,17 @@ impl<T, U> NonAggregate for NotIn<T, U> where
 impl<T, U, DB> QueryFragment<DB> for In<T, U> where
     DB: Backend,
     T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
+    U: QueryFragment<DB> + MaybeEmpty,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.left.to_sql(out));
-        out.push_sql(" IN (");
-        try!(self.values.to_sql(out));
-        out.push_sql(")");
+        if self.values.is_empty() {
+            out.push_sql("1=0");
+        } else {
+            try!(self.left.to_sql(out));
+            out.push_sql(" IN (");
+            try!(self.values.to_sql(out));
+            out.push_sql(")");
+        }
         Ok(())
     }
 
@@ -120,7 +124,7 @@ use std::marker::PhantomData;
 use query_builder::SelectStatement;
 
 pub trait AsInExpression<T> {
-    type InExpression: Expression<SqlType=T>;
+    type InExpression: MaybeEmpty + Expression<SqlType=T>;
 
     fn as_in_expression(self) -> Self::InExpression;
 }
@@ -136,6 +140,10 @@ impl<I, T, ST> AsInExpression<ST> for I where
             .map(AsExpression::as_expression).collect();
         Many(expressions)
     }
+}
+
+pub trait MaybeEmpty {
+    fn is_empty(&self) -> bool;
 }
 
 impl<ST, S, F, W, O, L, Of> AsInExpression<ST>
@@ -154,6 +162,12 @@ pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {
     type SqlType = T::SqlType;
+}
+
+impl<T> MaybeEmpty for Many<T> {
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl<T, QS> SelectableExpression<QS> for Many<T> where
@@ -197,6 +211,12 @@ pub struct Subselect<T, ST> {
 
 impl<T: Expression, ST> Expression for Subselect<T, ST> {
     type SqlType = ST;
+}
+
+impl<T, ST> MaybeEmpty for Subselect<T, ST> {
+    fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where

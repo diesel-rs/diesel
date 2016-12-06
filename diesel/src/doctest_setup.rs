@@ -1,9 +1,6 @@
 extern crate dotenv;
 
-use diesel::backend;
-use diesel::persistable::{InsertValues};
 use diesel::prelude::*;
-use diesel::query_builder::{QueryBuilder, BuildQueryResult};
 use self::dotenv::dotenv;
 
 #[cfg(feature = "postgres")]
