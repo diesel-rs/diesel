@@ -122,7 +122,14 @@ pub fn get_option<'a>(
     option_name: &str,
     on_bug: fn() -> !,
 ) -> &'a str {
+    get_optional_option(options, option_name)
+        .unwrap_or_else(|| on_bug())
+}
+
+pub fn get_optional_option<'a>(
+    options: &'a [MetaItem],
+    option_name: &str,
+) -> Option<&'a str> {
     options.iter().find(|a| a.name() == option_name)
         .map(|a| str_value_of_meta_item(a, option_name))
-        .unwrap_or_else(|| on_bug())
 }

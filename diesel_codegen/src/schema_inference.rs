@@ -3,7 +3,7 @@ use quote;
 
 use diesel_codegen_shared::*;
 
-use util::{get_options_from_input, get_option};
+use util::{get_options_from_input, get_option, get_optional_option};
 
 pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     fn bug() -> ! {
@@ -13,19 +13,9 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
 
     let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
+    let schema_name = get_optional_option(&options, "schema_name");
 
-    let table_names = load_table_names(&database_url).unwrap();
-    let schema_inferences = table_names.into_iter().map(|table_name| {
-        let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
-        quote! {
-            mod #mod_ident {
-                infer_table_from_schema!(#database_url, #table_name);
-            }
-            pub use self::#mod_ident::*;
-        }
-    });
-
-    quote!(#(#schema_inferences)*)
+    infer_schema_for_schema_name(&database_url, schema_name.as_ref().map(|s| &**s))
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
@@ -51,6 +41,31 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
             #(#tokens),*,
         }
     })
+}
+
+fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>) -> quote::Tokens {
+    let table_names = load_table_names(&database_url, schema_name).unwrap();
+    let schema_inferences = table_names.into_iter().map(|table_name| {
+        let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
+        let table_name = match schema_name {
+            Some(name) => format!("{}.{}", name, table_name),
+            None => table_name,
+        };
+        quote! {
+            mod #mod_ident {
+                infer_table_from_schema!(#database_url, #table_name);
+            }
+            pub use self::#mod_ident::*;
+        }
+    });
+
+    match schema_name {
+        Some(name) => {
+            let schema_ident = syn::Ident::new(name);
+            quote! { pub mod #schema_ident { #(#schema_inferences)* } }
+        }
+        None => quote!(#(#schema_inferences)*),
+    }
 }
 
 fn column_def_tokens(

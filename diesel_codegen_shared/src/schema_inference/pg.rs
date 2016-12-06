@@ -1,5 +1,7 @@
 use diesel::*;
-use diesel::pg::PgConnection;
+use diesel::query_builder::BoxedSelectStatement;
+use diesel::types::Oid;
+use diesel::pg::{PgConnection, Pg};
 use std::error::Error;
 
 use super::data_structures::*;
@@ -43,6 +45,15 @@ table! {
     pg_class (oid) {
         oid -> Oid,
         relname -> VarChar,
+        relnamespace -> Oid,
+    }
+}
+
+// https://www.postgresql.org/docs/9.5/static/catalog-pg-namespace.html
+table! {
+    pg_namespace (oid) {
+        oid -> Oid,
+        nspname -> VarChar,
     }
 }
 
@@ -53,6 +64,12 @@ mod information_schema {
             table_schema -> VarChar,
             table_name -> VarChar,
             table_type -> VarChar,
+        }
+    }
+
+    table! {
+        information_schema.schemata (schema_name) {
+            schema_name -> VarChar,
         }
     }
 }
@@ -79,13 +96,10 @@ fn capitalize(name: &str) -> String {
 pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>> {
     use self::pg_attribute::dsl::*;
     use self::pg_type::dsl::{pg_type, typname};
-    use self::pg_class::dsl::*;
-
-    let table_oid = pg_class.select(oid).filter(relname.eq(table_name)).limit(1);
 
     pg_attribute.inner_join(pg_type)
         .select((attname, typname, attnotnull))
-        .filter(attrelid.eq_any(table_oid))
+        .filter(attrelid.eq_any(table_oid(table_name)))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
         .load(conn)
@@ -95,12 +109,9 @@ pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<
 pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<String>> {
     use self::pg_attribute::dsl::*;
     use self::pg_index::dsl::{pg_index, indisprimary, indexrelid, indrelid};
-    use self::pg_class::dsl::*;
-
-    let table_oid = pg_class.select(oid).filter(relname.eq(table_name)).limit(1);
 
     let pk_query = pg_index.select(indexrelid)
-        .filter(indrelid.eq_any(table_oid))
+        .filter(indrelid.eq_any(table_oid(table_name)))
         .filter(indisprimary.eq(true));
 
     pg_attribute.select(attname)
@@ -109,11 +120,33 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
         .load(conn)
 }
 
-pub fn load_table_names(connection: &PgConnection) -> Result<Vec<String>, Box<Error>> {
+fn table_oid<'a>(table_name: &'a str) -> BoxedSelectStatement<'a, Oid, pg_class::table, Pg> {
+    use self::pg_class::dsl::*;
+    use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
+
+    let mut parts = table_name.split('.');
+    let (schema_name, table_name) = match (parts.next(), parts.next()) {
+        (Some(schema), Some(table)) => (schema, table),
+        (Some(table), None) => ("public", table),
+        _ => panic!("Unable to load schema for {}", table_name),
+    };
+
+    let schema_oid = pg_namespace.select(nsoid).filter(nspname.eq(schema_name)).limit(1);
+    pg_class.select(oid)
+        .filter(relname.eq(table_name))
+        .filter(relnamespace.eq_any(schema_oid))
+        .limit(1)
+        .into_boxed()
+}
+
+pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
+    -> Result<Vec<String>, Box<Error>>
+{
     use self::information_schema::tables::dsl::*;
 
+    let schema_name = schema_name.unwrap_or("public");
     let query = tables.select(table_name)
-        .filter(table_schema.eq("public"))
+        .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"));
     Ok(try!(query.load(connection)))
@@ -133,7 +166,7 @@ fn skip_views() {
     connection.execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)").unwrap();
     connection.execute("CREATE VIEW a_view AS SELECT 42").unwrap();
 
-    let table_names = load_table_names(&connection).unwrap();
+    let table_names = load_table_names(&connection, None).unwrap();
 
     assert!(table_names.contains(&"a_regular_table".to_string()));
     assert!(!table_names.contains(&"a_view".to_string()));

@@ -22,8 +22,15 @@ table!{
     }
 }
 
-pub fn load_table_names(connection: &SqliteConnection) -> Result<Vec<String>, Box<Error>> {
+pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>)
+    -> Result<Vec<String>, Box<Error>>
+{
     use self::sqlite_master::dsl::*;
+
+    if !schema_name.is_none() {
+        return Err("sqlite cannot infer schema for databases other than the \
+                    main database".into());
+    }
 
     sqlite_master.select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
@@ -136,14 +143,14 @@ fn is_double(type_name: &str) -> bool {
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    assert_eq!(Vec::<String>::new(), load_table_names(&conn).unwrap());
+    assert_eq!(Vec::<String>::new(), load_table_names(&conn, None).unwrap());
 }
 
 #[test]
 fn load_table_names_includes_tables_that_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    let table_names = load_table_names(&conn).unwrap();
+    let table_names = load_table_names(&conn, None).unwrap();
     assert!(table_names.contains(&String::from("users")));
 }
 
@@ -151,7 +158,7 @@ fn load_table_names_includes_tables_that_exist() {
 fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    let table_names = load_table_names(&conn).unwrap();
+    let table_names = load_table_names(&conn, None).unwrap();
     assert!(!table_names.contains(&String::from("__diesel_metadata")));
 }
 
@@ -160,7 +167,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    let table_names = load_table_names(&conn);
+    let table_names = load_table_names(&conn, None);
     assert_eq!(vec![String::from("users")], table_names.unwrap());
 }
 
@@ -169,6 +176,19 @@ fn load_table_names_excludes_views() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
-    let table_names = load_table_names(&conn);
+    let table_names = load_table_names(&conn, None);
     assert_eq!(vec![String::from("users")], table_names.unwrap());
+}
+
+#[test]
+fn load_table_names_returns_error_when_given_schema_name() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    // We're testing the error message rather than using #[should_panic]
+    // to ensure this is returning an error and not actually panicking.
+    let table_names = load_table_names(&conn, Some("stuff"));
+    match table_names {
+        Ok(_) => panic!("Expected load_table_names to return an error"),
+        Err(e) => assert!(e.description().starts_with("sqlite cannot infer \
+            schema for databases")),
+    }
 }

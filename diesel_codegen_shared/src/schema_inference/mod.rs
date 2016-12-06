@@ -12,14 +12,16 @@ use InferConnection;
 use database_url::extract_database_url;
 pub use self::data_structures::{ColumnInformation, ColumnType};
 
-pub fn load_table_names(database_url: &str) -> Result<Vec<String>, Box<Error>> {
+pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
+    -> Result<Vec<String>, Box<Error>>
+{
     let connection = try!(establish_connection(database_url));
 
     match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(c) => sqlite::load_table_names(&c),
+        InferConnection::Sqlite(c) => sqlite::load_table_names(&c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => pg::load_table_names(&c),
+        InferConnection::Pg(c) => pg::load_table_names(&c, schema_name),
     }
 }
 
@@ -106,4 +108,3 @@ pub fn get_primary_keys(
         Ok(primary_keys)
     }
 }
-
