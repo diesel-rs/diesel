@@ -13,7 +13,8 @@ pub struct In<T, U> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct NotIn<T, U> {
-    in_expr: In<T, U>
+    left: T,
+    values: U,
 }
 
 pub type EqAny<T, U> = In<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
@@ -31,7 +32,8 @@ impl<T, U> In<T, U> {
 impl<T, U> NotIn<T, U> {
     pub fn new(left: T, values: U) -> Self {
         NotIn {
-            in_expr: In::new(left, values),
+            left: left,
+            values: values,
         }
     }
 }
@@ -43,7 +45,9 @@ impl<T, U> Expression for In<T, U> where
     type SqlType = Bool;
 }
 
-impl<T, U> Expression for NotIn<T, U> where In<T, U>: Expression,
+impl<T, U> Expression for NotIn<T, U> where
+    T: Expression,
+    U: Expression<SqlType=T::SqlType>,
 {
     type SqlType = Bool;
 }
@@ -56,7 +60,9 @@ impl<T, U, QS> SelectableExpression<QS> for In<T, U> where
 }
 
 impl<T, U, QS> SelectableExpression<QS> for NotIn<T, U> where
-    In<T, U>: SelectableExpression<QS>,
+    NotIn<T, U>: Expression,
+    T: SelectableExpression<QS>,
+    U: SelectableExpression<QS>,
 {
 }
 
@@ -101,19 +107,30 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
 
 impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
     DB: Backend,
-    In<T, U>: QueryFragment<DB>,
+    T: QueryFragment<DB>,
+    U: QueryFragment<DB> + MaybeEmpty,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_sql("NOT ");
-        self.in_expr.to_sql(out)
+        if self.values.is_empty() {
+            out.push_sql("1=1");
+        } else {
+            try!(self.left.to_sql(out));
+            out.push_sql(" NOT IN (");
+            try!(self.values.to_sql(out));
+            out.push_sql(")");
+        }
+        Ok(())
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.in_expr.collect_binds(out)
+        try!(self.left.collect_binds(out));
+        try!(self.values.collect_binds(out));
+        Ok(())
     }
 
     fn is_safe_to_cache_prepared(&self) -> bool {
-        self.in_expr.is_safe_to_cache_prepared()
+        self.left.is_safe_to_cache_prepared() &&
+            self.values.is_safe_to_cache_prepared()
     }
 }
 
