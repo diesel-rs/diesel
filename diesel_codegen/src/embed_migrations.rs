@@ -15,7 +15,7 @@ pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
     }
 
     let options = get_options_from_input(&input.attrs, bug);
-    let migrations_path_opt = options.map(|o| get_option(&o, "migrations_path", bug));
+    let migrations_path_opt = options.as_ref().map(|o| get_option(o, "migrations_path", bug));
     let migrations_expr = migration_directory_from_given_path(migrations_path_opt)
         .and_then(|path| migration_literals_from_path(&path));
     let migrations_expr = match migrations_expr {
@@ -64,7 +64,7 @@ pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
         use self::diesel::connection::SimpleConnection;
         use std::io;
 
-        const ALL_MIGRATIONS: &'static [&'static Migration] = &[#(migrations_expr),*];
+        const ALL_MIGRATIONS: &'static [&'static Migration] = &[#(#migrations_expr),*];
 
         #embedded_migration_def
 
@@ -82,7 +82,7 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<E
 fn migration_literal_from_path(path: &Path) -> Result<quote::Tokens, Box<Error>> {
     let version = try!(version_from_path(path));
     let sql_file = path.join("up.sql");
-    let sql_file_path = sql_file.to_string_lossy();
+    let sql_file_path = sql_file.to_str();
 
     Ok(quote!(&EmbeddedMigration {
         version: #version,

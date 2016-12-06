@@ -64,7 +64,7 @@ fn single_arg_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a Ident {
                 return usage_err();
             }
             match items[0] {
-                MetaItem::Word(ref name) => name,
+                NestedMetaItem::MetaItem(MetaItem::Word(ref name)) => name,
                 _ => usage_err(),
             }
         }
@@ -102,11 +102,16 @@ pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
 }
 
 pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
-    -> Option<&[MetaItem]>
+    -> Option<Vec<MetaItem>>
 {
     let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
     match options {
-        Some(&MetaItem::List(_, ref options)) => Some(options),
+        Some(&MetaItem::List(_, ref options)) => {
+            Some(options.iter().map(|o| match o {
+                &NestedMetaItem::MetaItem(ref m) => m.clone(),
+                _ => on_bug(),
+            }).collect())
+        }
         Some(_) => on_bug(),
         None => None,
     }

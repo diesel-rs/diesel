@@ -1,16 +1,9 @@
-use syn::{Ident, Ty, Path, PathSegment};
+use syn::{Ident, Ty, Path};
 
 pub fn ty_ident(ident: Ident) -> Ty {
-    ty_path(path_ident(ident))
+    ty_path(ident.into())
 }
 
 pub fn ty_path(path: Path) -> Ty {
     Ty::Path(None, path)
-}
-
-pub fn path_ident(ident: Ident) -> Path {
-    Path {
-        global: false,
-        segments: vec![PathSegment::ident(ident)],
-    }
 }

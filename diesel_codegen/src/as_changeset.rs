@@ -26,9 +26,9 @@ pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
             table_name = #table_name,
             treat_none_as_null = #treat_none_as_null,
             struct_ty = #struct_ty,
-            lifetimes = (#(lifetimes),*),
+            lifetimes = (#(#lifetimes),*),
         ),
-        fields = [#(attrs)*],
+        fields = [#(#attrs)*],
     })
 }
 
@@ -47,7 +47,7 @@ fn treat_none_as_null(attrs: &[syn::Attribute]) -> bool {
                 usage_err();
             }
             match values[0] {
-                syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _))
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _)))
                     if name == "treat_none_as_null" => value == "true",
                 _ => usage_err(),
             }

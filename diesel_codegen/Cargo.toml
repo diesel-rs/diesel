@@ -10,8 +10,8 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
-syn = "0.8.5"
-quote = "0.2.1"
+syn = "0.10.3"
+quote = "0.3.10"
 diesel = { version = "0.8.0", default-features = false }
 diesel_codegen_shared = { version = "0.8.0", default-features = false }
 

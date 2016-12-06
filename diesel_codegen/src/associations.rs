@@ -20,7 +20,7 @@ pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
         }
     }
 
-    quote!(#(derived_associations)*)
+    quote!(#(#derived_associations)*)
 }
 
 fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Tokens {
@@ -39,7 +39,7 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
             foreign_key_name = #foreign_key_name,
             child_table_name = #child_table_name,
         ),
-        fields = [#(fields)*],
+        fields = [#(#fields)*],
     })
 }
 
@@ -56,7 +56,7 @@ fn expand_has_many(model: &Model, options: AssociationOptions) -> quote::Tokens 
             child_table = #child_table_name::table,
             foreign_key = #child_table_name::#foreign_key_name,
         ),
-        fields = [#(fields)*],
+        fields = [#(#fields)*],
     })
 }
 
@@ -75,10 +75,15 @@ fn build_association_options(
     match attr.value {
         syn::MetaItem::List(_, ref options) if options.len() >= 1 => {
             let association_name = match options[0] {
-                syn::MetaItem::Word(ref name) => name.clone(),
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref name)) => name.clone(),
                 _ => return usage_error,
             };
-            let foreign_key_name = options.iter().find(|a| a.name() == "foreign_key")
+            let foreign_key_name = options.iter()
+                .filter_map(|o| match o {
+                    &syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
+                    _ => None
+                })
+                .find(|a| a.name() == "foreign_key")
                 .map(|a| str_value_of_meta_item(a, "foreign_key"))
                 .map(syn::Ident::new);
 
