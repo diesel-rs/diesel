@@ -46,6 +46,17 @@ table! {
     }
 }
 
+mod information_schema {
+    table! {
+        information_schema.tables (table_catalog, table_schema, table_name) {
+            table_catalog -> VarChar,
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            table_type -> VarChar,
+        }
+    }
+}
+
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with("_");
     let tpe = if is_array {
@@ -99,14 +110,12 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
 }
 
 pub fn load_table_names(connection: &PgConnection) -> Result<Vec<String>, Box<Error>> {
-    use diesel::expression::dsl::sql;
+    use self::information_schema::tables::dsl::*;
 
-    let query = select(sql::<types::VarChar>("table_name FROM information_schema.tables"))
-        .filter(sql::<types::Bool>("\
-            table_schema = 'public' AND \
-            table_name NOT LIKE '\\_\\_%' AND \
-            table_type LIKE 'BASE TABLE'\
-        "));
+    let query = tables.select(table_name)
+        .filter(table_schema.eq("public"))
+        .filter(table_name.not_like("\\_\\_%"))
+        .filter(table_type.like("BASE TABLE"));
     Ok(try!(query.load(connection)))
 }
 
