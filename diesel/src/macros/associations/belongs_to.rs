@@ -21,13 +21,13 @@
 /// pub struct User {
 ///     id: i32,
 /// }
-/// # Identifiable! { #[table_name(users)] struct User { id: i32, } }
+/// # impl_Identifiable! { #[table_name(users)] struct User { id: i32, } }
 ///
 /// pub struct Post {
 ///     id: i32,
 ///     user_id: i32,
 /// }
-/// # Identifiable! { #[table_name(posts)] struct Post { id: i32, user_id: i32, } }
+/// # impl_Identifiable! { #[table_name(posts)] struct Post { id: i32, user_id: i32, } }
 ///
 /// BelongsTo! {
 ///     (User, foreign_key = user_id)

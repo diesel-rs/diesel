@@ -66,7 +66,7 @@ impl NewUser {
     }
 }
 
-Insertable! {
+impl_Insertable! {
     (users)
     struct NewUser {
         name: String,

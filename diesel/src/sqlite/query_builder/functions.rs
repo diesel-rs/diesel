@@ -22,7 +22,7 @@ use super::nodes::Replace;
 /// #     name: &'a str,
 /// # }
 /// #
-/// # Insertable! {
+/// # impl_Insertable! {
 /// #     (users)
 /// #     struct User<'a> {
 /// #         id: i32,

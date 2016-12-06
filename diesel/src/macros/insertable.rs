@@ -14,7 +14,7 @@
 ///     hair_color: &'a str,
 /// }
 ///
-/// Insertable! {
+/// impl_Insertable! {
 ///     (users)
 ///     struct NewUser<'a> {
 ///         name: &'a str,
@@ -48,7 +48,7 @@
 /// # table! { users { id -> Integer, name -> VarChar, hair_color -> Nullable<VarChar>, } }
 /// struct NewUser<'a>(&'a str, Option<&'a str>);
 ///
-/// Insertable! {
+/// impl_Insertable! {
 ///     (users)
 ///     struct NewUser<'a>(
 ///         #[column_name(name)]
@@ -60,22 +60,14 @@
 /// # fn main() {}
 /// ```
 #[macro_export]
-macro_rules! Insertable {
-    ($($args:tt)*) => {
-        _Insertable!($($args)*);
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! _Insertable {
+macro_rules! impl_Insertable {
     // Strip meta items, pub (if present) and struct from definition
     (
         ($table_name:ident)
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        _Insertable! {
+        impl_Insertable! {
             ($table_name)
             $($body)*
         }
@@ -94,7 +86,7 @@ macro_rules! _Insertable {
                 struct_ty = $struct_name<$($lifetime),*>,
                 lifetimes = ($($lifetime),*),
             ),
-            callback = _Insertable,
+            callback = impl_Insertable,
             body = $body,
         }
     };
@@ -112,7 +104,7 @@ macro_rules! _Insertable {
                 struct_ty = $struct_name,
                 lifetimes = (),
             ),
-            callback = _Insertable,
+            callback = impl_Insertable,
             body = $body,
         }
     };
@@ -130,7 +122,7 @@ macro_rules! _Insertable {
             $($rest:tt)*
         })+],
     ) => {
-        _Insertable! {
+        impl_Insertable! {
             $($headers)*
             self_to_columns = $struct_name($(ref $column_name),+),
             columns = ($($column_name, $field_ty, $field_kind),+),
@@ -151,7 +143,7 @@ macro_rules! _Insertable {
             $($rest:tt)*
         })+],
     ) => {
-        _Insertable! {
+        impl_Insertable! {
             $($headers)*
             self_to_columns = $struct_name { $($field_name: ref $column_name),+ },
             columns = ($($column_name, $field_ty, $field_kind),+),
@@ -257,7 +249,7 @@ mod tests {
             hair_color: String,
         }
 
-        Insertable! {
+        impl_Insertable! {
             (users)
             struct NewUser {
                 name: String,
@@ -288,7 +280,7 @@ mod tests {
                 __diesel_parse_as_item!($($struct_def)*);
             #[test]
             fn $test_name() {
-                Insertable! {
+                impl_Insertable! {
                     (users)
                     $($struct_def)*
                 }
@@ -361,7 +353,7 @@ mod tests {
             hair_color: String,
         }
 
-        Insertable! {
+        impl_Insertable! {
             (users)
             struct NewUser {
                 #[column_name(name)]
@@ -387,7 +379,7 @@ mod tests {
             my_hair_color: Option<String>,
         }
 
-        Insertable! {
+        impl_Insertable! {
             (users)
             struct NewUser {
                 #[column_name(name)]
@@ -414,7 +406,7 @@ mod tests {
             Option<&'a str>,
         );
 
-        Insertable! {
+        impl_Insertable! {
             (users)
             struct NewUser<'a>(
                 #[column_name(name)]
@@ -441,7 +433,7 @@ mod tests {
             Option<&'a str>
         );
 
-        Insertable! {
+        impl_Insertable! {
             (users)
             struct NewUser<'a>(
                 #[column_name(name)]
@@ -474,7 +466,7 @@ mod tests {
     #[test]
     fn insertable_with_slice_of_borrowed() {
         struct NewPost<'a> { tags: &'a [&'a str], }
-        Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
+        impl_Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
 
         let conn = ::test_helpers::pg_helpers::connection();
         conn.execute("DROP TABLE IF EXISTS posts").unwrap();

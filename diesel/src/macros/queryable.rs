@@ -12,7 +12,7 @@
 ///     hair_color: Option<String>,
 /// }
 ///
-/// Queryable! {
+/// impl_Queryable! {
 ///     struct User {
 ///         name: String,
 ///         hair_color: Option<String>,
@@ -21,18 +21,10 @@
 /// # fn main() {}
 /// ```
 #[macro_export]
-macro_rules! Queryable {
-    ($($args:tt)*) => {
-        _Queryable!($($args)*);
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! _Queryable {
+macro_rules! impl_Queryable {
     // Strip empty argument list if given (Passed by custom_derive macro)
     (() $($body:tt)*) => {
-        _Queryable! {
+        impl_Queryable! {
             $($body)*
         }
     };
@@ -42,7 +34,7 @@ macro_rules! _Queryable {
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        _Queryable! {
+        impl_Queryable! {
             $($body)*
         }
     };
@@ -62,7 +54,7 @@ macro_rules! _Queryable {
             $($rest:tt)*
         })+],
     ) => {
-        _Queryable! {
+        impl_Queryable! {
             $($headers)*
             row_ty = ($($field_ty,)+),
             row_pat = ($($field_name,)+),
@@ -82,7 +74,7 @@ macro_rules! _Queryable {
             $($rest:tt)*
         })+],
     ) => {
-        _Queryable! {
+        impl_Queryable! {
             $headers,
             fields = [$({
                 field_ty: $field_ty,
@@ -104,7 +96,7 @@ macro_rules! _Queryable {
             $($rest:tt)*
         })+],
     ) => {
-        _Queryable! {
+        impl_Queryable! {
             $($headers)*
             row_ty = ($($field_ty,)+),
             row_pat = ($($field_kind,)+),
@@ -146,7 +138,7 @@ macro_rules! _Queryable {
                 generics = ($($generics),*),
                 lifetimes = (),
             ),
-            callback = _Queryable,
+            callback = impl_Queryable,
             body = $body,
         }
     };
@@ -163,7 +155,7 @@ macro_rules! _Queryable {
                 generics = (),
                 lifetimes = (),
             ),
-            callback = _Queryable,
+            callback = impl_Queryable,
             body = $body,
         }
     };
@@ -184,7 +176,7 @@ mod tests {
             bar: i32,
         }
 
-        Queryable! {
+        impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             struct MyStruct {
                 foo: i32,
@@ -202,7 +194,7 @@ mod tests {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         struct MyStruct(i32, i32);
 
-        Queryable! {
+        impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             struct MyStruct(#[column_name(foo)] i32, #[column_name(bar)] i32);
         }
@@ -217,7 +209,7 @@ mod tests {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         struct MyStruct(i32, i32);
 
-        Queryable! {
+        impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             struct MyStruct(i32, i32);
         }

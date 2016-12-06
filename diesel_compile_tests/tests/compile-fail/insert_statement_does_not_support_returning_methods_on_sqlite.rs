@@ -35,7 +35,7 @@ impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
 
 pub struct NewUser(String);
 
-Insertable! {
+impl_Insertable! {
     (users)
     pub struct NewUser(#[column_name(name)] String,);
 }

@@ -12,7 +12,7 @@ pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     let attrs = model.attrs;
     let lifetimes = &model.generics.lifetimes;
 
-    quote!(_Queryable! {
+    quote!(impl_Queryable! {
         (
             struct_name = #struct_name,
             struct_ty = #struct_ty,

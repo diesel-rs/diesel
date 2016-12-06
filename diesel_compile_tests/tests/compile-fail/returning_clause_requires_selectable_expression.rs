@@ -13,7 +13,7 @@ table! {
 
 pub struct NewUser(String);
 
-Insertable! {
+impl_Insertable! {
     (users)
     pub struct NewUser(#[column_name(name)] String,);
 }

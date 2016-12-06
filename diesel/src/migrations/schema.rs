@@ -7,7 +7,7 @@ table! {
 
 #[derive(Debug, Copy, Clone)]
 pub struct NewMigration<'a>(pub &'a str);
-Insertable! {
+impl_Insertable! {
     (__diesel_schema_migrations)
     pub struct NewMigration<'a>(
         #[column_name(version)]

@@ -21,7 +21,7 @@ pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
     let lifetimes = model.generics.lifetimes;
     let fields = model.attrs;
 
-    quote!(_Insertable! {
+    quote!(impl_Insertable! {
         (
             struct_name = #struct_name,
             table_name = #table_name,

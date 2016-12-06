@@ -105,7 +105,7 @@ fn changeset_impl(
         .map(|a| a.to_stable_macro_tokens(cx))
         .collect::<Vec<_>>();
 
-    quote_item!(cx, AsChangeset! {
+    quote_item!(cx, impl_AsChangeset! {
         (
             struct_name = $struct_name,
             table_name = $table_name,
