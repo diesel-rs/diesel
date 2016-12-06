@@ -13,3 +13,9 @@ members = [
     "examples/getting_started_step_3",
     "examples/getting_started_step_4",
 ]
+
+[replace]
+"diesel:0.8.2" = { path = "diesel" }
+"diesel_codegen:0.8.2" = { path = "diesel_codegen" }
+"diesel_codegen_shared:0.8.0" = { path = "diesel_codegen_shared" }
+"diesel_codegen_syntex:0.8.0" = { path = "diesel_codegen_syntex" }
