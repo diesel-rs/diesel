@@ -1,7 +1,7 @@
 use backend::Backend;
 use expression::*;
 use expression::helper_types::SqlTypeOf;
-use query_builder::{QueryBuilder, QueryFragment, BuildQueryResult};
+use query_builder::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 use result::QueryResult;
 use types::Bool;
 
@@ -138,7 +138,7 @@ impl_query_id!(In<T, U>);
 impl_query_id!(NotIn<T, U>);
 
 use std::marker::PhantomData;
-use query_builder::SelectStatement;
+use query_builder::{SelectStatement, BoxedSelectStatement};
 
 pub trait AsInExpression<T> {
     type InExpression: MaybeEmpty + Expression<SqlType=T>;
@@ -165,7 +165,18 @@ pub trait MaybeEmpty {
 
 impl<ST, S, F, W, O, L, Of> AsInExpression<ST>
     for SelectStatement<ST, S, F, W, O, L, Of> where
-        SelectStatement<ST, S, F, W, O, L, Of>: Expression,
+        Subselect<SelectStatement<ST, S, F, W, O, L, Of>, ST>: Expression<SqlType=ST>,
+{
+    type InExpression = Subselect<Self, ST>;
+
+    fn as_in_expression(self) -> Self::InExpression {
+        Subselect { values: self, _sql_type: PhantomData }
+    }
+}
+
+impl<'a, ST, QS, DB> AsInExpression<ST>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType=ST>,
 {
     type InExpression = Subselect<Self, ST>;
 
@@ -226,7 +237,7 @@ pub struct Subselect<T, ST> {
     _sql_type: PhantomData<ST>,
 }
 
-impl<T: Expression, ST> Expression for Subselect<T, ST> {
+impl<T: Query, ST> Expression for Subselect<T, ST> {
     type SqlType = ST;
 }
 
@@ -238,7 +249,7 @@ impl<T, ST> MaybeEmpty for Subselect<T, ST> {
 
 impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where
     Subselect<T, ST>: Expression,
-    T: SelectableExpression<QS>,
+    T: Query,
 {
 }
 
