@@ -1,5 +1,3 @@
-extern crate libc;
-
 use backend::Backend;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::Queryable;
