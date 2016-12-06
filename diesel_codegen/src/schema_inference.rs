@@ -38,9 +38,9 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     let database_url = get_option(&options, "database_url", bug);
     let table_name = get_option(&options, "table_name", bug);
 
-    let connection = establish_connection(&database_url).unwrap();
-    let data = get_table_data(&connection, &table_name).unwrap();
-    let primary_keys = get_primary_keys(&connection, &table_name).unwrap()
+    let connection = establish_connection(database_url).unwrap();
+    let data = get_table_data(&connection, table_name).unwrap();
+    let primary_keys = get_primary_keys(&connection, table_name).unwrap()
         .into_iter().map(syn::Ident::new);
     let table_name = syn::Ident::new(table_name);
 
@@ -61,7 +61,6 @@ fn column_def_tokens(
     let column_type = determine_column_type(column, connection).unwrap();
     let path_segments = column_type.path
         .into_iter()
-        .map(syn::Ident::new)
         .map(syn::PathSegment::from)
         .collect();
     let tpe = syn::Path { global: true, segments: path_segments };
