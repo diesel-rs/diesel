@@ -160,13 +160,12 @@ macro_rules! impl_Insertable {
         impl<$($lifetime,)* 'insert, DB> $crate::persistable::Insertable<$table_name::table, DB>
             for &'insert $struct_ty where
                 DB: $crate::backend::Backend,
-                $('insert: $lifetime,)*
                 ($(
                     $crate::persistable::ColumnInsertValue<
                         $table_name::$column_name,
-                        $crate::expression::bound::Bound<
-                            <$table_name::$column_name as $crate::expression::Expression>::SqlType,
+                        $crate::expression::helper_types::AsExpr<
                             &'insert $field_ty,
+                            $table_name::$column_name,
                         >,
                     >
                 ,)+): $crate::persistable::InsertValues<DB>,
@@ -174,9 +173,9 @@ macro_rules! impl_Insertable {
             type Values = ($(
                 $crate::persistable::ColumnInsertValue<
                     $table_name::$column_name,
-                    $crate::expression::bound::Bound<
-                        <$table_name::$column_name as $crate::expression::Expression>::SqlType,
+                    $crate::expression::helper_types::AsExpr<
                         &'insert $field_ty,
+                        $table_name::$column_name,
                     >,
                 >
             ,)+);

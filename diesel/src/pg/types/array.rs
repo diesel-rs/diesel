@@ -88,7 +88,7 @@ use expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
-        impl<'a, ST, T> AsExpression<$sql_type> for $ty where
+        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty where
             Pg: HasSqlType<ST>,
         {
             type Expression = Bound<$sql_type, Self>;
@@ -102,8 +102,8 @@ macro_rules! array_as_expression {
 
 array_as_expression!(&'a [T], Array<ST>);
 array_as_expression!(&'a [T], Nullable<Array<ST>>);
-array_as_expression!(&'a &'a [T], Array<ST>);
-array_as_expression!(&'a &'a [T], Nullable<Array<ST>>);
+array_as_expression!(&'a &'b [T], Array<ST>);
+array_as_expression!(&'a &'b [T], Nullable<Array<ST>>);
 array_as_expression!(Vec<T>, Array<ST>);
 array_as_expression!(Vec<T>, Nullable<Array<ST>>);
 array_as_expression!(&'a Vec<T>, Array<ST>);

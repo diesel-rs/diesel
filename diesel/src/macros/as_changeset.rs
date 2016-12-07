@@ -220,7 +220,7 @@ macro_rules! impl_AsChangeset {
         changeset_ty = $changeset_ty:ty,
     ) => {
         __diesel_parse_as_item! {
-            impl<$($lifetime: 'update,)* 'update> $crate::query_builder::AsChangeset
+            impl<$($lifetime,)* 'update> $crate::query_builder::AsChangeset
                 for &'update $struct_ty
             {
                 type Target = $table_name::table;
@@ -259,12 +259,9 @@ macro_rules! AsChangeset_changeset_ty {
             $($rest:tt)*
         },
     ) => {
-        Option<$crate::expression::predicates::Eq<
+        Option<$crate::expression::helper_types::Eq<
             $table_name::$column_name,
-            $crate::expression::bound::Bound<
-                <$table_name::$column_name as $crate::expression::Expression>::SqlType,
-                &'update $field_ty,
-            >,
+            &'update $field_ty,
         >>
     };
 
@@ -279,12 +276,9 @@ macro_rules! AsChangeset_changeset_ty {
             $($ignore:tt)*
         },
     ) => {
-        $crate::expression::predicates::Eq<
+        $crate::expression::helper_types::Eq<
             $table_name::$column_name,
-            $crate::expression::bound::Bound<
-                <$table_name::$column_name as $crate::expression::Expression>::SqlType,
-                &'update $field_ty,
-            >,
+            &'update $field_ty,
         >
     };
 }
