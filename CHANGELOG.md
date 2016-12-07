@@ -506,8 +506,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `Connection#insert` and `Connection#insert_returning_count` have been
   deprecated in favor of [`insert`][insert]
 
-[insert]: http://docs.diesel.rs/diesel/query_builder/fn.insert.html
-
 ## 0.1.0 - 2015-11-29
 
 * Initial release
