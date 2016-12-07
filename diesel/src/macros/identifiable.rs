@@ -17,7 +17,7 @@
 ///     name: String,
 /// }
 ///
-/// Identifiable! {
+/// impl_Identifiable! {
 ///     #[table_name(users)]
 ///     struct User {
 ///         id: i32,
@@ -27,22 +27,14 @@
 /// # fn main() {}
 /// ```
 #[macro_export]
-macro_rules! Identifiable {
-    ($($args:tt)*) => {
-        _Identifiable!($($args)*);
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! _Identifiable {
+macro_rules! impl_Identifiable {
     // Extract table name from meta item
     (
         $(())*
         #[table_name($table_name:ident)]
         $($rest:tt)*
     ) => {
-        _Identifiable! {
+        impl_Identifiable! {
             (table_name = $table_name,)
             $($rest)*
         }
@@ -54,7 +46,7 @@ macro_rules! _Identifiable {
         #[$ignore:meta]
         $($rest:tt)*
     ) => {
-        _Identifiable!($args $($rest)*);
+        impl_Identifiable!($args $($rest)*);
     };
 
     // Strip pub (if present) and struct from definition
@@ -63,7 +55,7 @@ macro_rules! _Identifiable {
         $args:tt
         $(pub)* struct $($body:tt)*
     ) => {
-        _Identifiable!($args $($body)*);
+        impl_Identifiable!($args $($body)*);
     };
 
     // We found the `id` field, return the final impl
@@ -109,7 +101,7 @@ macro_rules! _Identifiable {
             $($rest:tt)*
         } $($fields:tt)*],
     ) => {
-        _Identifiable! {
+        impl_Identifiable! {
             $args,
             fields = [$($fields)*],
         }
@@ -127,7 +119,7 @@ macro_rules! _Identifiable {
                 struct_ty = $struct_name<$($lifetimes),*>,
                 lifetimes = ($($lifetimes),*),
             ),
-            callback = _Identifiable,
+            callback = impl_Identifiable,
             body = $body,
         }
     };
@@ -144,7 +136,7 @@ macro_rules! _Identifiable {
                 struct_ty = $struct_name,
                 lifetimes = (),
             ),
-            callback = _Identifiable,
+            callback = impl_Identifiable,
             body = $body,
         }
     };
@@ -173,7 +165,7 @@ fn derive_identifiable_on_simple_struct() {
         foo: i32,
     }
 
-    Identifiable! {
+    impl_Identifiable! {
         #[table_name(foos)]
         struct Foo {
             id: i32,
@@ -198,7 +190,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
         id: i32,
     }
 
-    Identifiable! {
+    impl_Identifiable! {
         #[table_name(foos)]
         struct Foo {
             foo: i32,
@@ -223,7 +215,7 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
         foo: i32,
     }
 
-    Identifiable! {
+    impl_Identifiable! {
         #[table_name(bars)]
         struct Foo {
             id: &'static str,
@@ -248,7 +240,7 @@ fn derive_identifiable_on_struct_with_lifetime() {
         foo: i32,
     }
 
-    Identifiable! {
+    impl_Identifiable! {
         #[table_name(bars)]
         struct Foo<'a> {
             id: &'a str,

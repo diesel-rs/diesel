@@ -79,7 +79,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # }
     /// #
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
+    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
@@ -133,7 +133,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # }
     /// #
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
+    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
@@ -183,7 +183,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// # }
     /// #
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
+    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;

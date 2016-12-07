@@ -49,7 +49,7 @@ struct FullTableInfo {
     primary_key: bool,
 }
 
-Queryable! {
+impl_Queryable! {
     struct FullTableInfo {
         _cid: i32,
         name: String,

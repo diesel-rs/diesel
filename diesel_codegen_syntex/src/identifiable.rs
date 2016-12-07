@@ -19,7 +19,7 @@ pub fn expand_derive_identifiable(
         let lifetimes = lifetime_list_tokens(&model.generics.lifetimes, span);
         let fields = model.field_tokens_for_stable_macro(cx);
         if model.attr_named(str_to_ident("id")).is_some() {
-            push(Annotatable::Item(quote_item!(cx, Identifiable! {
+            push(Annotatable::Item(quote_item!(cx, impl_Identifiable! {
                 (
                     table_name = $table_name,
                     struct_ty = $struct_ty,

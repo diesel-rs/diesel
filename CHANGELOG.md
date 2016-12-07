@@ -27,6 +27,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [insert]: http://docs.diesel.rs/diesel/fn.insert.html
 
+### Changed
+
+* All macros with the same name as traits we can derive (e.g. `Queryable!`) have
+  been renamed to `impl_Queryable!` or similar.
+
 ### Fixed
 
 * `#[derive(Identifiable)]` now works on structs with lifetimes

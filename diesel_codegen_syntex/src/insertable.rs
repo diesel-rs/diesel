@@ -38,7 +38,7 @@ fn insertable_impl(
     let lifetimes = lifetime_list_tokens(&model.generics.lifetimes, span);
     let fields = model.attrs.iter().map(|a| a.to_stable_macro_tokens(cx)).collect::<Vec<_>>();
 
-    quote_item!(cx, Insertable! {
+    quote_item!(cx, impl_Insertable! {
         (
             struct_name = $struct_name,
             table_name = $table_name,

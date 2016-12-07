@@ -26,7 +26,7 @@
 ///     name: String,
 /// }
 ///
-/// AsChangeset! {
+/// impl_AsChangeset! {
 ///     (users)
 ///     struct User {
 ///         id: i32,
@@ -34,7 +34,7 @@
 ///     }
 /// }
 ///
-/// # Queryable! {
+/// # impl_Queryable! {
 /// #     struct User {
 /// #         id: i32,
 /// #         name: String,
@@ -70,21 +70,13 @@
 /// # }
 /// ```
 #[macro_export]
-macro_rules! AsChangeset {
-    ($($args:tt)*) => {
-        _AsChangeset!($($args)*);
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! _AsChangeset {
+macro_rules! impl_AsChangeset {
     // Provide a default value for treat_none_as_null if not provided
     (
         ($table_name:ident)
         $($body:tt)*
     ) => {
-        _AsChangeset! {
+        impl_AsChangeset! {
             ($table_name, treat_none_as_null="false")
             $($body)*
         }
@@ -96,7 +88,7 @@ macro_rules! _AsChangeset {
         $(#[$ignore:meta])*
         $(pub)* struct $($body:tt)*
     ) => {
-        _AsChangeset! {
+        impl_AsChangeset! {
             $args
             $($body)*
         }
@@ -116,7 +108,7 @@ macro_rules! _AsChangeset {
                 struct_ty = $struct_name<$($lifetime),*>,
                 lifetimes = ($($lifetime),*),
             ),
-            callback = _AsChangeset,
+            callback = impl_AsChangeset,
             body = $body,
         }
     };
@@ -136,7 +128,7 @@ macro_rules! _AsChangeset {
                 struct_ty = $struct_name,
                 lifetimes = ('a),
             ),
-            callback = _AsChangeset,
+            callback = impl_AsChangeset,
             body = $body,
         }
     };
@@ -151,7 +143,7 @@ macro_rules! _AsChangeset {
         ),
         fields = [$($field:tt)+],
     ) => {
-        _AsChangeset! {
+        impl_AsChangeset! {
             (
                 fields = [$($field)+],
                 struct_name = $struct_name,
@@ -183,7 +175,7 @@ macro_rules! _AsChangeset {
         ),
         changeset_ty = $changeset_ty:ty,
     ) => {
-        _AsChangeset! {
+        impl_AsChangeset! {
             $($headers)*
             self_to_columns = $struct_name($(ref $column_name),+),
             columns = ($($column_name, $field_kind),+),
@@ -207,7 +199,7 @@ macro_rules! _AsChangeset {
         ),
         changeset_ty = $changeset_ty:ty,
     ) => {
-        _AsChangeset! {
+        impl_AsChangeset! {
             $($headers)*
             self_to_columns = $struct_name { $($field_name: ref $column_name,)+ ..},
             columns = ($($column_name, $field_kind),+),
