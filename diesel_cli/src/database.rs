@@ -171,6 +171,7 @@ pub fn backend(database_url: &String) -> &str {
     }
 }
 
+#[cfg(feature = "postgres")]
 fn split_pg_connection_string(database_url: &String) -> (String, String) {
     let mut split: Vec<&str> = database_url.split("/").collect();
     let database = split.pop().unwrap();
@@ -183,7 +184,7 @@ fn handle_error<E: Error, T>(error: E) -> T {
     ::std::process::exit(1);
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "postgres"))]
 mod tests {
     use super::split_pg_connection_string;
 
