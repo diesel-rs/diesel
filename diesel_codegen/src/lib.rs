@@ -38,7 +38,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }
 
-#[proc_macro_derive(Identifiable, attributes(table_name))]
+#[proc_macro_derive(Identifiable, attributes(table_name, primary_key))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive_identifiable)
 }

@@ -289,7 +289,7 @@ macro_rules! table_body {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types, missing_debug_implementations)]
-            #[derive(Clone, Copy)]
+            #[derive(Debug, Clone, Copy)]
             pub struct table;
 
             impl table {

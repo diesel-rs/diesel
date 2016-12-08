@@ -28,50 +28,68 @@
 /// ```
 #[macro_export]
 macro_rules! impl_Identifiable {
-    // Extract table name from meta item
+    // Find table name in options
     (
         $(())*
-        #[table_name($table_name:ident)]
-        $($rest:tt)*
+        $(#[$option_name:ident $option_value:tt])*
+        $(pub)* struct $($rest:tt)*
     ) => {
-        impl_Identifiable! {
-            (table_name = $table_name,)
-            $($rest)*
+        __diesel_find_option_with_name! {
+            (options = [$(#[$option_name $option_value])*], body = $($rest)*),
+            option_name = table_name,
+            args = [$(#[$option_name $option_value])*],
+            callback = impl_Identifiable,
         }
     };
 
-    // Strip meta items that aren't table name
+    // Next, find primary key name in options
     (
-        $args:tt
-        #[$ignore:meta]
-        $($rest:tt)*
+        (options = $options:tt, $($args:tt)*),
+        found_option_with_name = table_name,
+        value = ($table_name:ident),
     ) => {
-        impl_Identifiable!($args $($rest)*);
+        __diesel_find_option_with_name! {
+            (options = $options, table_name = $table_name, $($args)*),
+            option_name = primary_key,
+            args = $options,
+            callback = impl_Identifiable,
+            default = (id),
+        }
     };
 
-    // Strip pub (if present) and struct from definition
-    // After this step, we will go to the step at the bottom.
+    // Options extracted, deal with the struct body (bottom two branches)
     (
-        $args:tt
-        $(pub)* struct $($body:tt)*
+        (
+            options = $ignore:tt,
+            table_name = $table_name:ident,
+            body = $($body:tt)*
+        ),
+        found_option_with_name = primary_key,
+        value = ($primary_key_name:ident),
     ) => {
-        impl_Identifiable!($args $($body)*);
+        impl_Identifiable! {
+            (
+                table_name = $table_name,
+                primary_key_name = $primary_key_name,
+            )
+            $($body)*
+        }
     };
 
-    // We found the `id` field, return the final impl
+    // We found the primary key field, return the final impl
     (
         (
             table_name = $table_name:ident,
             struct_ty = $struct_ty:ty,
             lifetimes = ($($lifetimes:tt),*),
         ),
-        fields = [{
-            field_name: id,
+        primary_key_field = {
+            field_name: $field_name:ident,
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
             $($rest:tt)*
-        } $($fields:tt)*],
+        },
     ) => {
         impl<$($lifetimes),*> $crate::associations::HasTable for $struct_ty {
             type Table = $table_name::table;
@@ -85,25 +103,45 @@ macro_rules! impl_Identifiable {
             type Id = &'ident $field_ty;
 
             fn id(self) -> Self::Id {
-                &self.id
+                &self.$field_name
             }
         }
     };
 
-    // Search for the `id` field and continue
+    // Search for the primary key field and continue
     (
-        $args:tt,
+        (
+            table_name = $table_name:ident,
+            primary_key_name = $primary_key_name:ident,
+            $($args:tt)*
+        ),
         fields = [{
             field_name: $field_name:ident,
-            column_name: $column_name:ident,
-            field_ty: $field_ty:ty,
-            field_kind: $field_kind:ident,
             $($rest:tt)*
         } $($fields:tt)*],
     ) => {
-        impl_Identifiable! {
-            $args,
-            fields = [$($fields)*],
+        static_cond! {
+            if $primary_key_name == $field_name {
+                impl_Identifiable! {
+                    (
+                        table_name = $table_name,
+                        $($args)*
+                    ),
+                    primary_key_field = {
+                        field_name: $field_name,
+                        $($rest)*
+                    },
+                }
+            } else {
+                impl_Identifiable! {
+                    (
+                        table_name = $table_name,
+                        primary_key_name = $primary_key_name,
+                        $($args)*
+                    ),
+                    fields = [$($fields)*],
+                }
+            }
         }
     };
 
@@ -250,6 +288,60 @@ fn derive_identifiable_on_struct_with_lifetime() {
 
     let foo1 = Foo { id: "hi", foo: 2 };
     let foo2 = Foo { id: "there", foo: 3 };
+    assert_eq!(&"hi", foo1.id());
+    assert_eq!(&"there", foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_non_standard_pk() {
+    use associations::Identifiable;
+
+    #[allow(missing_debug_implementations, missing_copy_implementations, dead_code)]
+    struct Foo<'a> {
+        id: i32,
+        foo_id: &'a str,
+        foo: i32,
+    }
+
+    impl_Identifiable! {
+        #[table_name(bars)]
+        #[primary_key(foo_id)]
+        struct Foo<'a> {
+            id: i32,
+            foo_id: &'a str,
+            foo: i32,
+        }
+    }
+
+    let foo1 = Foo { id: 1, foo_id: "hi", foo: 2 };
+    let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
+    assert_eq!(&"hi", foo1.id());
+    assert_eq!(&"there", foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_non_standard_pk_given_before_table_name() {
+    use associations::Identifiable;
+
+    #[allow(missing_debug_implementations, missing_copy_implementations, dead_code)]
+    struct Foo<'a> {
+        id: i32,
+        foo_id: &'a str,
+        foo: i32,
+    }
+
+    impl_Identifiable! {
+        #[primary_key(foo_id)]
+        #[table_name(bars)]
+        struct Foo<'a> {
+            id: i32,
+            foo_id: &'a str,
+            foo: i32,
+        }
+    }
+
+    let foo1 = Foo { id: 1, foo_id: "hi", foo: 2 };
+    let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
     assert_eq!(&"hi", foo1.id());
     assert_eq!(&"there", foo2.id());
 }
