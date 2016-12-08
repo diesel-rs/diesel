@@ -5,11 +5,11 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 build = "build.rs"
 
 [build-dependencies]
-diesel_codegen_syntex = { version = "0.8.0", features = ["postgres"], optional = true }
+diesel_codegen_syntex = { version = "0.9.0", features = ["postgres"], optional = true }
 
 [dependencies]
-diesel = "0.8.2"
-diesel_codegen = { version = "0.8.2", features = ["postgres"], optional = true }
+diesel = "0.9.0"
+diesel_codegen = { version = "0.9.0", features = ["postgres"], optional = true }
 dotenv = "0.8.0"
 
 [features]

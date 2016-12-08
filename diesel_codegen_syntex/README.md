@@ -8,7 +8,7 @@ Add `diesel_codegen_syntex` to your `Cargo.toml`, specifying which backends you
 use.
 
 ```toml
-diesel_codegen_syntex = { version = "0.8.0", features = ["postgres"] }
+diesel_codegen_syntex = { version = "0.9.0", features = ["postgres"] }
 ```
 
 Next, move the `mod` declarations of any modules that need codegen to a separate

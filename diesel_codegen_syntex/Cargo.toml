@@ -1,6 +1,6 @@
 [package]
 name = "diesel_codegen_syntex"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
@@ -17,8 +17,8 @@ syntex_syntax = { version = "0.44.0" }
 [dependencies]
 syntex = { version = "0.44.0" }
 syntex_syntax = { version = "0.44.0" }
-diesel = { version = "0.8.0", default-features = false }
-diesel_codegen_shared = { version = "0.8.0", default-features = false }
+diesel = { version = "0.9.0", default-features = false }
+diesel_codegen_shared = { version = "0.9.0", default-features = false }
 
 [features]
 default = ["postgres", "dotenv"]

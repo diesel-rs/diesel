@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
@@ -15,7 +15,7 @@ name = "diesel"
 [dependencies]
 chrono = "0.2.17"
 clap = "2.11"
-diesel = { version = "0.8.0", default-features = false }
+diesel = { version = "0.9.0", default-features = false }
 dotenv = "0.8.0"
 
 [dev-dependencies]
