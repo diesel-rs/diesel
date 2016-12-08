@@ -10,7 +10,10 @@ include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
 mod util;
 
-pub fn register(reg: &mut syntex::Registry) {
+use std::path::Path;
+
+pub fn expand(input: &Path, output: &Path) -> Result<(), syntex::Error> {
+    let mut reg = syntex::Registry::new();
     reg.add_attr("feature(custom_derive)");
     reg.add_attr("feature(custom_attribute)");
 
@@ -24,4 +27,5 @@ pub fn register(reg: &mut syntex::Registry) {
     reg.add_macro("infer_schema", schema_inference::expand_infer_schema);
 
     reg.add_post_expansion_pass(util::strip_attributes);
+    reg.expand("", input, output)
 }

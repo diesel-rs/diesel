@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+(cd diesel && cargo test --no-default-features --features "chrono sqlite postgres")
+(cd examples && ./test_stable)
+(cd diesel_cli && cargo test --no-default-features --features "postgres")
+(cd diesel_cli && cargo test --no-default-features --features "sqlite")
+(cd diesel_codegen_shared && cargo test --no-default-features --features "dotenv postgres")
+(cd diesel_codegen_shared && cargo test --no-default-features --features "dotenv sqlite")
+(cd diesel_codegen_syntex && cargo test --no-default-features --features "postgres")
+(cd diesel_codegen_syntex && cargo test --no-default-features --features "sqlite")
+(cd diesel_tests && cargo test --no-default-features --features "stable_postgres")
+(cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --no-default-features --features "stable_sqlite")
