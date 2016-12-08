@@ -1,10 +1,13 @@
-#![feature(proc_macro)]
+#![feature(proc_macro, test)]
 
 #![allow(non_snake_case)]
 
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 extern crate test;
+extern crate dotenv;
 
 mod schema;
 
