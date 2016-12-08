@@ -332,3 +332,67 @@ macro_rules! __diesel_field_with_column_name {
         )*
     };
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __diesel_find_option_with_name {
+    // When no default is given, just a simple search will work
+    (
+        $headers:tt,
+        option_name = $target_option_name:ident,
+        args = [$(#[$option_name:ident $option_value:tt])*],
+        callback = $callback:ident,
+    ) => { $(
+        static_cond! {
+            if $target_option_name == $option_name {
+                $callback! {
+                    $headers,
+                    found_option_with_name = $target_option_name,
+                    value = $option_value,
+                }
+            }
+        }
+    )* };
+
+    // When a default is given, we need to recurse so we know when we're done
+    (
+        $headers:tt,
+        option_name = $target_option_name:ident,
+        args = [#[$option_name:ident $option_value:tt] $($rest:tt)*],
+        callback = $callback:ident,
+        default = $default:tt,
+    ) => {
+        static_cond! {
+            if $target_option_name == $option_name {
+                $callback! {
+                    $headers,
+                    found_option_with_name = $target_option_name,
+                    value = $option_value,
+                }
+            } else {
+                __diesel_find_option_with_name! {
+                    $headers,
+                    option_name = $target_option_name,
+                    args = [$($rest)*],
+                    callback = $callback,
+                    default = $default,
+                }
+            }
+        }
+    };
+
+    // Default was given, and we didn't find a value
+    (
+        $headers:tt,
+        option_name = $target_option_name:ident,
+        args = [],
+        callback = $callback:ident,
+        default = $default:tt,
+    ) => {
+        $callback! {
+            $headers,
+            found_option_with_name = $target_option_name,
+            value = $default,
+        }
+    };
+}

@@ -72,6 +72,7 @@ const KNOWN_ATTRIBUTES: &'static [&'static str] = &[
     "column_name",
     "has_many",
     "table_name",
+    "primary_key",
 ];
 
 pub fn strip_attributes(krate: ast::Crate) -> ast::Crate {

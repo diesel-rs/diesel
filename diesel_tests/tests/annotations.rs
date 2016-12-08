@@ -172,3 +172,25 @@ mod derive_identifiable_with_lifetime {
         id: &'a i32
     }
 }
+
+#[test]
+fn derive_identifiable_with_non_standard_pk() {
+    use diesel::associations::*;
+
+    #[derive(Identifiable)]
+    #[table_name="posts"]
+    #[primary_key(foo_id)]
+    #[allow(dead_code)]
+    struct Foo<'a> {
+        id: i32,
+        foo_id: &'a str,
+        foo: i32,
+    }
+
+    let foo1 = Foo { id: 1, foo_id: "hi", foo: 2 };
+    let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
+    assert_eq!(&"hi", foo1.id());
+    assert_eq!(&"there", foo2.id());
+    // Fails to compile if wrong table is generated.
+    let _: posts::table = Foo::<'static>::table();
+}

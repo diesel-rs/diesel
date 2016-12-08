@@ -6,13 +6,14 @@ use syntax::parse::token::str_to_ident;
 use syntax::tokenstream::TokenTree;
 
 use attr::Attr;
-use util::{str_value_of_attr_with_name, struct_ty};
+use util::*;
 
 pub struct Model {
     pub ty: P<ast::Ty>,
     pub attrs: Vec<Attr>,
     pub name: ast::Ident,
     pub generics: ast::Generics,
+    pub primary_key_name: ast::Ident,
     table_name_from_annotation: Option<ast::Ident>,
 }
 
@@ -25,6 +26,9 @@ impl Model {
         if let Annotatable::Item(ref item) = *annotatable {
             let table_name_from_annotation =
                 str_value_of_attr_with_name(cx, &item.attrs, "table_name");
+            let primary_key_name =
+                ident_value_of_attr_with_name(cx, &item.attrs, "primary_key")
+                    .unwrap_or(str_to_ident("id"));
             Attr::from_item(cx, item).map(|(generics, attrs)| {
                 let ty = struct_ty(cx, span, item.ident, &generics);
                 Model {
@@ -32,6 +36,7 @@ impl Model {
                     attrs: attrs,
                     name: item.ident,
                     generics: generics,
+                    primary_key_name: primary_key_name,
                     table_name_from_annotation: table_name_from_annotation,
                 }
             })
@@ -41,7 +46,7 @@ impl Model {
     }
 
     pub fn primary_key_name(&self) -> ast::Ident {
-        str_to_ident("id")
+        self.primary_key_name
     }
 
     pub fn table_name(&self) -> ast::Ident {
