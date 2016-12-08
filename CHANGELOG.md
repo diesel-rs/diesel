@@ -22,6 +22,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
   The generated module will still be called `table_1`.
 
+* The `infer_table_from_schema!` macro now allows custom schemas to be
+  specified. Example:
+
+  ```rust
+  infer_table_from_schema!("dotenv:DATABASE_URL", "schema_1.table_1");
+  ```
+
+* The `infer_schema!` optionally allows a schema name as the second argument. Any
+  schemas other than `public` will be wrapped in a module with the same name as
+  the schema. For example, `schema_1.table_1` would be referenced as
+  `schema_1::table_1`.
+
 * Added support for batch insert on SQLite. This means that you can now pass a
   slice or vector to [`diesel::insert`][insert] on all backends.
 

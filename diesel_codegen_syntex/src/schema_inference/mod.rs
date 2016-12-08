@@ -53,12 +53,12 @@ pub fn expand_infer_schema<'cx>(
     sp: Span,
     tts: &[TokenTree]
 ) -> Box<MacResult+'cx> {
-    let mut exprs = match get_exprs_from_tts(cx, sp, tts) {
+    let exprs = match get_exprs_from_tts(cx, sp, tts) {
         Some(exprs) => exprs.into_iter(),
         None => return DummyResult::any(sp),
     };
 
-    match infer_schema_body(cx, sp, &mut exprs) {
+    match infer_schema_body(cx, sp, exprs) {
         Ok(res) => res,
         Err(res) => res,
     }
@@ -67,14 +67,46 @@ pub fn expand_infer_schema<'cx>(
 pub fn infer_schema_body<T: Iterator<Item=P<ast::Expr>>>(
     cx: &mut ExtCtxt,
     sp: Span,
-    exprs: &mut T,
+    exprs: T,
 ) -> Result<Box<MacResult>, Box<MacResult>> {
-    let database_url = try!(next_str_lit(cx, sp, exprs));
-    let table_names = load_table_names(&database_url).unwrap();
+    let mut exprs = exprs.peekable();
+    let database_url = try!(next_str_lit(cx, sp, &mut exprs));
+    let schema_name = if exprs.peek().is_some() {
+        Some(try!(next_str_lit(cx, sp, &mut exprs)))
+    } else {
+        None
+    };
+    let schema_inferences = infer_schema_for_schema_name(
+        cx,
+        &database_url,
+        schema_name.as_ref().map(|s| &**s),
+    );
+    Ok(MacEager::items(SmallVector::many(schema_inferences)))
+}
+
+fn infer_schema_for_schema_name(
+    cx: &mut ExtCtxt,
+    database_url: &str,
+    schema_name: Option<&str>,
+) -> Vec<P<ast::Item>> {
+    let table_names = load_table_names(&database_url, schema_name).unwrap();
     let impls = table_names.into_iter()
-        .map(|n| quote_item!(cx, infer_table_from_schema!($database_url, $n);).unwrap())
-        .collect();
-    Ok(MacEager::items(SmallVector::many(impls)))
+        .map(|table_name| {
+            let table_name = match schema_name {
+                Some(name) => format!("{}.{}", name, table_name),
+                None => table_name,
+            };
+            quote_item!(cx, infer_table_from_schema!($database_url, $table_name);).unwrap()
+        })
+        .collect::<Vec<_>>();
+    match schema_name {
+        Some(name) => {
+            let schema_ident = str_to_ident(name);
+            let item = quote_item!(cx, pub mod $schema_ident { $impls }).unwrap();
+            vec![item]
+        }
+        None => impls,
+    }
 }
 
 fn table_macro_call(

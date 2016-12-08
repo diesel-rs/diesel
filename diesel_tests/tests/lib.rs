@@ -15,6 +15,11 @@ include!(concat!(env!("OUT_DIR"), "/lib.rs"));
 
 mod boxed_queries;
 mod connection;
+// This should be in lib.in.rs restricted to PG, but
+// syntex compiles the file even if the feature is unset,
+// and the macro call is invalid on SQLite.
+#[cfg(all(feature = "unstable", feature = "postgres"))]
+mod custom_schemas;
 mod debug;
 mod delete;
 mod errors;

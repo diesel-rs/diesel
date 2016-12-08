@@ -1,11 +1,13 @@
 #[macro_export]
 /// Queries the database for the names of all tables, and calls
 /// [`infer_table_from_schema!`](macro.infer_table_from_schema!.html) for each
-/// one.
+/// one. A schema name can optionally be passed to load from schemas other than
+/// the default. If a schema name is given, the inferred tables will be wrapped
+/// in a module with the same name.
 ///
-/// Attempting to use the `env!` or `dotenv!` macros here will not work due to limitations of
-/// the Macros 1.1 system, but you can pass a string in the form `"env:SOME_ENV_VAR"` or
-/// `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
+/// Attempting to use the `env!` or `dotenv!` macros here will not work due to
+/// limitations of the Macros 1.1 system, but you can pass a string in the form
+/// `"env:SOME_ENV_VAR"` or `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
 ///
 /// This macro can only be used in combination with the `diesel_codegen` or
 /// `diesel_codegen_syntex` crates. It will not work on its own.
@@ -17,20 +19,33 @@ macro_rules! infer_schema {
             struct _Dummy;
         }
         pub use self::__diesel_infer_schema::*;
-    }
+    };
+
+    ($database_url: expr, $schema_name: expr) => {
+        mod __diesel_infer_schema {
+            #[derive(InferSchema)]
+            #[options(database_url=$database_url, schema_name=$schema_name)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_schema::*;
+    };
 }
 
 #[macro_export]
-/// Establishes a database connection at compile time, loads the schema information about a table's
-/// columns, and invokes [`table!`](macro.table!.html) for you automatically.
+/// Establishes a database connection at compile time, loads the schema
+/// information about a table's columns, and invokes
+/// [`table!`](macro.table!.html) for you automatically. For tables in a schema
+/// other than the default, the table name should be given as
+/// `"schema_name.table_name"`.
 ///
-/// Attempting to use the `env!` or `dotenv!` macros here will not work due to limitations of the
-/// Macros 1.1 system, but you can pass a string in the form `"env:SOME_ENV_VAR"` or
-/// `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
+/// Attempting to use the `env!` or `dotenv!` macros here will not work due to
+/// limitations of the Macros 1.1 system, but you can pass a string in the form
+/// `"env:SOME_ENV_VAR"` or `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
 ///
-/// At this time, the schema inference macros do not support types from third party crates, and
-/// having any columns with a type not supported by the diesel core crate will result in a compiler
-/// error (please [open an issue](https://github.com/diesel-rs/diesel/issues/new) if this happens
+/// At this time, the schema inference macros do not support types from third
+/// party crates, and having any columns with a type not supported by the diesel
+/// core crate will result in a compiler error (please [open an
+/// issue](https://github.com/diesel-rs/diesel/issues/new) if this happens
 /// unexpectedly for a type listed in our docs.)
 ///
 /// This macro can only be used in combination with the `diesel_codegen` or
