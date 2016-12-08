@@ -335,6 +335,105 @@ macro_rules! __diesel_field_with_column_name {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! __diesel_field_with_field_name {
+    (
+        $headers:tt,
+        callback = $callback:ident,
+        target = $target_field_name:ident,
+        fields = [$({
+            field_name: $field_name:ident,
+            $($field_info:tt)*
+        })*],
+    ) => {
+        $(
+            static_cond! {
+                if $target_field_name == $field_name {
+                    $callback! {
+                        $headers,
+                        found_field_with_field_name = $field_name,
+                        field = {
+                            field_name: $field_name,
+                            $($field_info)*
+                        },
+                    }
+                }
+            }
+        )*
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __diesel_fields_with_field_names {
+    // Entrypoint, start search
+    (
+        $headers:tt,
+        callback = $callback:ident,
+        targets = ($target_field_name:ident $(,$rest:ident)*),
+        fields = $fields:tt,
+    ) => {
+        __diesel_field_with_field_name! {
+            (
+                targets = ($($rest),*),
+                fields = $fields,
+                headers = $headers,
+                callback = $callback,
+                found_fields = [],
+            ),
+            callback = __diesel_fields_with_field_names,
+            target = $target_field_name,
+            fields = $fields,
+        }
+    };
+
+    // Found field, more to search for
+    (
+        (
+            targets = ($target_field_name:ident $(,$rest:ident)*),
+            fields = $fields:tt,
+            headers = $headers:tt,
+            callback = $callback:ident,
+            found_fields = [$($found_fields:tt)*],
+        ),
+        found_field_with_field_name = $ignore:tt,
+        field = $field:tt,
+    ) => {
+        __diesel_field_with_field_name! {
+            (
+                targets = ($($rest),*),
+                fields = $fields,
+                headers = $headers,
+                callback = $callback,
+                found_fields = [$($found_fields)* $field],
+            ),
+            callback = __diesel_fields_with_field_names,
+            target = $target_field_name,
+            fields = $fields,
+        }
+    };
+
+    // Found field, no more to search for
+    (
+        (
+            targets = (),
+            fields = $fields:tt,
+            headers = $headers:tt,
+            callback = $callback:ident,
+            found_fields = [$($found_fields:tt)*],
+        ),
+        found_field_with_field_name = $ignore:tt,
+        field = $field:tt,
+    ) => {
+        $callback! {
+            $headers,
+            found_fields_with_field_names,
+            fields = [$($found_fields)* $field],
+        }
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! __diesel_find_option_with_name {
     // When no default is given, just a simple search will work
     (

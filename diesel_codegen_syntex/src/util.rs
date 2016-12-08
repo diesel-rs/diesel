@@ -21,28 +21,27 @@ fn str_value_of_attr(
     })
 }
 
-fn single_arg_value_of_attr(
+fn list_value_of_attr(
     cx: &mut ExtCtxt,
     attr: &ast::Attribute,
     name: &str,
-) -> Option<ast::Ident> {
-    let usage_err = || {
-        cx.span_err(attr.span(),
-            &format!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name));
-        None
-    };
-    // FIXME: This can be cleaned up with slice patterns
+) -> Vec<ast::Ident> {
     match attr.node.value.node {
         ast::MetaItemKind::List(_, ref items) => {
-            if items.len() != 1 {
-                return usage_err();
-            }
-            match items[0].word() {
+            items.iter().filter_map(|item| match item.word() {
                 Some(word) => Some(str_to_ident(&word.name())),
-                _ => usage_err(),
-            }
+                _ =>  {
+                    cx.span_err(attr.span(),
+                        &format!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name));
+                    None
+                }
+            }).collect()
         }
-        _ => usage_err(),
+        _ => {
+            cx.span_err(attr.span(),
+                &format!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name));
+            Vec::new()
+        },
     }
 }
 
@@ -63,7 +62,24 @@ pub fn ident_value_of_attr_with_name(
 ) -> Option<ast::Ident> {
     attrs.iter()
         .find(|a| a.check_name(name))
-        .and_then(|a| single_arg_value_of_attr(cx, &a, name))
+        .map(|a| {
+            let list = list_value_of_attr(cx, &a, name);
+            if list.len() != 1 {
+                cx.span_err(a.span(),
+                    &format!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name));
+            }
+            list[0]
+        })
+}
+
+pub fn list_value_of_attr_with_name(
+    cx: &mut ExtCtxt,
+    attrs: &[ast::Attribute],
+    name: &str,
+) -> Option<Vec<ast::Ident>> {
+    attrs.iter()
+        .find(|a| a.check_name(name))
+        .map(|a| list_value_of_attr(cx, &a, name))
 }
 
 const KNOWN_ATTRIBUTES: &'static [&'static str] = &[

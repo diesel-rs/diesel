@@ -99,9 +99,9 @@ fn changeset_impl(
     let struct_ty = &model.ty;
     let lifetimes = lifetime_list_tokens(&model.generics.lifetimes, span);
 
-    let pk = model.primary_key_name();
+    let pks = model.primary_key_names();
     let fields = model.attrs.iter()
-        .filter(|a| a.column_name.name != pk.name)
+        .filter(|a| pks.iter().all(|pk| a.column_name.name != pk.name))
         .map(|a| a.to_stable_macro_tokens(cx))
         .collect::<Vec<_>>();
 

@@ -35,7 +35,19 @@ pub fn ident_value_of_attr_with_name<'a>(
     attrs: &'a [Attribute],
     name: &str,
 ) -> Option<&'a Ident> {
-    attr_with_name(attrs, name).map(|attr| single_arg_value_of_attr(attr, name))
+    list_value_of_attr_with_name(attrs, name).map(|idents| {
+        if idents.len() != 1 {
+            panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name);
+        }
+        idents[0]
+    })
+}
+
+pub fn list_value_of_attr_with_name<'a>(
+    attrs: &'a [Attribute],
+    name: &str,
+) -> Option<Vec<&'a Ident>> {
+    attr_with_name(attrs, name).map(|attr| list_value_of_attr(attr, name))
 }
 
 pub fn attr_with_name<'a>(
@@ -56,19 +68,15 @@ pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
     }
 }
 
-fn single_arg_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a Ident {
-    let usage_err = || panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name);
+fn list_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Vec<&'a Ident> {
     match attr.value {
         MetaItem::List(_, ref items) => {
-            if items.len() != 1 {
-                return usage_err();
-            }
-            match items[0] {
+            items.iter().map(|item| match *item {
                 NestedMetaItem::MetaItem(MetaItem::Word(ref name)) => name,
-                _ => usage_err(),
-            }
+                _ => panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name),
+            }).collect()
         }
-        _ => usage_err(),
+        _ => panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name),
     }
 }
 

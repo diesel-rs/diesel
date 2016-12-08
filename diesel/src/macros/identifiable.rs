@@ -65,12 +65,12 @@ macro_rules! impl_Identifiable {
             body = $($body:tt)*
         ),
         found_option_with_name = primary_key,
-        value = ($primary_key_name:ident),
+        value = $primary_key_names:tt,
     ) => {
         impl_Identifiable! {
             (
                 table_name = $table_name,
-                primary_key_name = $primary_key_name,
+                primary_key_names = $primary_key_names,
             )
             $($body)*
         }
@@ -83,13 +83,14 @@ macro_rules! impl_Identifiable {
             struct_ty = $struct_ty:ty,
             lifetimes = ($($lifetimes:tt),*),
         ),
-        primary_key_field = {
+        found_fields_with_field_names,
+        fields = [$({
             field_name: $field_name:ident,
             column_name: $column_name:ident,
             field_ty: $field_ty:ty,
             field_kind: $field_kind:ident,
             $($rest:tt)*
-        },
+        })*],
     ) => {
         impl<$($lifetimes),*> $crate::associations::HasTable for $struct_ty {
             type Table = $table_name::table;
@@ -100,48 +101,28 @@ macro_rules! impl_Identifiable {
         }
 
         impl<'ident $(,$lifetimes)*> $crate::associations::Identifiable for &'ident $struct_ty {
-            type Id = &'ident $field_ty;
+            type Id = ($(&'ident $field_ty),*);
 
             fn id(self) -> Self::Id {
-                &self.$field_name
+                ($(&self.$field_name),*)
             }
         }
     };
 
-    // Search for the primary key field and continue
+    // Search for the primary key fields and continue
     (
         (
             table_name = $table_name:ident,
-            primary_key_name = $primary_key_name:ident,
+            primary_key_names = $primary_key_names:tt,
             $($args:tt)*
         ),
-        fields = [{
-            field_name: $field_name:ident,
-            $($rest:tt)*
-        } $($fields:tt)*],
+        fields = $fields:tt,
     ) => {
-        static_cond! {
-            if $primary_key_name == $field_name {
-                impl_Identifiable! {
-                    (
-                        table_name = $table_name,
-                        $($args)*
-                    ),
-                    primary_key_field = {
-                        field_name: $field_name,
-                        $($rest)*
-                    },
-                }
-            } else {
-                impl_Identifiable! {
-                    (
-                        table_name = $table_name,
-                        primary_key_name = $primary_key_name,
-                        $($args)*
-                    ),
-                    fields = [$($fields)*],
-                }
-            }
+        __diesel_fields_with_field_names! {
+            (table_name = $table_name, $($args)*),
+            callback = impl_Identifiable,
+            targets = $primary_key_names,
+            fields = $fields,
         }
     };
 
@@ -344,4 +325,33 @@ fn derive_identifiable_with_non_standard_pk_given_before_table_name() {
     let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
     assert_eq!(&"hi", foo1.id());
     assert_eq!(&"there", foo2.id());
+}
+
+#[test]
+fn derive_identifiable_with_composite_pk() {
+    use associations::Identifiable;
+
+    #[allow(missing_debug_implementations, missing_copy_implementations, dead_code)]
+    struct Foo {
+        id: i32,
+        foo_id: i32,
+        bar_id: i32,
+        foo: i32,
+    }
+
+    impl_Identifiable! {
+        #[primary_key(foo_id, bar_id)]
+        #[table_name(bars)]
+        struct Foo {
+            id: i32,
+            foo_id: i32,
+            bar_id: i32,
+            foo: i32,
+        }
+    }
+
+    let foo1 = Foo { id: 1, foo_id: 2, bar_id: 3, foo: 4 };
+    let foo2 = Foo { id: 5, foo_id: 6, bar_id: 7, foo: 8 };
+    assert_eq!((&2, &3), foo1.id());
+    assert_eq!((&6, &7), foo2.id());
 }

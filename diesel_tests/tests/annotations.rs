@@ -194,3 +194,24 @@ fn derive_identifiable_with_non_standard_pk() {
     // Fails to compile if wrong table is generated.
     let _: posts::table = Foo::<'static>::table();
 }
+
+#[test]
+fn derive_identifiable_with_composite_pk() {
+    use diesel::associations::Identifiable;
+
+    #[derive(Identifiable)]
+    #[primary_key(foo_id, bar_id)]
+    #[table_name="posts"]
+    #[allow(dead_code)]
+    struct Foo {
+        id: i32,
+        foo_id: i32,
+        bar_id: i32,
+        foo: i32,
+    }
+
+    let foo1 = Foo { id: 1, foo_id: 2, bar_id: 3, foo: 4 };
+    let foo2 = Foo { id: 5, foo_id: 6, bar_id: 7, foo: 8 };
+    assert_eq!((&2, &3), foo1.id());
+    assert_eq!((&6, &7), foo2.id());
+}

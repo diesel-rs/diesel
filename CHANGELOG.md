@@ -44,6 +44,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [exists]: http://docs.diesel.rs/diesel/expression/dsl/fn.sql.html
 
+* `#[derive(Identifiable)]` can be used with structs that have primary keys
+  other than `id`, as well as structs with composite primary keys. You can now
+  annotate the struct with `#[primary_key(nonstandard)]` or `#[primary_key(foo,
+  bar)]`.
+
 ### Changed
 
 * All macros with the same name as traits we can derive (e.g. `Queryable!`) have

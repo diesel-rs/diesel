@@ -8,7 +8,7 @@ pub struct Model {
     pub attrs: Vec<Attr>,
     pub name: syn::Ident,
     pub generics: syn::Generics,
-    pub primary_key_name: syn::Ident,
+    pub primary_key_names: Vec<syn::Ident>,
     table_name_from_annotation: Option<syn::Ident>,
 }
 
@@ -23,9 +23,9 @@ impl Model {
         let ty = struct_ty(item.ident.clone(), &item.generics);
         let name = item.ident.clone();
         let generics = item.generics.clone();
-        let primary_key_name = ident_value_of_attr_with_name(&item.attrs, "primary_key")
-            .map(Clone::clone)
-            .unwrap_or(syn::Ident::new("id"));
+        let primary_key_names = list_value_of_attr_with_name(&item.attrs, "primary_key")
+            .map(|v| v.into_iter().map(Clone::clone).collect())
+            .unwrap_or_else(|| vec![syn::Ident::new("id")]);
         let table_name_from_annotation = str_value_of_attr_with_name(
             &item.attrs, "table_name").map(syn::Ident::new);
 
@@ -34,7 +34,7 @@ impl Model {
             attrs: attrs,
             name: name,
             generics: generics,
-            primary_key_name: primary_key_name,
+            primary_key_names: primary_key_names,
             table_name_from_annotation: table_name_from_annotation,
         })
     }
