@@ -39,6 +39,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [insert]: http://docs.diesel.rs/diesel/fn.insert.html
 
+* Added a function for SQL `EXISTS` expressions. See
+  [`diesel::expression::dsl::exists`][exists] for details.
+
+[exists]: http://docs.diesel.rs/diesel/expression/dsl/fn.sql.html
+
 ### Changed
 
 * All macros with the same name as traits we can derive (e.g. `Queryable!`) have
