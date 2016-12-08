@@ -25,6 +25,8 @@ pub mod array_comparison;
 pub mod bound;
 #[doc(hidden)]
 pub mod count;
+#[doc(hidden)]
+pub mod exists;
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod functions;
@@ -47,6 +49,7 @@ pub mod dsl {
     #[doc(inline)] pub use super::functions::aggregate_ordering::*;
     #[doc(inline)] pub use super::functions::aggregate_folding::*;
     #[doc(inline)] pub use super::sql_literal::sql;
+    #[doc(inline)] pub use super::exists::exists;
 
     #[cfg(feature = "postgres")]
     pub use pg::expression::dsl::*;
