@@ -1,10 +1,3 @@
-// FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
-#[macro_export]
-#[doc(hidden)]
-macro_rules! diesel_internal_expr_conversion {
-    ($e:expr) => { $e }
-}
-
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
