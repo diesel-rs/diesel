@@ -9,11 +9,6 @@ use row::Row;
 use std::error::Error;
 use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
 
-// FIXME(https://github.com/rust-lang/rust/issues/19630) Remove this work-around
-macro_rules! e {
-    ($e:expr) => { $e }
-}
-
 macro_rules! tuple_impls {
     ($(
         $Tuple:tt {
@@ -51,7 +46,7 @@ macro_rules! tuple_impls {
                 DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    if e!(row.next_is_null($Tuple)) {
+                    if row.next_is_null($Tuple) {
                         Ok(None)
                     } else {
                         Ok(Some(($(try!($T::build_from_row(row)),)+)))
@@ -68,7 +63,7 @@ macro_rules! tuple_impls {
                 type Row = ($($T::Row,)+);
 
                 fn build(row: Self::Row) -> Self {
-                    ($($T::build(e!(row.$idx)),)+)
+                    ($($T::build(row.$idx),)+)
                 }
             }
 
@@ -80,23 +75,23 @@ macro_rules! tuple_impls {
                 fn to_sql(&self, out: &mut DB::QueryBuilder)
                 -> BuildQueryResult {
                     $(
-                        if e!($idx) != 0 {
+                        if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        try!(e!(self.$idx.to_sql(out)));
+                        try!(self.$idx.to_sql(out));
                     )+
                     Ok(())
                 }
 
                 fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
                     $(
-                        try!(e!(self.$idx.collect_binds(out)));
+                        try!(self.$idx.collect_binds(out));
                     )+
                     Ok(())
                 }
 
                 fn is_safe_to_cache_prepared(&self) -> bool {
-                    $(e!(self.$idx.is_safe_to_cache_prepared()) &&)+ true
+                    $(self.$idx.is_safe_to_cache_prepared() &&)+ true
                 }
             }
 
@@ -120,7 +115,7 @@ macro_rules! tuple_impls {
             {
                 fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     $(
-                        if e!($idx) != 0 {
+                        if $idx != 0 {
                             out.push_sql(", ");
                         }
                         try!(out.push_identifier($T::name()));
@@ -131,10 +126,10 @@ macro_rules! tuple_impls {
                 fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     out.push_sql("(");
                     $(
-                        if e!($idx) != 0 {
+                        if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        match e!(&self.$idx) {
+                        match &self.$idx {
                             &ColumnInsertValue::Expression(_, ref value) => {
                                 try!(value.to_sql(out));
                             }
@@ -147,7 +142,7 @@ macro_rules! tuple_impls {
 
                 fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
                     $(
-                        match e!(&self.$idx) {
+                        match &self.$idx {
                             &ColumnInsertValue::Expression(_, ref value) => {
                                 try!(value.collect_binds(out));
                             }
@@ -169,7 +164,7 @@ macro_rules! tuple_impls {
                 fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
                     let mut columns_present = false;
                     $(
-                        match e!(&self.$idx) {
+                        match &self.$idx {
                             &ColumnInsertValue::Expression(..) => {
                                 if columns_present {
                                     out.push_sql(", ");
@@ -188,7 +183,7 @@ macro_rules! tuple_impls {
                     out.push_sql("(");
                     let mut columns_present = false;
                     $(
-                        match e!(&self.$idx) {
+                        match &self.$idx {
                             &ColumnInsertValue::Expression(_, ref value) => {
                                 if columns_present {
                                     out.push_sql(", ");
@@ -208,7 +203,7 @@ macro_rules! tuple_impls {
                     out: &mut <::sqlite::Sqlite as Backend>::BindCollector
                 ) -> QueryResult<()> {
                     $(
-                        match e!(&self.$idx) {
+                        match &self.$idx {
                             &ColumnInsertValue::Expression(_, ref value) => {
                                 try!(value.collect_binds(out));
                             }
@@ -244,7 +239,7 @@ macro_rules! tuple_impls {
                 type Changeset = ($($T::Changeset,)+);
 
                 fn as_changeset(self) -> Self::Changeset {
-                    ($(e!(self.$idx.as_changeset()),)+)
+                    ($(self.$idx.as_changeset(),)+)
                 }
             }
 
@@ -253,19 +248,19 @@ macro_rules! tuple_impls {
                 $($T: Changeset<DB>,)+
             {
                 fn is_noop(&self) -> bool {
-                    $(e!(self.$idx.is_noop()) &&)+ true
+                    $(self.$idx.is_noop() &&)+ true
                 }
 
                 #[allow(unused_assignments)]
                 fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     let mut needs_comma = false;
                     $(
-                        let noop_element = e!(self.$idx.is_noop());
+                        let noop_element = self.$idx.is_noop();
                         if !noop_element {
                             if needs_comma {
                                 out.push_sql(", ");
                             }
-                            try!(e!(self.$idx.to_sql(out)));
+                            try!(self.$idx.to_sql(out));
                             needs_comma = true;
                         }
                     )+
@@ -274,7 +269,7 @@ macro_rules! tuple_impls {
 
                 fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
                     $(
-                        try!(e!(self.$idx.collect_binds(out)));
+                        try!(self.$idx.collect_binds(out));
                     )+
                     Ok(())
                 }
