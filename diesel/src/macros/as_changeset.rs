@@ -228,6 +228,7 @@ macro_rules! impl_AsChangeset {
 
                 #[allow(non_shorthand_field_patterns)]
                 fn as_changeset(self) -> Self::Changeset {
+                    use $crate::prelude::ExpressionMethods;
                     let $self_to_columns = *self;
                     ($(
                         AsChangeset_column_expr!(
@@ -304,4 +305,26 @@ macro_rules! AsChangeset_column_expr {
     ) => {
         $column.eq($field_access)
     };
+}
+
+#[cfg(test)]
+mod using_as_changeset_with_any_imports {
+    table!(users {
+        id -> Integer,
+        name -> VarChar,
+    });
+
+    #[allow(missing_debug_implementations)]
+    struct Changes {
+        id: i32,
+        name: String,
+    }
+
+    impl_AsChangeset! {
+        (users)
+        struct Changes {
+            id: i32,
+            name: String,
+        }
+    }
 }

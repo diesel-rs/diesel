@@ -11,6 +11,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added missing impls for loading `chrono::NaiveDateTime` from a column of type
   `Timestamptz`
 
+* `#[derive(AsChangeset)]` no longer assumes that `use diesel::prelude::*` has
+  been done.
+
 ## [0.9.0] - 2016-12-08
 
 ### Added
