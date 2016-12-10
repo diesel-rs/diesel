@@ -107,6 +107,7 @@ mod pg_types {
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
+    test_round_trip!(naive_datetime_roundtrips_tz, Timestamptz, (i64, u32), mk_naive_datetime);
     test_round_trip!(uuid_roundtrips, Uuid, (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)), mk_uuid);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {

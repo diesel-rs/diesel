@@ -15,6 +15,7 @@ expression_impls! {
     Date -> NaiveDate,
     Time -> NaiveTime,
     Timestamp -> NaiveDateTime,
+    Timestamptz -> NaiveDateTime,
     Timestamptz -> DateTime<UTC>,
     Timestamptz -> DateTime<FixedOffset>,
     Timestamptz -> DateTime<Local>,
@@ -24,6 +25,7 @@ queryable_impls! {
     Date -> NaiveDate,
     Time -> NaiveTime,
     Timestamp -> NaiveDateTime,
+    Timestamptz -> NaiveDateTime,
     Timestamptz -> DateTime<UTC>,
 }
 
