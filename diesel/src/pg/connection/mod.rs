@@ -41,7 +41,7 @@ impl SimpleConnection for PgConnection {
         let inner_result = unsafe {
             self.raw_connection.exec(query.as_ptr())
         };
-        try!(PgResult::new(inner_result));
+        try!(PgResult::new(inner_result?));
         Ok(())
     }
 }

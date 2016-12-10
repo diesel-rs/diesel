@@ -3,18 +3,19 @@ extern crate libc;
 
 use result::{Error, QueryResult, DatabaseErrorInformation, DatabaseErrorKind};
 use super::row::PgRow;
+use super::raw::RawResult;
 
 use self::pq_sys::*;
 use std::ffi::CStr;
 use std::{str, slice};
 
 pub struct PgResult {
-    internal_result: *mut PGresult,
+    internal_result: RawResult,
 }
 
 impl PgResult {
-    pub fn new(internal_result: *mut PGresult) -> QueryResult<Self> {
-        let result_status = unsafe { PQresultStatus(internal_result) };
+    pub fn new(internal_result: RawResult) -> QueryResult<Self> {
+        let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
                 Ok(PgResult {
@@ -22,11 +23,11 @@ impl PgResult {
                 })
             },
             _ => {
-                let error_information = Box::new(PgErrorInformation(internal_result));
-                let error_kind = match get_result_field(internal_result, ResultField::SqlState) {
+                let error_kind = match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
                     Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
                     _ => DatabaseErrorKind::__Unknown,
                 };
+                let error_information = Box::new(PgErrorInformation(internal_result));
                 Err(Error::DatabaseError(error_kind, error_information))
             }
         }
@@ -34,7 +35,7 @@ impl PgResult {
 
     pub fn rows_affected(&self) -> usize {
         unsafe {
-            let count_char_ptr = PQcmdTuples(self.internal_result);
+            let count_char_ptr = PQcmdTuples(self.internal_result.as_ptr());
             let count_bytes = CStr::from_ptr(count_char_ptr).to_bytes();
             let count_str = str::from_utf8_unchecked(count_bytes);
             match count_str {
@@ -45,7 +46,7 @@ impl PgResult {
     }
 
     pub fn num_rows(&self) -> usize {
-        unsafe { PQntuples(self.internal_result) as usize }
+        unsafe { PQntuples(self.internal_result.as_ptr()) as usize }
     }
 
     pub fn get_row(&self, idx: usize) -> PgRow {
@@ -59,8 +60,9 @@ impl PgResult {
             let row_idx = row_idx as libc::c_int;
             let col_idx = col_idx as libc::c_int;
             unsafe {
-                let value_ptr = PQgetvalue(self.internal_result, row_idx, col_idx) as *const u8;
-                let num_bytes = PQgetlength(self.internal_result, row_idx, col_idx);
+                let value_ptr = PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx)
+                    as *const u8;
+                let num_bytes = PQgetlength(self.internal_result.as_ptr(), row_idx, col_idx);
                 Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
             }
         }
@@ -69,7 +71,7 @@ impl PgResult {
     pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
             0 != PQgetisnull(
-                self.internal_result,
+                self.internal_result.as_ptr(),
                 row_idx as libc::c_int,
                 col_idx as libc::c_int,
             )
@@ -77,48 +79,34 @@ impl PgResult {
     }
 }
 
-impl Drop for PgResult {
-    fn drop(&mut self) {
-        unsafe { PQclear(self.internal_result) };
-    }
-}
-
-struct PgErrorInformation(*mut PGresult);
-
-unsafe impl Send for PgErrorInformation {}
-
-impl Drop for PgErrorInformation {
-    fn drop(&mut self) {
-        unsafe { PQclear(self.0) };
-    }
-}
+struct PgErrorInformation(RawResult);
 
 impl DatabaseErrorInformation for PgErrorInformation {
     fn message(&self) -> &str {
-        match get_result_field(self.0, ResultField::MessagePrimary) {
+        match get_result_field(self.0.as_ptr(), ResultField::MessagePrimary) {
             Some(e) => e,
             None => unreachable!("Per PGs documentation, all errors should have a message"),
         }
     }
 
     fn details(&self) -> Option<&str> {
-        get_result_field(self.0, ResultField::MessageDetail)
+        get_result_field(self.0.as_ptr(), ResultField::MessageDetail)
     }
 
     fn hint(&self) -> Option<&str> {
-        get_result_field(self.0, ResultField::MessageHint)
+        get_result_field(self.0.as_ptr(), ResultField::MessageHint)
     }
 
     fn table_name(&self) -> Option<&str> {
-        get_result_field(self.0, ResultField::TableName)
+        get_result_field(self.0.as_ptr(), ResultField::TableName)
     }
 
     fn column_name(&self) -> Option<&str> {
-        get_result_field(self.0, ResultField::ColumnName)
+        get_result_field(self.0.as_ptr(), ResultField::ColumnName)
     }
 
     fn constraint_name(&self) -> Option<&str> {
-        get_result_field(self.0, ResultField::ConstraintName)
+        get_result_field(self.0.as_ptr(), ResultField::ConstraintName)
     }
 }
 
