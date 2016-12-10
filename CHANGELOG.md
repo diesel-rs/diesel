@@ -14,6 +14,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[derive(AsChangeset)]` no longer assumes that `use diesel::prelude::*` has
   been done.
 
+* `debug_sql!` can now properly be used with types from `chrono` or
+  `std::time`.
+
 ## [0.9.0] - 2016-12-08
 
 ### Added

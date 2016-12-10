@@ -143,6 +143,17 @@ macro_rules! primitive_impls {
     }
 }
 
+macro_rules! debug_to_sql {
+    ($sql_type:ty, $ty:ty) => {
+        impl $crate::types::ToSql<$sql_type, $crate::backend::Debug> for $ty {
+            fn to_sql<W: ::std::io::Write>(&self, _: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
+                Ok($crate::types::IsNull::No)
+            }
+        }
+    };
+}
+
+mod date_and_time;
 pub mod floats;
 mod integers;
 pub mod option;
