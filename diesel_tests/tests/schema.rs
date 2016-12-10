@@ -126,7 +126,7 @@ impl NewPost {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Copy, Insertable)]
 #[table_name="comments"]
 pub struct NewComment<'a>(
     #[column_name(post_id)]

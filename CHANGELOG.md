@@ -17,6 +17,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `debug_sql!` can now properly be used with types from `chrono` or
   `std::time`.
 
+* When using PostgreSQL, attempting to get the error message of a query which
+  could not be transmitted to the server (such as a query with greater than
+  65535 bind parameters) will no longer panic.
+
 ## [0.9.0] - 2016-12-08
 
 ### Added

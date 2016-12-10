@@ -26,6 +26,7 @@ pub enum Error {
 /// bump.
 pub enum DatabaseErrorKind {
     UniqueViolation,
+    UnableToSendCommand,
     #[doc(hidden)]
     __Unknown, // Match against _ instead, more variants may be added in the future
 }

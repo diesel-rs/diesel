@@ -57,8 +57,8 @@ impl RawConnection {
         }
     }
 
-    pub unsafe fn exec(&self, query: *const libc::c_char) -> *mut PGresult {
-        PQexec(self.internal_connection, query)
+    pub unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
+        RawResult::new(PQexec(self.internal_connection, query), self)
     }
 
     pub unsafe fn exec_params(
@@ -70,8 +70,8 @@ impl RawConnection {
         param_lengths: *const libc::c_int,
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
-    ) -> *mut PGresult {
-        PQexecParams(
+    ) -> QueryResult<RawResult> {
+        let ptr = PQexecParams(
             self.internal_connection,
             query,
             param_count,
@@ -80,7 +80,8 @@ impl RawConnection {
             param_lengths,
             param_formats,
             result_format,
-        )
+        );
+        RawResult::new(ptr, self)
     }
 
     pub unsafe fn exec_prepared(
@@ -91,8 +92,8 @@ impl RawConnection {
         param_lengths: *const libc::c_int,
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
-    ) -> *mut PGresult {
-        PQexecPrepared(
+    ) -> QueryResult<RawResult> {
+        let ptr = PQexecPrepared(
             self.internal_connection,
             stmt_name,
             param_count,
@@ -100,7 +101,8 @@ impl RawConnection {
             param_lengths,
             param_formats,
             result_format,
-        )
+        );
+        RawResult::new(ptr, self)
     }
 
     pub unsafe fn prepare(
@@ -109,14 +111,15 @@ impl RawConnection {
         query: *const libc::c_char,
         param_count: libc::c_int,
         param_types: *const Oid,
-    ) -> *mut PGresult {
-        PQprepare(
+    ) -> QueryResult<RawResult> {
+        let ptr = PQprepare(
             self.internal_connection,
             stmt_name,
             query,
             param_count,
             param_types,
-        )
+        );
+        RawResult::new(ptr, self)
     }
 }
 
@@ -165,5 +168,39 @@ impl Drop for PgString {
         unsafe {
             PQfreemem(self.pg_str as *mut libc::c_void)
         }
+    }
+}
+
+/// Internal wrapper around a `*mut PGresult` which is known to be not-null, and
+/// have no aliases.  This wrapper is to ensure that it's always properly
+/// dropped.
+///
+/// If `Unique` is ever stabilized, we should use it here.
+#[allow(missing_debug_implementations)]
+pub struct RawResult(*mut PGresult);
+
+unsafe impl Send for RawResult {}
+unsafe impl Sync for RawResult {}
+
+impl RawResult {
+    fn new(ptr: *mut PGresult, conn: &RawConnection) -> QueryResult<Self> {
+        if ptr.is_null() {
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::UnableToSendCommand,
+                Box::new(conn.last_error_message()),
+            ))
+        } else {
+            Ok(RawResult(ptr))
+        }
+    }
+
+    pub fn as_ptr(&self) -> *mut PGresult {
+        self.0
+    }
+}
+
+impl Drop for RawResult {
+    fn drop(&mut self) {
+        unsafe { PQclear(self.0) }
     }
 }
