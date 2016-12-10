@@ -30,7 +30,6 @@ pub mod migrations;
 mod query_dsl;
 pub mod query_source;
 pub mod result;
-#[doc(hidden)]
 pub mod row;
 
 pub mod helper_types {
