@@ -18,7 +18,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// Creates a SQL `COUNT(*)` expression
 ///
 /// For selecting the count of a query, and nothing else, you can just call
-/// [`count`](../../trait.CountDsl.html) on the query instead.
+/// [`count`](fn.count.html) on the query instead.
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically as `diesel::expression::count_star`, or glob import

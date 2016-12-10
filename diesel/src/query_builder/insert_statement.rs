@@ -9,7 +9,7 @@ use result::QueryResult;
 use super::returning_clause::*;
 use types::HasSqlType;
 
-/// The structure returned by [`insert`](fn.insert.html). The only thing that can be done with it
+/// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
 /// is call `into`.
 #[derive(Debug, Copy, Clone)]
 pub struct IncompleteInsertStatement<T, Op> {

@@ -5,7 +5,7 @@ use expression::predicates::*;
 
 pub trait ExpressionMethods: Expression + Sized {
     /// Alias an expression for use alongside
-    /// [`with`](../../../trait.WithDsl.html).
+    /// [`with`](../../../prelude/trait.WithDsl.html).
     ///
     /// While you will need to give it a name to alias as, you should not need
     /// to reference the alias elsewhere. You can pass the returned expression

@@ -1,6 +1,6 @@
 #[macro_export]
 /// Queries the database for the names of all tables, and calls
-/// [`infer_table_from_schema!`](macro.infer_table_from_schema!.html) for each
+/// [`infer_table_from_schema!`](macro.infer_table_from_schema.html) for each
 /// one. A schema name can optionally be passed to load from schemas other than
 /// the default. If a schema name is given, the inferred tables will be wrapped
 /// in a module with the same name.
@@ -34,7 +34,7 @@ macro_rules! infer_schema {
 #[macro_export]
 /// Establishes a database connection at compile time, loads the schema
 /// information about a table's columns, and invokes
-/// [`table!`](macro.table!.html) for you automatically. For tables in a schema
+/// [`table!`](macro.table.html) for you automatically. For tables in a schema
 /// other than the default, the table name should be given as
 /// `"schema_name.table_name"`.
 ///

@@ -68,8 +68,8 @@ impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
 pub trait ExecuteDsl<Conn: Connection<Backend=DB>, DB: Backend = <Conn as Connection>::Backend>: Sized {
     /// Executes the given command, returning the number of rows affected. Used
     /// in conjunction with
-    /// [`update`](../query_builder/fn.update.html) and
-    /// [`delete`](../query_builder/fn.delete.html)
+    /// [`update`](/diesel/fn.update.html) and
+    /// [`delete`](/diesel/fn.delete.html)
     fn execute(self, conn: &Conn) -> QueryResult<usize>;
 }
 
