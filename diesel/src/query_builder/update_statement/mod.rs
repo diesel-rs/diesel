@@ -10,7 +10,7 @@ use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResul
 use query_source::Table;
 use result::QueryResult;
 
-/// The type returned by [`update`](fn.update.html). The only thing you can do
+/// The type returned by [`update`](/diesel/fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
 #[derive(Debug)]
 pub struct IncompleteUpdateStatement<T, U>(UpdateTarget<T, U>);

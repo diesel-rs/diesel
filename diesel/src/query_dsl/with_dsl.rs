@@ -8,7 +8,7 @@ use result::QueryResult;
 /// like full text search, where you need to access the result of an expensive
 /// computation for the where clause that shouldn't be redone for each row, such
 /// as `plain_to_tsquery`. See
-/// [`.aliased`](expression/expression_methods/global_expression_methods/trait.ExpressionMethods.html#method.aliased)
+/// [`.aliased`](../expression/expression_methods/global_expression_methods/trait.ExpressionMethods.html#method.aliased)
 /// for more
 pub trait WithDsl<'a, Expr> {
     type Output: AsQuery;

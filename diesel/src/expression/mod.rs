@@ -1,14 +1,14 @@
 //! AST types representing various typed SQL expressions. Almost all types
-//! implement either [`Expression`](trait.Expression.html) or
-//! [`AsExpression`](trait.AsExpression.html).
+//! implement either [`Expression`](/diesel/expression/trait.Expression.html) or
+//! [`AsExpression`](/diesel/expression/trait.AsExpression.html).
 //!
 //! The most common expression to work with is a
 //! [`Column`](../query_source/trait.Column.html). There are various methods
 //! that you can call on these, found in
 //! [`expression_methods`](expression_methods/index.html). You can also call
 //! numeric operators on types which have been passed to
-//! [`operator_allowed!`](../macro.operator_allowed!.html) or
-//! [`numeric_expr!`](../macro.numeric_expr!.html).
+//! [`operator_allowed!`](../macro.operator_allowed.html) or
+//! [`numeric_expr!`](../macro.numeric_expr.html).
 //!
 //! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
@@ -63,8 +63,8 @@ use backend::Backend;
 /// Represents a typed fragment of SQL. Apps should not need to implement this
 /// type directly, but it may be common to use this as type boundaries.
 /// Libraries should consider using
-/// [`infix_predicate!`](../macro.infix_predicate!.html) or
-/// [`postfix_predicate!`](../macro.postfix_predicate!.html) instead of
+/// [`infix_predicate!`](../macro.infix_predicate.html) or
+/// [`postfix_predicate!`](../macro.postfix_predicate.html) instead of
 /// implementing this directly.
 pub trait Expression {
     type SqlType;
@@ -82,7 +82,7 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 /// These types couldn't just implement [`Expression`](trait.Expression.html)
 /// directly, as many things can be used as an expression of multiple types.
 /// (`String` for example, can be used as either
-/// [`VarChar`](../types/struct.VarChar.html) or
+/// [`VarChar`](../types/type.VarChar.html) or
 /// [`Text`](../types/struct.Text.html)).
 ///
 /// This trait allows us to use primitives on the right hand side of various

@@ -23,7 +23,7 @@ pub trait Connection: SimpleConnection + Sized {
     ///
     /// If the function returns an `Ok`, that value will be returned.  If the
     /// function returns an `Err`,
-    /// [`TransactionError::UserReturnedError`](result/enum.TransactionError.html#variant.UserReturnedError)
+    /// [`TransactionError::UserReturnedError`](../result/enum.TransactionError.html#variant.UserReturnedError)
     /// will be returned wrapping that value.
     fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
         F: FnOnce() -> Result<T, E>,

@@ -3,7 +3,7 @@
 /// with, followed by the entire struct body. This macro mirrors
 /// `#[as_changeset]` from [`diesel_codegen`][diesel_codegen]
 ///
-/// [changeset]: prelude/trait.AsChangeset.html
+/// [changeset]: query_builder/trait.AsChangeset.html
 /// [diesel_codegen]: https://github.com/diesel-rs/diesel/tree/master/diesel_codegen
 ///
 /// # Options

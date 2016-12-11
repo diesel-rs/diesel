@@ -74,7 +74,7 @@ impl<'a, T: Query> Query for &'a T {
 /// An untyped fragment of SQL. This may be a complete SQL command (such as
 /// an update statement without a `RETURNING` clause), or a subsection (such as
 /// our internal types used to represent a `WHERE` clause). All methods on
-/// [`Connection`](../struct.Connection.html) that execute a query require this
+/// [`Connection`](../connection/trait.Connection.html) that execute a query require this
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;

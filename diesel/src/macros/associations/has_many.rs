@@ -4,7 +4,7 @@
 /// `#[table_name(name_of_table)]`. Both the parent and child structs must implement
 /// [`Identifiable`][identifiable].
 ///
-/// [identifiable]: prelude/trait.Identifiable.html
+/// [identifiable]: associations/trait.Identifiable.html
 ///
 /// # Options
 ///
