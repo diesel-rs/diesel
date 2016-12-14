@@ -1,7 +1,7 @@
 use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
-use persistable::{ColumnInsertValue, InsertValues};
+use insertable::{ColumnInsertValue, InsertValues};
 use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;

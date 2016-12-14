@@ -16,10 +16,14 @@ pub mod connection;
 #[macro_use]
 pub mod expression;
 #[doc(hidden)]
-pub mod persistable;
+pub mod insertable;
 pub mod query_builder;
 #[macro_use]
 pub mod types;
+
+#[deprecated(since = "0.10.0", note = "use `insertable` instead")]
+#[cfg(feature = "with-deprecated")]
+pub use self::insertable as persistable;
 
 #[cfg(feature = "postgres")]
 pub mod pg;
@@ -91,7 +95,7 @@ pub mod prelude {
     pub use expression::{Expression, SelectableExpression, BoxableExpression};
     pub use expression::expression_methods::*;
     #[doc(inline)]
-    pub use persistable::Insertable;
+    pub use insertable::Insertable;
     pub use query_dsl::*;
     pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
     pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};

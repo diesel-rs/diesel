@@ -8,8 +8,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Changed
 
+* When possible, we will use deprecation warnings for breaking changes.
+  Deprecated code requires the `with-deprecated` feature, which is enabled by
+  default.
+
 * The `postgres` feature is no longer enabled by default by `diesel` or
   `diesel_codegen_syntex`. Add `features = ["postgres"]` to your `Cargo.toml`.
+
+* The `persistable` module has been renamed to `insertable`.
 
 ## [0.9.1] - 2016-12-09
 

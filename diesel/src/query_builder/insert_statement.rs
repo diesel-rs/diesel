@@ -1,7 +1,7 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use connection::Connection;
 use expression::{Expression, SelectableExpression, NonAggregate};
-use persistable::{Insertable, InsertValues};
+use insertable::{Insertable, InsertValues};
 use query_builder::*;
 use query_dsl::{ExecuteDsl, LoadDsl};
 use query_source::{Queryable, Table};
