@@ -1,3 +1,5 @@
+use std::iter;
+
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
 use result::QueryResult;
@@ -36,33 +38,41 @@ pub enum ColumnInsertValue<Col, Expr> where
     Default(Col),
 }
 
+type ValuesFn<Item, T, DB> = fn(Item) -> <Item as Insertable<T, DB>>::Values;
+
 impl<Iter, T, DB> Insertable<T, DB> for Iter where
     T: Table,
     DB: Backend + SupportsDefaultKeyword,
     Iter: IntoIterator,
     Iter::Item: Insertable<T, DB>,
+    Iter::IntoIter: Clone,
 {
-    type Values = BatchInsertValues<<Iter::Item as Insertable<T, DB>>::Values>;
+    type Values = BatchInsertValues<iter::Map<
+        Iter::IntoIter,
+        ValuesFn<Iter::Item, T, DB>,
+    >>;
 
     fn values(self) -> Self::Values {
-        let values = self.into_iter().map(Insertable::values).collect();
+        let values = self.into_iter()
+            .map(Insertable::values as ValuesFn<Iter::Item, T, DB>);
         BatchInsertValues(values)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct BatchInsertValues<T>(Vec<T>);
+pub struct BatchInsertValues<T>(T);
 
 impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
-    T: InsertValues<DB>,
+    T: Iterator + Clone,
+    T::Item: InsertValues<DB>,
     DB: Backend,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.0[0].column_names(out)
+        self.0.clone().next().unwrap().column_names(out)
     }
 
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        for (i, values) in self.0.iter().enumerate() {
+        for (i, values) in self.0.clone().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
             }
@@ -72,7 +82,7 @@ impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
     }
 
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        for values in self.0.iter() {
+        for values in self.0.clone() {
             try!(values.values_bind_params(out));
         }
         Ok(())
