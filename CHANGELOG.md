@@ -4,6 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Changed
+
+* The `postgres` feature is no longer enabled by default by `diesel` or
+  `diesel_codegen_syntex`. Add `features = ["postgres"]` to your `Cargo.toml`.
+
 ## [0.9.1] - 2016-12-09
 
 ### Fixed

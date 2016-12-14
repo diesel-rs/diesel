@@ -8,7 +8,7 @@ build = "build.rs"
 diesel_codegen_syntex = { version = "0.9.0", features = ["postgres"], optional = true }
 
 [dependencies]
-diesel = "0.9.0"
+diesel = { version = "0.9.0", features = ["postgres"] }
 diesel_codegen = { version = "0.9.0", features = ["postgres"], optional = true }
 dotenv = "0.8.0"
 

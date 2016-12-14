@@ -24,7 +24,7 @@ dotenv = "0.8.0"
 tempdir = "^0.3.4"
 
 [features]
-default = ["postgres"]
+default = []
 unstable = []
 large-tables = []
 huge-tables = ["large-tables"]
