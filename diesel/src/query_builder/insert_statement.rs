@@ -302,8 +302,8 @@ impl<'a, T, U, Op, Ret, Conn, ST> LoadDsl<Conn>
 {
     type SqlType = ST;
 
-    fn load<'b, V>(self, conn: &Conn) -> QueryResult<Vec<V>> where
-        V: Queryable<Self::SqlType, Conn::Backend> + 'b,
+    fn load<V>(self, conn: &Conn) -> QueryResult<Vec<V>> where
+        V: Queryable<Self::SqlType, Conn::Backend>,
     {
         if self.records.is_empty() {
             Ok(Vec::new())
