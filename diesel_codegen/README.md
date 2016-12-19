@@ -7,14 +7,16 @@ Rust, see
 
 Diesel Codegen provides custom derive implementations for
 [`Queryable`][queryable], [`Identifiable`][identifiable],
-[`Insertable`][insertable], [`AsChangeset`][as-changeset], and [`Associations`].
+[`Insertable`][insertable], [`AsChangeset`][as-changeset], and [`Associations`][associations].
 It also provides the macros [`infer_schema!`][infer-schema],
 [`infer_table_from_schema!`][infer-table-from-schema], and
 [`embed_migrations!`][embed-migrations].
 
 [queryable]: http://docs.diesel.rs/diesel/query_source/trait.Queryable.html
 [identifiable]: http://docs.diesel.rs/diesel/associations/trait.Identifiable.html
+[insertable]: http://docs.diesel.rs/diesel/prelude/trait.Insertable.html
 [as-changeset]: http://docs.diesel.rs/diesel/query_builder/trait.AsChangeset.html
+[associations]: http://docs.diesel.rs/diesel/associations/index.html
 [infer-schema]: http://docs.diesel.rs/diesel/macro.infer_schema!.html
 [infer-table-from-schema]: http://docs.diesel.rs/diesel/macro.infer_table_from_schema!.html
 [embed-migrations]: http://docs.diesel.rs/diesel/macro.embed_migrations!.html
