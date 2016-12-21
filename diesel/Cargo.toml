@@ -24,9 +24,10 @@ dotenv = "0.8.0"
 tempdir = "^0.3.4"
 
 [features]
-default = ["postgres"]
+default = ["with-deprecated"]
 unstable = []
 large-tables = []
 huge-tables = ["large-tables"]
 postgres = ["pq-sys"]
 sqlite = ["libsqlite3-sys"]
+with-deprecated = []

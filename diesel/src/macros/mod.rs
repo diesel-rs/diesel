@@ -262,6 +262,7 @@ macro_rules! table_body {
         columns = [$($column_name:ident -> $column_ty:ty,)+],
     ) => {
         pub mod $table_name {
+            #![allow(dead_code)]
             #![allow(unused_imports)] // FIXME: Once we revamp type imports this can be removed
             use $crate::{
                 QuerySource,

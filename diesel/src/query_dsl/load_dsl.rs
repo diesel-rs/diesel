@@ -16,8 +16,8 @@ pub trait LoadDsl<Conn: Connection>: Sized where
 
     /// Executes the given query, returning an `Iterator` over the returned
     /// rows.
-    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a;
+    fn load<U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
+        U: Queryable<Self::SqlType, Conn::Backend>;
 
     /// Attempts to load a single record. Returns `Ok(record)` if found, and
     /// `Err(NotFound)` if no results are returned. If the query truly is
@@ -39,8 +39,8 @@ pub trait LoadDsl<Conn: Connection>: Sized where
         U: Queryable<Self::SqlType, Conn::Backend>;
 
     /// Runs the command, returning an `Iterator` over the affected rows.
-    fn get_results<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
+    fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
+        U: Queryable<Self::SqlType, Conn::Backend>,
     {
         self.load(conn)
     }
@@ -52,8 +52,8 @@ impl<Conn: Connection, T: AsQuery> LoadDsl<Conn> for T where
 {
     type SqlType = <Self as AsQuery>::SqlType;
 
-    fn load<'a, U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
-        U: Queryable<Self::SqlType, Conn::Backend> + 'a,
+    fn load<U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
+        U: Queryable<Self::SqlType, Conn::Backend>,
     {
         conn.query_all(self)
     }

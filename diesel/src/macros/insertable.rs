@@ -157,21 +157,21 @@ macro_rules! impl_Insertable {
         self_to_columns = $self_to_columns:pat,
         columns = ($($column_name:ident, $field_ty:ty, $field_kind:ident),+),
     ) => { __diesel_parse_as_item! {
-        impl<$($lifetime,)* 'insert, DB> $crate::persistable::Insertable<$table_name::table, DB>
+        impl<$($lifetime,)* 'insert, DB> $crate::insertable::Insertable<$table_name::table, DB>
             for &'insert $struct_ty where
                 DB: $crate::backend::Backend,
                 ($(
-                    $crate::persistable::ColumnInsertValue<
+                    $crate::insertable::ColumnInsertValue<
                         $table_name::$column_name,
                         $crate::expression::helper_types::AsExpr<
                             &'insert $field_ty,
                             $table_name::$column_name,
                         >,
                     >
-                ,)+): $crate::persistable::InsertValues<DB>,
+                ,)+): $crate::insertable::InsertValues<DB>,
         {
             type Values = ($(
-                $crate::persistable::ColumnInsertValue<
+                $crate::insertable::ColumnInsertValue<
                     $table_name::$column_name,
                     $crate::expression::helper_types::AsExpr<
                         &'insert $field_ty,
@@ -183,7 +183,7 @@ macro_rules! impl_Insertable {
             #[allow(non_shorthand_field_patterns)]
             fn values(self) -> Self::Values {
                 use $crate::expression::{AsExpression, Expression};
-                use $crate::persistable::ColumnInsertValue;
+                use $crate::insertable::ColumnInsertValue;
                 let $self_to_columns = *self;
                 ($(
                     Insertable_column_expr!($table_name::$column_name, $column_name, $field_kind)

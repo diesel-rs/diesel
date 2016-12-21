@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::iter;
 
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
@@ -38,62 +38,52 @@ pub enum ColumnInsertValue<Col, Expr> where
     Default(Col),
 }
 
-impl<'a, T, U: 'a, DB> Insertable<T, DB> for &'a [U] where
+type ValuesFn<Item, T, DB> = fn(Item) -> <Item as Insertable<T, DB>>::Values;
+
+impl<Iter, T, DB> Insertable<T, DB> for Iter where
     T: Table,
-    DB: Backend,
-    &'a U: Insertable<T, DB>,
-    DB: SupportsDefaultKeyword,
+    DB: Backend + SupportsDefaultKeyword,
+    Iter: IntoIterator,
+    Iter::Item: Insertable<T, DB>,
+    Iter::IntoIter: Clone,
 {
-    type Values = BatchInsertValues<'a, T, U, DB>;
+    type Values = BatchInsertValues<iter::Map<
+        Iter::IntoIter,
+        ValuesFn<Iter::Item, T, DB>,
+    >>;
 
     fn values(self) -> Self::Values {
-        BatchInsertValues {
-            values: self,
-            _marker: PhantomData,
-        }
+        let values = self.into_iter()
+            .map(Insertable::values as ValuesFn<Iter::Item, T, DB>);
+        BatchInsertValues(values)
     }
 }
 
-impl<'a, T, U, DB> Insertable<T, DB> for &'a Vec<U> where
-    T: Table,
+#[derive(Debug, Clone)]
+pub struct BatchInsertValues<T>(T);
+
+impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
+    T: Iterator + Clone,
+    T::Item: InsertValues<DB>,
     DB: Backend,
-    &'a [U]: Insertable<T, DB>,
-{
-    type Values = <&'a [U] as Insertable<T, DB>>::Values;
-
-    fn values(self) -> Self::Values {
-        (self as &'a [U]).values()
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct BatchInsertValues<'a, T, U: 'a, DB> {
-    values: &'a [U],
-    _marker: PhantomData<(T, DB)>,
-}
-
-impl<'a, T, U: 'a, DB> InsertValues<DB> for BatchInsertValues<'a, T, U, DB> where
-    T: Table,
-    DB: Backend,
-    &'a U: Insertable<T, DB>,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.values[0].values().column_names(out)
+        self.0.clone().next().unwrap().column_names(out)
     }
 
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        for (i, record) in self.values.into_iter().enumerate() {
+        for (i, values) in self.0.clone().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
             }
-            try!(record.values().values_clause(out));
+            try!(values.values_clause(out));
         }
         Ok(())
     }
 
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        for record in self.values.into_iter() {
-            try!(record.values().values_bind_params(out));
+        for values in self.0.clone() {
+            try!(values.values_bind_params(out));
         }
         Ok(())
     }

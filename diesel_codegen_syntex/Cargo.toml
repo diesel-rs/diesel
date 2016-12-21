@@ -21,7 +21,7 @@ diesel = { version = "0.9.0", default-features = false }
 diesel_codegen_shared = { version = "0.9.0", default-features = false }
 
 [features]
-default = ["postgres", "dotenv"]
+default = ["dotenv"]
 dotenv = ["diesel_codegen_shared/dotenv"]
 postgres = ["diesel/postgres", "diesel_codegen_shared/postgres"]
 sqlite = ["diesel/sqlite", "diesel_codegen_shared/sqlite"]
