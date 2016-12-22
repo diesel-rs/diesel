@@ -18,17 +18,31 @@ table! {
     }
 }
 
+// https://www.postgresql.org/docs/9.5/static/catalog-pg-enum.html
+table! {
+    pg_enum (oid) {
+        oid -> Oid,
+        enumtypid -> Oid,
+        enumsortorder -> Float,
+        enumlabel -> VarChar,
+    }
+}
+
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-type.html
 table! {
     pg_type (oid) {
         oid -> Oid,
         typname -> VarChar,
+        typtype -> VarChar,
     }
 }
 
 joinable!(pg_attribute -> pg_type (atttypid));
+joinable!(pg_enum -> pg_type (enumtypid));
 select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
-select_column_workaround!(pg_type -> pg_attribute (oid, typname));
+select_column_workaround!(pg_type -> pg_attribute (oid, typname, typtype));
+select_column_workaround!(pg_enum -> pg_type (oid, enumtypid, enumsortorder, enumlabel));
+select_column_workaround!(pg_type -> pg_enum (oid, typname, typtype));
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-index.html
 table! {
@@ -150,6 +164,17 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"));
     Ok(try!(query.load(connection)))
+}
+
+pub fn load_enum_info(connection: &PgConnection, _oschema_name: Option<&str>)
+                      -> Result<Vec<(String, String, u32)>, Box<Error>> {
+    use self::pg_enum::dsl::*;
+    use self::pg_type::dsl::*;
+    let query = pg_enum.inner_join(pg_type)
+        .select((typname, enumlabel, enumtypid))
+        .filter(typtype.eq("e"))
+        .order((typname, enumsortorder));
+    Ok(query.load(connection)?)
 }
 
 #[test]

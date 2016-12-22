@@ -49,3 +49,12 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
         }
     }
 }
+
+#[cfg(feature = "postgres")]
+pub struct EnumInformation {
+    pub type_name: String,
+    pub variants: Vec<String>,
+    pub oid: u32,
+    pub array_oid: u32,
+}
+

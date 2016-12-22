@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![recursion_limit = "196"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -27,6 +28,8 @@ mod model;
 mod queryable;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
+#[cfg(feature = "postgres")]
+mod type_inference;
 mod util;
 
 use proc_macro::TokenStream;
@@ -72,6 +75,12 @@ pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
+}
+
+#[proc_macro_derive(InferEnums, attributes(options))]
+#[cfg(feature = "postgres")]
+pub fn derive_infer_enums(input: TokenStream) -> TokenStream {
+    expand_derive(input, type_inference::derive_infer_enums)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) -> TokenStream {

@@ -88,3 +88,33 @@ macro_rules! embed_migrations {
         }
     }
 }
+
+#[macro_export]
+/// Queries the database for the names of all enum types and creates a Rust enum
+/// type for each one in the current namespace. The enum type name and variants
+/// of the database enum type will be translated from snake case to camel case
+/// (so enum_type::variant becomes EnumType::Variant). For types in a schema
+/// other than the default, the type will be created in a submodule with the
+/// schema name.
+///
+/// This macro can only be used in combination with the `diesel_codegen` or
+/// `diesel_codegen_syntex` crates. It will not work on its own.
+macro_rules! infer_enums {
+    ($database_url: expr) => {
+        mod __diesel_infer_enums {
+            #[derive(InferEnums)]
+            #[options(database_url=$database_url)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_enums::*;
+    };
+
+    ($database_url: expr, $schema_name: expr) => {
+        mod __diesel_infer_enums {
+            #[derive(InferEnums)]
+            #[options(databsae_url=$database_url, schema_name=$schema_name)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_enums::*;
+    };
+}

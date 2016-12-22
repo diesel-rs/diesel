@@ -2,6 +2,7 @@
 extern crate diesel;
 #[cfg(feature = "dotenv")]
 extern crate dotenv;
+extern crate itertools;
 
 #[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;

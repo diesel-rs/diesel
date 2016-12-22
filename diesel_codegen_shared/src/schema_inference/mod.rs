@@ -6,11 +6,14 @@ mod sqlite;
 
 use diesel::Connection;
 use diesel::result::Error::NotFound;
+use itertools::Itertools;
 use std::error::Error;
 
 use InferConnection;
 use database_url::extract_database_url;
 pub use self::data_structures::{ColumnInformation, ColumnType};
+#[cfg(feature = "postgres")]
+pub use self::data_structures::EnumInformation;
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
     -> Result<Vec<String>, Box<Error>>
@@ -107,4 +110,32 @@ pub fn get_primary_keys(
     } else {
         Ok(primary_keys)
     }
+}
+
+#[cfg(feature = "postgres")]
+pub fn get_enum_information(conn: &InferConnection, schema_name: Option<&str>)
+                            -> Result<Vec<EnumInformation>, Box<Error>> {
+    let rows = try!(match *conn {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) =>
+            panic!("Diesel does not support inferring enum types from SQLite"),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(ref c) => pg::load_enum_info(c, schema_name),
+    });
+    let mut enum_information = vec!();
+    for (oid, grouped) in rows.into_iter().group_by(|&(_, _, oid)| oid).into_iter() {
+        let mut grouped = grouped.peekable();
+        let type_name = match grouped.peek() {
+            Some(&(ref type_name, _, _)) => type_name.clone(),
+            None => panic!("enum must have at least one variant"),
+        };
+        let variants = grouped.map(|(_, ref variant_name, _)| variant_name.clone()).collect();
+        enum_information.push(EnumInformation {
+            type_name: type_name,
+            variants: variants,
+            oid: oid,
+            array_oid: oid,  // TODO: fix this.
+        });
+    }
+    Ok(enum_information)
 }
