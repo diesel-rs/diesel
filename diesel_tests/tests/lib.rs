@@ -32,5 +32,6 @@ mod schema_inference;
 mod select;
 mod transactions;
 mod types;
+mod type_inference;
 mod types_roundtrip;
 mod update;

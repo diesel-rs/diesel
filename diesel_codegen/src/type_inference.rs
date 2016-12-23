@@ -34,23 +34,25 @@ fn camel_cased(snake_case: &str) -> String {
                 .take_while(|&c| c != '_'))).collect()
 }
 
-fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>, types: Option<&str>,
-                               camel_case_types: bool, camel_case_variants: bool) -> quote::Tokens {
-    let mut acceptable_type_names = HashSet::new();
-    if let Some(type_names) = types.map(|csl| csl.split(",").map(|t| t.trim())) {
-        for type_name in type_names {
-            acceptable_type_names.insert(canonicalize_pg_type_name(type_name));
-        }
-        if acceptable_type_names.is_empty() {
-            panic!("acceptable_type_names should be non-empty if specified")
-        }
-    };
+fn read_type_names(csl: &str) -> HashSet<String> {
+    csl.split(",")
+        .map(|t| t.trim())
+        .map(canonicalize_pg_type_name)
+        .filter(|t| !t.is_empty()).collect()
+}
+
+fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
+                               type_list: Option<&str>, camel_case_types: bool,
+                               camel_case_variants: bool) -> quote::Tokens {
+    let acceptable_type_names: HashSet<String> =
+        type_list.map(read_type_names).unwrap_or_else(|| HashSet::new());
     let acceptable_type_name_p = |s: &str| {
-        acceptable_type_names.is_empty() ||
-            acceptable_type_names.contains(&canonicalize_pg_type_name(s))
+        acceptable_type_names.is_empty() || acceptable_type_names.contains(&canonicalize_pg_type_name(s))
     };
-    let connection = establish_connection(database_url).unwrap();
-    let inferred_enums = get_enum_information(&connection, schema_name).unwrap().into_iter()
+    let connection = establish_connection(database_url).expect("unable to connect to database");
+    let inferred_enums = get_enum_information(&connection, schema_name)
+        .expect("unable to read type information from database")
+        .into_iter()
         .filter(|e| acceptable_type_name_p(&e.type_name))
         .map(|EnumInformation { type_name, variants, oid, array_oid }| {
             let final_type_name = if camel_case_types {
@@ -74,16 +76,13 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>, ty
     quote!(#(#inferred_enums)*)
 }
 
-fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32) -> quote::Tokens {
-    let has_sql_type = quote! {
-        ::diesel::types::HasSqlType<#type_name>
-    };
-    let backend = quote! {
-        ::diesel::backend::Backend
-    };
-    let box_error = quote! {
-        ::std::boxed::Box<::std::error::Error + ::std::marker::Send + ::std::marker::Sync>
-    };
+fn generate_enum(type_name: &str, variants: &[String], _oid: u32, _array_oid: u32) -> quote::Tokens {
+    let type_name = syn::Ident::new(type_name);
+    let variants: Vec<syn::Ident> = variants.into_iter().map(|s| syn::Ident::new(s.as_ref())).collect();
+    let has_sql_type = quote!(::diesel::types::HasSqlType<#type_name>);
+    let backend = quote!(::diesel::backend::Backend);
+    let box_error = quote!(
+        ::std::boxed::Box<::std::error::Error + ::std::marker::Send + ::std::marker::Sync>);
     quote! {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
         pub enum #type_name {
@@ -94,35 +93,35 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
             fn metadata() { }
         }
 
-        impl #has_sql_type for ::diesel::backend::Pg {
-            fn metadata() -> ::diesel::pg::PgTypeMetadata {
-                ::diesel::pg::PgTypeMetadata {
-                    oid: #oid,
-                    array_oid: #array_oid,
-                }
-            }
-        }
+        // impl #has_sql_type for ::diesel::pg::Pg {
+        //     fn metadata() -> ::diesel::pg::PgTypeMetadata {
+        //         ::diesel::pg::PgTypeMetadata {
+        //             oid: #oid,
+        //             array_oid: #array_oid,
+        //         }
+        //     }
+        // }
 
-        impl ::diesel::query_builder::QueryId for #type_name {
-            type QueryId = Self;
+        // impl ::diesel::query_builder::QueryId for #type_name {
+        //     type QueryId = Self;
 
-            fn has_static_query_id() -> bool {
-                true
-            }
-        }
+        //     fn has_static_query_id() -> bool {
+        //         true
+        //     }
+        // }
 
         impl ::diesel::types::NotNull for #type_name { }
 
-        impl<DB> ::diesel::types::ToSql<#type_name, DB> where DB: #backend + #has_sql_type {
-            fn to_sql<W: ::std::io::Write>(&self, out: &mut W)
-                                            -> ::std::result::Result<IsNull, #box_error> {
+        impl<DB> ::diesel::types::ToSql<#type_name, DB> for #type_name where DB: #backend + #has_sql_type {
+            fn to_sql<W: ::std::io::Write>(&self, _out: &mut W)
+                                            -> ::std::result::Result<::diesel::types::IsNull, #box_error> {
                 unimplemented!()
             }
         }
 
         impl<DB> ::diesel::types::FromSql<#type_name, DB> for #type_name
             where DB: #backend + #has_sql_type {
-            fn from_sql(bytes: Option<&DB::RawValue>) -> ::std::result::Result<Self, #box_error> {
+            fn from_sql(_bytes: Option<&DB::RawValue>) -> ::std::result::Result<Self, #box_error> {
                 unimplemented!()
             }
         }
@@ -130,8 +129,8 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
         impl<DB> ::diesel::types::FromSqlRow<#type_name, DB> for #type_name
             where DB: #backend + #has_sql_type,
                   #type_name: ::diesel::types::FromSql<#type_name, DB> {
-            fn build_from_row<T: Row<DB>>(row: &mut T) -> ::std::result::Result<Self, #box_error> {
-                FromSql::<#type_name, DB>::from_sql(row.take())
+            fn build_from_row<T: ::diesel::row::Row<DB>>(row: &mut T) -> ::std::result::Result<Self, #box_error> {
+                ::diesel::types::FromSql::<#type_name, DB>::from_sql(row.take())
             }
         }
 
@@ -148,7 +147,11 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
 
 #[cfg(test)]
 mod tests {
+    use super::canonicalize_pg_type_name;
     use super::camel_cased;
+    use super::read_type_names;
+
+    use std::collections::HashSet;
 
     #[test]
     fn camel_cased_empty() {
@@ -178,5 +181,41 @@ mod tests {
     fn camel_cased_i18n() {
         assert_eq!("Außerdem", camel_cased("außerdem"));
         assert_eq!("AuSSerdem", camel_cased("au_ßerdem"));
+    }
+
+    #[test]
+    fn read_type_names_empty() {
+        assert!(read_type_names("").is_empty());
+        assert!(read_type_names(",,").is_empty());
+        assert!(read_type_names("     ").is_empty());
+        assert!(read_type_names(",  , ").is_empty());
+    }
+
+    #[test]
+    fn read_type_names_single() {
+        let assert_contains = |s: &str, h: HashSet<String>| {
+            assert!(!h.is_empty());
+            assert_eq!(canonicalize_pg_type_name(s), h.into_iter().next().unwrap());
+        };
+        let assert_not_contains = |s: &str, h: HashSet<String>| {
+            assert!(!h.is_empty());
+            assert!(s != h.iter().next().unwrap());
+        };
+        assert_contains("mytype", read_type_names("mytype"));
+        assert_contains("MyType", read_type_names("mytype"));
+        assert_not_contains("my_type", read_type_names("mytype"));
+        assert_not_contains("MyType", read_type_names("my_type"));
+    }
+
+    #[test]
+    fn read_type_names_multi() {
+        let assert_equal = |mut ss: Vec<&str>, h: HashSet<String>| {
+            ss.sort();
+            let mut names: Vec<String> = h.into_iter().collect();
+            names.sort();
+            assert_eq!(ss, names);
+        };
+        assert_equal(vec!("mytype1", "mytype2"), read_type_names("mytype1,mytype2"));
+        assert_equal(vec!("mytype1", "mytype2"), read_type_names(",mytype1,mytype2,"));
     }
 }
