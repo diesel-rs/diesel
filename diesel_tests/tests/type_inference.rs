@@ -1,5 +1,8 @@
 #[cfg(feature = "postgres")]
 mod postgres {
+    use diesel;
+    use diesel::types::HasSqlType;
+
     use std::collections::HashMap;
     use std::fmt::Write;
 
@@ -40,5 +43,10 @@ mod postgres {
         let mut h = HashMap::new();
         h.insert(UserType::Default, UserType::Guest);
         assert!(h.contains_key(&UserType::Default));
+    }
+
+    #[test]
+    fn pg_has_enum_type() {
+        let _ = <diesel::pg::Pg as HasSqlType<UserType>>::metadata();
     }
 }

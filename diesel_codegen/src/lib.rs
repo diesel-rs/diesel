@@ -1,5 +1,5 @@
 #![deny(warnings)]
-#![recursion_limit = "196"]
+#![recursion_limit = "256"]
 
 macro_rules! t {
     ($expr:expr) => {

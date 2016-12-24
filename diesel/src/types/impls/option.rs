@@ -7,12 +7,12 @@ use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
+use types::{ProvidesSqlTypeFor, HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 
-impl<T, DB> HasSqlType<Nullable<T>> for DB where
+impl<T, DB> ProvidesSqlTypeFor<DB> for Nullable<T> where
     DB: Backend + HasSqlType<T>, T: NotNull,
 {
-    fn metadata() -> DB::TypeMetadata{
+    fn self_metadata() -> DB::TypeMetadata{
         <DB as HasSqlType<T>>::metadata()
     }
 }

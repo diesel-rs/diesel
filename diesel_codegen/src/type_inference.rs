@@ -76,7 +76,7 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
     quote!(#(#inferred_enums)*)
 }
 
-fn generate_enum(type_name: &str, variants: &[String], _oid: u32, _array_oid: u32) -> quote::Tokens {
+fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32) -> quote::Tokens {
     let type_name = syn::Ident::new(type_name);
     let variants: Vec<syn::Ident> = variants.into_iter().map(|s| syn::Ident::new(s.as_ref())).collect();
     let has_sql_type = quote!(::diesel::types::HasSqlType<#type_name>);
@@ -89,18 +89,20 @@ fn generate_enum(type_name: &str, variants: &[String], _oid: u32, _array_oid: u3
             #(#variants),*
         }
 
-        impl #has_sql_type for ::diesel::backend::Debug {
-            fn metadata() { }
+        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::backend::Debug> for #type_name
+            where ::diesel::backend::Debug: ::diesel::backend::TypeMetadata {
+            fn self_metadata() { }
         }
 
-        // impl #has_sql_type for ::diesel::pg::Pg {
-        //     fn metadata() -> ::diesel::pg::PgTypeMetadata {
-        //         ::diesel::pg::PgTypeMetadata {
-        //             oid: #oid,
-        //             array_oid: #array_oid,
-        //         }
-        //     }
-        // }
+        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::pg::Pg> for #type_name
+            where ::diesel::pg::Pg: ::diesel::backend::TypeMetadata {
+            fn self_metadata() -> ::diesel::pg::PgTypeMetadata {
+                ::diesel::pg::PgTypeMetadata {
+                    oid: #oid,
+                    array_oid: #array_oid,
+                }
+            }
+        }
 
         // impl ::diesel::query_builder::QueryId for #type_name {
         //     type QueryId = Self;
