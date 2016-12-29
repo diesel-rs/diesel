@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+source ci_helpers.sh
+
+in_dir "diesel" on_stable cargo_test chrono $BACKEND
+in_dir "diesel" on_nightly cargo_test unstable chrono $BACKEND
+in_dir "examples" on_stable using_postgres "./test_stable"
+in_dir "examples" on_nightly using_postgres "./test_nightly"
+in_dir "diesel_cli" cargo_test $BACKEND
+in_dir "diesel_codegen_shared" cargo_test $BACKEND
+in_dir "diesel_codegen_shared" cargo_test dotenv $BACKEND
+in_dir "diesel_codegen_syntex" cargo_test $BACKEND
+in_dir "diesel_tests" on_stable cargo_test "stable_$BACKEND"
+in_dir "diesel_tests" on_nightly cargo_test "unstable_$BACKEND"
+in_dir "diesel_compile_tests" on_nightly cargo_test

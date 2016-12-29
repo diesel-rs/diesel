@@ -12,31 +12,19 @@ before_script:
   - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
   - psql -c 'create database diesel_schema;' -U postgres
+  - source bin/ci_helpers.sh
 script:
-- |
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && travis-cargo test -- --no-default-features --features "unstable chrono $BACKEND")
-  else
-    (cd diesel && travis-cargo test -- --no-default-features --features "chrono $BACKEND")
-  fi &&
-  if [[ "$BACKEND" == postgres ]]; then
-    if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-      (cd examples && ./test_nightly)
-    else
-      (cd examples && ./test_stable)
-    fi
-  fi &&
-  (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_codegen_shared && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
-  (cd diesel_codegen_syntex && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable_$BACKEND")
-  else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "stable_$BACKEND")
-  fi &&
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_compile_tests && travis-cargo test)
-  fi
+  - in_dir "diesel" on_stable cargo_test chrono $BACKEND
+  - in_dir "diesel" on_nightly cargo_test unstable chrono $BACKEND
+  - in_dir "examples" on_stable using_postgres "./test_stable"
+  - in_dir "examples" on_nightly using_postgres "./test_nightly"
+  - in_dir "diesel_cli" cargo_test $BACKEND
+  - in_dir "diesel_codegen_shared" cargo_test $BACKEND
+  - in_dir "diesel_codegen_shared" cargo_test dotenv $BACKEND
+  - in_dir "diesel_codegen_syntex" cargo_test $BACKEND
+  - in_dir "diesel_tests" on_stable cargo_test "stable_$BACKEND"
+  - in_dir "diesel_tests" on_nightly cargo_test "unstable_$BACKEND"
+  - in_dir "diesel_compile_tests" on_nightly cargo_test
 env:
   matrix:
     - BACKEND=sqlite
