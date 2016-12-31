@@ -5,6 +5,8 @@ mod integers;
 mod primitives;
 #[cfg(feature = "uuid")]
 mod uuid;
+#[cfg(feature = "serde_json")]
+mod json;
 
 /// PostgreSQL specific SQL types
 ///
@@ -88,4 +90,19 @@ pub mod sql_types {
 
     #[doc(hidden)]
     pub type Bpchar = ::types::VarChar;
+
+    #[cfg(feature = "serde_json")]
+    /// The JSON SQL type.  This type can only be used with `feature =
+    /// "serde_json"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`serde_json::Value`][Value]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`serde_json`][Value]
+    ///
+    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Json;
 }
