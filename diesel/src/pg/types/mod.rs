@@ -105,4 +105,19 @@ pub mod sql_types {
     ///
     /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
     #[derive(Debug, Clone, Copy, Default)] pub struct Json;
+
+    #[cfg(feature = "serde_json")]
+    /// The JSON SQL type.  This type can only be used with `feature =
+    /// "serde_json"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`serde_json::Value`][Value]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`serde_json`][Value]
+    ///
+    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Jsonb;
 }
