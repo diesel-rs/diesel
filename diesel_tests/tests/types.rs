@@ -387,6 +387,41 @@ fn pg_uuid_to_sql_uuid() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn pg_json_from_sql() {
+    extern crate serde_json;
+
+    let query = "'true'::json";
+    let expected_value = serde_json::Value::Bool(true);
+    assert_eq!(expected_value, query_single_value::<Json, serde_json::Value>(query));
+}
+
+// See http://stackoverflow.com/q/32843213/12089 for why we don't have a
+// pg_json_to_sql_json test.  There's no `'true':json = 'true':json`
+// because JSON string representations are ambiguous.  We _do_ have this
+// test for `jsonb` values.
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_jsonb_from_sql() {
+    extern crate serde_json;
+
+    let query = "'true'::jsonb";
+    let expected_value = serde_json::Value::Bool(true);
+    assert_eq!(expected_value, query_single_value::<Jsonb, serde_json::Value>(query));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_jsonb_to_sql_jsonb() {
+    extern crate serde_json;
+
+    let expected_value = "'false'::jsonb";
+    let value = serde_json::Value::Bool(false);
+    assert!(query_to_sql_equality::<Jsonb, serde_json::Value>(expected_value, value));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn text_array_can_be_assigned_to_varchar_array_column() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
