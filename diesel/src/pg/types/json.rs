@@ -8,13 +8,19 @@ use std::error::Error;
 use pg::Pg;
 use types::{self, ToSql, IsNull, FromSql};
 
+// The OIDs used to identify `json` and `jsonb` are not documented anywhere
+// obvious, but they are discussed on various PostgreSQL mailing lists,
+// including:
+//
+// https://www.postgresql.org/message-id/CA+mi_8Yv2SVOdhAtx-4CbpzoDtaJGkf8QvnushdF8bMgySAbYg@mail.gmail.com
+// https://www.postgresql.org/message-id/CA+mi_8bd_g-MDPMwa88w0HXfjysaLFcrCza90+KL9zpRGbxKWg@mail.gmail.com
 primitive_impls!(Json -> (serde_json::Value, pg: (114, 199)));
 primitive_impls!(Jsonb -> (serde_json::Value, pg: (3802, 3807)));
 
 impl FromSql<types::Json, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let bytes = not_none!(bytes);
-        serde_json::from_slice(&bytes)
+        serde_json::from_slice(bytes)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
     }
 }
