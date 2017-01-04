@@ -17,6 +17,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `persistable` module has been renamed to `insertable`.
 
+### Fixed
+
+* `#[derive(Insertable)]` allows fields of type `Option<T>` to be used with
+  columns that are not null if they have a default value.
+
 ## [0.9.1] - 2016-12-09
 
 ### Fixed

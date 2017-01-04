@@ -111,7 +111,8 @@ macro_rules! tuple_impls {
                     DB: Backend + SupportsDefaultKeyword,
                     Tab: Table,
                     $($T: Column<Table=Tab>,)+
-                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<DB>,)+
+                    $($T::SqlType: IntoNullable,)+
+                    $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<DB>,)+
             {
                 fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     $(
@@ -158,7 +159,8 @@ macro_rules! tuple_impls {
                 for ($(ColumnInsertValue<$T, $ST>,)+) where
                     Tab: Table,
                     $($T: Column<Table=Tab>,)+
-                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<::sqlite::Sqlite>,)+
+                    $($T::SqlType: IntoNullable,)+
+                    $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<::sqlite::Sqlite>,)+
             {
                 #[allow(unused_assignments)]
                 fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {

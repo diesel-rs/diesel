@@ -215,3 +215,27 @@ fn derive_identifiable_with_composite_pk() {
     assert_eq!((&2, &3), foo1.id());
     assert_eq!((&6, &7), foo2.id());
 }
+
+#[test]
+fn derive_insertable_with_option_for_not_null_field_with_default() {
+    #[derive(Insertable)]
+    #[table_name="users"]
+    struct NewUser {
+        id: Option<i32>,
+        name: &'static str,
+    }
+
+    let conn = connection();
+    let data = vec![
+        NewUser { id: None, name: "Jim" },
+        NewUser { id: Some(123), name: "Bob" },
+    ];
+    assert_eq!(Ok(2), insert(&data).into(users::table).execute(&conn));
+
+    let users = users::table.load::<User>(&conn).unwrap();
+    let jim = users.iter().find(|u| u.name == "Jim");
+    let bob = users.iter().find(|u| u.name == "Bob");
+
+    assert!(jim.is_some());
+    assert_eq!(Some(&User::new(123, "Bob")), bob);
+}
