@@ -136,11 +136,29 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     }
 }
 
+impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
+    Pg: HasSqlType<ST>,
+    &'a [T]: ToSql<Array<ST>, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    }
+}
+
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (&self as &[T]).to_sql(out)
+    }
+}
+
+impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T> where
+    Pg: HasSqlType<ST>,
+    Vec<T>: ToSql<Array<ST>, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
