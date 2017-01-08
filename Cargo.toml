@@ -4,18 +4,15 @@ members = [
     "diesel_cli",
     "diesel_codegen",
     "diesel_codegen_shared",
-    "diesel_codegen_syntex",
     # FIXME: getting "multiple matching crates for `diesel`" because of the shared build directory
     # "diesel_compile_tests",
     "diesel_tests",
     "examples/getting_started_step_1",
     "examples/getting_started_step_2",
     "examples/getting_started_step_3",
-    "examples/getting_started_step_4",
 ]
 
 [replace]
 "diesel:0.9.1" = { path = "diesel" }
 "diesel_codegen:0.9.0" = { path = "diesel_codegen" }
 "diesel_codegen_shared:0.9.0" = { path = "diesel_codegen_shared" }
-"diesel_codegen_syntex:0.9.0" = { path = "diesel_codegen_syntex" }

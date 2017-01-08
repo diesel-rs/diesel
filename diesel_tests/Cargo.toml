@@ -6,7 +6,6 @@ license = "MIT OR Apache-2.0"
 build = "build.rs"
 
 [build-dependencies]
-diesel_codegen_syntex = { path = "../diesel_codegen_syntex", optional = true }
 diesel = { path = "../diesel", default-features = false }
 dotenv = "0.8.0"
 
@@ -14,21 +13,16 @@ dotenv = "0.8.0"
 assert_matches = "1.0.1"
 chrono = { version = "^0.2.17" }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid"] }
-diesel_codegen = { path = "../diesel_codegen", optional = true }
+diesel_codegen = { path = "../diesel_codegen" }
 dotenv = "0.8.0"
 quickcheck = { version = "0.3.1", features = ["unstable"] }
 uuid = { version = ">=0.2.0, <0.4.0" }
 
 [features]
-default = ["with-syntex"]
-unstable = ["diesel/unstable", "diesel_codegen"]
-with-syntex = ["diesel_codegen_syntex"]
-postgres = ["diesel/postgres"]
-sqlite = ["diesel/sqlite"]
-stable_postgres = ["with-syntex", "postgres", "diesel_codegen_syntex/postgres"]
-stable_sqlite = ["with-syntex", "sqlite", "diesel_codegen_syntex/sqlite"]
-unstable_postgres = ["unstable", "postgres", "diesel_codegen/postgres"]
-unstable_sqlite = ["unstable", "sqlite", "diesel_codegen/sqlite"]
+default = []
+unstable = ["diesel/unstable"]
+postgres = ["diesel/postgres", "diesel_codegen/postgres"]
+sqlite = ["diesel/sqlite", "diesel_codegen/sqlite"]
 
 [[test]]
 name = "integration_tests"

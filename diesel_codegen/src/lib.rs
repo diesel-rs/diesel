@@ -1,4 +1,3 @@
-#![feature(proc_macro, proc_macro_lib)]
 #![deny(warnings)]
 
 macro_rules! t {
