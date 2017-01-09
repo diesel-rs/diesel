@@ -28,7 +28,7 @@ use types::HasSqlType;
 /// http://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING
 #[allow(missing_debug_implementations)]
 pub struct PgConnection {
-    raw_connection: Rc<RawConnection>,
+    raw_connection: RawConnection,
     transaction_depth: Cell<i32>,
     statement_cache: StatementCache,
 }
@@ -52,7 +52,7 @@ impl Connection for PgConnection {
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).map(|raw_conn| {
             PgConnection {
-                raw_connection: Rc::new(raw_conn),
+                raw_connection: raw_conn,
                 transaction_depth: Cell::new(0),
                 statement_cache: StatementCache::new(),
             }
@@ -154,7 +154,7 @@ impl PgConnection {
                 bind_types,
             ))
         } else {
-            let mut query_builder = PgQueryBuilder::new(&self.raw_connection);
+            let mut query_builder = PgQueryBuilder::new();
             try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
             Rc::new(try!(Query::sql(&query_builder.sql, Some(bind_types))))
         };

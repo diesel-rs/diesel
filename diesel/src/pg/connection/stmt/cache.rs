@@ -49,7 +49,7 @@ impl StatementCache {
 
     pub fn cached_query<T: QueryFragment<Pg> + QueryId>(
         &self,
-        conn: &Rc<RawConnection>,
+        conn: &RawConnection,
         source: &T,
         bind_types: Vec<u32>,
     ) -> QueryResult<Rc<Query>> {
@@ -58,7 +58,7 @@ impl StatementCache {
 
         let cache_suffix = self.cache.borrow().len() + 1;
         let mut cache = self.cache.borrow_mut();
-        let (cache_key, maybe_binds) = try!(cache_key(conn, source, bind_types));
+        let (cache_key, maybe_binds) = try!(cache_key(source, bind_types));
 
         match cache.entry(cache_key) {
             Occupied(entry) => Ok(entry.get().clone()),
@@ -66,7 +66,7 @@ impl StatementCache {
                 let statement = {
                     let sql = match entry.key().sql() {
                         Some(sql) => Cow::Borrowed(sql),
-                        None => Cow::Owned(try!(to_sql(conn, source))),
+                        None => Cow::Owned(try!(to_sql(source))),
                     };
 
                     let name = format!("__diesel_stmt_{}", cache_suffix);
@@ -104,16 +104,15 @@ impl StatementCache {
     }
 }
 
-fn to_sql<T: QueryFragment<Pg>>(conn: &Rc<RawConnection>, source: &T)
+fn to_sql<T: QueryFragment<Pg>>(source: &T)
     -> QueryResult<String>
 {
-    let mut query_builder = PgQueryBuilder::new(conn);
+    let mut query_builder = PgQueryBuilder::new();
     try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
     Ok(query_builder.sql)
 }
 
 fn cache_key<T: QueryFragment<Pg> + QueryId>(
-    conn: &Rc<RawConnection>,
     source: &T,
     bind_types: Vec<u32>,
 ) -> QueryResult<(StatementCacheKey, Option<Vec<u32>>)> {
@@ -121,7 +120,7 @@ fn cache_key<T: QueryFragment<Pg> + QueryId>(
         Some(id) => Ok((StatementCacheKey::Type(id), Some(bind_types))),
         None => Ok((
             StatementCacheKey::Query {
-                sql: try!(to_sql(conn, source)),
+                sql: try!(to_sql(source)),
                 bind_types: bind_types
             },
             None,
