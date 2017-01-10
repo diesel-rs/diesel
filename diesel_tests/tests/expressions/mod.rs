@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, connection_with_sean_and_tess_in_users_table};
+use schema::{connection, NewUser, connection_with_sean_and_tess_in_users_table, UserType};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -14,7 +14,8 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(id));
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Sean", None, UserType::Default))
+        .into(users).execute(&connection).unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 }
 
@@ -24,7 +25,8 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Sean", None, UserType::Default))
+        .into(users).execute(&connection).unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
@@ -75,9 +77,9 @@ fn max_returns_same_type_as_expression_being_maximized() {
     let source = users.select(max(name));
 
     let data: &[_] = &[
-        NewUser::new("B", None),
-        NewUser::new("C", None),
-        NewUser::new("A", None),
+        NewUser::new("B", None, UserType::Default),
+        NewUser::new("C", None, UserType::Default),
+        NewUser::new("A", None, UserType::Default),
     ];
     insert(data).into(users).execute(&connection).unwrap();
     assert_eq!(Ok("C".to_string()), source.first(&connection));
@@ -160,7 +162,8 @@ fn function_with_multiple_arguments() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    let new_users = vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)];
+    let new_users = vec![NewUser::new("Sean", Some("black"), UserType::Default),
+                         NewUser::new("Tess", None, UserType::Default)];
     insert(&new_users).into(users).execute(&connection).unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];

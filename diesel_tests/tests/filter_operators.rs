@@ -6,8 +6,8 @@ fn filter_by_inequality() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
 
     assert_eq!(vec![tess.clone()], users.filter(name.ne("Sean")).load(&connection).unwrap());
     assert_eq!(vec![sean.clone()], users.filter(name.ne("Tess")).load(&connection).unwrap());
@@ -19,8 +19,8 @@ fn filter_by_gt() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
+    let tess = User::new(2, "Tess", UserType::Default);
+    let jim = User::new(3, "Jim", UserType::Default);
 
     assert_eq!(vec![tess, jim.clone()],
         users.filter(id.gt(1)).load(&connection).unwrap());
@@ -32,8 +32,8 @@ fn filter_by_ge() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
+    let tess = User::new(2, "Tess", UserType::Default);
+    let jim = User::new(3, "Jim", UserType::Default);
 
     assert_eq!(vec![tess, jim.clone()],
         users.filter(id.ge(2)).load(&connection).unwrap());
@@ -45,8 +45,8 @@ fn filter_by_lt() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
 
     assert_eq!(vec![sean.clone(), tess],
         users.filter(id.lt(3)).load(&connection).unwrap());
@@ -58,8 +58,8 @@ fn filter_by_le() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
 
     assert_eq!(vec![sean.clone(), tess],
         users.filter(id.le(2)).load(&connection).unwrap());
@@ -71,9 +71,9 @@ fn filter_by_between() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
+    let jim = User::new(3, "Jim", UserType::Default);
 
     assert_eq!(vec![sean, tess.clone(), jim.clone()],
         users.filter(id.between(1..3)).load(&connection).unwrap());
@@ -87,9 +87,9 @@ fn filter_by_like() {
 
     let connection = connection();
     let data = vec![
-        NewUser::new("Sean Griffin", None),
-        NewUser::new("Tess Griffin", None),
-        NewUser::new("Jim", None),
+        NewUser::new("Sean Griffin", None, UserType::Default),
+        NewUser::new("Tess Griffin", None, UserType::Default),
+        NewUser::new("Jim", None, UserType::Default),
     ];
     insert(&data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
@@ -110,9 +110,9 @@ fn filter_by_any() {
     use diesel::expression::dsl::any;
 
     let connection = connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
+    let jim = User::new(3, "Jim", UserType::Default);
 
     let owned_names = vec!["Sean", "Tess"];
     let borrowed_names: &[&str] = &["Sean", "Jim"];
@@ -127,9 +127,9 @@ fn filter_by_in() {
     use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
+    let jim = User::new(3, "Jim", UserType::Default);
 
     let owned_names = vec!["Sean", "Tess"];
     let borrowed_names: &[_] = &["Sean", "Jim"];

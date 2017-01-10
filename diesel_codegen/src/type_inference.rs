@@ -23,17 +23,6 @@ pub fn derive_infer_enums(input: syn::MacroInput) -> quote::Tokens {
                                 true, true)
 }
 
-fn canonicalize_pg_type_name(type_name: &str) -> String {
-    type_name.trim().to_lowercase()
-}
-
-fn camel_cased(snake_case: &str) -> String {
-    snake_case.split("_").flat_map(
-        |s| s.chars().take(1).flat_map(|c| c.to_uppercase().into_iter()).chain(
-            s.chars().skip(1).flat_map(|c| c.to_lowercase())
-                .take_while(|&c| c != '_'))).collect()
-}
-
 fn read_type_names(csl: &str) -> HashSet<String> {
     csl.split(",")
         .map(|t| t.trim())
@@ -47,7 +36,8 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
     let acceptable_type_names: HashSet<String> =
         type_list.map(read_type_names).unwrap_or_else(|| HashSet::new());
     let acceptable_type_name_p = |s: &str| {
-        acceptable_type_names.is_empty() || acceptable_type_names.contains(&canonicalize_pg_type_name(s))
+        acceptable_type_names.is_empty() ||
+            acceptable_type_names.contains(&canonicalize_pg_type_name(s))
     };
     let connection = establish_connection(database_url).expect("unable to connect to database");
     let inferred_enums = get_enum_information(&connection, schema_name)
@@ -58,25 +48,28 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
             let final_type_name = if camel_case_types {
                 camel_cased(&type_name)
             } else {
-                type_name
+                type_name.clone()
             };
             let final_variants = if camel_case_variants {
                 variants.into_iter().map(|s| camel_cased(&s)).collect()
             } else {
                 variants
             };
-            let enum_decl = generate_enum(&final_type_name, &final_variants, oid, array_oid);
+            let enum_decl = generate_enum(
+                &type_name, &final_type_name, &final_variants, oid, array_oid);
             match schema_name {
                 None => enum_decl,
-                Some(schema) => quote! {
-                    mod #schema { #enum_decl }
+                Some(schema) => {
+                    let schema = syn::Ident::new(schema);
+                    quote!(mod #schema { #enum_decl })
                 },
             }
         });
     quote!(#(#inferred_enums)*)
 }
 
-fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32) -> quote::Tokens {
+fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
+                 oid: u32, array_oid: u32) -> quote::Tokens {
     let type_name = syn::Ident::new(type_name);
     let variants: Vec<syn::Ident> = variants.into_iter().map(|s| syn::Ident::new(s.as_ref())).collect();
     let has_sql_type = quote!(::diesel::types::HasSqlType<#type_name>);
@@ -104,13 +97,13 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
             }
         }
 
-        // impl ::diesel::query_builder::QueryId for #type_name {
-        //     type QueryId = Self;
+        impl ::diesel::query_builder::QueryId for #type_name {
+            type QueryId = Self;
 
-        //     fn has_static_query_id() -> bool {
-        //         true
-        //     }
-        // }
+            fn has_static_query_id() -> bool {
+                true
+            }
+        }
 
         impl ::diesel::types::NotNull for #type_name { }
 
@@ -118,6 +111,14 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
             fn to_sql<W: ::std::io::Write>(&self, _out: &mut W)
                                             -> ::std::result::Result<::diesel::types::IsNull, #box_error> {
                 unimplemented!()
+            }
+        }
+
+        impl<'a, DB> ::diesel::types::ToSql<::diesel::types::Nullable<#type_name>, DB> for #type_name
+            where DB: #backend + #has_sql_type, #type_name: ::diesel::types::ToSql<#type_name, DB> {
+            fn to_sql<W: ::std::io::Write>(&self, out: &mut W)
+                                           -> ::std::result::Result<::diesel::types::IsNull, #box_error> {
+                ::diesel::types::ToSql::<#type_name, DB>::to_sql(self, out)
             }
         }
 
@@ -144,46 +145,75 @@ fn generate_enum(type_name: &str, variants: &[String], oid: u32, array_oid: u32)
                 row
             }
         }
+
+        impl ::diesel::Expression for #type_name {
+            type SqlType = #type_name;
+        }
+
+        impl ::diesel::query_builder::QueryFragment<::diesel::backend::Debug> for #type_name {
+            fn to_sql(&self, out: &mut <::diesel::backend::Debug as #backend>::QueryBuilder)
+                      -> ::diesel::query_builder::BuildQueryResult {
+                use ::diesel::query_builder::QueryBuilder;
+                out.push_sql(&format!(" CAST('{:?}' AS {}) ", self, #sql_type_name));
+                Ok(())
+            }
+
+            fn collect_binds(&self, out: &mut <::diesel::backend::Debug as #backend>::BindCollector)
+                             -> ::diesel::result::QueryResult<()> {
+                Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
+        }
+
+        impl ::diesel::query_builder::QueryFragment<::diesel::pg::Pg> for #type_name {
+            fn to_sql(&self, out: &mut <::diesel::pg::Pg as #backend>::QueryBuilder)
+                      -> ::diesel::query_builder::BuildQueryResult {
+                use ::diesel::query_builder::QueryBuilder;
+                out.push_sql(&format!(" CAST('{:?}' AS {}) ", self, #sql_type_name));
+                Ok(())
+            }
+
+            fn collect_binds(&self, out: &mut <::diesel::pg::Pg as #backend>::BindCollector)
+                             -> ::diesel::result::QueryResult<()> {
+                Ok(())
+            }
+
+            fn is_safe_to_cache_prepared(&self) -> bool {
+                true
+            }
+        }
+
+        // impl ::diesel::expression::AsExpression<#type_name> for #type_name {
+        //     type Expression = ::diesel::expression::bound::Bound<#type_name, Self>;
+        //     fn as_expression(self) -> Self::Expression {
+        //         ::diesel::expression::bound::Bound::new(self)
+        //     }
+        // }
+
+        // impl<'a, 'expr> ::diesel::expression::AsExpression<#type_name> for &'expr #type_name {
+        //     type Expression = ::diesel::expression::bound::Bound<#type_name, Self>;
+        //     fn as_expression(self) -> Self::Expression {
+        //         ::diesel::expression::bound::Bound::new(self)
+        //     }
+        // }
+
+        // impl ::diesel::expression::AsExpression<::diesel::types::Nullable<#type_name>> for #type_name {
+        //     type Expression = ::diesel::expression::bound::Bound<::diesel::types::Nullable<#type_name>, Self>;
+        //     fn as_expression(self) -> Self::Expression {
+        //         ::diesel::expression::bound::Bound::new(self)
+        //     }
+        // }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::canonicalize_pg_type_name;
-    use super::camel_cased;
     use super::read_type_names;
 
     use std::collections::HashSet;
-
-    #[test]
-    fn camel_cased_empty() {
-        assert_eq!("", camel_cased(""));
-        assert_eq!("", camel_cased("_"));
-    }
-
-    #[test]
-    fn camel_cased_initial_caps() {
-        assert_eq!("Cased", camel_cased("CASED"));
-        assert_eq!("Cased", camel_cased("cased"));
-        assert_eq!("C", camel_cased("C"));
-        assert_eq!("C", camel_cased("c"));
-    }
-
-    #[test]
-    fn camel_cased_underscores() {
-        assert_eq!("CamelCased", camel_cased("camel_cased"));
-        assert_eq!("CamelCased", camel_cased("cAmEL_CAsEd"));
-        assert_eq!("CamelCased", camel_cased("camel_cased_"));
-        assert_eq!("CamelCased", camel_cased("_camel_cased"));
-        assert_eq!("CamelCased", camel_cased("_camel_cased_"));
-        assert_eq!("CamelCased", camel_cased("_camel__cased_"));
-    }
-
-    #[test]
-    fn camel_cased_i18n() {
-        assert_eq!("Außerdem", camel_cased("außerdem"));
-        assert_eq!("AuSSerdem", camel_cased("au_ßerdem"));
-    }
 
     #[test]
     fn read_type_names_empty() {

@@ -1,5 +1,5 @@
 #![deny(warnings)]
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -14,6 +14,7 @@ extern crate diesel_codegen_shared;
 extern crate diesel;
 #[macro_use]
 extern crate quote;
+extern crate syntex_syntax;
 extern crate proc_macro;
 extern crate syn;
 

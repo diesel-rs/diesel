@@ -88,6 +88,24 @@ mod information_schema {
     }
 }
 
+pub fn camel_cased(snake_case: &str) -> String {
+    snake_case.split("_").flat_map(
+        |s| s.chars().take(1).flat_map(|c| c.to_uppercase().into_iter()).chain(
+            s.chars().skip(1).flat_map(|c| c.to_lowercase())
+                .take_while(|&c| c != '_'))).collect()
+}
+
+pub fn canonicalize_pg_type_name(type_name: &str) -> String {
+    type_name.trim().to_lowercase()
+}
+
+fn is_builtin_type_name(tpe: &str) -> bool {
+    // TODO: make this exhaustive, maybe doing better than hard-coding a list.
+    ["bool", "smallint", "integer", "bigint", "float", "double", "text", "binary",
+     "interval", "date", "time", "timestamp", "oid", "uuid", "timestamptz", "bigserial",
+     "bytea", "serial", "smallserial", "array", "int4", "varchar"].contains(&tpe)
+}
+
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with("_");
     let tpe = if is_array {
@@ -96,11 +114,21 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         &attr.type_name
     };
 
-    Ok(ColumnType {
-        path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
-        is_array: is_array,
-        is_nullable: attr.nullable,
-    })
+    if is_builtin_type_name(&tpe) {
+        Ok(ColumnType {
+            path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
+            is_builtin: true,
+            is_array: is_array,
+            is_nullable: attr.nullable,
+        })
+    } else {
+        Ok(ColumnType {
+            path: vec!["super".into(), "__diesel_infer_enums".into(), camel_cased(&tpe)],
+            is_builtin: false,
+            is_array: is_array,
+            is_nullable: attr.nullable,
+        })
+    }
 }
 
 fn capitalize(name: &str) -> String {
@@ -195,4 +223,40 @@ fn skip_views() {
 
     assert!(table_names.contains(&"a_regular_table".to_string()));
     assert!(!table_names.contains(&"a_view".to_string()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::canonicalize_pg_type_name;
+    use super::camel_cased;
+
+    #[test]
+    fn camel_cased_empty() {
+        assert_eq!("", camel_cased(""));
+        assert_eq!("", camel_cased("_"));
+    }
+
+    #[test]
+    fn camel_cased_initial_caps() {
+        assert_eq!("Cased", camel_cased("CASED"));
+        assert_eq!("Cased", camel_cased("cased"));
+        assert_eq!("C", camel_cased("C"));
+        assert_eq!("C", camel_cased("c"));
+    }
+
+    #[test]
+    fn camel_cased_underscores() {
+        assert_eq!("CamelCased", camel_cased("camel_cased"));
+        assert_eq!("CamelCased", camel_cased("cAmEL_CAsEd"));
+        assert_eq!("CamelCased", camel_cased("camel_cased_"));
+        assert_eq!("CamelCased", camel_cased("_camel_cased"));
+        assert_eq!("CamelCased", camel_cased("_camel_cased_"));
+        assert_eq!("CamelCased", camel_cased("_camel__cased_"));
+    }
+
+    #[test]
+    fn camel_cased_i18n() {
+        assert_eq!("Außerdem", camel_cased("außerdem"));
+        assert_eq!("AuSSerdem", camel_cased("au_ßerdem"));
+    }
 }

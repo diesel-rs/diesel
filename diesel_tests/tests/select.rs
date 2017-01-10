@@ -29,11 +29,11 @@ fn selecting_a_struct() {
         .unwrap();
 
     let expected_users = vec![
-        NewUser::new("Sean", None),
-        NewUser::new("Tess", None),
+        NewUser::new("Sean", None, UserType::Default),
+        NewUser::new("Tess", None, UserType::Default),
     ];
     let actual_users: Vec<_> = users
-        .select((name, hair_color))
+        .select((name, hair_color, user_class))
         .load(&connection).unwrap();
     assert_eq!(expected_users, actual_users);
 }
@@ -136,8 +136,8 @@ fn selecting_columns_with_different_definition_order() {
         string("hair_color"),
         string("name").not_null(),
     )).execute(&connection).unwrap();
-    let expected_user = User::with_hair_color(1, "Sean", "black");
-    insert(&NewUser::new("Sean", Some("black"))).into(users::table)
+    let expected_user = User::with_hair_color(1, "Sean", "black", UserType::Default);
+    insert(&NewUser::new("Sean", Some("black"), UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
     let user_from_select = users::table.first(&connection);
 

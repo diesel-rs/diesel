@@ -100,6 +100,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
 
     Ok(ColumnType {
         path: path,
+        is_builtin: true,
         is_array: false,
         is_nullable: attr.nullable,
     })

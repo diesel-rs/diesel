@@ -10,8 +10,8 @@ fn find() {
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
 
-    assert_eq!(Ok(User::new(1, "Sean")), users.find(1).first(&connection));
-    assert_eq!(Ok(User::new(2, "Tess")), users.find(2).first(&connection));
+    assert_eq!(Ok(User::new(1, "Sean", UserType::Default)), users.find(1).first(&connection));
+    assert_eq!(Ok(User::new(2, "Tess", UserType::Default)), users.find(2).first(&connection));
     assert_eq!(Ok(None::<User>), users.find(3).first(&connection).optional());
 }
 

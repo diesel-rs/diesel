@@ -1,4 +1,5 @@
 use syn;
+// use syntex_syntax::symbol::keywords;
 use quote;
 
 use diesel_codegen_shared::*;
@@ -78,9 +79,18 @@ fn column_def_tokens(
     let column_type = determine_column_type(column, connection).unwrap();
     let path_segments = column_type.path
         .into_iter()
-        .map(syn::PathSegment::from)
+        .map(
+             // if x == "self" {
+             //     syn::PathSegment {
+             //         ident: keywords::SelfValue.ident(),
+             //         parameters: syn::PathParameters::none(),
+             //     }
+             // } else {
+                 syn::PathSegment::from
+             // }
+)
         .collect();
-    let tpe = syn::Path { global: true, segments: path_segments };
+    let tpe = syn::Path { global: column_type.is_builtin, segments: path_segments };
     let mut tpe = quote!(#tpe);
 
     if column_type.is_array {

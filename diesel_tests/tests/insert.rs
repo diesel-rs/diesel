@@ -6,16 +6,18 @@ fn insert_records() {
     use schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
+        NewUser::new("Sean", Some("Black"), UserType::Default),
+        NewUser::new("Tess", None, UserType::Default),
     ];
 
     insert(new_users).into(users).execute(&connection).unwrap();
     let actual_users = users.load::<User>(&connection).unwrap();
 
     let expected_users = vec![
-        User { id: actual_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
-        User { id: actual_users[1].id, name: "Tess".to_string(), hair_color: None },
+        User { id: actual_users[0].id, name: "Sean".to_string(),
+               hair_color: Some("Black".to_string()), user_class: UserType::Default },
+        User { id: actual_users[1].id, name: "Tess".to_string(),
+               hair_color: None, user_class: UserType::Default },
     ];
     assert_eq!(expected_users, actual_users);
 }
@@ -26,14 +28,16 @@ fn insert_records_using_returning_clause() {
     use schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
+        NewUser::new("Sean", Some("Black"), UserType::Default),
+        NewUser::new("Tess", None, UserType::Default),
     ];
 
     let inserted_users = insert(new_users).into(users).get_results::<User>(&connection).unwrap();
     let expected_users = vec![
-        User { id: inserted_users[0].id, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
-        User { id: inserted_users[1].id, name: "Tess".to_string(), hair_color: None },
+        User { id: inserted_users[0].id, name: "Sean".to_string(),
+               hair_color: Some("Black".to_string()), user_class: UserType::Default },
+        User { id: inserted_users[1].id, name: "Tess".to_string(),
+               hair_color: None, user_class: UserType::Default },
     ];
 
     assert_eq!(expected_users, inserted_users);
@@ -46,8 +50,8 @@ fn insert_records_with_custom_returning_clause() {
 
     let connection = connection();
     let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
+        NewUser::new("Sean", Some("Black"), UserType::Default),
+        NewUser::new("Tess", None, UserType::Default),
     ];
 
     let inserted_users = insert(new_users)
@@ -77,14 +81,16 @@ fn batch_insert_with_defaults() {
     )).execute(&connection).unwrap();
 
     let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
+        NewUser::new("Sean", Some("Black"), UserType::Default),
+        NewUser::new("Tess", None, UserType::Default),
     ];
     insert(new_users).into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
-        User { id: 1, name: "Sean".to_string(), hair_color: Some("Black".to_string()) },
-        User { id: 2, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+        User { id: 1, name: "Sean".to_string(),
+               hair_color: Some("Black".to_string()), user_class: UserType::Default},
+        User { id: 2, name: "Tess".to_string(),
+               hair_color: Some("Green".to_string()), user_class: UserType::Default },
     ];
     let actual_users = users.load(&connection).unwrap();
 
@@ -103,10 +109,12 @@ fn insert_with_defaults() {
         string("name").not_null(),
         string("hair_color").not_null().default("'Green'"),
     )).execute(&connection).unwrap();
-    insert(&NewUser::new("Tess", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Tess", None, UserType::Default))
+        .into(users).execute(&connection).unwrap();
 
     let expected_users = vec![
-        User { id: 1, name: "Tess".to_string(), hair_color: Some("Green".to_string()) },
+        User { id: 1, name: "Tess".to_string(),
+               hair_color: Some("Green".to_string()), user_class: UserType::Default },
     ];
     let actual_users = users.load(&connection).unwrap();
 
@@ -158,8 +166,8 @@ fn insert_borrowed_content() {
 
     let actual_users = users.load::<User>(&connection).unwrap();
     let expected_users = vec![
-        User::new(actual_users[0].id, "Sean"),
-        User::new(actual_users[1].id, "Tess"),
+        User::new(actual_users[0].id, "Sean", UserType::Default),
+        User::new(actual_users[1].id, "Tess", UserType::Default),
     ];
 
     assert_eq!(expected_users, actual_users);

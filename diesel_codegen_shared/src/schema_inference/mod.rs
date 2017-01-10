@@ -6,6 +6,7 @@ mod sqlite;
 
 use diesel::Connection;
 use diesel::result::Error::NotFound;
+#[cfg(feature = "postgres")]
 use itertools::Itertools;
 use std::error::Error;
 
@@ -14,6 +15,8 @@ use database_url::extract_database_url;
 pub use self::data_structures::{ColumnInformation, ColumnType};
 #[cfg(feature = "postgres")]
 pub use self::data_structures::EnumInformation;
+#[cfg(feature = "postgres")]
+pub use self::pg::{camel_cased, canonicalize_pg_type_name};
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
     -> Result<Vec<String>, Box<Error>>

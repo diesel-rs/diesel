@@ -65,7 +65,7 @@ fn test_updating_multiple_columns() {
         hair_color.eq(Some("black")),
     )).execute(&connection).unwrap();
 
-    let expected_user = User::with_hair_color(sean.id, "Jim", "black");
+    let expected_user = User::with_hair_color(sean.id, "Jim", "black", UserType::Default);
     let user = users.find(sean.id).first(&connection);
     assert_eq!(Ok(expected_user), user);
 }
@@ -79,7 +79,7 @@ fn update_returning_struct() {
     let sean = find_user_by_name("Sean", &connection);
     let user = update(users.filter(id.eq(sean.id))).set(hair_color.eq("black"))
         .get_result(&connection);
-    let expected_user = User::with_hair_color(sean.id, "Sean", "black");
+    let expected_user = User::with_hair_color(sean.id, "Sean", "black", UserType::Default);
 
     assert_eq!(Ok(expected_user), user);
 }
@@ -106,12 +106,12 @@ fn update_with_struct_as_changes() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let changes = NewUser::new("Jim", Some("blue"));
+    let changes = NewUser::new("Jim", Some("blue"), UserType::Default);
 
     update(users.filter(id.eq(sean.id))).set(&changes)
         .execute(&connection).unwrap();
     let user = users.find(sean.id).first(&connection);
-    let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
+    let expected_user = User::with_hair_color(sean.id, "Jim", "blue", UserType::Default);
 
     assert_eq!(Ok(expected_user), user);
 }
@@ -123,12 +123,12 @@ fn update_with_struct_does_not_set_primary_key() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let other_id = sean.id + 1;
-    let changes = User::with_hair_color(other_id, "Jim", "blue");
+    let changes = User::with_hair_color(other_id, "Jim", "blue", UserType::Default);
 
     update(users.filter(id.eq(sean.id))).set(&changes)
         .execute(&connection).unwrap();
     let user = users.find(sean.id).first(&connection);
-    let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
+    let expected_user = User::with_hair_color(sean.id, "Jim", "blue", UserType::Default);
 
     assert_eq!(Ok(expected_user), user);
 }
@@ -139,7 +139,8 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
-    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User>(&connection);
+    let user = User::with_hair_color(sean.id, "Jim", "blue", UserType::Default)
+        .save_changes::<User>(&connection);
 
     let user_in_db = users.find(sean.id).first(&connection);
 
@@ -155,9 +156,9 @@ fn option_fields_on_structs_are_not_assigned() {
     update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
         .execute(&connection).unwrap();
-    let user = User::new(sean.id, "Jim").save_changes(&connection);
+    let user = User::new(sean.id, "Jim", UserType::Default).save_changes(&connection);
 
-    let expected_user = User::with_hair_color(sean.id, "Jim", "black");
+    let expected_user = User::with_hair_color(sean.id, "Jim", "black", UserType::Default);
     assert_eq!(Ok(expected_user), user);
 }
 
@@ -177,7 +178,7 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
         .execute(&connection).unwrap();
     let user = users::table.find(sean.id).first(&connection);
 
-    let expected_user = User::new(sean.id, "Jim");
+    let expected_user = User::new(sean.id, "Jim", UserType::Default);
     assert_eq!(Ok(expected_user), user);
 }
 

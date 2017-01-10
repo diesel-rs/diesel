@@ -4,7 +4,7 @@ use diesel::*;
 #[test]
 fn boxed_queries_can_be_executed() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table)
+    insert(&NewUser::new("Jim", None, UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
     let query_which_fails_unless_all_segments_are_applied =
         users::table
@@ -23,7 +23,7 @@ fn boxed_queries_can_be_executed() {
 #[test]
 fn boxed_queries_can_differ_conditionally() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table)
+    insert(&NewUser::new("Jim", None, UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
 
     enum Query { All, Ordered, One };
@@ -71,7 +71,7 @@ fn boxed_queries_implement_select_dsl() {
 #[test]
 fn boxed_queries_implement_filter_dsl() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Shane", None)).into(users::table)
+    insert(&NewUser::new("Shane", None, UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
     let data = users::table.into_boxed()
         .select(users::name)
