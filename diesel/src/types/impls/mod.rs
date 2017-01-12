@@ -9,6 +9,8 @@ macro_rules! not_none {
     }
 }
 
+#[doc(hidden)]
+#[macro_export]
 macro_rules! expression_impls {
     ($($Source:ident -> $Target:ty),+,) => {
         $(
@@ -56,6 +58,8 @@ macro_rules! expression_impls {
     }
 }
 
+#[doc(hidden)]
+#[macro_export]
 macro_rules! queryable_impls {
     ($($Source:ident -> $Target:ty),+,) => {$(
         impl<DB> $crate::types::FromSqlRow<types::$Source, DB> for $Target where
@@ -90,6 +94,8 @@ macro_rules! queryable_impls {
     )+}
 }
 
+#[doc(hidden)]
+#[macro_export]
 macro_rules! primitive_impls {
     ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr), sqlite: ($tpe:ident))) => {
         #[cfg(feature = "sqlite")]
