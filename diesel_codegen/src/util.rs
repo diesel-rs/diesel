@@ -109,10 +109,10 @@ pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
     }
 }
 
-pub fn get_options_from_input(attrs: &[Attribute], on_bug: fn() -> !)
+pub fn get_options_from_input(name: &str, attrs: &[Attribute], on_bug: fn() -> !)
     -> Option<Vec<MetaItem>>
 {
-    let options = attrs.iter().find(|a| a.name() == "options").map(|a| &a.value);
+    let options = attrs.iter().find(|a| a.name() == name).map(|a| &a.value);
     match options {
         Some(&MetaItem::List(_, ref options)) => {
             Some(options.iter().map(|o| match o {
