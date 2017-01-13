@@ -17,6 +17,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `persistable` module has been renamed to `insertable`.
 
+### Fixed
+
+* `#[derive(Insertable)]` allows fields of type `Option<T>` to be used with
+  columns that are not null if they have a default value.
+
+### Removed
+
+* `diesel_codegen_syntex` is no longer supported. `diesel_codegen` can now be
+  used on stable Rust.
+
+* Dropped support for Rust 1.14 and earlier
+
 ## [0.9.1] - 2016-12-09
 
 ### Fixed

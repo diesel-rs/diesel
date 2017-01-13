@@ -1,4 +1,3 @@
-#![feature(proc_macro, proc_macro_lib)]
 #![deny(warnings)]
 
 macro_rules! t {
@@ -58,19 +57,19 @@ pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
 }
 
-#[proc_macro_derive(InferSchema, attributes(options))]
+#[proc_macro_derive(InferSchema, attributes(infer_schema_options))]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
     expand_derive(input, schema_inference::derive_infer_schema)
 }
 
-#[proc_macro_derive(InferTableFromSchema, attributes(options))]
+#[proc_macro_derive(InferTableFromSchema, attributes(infer_table_from_schema_options))]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
     expand_derive(input, schema_inference::derive_infer_table_from_schema)
 }
 
-#[proc_macro_derive(EmbedMigrations, attributes(options))]
+#[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
 }

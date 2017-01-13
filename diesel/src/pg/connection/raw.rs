@@ -35,22 +35,6 @@ impl RawConnection {
         last_error_message(self.internal_connection)
     }
 
-    pub fn escape_identifier(&self, identifier: &str) -> Result<PgString, String> {
-        let result_ptr = unsafe { PQescapeIdentifier(
-            self.internal_connection,
-            identifier.as_ptr() as *const libc::c_char,
-            identifier.len() as libc::size_t,
-        ) };
-
-        if result_ptr.is_null() {
-            Err(last_error_message(self.internal_connection))
-        } else {
-            unsafe {
-                Ok(PgString::new(result_ptr))
-            }
-        }
-    }
-
     pub fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
             PQsetNoticeProcessor(self.internal_connection, Some(notice_processor), ptr::null_mut());
@@ -136,38 +120,6 @@ fn last_error_message(conn: *const PGconn) -> String {
         let error_ptr = PQerrorMessage(conn);
         let bytes = CStr::from_ptr(error_ptr).to_bytes();
         str::from_utf8_unchecked(bytes).to_string()
-    }
-}
-
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct PgString {
-    pg_str: *mut libc::c_char,
-}
-
-impl PgString {
-    unsafe fn new(ptr: *mut libc::c_char) -> Self {
-        PgString {
-            pg_str: ptr,
-        }
-    }
-}
-
-impl ::std::ops::Deref for PgString {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        unsafe {
-            let c_string = CStr::from_ptr(self.pg_str);
-            str::from_utf8_unchecked(c_string.to_bytes())
-        }
-    }
-}
-
-impl Drop for PgString {
-    fn drop(&mut self) {
-        unsafe {
-            PQfreemem(self.pg_str as *mut libc::c_void)
-        }
     }
 }
 

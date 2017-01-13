@@ -5,6 +5,7 @@ A safe, extensible ORM and Query Builder for Rust
 
 [![Build Status](https://travis-ci.org/diesel-rs/diesel.svg)](https://travis-ci.org/diesel-rs/diesel)
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
 [Documentation](http://docs.diesel.rs)
 

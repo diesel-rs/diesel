@@ -5,6 +5,7 @@ use expression::Expression;
 use result::QueryResult;
 use query_builder::{QueryBuilder, BuildQueryResult};
 use query_source::{Table, Column};
+use types::IntoNullable;
 
 /// Represents that a structure can be used to to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
@@ -32,7 +33,8 @@ pub trait InsertValues<DB: Backend> {
 #[derive(Debug, Copy, Clone)]
 pub enum ColumnInsertValue<Col, Expr> where
     Col: Column,
-    Expr: Expression<SqlType=Col::SqlType>,
+    Col::SqlType: IntoNullable,
+    Expr: Expression<SqlType=<Col::SqlType as IntoNullable>::Nullable>,
 {
     Expression(Col, Expr),
     Default(Col),

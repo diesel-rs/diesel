@@ -40,3 +40,7 @@ pub type NotBetween<Lhs, Rhs> = super::predicates::NotBetween<Lhs,
 pub use super::predicates::{IsNull, IsNotNull, Asc, Desc};
 #[doc(inline)]
 pub use super::array_comparison::EqAny;
+
+#[doc(hidden)]
+pub type AsNullableExpr<Item, TargetExpr> = AsExprOf<Item,
+    <SqlTypeOf<TargetExpr> as types::IntoNullable>::Nullable>;

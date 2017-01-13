@@ -20,19 +20,14 @@ script:
     (cd diesel && travis-cargo test -- --no-default-features --features "chrono $BACKEND")
   fi &&
   if [[ "$BACKEND" == postgres ]]; then
-    if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-      (cd examples && ./test_nightly)
-    else
-      (cd examples && ./test_stable)
-    fi
+    (cd examples && ./test_all)
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_codegen_shared && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
-  (cd diesel_codegen_syntex && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable_$BACKEND")
+    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "stable_$BACKEND")
+    (cd diesel_tests && travis-cargo test -- --no-default-features --features "$BACKEND")
   fi &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_compile_tests && travis-cargo test)
@@ -50,8 +45,8 @@ after_success:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono uuid")
-    (echo "docs.diesel.rs" > diesel/target/doc/CNAME)
-    (cd diesel && travis-cargo doc-upload)
+    (echo "docs.diesel.rs" > ../diesel/target/doc/CNAME)
+    (travis-cargo doc-upload)
   fi
 branches:
   only:
@@ -65,3 +60,6 @@ notifications:
     on_success: change
     on_failure: always
     on_start: never
+matrix:
+  allow_failures:
+    - rust: stable
