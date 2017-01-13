@@ -7,6 +7,7 @@ members = [
     # FIXME: getting "multiple matching crates for `diesel`" because of the shared build directory
     # "diesel_compile_tests",
     "diesel_tests",
+    "diesel_infer_schema",
     "examples/getting_started_step_1",
     "examples/getting_started_step_2",
     "examples/getting_started_step_3",

@@ -1,12 +1,15 @@
 extern crate chrono;
+#[macro_use]
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
+extern crate diesel_infer_schema;
 
 mod database_error;
 #[macro_use]
 mod database;
 mod cli;
+mod pretty_printing;
 
 use chrono::*;
 use clap::{ArgMatches,Shell};
@@ -35,6 +38,7 @@ fn main() {
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
+        ("print-schema", Some(matches)) => run_infer_schema(matches),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -185,6 +189,20 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 
     result.join(target_path.strip_prefix(current_path).unwrap())
 }
+
+fn run_infer_schema(matches: &ArgMatches) {
+    let database_url = database::database_url(matches);
+    let schema_name = matches.value_of("schema");
+    let schema = diesel_infer_schema::infer_schema_for_schema_name(&database_url, schema_name,
+        |table_name, error| {
+            println!("Failed to infer schema for table {}: {}", table_name, error);
+        })
+        .expect("Could not load tables from database");
+    
+    pretty_printing::format_schema(schema.as_str(), ::std::io::stdout());
+}
+
+
 
 #[cfg(test)]
 mod tests {
