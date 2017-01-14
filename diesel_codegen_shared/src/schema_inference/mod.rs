@@ -80,6 +80,7 @@ pub fn get_table_data(conn: &InferConnection, table_name: &str)
 }
 
 pub fn determine_column_type(
+    extra_types_module: Option<&str>,
     attr: &ColumnInformation,
     conn: &InferConnection,
 ) -> Result<ColumnType, Box<Error>> {
@@ -87,7 +88,7 @@ pub fn determine_column_type(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => pg::determine_column_type(attr),
+        InferConnection::Pg(_) => pg::determine_column_type(extra_types_module, attr),
     }
 }
 

@@ -78,7 +78,7 @@ pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
 }
 
-#[proc_macro_derive(InferEnums, attributes(options))]
+#[proc_macro_derive(InferEnums, attributes(infer_enum_options))]
 #[cfg(feature = "postgres")]
 pub fn derive_infer_enums(input: TokenStream) -> TokenStream {
     expand_derive(input, type_inference::derive_infer_enums)

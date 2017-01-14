@@ -1,10 +1,9 @@
+pub use enums::*;
 use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
-infer_enums!("dotenv:DATABASE_URL");
-pub use self::__diesel_infer_enums::UserType;
-infer_schema!("dotenv:DATABASE_URL");
+infer_schema!(extra_types_module = "::enums", "dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[has_many(posts)]

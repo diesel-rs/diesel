@@ -14,6 +14,8 @@ mod custom_schemas;
 mod debug;
 mod delete;
 mod deserialization;
+#[cfg(feature = "postgres")]
+mod enums;
 mod errors;
 mod expressions;
 mod filter;

@@ -106,7 +106,8 @@ fn is_builtin_type_name(tpe: &str) -> bool {
      "bytea", "serial", "smallserial", "array", "int4", "varchar"].contains(&tpe)
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn determine_column_type(extra_types_module: Option<&str>,
+                             attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with("_");
     let tpe = if is_array {
         &attr.type_name[1..]
@@ -122,12 +123,15 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
             is_nullable: attr.nullable,
         })
     } else {
-        Ok(ColumnType {
-            path: vec!["super".into(), "__diesel_infer_enums".into(), camel_cased(&tpe)],
-            is_builtin: false,
-            is_array: is_array,
-            is_nullable: attr.nullable,
-        })
+        match extra_types_module {
+            Some(m) => Ok(ColumnType {
+                path: vec![m.into(), camel_cased(&tpe)],
+                is_builtin: false,
+                is_array: is_array,
+                is_nullable: attr.nullable,
+            }),
+            None => panic!("Cannot locate non-builtin type {} unless extra types module is defined", tpe),
+        }
     }
 }
 

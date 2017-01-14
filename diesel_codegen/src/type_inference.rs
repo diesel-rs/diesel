@@ -12,7 +12,8 @@ pub fn derive_infer_enums(input: syn::MacroInput) -> quote::Tokens {
         panic!("This is a bug. Please open a Github issue with your invocation of `infer_enums!`");
     }
 
-    let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
+    let options = get_options_from_input("infer_enum_options", &input.attrs, bug)
+        .unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
     let schema_name = get_optional_option(&options, "schema_name");
     let types = get_optional_option(&options, "types");
