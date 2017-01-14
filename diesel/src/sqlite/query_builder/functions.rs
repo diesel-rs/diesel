@@ -17,18 +17,13 @@ use super::nodes::Replace;
 /// #     }
 /// # }
 /// #
+/// # #[derive(Insertable)]
+/// # #[table_name="users"]
 /// # struct User<'a> {
 /// #     id: i32,
 /// #     name: &'a str,
 /// # }
 /// #
-/// # impl_Insertable! {
-/// #     (users)
-/// #     struct User<'a> {
-/// #         id: i32,
-/// #         name: &'a str,
-/// #     }
-/// # }
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
