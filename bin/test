@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
 
-if [ "$1" == "integration" ] && [ "$2" == "sqlite" ]; then
+if [ "$1" = "integration" ] && [ "$2" = "sqlite" ]; then
   (cd diesel_tests && DATABASE_URL=/tmp/test.db cargo test --features "sqlite" --no-default-features)
-elif [ "$1" == "integration" ]; then
+elif [ "$1" = "integration" ]; then
   (cd diesel_tests && cargo test --features "postgres" --no-default-features)
-elif [ "$1" == "compile" ]; then
+elif [ "$1" = "compile" ]; then
   (cd diesel_compile_tests && cargo test)
 else
   (cd diesel && cargo test --no-default-features --features "chrono sqlite postgres")
