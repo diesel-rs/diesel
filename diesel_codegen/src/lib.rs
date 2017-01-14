@@ -27,10 +27,10 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
-mod schema_inference;
 #[cfg(feature = "postgres")]
 mod type_inference;
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+mod schema_inference;
 mod util;
 
 use proc_macro::TokenStream;
