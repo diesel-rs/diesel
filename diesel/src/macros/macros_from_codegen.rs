@@ -15,7 +15,7 @@ macro_rules! infer_schema {
     ($database_url: expr) => {
         mod __diesel_infer_schema {
             #[derive(InferSchema)]
-            #[options(database_url=$database_url)]
+            #[infer_schema_options(database_url=$database_url)]
             struct _Dummy;
         }
         pub use self::__diesel_infer_schema::*;
@@ -24,7 +24,7 @@ macro_rules! infer_schema {
     ($database_url: expr, $schema_name: expr) => {
         mod __diesel_infer_schema {
             #[derive(InferSchema)]
-            #[options(database_url=$database_url, schema_name=$schema_name)]
+            #[infer_schema_options(database_url=$database_url, schema_name=$schema_name)]
             struct _Dummy;
         }
         pub use self::__diesel_infer_schema::*;
@@ -53,7 +53,7 @@ macro_rules! infer_schema {
 macro_rules! infer_table_from_schema {
     ($database_url: expr, $table_name: expr) => {
         #[derive(InferTableFromSchema)]
-        #[options(database_url=$database_url, table_name=$table_name)]
+        #[infer_table_from_schema_options(database_url=$database_url, table_name=$table_name)]
         struct __DieselInferTableFromSchema;
     }
 }
@@ -83,7 +83,7 @@ macro_rules! embed_migrations {
     ($migrations_path: expr) => {
         mod embedded_migrations {
             #[derive(EmbedMigrations)]
-            #[options(migrations_path=$migrations_path)]
+            #[embed_migrations_options(migrations_path=$migrations_path)]
             struct _Dummy;
         }
     }

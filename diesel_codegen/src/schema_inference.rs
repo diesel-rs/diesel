@@ -11,7 +11,8 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
                with your invocation of `infer_schema!");
     }
 
-    let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
+    let options = get_options_from_input("infer_schema_options", &input.attrs, bug)
+        .unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
     let schema_name = get_optional_option(&options, "schema_name");
 
@@ -24,7 +25,8 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
                with your invocation of `infer_table_from_schema!");
     }
 
-    let options = get_options_from_input(&input.attrs, bug).unwrap_or_else(|| bug());
+    let options = get_options_from_input("infer_table_from_schema_options", &input.attrs, bug)
+        .unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
     let table_name = get_option(&options, "table_name", bug);
 
