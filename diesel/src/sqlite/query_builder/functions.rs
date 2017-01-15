@@ -8,6 +8,7 @@ use super::nodes::Replace;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("src/doctest_setup.rs");
 /// #
 /// # table! {
