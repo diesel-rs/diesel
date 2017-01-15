@@ -61,6 +61,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("src/doctest_setup.rs");
     /// #
     /// # table! {
@@ -78,8 +79,9 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
+    /// # #[derive(Insertable)]
+    /// # #[table_name="posts"]
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
@@ -115,6 +117,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("src/doctest_setup.rs");
     /// #
     /// # table! {
@@ -132,8 +135,9 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
+    /// # #[derive(Insertable)]
+    /// # #[table_name="posts"]
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
@@ -165,6 +169,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("src/doctest_setup.rs");
     /// #
     /// # table! {
@@ -182,8 +187,9 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
+    /// # #[derive(Insertable)]
+    /// # #[table_name="posts"]
     /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// # impl_Insertable! { (posts) struct NewPost<'a> { tags: Vec<&'a str>, } }
     /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
@@ -225,6 +231,7 @@ pub trait SortExpressionMethods : Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("src/doctest_setup.rs");
     /// #
     /// # table! {
@@ -267,6 +274,7 @@ pub trait SortExpressionMethods : Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("src/doctest_setup.rs");
     /// #
     /// # table! {

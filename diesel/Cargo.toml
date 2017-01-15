@@ -19,6 +19,7 @@ chrono = { version = "^0.2.17", optional = true }
 uuid = { version = ">=0.2.0, <0.4.0", optional = true, features = ["use_std"] }
 
 [dev-dependencies]
+diesel_codegen = "0.9.0"
 quickcheck = "0.3.1"
 dotenv = "0.8.0"
 tempdir = "^0.3.4"

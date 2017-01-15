@@ -8,6 +8,7 @@ use super::nodes::Replace;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("src/doctest_setup.rs");
 /// #
 /// # table! {
@@ -17,18 +18,13 @@ use super::nodes::Replace;
 /// #     }
 /// # }
 /// #
+/// # #[derive(Insertable)]
+/// # #[table_name="users"]
 /// # struct User<'a> {
 /// #     id: i32,
 /// #     name: &'a str,
 /// # }
 /// #
-/// # impl_Insertable! {
-/// #     (users)
-/// #     struct User<'a> {
-/// #         id: i32,
-/// #         name: &'a str,
-/// #     }
-/// # }
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
