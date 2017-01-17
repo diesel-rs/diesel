@@ -2,4 +2,3 @@ target
 Cargo.lock
 !diesel_cli/Cargo.lock
 .env
-*~
