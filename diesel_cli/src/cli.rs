@@ -69,7 +69,22 @@ pub fn build_cli() -> App<'static, 'static> {
              .long("schema")
              .short("s")
              .takes_value(true)
-             .help("The name of the schema."));
+             .help("The name of the schema."))
+        .arg(Arg::with_name("table-name")
+             .index(1)
+             .takes_value(true)
+             .multiple(true)
+             .help("Table names to filter (default whitelist)"))
+        .arg(Arg::with_name("whitelist")
+             .short("w")
+             .long("whitelist")
+             .help("Use table list as whitelist")
+             .conflicts_with("blacklist"))
+        .arg(Arg::with_name("blacklist")
+             .short("b")
+             .long("blacklist")
+             .help("Use table list as blacklist")
+             .conflicts_with("whitelist"));
 
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))

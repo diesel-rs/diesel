@@ -193,9 +193,18 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 fn run_infer_schema(matches: &ArgMatches) {
     let database_url = database::database_url(matches);
     let schema_name = matches.value_of("schema");
+    let tables = matches.values_of("table-name").map(|v| v.collect())
+        .unwrap_or(::std::collections::HashSet::new());
+    let is_whitelist = matches.is_present("whitelist");
+    let is_blacklist = matches.is_present("blacklist");
     let schema = diesel_infer_schema::infer_schema_for_schema_name(&database_url, schema_name,
         |table_name, error| {
             println!("Failed to infer schema for table {}: {}", table_name, error);
+        }, |table_name| {
+            if is_whitelist || (!is_blacklist && !is_whitelist) {
+                return tables.contains(table_name);
+            }
+            !tables.contains(table_name)
         })
         .expect("Could not load tables from database");
     

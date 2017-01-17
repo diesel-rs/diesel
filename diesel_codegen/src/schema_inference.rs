@@ -21,7 +21,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
         schema_name.as_ref().map(|s| &**s),
         |table_name, error|{
              panic!("Could not infer table {}: {}", table_name, error)
-        }).expect("Could not load tables from database")
+        }, |_| true).expect("Could not load tables from database")
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
