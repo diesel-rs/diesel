@@ -52,12 +52,12 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
                 type_name.clone()
             };
             let final_variants = if camel_case_variants {
-                variants.into_iter().map(|s| camel_cased(&s)).collect()
+                variants.iter().map(|s| camel_cased(&s)).collect()
             } else {
-                variants
+                variants.clone()
             };
             let enum_decl = generate_enum(
-                &type_name, &final_type_name, &final_variants, oid, array_oid);
+                &type_name, &final_type_name, &variants, &final_variants, oid, array_oid);
             match schema_name {
                 None => enum_decl,
                 Some(schema) => {
@@ -69,26 +69,37 @@ fn infer_enums_for_schema_name(database_url: &str, schema_name: Option<&str>,
     quote!(#(#inferred_enums)*)
 }
 
-fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
+fn generate_enum(sql_type_name: &str, type_name: &str, sql_variants: &[String], variants: &[String],
                  oid: u32, array_oid: u32) -> quote::Tokens {
-    let type_name = syn::Ident::new(type_name);
-    let variants: Vec<syn::Ident> = variants.into_iter().map(|s| syn::Ident::new(s.as_ref())).collect();
-    let has_sql_type = quote!(::diesel::types::HasSqlType<#type_name>);
+    let type_ident = syn::Ident::new(type_name);
+    let variant_decls: Vec<syn::Ident> = variants.into_iter().map(|s| syn::Ident::new(s.as_ref()))
+        .collect();
+    let variant_name_arms: Vec<quote::Tokens> = variant_decls.iter().zip(sql_variants.iter())
+        .map(|(variant_decl, sql_variant)| quote!(#variant_decl => #sql_variant)).collect();
+    let has_sql_type = quote!(::diesel::types::HasSqlType<#type_ident>);
     let backend = quote!(::diesel::backend::Backend);
     let box_error = quote!(
         ::std::boxed::Box<::std::error::Error + ::std::marker::Send + ::std::marker::Sync>);
     quote! {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-        pub enum #type_name {
-            #(#variants),*
+        pub enum #type_ident {
+            #(#variant_decls),*
         }
 
-        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::backend::Debug> for #type_name
+        impl #type_ident {
+            fn sql_variant(&self) -> &'static str {
+                match *self {
+                    #(#variant_name_arms),*
+                }
+            }
+        }
+
+        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::backend::Debug> for #type_ident
             where ::diesel::backend::Debug: ::diesel::backend::TypeMetadata {
             fn self_metadata() { }
         }
 
-        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::pg::Pg> for #type_name
+        impl ::diesel::types::ProvidesSqlTypeFor<::diesel::pg::Pg> for #type_ident
             where ::diesel::pg::Pg: ::diesel::backend::TypeMetadata {
             fn self_metadata() -> ::diesel::pg::PgTypeMetadata {
                 ::diesel::pg::PgTypeMetadata {
@@ -98,7 +109,7 @@ fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
             }
         }
 
-        impl ::diesel::query_builder::QueryId for #type_name {
+        impl ::diesel::query_builder::QueryId for #type_ident {
             type QueryId = Self;
 
             fn has_static_query_id() -> bool {
@@ -106,56 +117,50 @@ fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
             }
         }
 
-        impl ::diesel::types::NotNull for #type_name { }
+        impl ::diesel::types::NotNull for #type_ident { }
 
-        impl<DB> ::diesel::types::ToSql<#type_name, DB> for #type_name where DB: #backend + #has_sql_type {
+        impl ::diesel::backend::SupportsDefaultKeyword for #type_ident { }
+
+        impl<DB> ::diesel::types::ToSql<#type_ident, DB> for #type_ident where DB: #backend + #has_sql_type {
             fn to_sql<W: ::std::io::Write>(&self, _out: &mut W)
                                             -> ::std::result::Result<::diesel::types::IsNull, #box_error> {
                 unimplemented!()
             }
         }
 
-        impl<'a, DB> ::diesel::types::ToSql<::diesel::types::Nullable<#type_name>, DB> for #type_name
-            where DB: #backend + #has_sql_type, #type_name: ::diesel::types::ToSql<#type_name, DB> {
-            fn to_sql<W: ::std::io::Write>(&self, out: &mut W)
-                                           -> ::std::result::Result<::diesel::types::IsNull, #box_error> {
-                ::diesel::types::ToSql::<#type_name, DB>::to_sql(self, out)
-            }
-        }
-
-        impl<DB> ::diesel::types::FromSql<#type_name, DB> for #type_name
+        impl<DB> ::diesel::types::FromSql<#type_ident, DB> for #type_ident
             where DB: #backend + #has_sql_type {
             fn from_sql(_bytes: Option<&DB::RawValue>) -> ::std::result::Result<Self, #box_error> {
                 unimplemented!()
             }
         }
 
-        impl<DB> ::diesel::types::FromSqlRow<#type_name, DB> for #type_name
+        impl<DB> ::diesel::types::FromSqlRow<#type_ident, DB> for #type_ident
             where DB: #backend + #has_sql_type,
-                  #type_name: ::diesel::types::FromSql<#type_name, DB> {
+                  #type_ident: ::diesel::types::FromSql<#type_ident, DB> {
             fn build_from_row<T: ::diesel::row::Row<DB>>(row: &mut T) -> ::std::result::Result<Self, #box_error> {
-                ::diesel::types::FromSql::<#type_name, DB>::from_sql(row.take())
+                ::diesel::types::FromSql::<#type_ident, DB>::from_sql(row.take())
             }
         }
 
-        impl<DB> ::diesel::query_source::Queryable<#type_name, DB> for #type_name
+        impl<DB> ::diesel::query_source::Queryable<#type_ident, DB> for #type_ident
             where DB: #backend + #has_sql_type,
-                  (#type_name): ::diesel::types::FromSqlRow<#type_name, DB> {
+                  (#type_ident): ::diesel::types::FromSqlRow<#type_ident, DB> {
             type Row = Self;
             fn build(row: Self::Row) -> Self {
                 row
             }
         }
 
-        impl ::diesel::Expression for #type_name {
-            type SqlType = #type_name;
+        impl ::diesel::Expression for #type_ident {
+            type SqlType = #type_ident;
         }
 
-        impl ::diesel::query_builder::QueryFragment<::diesel::backend::Debug> for #type_name {
+        impl ::diesel::query_builder::QueryFragment<::diesel::backend::Debug> for #type_ident {
             fn to_sql(&self, out: &mut <::diesel::backend::Debug as #backend>::QueryBuilder)
                       -> ::diesel::query_builder::BuildQueryResult {
                 use ::diesel::query_builder::QueryBuilder;
-                out.push_sql(&format!(" CAST('{:?}' AS {}) ", self, #sql_type_name));
+                out.push_sql(&format!(" CAST('{}' AS {}) ", self.sql_variant(), #sql_type_name));
                 Ok(())
             }
 
@@ -169,11 +174,11 @@ fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
             }
         }
 
-        impl ::diesel::query_builder::QueryFragment<::diesel::pg::Pg> for #type_name {
+        impl ::diesel::query_builder::QueryFragment<::diesel::pg::Pg> for #type_ident {
             fn to_sql(&self, out: &mut <::diesel::pg::Pg as #backend>::QueryBuilder)
                       -> ::diesel::query_builder::BuildQueryResult {
                 use ::diesel::query_builder::QueryBuilder;
-                out.push_sql(&format!(" CAST('{:?}' AS {}) ", self, #sql_type_name));
+                out.push_sql(&format!(" CAST('{}' AS {}) ", self.sql_variant(), #sql_type_name));
                 Ok(())
             }
 
@@ -187,22 +192,22 @@ fn generate_enum(sql_type_name: &str, type_name: &str, variants: &[String],
             }
         }
 
-        // impl ::diesel::expression::AsExpression<#type_name> for #type_name {
-        //     type Expression = ::diesel::expression::bound::Bound<#type_name, Self>;
+        // impl ::diesel::expression::AsExpression<#type_ident> for #type_ident {
+        //     type Expression = ::diesel::expression::bound::Bound<#type_ident, Self>;
         //     fn as_expression(self) -> Self::Expression {
         //         ::diesel::expression::bound::Bound::new(self)
         //     }
         // }
 
-        // impl<'a, 'expr> ::diesel::expression::AsExpression<#type_name> for &'expr #type_name {
-        //     type Expression = ::diesel::expression::bound::Bound<#type_name, Self>;
+        // impl<'a, 'expr> ::diesel::expression::AsExpression<#type_ident> for &'expr #type_ident {
+        //     type Expression = ::diesel::expression::bound::Bound<#type_ident, Self>;
         //     fn as_expression(self) -> Self::Expression {
         //         ::diesel::expression::bound::Bound::new(self)
         //     }
         // }
 
-        // impl ::diesel::expression::AsExpression<::diesel::types::Nullable<#type_name>> for #type_name {
-        //     type Expression = ::diesel::expression::bound::Bound<::diesel::types::Nullable<#type_name>, Self>;
+        // impl ::diesel::expression::AsExpression<::diesel::types::Nullable<#type_ident>> for #type_ident {
+        //     type Expression = ::diesel::expression::bound::Bound<::diesel::types::Nullable<#type_ident>, Self>;
         //     fn as_expression(self) -> Self::Expression {
         //         ::diesel::expression::bound::Bound::new(self)
         //     }
