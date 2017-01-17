@@ -199,7 +199,8 @@ fn run_infer_schema(matches: &ArgMatches) {
         })
         .expect("Could not load tables from database");
     
-    pretty_printing::format_schema(schema.as_str(), ::std::io::stdout());
+    pretty_printing::format_schema(schema.as_str(), ::std::io::stdout())
+        .expect("Could not write to stdout");
 }
 
 
