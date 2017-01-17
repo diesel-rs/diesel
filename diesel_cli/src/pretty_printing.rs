@@ -50,7 +50,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         last_char = c;
         skip_space = false;
 
-        // At this point, there is an empty line before `{`. We need to remove
+        // At this point, there is an empty line before `}`. We need to remove
         // the already inserted indent, because the new indent is smaller than
         // the old one.
         if c == '}' {
@@ -93,10 +93,7 @@ mod tests {
     use std::io::Cursor;
 
     fn run_test(input: &str, expected: &str){
-        let out = Vec::<u8>::new();
-        let mut c = Cursor::new(out);
-        format_schema(input, &mut c).unwrap();
-        let actual = String::from_utf8(c.into_inner()).unwrap();
+        let actual = format_schema(input).unwrap();
         assert_eq!(expected, actual);
     }
 
