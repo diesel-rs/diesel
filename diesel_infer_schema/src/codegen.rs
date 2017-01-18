@@ -78,11 +78,20 @@ fn column_def_tokens(
 ) -> Result<quote::Tokens, Box<Error>> {
     let column_name = syn::Ident::new(&*column.column_name);
     let column_type = try!(determine_column_type(column, connection));
-    let path_segments = column_type.path
-        .into_iter()
-        .map(syn::PathSegment::from)
-        .collect();
-    let tpe = syn::Path { global: true, segments: path_segments };
+    let tpe = if column_type.path[0] == "diesel" && column_type.path[1] == "types" {
+        let path_segments = column_type.path
+            .into_iter()
+            .skip(2)
+            .map(syn::PathSegment::from)
+            .collect();
+        syn::Path { global: false, segments: path_segments }
+    }else{
+        let path_segments = column_type.path
+            .into_iter()
+            .map(syn::PathSegment::from)
+            .collect();
+        syn::Path { global: true, segments: path_segments }
+    };
     let mut tpe = quote!(#tpe);
 
     if column_type.is_array {
