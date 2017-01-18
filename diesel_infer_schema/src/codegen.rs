@@ -35,8 +35,8 @@ pub fn infer_schema_for_schema_name<F1, F2>(
     error_handler: F1,
     filter: F2
 ) -> Result<quote::Tokens, Box<Error>>
-    where for<'a> F1: Fn(&'a str, Box<Error>),
-          for<'a> F2: Fn(&'a str) -> bool
+    where F1: Fn(&str, Box<Error>),
+          F2: Fn(&str) -> bool
 {
     let table_names = try!(load_table_names(&database_url, schema_name));
     let schema_inferences = table_names.into_iter().filter_map(|table_name| {
