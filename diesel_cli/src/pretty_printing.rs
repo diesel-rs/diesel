@@ -43,7 +43,6 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         }
 
         if skip_space && c.is_whitespace() && last_char != '>' {
-            skip_space = false;
             continue;
         }
 
@@ -78,7 +77,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
                 indent += "\t";
                 write!(out, "\n{}", indent)?;
             },
-            ':' | '(' => skip_space = true,
+            ':' | '(' | '<' => skip_space = true,
             _=>{}
         }
     }
@@ -90,7 +89,6 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
 #[cfg(test)]
 mod tests {
     use super::format_schema;
-    use std::io::Cursor;
 
     fn run_test(input: &str, expected: &str){
         let actual = format_schema(input).unwrap();
@@ -106,6 +104,12 @@ mod tests {
     fn test_format_nullable() {
         run_test("Nullable < :: diesel :: types :: Text >",
             "Nullable<::diesel::types::Text>");
+    }
+
+        #[test]
+    fn test_format_nullable_multispace() {
+        run_test("Nullable <  Integer >",
+            "Nullable<Integer>");
     }
 
     #[test]

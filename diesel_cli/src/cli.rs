@@ -74,7 +74,7 @@ pub fn build_cli() -> App<'static, 'static> {
              .index(1)
              .takes_value(true)
              .multiple(true)
-             .help("Table names to filter (default whitelist)"))
+             .help("Table names to filter (default whitelist if not empty)"))
         .arg(Arg::with_name("whitelist")
              .short("w")
              .long("whitelist")

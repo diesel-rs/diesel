@@ -13,3 +13,4 @@ mod database_setup;
 mod database_reset;
 mod exit_codes;
 mod completion_generation;
+mod print_schema;

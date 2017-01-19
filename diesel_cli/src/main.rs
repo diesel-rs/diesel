@@ -201,10 +201,13 @@ fn run_infer_schema(matches: &ArgMatches) {
         |table_name, error| {
             println!("Failed to infer schema for table {}: {}", table_name, error);
         }, |table_name| {
-            if is_whitelist || (!is_blacklist && !is_whitelist) {
+            if is_whitelist {
                 return tables.contains(table_name);
             }
-            !tables.contains(table_name)
+            if is_blacklist {
+                return !tables.contains(table_name);
+            }
+            true
         })
         .expect("Could not load tables from database");
     
