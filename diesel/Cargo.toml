@@ -8,6 +8,7 @@ documentation = "http://docs.diesel.rs"
 homepage = "http://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "postgres", "postgresql", "sql"]
+categories = ["database"]
 
 [dependencies]
 libc = "0.2.*"
