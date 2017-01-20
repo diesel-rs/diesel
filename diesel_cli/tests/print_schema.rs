@@ -2,7 +2,7 @@ use support::{database, project};
 
 #[test]
 fn run_infer_schema() {
-    let p = project("print-schema").build();
+    let p = project("print_schema").build();
     let db = database(&p.database_url());
 
     // Make sure the project is setup
@@ -40,7 +40,7 @@ pub use self::infer_users2::*;
 
 #[test]
 fn run_infer_schema_whitelist() {
-    let p = project("print-schema").build();
+    let p = project("print_schema").build();
     let db = database(&p.database_url());
 
     // Make sure the project is setup
@@ -70,7 +70,7 @@ pub use self::infer_users1::*;
 
 #[test]
 fn run_infer_schema_blacklist() {
-    let p = project("print-schema").build();
+    let p = project("print_schema").build();
     let db = database(&p.database_url());
 
     // Make sure the project is setup
