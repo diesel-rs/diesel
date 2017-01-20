@@ -7,15 +7,12 @@ use diesel::pg::PgConnection;
 use diesel::sqlite::SqliteConnection;
 use data_structures::{ColumnInformation, ColumnType};
 
-
-
 pub enum InferConnection {
     #[cfg(feature = "sqlite")]
     Sqlite(SqliteConnection),
     #[cfg(feature = "postgres")]
     Pg(PgConnection),
 }
-
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
     -> Result<Vec<String>, Box<Error>>

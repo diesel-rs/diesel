@@ -6,7 +6,6 @@ use data_structures::ColumnInformation;
 use inference::{establish_connection, get_table_data, determine_column_type,
                 get_primary_keys, load_table_names, InferConnection};
 
-
 pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
     -> Result<quote::Tokens, Box<Error>>
 {
@@ -85,7 +84,7 @@ fn column_def_tokens(
             .map(syn::PathSegment::from)
             .collect();
         syn::Path { global: false, segments: path_segments }
-    }else{
+    } else {
         let path_segments = column_type.path
             .into_iter()
             .map(syn::PathSegment::from)
