@@ -90,64 +90,33 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
 mod tests {
     use super::format_schema;
 
-    fn run_test(input: &str, expected: &str){
-        let actual = format_schema(input).unwrap();
-        assert_eq!(expected, actual);
+    macro_rules! test_pretty_printing {
+        ($($name: ident: $input: expr => $expected: expr);*) => {
+            $(
+                #[test]
+                fn $name() {
+                    let actual = format_schema($input).unwrap();
+                    assert_eq!($expected, actual);
+                }
+            )*
+        }
     }
-
-    #[test]
-    fn test_remove_whitespace_colon() {
-        run_test(":: diesel :: types :: Text", "::diesel::types::Text");
-    }
-
-    #[test]
-    fn test_format_nullable() {
-        run_test("Nullable < :: diesel :: types :: Text >",
-            "Nullable<::diesel::types::Text>");
-    }
-
-        #[test]
-    fn test_format_nullable_multispace() {
-        run_test("Nullable <  Integer >",
-            "Nullable<Integer>");
-    }
-
-    #[test]
-    fn test_newline_after_comma() {
-        run_test(",", ",\n");
-    }
-
-    #[test]
-    fn test_increase_indent() {
-        run_test("{","{\n    ");
-    }
-
-    #[test]
-    fn test_decrease_indent() {
-        run_test("{abc,}","{\n    abc,\n}\n");
-    }
-
-    #[test]
-    fn test_format_arrow() {
-        run_test("created_at -> :: diesel :: types :: Timestamp",
-            "created_at -> ::diesel::types::Timestamp");
-    }
-
-    #[test]
-    fn test_format_full_line() {
-        run_test("created_at -> :: diesel :: types :: Timestamp ,",
-            "created_at -> ::diesel::types::Timestamp,\n");
-    }
-
-    #[test]
-    fn test_format_include_line() {
-        run_test("pub use self :: infer_locks :: * ;",
-            "pub use self::infer_locks::*;\n");
-    }
-
-    #[test]
-    fn test_format_generated_mod() {
-        run_test("mod infer_users { table ! { users ( id ) { id -> :: diesel :: types :: Int4 , username -> :: diesel :: types :: Varchar , password -> :: diesel :: types :: Varchar , } } } pub use self :: infer_users :: * ;",
+    test_pretty_printing! {
+        test_remove_whitespace_colon: ":: diesel :: types :: Text" =>
+            "::diesel::types::Text";
+        test_format_nullable: "Nullable < :: diesel :: types :: Text >" =>
+            "Nullable<::diesel::types::Text>";
+        test_format_nullable_multispace: "Nullable <  Integer >" => "Nullable<Integer>";
+        test_newline_after_comma: "," => ",\n";
+        test_increase_indent: "{" => "{\n    ";
+        test_decrease_indent: "{abc,}" => "{\n    abc,\n}\n";
+        test_format_arrow: "created_at -> :: diesel :: types :: Timestamp" =>
+            "created_at -> ::diesel::types::Timestamp";
+        test_format_full_line: "created_at -> :: diesel :: types :: Timestamp ," =>
+            "created_at -> ::diesel::types::Timestamp,\n";
+        test_format_include_line: "pub use self :: infer_locks :: * ;" =>
+            "pub use self::infer_locks::*;\n";
+        test_format_generated_mod: "mod infer_users { table ! { users ( id ) { id -> :: diesel :: types :: Int4 , username -> :: diesel :: types :: Varchar , password -> :: diesel :: types :: Varchar , } } } pub use self :: infer_users :: * ;" =>
 r"mod infer_users {
     table! {
         users(id) {
@@ -158,6 +127,6 @@ r"mod infer_users {
     }
 }
 pub use self::infer_users::*;
-");
+"
     }
 }
