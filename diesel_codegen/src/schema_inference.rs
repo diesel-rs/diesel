@@ -16,12 +16,19 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
         .unwrap_or_else(|| bug());
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let schema_name = get_optional_option(&options, "schema_name");
+    let schema_name = schema_name.as_ref().map(|s| &**s);
 
-    diesel_infer_schema::infer_schema_for_schema_name(&database_url,
-        schema_name.as_ref().map(|s| &**s),
-        |table_name, error|{
-             panic!("Could not infer table {}: {}", table_name, error)
-        }, |_| true).expect("Could not load tables from database")
+    let table_iter = diesel_infer_schema::infer_schema_for_schema_name(&database_url,
+                                                                       schema_name)
+        .expect("Could not load tables from database")
+        .map(|(table_name, tokens)| {
+            match tokens {
+                Ok(tokens) => tokens,
+                Err(e) => panic!("Could not load table {}: {}", table_name, e),
+            }
+        });
+
+    diesel_infer_schema::handle_schema(table_iter, schema_name)
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {

@@ -197,19 +197,34 @@ fn run_infer_schema(matches: &ArgMatches) {
         .unwrap_or(::std::collections::HashSet::new());
     let is_whitelist = matches.is_present("whitelist");
     let is_blacklist = matches.is_present("blacklist");
-    let schema = diesel_infer_schema::infer_schema_for_schema_name(&database_url, schema_name,
-        |table_name, error| {
-            println!("Failed to infer schema for table {}: {}", table_name, error);
-        }, |table_name| {
-            if is_whitelist {
-                return tables.contains(table_name);
+    let print_table = |table_name: &str| -> bool {
+        if is_whitelist {
+            return tables.contains(table_name);
+        }
+        if is_blacklist {
+            return !tables.contains(table_name);
+        }
+        true
+    };
+    
+    let table_iter = diesel_infer_schema::infer_schema_for_schema_name(&database_url, schema_name)
+        .expect("Could not load tables from database")
+        .filter_map(|(table_name, table_tokens)| {
+            match table_tokens {
+                Ok(tokens) => if print_table(&table_name){
+                    Some(tokens)
+                } else {
+                    None
+                },
+                Err(e) => {
+                    println!("Failed to infer schema for table {}: {}",
+                        table_name, e);
+                    None
+                }
             }
-            if is_blacklist {
-                return !tables.contains(table_name);
-            }
-            true
-        })
-        .expect("Could not load tables from database");
+        });
+    
+    let schema = diesel_infer_schema::handle_schema(table_iter, schema_name);
     
     let pretty = pretty_printing::format_schema(schema.as_str())
         .expect("Could not write to stdout");

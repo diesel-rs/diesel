@@ -28,46 +28,42 @@ pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
     }))
 }
 
-pub fn infer_schema_for_schema_name<F1, F2>(
-    database_url: &str,
-    schema_name: Option<&str>,
-    error_handler: F1,
-    filter: F2
-) -> Result<quote::Tokens, Box<Error>>
-    where F1: Fn(&str, Box<Error>),
-          F2: Fn(&str) -> bool
+pub fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>)
+    -> Result<Box<Iterator<Item = (String, Result<quote::Tokens, Box<Error>>)>>, Box<Error>>
 {
     let table_names = try!(load_table_names(&database_url, schema_name));
-    let schema_inferences = table_names.into_iter().filter_map(|table_name| {
-        if !filter(&table_name){
-            return None;
-        }
+    let schema_name: Option<String> = schema_name.map(String::from);
+    let database_url: String = database_url.into();
+    Ok(Box::new(table_names.into_iter().map(move |table_name| {
         let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
         let table_name = match schema_name {
-            Some(name) => format!("{}.{}", name, table_name),
+            Some(ref name) => format!("{}.{}", name, table_name),
             None => table_name,
         };
-        let table = match derive_infer_table_from_schema(database_url, &table_name){
+        let table = match derive_infer_table_from_schema(&database_url, &table_name) {
             Ok(table) => table,
             Err(e) => {
-                error_handler(&table_name, e);
-                return None;
+                return (table_name, Err(e));
             },
         };
-        Some(quote! {
+        (table_name, Ok(quote! {
             mod #mod_ident {
                 #table
             }
             pub use self::#mod_ident::*;
-        })
-    });
+        }))
+    })))
+}
 
+pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens
+    where I: Iterator<Item = quote::Tokens>
+{
     match schema_name {
         Some(name) => {
             let schema_ident = syn::Ident::new(name);
-            Ok(quote! { pub mod #schema_ident { #(#schema_inferences)* } })
+            quote! { pub mod #schema_ident { #(#tables)* } }
         }
-        None => Ok(quote!(#(#schema_inferences)*)),
+        None => quote!(#(#tables)*),
     }
 }
 
