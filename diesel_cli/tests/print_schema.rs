@@ -17,7 +17,8 @@ fn run_infer_schema() {
     let result = p.command("print-schema").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert_eq!(result.stdout(),
+    if cfg!(feature = "sqlite") {
+        assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
         users1(id) {
@@ -36,11 +37,32 @@ mod infer_users2 {
 pub use self::infer_users2::*;
 
 ");
+    } else if cfg!(feature = "postgres") {
+                assert_eq!(result.stdout(),
+r"mod infer_users1 {
+    table! {
+        users1(id) {
+            id -> Int4,
+        }
+    }
+}
+pub use self::infer_users1::*;
+mod infer_users2 {
+    table! {
+        users2(id) {
+            id -> Int4,
+        }
+    }
+}
+pub use self::infer_users2::*;
+
+");
+    }
 }
 
 #[test]
 fn run_infer_schema_whitelist() {
-    let p = project("print_schema").build();
+    let p = project("print_schema_whitelist").build();
     let db = database(&p.database_url());
 
     // Make sure the project is setup
@@ -55,7 +77,8 @@ fn run_infer_schema_whitelist() {
     let result = p.command("print-schema").arg("users1").arg("-w").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert_eq!(result.stdout(),
+    if cfg!(feature = "sqlite") {
+        assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
         users1(id) {
@@ -66,11 +89,24 @@ r"mod infer_users1 {
 pub use self::infer_users1::*;
 
 ");
+    } else if cfg!(feature = "postgres") {
+        assert_eq!(result.stdout(),
+r"mod infer_users1 {
+    table! {
+        users1(id) {
+            id -> Int4,
+        }
+    }
+}
+pub use self::infer_users1::*;
+
+");
+    }
 }
 
 #[test]
 fn run_infer_schema_blacklist() {
-    let p = project("print_schema").build();
+    let p = project("print_schema_blacklist").build();
     let db = database(&p.database_url());
 
     // Make sure the project is setup
@@ -85,7 +121,8 @@ fn run_infer_schema_blacklist() {
     let result = p.command("print-schema").arg("users1").arg("-b").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert_eq!(result.stdout(),
+    if cfg!(feature = "sqlite") {
+        assert_eq!(result.stdout(),
 r"mod infer_users2 {
     table! {
         users2(id) {
@@ -96,4 +133,17 @@ r"mod infer_users2 {
 pub use self::infer_users2::*;
 
 ");
+    } else if cfg!(feature = "postgres") {
+        assert_eq!(result.stdout(),
+r"mod infer_users2 {
+    table! {
+        users2(id) {
+            id -> Int4,
+        }
+    }
+}
+pub use self::infer_users2::*;
+
+");        
+    }
 }
