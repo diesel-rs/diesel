@@ -23,7 +23,7 @@ pub fn establish_connection() -> SqliteConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_post<'a>(conn: &SqliteConnection, title: &'a str, body: &'a str) -> usize {
+pub fn create_post(conn: &SqliteConnection, title: &str, body: &str) -> usize {
     use schema::posts;
 
     let new_post = NewPost {
