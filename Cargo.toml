@@ -1,0 +1,9 @@
+[package]
+name = "diesel_demo_sqlite"
+version = "0.1.0"
+authors = ["Taryn Hill <taryn@phrohdoh.com>"]
+
+[dependencies]
+diesel = "0.9"
+diesel_codegen = { version = "0.9", features = ["sqlite"] }
+dotenv = "0.8"
