@@ -11,12 +11,18 @@ pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
 #[doc(hidden)]
 pub use self::statement_cache::{StatementCache, StatementCacheKey, MaybeCached};
 
+/// Perform simple operations on a backend.
 pub trait SimpleConnection {
-    #[doc(hidden)]
+    /// Execute multiple SQL statements within the same string.
+    ///
+    /// This function is typically used in migrations where the statements to upgrade or
+    /// downgrade the database are stored in SQL batch files.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
+/// Perform connections to a backend.
 pub trait Connection: SimpleConnection + Sized + Send {
+    /// The backend this connection represents.
     type Backend: Backend;
     #[doc(hidden)]
     type TransactionManager: TransactionManager<Self>;
