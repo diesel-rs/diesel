@@ -193,38 +193,37 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 fn run_infer_schema(matches: &ArgMatches) {
     let database_url = database::database_url(matches);
     let schema_name = matches.value_of("schema");
-    let tables = matches.values_of("table-name").map(|v| v.collect())
+
+    let filtering_tables = matches.values_of("table-name").map(|v| v.collect())
         .unwrap_or(::std::collections::HashSet::new());
     let is_whitelist = matches.is_present("whitelist");
     let is_blacklist = matches.is_present("blacklist");
-    let print_table = |table_name: &str| -> bool {
-        if is_whitelist {
-            return tables.contains(table_name);
-        }
-        if is_blacklist {
-            return !tables.contains(table_name);
-        }
-        true
-    };
-    
-    let table_iter = diesel_infer_schema::infer_schema_for_schema_name(&database_url, schema_name)
-        .expect("Could not load tables from database")
-        .filter_map(|(table_name, table_tokens)| {
-            match table_tokens {
-                Ok(tokens) => if print_table(&table_name){
-                    Some(tokens)
-                } else {
-                    None
-                },
-                Err(e) => {
-                    println!("Failed to infer schema for table {}: {}",
-                        table_name, e);
-                    None
-                }
+
+    let table_names = diesel_infer_schema::load_table_names(&database_url, schema_name)
+        .expect(&format!("Could not load table names from database `{}`{}",
+            database_url,
+            if let Some(name) = schema_name {
+                format!(" with schema `{}`", name)
+            } else {
+                "".into()
             }
+        ));
+
+    let tables = table_names.iter()
+        .map(|table| diesel_infer_schema::infer_schema_for_schema_name(table, &database_url))
+        .filter_map(Result::ok)
+        .filter_map(|(table, table_tokens)| {
+            let table_name = table.to_string();
+            if is_whitelist && filtering_tables.contains(&table_name[..]) {
+                return None;
+            }
+            if is_blacklist && !filtering_tables.contains(&table_name[..]) {
+                return None;
+            }
+            Some(table_tokens)
         });
     
-    let schema = diesel_infer_schema::handle_schema(table_iter, schema_name);
+    let schema = diesel_infer_schema::handle_schema(tables, schema_name);
     
     let pretty = pretty_printing::format_schema(schema.as_str())
         .expect("Could not write to stdout");

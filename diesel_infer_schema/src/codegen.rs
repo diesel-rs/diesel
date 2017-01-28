@@ -3,9 +3,10 @@ use std::error::Error;
 use quote;
 use syn;
 
+use TableName;
 use data_structures::ColumnInformation;
-use inference::{establish_connection, get_table_data, determine_column_type,
-                get_primary_keys, load_table_names, InferConnection};
+use inference::{establish_connection, get_table_data, determine_column_type, get_primary_keys,
+                InferConnection};
 
 pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
     -> Result<quote::Tokens, Box<Error>>
@@ -30,33 +31,19 @@ pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
     }))
 }
 
-pub fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>)
-    -> Result<Box<Iterator<Item = (String, Result<quote::Tokens, Box<Error>>)>>, Box<Error>>
+pub fn infer_schema_for_schema_name(table: &TableName, database_url: &str)
+     -> Result<(TableName, quote::Tokens), Box<Error>>
 {
-    let table_names = try!(load_table_names(&database_url, schema_name));
-    let schema_name: Option<String> = schema_name.map(String::from);
-    let database_url: String = database_url.into();
+    let mod_ident = syn::Ident::new(format!("infer_{}", table.name));
+    let table_macro = derive_infer_table_from_schema(&database_url, &table.to_string())?;
+    let tokens = quote! {
+        mod #mod_ident {
+            #table_macro
+        }
+        pub use self::#mod_ident::*;
+    };
 
-    Ok(Box::new(table_names.into_iter().map(move |table_name| {
-        let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
-        let table_name = match schema_name {
-            Some(ref name) => format!("{}.{}", name, table_name),
-            None => table_name,
-        };
-        let table = match derive_infer_table_from_schema(&database_url, &table_name) {
-            Ok(table) => table,
-            Err(e) => {
-                return (table_name, Err(e));
-            },
-        };
-
-        (table_name, Ok(quote! {
-            mod #mod_ident {
-                #table
-            }
-            pub use self::#mod_ident::*;
-        }))
-    })))
+    Ok((table.clone(), tokens))
 }
 
 pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens

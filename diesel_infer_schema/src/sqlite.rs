@@ -4,6 +4,7 @@ use diesel::*;
 use diesel::expression::dsl::sql;
 use diesel::sqlite::SqliteConnection;
 
+use TableName;
 use super::data_structures::*;
 
 table! {
@@ -24,7 +25,7 @@ table!{
 }
 
 pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>)
-    -> Result<Vec<String>, Box<Error>>
+    -> Result<Vec<TableName>, Box<Error>>
 {
     use self::sqlite_master::dsl::*;
 
@@ -33,12 +34,15 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
                     main database".into());
     }
 
-    sqlite_master.select(name)
+    let tns: Vec<String> = sqlite_master.select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
         .filter(sql("type='table'"))
-        .load(connection)
-        .map_err(Into::into)
+        .load(connection)?;
+
+    let tns = tns.iter().map(|n| TableName::new(n, schema_name)).collect();
+    
+    Ok(tns)
 }
 
 pub fn get_table_data(conn: &SqliteConnection, table_name: &str)

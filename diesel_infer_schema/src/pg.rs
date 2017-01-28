@@ -5,6 +5,7 @@ use diesel::query_builder::BoxedSelectStatement;
 use diesel::types::Oid;
 use diesel::pg::{PgConnection, Pg};
 
+use TableName;
 use super::data_structures::*;
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-attribute.html
@@ -141,16 +142,21 @@ fn table_oid<'a>(table_name: &'a str) -> BoxedSelectStatement<'a, Oid, pg_class:
 }
 
 pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
-    -> Result<Vec<String>, Box<Error>>
+    -> Result<Vec<TableName>, Box<Error>>
 {
     use self::information_schema::tables::dsl::*;
 
     let schema_name = schema_name.unwrap_or("public");
-    let query = tables.select(table_name)
+    
+    let tns: Vec<String> = tables.select(table_name)
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
-        .filter(table_type.like("BASE TABLE"));
-    Ok(try!(query.load(connection)))
+        .filter(table_type.like("BASE TABLE"))
+        .load(connection)?;
+
+    let tns = tns.iter().map(|n| TableName::new(n, Some(schema_name))).collect();
+
+    Ok(tns)
 }
 
 #[test]

@@ -6,6 +6,8 @@ use diesel::result::Error::NotFound;
 use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::SqliteConnection;
+
+use TableName;
 use data_structures::{ColumnInformation, ColumnType};
 
 pub enum InferConnection {
@@ -16,7 +18,7 @@ pub enum InferConnection {
 }
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
-    -> Result<Vec<String>, Box<Error>>
+    -> Result<Vec<TableName>, Box<Error>>
 {
     let connection = try!(establish_connection(database_url));
 
