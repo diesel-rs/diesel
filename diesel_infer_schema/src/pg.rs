@@ -5,7 +5,7 @@ use diesel::query_builder::BoxedSelectStatement;
 use diesel::types::Oid;
 use diesel::pg::{PgConnection, Pg};
 
-use TableName;
+use TableData;
 use super::data_structures::*;
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-attribute.html
@@ -142,7 +142,7 @@ fn table_oid(table_name: &str) -> BoxedSelectStatement<Oid, pg_class::table, Pg>
 }
 
 pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
-    -> Result<Vec<TableName>, Box<Error>>
+    -> Result<Vec<TableData>, Box<Error>>
 {
     use self::information_schema::tables::dsl::*;
 
@@ -154,7 +154,7 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
         .filter(table_type.like("BASE TABLE"))
         .load(connection)?;
 
-    let tns = tns.iter().map(|n| TableName::new(n, Some(schema_name))).collect();
+    let tns = tns.iter().map(|n| TableData::new(n, Some(schema_name))).collect();
 
     Ok(tns)
 }

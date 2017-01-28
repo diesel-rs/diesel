@@ -214,15 +214,15 @@ fn run_infer_schema(matches: &ArgMatches) {
             diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
                 .expect(&format!("Could not load table `{}`", table.to_string()))
         })
-        .filter_map(|(table, table_tokens)| {
+        .filter(|table| {
             let table_name = table.to_string();
             if is_whitelist && filtering_tables.contains(&table_name[..]) {
-                return None;
+                return false;
             }
             if is_blacklist && !filtering_tables.contains(&table_name[..]) {
-                return None;
+                return false;
             }
-            Some(table_tokens)
+            true
         });
     
     let schema = diesel_infer_schema::handle_schema(tables, schema_name);
