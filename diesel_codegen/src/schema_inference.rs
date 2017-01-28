@@ -27,7 +27,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
                 "".into()
             }
         ));
-    
+
     let tables = table_names.iter()
         .map(|table| {
             diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)

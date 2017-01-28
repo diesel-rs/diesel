@@ -14,9 +14,7 @@ diesel = { version = "0.9.0", default-features = false }
 syn = "0.10.3"
 quote = "0.3.1"
 
-
 [features]
 default = ["postgres"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
-

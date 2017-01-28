@@ -227,10 +227,10 @@ fn run_infer_schema(matches: &ArgMatches) {
         .map(|t| t.tokens());
 
     let schema = diesel_infer_schema::handle_schema(tables, schema_name);
-    
+
     let pretty = pretty_printing::format_schema(schema.as_str())
         .expect("Could not write to stdout");
-    
+
     println!("{}", pretty);
 }
 

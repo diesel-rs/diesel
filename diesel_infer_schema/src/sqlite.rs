@@ -41,7 +41,7 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
         .load(connection)?;
 
     let tns = tns.iter().map(|n| TableData::new(n, schema_name)).collect();
-    
+
     Ok(tns)
 }
 

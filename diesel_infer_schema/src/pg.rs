@@ -147,7 +147,7 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
     use self::information_schema::tables::dsl::*;
 
     let schema_name = schema_name.unwrap_or("public");
-    
+
     let tns: Vec<String> = tables.select(table_name)
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))

@@ -144,6 +144,6 @@ r"mod infer_users2 {
 }
 pub use self::infer_users2::*;
 
-");        
+");
     }
 }
