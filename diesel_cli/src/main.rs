@@ -216,10 +216,10 @@ fn run_infer_schema(matches: &ArgMatches) {
         })
         .filter(|table| {
             let table_name = table.to_string();
-            if is_whitelist && filtering_tables.contains(&table_name[..]) {
+            if is_whitelist && !filtering_tables.contains(&table_name[..]) {
                 return false;
             }
-            if is_blacklist && !filtering_tables.contains(&table_name[..]) {
+            if is_blacklist && filtering_tables.contains(&table_name[..]) {
                 return false;
             }
             true
