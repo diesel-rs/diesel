@@ -77,7 +77,7 @@ mod information_schema {
 }
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
-    let is_array = attr.type_name.starts_with("_");
+    let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
         &attr.type_name[1..]
     } else {
@@ -122,7 +122,7 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
         .load(conn)
 }
 
-fn table_oid<'a>(table_name: &'a str) -> BoxedSelectStatement<'a, Oid, pg_class::table, Pg> {
+fn table_oid(table_name: &str) -> BoxedSelectStatement<Oid, pg_class::table, Pg> {
     use self::pg_class::dsl::*;
     use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
 

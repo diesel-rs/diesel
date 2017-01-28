@@ -34,10 +34,10 @@ pub fn establish_connection(database_url: &str) -> Result<InferConnection, Box<E
     match database_url {
         #[cfg(feature = "postgres")]
         _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") => {
-            establish_real_connection(&database_url).map(InferConnection::Pg)
+            establish_real_connection(database_url).map(InferConnection::Pg)
         }
         #[cfg(feature = "sqlite")]
-        _ => establish_real_connection(&database_url).map(InferConnection::Sqlite),
+        _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
         #[cfg(not(feature = "sqlite"))]
         _ => {
             Err(format!(
