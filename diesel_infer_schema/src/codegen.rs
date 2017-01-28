@@ -1,7 +1,8 @@
+use std::error::Error;
+
 use quote;
 use syn;
 
-use std::error::Error;
 use data_structures::ColumnInformation;
 use inference::{establish_connection, get_table_data, determine_column_type,
                 get_primary_keys, load_table_names, InferConnection};
@@ -9,16 +10,17 @@ use inference::{establish_connection, get_table_data, determine_column_type,
 pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
     -> Result<quote::Tokens, Box<Error>>
 {
-
-    let connection = try!(establish_connection(database_url));
-    let data = try!(get_table_data(&connection, table_name));
-    let primary_keys = try!(get_primary_keys(&connection, table_name))
-        .into_iter().map(syn::Ident::new);
+    let connection = establish_connection(database_url)?;
+    let data = get_table_data(&connection, table_name)?;
+    let primary_keys = get_primary_keys(&connection, table_name)?
+        .into_iter()
+        .map(syn::Ident::new);
     let table_name = syn::Ident::new(table_name);
 
     let mut tokens = Vec::with_capacity(data.len());
+
     for a in data {
-        tokens.push(try!(column_def_tokens(&a, &connection)));
+        tokens.push(column_def_tokens(&a, &connection)?);
     }
 
     Ok(quote!(table! {
@@ -34,6 +36,7 @@ pub fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str
     let table_names = try!(load_table_names(&database_url, schema_name));
     let schema_name: Option<String> = schema_name.map(String::from);
     let database_url: String = database_url.into();
+
     Ok(Box::new(table_names.into_iter().map(move |table_name| {
         let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
         let table_name = match schema_name {
@@ -46,6 +49,7 @@ pub fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str
                 return (table_name, Err(e));
             },
         };
+
         (table_name, Ok(quote! {
             mod #mod_ident {
                 #table

@@ -14,4 +14,3 @@ mod codegen;
 mod inference;
 
 pub use codegen::*;
-
