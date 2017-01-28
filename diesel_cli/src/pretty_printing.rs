@@ -91,7 +91,7 @@ mod tests {
     use super::format_schema;
 
     macro_rules! test_pretty_printing {
-        ($($name: ident: $input: expr => $expected: expr);*) => {
+        ($($name:ident: $input:expr => $expected:expr);*) => {
             $(
                 #[test]
                 fn $name() {
@@ -101,22 +101,68 @@ mod tests {
             )*
         }
     }
+
     test_pretty_printing! {
-        test_remove_whitespace_colon: ":: diesel :: types :: Text" =>
+        test_increase_indent:
+            "{" =>
+            "{\n    ";
+
+        test_decrease_indent:
+            "{abc,}" =>
+            "{\n    abc,\n}\n";
+
+        test_newline_after_comma:
+            "," =>
+            ",\n";
+
+        test_newline_after_semicolon:
+            ";" =>
+            ";\n";
+        
+        test_remove_whitespace_macro_call:
+            "table ! { }" =>
+            "table! {\n}\n";
+
+        test_remove_whitespace_path_segments:
+            ":: diesel :: types :: Text" =>
             "::diesel::types::Text";
-        test_format_nullable: "Nullable < :: diesel :: types :: Text >" =>
+
+        test_remove_whitespace_parenthesis:
+            "foo ( 42 )" =>
+            "foo(42)";
+
+        test_remove_whitespace_angular_brackets:
+            "Option < i32 >" =>
+            "Option<i32>";
+
+        test_remove_whitespace_before_comma:
+            "id -> Int4 , username -> Varchar" =>
+            "id -> Int4,\nusername -> Varchar";
+
+        test_format_nullable:
+            "Nullable < :: diesel :: types :: Text >" =>
             "Nullable<::diesel::types::Text>";
-        test_format_nullable_multispace: "Nullable <  Integer >" => "Nullable<Integer>";
-        test_newline_after_comma: "," => ",\n";
-        test_increase_indent: "{" => "{\n    ";
-        test_decrease_indent: "{abc,}" => "{\n    abc,\n}\n";
-        test_format_arrow: "created_at -> :: diesel :: types :: Timestamp" =>
+
+        test_format_nullable_multispace:
+            "Nullable <  Integer >" =>
+            "Nullable<Integer>";
+
+        test_format_arrow:
+            "created_at -> :: diesel :: types :: Timestamp" =>
             "created_at -> ::diesel::types::Timestamp";
-        test_format_full_line: "created_at -> :: diesel :: types :: Timestamp ," =>
+
+        test_format_full_line:
+            "created_at -> :: diesel :: types :: Timestamp ," =>
             "created_at -> ::diesel::types::Timestamp,\n";
-        test_format_include_line: "pub use self :: infer_locks :: * ;" =>
+
+        test_format_include_line:
+            "pub use self :: infer_locks :: * ;" =>
             "pub use self::infer_locks::*;\n";
-        test_format_generated_mod: "mod infer_users { table ! { users ( id ) { id -> :: diesel :: types :: Int4 , username -> :: diesel :: types :: Varchar , password -> :: diesel :: types :: Varchar , } } } pub use self :: infer_users :: * ;" =>
+
+        test_format_generated_mod:
+            "mod infer_users { table ! { users ( id ) { id -> :: diesel :: types :: Int4 , \
+            username -> :: diesel :: types :: Varchar , password -> :: diesel :: types :: Varchar \
+            , } } } pub use self :: infer_users :: * ;" =>
 r"mod infer_users {
     table! {
         users(id) {
@@ -128,5 +174,6 @@ r"mod infer_users {
 }
 pub use self::infer_users::*;
 "
+
     }
 }
