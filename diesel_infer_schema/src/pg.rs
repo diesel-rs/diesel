@@ -5,7 +5,7 @@ use diesel::query_builder::BoxedSelectStatement;
 use diesel::types::Oid;
 use diesel::pg::{PgConnection, Pg};
 
-use TableData;
+use table_data::TableData;
 use super::data_structures::*;
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-attribute.html

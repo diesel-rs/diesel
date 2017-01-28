@@ -7,7 +7,7 @@ use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::SqliteConnection;
 
-use TableData;
+use table_data::TableData;
 use data_structures::{ColumnInformation, ColumnType};
 
 pub enum InferConnection {

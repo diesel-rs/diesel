@@ -8,7 +8,7 @@ extern crate diesel;
 mod codegen;
 mod data_structures;
 mod inference;
-mod table_data;
+pub mod table_data;
 
 #[cfg(feature = "postgres")]
 mod pg;
@@ -17,4 +17,3 @@ mod sqlite;
 
 pub use codegen::*;
 pub use inference::load_table_names;
-pub use table_data::TableData;

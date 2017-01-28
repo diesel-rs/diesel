@@ -3,7 +3,7 @@ use std::error::Error;
 use quote;
 use syn;
 
-use TableData;
+use table_data::{TableData, TableDataWithTokens};
 use data_structures::ColumnInformation;
 use inference::{establish_connection, get_table_data, determine_column_type, get_primary_keys,
                 InferConnection};
@@ -32,7 +32,7 @@ pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
 }
 
 pub fn infer_schema_for_schema_name(table: &TableData, database_url: &str)
-     -> Result<TableData, Box<Error>>
+     -> Result<TableDataWithTokens, Box<Error>>
 {
     let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
     let table_macro = derive_infer_table_from_schema(database_url, &table.to_string())?;
@@ -43,14 +43,12 @@ pub fn infer_schema_for_schema_name(table: &TableData, database_url: &str)
         pub use self::#mod_ident::*;
     };
 
-    Ok(table.clone().set_tokens(tokens))
+    Ok(table.set_tokens(tokens))
 }
 
 pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens
-    where I: Iterator<Item = TableData>
+    where I: Iterator<Item = quote::Tokens>
 {
-    let tables = tables.filter_map(|t| t.tokens());
-
     match schema_name {
         Some(name) => {
             let schema_ident = syn::Ident::new(name);

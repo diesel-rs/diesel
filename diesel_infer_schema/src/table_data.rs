@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use quote;
 
 #[derive(Debug, Clone)]
@@ -6,8 +8,6 @@ pub struct TableData {
     name: String,
     /// Schema name
     schema: Option<String>,
-    /// Table represented as tokens of `table!` macro
-    tokens: Option<quote::Tokens>,
 }
 
 impl TableData {
@@ -15,7 +15,6 @@ impl TableData {
         TableData {
           name: name.into(),
           schema: schema.map(String::from),
-          tokens: None,
         }
     }
 
@@ -23,20 +22,39 @@ impl TableData {
         &self.name
     }
 
-    pub fn tokens(&self) -> Option<quote::Tokens> {
-        self.tokens.clone()
-    }
-
-    pub fn set_tokens(&self, tokens: quote::Tokens) -> Self {
-        let mut res = self.clone();
-        res.tokens = Some(tokens);
-        res
-    }
-
     pub fn to_string(&self) -> String {
         match self.schema {
             Some(ref schema_name) => format!("{}.{}", schema_name, self.name),
             None => self.name.clone(),
         }
+    }
+
+    pub fn set_tokens(&self, tokens: quote::Tokens) -> TableDataWithTokens {
+        TableDataWithTokens {
+          table: self.clone(),
+          tokens: tokens,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TableDataWithTokens {
+    /// Table data with name and schema
+    table: TableData,
+    /// Table represented as tokens of `table!` macro
+    tokens: quote::Tokens,
+}
+
+impl TableDataWithTokens {
+    pub fn tokens(&self) -> quote::Tokens {
+        self.tokens.clone()
+    }
+}
+
+impl Deref for TableDataWithTokens {
+    type Target = TableData;
+
+    fn deref(&self) -> &TableData {
+        &self.table
     }
 }

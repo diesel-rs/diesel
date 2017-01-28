@@ -33,7 +33,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
             diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
               .expect(&format!("Could not load table `{}`", table.to_string()))
         })
-        .map(|(_table, tokens)| tokens);
+        .map(|table| table.tokens());
 
     diesel_infer_schema::handle_schema(tables, schema_name)
 }
