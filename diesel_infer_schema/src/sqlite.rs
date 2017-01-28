@@ -1,7 +1,8 @@
+use std::error::Error;
+
 use diesel::*;
 use diesel::expression::dsl::sql;
 use diesel::sqlite::SqliteConnection;
-use std::error::Error;
 
 use super::data_structures::*;
 

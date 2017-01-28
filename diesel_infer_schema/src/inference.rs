@@ -1,6 +1,7 @@
+use std::error::Error;
+
 use diesel::Connection;
 use diesel::result::Error::NotFound;
-use std::error::Error;
 #[cfg(feature = "postgres")]
 use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]

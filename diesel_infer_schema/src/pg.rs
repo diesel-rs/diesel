@@ -1,8 +1,9 @@
+use std::error::Error;
+
 use diesel::*;
 use diesel::query_builder::BoxedSelectStatement;
 use diesel::types::Oid;
 use diesel::pg::{PgConnection, Pg};
-use std::error::Error;
 
 use super::data_structures::*;
 
