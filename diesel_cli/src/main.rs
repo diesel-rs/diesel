@@ -210,8 +210,10 @@ fn run_infer_schema(matches: &ArgMatches) {
         ));
 
     let tables = table_names.iter()
-        .map(|table| diesel_infer_schema::infer_schema_for_schema_name(table, &database_url))
-        .filter_map(Result::ok)
+        .map(|table| {
+            diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
+                .expect(&format!("Could not load table `{}`", table.to_string()))
+        })
         .filter_map(|(table, table_tokens)| {
             let table_name = table.to_string();
             if is_whitelist && filtering_tables.contains(&table_name[..]) {

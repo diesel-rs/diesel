@@ -18,17 +18,24 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     let schema_name = get_optional_option(&options, "schema_name");
     let schema_name = schema_name.as_ref().map(|s| &**s);
 
-    let table_iter = diesel_infer_schema::infer_schema_for_schema_name(&database_url,
-                                                                       schema_name)
-        .expect("Could not load tables from database")
-        .map(|(table_name, tokens)| {
-            match tokens {
-                Ok(tokens) => tokens,
-                Err(e) => panic!("Could not load table {}: {}", table_name, e),
+    let table_names = diesel_infer_schema::load_table_names(&database_url, schema_name)
+        .expect(&format!("Could not load table names from database `{}`{}",
+            database_url,
+            if let Some(name) = schema_name {
+                format!(" with schema `{}`", name)
+            } else {
+                "".into()
             }
-        });
+        ));
+    
+    let tables = table_names.iter()
+        .map(|table| {
+            diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
+              .expect(&format!("Could not load table `{}`", table.to_string()))
+        })
+        .map(|(_table, tokens)| tokens);
 
-    diesel_infer_schema::handle_schema(table_iter, schema_name)
+    diesel_infer_schema::handle_schema(tables, schema_name)
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
