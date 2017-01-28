@@ -4,6 +4,7 @@ use diesel::prelude::*;
 use self::dotenv::dotenv;
 
 #[cfg(feature = "postgres")]
+#[allow(dead_code)]
 type DB = diesel::pg::Pg;
 
 #[cfg(feature = "postgres")]
@@ -20,6 +21,7 @@ fn connection_no_data() -> diesel::pg::PgConnection {
 }
 
 #[cfg(feature = "postgres")]
+#[allow(dead_code)]
 fn establish_connection() -> diesel::pg::PgConnection {
     let connection = connection_no_data();
 
@@ -33,6 +35,7 @@ fn establish_connection() -> diesel::pg::PgConnection {
 }
 
 #[cfg(all(not(feature = "postgres"), feature = "sqlite"))]
+#[allow(dead_code)]
 type DB = diesel::sqlite::Sqlite;
 
 #[cfg(all(not(feature = "postgres"), feature = "sqlite"))]
@@ -41,6 +44,7 @@ fn connection_no_data() -> diesel::sqlite::SqliteConnection {
 }
 
 #[cfg(all(not(feature = "postgres"), feature = "sqlite"))]
+#[allow(dead_code)]
 fn establish_connection() -> diesel::sqlite::SqliteConnection {
     let connection = connection_no_data();
 
@@ -54,6 +58,7 @@ fn establish_connection() -> diesel::sqlite::SqliteConnection {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct NewUser {
     name: String,
 }
