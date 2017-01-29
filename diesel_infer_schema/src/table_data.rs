@@ -22,17 +22,19 @@ impl TableData {
         &self.name
     }
 
-    pub fn to_string(&self) -> String {
-        match self.schema {
-            Some(ref schema_name) => format!("{}.{}", schema_name, self.name),
-            None => self.name.clone(),
-        }
-    }
-
     pub fn set_tokens(&self, tokens: quote::Tokens) -> TableDataWithTokens {
         TableDataWithTokens {
           table: self.clone(),
           tokens: tokens,
+        }
+    }
+}
+
+impl ToString for TableData {
+    fn to_string(&self) -> String {
+        match self.schema {
+            Some(ref schema_name) => format!("{}.{}", schema_name, self.name),
+            None => self.name.clone(),
         }
     }
 }
