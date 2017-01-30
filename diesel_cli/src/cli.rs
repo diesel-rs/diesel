@@ -62,6 +62,30 @@ pub fn build_cli() -> App<'static, 'static> {
     let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
         .about("Generate bash completion script for the diesel command.");
 
+    let infer_schema_subcommand = SubCommand::with_name("print-schema")
+        .setting(AppSettings::VersionlessSubcommands)
+        .about("Print table definitions for database schema.")
+        .arg(Arg::with_name("schema")
+             .long("schema")
+             .short("s")
+             .takes_value(true)
+             .help("The name of the schema."))
+        .arg(Arg::with_name("table-name")
+             .index(1)
+             .takes_value(true)
+             .multiple(true)
+             .help("Table names to filter (default whitelist if not empty)"))
+        .arg(Arg::with_name("whitelist")
+             .short("w")
+             .long("whitelist")
+             .help("Use table list as whitelist")
+             .conflicts_with("blacklist"))
+        .arg(Arg::with_name("blacklist")
+             .short("b")
+             .long("blacklist")
+             .help("Use table list as blacklist")
+             .conflicts_with("whitelist"));
+
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
@@ -71,5 +95,6 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
         .subcommand(generate_bash_completion_subcommand)
+        .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }

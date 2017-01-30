@@ -23,6 +23,7 @@ script:
     (cd examples && ./test_all)
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
+  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_codegen_shared && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
