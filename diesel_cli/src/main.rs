@@ -196,14 +196,14 @@ fn run_infer_schema(matches: &ArgMatches) {
 
     let filtering_tables = matches.values_of("table-name").map(|values| {
         values.map(|table_name| {
-            if cfg!(not(feature = "postgres")) || table_name.contains(".") {
+            if cfg!(not(feature = "postgres")) || table_name.contains('.') {
                 String::from(table_name)
             } else {
                 format!("{}.{}", schema_name.unwrap_or("public"), table_name)
             }
         }).collect()
-    })
-        .unwrap_or(::std::collections::HashSet::new());
+    }).unwrap_or_else(::std::collections::HashSet::new);
+
     let is_whitelist = matches.is_present("whitelist");
     let is_blacklist = matches.is_present("blacklist");
 
