@@ -12,11 +12,12 @@ dotenv = "0.8.0"
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "^0.2.17" }
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json"] }
 diesel_codegen = { path = "../diesel_codegen" }
 dotenv = "0.8.0"
 quickcheck = { version = "0.3.1", features = ["unstable"] }
 uuid = { version = ">=0.2.0, <0.4.0" }
+serde_json = "0.8"
 
 [features]
 default = []
