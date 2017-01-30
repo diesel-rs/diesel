@@ -249,8 +249,18 @@ pub type VarChar = Text;
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
 
+pub trait ProvidesSqlTypeFor<DB> where DB: TypeMetadata {
+    fn self_metadata() -> DB::TypeMetadata;
+}
+
 pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata() -> Self::TypeMetadata;
+}
+
+impl<ST, DB> HasSqlType<ST> for DB where DB: TypeMetadata, ST: ProvidesSqlTypeFor<DB> {
+    fn metadata() -> Self::TypeMetadata {
+        <ST as ProvidesSqlTypeFor<DB>>::self_metadata()
+    }
 }
 
 pub trait NotNull {

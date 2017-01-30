@@ -17,8 +17,8 @@ fn test_sql_function() {
     connection.execute("CREATE FUNCTION my_lower(varchar) RETURNS varchar
         AS $$ SELECT LOWER($1) $$
         LANGUAGE SQL").unwrap();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
 
     assert_eq!(vec![sean], users.filter(my_lower(name).eq("sean"))
         .load(&connection).unwrap());

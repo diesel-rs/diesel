@@ -10,8 +10,8 @@ fn belongs_to() {
         (2, 2, 'World', NULL)
     ").unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
     let seans_post = Post::new(1, 1, "Hello", Some("Content"));
     let tess_post = Post::new(2, 2, "World", None);
 
@@ -76,7 +76,7 @@ fn select_only_one_side_of_join() {
 
     let source = users::table.inner_join(posts::table).select(users::all_columns);
 
-    let expected_data = vec![User::new(2, "Tess")];
+    let expected_data = vec![User::new(2, "Tess", UserType::Default)];
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -91,8 +91,8 @@ fn left_outer_joins() {
         (2, 1, 'World')
     ").unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
     let seans_post = Post::new(1, 1, "Hello", None);
     let seans_second_post = Post::new(2, 1, "World", None);
 
@@ -157,8 +157,8 @@ fn select_complex_from_left_join() {
         (1, 'World', NULL)
     ").unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
     let expected_data = vec![
         (sean.clone(), Some(("Hello".to_string(), Some("Content".to_string())))),
         (sean, Some(("World".to_string(), None))),
@@ -180,8 +180,8 @@ fn select_right_side_with_nullable_column_first() {
         (1, 'World', NULL)
     ").unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
     let expected_data = vec![
         (sean.clone(), Some((Some("Content".to_string()), "Hello".to_string()))),
         (sean, Some((None, "World".to_string()))),
@@ -219,9 +219,10 @@ fn join_through_other() {
     use schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 
-    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None, UserType::Default)).into(users).execute(&connection).unwrap();
     insert(&vec![
-        NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
+        NewPost::new(1, "Hello", None),
+        NewPost::new(2, "World", None),
         NewPost::new(1, "Hello again!", None),
     ]).into(posts::table).execute(&connection).unwrap();
     let posts = posts::table.load::<Post>(&connection).unwrap();
@@ -234,8 +235,8 @@ fn join_through_other() {
     let data = users.inner_join(comments::table).load(&connection)
         .unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Default);
     let expected_data = vec![
         (sean.clone(), comments[0].clone()),
         (tess, comments[1].clone()),

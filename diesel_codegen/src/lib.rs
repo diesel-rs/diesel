@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![recursion_limit = "512"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -13,6 +14,7 @@ extern crate diesel_codegen_shared;
 extern crate diesel;
 #[macro_use]
 extern crate quote;
+extern crate syntex_syntax;
 extern crate proc_macro;
 extern crate syn;
 
@@ -25,6 +27,8 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
+#[cfg(feature = "postgres")]
+mod type_inference;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
 mod util;
@@ -72,6 +76,12 @@ pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
+}
+
+#[proc_macro_derive(InferEnums, attributes(infer_enum_options))]
+#[cfg(feature = "postgres")]
+pub fn derive_infer_enums(input: TokenStream) -> TokenStream {
+    expand_derive(input, type_inference::derive_infer_enums)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) -> TokenStream {

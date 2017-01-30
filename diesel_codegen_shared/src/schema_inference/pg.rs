@@ -18,17 +18,31 @@ table! {
     }
 }
 
+// https://www.postgresql.org/docs/9.5/static/catalog-pg-enum.html
+table! {
+    pg_enum (oid) {
+        oid -> Oid,
+        enumtypid -> Oid,
+        enumsortorder -> Float,
+        enumlabel -> VarChar,
+    }
+}
+
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-type.html
 table! {
     pg_type (oid) {
         oid -> Oid,
         typname -> VarChar,
+        typtype -> VarChar,
     }
 }
 
 joinable!(pg_attribute -> pg_type (atttypid));
+joinable!(pg_enum -> pg_type (enumtypid));
 select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
-select_column_workaround!(pg_type -> pg_attribute (oid, typname));
+select_column_workaround!(pg_type -> pg_attribute (oid, typname, typtype));
+select_column_workaround!(pg_enum -> pg_type (oid, enumtypid, enumsortorder, enumlabel));
+select_column_workaround!(pg_type -> pg_enum (oid, typname, typtype));
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-index.html
 table! {
@@ -74,7 +88,26 @@ mod information_schema {
     }
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn camel_cased(snake_case: &str) -> String {
+    snake_case.split("_").flat_map(
+        |s| s.chars().take(1).flat_map(|c| c.to_uppercase().into_iter()).chain(
+            s.chars().skip(1).flat_map(|c| c.to_lowercase())
+                .take_while(|&c| c != '_'))).collect()
+}
+
+pub fn canonicalize_pg_type_name(type_name: &str) -> String {
+    type_name.trim().to_lowercase()
+}
+
+fn is_builtin_type_name(tpe: &str) -> bool {
+    // TODO: make this exhaustive, maybe doing better than hard-coding a list.
+    ["bool", "smallint", "integer", "bigint", "float", "double", "text", "binary",
+     "interval", "date", "time", "timestamp", "oid", "uuid", "timestamptz", "bigserial",
+     "bytea", "serial", "smallserial", "array", "int4", "varchar"].contains(&tpe)
+}
+
+pub fn determine_column_type(extra_types_module: Option<&str>,
+                             attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with("_");
     let tpe = if is_array {
         &attr.type_name[1..]
@@ -82,11 +115,24 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         &attr.type_name
     };
 
-    Ok(ColumnType {
-        path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
-        is_array: is_array,
-        is_nullable: attr.nullable,
-    })
+    if is_builtin_type_name(&tpe) {
+        Ok(ColumnType {
+            path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
+            is_builtin: true,
+            is_array: is_array,
+            is_nullable: attr.nullable,
+        })
+    } else {
+        match extra_types_module {
+            Some(m) => Ok(ColumnType {
+                path: vec![m.into(), camel_cased(&tpe)],
+                is_builtin: false,
+                is_array: is_array,
+                is_nullable: attr.nullable,
+            }),
+            None => panic!("Cannot locate non-builtin type {} unless extra types module is defined", tpe),
+        }
+    }
 }
 
 fn capitalize(name: &str) -> String {
@@ -152,6 +198,17 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
     Ok(try!(query.load(connection)))
 }
 
+pub fn load_enum_info(connection: &PgConnection, _oschema_name: Option<&str>)
+                      -> Result<Vec<(String, String, u32)>, Box<Error>> {
+    use self::pg_enum::dsl::*;
+    use self::pg_type::dsl::*;
+    let query = pg_enum.inner_join(pg_type)
+        .select((typname, enumlabel, enumtypid))
+        .filter(typtype.eq("e"))
+        .order((typname, enumsortorder));
+    Ok(query.load(connection)?)
+}
+
 #[test]
 #[cfg(feature = "dotenv")]
 fn skip_views() {
@@ -170,4 +227,40 @@ fn skip_views() {
 
     assert!(table_names.contains(&"a_regular_table".to_string()));
     assert!(!table_names.contains(&"a_view".to_string()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::canonicalize_pg_type_name;
+    use super::camel_cased;
+
+    #[test]
+    fn camel_cased_empty() {
+        assert_eq!("", camel_cased(""));
+        assert_eq!("", camel_cased("_"));
+    }
+
+    #[test]
+    fn camel_cased_initial_caps() {
+        assert_eq!("Cased", camel_cased("CASED"));
+        assert_eq!("Cased", camel_cased("cased"));
+        assert_eq!("C", camel_cased("C"));
+        assert_eq!("C", camel_cased("c"));
+    }
+
+    #[test]
+    fn camel_cased_underscores() {
+        assert_eq!("CamelCased", camel_cased("camel_cased"));
+        assert_eq!("CamelCased", camel_cased("cAmEL_CAsEd"));
+        assert_eq!("CamelCased", camel_cased("camel_cased_"));
+        assert_eq!("CamelCased", camel_cased("_camel_cased"));
+        assert_eq!("CamelCased", camel_cased("_camel_cased_"));
+        assert_eq!("CamelCased", camel_cased("_camel__cased_"));
+    }
+
+    #[test]
+    fn camel_cased_i18n() {
+        assert_eq!("Außerdem", camel_cased("außerdem"));
+        assert_eq!("AuSSerdem", camel_cased("au_ßerdem"));
+    }
 }

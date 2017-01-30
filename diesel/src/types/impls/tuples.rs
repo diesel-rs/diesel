@@ -7,7 +7,7 @@ use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
 use std::error::Error;
-use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
+use types::{ProvidesSqlTypeFor, HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
 
 macro_rules! tuple_impls {
     ($(
@@ -16,11 +16,11 @@ macro_rules! tuple_impls {
         }
     )+) => {
         $(
-            impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
+            impl<$($T),+, DB> ProvidesSqlTypeFor<DB> for ($($T,)+) where
                 $(DB: HasSqlType<$T>),+,
                 DB: Backend,
             {
-                fn metadata() -> DB::TypeMetadata {
+                fn self_metadata() -> DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
             }

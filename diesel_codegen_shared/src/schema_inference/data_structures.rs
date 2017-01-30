@@ -14,6 +14,7 @@ pub struct ColumnInformation {
 
 pub struct ColumnType {
     pub path: Vec<String>,
+    pub is_builtin: bool,
     pub is_array: bool,
     pub is_nullable: bool,
 }
@@ -49,3 +50,12 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
         }
     }
 }
+
+#[cfg(feature = "postgres")]
+pub struct EnumInformation {
+    pub type_name: String,
+    pub variants: Vec<String>,
+    pub oid: u32,
+    pub array_oid: u32,
+}
+

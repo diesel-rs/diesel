@@ -1,4 +1,5 @@
 use syn;
+// use syntex_syntax::symbol::keywords;
 use quote;
 
 use diesel_codegen_shared::*;
@@ -15,8 +16,9 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
         .unwrap_or_else(|| bug());
     let database_url = get_option(&options, "database_url", bug);
     let schema_name = get_optional_option(&options, "schema_name");
+    let extra_types_module = get_optional_option(&options, "extra_types_module");
 
-    infer_schema_for_schema_name(&database_url, schema_name.as_ref().map(|s| &**s))
+    infer_schema_for_schema_name(&database_url, schema_name.as_ref().map(|s| &**s), extra_types_module)
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
@@ -27,6 +29,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
 
     let options = get_options_from_input("infer_table_from_schema_options", &input.attrs, bug)
         .unwrap_or_else(|| bug());
+    let extra_types_module = get_optional_option(&options, "extra_types_module");
     let database_url = get_option(&options, "database_url", bug);
     let table_name = get_option(&options, "table_name", bug);
 
@@ -36,7 +39,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
         .into_iter().map(syn::Ident::new);
     let table_name = syn::Ident::new(table_name);
 
-    let tokens = data.iter().map(|a| column_def_tokens(a, &connection));
+    let tokens = data.iter().map(|a| column_def_tokens(extra_types_module, a, &connection));
 
     quote!(table! {
         #table_name (#(#primary_keys),*) {
@@ -45,7 +48,8 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     })
 }
 
-fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>) -> quote::Tokens {
+fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>,
+                                extra_types_module: Option<&str>) -> quote::Tokens {
     let table_names = load_table_names(&database_url, schema_name).unwrap();
     let schema_inferences = table_names.into_iter().map(|table_name| {
         let mod_ident = syn::Ident::new(format!("infer_{}", table_name));
@@ -53,11 +57,19 @@ fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>) -
             Some(name) => format!("{}.{}", name, table_name),
             None => table_name,
         };
-        quote! {
-            mod #mod_ident {
-                infer_table_from_schema!(#database_url, #table_name);
-            }
-            pub use self::#mod_ident::*;
+        match extra_types_module {
+            Some(m) => quote! {
+                mod #mod_ident {
+                    infer_table_from_schema!(extra_types_module=#m, #database_url, #table_name);
+                }
+                pub use self::#mod_ident::*;
+            },
+            None => quote! {
+                mod #mod_ident {
+                    infer_table_from_schema!(#database_url, #table_name);
+                }
+                pub use self::#mod_ident::*;
+            },
         }
     });
 
@@ -71,16 +83,15 @@ fn infer_schema_for_schema_name(database_url: &str, schema_name: Option<&str>) -
 }
 
 fn column_def_tokens(
+    extra_types_module: Option<&str>,
     column: &ColumnInformation,
     connection: &InferConnection,
 ) -> quote::Tokens {
     let column_name = syn::Ident::new(&*column.column_name);
-    let column_type = determine_column_type(column, connection).unwrap();
-    let path_segments = column_type.path
-        .into_iter()
-        .map(syn::PathSegment::from)
-        .collect();
-    let tpe = syn::Path { global: true, segments: path_segments };
+    let column_type = determine_column_type(extra_types_module, column, connection).unwrap();
+    let path_segments =
+        column_type.path.into_iter().map(syn::PathSegment::from).collect();
+    let tpe = syn::Path { global: column_type.is_builtin, segments: path_segments };
     let mut tpe = quote!(#tpe);
 
     if column_type.is_array {

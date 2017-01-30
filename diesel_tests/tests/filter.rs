@@ -10,8 +10,8 @@ fn filter_by_int_equality() {
     let tess_id = find_user_by_name("Tess", &connection).id;
     let unused_id = sean_id + tess_id;
 
-    let sean = User::new(sean_id, "Sean");
-    let tess = User::new(tess_id, "Tess");
+    let sean = User::new(sean_id, "Sean", UserType::Default);
+    let tess = User::new(tess_id, "Tess", UserType::Admin);
     assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(&connection));
     assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(&connection));
     assert_eq!(Err(NotFound), users.filter(id.eq(unused_id)).first::<User>(&connection));
@@ -23,8 +23,8 @@ fn filter_by_string_equality() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Admin);
     assert_eq!(Ok(sean), users.filter(name.eq("Sean")).first(&connection));
     assert_eq!(Ok(tess), users.filter(name.eq("Tess")).first(&connection));
     assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).first::<User>(&connection));
@@ -36,9 +36,9 @@ fn filter_by_equality_on_nullable_columns() {
 
     let connection = connection();
     let data = vec![
-        NewUser::new("Sean", Some("black")),
-        NewUser::new("Tess", Some("brown")),
-        NewUser::new("Jim", Some("black")),
+        NewUser::new("Sean", Some("black"), UserType::Default),
+        NewUser::new("Tess", Some("brown"), UserType::Default),
+        NewUser::new("Jim", Some("black"), UserType::Admin),
     ];
     insert(&data).into(users).execute(&connection).unwrap();
 
@@ -59,8 +59,8 @@ fn filter_by_is_not_null_on_nullable_columns() {
 
     let connection = connection();
     let data = vec![
-        NewUser::new("Derek", Some("red")),
-        NewUser::new("Gordon", None),
+        NewUser::new("Derek", Some("red"), UserType::Default),
+        NewUser::new("Gordon", None, UserType::Default),
     ];
     insert(&data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
@@ -76,8 +76,8 @@ fn filter_by_is_null_on_nullable_columns() {
 
     let connection = connection();
     let data = vec![
-        NewUser::new("Derek", Some("red")),
-        NewUser::new("Gordon", None),
+        NewUser::new("Derek", Some("red"), UserType::Admin),
+        NewUser::new("Gordon", None, UserType::Admin),
     ];
     insert(&data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
@@ -96,8 +96,8 @@ fn filter_after_joining() {
                        (1, 'Hello', 1), (2, 'World', 2)")
         .unwrap();
 
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Admin);
     let seans_post = Post::new(1, 1, "Hello", None);
     let tess_post = Post::new(2, 2, "World", None);
     let source = users::table.inner_join(posts::table);
@@ -128,7 +128,8 @@ fn filter_then_select() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
+    let data = vec![NewUser::new("Sean", None, UserType::Admin),
+                    NewUser::new("Tess", None, UserType::Admin)];
     insert(&data).into(users).execute(&connection).unwrap();
 
     assert_eq!(Ok("Sean".to_string()),
@@ -145,11 +146,11 @@ fn filter_on_multiple_columns() {
 
     let connection = connection();
     let data: &[_] = &[
-        NewUser::new("Sean", Some("black")),
-        NewUser::new("Sean", Some("brown")),
-        NewUser::new("Sean", None),
-        NewUser::new("Tess", Some("black")),
-        NewUser::new("Tess", Some("brown")),
+        NewUser::new("Sean", Some("black"), UserType::Default),
+        NewUser::new("Sean", Some("brown"), UserType::Default),
+        NewUser::new("Sean", None, UserType::Default),
+        NewUser::new("Tess", Some("black"), UserType::Default),
+        NewUser::new("Tess", Some("brown"), UserType::Admin),
     ];
     insert(data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
@@ -177,11 +178,11 @@ fn filter_called_twice_means_same_thing_as_and() {
 
     let connection = connection();
     let data: &[_] = &[
-        NewUser::new("Sean", Some("black")),
-        NewUser::new("Sean", Some("brown")),
-        NewUser::new("Sean", None),
-        NewUser::new("Tess", Some("black")),
-        NewUser::new("Tess", Some("brown")),
+        NewUser::new("Sean", Some("black"), UserType::Admin),
+        NewUser::new("Sean", Some("brown"), UserType::GroupOwner),
+        NewUser::new("Sean", None, UserType::Default),
+        NewUser::new("Tess", Some("black"), UserType::Default),
+        NewUser::new("Tess", Some("brown"), UserType::Default),
     ];
     insert(data).into(users).execute(&connection).unwrap();
     let data = users.load::<User>(&connection).unwrap();
@@ -229,9 +230,10 @@ fn filter_with_or() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None, UserType::Default)).into(users).execute(&connection).unwrap();
 
-    let expected_users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
+    let expected_users = vec![User::new(1, "Sean", UserType::Default),
+                              User::new(2, "Tess", UserType::Default)];
     let data: Vec<_> = users.filter(name.eq("Sean").or(name.eq("Tess")))
         .load(&connection).unwrap();
 
@@ -266,8 +268,8 @@ fn filter_by_boxed_predicate() {
     }
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
+    let sean = User::new(1, "Sean", UserType::Default);
+    let tess = User::new(2, "Tess", UserType::Admin);
     let queried_sean = users::table.filter(by_name("sean")).first(&connection);
     let queried_tess = users::table.filter(by_name("tess")).first(&connection);
 

@@ -1,8 +1,9 @@
+pub use enums::*;
 use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
-infer_schema!("dotenv:DATABASE_URL");
+infer_schema!(extra_types_module = "::enums", "dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[has_many(posts)]
@@ -11,18 +12,20 @@ pub struct User {
     pub id: i32,
     pub name: String,
     pub hair_color: Option<String>,
+    pub user_class: UserType,
 }
 
 impl User {
-    pub fn new(id: i32, name: &str) -> Self {
-        User { id: id, name: name.to_string(), hair_color: None }
+    pub fn new(id: i32, name: &str, user_class: UserType) -> Self {
+        User { id: id, name: name.to_string(), hair_color: None, user_class: user_class, }
     }
 
-    pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
+    pub fn with_hair_color(id: i32, name: &str, hair_color: &str, user_class: UserType) -> Self {
         User {
             id: id,
             name: name.to_string(),
             hair_color: Some(hair_color.to_string()),
+            user_class: user_class,
         }
     }
 
@@ -87,7 +90,7 @@ pub use self::backend_specifics::*;
 
 numeric_expr!(users::id);
 
-select_column_workaround!(users -> comments (id, name, hair_color));
+select_column_workaround!(users -> comments (id, name, hair_color, user_class));
 select_column_workaround!(comments -> users (id, post_id, text));
 
 join_through!(users -> posts -> comments);
@@ -97,13 +100,15 @@ join_through!(users -> posts -> comments);
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
+    pub user_class: UserType,
 }
 
 impl NewUser {
-    pub fn new(name: &str, hair_color: Option<&str>) -> Self {
+    pub fn new(name: &str, hair_color: Option<&str>, user_class: UserType) -> Self {
         NewUser {
             name: name.to_string(),
             hair_color: hair_color.map(|s| s.to_string()),
+            user_class: user_class,
         }
     }
 }

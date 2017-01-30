@@ -7,10 +7,10 @@ use schema::*;
 #[test]
 fn unique_constraints_are_detected() {
     let connection = connection();
-    diesel::insert(&User::new(1, "Sean")).into(users::table)
+    diesel::insert(&User::new(1, "Sean", UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
 
-    let failure = diesel::insert(&User::new(1, "Jim")).into(users::table)
+    let failure = diesel::insert(&User::new(1, "Jim", UserType::Default)).into(users::table)
         .execute(&connection);
     assert_matches!(failure, Err(DatabaseError(UniqueViolation, _)));
 }
@@ -20,10 +20,10 @@ fn unique_constraints_are_detected() {
 fn unique_constraints_report_correct_constraint_name() {
     let connection = connection();
     connection.execute("CREATE UNIQUE INDEX users_name ON users (name)").unwrap();
-    diesel::insert(&User::new(1, "Sean")).into(users::table)
+    diesel::insert(&User::new(1, "Sean", UserType::Default)).into(users::table)
         .execute(&connection).unwrap();
 
-    let failure = diesel::insert(&User::new(2, "Sean")).into(users::table)
+    let failure = diesel::insert(&User::new(2, "Sean", UserType::Default)).into(users::table)
         .execute(&connection);
     match failure {
         Err(DatabaseError(UniqueViolation, e)) => {
@@ -47,7 +47,7 @@ macro_rules! try_no_coerce {
 #[test]
 fn cached_prepared_statements_can_be_reused_after_error() {
     let connection = connection_without_transaction();
-    let user = User::new(1, "Sean");
+    let user = User::new(1, "Sean", UserType::Default);
     let query = diesel::insert(&user).into(users::table);
 
     connection.test_transaction(|| {

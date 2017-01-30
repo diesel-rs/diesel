@@ -118,7 +118,8 @@ fn associations_can_be_grouped_multiple_levels_deep() {
     // let posts = Post::belonging_to(&users).load::<Post>().unwrap();
     // let comments = Comment::belonging_to(&users).load::<Comment>().unwrap();
     // ```
-    let users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
+    let users = vec![User::new(1, "Sean", UserType::Default),
+                     User::new(2, "Tess", UserType::Default)];
     let posts = vec![Post::new(1, 1, "Hello", None), Post::new(2, 2, "World", None), Post::new(3, 1, "Hello 2", None)];
     let comments = vec![Comment::new(1, 3, "LOL"), Comment::new(2, 1, "UR dumb"), Comment::new(3, 3, "Funny")]; // Never read the comments
 
@@ -136,7 +137,8 @@ fn associations_can_be_grouped_multiple_levels_deep() {
 
 fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table).execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None, UserType::Default))
+        .into(users::table).execute(&connection).unwrap();
 
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
