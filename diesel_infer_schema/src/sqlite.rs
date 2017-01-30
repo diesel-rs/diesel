@@ -148,7 +148,7 @@ fn is_double(type_name: &str) -> bool {
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    assert_eq!(Vec::<String>::new(), load_table_names(&conn, None).unwrap());
+    assert_eq!(Vec::<TableData>::new(), load_table_names(&conn, None).unwrap());
 }
 
 #[test]
@@ -156,7 +156,7 @@ fn load_table_names_includes_tables_that_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(table_names.contains(&String::from("users")));
+    assert!(table_names.contains(&TableData::new("users", None)));
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(!table_names.contains(&String::from("__diesel_metadata")));
+    assert!(!table_names.contains(&TableData::new("__diesel_metadata", None)));
 }
 
 #[test]
@@ -173,7 +173,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![String::from("users")], table_names.unwrap());
+    assert_eq!(vec![TableData::new("users", None)], table_names.unwrap());
 }
 
 #[test]
@@ -182,7 +182,7 @@ fn load_table_names_excludes_views() {
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![String::from("users")], table_names.unwrap());
+    assert_eq!(vec![TableData::new("users", None)], table_names.unwrap());
 }
 
 #[test]

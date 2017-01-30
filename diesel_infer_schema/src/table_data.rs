@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use quote;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TableData {
     /// Table name
     name: String,
@@ -39,7 +39,7 @@ impl ToString for TableData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TableDataWithTokens {
     /// Table data with name and schema
     table: TableData,

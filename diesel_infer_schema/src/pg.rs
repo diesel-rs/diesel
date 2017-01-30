@@ -159,10 +159,12 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
     Ok(tns)
 }
 
+#[cfg(test)]
+extern crate dotenv;
+
 #[test]
-#[cfg(feature = "dotenv")]
 fn skip_views() {
-    use ::dotenv::dotenv;
+    use self::dotenv::dotenv;
     dotenv().ok();
 
     let connection_url = ::std::env::var("DATABASE_URL")
@@ -175,6 +177,6 @@ fn skip_views() {
 
     let table_names = load_table_names(&connection, None).unwrap();
 
-    assert!(table_names.contains(&"a_regular_table".to_string()));
-    assert!(!table_names.contains(&"a_view".to_string()));
+    assert!(table_names.contains(&TableData::new("a_regular_table", Some("public"))));
+    assert!(!table_names.contains(&TableData::new("a_view", Some("public"))));
 }
