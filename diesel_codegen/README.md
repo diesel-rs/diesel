@@ -35,8 +35,6 @@ the `features` section.
 Next, at the root of your crate add:
 
 ```rust
-#![feature(proc_macro)]
-
 #[macro_use] extern crate diesel_codegen;
 ```
 

@@ -1,4 +1,4 @@
-#![feature(proc_macro, test)]
+#![feature(test)]
 
 #![allow(non_snake_case)]
 
