@@ -45,10 +45,10 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
     Ok(tns)
 }
 
-pub fn get_table_data(conn: &SqliteConnection, table_name: &str)
+pub fn get_table_data(conn: &SqliteConnection, table: &TableData)
     -> QueryResult<Vec<ColumnInformation>>
 {
-    let query = format!("PRAGMA TABLE_INFO('{}')", table_name);
+    let query = format!("PRAGMA TABLE_INFO('{}')", table.name());
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
@@ -72,8 +72,8 @@ impl_Queryable! {
     }
 }
 
-pub fn get_primary_keys(conn: &SqliteConnection, table_name: &str) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", table_name);
+pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResult<Vec<String>> {
+    let query = format!("PRAGMA TABLE_INFO('{}')", table.name());
     let results = try!(sql::<pragma_table_info::SqlType>(&query)
         .load::<FullTableInfo>(conn));
     Ok(results.iter()

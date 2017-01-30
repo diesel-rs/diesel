@@ -61,17 +61,17 @@ fn establish_real_connection<Conn>(database_url: &str) -> Result<Conn, Box<Error
     })
 }
 
-pub fn get_table_data(conn: &InferConnection, table_name: &str)
+pub fn get_table_data(conn: &InferConnection, table: &TableData)
     -> Result<Vec<ColumnInformation>, Box<Error>>
 {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => ::sqlite::get_table_data(c, table_name),
+        InferConnection::Sqlite(ref c) => ::sqlite::get_table_data(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::pg::get_table_data(c, table_name),
+        InferConnection::Pg(ref c) => ::pg::get_table_data(c, table),
     };
     if let Err(NotFound) = column_info {
-        Err(format!("no table exists named {}", table_name).into())
+        Err(format!("no table exists named {}", table.to_string()).into())
     } else {
         column_info.map_err(Into::into)
     }
@@ -91,13 +91,13 @@ pub fn determine_column_type(
 
 pub fn get_primary_keys(
     conn: &InferConnection,
-    table_name: &str,
+    table: &TableData,
 ) -> Result<Vec<String>, Box<Error>> {
     let primary_keys = try!(match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table_name),
+        InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::pg::get_primary_keys(c, table_name),
+        InferConnection::Pg(ref c) => ::pg::get_primary_keys(c, table),
         #[cfg(not(any(feature = "sqlite", feature = "postgres")))]
         _ => {
             let q: ::diesel::QueryResult<Vec<String>> = Ok(Vec::<String>::new());
@@ -106,13 +106,13 @@ pub fn get_primary_keys(
     });
     if primary_keys.is_empty() {
         Err(format!("Diesel only supports tables with primary keys. \
-                    Table {} has no primary key", table_name).into())
+                    Table {} has no primary key", table.to_string()).into())
     } else if primary_keys.len() > 4 {
         Err(format!("Diesel does not currently support tables with \
                      primary keys consisting of more than 4 columns. \
                      Table {} has {} columns in its primary key. \
                      Please open an issue and we will increase the \
-                     limit.", table_name, primary_keys.len()).into())
+                     limit.", table.to_string(), primary_keys.len()).into())
     } else {
         Ok(primary_keys)
     }

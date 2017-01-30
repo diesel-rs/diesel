@@ -8,22 +8,31 @@ use data_structures::ColumnInformation;
 use inference::{establish_connection, get_table_data, determine_column_type, get_primary_keys,
                 InferConnection};
 
-pub fn derive_infer_table_from_schema(database_url: &str, table_name: &str)
+pub fn derive_infer_table_from_schema(database_url: &str, table: &TableData)
     -> Result<quote::Tokens, Box<Error>>
 {
     let connection = establish_connection(database_url)?;
-    let data = get_table_data(&connection, table_name)?;
-    let primary_keys = get_primary_keys(&connection, table_name)?
+    let data = get_table_data(&connection, table)?;
+    let primary_keys = get_primary_keys(&connection, table)?
         .into_iter()
         .map(syn::Ident::new);
-    let table_name = syn::Ident::new(table_name);
+    let table_name = syn::Ident::new(&table.name()[..]);
 
     let mut tokens = Vec::with_capacity(data.len());
 
     for a in data {
         tokens.push(column_def_tokens(&a, &connection)?);
     }
-
+    if let Some(ref schema) = *table.schema() {
+        if cfg!(not(feature = "postgres")) || schema != "public" {
+            let schema_name = syn::Ident::new(&schema[..]);
+            return Ok(quote!(table! {
+                #schema_name.#table_name (#(#primary_keys),*) {
+                    #(#tokens),*,
+                }
+            }));
+        }
+    }
     Ok(quote!(table! {
         #table_name (#(#primary_keys),*) {
             #(#tokens),*,
@@ -35,7 +44,7 @@ pub fn infer_schema_for_schema_name(table: &TableData, database_url: &str)
      -> Result<TableDataWithTokens, Box<Error>>
 {
     let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
-    let table_macro = derive_infer_table_from_schema(database_url, &table.name())?;
+    let table_macro = derive_infer_table_from_schema(database_url, table)?;
     let tokens = quote! {
         mod #mod_ident {
             #table_macro

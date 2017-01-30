@@ -3,6 +3,7 @@ use quote;
 
 use diesel_codegen_shared::extract_database_url;
 use diesel_infer_schema;
+use diesel_infer_schema::table_data::TableData;
 
 use util::{get_options_from_input, get_option, get_optional_option};
 
@@ -49,7 +50,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let table_name = get_option(&options, "table_name", bug);
 
-    diesel_infer_schema::derive_infer_table_from_schema(&database_url, table_name)
+    diesel_infer_schema::derive_infer_table_from_schema(&database_url, &TableData::new(table_name, None))
         .expect(&format!("Could not infer table {}", table_name))
 }
 

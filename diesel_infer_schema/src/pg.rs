@@ -95,25 +95,25 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>> {
+pub fn get_table_data(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<ColumnInformation>> {
     use self::pg_attribute::dsl::*;
     use self::pg_type::dsl::{pg_type, typname};
 
     pg_attribute.inner_join(pg_type)
         .select((attname, typname, attnotnull))
-        .filter(attrelid.eq_any(table_oid(table_name)))
+        .filter(attrelid.eq_any(table_oid(table)))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
         .load(conn)
 }
 
 
-pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<String>> {
+pub fn get_primary_keys(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<String>> {
     use self::pg_attribute::dsl::*;
     use self::pg_index::dsl::{pg_index, indisprimary, indexrelid, indrelid};
 
     let pk_query = pg_index.select(indexrelid)
-        .filter(indrelid.eq_any(table_oid(table_name)))
+        .filter(indrelid.eq_any(table_oid(table)))
         .filter(indisprimary.eq(true));
 
     pg_attribute.select(attname)
@@ -122,20 +122,16 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
         .load(conn)
 }
 
-fn table_oid(table_name: &str) -> BoxedSelectStatement<Oid, pg_class::table, Pg> {
+fn table_oid(table: &TableData) -> BoxedSelectStatement<Oid, pg_class::table, Pg> {
     use self::pg_class::dsl::*;
     use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
 
-    let mut parts = table_name.split('.');
-    let (schema_name, table_name) = match (parts.next(), parts.next()) {
-        (Some(schema), Some(table)) => (schema, table),
-        (Some(table), None) => ("public", table),
-        _ => panic!("Unable to load schema for {}", table_name),
-    };
-
-    let schema_oid = pg_namespace.select(nsoid).filter(nspname.eq(schema_name)).limit(1);
+    let schema_oid = pg_namespace.select(nsoid)
+        .filter(nspname.eq(table.schema().clone()
+            .expect("Postgres TableDate has schema")))
+        .limit(1);
     pg_class.select(oid)
-        .filter(relname.eq(table_name))
+        .filter(relname.eq(table.name()))
         .filter(relnamespace.eq_any(schema_oid))
         .limit(1)
         .into_boxed()

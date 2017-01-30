@@ -22,6 +22,10 @@ impl TableData {
         &self.name
     }
 
+    pub fn schema(&self) -> &Option<String> {
+        &self.schema
+    }
+
     pub fn set_tokens(&self, tokens: quote::Tokens) -> TableDataWithTokens {
         TableDataWithTokens {
           table: self.clone(),
