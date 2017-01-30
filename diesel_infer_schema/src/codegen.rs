@@ -35,7 +35,7 @@ pub fn infer_schema_for_schema_name(table: &TableData, database_url: &str)
      -> Result<TableDataWithTokens, Box<Error>>
 {
     let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
-    let table_macro = derive_infer_table_from_schema(database_url, &table.to_string())?;
+    let table_macro = derive_infer_table_from_schema(database_url, &table.name())?;
     let tokens = quote! {
         mod #mod_ident {
             #table_macro

@@ -194,7 +194,19 @@ fn run_infer_schema(matches: &ArgMatches) {
     let database_url = database::database_url(matches);
     let schema_name = matches.value_of("schema");
 
-    let filtering_tables = matches.values_of("table-name").map(|v| v.collect())
+    let filtering_tables = matches.values_of("table-name").map(|v| {
+        if cfg!(feature = "postgres") {
+            v.map(|v| {
+                if v.contains(".") {
+                   String::from(v)
+                } else {
+                   format!("{}.{}", schema_name.unwrap_or("public"), v)
+                }
+            }).collect()
+        } else {
+            v.map(String::from).collect()
+        }
+    })
         .unwrap_or(::std::collections::HashSet::new());
     let is_whitelist = matches.is_present("whitelist");
     let is_blacklist = matches.is_present("blacklist");
