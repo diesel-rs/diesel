@@ -11,7 +11,7 @@ fn filter_by_inequality() {
 
     assert_eq!(vec![tess.clone()], users.filter(name.ne("Sean")).load(&connection).unwrap());
     assert_eq!(vec![sean.clone()], users.filter(name.ne("Tess")).load(&connection).unwrap());
-    assert_eq!(vec![sean, tess], users.filter(name.ne("Jim")).load(&connection).unwrap());
+    assert_eq!(vec![sean, tess], users.filter(name.ne("Jim")).order(id.asc()).load(&connection).unwrap());
 }
 
 #[test]
@@ -23,7 +23,7 @@ fn filter_by_gt() {
     let jim = User::new(3, "Jim");
 
     assert_eq!(vec![tess, jim.clone()],
-        users.filter(id.gt(1)).load(&connection).unwrap());
+        users.filter(id.gt(1)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![jim], users.filter(id.gt(2)).load(&connection).unwrap());
 }
 
@@ -36,7 +36,7 @@ fn filter_by_ge() {
     let jim = User::new(3, "Jim");
 
     assert_eq!(vec![tess, jim.clone()],
-        users.filter(id.ge(2)).load(&connection).unwrap());
+        users.filter(id.ge(2)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![jim], users.filter(id.ge(3)).load(&connection).unwrap());
 }
 
@@ -49,7 +49,7 @@ fn filter_by_lt() {
     let tess = User::new(2, "Tess");
 
     assert_eq!(vec![sean.clone(), tess],
-        users.filter(id.lt(3)).load(&connection).unwrap());
+        users.filter(id.lt(3)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![sean], users.filter(id.lt(2)).load(&connection).unwrap());
 }
 
@@ -62,7 +62,7 @@ fn filter_by_le() {
     let tess = User::new(2, "Tess");
 
     assert_eq!(vec![sean.clone(), tess],
-        users.filter(id.le(2)).load(&connection).unwrap());
+        users.filter(id.le(2)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![sean], users.filter(id.le(1)).load(&connection).unwrap());
 }
 
@@ -76,9 +76,9 @@ fn filter_by_between() {
     let jim = User::new(3, "Jim");
 
     assert_eq!(vec![sean, tess.clone(), jim.clone()],
-        users.filter(id.between(1..3)).load(&connection).unwrap());
+        users.filter(id.between(1..3)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![tess, jim],
-        users.filter(id.between(2..3)).load(&connection).unwrap());
+        users.filter(id.between(2..3)).order(id.asc()).load(&connection).unwrap());
 }
 
 #[test]
@@ -98,9 +98,9 @@ fn filter_by_like() {
     let jim = data[2].clone();
 
     assert_eq!(vec![sean, tess],
-        users.filter(name.like("%Griffin")).load(&connection).unwrap());
+        users.filter(name.like("%Griffin")).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![jim],
-        users.filter(name.not_like("%Griffin")).load(&connection).unwrap());
+        users.filter(name.not_like("%Griffin")).order(id.asc()).load(&connection).unwrap());
 }
 
 #[test]
@@ -117,9 +117,9 @@ fn filter_by_any() {
     let owned_names = vec!["Sean", "Tess"];
     let borrowed_names: &[&str] = &["Sean", "Jim"];
     assert_eq!(vec![sean.clone(), tess],
-        users.filter(name.eq(any(owned_names))).load(&connection).unwrap());
+        users.filter(name.eq(any(owned_names))).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![sean, jim],
-        users.filter(name.eq(any(borrowed_names))).load(&connection).unwrap());
+        users.filter(name.eq(any(borrowed_names))).order(id.asc()).load(&connection).unwrap());
 }
 
 #[test]
@@ -134,9 +134,9 @@ fn filter_by_in() {
     let owned_names = vec!["Sean", "Tess"];
     let borrowed_names: &[_] = &["Sean", "Jim"];
     assert_eq!(vec![sean.clone(), tess],
-        users.filter(name.eq_any(owned_names)).load(&connection).unwrap());
+        users.filter(name.eq_any(owned_names)).order(id.asc()).load(&connection).unwrap());
     assert_eq!(vec![sean, jim],
-        users.filter(name.eq_any(borrowed_names)).load(&connection).unwrap());
+        users.filter(name.eq_any(borrowed_names)).order(id.asc()).load(&connection).unwrap());
 }
 
 fn connection_with_3_users() -> TestConnection {
