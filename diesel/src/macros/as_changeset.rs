@@ -16,11 +16,12 @@
 /// # Example
 ///
 /// ```
+/// # #[macro_use] extern crate diesel_codegen;
 /// # #[macro_use] extern crate diesel;
 /// # table! { users { id -> Integer, name -> VarChar, } }
 /// # include!("src/doctest_setup.rs");
 ///
-/// #[derive(PartialEq, Debug)]
+/// #[derive(PartialEq, Debug, Queryable)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
@@ -34,12 +35,6 @@
 ///     }
 /// }
 ///
-/// # impl_Queryable! {
-/// #     struct User {
-/// #         id: i32,
-/// #         name: String,
-/// #     }
-/// # }
 /// #
 /// # impl User {
 /// #     fn new(id: i32, name: &str) -> Self {

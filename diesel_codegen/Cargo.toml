@@ -18,12 +18,13 @@ diesel_infer_schema = { version = "0.10.1", default-features = false, optional =
 
 [dev-dependencies]
 tempdir = "0.3.4"
+cfg-if = "0.1.0"
 
 [lib]
 proc-macro = true
 
 [features]
 default = ["dotenv"]
-postgres = ["diesel_infer_schema/postgres"]
-sqlite = ["diesel_infer_schema/sqlite"]
-mysql = ["diesel_infer_schema/mysql"]
+postgres = ["diesel_infer_schema/postgres", "diesel/postgres"]
+sqlite = ["diesel_infer_schema/sqlite", "diesel/sqlite"]
+mysql = ["diesel_infer_schema/mysql", "diesel/mysql"]

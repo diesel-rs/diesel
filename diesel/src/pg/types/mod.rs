@@ -146,6 +146,7 @@ pub mod sql_types {
     /// ```rust
     /// # #![allow(dead_code)]
     /// extern crate serde_json;
+    /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
     /// # include!("src/doctest_setup.rs");
     /// #
@@ -156,18 +157,11 @@ pub mod sql_types {
     /// #     }
     /// # }
     /// #
+    /// #[derive(Queryable)]
     /// struct Contact {
     ///     id: i32,
     ///     name: String,
     ///     address: serde_json::Value,
-    /// }
-    ///
-    /// impl_Queryable! {
-    ///     struct Contact {
-    ///         id: i32,
-    ///         name: String,
-    ///         address: serde_json::Value,
-    ///     }
     /// }
     ///
     /// struct NewContact {

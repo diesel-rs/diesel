@@ -3,6 +3,7 @@ use syn;
 use attr::Attr;
 use util::*;
 
+#[derive(Debug)]
 pub struct Model {
     pub ty: syn::Ty,
     pub attrs: Vec<Attr>,
