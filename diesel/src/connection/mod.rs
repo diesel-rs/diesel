@@ -4,16 +4,18 @@ use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
 
-/// Trait to perform a simple connection with the associated backend.
+/// To perform simple operations to the backed that implements this trait.
+/// `SimpleConnection` will be used for migrations. Every backend shall implement
+/// their own way to run migrations scripts.
 pub trait SimpleConnection {
-    #[doc(hidden)]
+    /// Migrations will use this function to run the `up.sql` and `down.sql` files.
+    /// New backends shall provide their own mechanism to execute the migration SQL scripts
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
-/// Adds `establish`, `transaction`, `test_transaction` and `begin_test_transaction`
-/// to all types that implements `SimpleConnection` trait.
+/// Every backend shall implement this trait to perform connections to the database.
 pub trait Connection: SimpleConnection + Sized {
-    /// The associated backend.
+    /// A trait that provides specific operations for the backed.
     type Backend: Backend;
 
     /// Establishes a new connection to the database at the given URL. The URL
