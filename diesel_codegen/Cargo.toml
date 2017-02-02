@@ -12,8 +12,8 @@ keywords = ["orm", "database", "postgres", "sql", "codegen"]
 [dependencies]
 syn = "0.10.3"
 quote = "0.3.10"
+dotenv = { version = "0.8.0", optional = true }
 diesel = { version = "0.10.0", default-features = false }
-diesel_codegen_shared = { version = "0.10.0", default-features = false }
 diesel_infer_schema = { version = "0.1.0", default-features = false }
 
 [lib]
@@ -21,8 +21,7 @@ proc-macro = true
 
 [features]
 default = ["dotenv"]
-dotenv = ["diesel_codegen_shared/dotenv"]
-postgres = ["diesel_codegen_shared/postgres", "diesel_infer_schema/postgres"]
-sqlite = ["diesel_codegen_shared/sqlite", "diesel_infer_schema/sqlite"]
+postgres = ["diesel_infer_schema/postgres"]
+sqlite = ["diesel_infer_schema/sqlite"]
 
 

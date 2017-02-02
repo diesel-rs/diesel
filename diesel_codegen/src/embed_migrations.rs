@@ -2,7 +2,7 @@ use syn;
 use quote;
 
 use diesel::migrations::{migration_paths_in_directory, version_from_path};
-use diesel_codegen_shared::migration_directory_from_given_path;
+use migrations::migration_directory_from_given_path;
 use std::error::Error;
 use std::path::Path;
 

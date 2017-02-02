@@ -9,7 +9,7 @@ macro_rules! t {
     };
 }
 
-extern crate diesel_codegen_shared;
+extern crate dotenv;
 extern crate diesel_infer_schema;
 extern crate diesel;
 #[macro_use]
@@ -29,6 +29,8 @@ mod queryable;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
 mod util;
+mod migrations;
+mod database_url;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
