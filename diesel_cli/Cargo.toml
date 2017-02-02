@@ -14,7 +14,7 @@ name = "diesel"
 
 [dependencies]
 chrono = "0.2.17"
-clap = "2.11"
+clap = ">=2.19.3, <2.20.0"
 diesel = { version = "0.9.0", default-features = false }
 dotenv = "0.8.0"
 diesel_infer_schema = { version = "0.1.0", default-features = false, path = "../diesel_infer_schema" }
