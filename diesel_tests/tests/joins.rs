@@ -202,13 +202,13 @@ fn select_then_join() {
     connection.execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
         .unwrap();
     let expected_data = vec![1];
-    let data: Vec<_> = users.select(id).inner_join(posts::table)
+    let data: Vec<i32> = users.select(id).inner_join(posts::table)
         .load(&connection).unwrap();
 
     assert_eq!(expected_data, data);
 
     let expected_data = vec![1, 2];
-    let data: Vec<_> = users.select(id).left_outer_join(posts::table)
+    let data: Vec<i32> = users.select(id).left_outer_join(posts::table)
         .load(&connection).unwrap();
 
     assert_eq!(expected_data, data);
