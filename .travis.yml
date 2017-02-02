@@ -46,8 +46,10 @@ after_success:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == beta ]]; then
     (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono uuid")
-    (echo "docs.diesel.rs" > ../diesel/target/doc/CNAME)
-    (travis-cargo doc-upload)
+    mkdir diesel/target
+    mv target/doc diesel/target/doc
+    echo "docs.diesel.rs" > diesel/target/doc/CNAME
+    (cd diesel && travis-cargo doc-upload)
   fi
 branches:
   only:
