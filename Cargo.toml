@@ -5,6 +5,6 @@ license = "MIT"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 
 [dependencies]
-diesel = "0.9"
-diesel_codegen = { version = "0.9", features = ["sqlite"] }
+diesel = "0.10"
+diesel_codegen = { version = "0.10", features = ["sqlite"] }
 dotenv = "0.8"
