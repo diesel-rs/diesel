@@ -19,43 +19,31 @@ fn run_infer_schema() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     if cfg!(feature = "sqlite") {
         assert_eq!(result.stdout(),
-r"mod infer_users1 {
-    table! {
-        users1 (id) {
-            id -> Nullable<Integer>,
-        }
+r"table! {
+    users1 (id) {
+        id -> Nullable<Integer>,
     }
 }
-pub use self::infer_users1::*;
-mod infer_users2 {
-    table! {
-        users2 (id) {
-            id -> Nullable<Integer>,
-        }
-    }
-}
-pub use self::infer_users2::*;
 
+table! {
+    users2 (id) {
+        id -> Nullable<Integer>,
+    }
+}
 ");
     } else if cfg!(feature = "postgres") {
                 assert_eq!(result.stdout(),
-r"mod infer_users1 {
-    table! {
-        users1 (id) {
-            id -> Int4,
-        }
+r"table! {
+    users1 (id) {
+        id -> Int4,
     }
 }
-pub use self::infer_users1::*;
-mod infer_users2 {
-    table! {
-        users2 (id) {
-            id -> Int4,
-        }
-    }
-}
-pub use self::infer_users2::*;
 
+table! {
+    users2 (id) {
+        id -> Int4,
+    }
+}
 ");
     }
 }
@@ -79,27 +67,19 @@ fn run_infer_schema_whitelist() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     if cfg!(feature = "sqlite") {
         assert_eq!(result.stdout(),
-r"mod infer_users1 {
-    table! {
-        users1 (id) {
-            id -> Nullable<Integer>,
-        }
+r"table! {
+    users1 (id) {
+        id -> Nullable<Integer>,
     }
 }
-pub use self::infer_users1::*;
-
 ");
     } else if cfg!(feature = "postgres") {
         assert_eq!(result.stdout(),
-r"mod infer_users1 {
-    table! {
-        users1 (id) {
-            id -> Int4,
-        }
+r"table! {
+    users1 (id) {
+        id -> Int4,
     }
 }
-pub use self::infer_users1::*;
-
 ");
     }
 }
@@ -123,27 +103,19 @@ fn run_infer_schema_blacklist() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     if cfg!(feature = "sqlite") {
         assert_eq!(result.stdout(),
-r"mod infer_users2 {
-    table! {
-        users2 (id) {
-            id -> Nullable<Integer>,
-        }
+r"table! {
+    users2 (id) {
+        id -> Nullable<Integer>,
     }
 }
-pub use self::infer_users2::*;
-
 ");
     } else if cfg!(feature = "postgres") {
         assert_eq!(result.stdout(),
-r"mod infer_users2 {
-    table! {
-        users2 (id) {
-            id -> Int4,
-        }
+r"table! {
+    users2 (id) {
+        id -> Int4,
     }
 }
-pub use self::infer_users2::*;
-
 ");
     }
 }

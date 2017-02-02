@@ -1,6 +1,4 @@
-use std::ops::Deref;
-
-use quote;
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TableData {
@@ -25,42 +23,13 @@ impl TableData {
     pub fn schema(&self) -> &Option<String> {
         &self.schema
     }
-
-    pub fn set_tokens(&self, tokens: quote::Tokens) -> TableDataWithTokens {
-        TableDataWithTokens {
-          table: self.clone(),
-          tokens: tokens,
-        }
-    }
 }
 
-impl ToString for TableData {
-    fn to_string(&self) -> String {
+impl fmt::Display for TableData {
+    fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.schema {
-            Some(ref schema_name) => format!("{}.{}", schema_name, self.name),
-            None => self.name.clone(),
+            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
+            None => write!(out, "{}", self.name)
         }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TableDataWithTokens {
-    /// Table data with name and schema
-    table: TableData,
-    /// Table represented as tokens of `table!` macro
-    tokens: quote::Tokens,
-}
-
-impl TableDataWithTokens {
-    pub fn tokens(&self) -> quote::Tokens {
-        self.tokens.clone()
-    }
-}
-
-impl Deref for TableDataWithTokens {
-    type Target = TableData;
-
-    fn deref(&self) -> &TableData {
-        &self.table
     }
 }
