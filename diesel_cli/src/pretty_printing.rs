@@ -23,7 +23,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         // The `quote!` macro inserts whitespaces at some strange location,
         // let's remove them!
         match c {
-            '!' | '(' | ';' | ',' | '<' | ')' | '>' if last_char.is_whitespace() => {
+            '!' | ';' | ',' | '<' | ')' | '>' if last_char.is_whitespace() => {
                 out.pop();
             },
             ':' if last_char.is_whitespace() => {
@@ -71,14 +71,14 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
             ';' | ',' | '}' => {
                 skip_space = true;
                 write!(out, "\n{}", indent)?;
-            },
+            }
             '{' => {
                 skip_space = true;
                 indent += "\t";
                 write!(out, "\n{}", indent)?;
-            },
+            }
             ':' | '(' | '<' => skip_space = true,
-            _=>{}
+            _ => {}
         }
     }
 
@@ -118,7 +118,7 @@ mod tests {
         test_newline_after_semicolon:
             ";" =>
             ";\n";
-        
+
         test_remove_whitespace_macro_call:
             "table ! { }" =>
             "table! {\n}\n";
@@ -129,7 +129,7 @@ mod tests {
 
         test_remove_whitespace_parenthesis:
             "foo ( 42 )" =>
-            "foo(42)";
+            "foo (42)";
 
         test_remove_whitespace_angular_brackets:
             "Option < i32 >" =>
@@ -165,7 +165,7 @@ mod tests {
             , } } } pub use self :: infer_users :: * ;" =>
 r"mod infer_users {
     table! {
-        users(id) {
+        users (id) {
             id -> ::diesel::types::Int4,
             username -> ::diesel::types::Varchar,
             password -> ::diesel::types::Varchar,

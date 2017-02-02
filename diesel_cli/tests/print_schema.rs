@@ -21,7 +21,7 @@ fn run_infer_schema() {
         assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
-        users1(id) {
+        users1 (id) {
             id -> Nullable<Integer>,
         }
     }
@@ -29,7 +29,7 @@ r"mod infer_users1 {
 pub use self::infer_users1::*;
 mod infer_users2 {
     table! {
-        users2(id) {
+        users2 (id) {
             id -> Nullable<Integer>,
         }
     }
@@ -41,7 +41,7 @@ pub use self::infer_users2::*;
                 assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
-        users1(id) {
+        users1 (id) {
             id -> Int4,
         }
     }
@@ -49,7 +49,7 @@ r"mod infer_users1 {
 pub use self::infer_users1::*;
 mod infer_users2 {
     table! {
-        users2(id) {
+        users2 (id) {
             id -> Int4,
         }
     }
@@ -81,7 +81,7 @@ fn run_infer_schema_whitelist() {
         assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
-        users1(id) {
+        users1 (id) {
             id -> Nullable<Integer>,
         }
     }
@@ -93,7 +93,7 @@ pub use self::infer_users1::*;
         assert_eq!(result.stdout(),
 r"mod infer_users1 {
     table! {
-        users1(id) {
+        users1 (id) {
             id -> Int4,
         }
     }
@@ -125,7 +125,7 @@ fn run_infer_schema_blacklist() {
         assert_eq!(result.stdout(),
 r"mod infer_users2 {
     table! {
-        users2(id) {
+        users2 (id) {
             id -> Nullable<Integer>,
         }
     }
@@ -137,7 +137,7 @@ pub use self::infer_users2::*;
         assert_eq!(result.stdout(),
 r"mod infer_users2 {
     table! {
-        users2(id) {
+        users2 (id) {
             id -> Int4,
         }
     }
