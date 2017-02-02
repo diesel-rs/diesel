@@ -6,6 +6,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for the PostgreSQL [`json` and `jsonb` types][pg-json]. They can
+  be mapped to/from `serde_json::Value`. The `serde` feature must be enabled to
+  use the JSON types.
+
+[pg-json]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
+
+* Added the `print-schema` command to Diesel CLI. This command will print the
+  output of the `infer_schema!` macro. For more information run `diesel help
+  print-schema`.
+
 ### Changed
 
 * When possible, we will use deprecation warnings for breaking changes.
