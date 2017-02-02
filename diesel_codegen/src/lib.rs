@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![recursion_limit="1024"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -30,12 +31,13 @@ mod queryable;
 mod schema_inference;
 mod util;
 mod migrations;
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod database_url;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
-#[proc_macro_derive(Queryable)]
+#[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }
