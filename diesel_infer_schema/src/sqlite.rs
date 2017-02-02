@@ -60,16 +60,25 @@ struct FullTableInfo {
     primary_key: bool,
 }
 
-impl_Queryable! {
-    struct FullTableInfo {
-        _cid: i32,
-        name: String,
-        _type_name: String,
-        _not_null: bool,
-        _dflt_value: Option<String>,
-        primary_key: bool,
+
+impl<ST> Queryable<ST, ::diesel::sqlite::Sqlite> for FullTableInfo where
+    ::diesel::sqlite::Sqlite: ::diesel::types::HasSqlType<ST>,
+    (i32, String, String, bool, Option<String>, bool) : ::diesel::types::FromSqlRow<ST, ::diesel::sqlite::Sqlite> {
+        
+    type Row = (i32, String, String, bool, Option<String>, bool);
+
+    fn build(row: Self::Row) -> Self{
+        FullTableInfo{
+            _cid: row.0,
+            name: row.1,
+            _type_name: row.2,
+            _not_null: row.3,
+            _dflt_value: row.4,
+            primary_key: row.5,
+        }
     }
 }
+
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
