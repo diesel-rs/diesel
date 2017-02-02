@@ -3,12 +3,12 @@ use std::error::Error;
 use quote;
 use syn;
 
-use table_data::{TableData, TableDataWithTokens};
+use table_data::TableData;
 use data_structures::ColumnInformation;
 use inference::{establish_connection, get_table_data, determine_column_type, get_primary_keys,
                 InferConnection};
 
-pub fn derive_infer_table_from_schema(database_url: &str, table: &TableData)
+pub fn expand_infer_table_from_schema(database_url: &str, table: &TableData)
     -> Result<quote::Tokens, Box<Error>>
 {
     let connection = establish_connection(database_url)?;
@@ -38,21 +38,6 @@ pub fn derive_infer_table_from_schema(database_url: &str, table: &TableData)
             #(#tokens),*,
         }
     }))
-}
-
-pub fn infer_schema_for_schema_name(table: &TableData, database_url: &str)
-     -> Result<TableDataWithTokens, Box<Error>>
-{
-    let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
-    let table_macro = derive_infer_table_from_schema(database_url, table)?;
-    let tokens = quote! {
-        mod #mod_ident {
-            #table_macro
-        }
-        pub use self::#mod_ident::*;
-    };
-
-    Ok(table.set_tokens(tokens))
 }
 
 pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens

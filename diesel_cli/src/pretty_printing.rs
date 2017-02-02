@@ -23,9 +23,9 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         // The `quote!` macro inserts whitespaces at some strange location,
         // let's remove them!
         match c {
-            '!' | ';' | ',' | '<' | ')' | '>' if last_char.is_whitespace() => {
+            '!' | ',' | '<' | ')' | '>' if last_char.is_whitespace() => {
                 out.pop();
-            },
+            }
             ':' if last_char.is_whitespace() => {
                 // Unless we are at the beginning of a fully qualified path,
                 // remove the whitespace.
@@ -38,8 +38,8 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
                 if char_before_whitespace != Some('>') {
                     out.pop();
                 }
-            },
-            _=> { }
+            }
+            _ => {}
         }
 
         if skip_space && c.is_whitespace() && last_char != '>' {
@@ -68,7 +68,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         // We need to insert newlines in some places and adjust the indent.
         // Also, we need to remember if we could skip the next whitespace.
         match c {
-            ';' | ',' | '}' => {
+            ',' | '}' => {
                 skip_space = true;
                 write!(out, "\n{}", indent)?;
             }
@@ -82,7 +82,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
         }
     }
 
-    Ok(out.replace("\t", "    "))
+    Ok(out.replace("\t", "    ").replace("table!", "\ntable!").trim().to_string())
 }
 
 
@@ -104,24 +104,20 @@ mod tests {
 
     test_pretty_printing! {
         test_increase_indent:
-            "{" =>
-            "{\n    ";
+            "{,}" =>
+            "{\n    ,\n}";
 
         test_decrease_indent:
             "{abc,}" =>
-            "{\n    abc,\n}\n";
+            "{\n    abc,\n}";
 
         test_newline_after_comma:
-            "," =>
-            ",\n";
-
-        test_newline_after_semicolon:
-            ";" =>
-            ";\n";
+            ",," =>
+            ",\n,";
 
         test_remove_whitespace_macro_call:
             "table ! { }" =>
-            "table! {\n}\n";
+            "table! {\n}";
 
         test_remove_whitespace_path_segments:
             ":: diesel :: types :: Text" =>
@@ -152,28 +148,20 @@ mod tests {
             "created_at -> ::diesel::types::Timestamp";
 
         test_format_full_line:
-            "created_at -> :: diesel :: types :: Timestamp ," =>
-            "created_at -> ::diesel::types::Timestamp,\n";
-
-        test_format_include_line:
-            "pub use self :: infer_locks :: * ;" =>
-            "pub use self::infer_locks::*;\n";
+            "created_at -> :: diesel :: types :: Timestamp ,," =>
+            "created_at -> ::diesel::types::Timestamp,\n,";
 
         test_format_generated_mod:
-            "mod infer_users { table ! { users ( id ) { id -> :: diesel :: types :: Int4 , \
+            "table ! { users ( id ) { id -> :: diesel :: types :: Int4 , \
             username -> :: diesel :: types :: Varchar , password -> :: diesel :: types :: Varchar \
-            , } } } pub use self :: infer_users :: * ;" =>
-r"mod infer_users {
-    table! {
-        users (id) {
-            id -> ::diesel::types::Int4,
-            username -> ::diesel::types::Varchar,
-            password -> ::diesel::types::Varchar,
-        }
+            , } }" =>
+r"table! {
+    users (id) {
+        id -> ::diesel::types::Int4,
+        username -> ::diesel::types::Varchar,
+        password -> ::diesel::types::Varchar,
     }
-}
-pub use self::infer_users::*;
-"
+}"
 
     }
 }

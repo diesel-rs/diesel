@@ -2,8 +2,7 @@ use syn;
 use quote;
 
 use diesel_codegen_shared::extract_database_url;
-use diesel_infer_schema;
-use diesel_infer_schema::table_data::TableData;
+use diesel_infer_schema::*;
 
 use util::{get_options_from_input, get_option, get_optional_option};
 
@@ -19,7 +18,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     let schema_name = get_optional_option(&options, "schema_name");
     let schema_name = schema_name.as_ref().map(|s| &**s);
 
-    let table_names = diesel_infer_schema::load_table_names(&database_url, schema_name)
+    let table_names = load_table_names(&database_url, schema_name)
         .expect(&format!("Could not load table names from database `{}`{}",
             database_url,
             if let Some(name) = schema_name {
@@ -31,12 +30,18 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
 
     let tables = table_names.iter()
         .map(|table| {
-            diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
-              .expect(&format!("Could not load table `{}`", table.to_string()))
-        })
-        .map(|table| table.tokens());
+            let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
+            let table_macro = expand_infer_table_from_schema(&database_url, table)
+                .expect(&format!("Could not infer table {}", table));
+            quote! {
+                mod #mod_ident {
+                    #table_macro
+                }
+                pub use self::#mod_ident::*;
+            }
+        });
 
-    diesel_infer_schema::handle_schema(tables, schema_name)
+    handle_schema(tables, schema_name)
 }
 
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
@@ -50,7 +55,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let table_name = get_option(&options, "table_name", bug);
 
-    diesel_infer_schema::derive_infer_table_from_schema(&database_url, &TableData::new(table_name, None))
+    expand_infer_table_from_schema(&database_url, &TableData::new(table_name, None))
         .expect(&format!("Could not infer table {}", table_name))
 }
 

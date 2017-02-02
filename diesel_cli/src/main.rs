@@ -226,9 +226,8 @@ fn run_infer_schema(matches: &ArgMatches) {
             if is_blacklist && filtering_tables.contains(&table_name[..]) {
                 return None;
             }
-            Some(diesel_infer_schema::infer_schema_for_schema_name(table, &database_url)
-                .expect(&format!("Could not load table `{}`", table.to_string()))
-                .tokens())
+            Some(diesel_infer_schema::expand_infer_table_from_schema(&database_url, &table)
+                .expect(&format!("Could not load table `{}`", table.to_string())))
         });
 
     let schema = diesel_infer_schema::handle_schema(tables, schema_name);
