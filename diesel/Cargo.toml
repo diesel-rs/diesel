@@ -14,7 +14,7 @@ categories = ["database"]
 libc = "0.2.*"
 pq-sys = { version = "^0.2.0", optional = true }
 libsqlite3-sys = { version = "^0.4.0", optional = true }
-byteorder = "0.3.*"
+byteorder = "1.0"
 quickcheck = { version = "0.3.1", optional = true }
 chrono = { version = "^0.2.17", optional = true }
 uuid = { version = ">=0.2.0, <0.4.0", optional = true, features = ["use_std"] }
