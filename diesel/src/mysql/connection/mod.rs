@@ -1,14 +1,19 @@
-extern crate mysqlclient_sys as ffi;
+mod raw;
+mod url;
 
 use connection::{Connection, SimpleConnection};
 use query_builder::*;
 use query_source::Queryable;
 use result::*;
+use self::raw::RawConnection;
+use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct MysqlConnection;
+pub struct MysqlConnection {
+    _raw_connection: RawConnection,
+}
 
 impl SimpleConnection for MysqlConnection {
     fn batch_execute(&self, _query: &str) -> QueryResult<()> {
@@ -19,8 +24,13 @@ impl SimpleConnection for MysqlConnection {
 impl Connection for MysqlConnection {
     type Backend = Mysql;
 
-    fn establish(_database_url: &str) -> ConnectionResult<Self> {
-        unimplemented!()
+    fn establish(database_url: &str) -> ConnectionResult<Self> {
+        let raw_connection = RawConnection::new();
+        let connection_options = try!(ConnectionOptions::parse(database_url));
+        try!(raw_connection.connect(connection_options));
+        Ok(MysqlConnection {
+            _raw_connection: raw_connection,
+        })
     }
 
     fn execute(&self, _query: &str) -> QueryResult<usize> {
