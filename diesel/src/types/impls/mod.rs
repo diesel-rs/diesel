@@ -97,7 +97,11 @@ macro_rules! queryable_impls {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! primitive_impls {
-    ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr), sqlite: ($tpe:ident))) => {
+    ($Source:ident -> (, $($rest:tt)*)) => {
+        primitive_impls!($Source -> ($($rest)*));
+    };
+
+    ($Source:ident -> (sqlite: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "sqlite")]
         impl types::HasSqlType<types::$Source> for $crate::sqlite::Sqlite {
             fn metadata() -> $crate::sqlite::SqliteType {
@@ -105,15 +109,10 @@ macro_rules! primitive_impls {
             }
         }
 
-        primitive_impls!($Source -> ($Target, pg: ($oid, $array_oid)));
+        primitive_impls!($Source -> ($($rest)*));
     };
 
-    ($Source:ident -> ($Target:ty, pg: ($oid:expr, $array_oid:expr))) => {
-        primitive_impls!($Source -> (pg: ($oid, $array_oid)));
-        primitive_impls!($Source -> $Target);
-    };
-
-    ($Source:ident -> (pg: ($oid:expr, $array_oid:expr))) => {
+    ($Source:ident -> (pg: ($oid:expr, $array_oid:expr) $($rest:tt)*)) => {
         #[cfg(feature = "postgres")]
         impl types::HasSqlType<types::$Source> for $crate::pg::Pg {
             fn metadata() -> $crate::pg::PgTypeMetadata {
@@ -123,6 +122,28 @@ macro_rules! primitive_impls {
                 }
             }
         }
+
+        primitive_impls!($Source -> ($($rest)*));
+    };
+
+    ($Source:ident -> (mysql: ($tpe:ident) $($rest:tt)*)) => {
+        #[cfg(feature = "mysql")]
+        impl types::HasSqlType<types::$Source> for $crate::mysql::Mysql {
+            fn metadata() -> $crate::mysql::MysqlType {
+                $crate::mysql::MysqlType::$tpe
+            }
+        }
+
+        primitive_impls!($Source -> ($($rest)*));
+    };
+
+    // Done implementing type metadata, no body
+    ($Source:ident -> ()) => {
+    };
+
+    ($Source:ident -> ($Target:ty, $($rest:tt)+)) => {
+        primitive_impls!($Source -> $Target);
+        primitive_impls!($Source -> ($($rest)+));
     };
 
     ($Source:ident -> $Target:ty) => {
