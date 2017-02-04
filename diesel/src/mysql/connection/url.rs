@@ -1,12 +1,16 @@
 extern crate url;
 
-use std::ffi::{CString, NulError};
+use std::ffi::{CString, CStr};
 use self::url::Url;
 
 use result::{ConnectionResult, ConnectionError};
 
 pub struct ConnectionOptions {
-    url: Url,
+    host: Option<CString>,
+    user: CString,
+    password: Option<CString>,
+    database: Option<CString>,
+    port: Option<u16>,
 }
 
 impl ConnectionOptions {
@@ -24,38 +28,47 @@ impl ConnectionOptions {
             return Err(connection_url_error());
         }
 
+        let host = match url.host_str() {
+            Some(host) => Some(try!(CString::new(host.as_bytes()))),
+            None => None,
+        };
+        let user = try!(CString::new(url.username().as_bytes()));
+        let password = match url.password() {
+            Some(password) => Some(try!(CString::new(password.as_bytes()))),
+            None => None,
+        };
+        let database = match url.path_segments().and_then(|mut iter| iter.nth(0)) {
+            Some("") | None => None,
+            Some(segment) => Some(try!(CString::new(segment.as_bytes()))),
+        };
+
         Ok(ConnectionOptions {
-            url: url,
+            host: host,
+            user: user,
+            password: password,
+            database: database,
+            port: url.port(),
         })
     }
 
-    pub fn host(&self) -> Result<Option<CString>, NulError> {
-        match self.url.host_str() {
-            Some(host) => CString::new(host.as_bytes()).map(Some),
-            None => Ok(None),
-        }
+    pub fn host(&self) -> Option<&CStr> {
+        self.host.as_ref().map(|x| &**x)
     }
 
-    pub fn user(&self) -> Result<CString, NulError> {
-        CString::new(self.url.username().as_bytes())
+    pub fn user(&self) -> &CStr {
+        &self.user
     }
 
-    pub fn password(&self) -> Result<Option<CString>, NulError> {
-        match self.url.password() {
-            Some(pw) => CString::new(pw.as_bytes()).map(Some),
-            None => Ok(None),
-        }
+    pub fn password(&self) -> Option<&CStr> {
+        self.password.as_ref().map(|x| &**x)
     }
 
-    pub fn database(&self) -> Result<Option<CString>, NulError> {
-        match self.url.path_segments().and_then(|mut iter| iter.nth(0)) {
-            Some("") | None => Ok(None),
-            Some(segment) => CString::new(segment.as_bytes()).map(Some),
-        }
+    pub fn database(&self) -> Option<&CStr> {
+        self.database.as_ref().map(|x| &**x)
     }
 
     pub fn port(&self) -> Option<u16> {
-        self.url.port()
+        self.port
     }
 }
 
@@ -85,15 +98,15 @@ fn first_path_segment_is_treated_as_database() {
     let foo_cstr = CString::new("foo".as_bytes()).unwrap();
     let bar_cstr = CString::new("bar".as_bytes()).unwrap();
     assert_eq!(
-        Ok(Some(foo_cstr)),
+        Some(&*foo_cstr),
         ConnectionOptions::parse("mysql://localhost/foo").unwrap().database()
     );
     assert_eq!(
-        Ok(Some(bar_cstr)),
+        Some(&*bar_cstr),
         ConnectionOptions::parse("mysql://localhost/bar").unwrap().database()
     );
     assert_eq!(
-        Ok(None),
+        None,
         ConnectionOptions::parse("mysql://localhost").unwrap().database()
     );
 }
