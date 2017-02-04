@@ -49,7 +49,7 @@ impl<DB> ToSql<types::Text, DB> for String where
     for<'a> &'a str: ToSql<types::Text, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (&self as &str).to_sql(out)
+        (self as &str).to_sql(out)
     }
 }
 
@@ -64,7 +64,7 @@ impl<DB> ToSql<types::Binary, DB> for Vec<u8> where
     for<'a> &'a [u8]: ToSql<types::Binary, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (&self as &[u8]).to_sql(out)
+        (self as &[u8]).to_sql(out)
     }
 }
 
@@ -83,9 +83,9 @@ impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T> where
     T::Owned: ToSql<ST, DB>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        match self {
-            &Cow::Borrowed(ref t) => t.to_sql(out),
-            &Cow::Owned(ref t) => t.to_sql(out),
+        match *self {
+            Cow::Borrowed(t) => t.to_sql(out),
+            Cow::Owned(ref t) => t.to_sql(out),
         }
     }
 }

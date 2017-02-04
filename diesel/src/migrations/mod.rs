@@ -73,7 +73,6 @@ use std::io::{stdout, Write};
 
 use expression::expression_methods::*;
 use query_dsl::*;
-use self::migration_error::MigrationError::*;
 use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
 
@@ -150,7 +149,7 @@ fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
     });
     match migration {
         Some(m) => Ok(m),
-        None => Err(UnknownMigrationVersion(ver.into())),
+        None => Err(MigrationError::UnknownMigrationVersion(ver.into())),
     }
 }
 
@@ -177,10 +176,10 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
                 Ok(e) => e,
                 Err(e) => return Some(Err(e.into())),
             };
-            if !entry.file_name().to_string_lossy().starts_with(".") {
-                Some(Ok(entry))
-            } else {
+            if entry.file_name().to_string_lossy().starts_with('.') {
                 None
+            } else {
+                Some(Ok(entry))
             }
         }).collect()
 }
@@ -264,6 +263,7 @@ pub fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, Migration
 }
 
 #[cfg(test)]
+#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     extern crate tempdir;
 

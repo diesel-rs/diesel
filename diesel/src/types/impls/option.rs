@@ -62,7 +62,7 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     ST: NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        if let &Some(ref value) = self {
+        if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
             Ok(IsNull::Yes)
@@ -114,6 +114,7 @@ use pg::Pg;
 
 #[test]
 #[cfg(feature = "postgres")]
+#[cfg_attr(feature = "clippy", allow(string_lit_as_bytes))]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
     let mut bytes = Vec::<u8>::new();
