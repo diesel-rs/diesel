@@ -10,11 +10,17 @@ pub struct SqliteQueryBuilder {
     pub sql: String,
 }
 
-impl SqliteQueryBuilder {
-    pub fn new() -> Self {
+impl Default for SqliteQueryBuilder {
+    fn default() -> Self {
         SqliteQueryBuilder {
             sql: String::new(),
         }
+    }
+}
+
+impl SqliteQueryBuilder {
+    pub fn new() -> Self {
+        SqliteQueryBuilder::default()
     }
 }
 

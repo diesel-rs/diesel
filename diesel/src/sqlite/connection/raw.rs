@@ -47,12 +47,12 @@ impl RawConnection {
             );
         }
 
-        if !err_msg.is_null() {
+        if err_msg.is_null() {
+            Ok(())
+        } else {
             let msg = convert_to_string_and_free(err_msg);
             let error_kind = DatabaseErrorKind::__Unknown;
             Err(DatabaseError(error_kind, Box::new(msg)))
-        } else {
-            Ok(())
         }
     }
 
@@ -78,7 +78,8 @@ impl Drop for RawConnection {
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {
-                write!(stderr(), "Error closing SQLite connection: {}", error_message).unwrap();
+                write!(stderr(), "Error closing SQLite connection: {}", error_message)
+                    .expect("Error writing to `stderr`");
             } else {
                 panic!("Error closing SQLite connection: {}", error_message);
             }

@@ -32,7 +32,7 @@ impl Statement {
             )
         };
 
-        ensure_sqlite_ok(prepare_result, &raw_connection)
+        ensure_sqlite_ok(prepare_result, raw_connection)
             .map(|_| Statement {
                 raw_connection: raw_connection.clone(),
                 inner_statement: stmt,
@@ -134,10 +134,10 @@ impl Statement {
 }
 
 fn ensure_sqlite_ok(code: libc::c_int, raw_connection: &RawConnection) -> QueryResult<()> {
-    if code != ffi::SQLITE_OK {
-        Err(last_error(raw_connection))
-    } else {
+    if code == ffi::SQLITE_OK {
         Ok(())
+    } else {
+        Err(last_error(raw_connection))
     }
 }
 
@@ -159,7 +159,8 @@ impl Drop for Statement {
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
         if let Err(e) = ensure_sqlite_ok(finalize_result, &self.raw_connection) {
             if panicking() {
-                write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e).unwrap();
+                write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e)
+                    .expect("Error writing to `stderr`");
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
             }

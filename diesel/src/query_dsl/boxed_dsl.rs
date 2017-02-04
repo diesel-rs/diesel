@@ -57,9 +57,9 @@ impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
 /// # }
 /// ```
 ///
-/// Diesel queries also have a similar problem to [Iterator][iterator], where
+/// Diesel queries also have a similar problem to [`Iterator`][iterator], where
 /// returning them from a function requires exposing the implementation of that
-/// function. The [helper_types][helper_types] module exists to help with this,
+/// function. The [`helper_types`][helper_types] module exists to help with this,
 /// but you might want to hide the return type or have it conditionally change.
 /// Boxing can achieve both.
 ///

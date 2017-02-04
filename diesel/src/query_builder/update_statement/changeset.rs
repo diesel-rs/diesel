@@ -47,16 +47,16 @@ impl<T: Changeset<DB>, DB: Backend> Changeset<DB> for Option<T> {
     }
 
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        match self {
-            &Some(ref c) => c.to_sql(out),
-            &None => Ok(()),
+        match *self {
+            Some(ref c) => c.to_sql(out),
+            None => Ok(()),
         }
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        match self {
-            &Some(ref c) => c.collect_binds(out),
-            &None => Ok(()),
+        match *self {
+            Some(ref c) => c.collect_binds(out),
+            None => Ok(()),
         }
     }
 }

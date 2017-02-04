@@ -4,6 +4,7 @@ use std::fmt::{self, Display};
 use std::ffi::NulError;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "clippy", allow(enum_variant_names))]
 /// The generic "things can fail in a myriad of ways" enum. This type is not
 /// indended to be exhaustively matched, and new variants may be added in the
 /// future without a major version bump.
@@ -48,7 +49,7 @@ impl fmt::Debug for DatabaseErrorInformation+Send+Sync {
 
 impl DatabaseErrorInformation for String {
     fn message(&self) -> &str {
-        &self
+        self
     }
 
     fn details(&self) -> Option<&str> { None }
@@ -112,7 +113,7 @@ impl<E> From<Error> for TransactionError<E> {
 impl From<TransactionError<Error>> for Error {
     fn from(e: TransactionError<Error>) -> Self {
         match e {
-            TransactionError::CouldntCreateTransaction(e) => e,
+            TransactionError::CouldntCreateTransaction(e) |
             TransactionError::UserReturnedError(e) => e,
         }
     }
@@ -120,68 +121,68 @@ impl From<TransactionError<Error>> for Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            &Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
-            &Error::NotFound => f.write_str("NotFound"),
-            &Error::QueryBuilderError(ref e) => e.fmt(f),
-            &Error::DeserializationError(ref e) => e.fmt(f),
-            &Error::SerializationError(ref e) => e.fmt(f),
-            &Error::__Nonexhaustive => unreachable!(),
+        match *self {
+            Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
+            Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
+            Error::NotFound => f.write_str("NotFound"),
+            Error::QueryBuilderError(ref e) => e.fmt(f),
+            Error::DeserializationError(ref e) => e.fmt(f),
+            Error::SerializationError(ref e) => e.fmt(f),
+            Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        match self {
-            &Error::InvalidCString(ref nul_err) => nul_err.description(),
-            &Error::DatabaseError(_, ref e) => e.message(),
-            &Error::NotFound => "Record not found",
-            &Error::QueryBuilderError(ref e) => e.description(),
-            &Error::DeserializationError(ref e) => e.description(),
-            &Error::SerializationError(ref e) => e.description(),
-            &Error::__Nonexhaustive => unreachable!(),
+        match *self {
+            Error::InvalidCString(ref nul_err) => nul_err.description(),
+            Error::DatabaseError(_, ref e) => e.message(),
+            Error::NotFound => "Record not found",
+            Error::QueryBuilderError(ref e) => e.description(),
+            Error::DeserializationError(ref e) => e.description(),
+            Error::SerializationError(ref e) => e.description(),
+            Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
 impl Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            &ConnectionError::BadConnection(ref s) => write!(f, "{}", &s),
-            &ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", &s),
-            &ConnectionError::__Nonexhaustive => unreachable!(),
+        match *self {
+            ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
+            ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
+            ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
+            ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
 impl StdError for ConnectionError {
     fn description(&self) -> &str {
-        match self {
-            &ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
-            &ConnectionError::BadConnection(ref s) => &s,
-            &ConnectionError::InvalidConnectionUrl(ref s) => &s,
-            &ConnectionError::__Nonexhaustive => unreachable!(),
+        match *self {
+            ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
+            ConnectionError::BadConnection(ref s) => s,
+            ConnectionError::InvalidConnectionUrl(ref s) => s,
+            ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
 impl<E: Display> Display for TransactionError<E> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &TransactionError::CouldntCreateTransaction(ref e) => e.fmt(f),
-            &TransactionError::UserReturnedError(ref e) => e.fmt(f),
+        match *self {
+            TransactionError::CouldntCreateTransaction(ref e) => e.fmt(f),
+            TransactionError::UserReturnedError(ref e) => e.fmt(f),
         }
     }
 }
 
 impl<E: StdError> StdError for TransactionError<E> {
     fn description(&self) -> &str {
-        match self {
-            &TransactionError::CouldntCreateTransaction(ref e) => e.description(),
-            &TransactionError::UserReturnedError(ref e) => e.description(),
+        match *self {
+            TransactionError::CouldntCreateTransaction(ref e) => e.description(),
+            TransactionError::UserReturnedError(ref e) => e.description(),
         }
     }
 }

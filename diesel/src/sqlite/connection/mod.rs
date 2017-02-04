@@ -117,7 +117,7 @@ impl SqliteConnection {
         try!(source.collect_binds(&mut bind_collector));
         {
             let mut stmt = result.borrow_mut();
-            for (tpe, value) in bind_collector.binds.into_iter() {
+            for (tpe, value) in bind_collector.binds {
                 try!(stmt.bind(tpe, value));
             }
         }
@@ -165,8 +165,8 @@ fn cache_key<T: QueryFragment<Sqlite> + QueryId>(source: &T)
 fn sql_from_cache_key<'a, T: QueryFragment<Sqlite>>(key: &'a QueryCacheKey, source: &T)
     -> QueryResult<Cow<'a, str>>
 {
-    match key {
-        &QueryCacheKey::Sql(ref sql) => Ok(Cow::Borrowed(sql)),
+    match *key {
+        QueryCacheKey::Sql(ref sql) => Ok(Cow::Borrowed(sql)),
         _ => to_sql(source).map(Cow::Owned),
     }
 }
@@ -182,6 +182,7 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 }
 
 #[cfg(test)]
+#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     use expression::AsExpression;
     use expression::dsl::sql;

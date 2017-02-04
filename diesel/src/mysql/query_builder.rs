@@ -2,15 +2,14 @@ use super::backend::Mysql;
 use query_builder::{QueryBuilder, BuildQueryResult};
 
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct MysqlQueryBuilder {
     pub sql: String,
 }
 
 impl MysqlQueryBuilder {
     pub fn new() -> Self {
-        MysqlQueryBuilder {
-            sql: String::new(),
-        }
+        MysqlQueryBuilder::default()
     }
 }
 
