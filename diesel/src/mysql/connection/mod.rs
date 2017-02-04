@@ -27,7 +27,7 @@ impl Connection for MysqlConnection {
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let raw_connection = RawConnection::new();
         let connection_options = try!(ConnectionOptions::parse(database_url));
-        try!(raw_connection.connect(connection_options));
+        try!(raw_connection.connect(&connection_options));
         Ok(MysqlConnection {
             _raw_connection: raw_connection,
         })

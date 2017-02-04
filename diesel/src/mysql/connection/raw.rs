@@ -34,11 +34,11 @@ impl RawConnection {
         result
     }
 
-    pub fn connect(&self, connection_options: ConnectionOptions) -> ConnectionResult<()> {
-        let host = try!(connection_options.host());
-        let user = try!(connection_options.user());
-        let password = try!(connection_options.password());
-        let database = try!(connection_options.database());
+    pub fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
+        let host = connection_options.host();
+        let user = connection_options.user();
+        let password = connection_options.password();
+        let database = connection_options.database();
         let port = connection_options.port();
 
         unsafe {
