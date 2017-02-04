@@ -1,7 +1,7 @@
 mod raw;
 mod url;
 
-use connection::{Connection, SimpleConnection};
+use connection::{Connection, SimpleConnection, AnsiTransactionManager};
 use query_builder::*;
 use query_source::Queryable;
 use result::*;
@@ -13,6 +13,7 @@ use types::HasSqlType;
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct MysqlConnection {
     _raw_connection: RawConnection,
+    transaction_manager: AnsiTransactionManager,
 }
 
 impl SimpleConnection for MysqlConnection {
@@ -23,6 +24,7 @@ impl SimpleConnection for MysqlConnection {
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;
+    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let raw_connection = RawConnection::new();
@@ -30,13 +32,16 @@ impl Connection for MysqlConnection {
         try!(raw_connection.connect(&connection_options));
         Ok(MysqlConnection {
             _raw_connection: raw_connection,
+            transaction_manager: AnsiTransactionManager::new(),
         })
     }
 
+    #[doc(hidden)]
     fn execute(&self, _query: &str) -> QueryResult<usize> {
         unimplemented!()
     }
 
+    #[doc(hidden)]
     fn query_all<T, U>(&self, _source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
@@ -46,30 +51,22 @@ impl Connection for MysqlConnection {
         unimplemented!()
     }
 
+    #[doc(hidden)]
     fn silence_notices<F: FnOnce() -> T, T>(&self, _f: F) -> T {
         unimplemented!()
     }
 
+    #[doc(hidden)]
     fn execute_returning_count<T>(&self, _source: &T) -> QueryResult<usize> {
         unimplemented!()
     }
 
-    fn begin_transaction(&self) -> QueryResult<()> {
-        unimplemented!()
+    #[doc(hidden)]
+    fn transaction_manager(&self) -> &Self::TransactionManager {
+        &self.transaction_manager
     }
 
-    fn rollback_transaction(&self) -> QueryResult<()> {
-        unimplemented!()
-    }
-
-    fn commit_transaction(&self) -> QueryResult<()> {
-        unimplemented!()
-    }
-
-    fn get_transaction_depth(&self) -> i32 {
-        unimplemented!()
-    }
-
+    #[doc(hidden)]
     fn setup_helper_functions(&self) {
         unimplemented!()
     }
