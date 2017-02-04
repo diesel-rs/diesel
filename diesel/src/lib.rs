@@ -4,6 +4,8 @@
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
 
+extern crate byteorder;
+
 #[macro_use]
 mod macros;
 

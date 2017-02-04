@@ -1,8 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 extern crate libc;
-extern crate byteorder;
 
-use self::byteorder::{ReadBytesExt, BigEndian};
 use std::ffi::CString;
 use std::io::{stderr, Write};
 use std::ptr;
@@ -10,7 +8,7 @@ use std::rc::Rc;
 
 use sqlite::SqliteType;
 use result::*;
-use result::Error::{DatabaseError, QueryBuilderError};
+use result::Error::DatabaseError;
 use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
 
@@ -51,6 +49,12 @@ impl Statement {
 
     pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
         self.bind_index += 1;
+        // This unsafe block assumes the following invariants:
+        //
+        // - `self.inner_statement` points to valid memory
+        // - If `tpe` is anything other than `Binary` or `Text`, the appropriate
+        //   number of bytes were written to `value` for an integer of the
+        //   corresponding size.
         let result = unsafe { match (tpe, value) {
             (_, None) =>
                 ffi::sqlite3_bind_null(self.inner_statement, self.bind_index),
@@ -71,8 +75,7 @@ impl Statement {
                     ffi::SQLITE_TRANSIENT(),
                 ),
             (SqliteType::Float, Some(bytes)) => {
-                let value = try!((&bytes[..]).read_f32::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                let value = *(bytes.as_ptr() as *const f32);
                 ffi::sqlite3_bind_double(
                     self.inner_statement,
                     self.bind_index,
@@ -80,8 +83,7 @@ impl Statement {
                 )
             }
             (SqliteType::Double, Some(bytes)) => {
-                let value = try!((&bytes[..]).read_f64::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                let value = *(bytes.as_ptr() as *const f64);
                 ffi::sqlite3_bind_double(
                     self.inner_statement,
                     self.bind_index,
@@ -89,8 +91,7 @@ impl Statement {
                 )
             }
             (SqliteType::SmallInt, Some(bytes)) => {
-                let value = try!((&bytes[..]).read_i16::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                let value = *(bytes.as_ptr() as *const i16);
                 ffi::sqlite3_bind_int(
                     self.inner_statement,
                     self.bind_index,
@@ -98,8 +99,7 @@ impl Statement {
                 )
             }
             (SqliteType::Integer, Some(bytes)) => {
-                let value = try!((&bytes[..]).read_i32::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                let value = *(bytes.as_ptr() as *const i32);
                 ffi::sqlite3_bind_int(
                     self.inner_statement,
                     self.bind_index,
@@ -107,8 +107,7 @@ impl Statement {
                 )
             }
             (SqliteType::Long, Some(bytes)) => {
-                let value = try!((&bytes[..]).read_i64::<BigEndian>()
-                    .map_err(|e| QueryBuilderError(Box::new(e))));
+                let value = *(bytes.as_ptr() as *const i64);
                 ffi::sqlite3_bind_int64(
                     self.inner_statement,
                     self.bind_index,

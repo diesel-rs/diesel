@@ -1,3 +1,5 @@
+use byteorder::{ByteOrder, NativeEndian};
+
 use query_builder::{QueryBuilder, BindCollector};
 use query_builder::debug::DebugQueryBuilder;
 use types::{self, HasSqlType};
@@ -19,6 +21,7 @@ pub trait Backend where
     type QueryBuilder: QueryBuilder<Self>;
     type BindCollector: BindCollector<Self>;
     type RawValue: ?Sized;
+    type ByteOrder: ByteOrder;
 }
 
 pub trait TypeMetadata {
@@ -36,6 +39,7 @@ impl Backend for Debug {
     type QueryBuilder = DebugQueryBuilder;
     type BindCollector = ();
     type RawValue = ();
+    type ByteOrder = NativeEndian;
 }
 
 impl BindCollector<Debug> for () {

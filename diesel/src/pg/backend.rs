@@ -1,3 +1,5 @@
+use byteorder::NetworkEndian;
+
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use super::query_builder::PgQueryBuilder;
@@ -15,6 +17,7 @@ impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
     type RawValue = [u8];
+    type ByteOrder = NetworkEndian;
 }
 
 impl TypeMetadata for Pg {
