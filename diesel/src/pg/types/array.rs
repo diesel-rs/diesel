@@ -56,7 +56,7 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
             } else {
                 let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                 bytes = new_bytes;
-                T::from_sql(Some(&elem_bytes))
+                T::from_sql(Some(elem_bytes))
             }
         }).collect()
     }
@@ -148,7 +148,7 @@ impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (&self as &[T]).to_sql(out)
+        (self as &[T]).to_sql(out)
     }
 }
 

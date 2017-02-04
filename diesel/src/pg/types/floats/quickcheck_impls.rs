@@ -16,7 +16,7 @@ impl Arbitrary for PgNumeric {
         }
         let scale = u16::arbitrary(g) & SCALE_MASK;
         let digits = gen_vec_of_appropriate_length_valid_digits(g, weight as u16, scale);
-        if digits.len() == 0 {
+        if digits.is_empty() {
             weight = 0;
             variant = Some(true);
         }

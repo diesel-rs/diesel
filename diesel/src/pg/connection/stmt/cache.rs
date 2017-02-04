@@ -26,15 +26,15 @@ enum StatementCacheKey {
 
 impl StatementCacheKey {
     fn sql(&self) -> Option<&str> {
-        match self {
-            &StatementCacheKey::Query { ref sql, .. } => Some(&*sql),
+        match *self {
+            StatementCacheKey::Query { ref sql, .. } => Some(&*sql),
             _ => None
         }
     }
 
     fn bind_types(&self) -> Option<&Vec<u32>> {
-        match self {
-            &StatementCacheKey::Query { ref bind_types, .. } => Some(bind_types),
+        match *self {
+            StatementCacheKey::Query { ref bind_types, .. } => Some(bind_types),
             _ => None
         }
     }
@@ -71,8 +71,10 @@ impl StatementCache {
 
                     let name = format!("__diesel_stmt_{}", cache_suffix);
 
-                    let bind_types = entry.key().bind_types()
-                        .or(maybe_binds.as_ref()).unwrap();
+                    let bind_types = entry.key()
+                        .bind_types()
+                        .or_else(|| maybe_binds.as_ref())
+                        .expect("Missing bind types");
 
                     Rc::new(try!(Query::prepare(
                         conn,

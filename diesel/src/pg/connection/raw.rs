@@ -45,6 +45,7 @@ impl RawConnection {
         RawResult::new(PQexec(self.internal_connection, query), self)
     }
 
+    #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
     pub unsafe fn exec_params(
         &self,
         query: *const libc::c_char,

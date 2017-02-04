@@ -41,12 +41,12 @@ impl Error for InvalidNumericSign {
 impl FromSql<types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
-        let ndigits = try!(bytes.read_u16::<NetworkEndian>());
-        let mut digits = Vec::with_capacity(ndigits as usize);
+        let num_digits = try!(bytes.read_u16::<NetworkEndian>());
+        let mut digits = Vec::with_capacity(num_digits as usize);
         let weight = try!(bytes.read_i16::<NetworkEndian>());
         let sign = try!(bytes.read_u16::<NetworkEndian>());
         let scale = try!(bytes.read_u16::<NetworkEndian>());
-        for _ in 0..ndigits {
+        for _ in 0..num_digits {
             digits.push(try!(bytes.read_i16::<NetworkEndian>()));
         }
 
@@ -69,26 +69,26 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        let sign = match self {
-            &PgNumeric::Positive { .. } => 0,
-            &PgNumeric::Negative { .. } => 0x4000,
-            &PgNumeric::NaN => 0xC000,
+        let sign = match *self {
+            PgNumeric::Positive { .. } => 0,
+            PgNumeric::Negative { .. } => 0x4000,
+            PgNumeric::NaN => 0xC000,
         };
         let empty_vec = Vec::new();
-        let digits = match self {
-            &PgNumeric::Positive { ref digits, .. } => digits,
-            &PgNumeric::Negative { ref digits, .. } => digits,
-            &PgNumeric::NaN => &empty_vec,
+        let digits = match *self {
+            PgNumeric::Positive { ref digits, .. } |
+            PgNumeric::Negative { ref digits, .. } => digits,
+            PgNumeric::NaN => &empty_vec,
         };
-        let weight = match self {
-            &PgNumeric::Positive { weight, .. } => weight,
-            &PgNumeric::Negative { weight, .. } => weight,
-            &PgNumeric::NaN => 0,
+        let weight = match *self {
+            PgNumeric::Positive { weight, .. } |
+            PgNumeric::Negative { weight, .. } => weight,
+            PgNumeric::NaN => 0,
         };
-        let scale = match self {
-            &PgNumeric::Positive { scale, .. } => scale,
-            &PgNumeric::Negative { scale, .. } => scale,
-            &PgNumeric::NaN => 0,
+        let scale = match *self {
+            PgNumeric::Positive { scale, .. } |
+            PgNumeric::Negative { scale, .. } => scale,
+            PgNumeric::NaN => 0,
         };
         try!(out.write_u16::<NetworkEndian>(digits.len() as u16));
         try!(out.write_i16::<NetworkEndian>(weight));
