@@ -1,6 +1,4 @@
-extern crate byteorder;
-
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
 use std::io::Write;
 
@@ -37,22 +35,22 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
-        let num_dimensions = try!(bytes.read_i32::<BigEndian>());
-        let has_null = try!(bytes.read_i32::<BigEndian>()) != 0;
-        let _oid = try!(bytes.read_i32::<BigEndian>());
+        let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
+        let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
+        let _oid = try!(bytes.read_i32::<NetworkEndian>());
 
         if num_dimensions == 0 {
             return Ok(Vec::new())
         }
 
-        let num_elements = try!(bytes.read_i32::<BigEndian>());
-        let lower_bound = try!(bytes.read_i32::<BigEndian>());
+        let num_elements = try!(bytes.read_i32::<NetworkEndian>());
+        let lower_bound = try!(bytes.read_i32::<NetworkEndian>());
 
         assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
         assert!(lower_bound == 1, "lower bound must be 1");
 
         (0..num_elements).map(|_| {
-            let elem_size = try!(bytes.read_i32::<BigEndian>());
+            let elem_size = try!(bytes.read_i32::<NetworkEndian>());
             if has_null && elem_size == -1 {
                 T::from_sql(None)
             } else {
@@ -115,19 +113,19 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         let num_dimensions = 1;
-        try!(out.write_i32::<BigEndian>(num_dimensions));
+        try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
-        try!(out.write_i32::<BigEndian>(flags));
-        try!(out.write_u32::<BigEndian>(Pg::metadata().oid));
-        try!(out.write_i32::<BigEndian>(self.len() as i32));
+        try!(out.write_i32::<NetworkEndian>(flags));
+        try!(out.write_u32::<NetworkEndian>(Pg::metadata().oid));
+        try!(out.write_i32::<NetworkEndian>(self.len() as i32));
         let lower_bound = 1;
-        try!(out.write_i32::<BigEndian>(lower_bound));
+        try!(out.write_i32::<NetworkEndian>(lower_bound));
 
         let mut buffer = Vec::new();
         for elem in self.iter() {
             let is_null = try!(elem.to_sql(&mut buffer));
             assert!(is_null == IsNull::No, "Arrays containing null are not supported");
-            try!(out.write_i32::<BigEndian>(buffer.len() as i32));
+            try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
             try!(out.write_all(&buffer));
             buffer.clear();
         }

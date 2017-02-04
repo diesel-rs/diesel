@@ -1,6 +1,4 @@
-extern crate byteorder;
-
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
 use std::io::prelude::*;
 
@@ -12,13 +10,13 @@ primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 impl FromSql<types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
-        bytes.read_u32::<BigEndian>().map_err(|e| e.into())
+        bytes.read_u32::<NetworkEndian>().map_err(|e| e.into())
     }
 }
 
 impl ToSql<types::Oid, Pg> for u32 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        out.write_u32::<BigEndian>(*self)
+        out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())
     }

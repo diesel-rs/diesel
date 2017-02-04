@@ -1,6 +1,4 @@
-extern crate byteorder;
-
-use self::byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
 use std::io::prelude::*;
 
@@ -43,13 +41,13 @@ impl Error for InvalidNumericSign {
 impl FromSql<types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mut bytes = not_none!(bytes);
-        let ndigits = try!(bytes.read_u16::<BigEndian>());
+        let ndigits = try!(bytes.read_u16::<NetworkEndian>());
         let mut digits = Vec::with_capacity(ndigits as usize);
-        let weight = try!(bytes.read_i16::<BigEndian>());
-        let sign = try!(bytes.read_u16::<BigEndian>());
-        let scale = try!(bytes.read_u16::<BigEndian>());
+        let weight = try!(bytes.read_i16::<NetworkEndian>());
+        let sign = try!(bytes.read_u16::<NetworkEndian>());
+        let scale = try!(bytes.read_u16::<NetworkEndian>());
         for _ in 0..ndigits {
-            digits.push(try!(bytes.read_i16::<BigEndian>()));
+            digits.push(try!(bytes.read_i16::<NetworkEndian>()));
         }
 
         match sign {
@@ -92,12 +90,12 @@ impl ToSql<types::Numeric, Pg> for PgNumeric {
             &PgNumeric::Negative { scale, .. } => scale,
             &PgNumeric::NaN => 0,
         };
-        try!(out.write_u16::<BigEndian>(digits.len() as u16));
-        try!(out.write_i16::<BigEndian>(weight));
-        try!(out.write_u16::<BigEndian>(sign));
-        try!(out.write_u16::<BigEndian>(scale));
+        try!(out.write_u16::<NetworkEndian>(digits.len() as u16));
+        try!(out.write_i16::<NetworkEndian>(weight));
+        try!(out.write_u16::<NetworkEndian>(sign));
+        try!(out.write_u16::<NetworkEndian>(scale));
         for digit in digits.iter() {
-            try!(out.write_i16::<BigEndian>(*digit));
+            try!(out.write_i16::<NetworkEndian>(*digit));
         }
 
         Ok(IsNull::No)
