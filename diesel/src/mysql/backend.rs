@@ -39,6 +39,7 @@ impl TypeMetadata for Mysql {
 
 impl SupportsReturningClause for Mysql {}
 impl SupportsDefaultKeyword for Mysql {}
+impl UsesAnsiSavepointSyntax for Mysql {}
 
 // FIXME: Move this out of this module
 use types::HasSqlType;

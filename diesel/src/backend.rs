@@ -27,6 +27,7 @@ pub trait TypeMetadata {
 
 pub trait SupportsReturningClause {}
 pub trait SupportsDefaultKeyword {}
+pub trait UsesAnsiSavepointSyntax {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Debug;
@@ -50,3 +51,4 @@ impl TypeMetadata for Debug {
 
 impl SupportsReturningClause for Debug {}
 impl SupportsDefaultKeyword for Debug {}
+impl UsesAnsiSavepointSyntax for Debug {}

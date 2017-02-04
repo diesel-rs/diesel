@@ -26,3 +26,5 @@ impl Backend for Sqlite {
 impl TypeMetadata for Sqlite {
     type TypeMetadata = SqliteType;
 }
+
+impl UsesAnsiSavepointSyntax for Sqlite {}

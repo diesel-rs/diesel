@@ -7,11 +7,10 @@ mod row;
 pub mod result;
 mod stmt;
 
-use std::cell::Cell;
 use std::ffi::{CString, CStr};
 use std::rc::Rc;
 
-use connection::{SimpleConnection, Connection};
+use connection::{SimpleConnection, Connection, AnsiTransactionManager};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_builder::bind_collector::RawBytesBindCollector;
@@ -29,7 +28,7 @@ use types::HasSqlType;
 #[allow(missing_debug_implementations)]
 pub struct PgConnection {
     raw_connection: RawConnection,
-    transaction_depth: Cell<i32>,
+    transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache,
 }
 
@@ -48,12 +47,13 @@ impl SimpleConnection for PgConnection {
 
 impl Connection for PgConnection {
     type Backend = Pg;
+    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).map(|raw_conn| {
             PgConnection {
                 raw_connection: raw_conn,
-                transaction_depth: Cell::new(0),
+                transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
             }
         })
@@ -94,40 +94,8 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn begin_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            self.execute("BEGIN")
-        } else {
-            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
-    }
-
-    #[doc(hidden)]
-    fn rollback_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth == 1 {
-            self.execute("ROLLBACK")
-        } else {
-            self.execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    #[doc(hidden)]
-    fn commit_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth <= 1 {
-            self.execute("COMMIT")
-        } else {
-            self.execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    #[doc(hidden)]
-    fn get_transaction_depth(&self) -> i32 {
-        self.transaction_depth.get()
+    fn transaction_manager(&self) -> &Self::TransactionManager {
+        &self.transaction_manager
     }
 
     #[doc(hidden)]
@@ -165,13 +133,6 @@ impl PgConnection {
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
         let query = try!(Query::sql(query, None));
         query.execute(&self.raw_connection, &Vec::new())
-    }
-
-    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
-        if query.is_ok() {
-            self.transaction_depth.set(self.transaction_depth.get() + by);
-        }
-        query.map(|_| ())
     }
 }
 
