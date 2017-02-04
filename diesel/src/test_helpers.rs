@@ -38,12 +38,16 @@ cfg_if! {
         pub type TestConnection = MysqlConnection;
 
         pub fn connection() -> TestConnection {
+            let conn = connection_no_transaction();
+            conn.begin_test_transaction().unwrap();
+            conn
+        }
+
+        pub fn connection_no_transaction() -> TestConnection {
             dotenv().ok();
             let database_url = env::var("DATABASE_URL")
                 .expect("DATABASE_URL must be set to run tests");
-            let conn = MysqlConnection::establish(&database_url).unwrap();
-            conn.begin_test_transaction().unwrap();
-            conn
+            MysqlConnection::establish(&database_url).unwrap()
         }
     } else {
         // FIXME: https://github.com/rust-lang/rfcs/pull/1695
