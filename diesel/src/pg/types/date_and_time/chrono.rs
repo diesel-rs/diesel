@@ -9,7 +9,7 @@ use self::chrono::naive::date;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
-use types::{self, Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
+use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
 
 expression_impls! {
     Date -> NaiveDate,
