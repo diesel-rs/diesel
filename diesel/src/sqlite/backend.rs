@@ -1,3 +1,5 @@
+use byteorder::NativeEndian;
+
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use super::connection::SqliteValue;
@@ -21,8 +23,11 @@ impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
     type BindCollector = RawBytesBindCollector<Sqlite>;
     type RawValue = SqliteValue;
+    type ByteOrder = NativeEndian;
 }
 
 impl TypeMetadata for Sqlite {
     type TypeMetadata = SqliteType;
 }
+
+impl UsesAnsiSavepointSyntax for Sqlite {}

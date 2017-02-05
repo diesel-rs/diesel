@@ -18,6 +18,34 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     }
 }
 
+impl Migration for Box<Migration> {
+    fn version(&self) -> &str {
+        (&**self).version()
+    }
+
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        (&**self).run(conn)
+    }
+
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        (&**self).revert(conn)
+    }
+}
+
+impl<'a> Migration for &'a Migration {
+    fn version(&self) -> &str {
+        (&**self).version()
+    }
+
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        (&**self).run(conn)
+    }
+
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        (&**self).revert(conn)
+    }
+}
+
 fn valid_sql_migration_directory(path: &Path) -> bool {
     file_names(path).map(|files| {
         files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())

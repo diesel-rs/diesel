@@ -453,44 +453,54 @@ mod tests {
         assert_eq!(Ok(expected), saved);
     }
 
-    // FIXME: This can be moved into the function once `pub` is allowed
-    #[cfg(feature = "postgres")]
-    table! {
-        posts {
-            id -> Serial,
-            tags -> Array<Text>,
+    cfg_if! {
+        if #[cfg(feature = "sqlite")] {
+            fn connection() -> ::test_helpers::TestConnection {
+                let conn = ::test_helpers::connection();
+                conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
+                conn
+            }
+        } else if #[cfg(feature = "postgres")] {
+            fn connection() -> ::test_helpers::TestConnection {
+                let conn = ::test_helpers::connection();
+                conn.execute("DROP TABLE IF EXISTS users").unwrap();
+                conn.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
+                conn
+            }
+
+            // FIXME: This can be moved into the function once `pub` is allowed
+            table! {
+                posts {
+                    id -> Serial,
+                    tags -> Array<Text>,
+                }
+            }
+
+            #[test]
+            fn insertable_with_slice_of_borrowed() {
+                struct NewPost<'a> { tags: &'a [&'a str], }
+                impl_Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
+
+                let conn = ::test_helpers::connection();
+                conn.execute("DROP TABLE IF EXISTS posts").unwrap();
+                conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+                let new_post = NewPost { tags: &["hi", "there"] };
+                ::insert(&new_post).into(posts::table).execute(&conn).unwrap();
+
+                let saved = posts::table.select(posts::tags).load::<Vec<String>>(&conn);
+                let expected = vec![vec![String::from("hi"), String::from("there")]];
+                assert_eq!(Ok(expected), saved);
+            }
+        } else if #[cfg(feature = "mysql")] {
+            fn connection() -> ::test_helpers::TestConnection {
+                let conn = ::test_helpers::connection();
+                conn.execute("DROP TABLE IF EXISTS users").unwrap();
+                conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
+                conn
+            }
+        } else {
+            // FIXME: https://github.com/rust-lang/rfcs/pull/1695
+            // compile_error!("At least one backend must be enabled to run tests");
         }
-    }
-
-    #[cfg(feature = "postgres")]
-    #[test]
-    fn insertable_with_slice_of_borrowed() {
-        struct NewPost<'a> { tags: &'a [&'a str], }
-        impl_Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
-
-        let conn = ::test_helpers::pg_helpers::connection();
-        conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-        conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
-        let new_post = NewPost { tags: &["hi", "there"] };
-        ::insert(&new_post).into(posts::table).execute(&conn).unwrap();
-
-        let saved = posts::table.select(posts::tags).load::<Vec<String>>(&conn);
-        let expected = vec![vec![String::from("hi"), String::from("there")]];
-        assert_eq!(Ok(expected), saved);
-    }
-
-    #[cfg(feature = "sqlite")]
-    fn connection() -> ::test_helpers::TestConnection {
-        let conn = ::test_helpers::connection();
-        conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
-        conn
-    }
-
-    #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-    fn connection() -> ::test_helpers::TestConnection {
-        let conn = ::test_helpers::connection();
-        conn.execute("DROP TABLE IF EXISTS users").unwrap();
-        conn.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
-        conn
     }
 }

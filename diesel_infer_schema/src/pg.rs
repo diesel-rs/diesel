@@ -1,9 +1,11 @@
+use std::error::Error;
+
 use diesel::*;
 use diesel::query_builder::BoxedSelectStatement;
 use diesel::types::Oid;
 use diesel::pg::{PgConnection, Pg};
-use std::error::Error;
 
+use table_data::TableData;
 use super::data_structures::*;
 
 // https://www.postgresql.org/docs/9.5/static/catalog-pg-attribute.html
@@ -75,7 +77,7 @@ mod information_schema {
 }
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
-    let is_array = attr.type_name.starts_with("_");
+    let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
         &attr.type_name[1..]
     } else {
@@ -93,25 +95,25 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-pub fn get_table_data(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<ColumnInformation>> {
+pub fn get_table_data(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<ColumnInformation>> {
     use self::pg_attribute::dsl::*;
     use self::pg_type::dsl::{pg_type, typname};
 
     pg_attribute.inner_join(pg_type)
         .select((attname, typname, attnotnull))
-        .filter(attrelid.eq_any(table_oid(table_name)))
+        .filter(attrelid.eq_any(table_oid(table)))
         .filter(attnum.gt(0).and(attisdropped.ne(true)))
         .order(attnum)
         .load(conn)
 }
 
 
-pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Vec<String>> {
+pub fn get_primary_keys(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<String>> {
     use self::pg_attribute::dsl::*;
     use self::pg_index::dsl::{pg_index, indisprimary, indexrelid, indrelid};
 
     let pk_query = pg_index.select(indexrelid)
-        .filter(indrelid.eq_any(table_oid(table_name)))
+        .filter(indrelid.eq_any(table_oid(table)))
         .filter(indisprimary.eq(true));
 
     pg_attribute.select(attname)
@@ -120,42 +122,45 @@ pub fn get_primary_keys(conn: &PgConnection, table_name: &str) -> QueryResult<Ve
         .load(conn)
 }
 
-fn table_oid<'a>(table_name: &'a str) -> BoxedSelectStatement<'a, Oid, pg_class::table, Pg> {
+fn table_oid(table: &TableData) -> BoxedSelectStatement<Oid, pg_class::table, Pg> {
     use self::pg_class::dsl::*;
     use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
 
-    let mut parts = table_name.split('.');
-    let (schema_name, table_name) = match (parts.next(), parts.next()) {
-        (Some(schema), Some(table)) => (schema, table),
-        (Some(table), None) => ("public", table),
-        _ => panic!("Unable to load schema for {}", table_name),
-    };
-
-    let schema_oid = pg_namespace.select(nsoid).filter(nspname.eq(schema_name)).limit(1);
+    let schema_oid = pg_namespace.select(nsoid)
+        .filter(nspname.eq(table.schema().clone()
+            .expect("Postgres TableDate has schema")))
+        .limit(1);
     pg_class.select(oid)
-        .filter(relname.eq(table_name))
+        .filter(relname.eq(table.name()))
         .filter(relnamespace.eq_any(schema_oid))
         .limit(1)
         .into_boxed()
 }
 
 pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
-    -> Result<Vec<String>, Box<Error>>
+    -> Result<Vec<TableData>, Box<Error>>
 {
     use self::information_schema::tables::dsl::*;
 
     let schema_name = schema_name.unwrap_or("public");
-    let query = tables.select(table_name)
+
+    let tns: Vec<String> = tables.select(table_name)
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
-        .filter(table_type.like("BASE TABLE"));
-    Ok(try!(query.load(connection)))
+        .filter(table_type.like("BASE TABLE"))
+        .load(connection)?;
+
+    let tns = tns.iter().map(|n| TableData::new(n, Some(schema_name))).collect();
+
+    Ok(tns)
 }
 
+#[cfg(test)]
+extern crate dotenv;
+
 #[test]
-#[cfg(feature = "dotenv")]
 fn skip_views() {
-    use ::dotenv::dotenv;
+    use self::dotenv::dotenv;
     dotenv().ok();
 
     let connection_url = ::std::env::var("DATABASE_URL")
@@ -168,6 +173,6 @@ fn skip_views() {
 
     let table_names = load_table_names(&connection, None).unwrap();
 
-    assert!(table_names.contains(&"a_regular_table".to_string()));
-    assert!(!table_names.contains(&"a_view".to_string()));
+    assert!(table_names.contains(&TableData::new("a_regular_table", Some("public"))));
+    assert!(!table_names.contains(&TableData::new("a_view", Some("public"))));
 }
