@@ -5,7 +5,7 @@ use std::os::{raw as libc};
 use std::ptr;
 use std::sync::{Once, ONCE_INIT};
 
-use result::{ConnectionResult, ConnectionError};
+use result::{ConnectionResult, ConnectionError, QueryResult};
 use super::url::ConnectionOptions;
 
 pub struct RawConnection(*mut ffi::MYSQL);
@@ -67,6 +67,62 @@ impl RawConnection {
         unsafe { CStr::from_ptr(ffi::mysql_error(self.0)) }
             .to_string_lossy()
             .into_owned()
+    }
+
+    pub fn execute(&self, query: &str) -> QueryResult<()> {
+        unsafe {
+            // Make sure you don't use the fake one!
+            ffi::mysql_real_query(
+                self.0,
+                query.as_ptr() as *const libc::c_char,
+                query.len() as libc::c_ulong,
+            );
+        }
+        self.did_an_error_occur()
+    }
+
+    pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T> where
+        F: FnOnce() -> QueryResult<T>,
+    {
+        unsafe {
+            ffi::mysql_set_server_option(
+                self.0,
+                ffi::enum_mysql_set_option::MYSQL_OPTION_MULTI_STATEMENTS_ON,
+            );
+        }
+        self.did_an_error_occur()?;
+
+        let result = f();
+
+        unsafe {
+            ffi::mysql_set_server_option(
+                self.0,
+                ffi::enum_mysql_set_option::MYSQL_OPTION_MULTI_STATEMENTS_OFF,
+            );
+        }
+        self.did_an_error_occur()?;
+
+        result
+    }
+
+    pub fn affected_rows(&self) -> usize {
+        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0) };
+        affected_rows as usize
+    }
+
+    fn did_an_error_occur(&self) -> QueryResult<()> {
+        use result::DatabaseErrorKind;
+        use result::Error::DatabaseError;
+
+        let error_message = self.last_error_message();
+        if error_message.is_empty() {
+            Ok(())
+        } else {
+            Err(DatabaseError(
+                DatabaseErrorKind::__Unknown,
+                Box::new(error_message),
+            ))
+        }
     }
 }
 

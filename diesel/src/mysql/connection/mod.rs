@@ -12,13 +12,15 @@ use types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct MysqlConnection {
-    _raw_connection: RawConnection,
+    raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
 }
 
 impl SimpleConnection for MysqlConnection {
-    fn batch_execute(&self, _query: &str) -> QueryResult<()> {
-        unimplemented!()
+    fn batch_execute(&self, query: &str) -> QueryResult<()> {
+        self.raw_connection.enable_multi_statements(|| {
+            self.raw_connection.execute(query)
+        })
     }
 }
 
@@ -31,14 +33,15 @@ impl Connection for MysqlConnection {
         let connection_options = try!(ConnectionOptions::parse(database_url));
         try!(raw_connection.connect(&connection_options));
         Ok(MysqlConnection {
-            _raw_connection: raw_connection,
+            raw_connection: raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
         })
     }
 
     #[doc(hidden)]
-    fn execute(&self, _query: &str) -> QueryResult<usize> {
-        unimplemented!()
+    fn execute(&self, query: &str) -> QueryResult<usize> {
+        self.raw_connection.execute(query)
+            .map(|_| self.raw_connection.affected_rows())
     }
 
     #[doc(hidden)]

@@ -493,9 +493,10 @@ mod tests {
             }
         } else if #[cfg(feature = "mysql")] {
             fn connection() -> ::test_helpers::TestConnection {
-                let conn = ::test_helpers::connection();
+                let conn = ::test_helpers::connection_no_transaction();
                 conn.execute("DROP TABLE IF EXISTS users").unwrap();
-                conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name VARCHAR NOT NULL, hair_color VARCHAR DEFAULT 'Green')").unwrap();
+                conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name TEXT NOT NULL, hair_color VARCHAR(255) DEFAULT 'Green')").unwrap();
+                conn.begin_test_transaction().unwrap();
                 conn
             }
         } else {
