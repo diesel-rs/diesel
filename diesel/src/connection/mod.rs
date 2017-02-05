@@ -8,14 +8,15 @@ use types::HasSqlType;
 /// `SimpleConnection` will be used for migrations. Every backend shall implement
 /// their own way to run migrations scripts.
 pub trait SimpleConnection {
-    /// Migrations will use this function to run the `up.sql` and `down.sql` files.
-    /// New backends shall provide their own mechanism to execute the migration SQL scripts
+    /// Brings the ability to execute multiple SQL statements within the same string.
+    /// This function is tipically used on migrations where the statements to upgrade or
+    /// downgrade the database are stored in SQL batch files.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
-/// Every backend shall implement this trait to perform connections to the database.
+/// Provides functionality to perform connections to the backend.
 pub trait Connection: SimpleConnection + Sized {
-    /// A trait that provides specific operations for the backed.
+    /// The backend this connections represents.
     type Backend: Backend;
 
     /// Establishes a new connection to the database at the given URL. The URL
