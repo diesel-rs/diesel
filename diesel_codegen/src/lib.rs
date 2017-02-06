@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![recursion_limit="1024"]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -9,7 +10,7 @@ macro_rules! t {
     };
 }
 
-extern crate diesel_codegen_shared;
+extern crate dotenv;
 extern crate diesel_infer_schema;
 extern crate diesel;
 #[macro_use]
@@ -29,11 +30,14 @@ mod queryable;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 mod schema_inference;
 mod util;
+mod migrations;
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+mod database_url;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
-#[proc_macro_derive(Queryable)]
+#[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }

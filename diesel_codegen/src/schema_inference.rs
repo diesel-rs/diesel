@@ -1,7 +1,7 @@
 use syn;
 use quote;
 
-use diesel_codegen_shared::extract_database_url;
+use database_url::extract_database_url;
 use diesel_infer_schema::*;
 
 use util::{get_options_from_input, get_option, get_optional_option};
