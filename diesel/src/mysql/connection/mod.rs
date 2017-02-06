@@ -1,5 +1,6 @@
 mod bind;
 mod raw;
+mod result;
 mod stmt;
 mod url;
 
@@ -9,6 +10,7 @@ use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
 use self::raw::RawConnection;
+use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use super::query_builder::MysqlQueryBuilder;
@@ -49,13 +51,22 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn query_all<T, U>(&self, _source: T) -> QueryResult<Vec<U>> where
+    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        unimplemented!()
+        use result::Error::DeserializationError;
+        use types::FromSqlRow;
+
+        let mut stmt = try!(self.prepare_query(&source.as_query()));
+        stmt.execute()?;
+        stmt.results()?.map(|mut row| {
+            U::Row::build_from_row(&mut row)
+                .map(U::build)
+                .map_err(DeserializationError)
+        })
     }
 
     #[doc(hidden)]
@@ -67,12 +78,7 @@ impl Connection for MysqlConnection {
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let mut query_builder = MysqlQueryBuilder::new();
-        try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
-        let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
-        try!(source.collect_binds(&mut bind_collector));
-        let mut stmt = try!(self.raw_connection.prepare(&query_builder.sql));
-        try!(stmt.bind(bind_collector.binds));
+        let stmt = try!(self.prepare_query(source));
         try!(stmt.execute());
         Ok(stmt.affected_rows())
     }
@@ -85,5 +91,19 @@ impl Connection for MysqlConnection {
     #[doc(hidden)]
     fn setup_helper_functions(&self) {
         unimplemented!()
+    }
+}
+
+impl MysqlConnection {
+    fn prepare_query<T>(&self, source: &T) -> QueryResult<Statement> where
+        T: QueryFragment<Mysql> + QueryId,
+    {
+        let mut query_builder = MysqlQueryBuilder::new();
+        try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
+        let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
+        try!(source.collect_binds(&mut bind_collector));
+        let mut stmt = try!(self.raw_connection.prepare(&query_builder.sql));
+        try!(stmt.bind(bind_collector.binds));
+        Ok(stmt)
     }
 }

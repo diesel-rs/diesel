@@ -56,8 +56,7 @@ cfg_if! {
 
         fn connection_no_data() -> diesel::mysql::MysqlConnection {
             let connection_url = database_url_from_env();
-            let connection = diesel::mysql::MysqlConnection::establish(connection_url).unwrap();
-            connection.begin_test_transaction().unwrap();
+            let connection = diesel::mysql::MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
 
             connection
@@ -69,9 +68,10 @@ cfg_if! {
 
             connection.execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                name VARCHAR NOT NULL
-            )").unwrap();
+                name TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").unwrap();
             connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").unwrap();
+            connection.begin_test_transaction().unwrap();
 
             connection
         }

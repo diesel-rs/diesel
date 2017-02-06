@@ -1,11 +1,15 @@
 extern crate mysqlclient_sys as ffi;
 
+mod iterator;
+
 use std::os::{raw as libc};
 use std::ffi::CStr;
 
-use result::QueryResult;
-use super::bind::Binds;
 use mysql::MysqlType;
+use result::QueryResult;
+use self::iterator::StatementIterator;
+use super::bind::Binds;
+use super::result::RawResult;
 
 pub struct Statement {
     stmt: *mut ffi::MYSQL_STMT,
@@ -49,6 +53,19 @@ impl Statement {
     pub fn affected_rows(&self) -> usize {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.stmt) };
         affected_rows as usize
+    }
+
+    pub fn results(&mut self) -> QueryResult<StatementIterator> {
+        StatementIterator::new(self)
+    }
+
+    fn result_metadata(&self) -> QueryResult<Option<RawResult>> {
+        let result = unsafe {
+            let result_ptr = ffi::mysql_stmt_result_metadata(self.stmt);
+            RawResult::from_raw(result_ptr)
+        };
+        self.did_an_error_occur()?;
+        Ok(result)
     }
 
     fn last_error_message(&self) -> String {
