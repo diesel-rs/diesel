@@ -11,6 +11,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * It is no longer possible to exhaustively match against
   `result::ConnectionError`.
 
+* Updated chrono to version 0.3.
+
 ## [0.10.0] - 2017-02-02
 
 ### Added

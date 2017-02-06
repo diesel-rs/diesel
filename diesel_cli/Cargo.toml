@@ -13,7 +13,7 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 name = "diesel"
 
 [dependencies]
-chrono = "0.2.17"
+chrono = "0.3"
 clap = "2.20.3"
 diesel = { version = "0.10.0", default-features = false }
 dotenv = "0.8.0"
