@@ -9,7 +9,7 @@ use std::ffi::NulError;
 /// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),
-    DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send>),
+    DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send+Sync>),
     NotFound,
     QueryBuilderError(Box<StdError+Send+Sync>),
     DeserializationError(Box<StdError+Send+Sync>),
@@ -40,7 +40,7 @@ pub trait DatabaseErrorInformation {
     fn constraint_name(&self) -> Option<&str>;
 }
 
-impl fmt::Debug for DatabaseErrorInformation+Send {
+impl fmt::Debug for DatabaseErrorInformation+Send+Sync {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.message(), f)
     }
