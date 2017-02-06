@@ -7,6 +7,7 @@ use std::sync::{Once, ONCE_INIT};
 
 use result::{ConnectionResult, ConnectionError, QueryResult};
 use super::url::ConnectionOptions;
+use super::stmt::Statement;
 
 pub struct RawConnection(*mut ffi::MYSQL);
 
@@ -108,6 +109,17 @@ impl RawConnection {
     pub fn affected_rows(&self) -> usize {
         let affected_rows = unsafe { ffi::mysql_affected_rows(self.0) };
         affected_rows as usize
+    }
+
+    pub fn prepare(&self, query: &str) -> QueryResult<Statement> {
+        let stmt = unsafe { ffi::mysql_stmt_init(self.0) };
+        // It is documented that the only reason `mysql_stmt_init` will fail
+        // is because of OOM.
+        // https://dev.mysql.com/doc/refman/5.7/en/mysql-stmt-init.html
+        assert!(!stmt.is_null(), "Out of memory creating prepared statement");
+        let stmt = Statement::new(stmt);
+        try!(stmt.prepare(query));
+        Ok(stmt)
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {

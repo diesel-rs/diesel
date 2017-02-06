@@ -1,13 +1,17 @@
+mod bind;
 mod raw;
+mod stmt;
 mod url;
 
 use connection::{Connection, SimpleConnection, AnsiTransactionManager};
 use query_builder::*;
+use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
 use self::raw::RawConnection;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use super::query_builder::MysqlQueryBuilder;
 use types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -60,8 +64,17 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, _source: &T) -> QueryResult<usize> {
-        unimplemented!()
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+        T: QueryFragment<Self::Backend> + QueryId,
+    {
+        let mut query_builder = MysqlQueryBuilder::new();
+        try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
+        let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
+        try!(source.collect_binds(&mut bind_collector));
+        let mut stmt = try!(self.raw_connection.prepare(&query_builder.sql));
+        try!(stmt.bind(bind_collector.binds));
+        try!(stmt.execute());
+        Ok(stmt.affected_rows())
     }
 
     #[doc(hidden)]
