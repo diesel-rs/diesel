@@ -132,7 +132,7 @@ pub fn mk_datetime(data: (i64, u32)) -> DateTime<UTC> {
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
     let latest_chrono_date = date::MAX;
-    let num_days_representable = (latest_chrono_date - earliest_pg_date).num_days();
+    let num_days_representable = latest_chrono_date.signed_duration_since(earliest_pg_date).num_days();
     earliest_pg_date + Duration::days(days as i64 % num_days_representable)
 }
 
