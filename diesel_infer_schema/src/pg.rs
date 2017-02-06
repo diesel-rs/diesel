@@ -127,8 +127,7 @@ fn table_oid(table: &TableData) -> BoxedSelectStatement<Oid, pg_class::table, Pg
     use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
 
     let schema_oid = pg_namespace.select(nsoid)
-        .filter(nspname.eq(table.schema().clone()
-            .expect("Postgres TableDate has schema")))
+        .filter(nspname.nullable().eq(table.schema()))
         .limit(1);
     pg_class.select(oid)
         .filter(relname.eq(table.name()))
