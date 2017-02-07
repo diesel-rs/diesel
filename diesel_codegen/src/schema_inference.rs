@@ -31,11 +31,10 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     let tables = table_names.iter()
         .map(|table| {
             let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
-            let table_macro = expand_infer_table_from_schema(&database_url, table)
-                .expect(&format!("Could not infer table {}", table));
+            let table_name = table.to_string();
             quote! {
                 mod #mod_ident {
-                    #table_macro
+                    infer_table_from_schema!(#database_url, #table_name);
                 }
                 pub use self::#mod_ident::*;
             }
@@ -55,7 +54,7 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let table_name = get_option(&options, "table_name", bug);
 
-    expand_infer_table_from_schema(&database_url, &TableData::new(table_name, None))
+    expand_infer_table_from_schema(&database_url, &table_name.parse().unwrap())
         .expect(&format!("Could not infer table {}", table_name))
 }
 

@@ -1,4 +1,5 @@
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TableData {
@@ -30,6 +31,20 @@ impl fmt::Display for TableData {
         match self.schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
             None => write!(out, "{}", self.name)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Never {}
+impl FromStr for TableData {
+    type Err = Never;
+
+    fn from_str(table_name: &str) -> Result<Self, Self::Err> {
+        let mut parts = table_name.split('.');
+        match (parts.next(), parts.next()) {
+            (Some(schema_name), Some(table_name)) => Ok(TableData::new(table_name, Some(schema_name))),
+            _ => Ok(TableData::new(table_name, None)),
         }
     }
 }
