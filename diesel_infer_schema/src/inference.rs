@@ -6,6 +6,8 @@ use diesel::result::Error::NotFound;
 use diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::SqliteConnection;
+#[cfg(feature = "mysql")]
+use diesel::mysql::MysqlConnection;
 
 use table_data::TableData;
 use data_structures::{ColumnInformation, ColumnType};
@@ -15,6 +17,8 @@ pub enum InferConnection {
     Sqlite(SqliteConnection),
     #[cfg(feature = "postgres")]
     Pg(PgConnection),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlConnection),
 }
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
@@ -27,6 +31,8 @@ pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
         InferConnection::Sqlite(c) => ::sqlite::load_table_names(&c, schema_name),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(c) => ::information_schema::load_table_names(&c, schema_name),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(c) => ::information_schema::load_table_names(&c, schema_name),
     }
 }
 
@@ -36,13 +42,25 @@ pub fn establish_connection(database_url: &str) -> Result<InferConnection, Box<E
         _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") => {
             establish_real_connection(database_url).map(InferConnection::Pg)
         }
+        #[cfg(feature = "mysql")]
+        _ if database_url.starts_with("mysql://") => {
+            establish_real_connection(database_url).map(InferConnection::Mysql)
+        }
         #[cfg(feature = "sqlite")]
         _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
-        #[cfg(not(feature = "sqlite"))]
+        #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
         _ => {
             Err(format!(
                 "{} is not a valid PG database URL. \
                 It must start with postgres:// or postgresql://",
+                database_url,
+            ).into())
+        }
+        #[cfg(all(feature = "mysql", not(any(feature = "sqlite", feature = "postgres"))))]
+        _ => {
+            Err(format!(
+                "{} is not a valid MySQL database URL. \
+                It must start with mysql://",
                 database_url,
             ).into())
         }
@@ -69,6 +87,8 @@ pub fn get_table_data(conn: &InferConnection, table: &TableData)
         InferConnection::Sqlite(ref c) => ::sqlite::get_table_data(c, table),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => ::information_schema::get_table_data(c, table),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(ref c) => ::information_schema::get_table_data(c, table),
     };
     if let Err(NotFound) = column_info {
         Err(format!("no table exists named {}", table.to_string()).into())
@@ -86,6 +106,8 @@ pub fn determine_column_type(
         InferConnection::Sqlite(_) => ::sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(_) => ::information_schema::determine_column_type(attr),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => ::information_schema::determine_column_type(attr),
     }
 }
 
@@ -98,6 +120,8 @@ pub fn get_primary_keys(
         InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => ::information_schema::get_primary_keys(c, table),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(ref c) => ::information_schema::get_primary_keys(c, table),
     });
     if primary_keys.is_empty() {
         Err(format!("Diesel only supports tables with primary keys. \

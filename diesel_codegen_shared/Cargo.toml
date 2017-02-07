@@ -19,3 +19,4 @@ tempdir = "0.3.4"
 default = ["dotenv"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]

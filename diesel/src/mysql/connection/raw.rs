@@ -96,6 +96,12 @@ impl RawConnection {
         let result = f();
 
         unsafe {
+            while ffi::mysql_next_result(self.0) != -1 {
+                self.did_an_error_occur()?;
+            }
+        }
+
+        unsafe {
             ffi::mysql_set_server_option(
                 self.0,
                 ffi::enum_mysql_set_option::MYSQL_OPTION_MULTI_STATEMENTS_OFF,

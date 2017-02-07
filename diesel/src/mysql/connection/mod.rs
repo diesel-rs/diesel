@@ -70,8 +70,8 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, _f: F) -> T {
-        unimplemented!()
+    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
+        f()
     }
 
     #[doc(hidden)]
@@ -90,7 +90,7 @@ impl Connection for MysqlConnection {
 
     #[doc(hidden)]
     fn setup_helper_functions(&self) {
-        unimplemented!()
+        // FIXME: We can implement this pretty easily
     }
 }
 

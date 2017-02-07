@@ -28,7 +28,7 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[cfg(feature = "diesel_infer_schema")]
 mod schema_inference;
 mod util;
 
@@ -61,13 +61,13 @@ pub fn derive_associations(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(InferSchema, attributes(infer_schema_options))]
-#[cfg(any(feature = "sqlite", feature = "postgres"))]
+#[cfg(feature = "diesel_infer_schema")]
 pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
     expand_derive(input, schema_inference::derive_infer_schema)
 }
 
 #[proc_macro_derive(InferTableFromSchema, attributes(infer_table_from_schema_options))]
-#[cfg(any(feature = "sqlite", feature = "postgres"))]
+#[cfg(feature = "diesel_infer_schema")]
 pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
     expand_derive(input, schema_inference::derive_infer_table_from_schema)
 }
