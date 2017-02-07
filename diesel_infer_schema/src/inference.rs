@@ -93,7 +93,7 @@ pub fn get_primary_keys(
     conn: &InferConnection,
     table: &TableData,
 ) -> Result<Vec<String>, Box<Error>> {
-    let primary_keys = try!(match *conn {
+    let primary_keys: Vec<String> = try!(match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]

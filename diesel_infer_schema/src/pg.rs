@@ -1,63 +1,10 @@
 use std::error::Error;
 
 use diesel::*;
-use diesel::query_builder::BoxedSelectStatement;
-use diesel::types::Oid;
-use diesel::pg::{PgConnection, Pg};
+use diesel::pg::PgConnection;
 
 use table_data::TableData;
 use super::data_structures::*;
-
-// https://www.postgresql.org/docs/9.5/static/catalog-pg-attribute.html
-table! {
-    pg_attribute (attrelid) {
-        attrelid -> Oid,
-        attname -> VarChar,
-        atttypid -> Oid,
-        attnotnull -> Bool,
-        attnum -> SmallInt,
-        attisdropped -> Bool,
-    }
-}
-
-// https://www.postgresql.org/docs/9.5/static/catalog-pg-type.html
-table! {
-    pg_type (oid) {
-        oid -> Oid,
-        typname -> VarChar,
-    }
-}
-
-joinable!(pg_attribute -> pg_type (atttypid));
-select_column_workaround!(pg_attribute -> pg_type (attrelid, attname, atttypid, attnotnull, attnum, attisdropped));
-select_column_workaround!(pg_type -> pg_attribute (oid, typname));
-
-// https://www.postgresql.org/docs/9.5/static/catalog-pg-index.html
-table! {
-    pg_index (indrelid) {
-        indrelid -> Oid,
-        indexrelid -> Oid,
-        indkey -> Array<SmallInt>,
-        indisprimary -> Bool,
-    }
-}
-
-// https://www.postgresql.org/docs/9.5/static/catalog-pg-class.html
-table! {
-    pg_class (oid) {
-        oid -> Oid,
-        relname -> VarChar,
-        relnamespace -> Oid,
-    }
-}
-
-// https://www.postgresql.org/docs/9.5/static/catalog-pg-namespace.html
-table! {
-    pg_namespace (oid) {
-        oid -> Oid,
-        nspname -> VarChar,
-    }
-}
 
 mod information_schema {
     table! {
@@ -69,8 +16,32 @@ mod information_schema {
     }
 
     table! {
-        information_schema.schemata (schema_name) {
-            schema_name -> VarChar,
+        information_schema.columns (table_schema, table_name, column_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            column_name -> VarChar,
+            is_nullable -> VarChar,
+            ordinal_position -> BigInt,
+            udt_name -> VarChar,
+        }
+    }
+
+    table! {
+        information_schema.key_column_usage (table_schema, table_name, column_name, constraint_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            column_name -> VarChar,
+            constraint_name -> VarChar,
+            ordinal_position -> BigInt,
+        }
+    }
+
+    table! {
+        information_schema.table_constraints (table_schema, table_name, constraint_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            constraint_name -> VarChar,
+            constraint_type -> VarChar,
         }
     }
 }
@@ -95,44 +66,28 @@ fn capitalize(name: &str) -> String {
 }
 
 pub fn get_table_data(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<ColumnInformation>> {
-    use self::pg_attribute::dsl::*;
-    use self::pg_type::dsl::{pg_type, typname};
+    use self::information_schema::columns::dsl::*;
 
-    pg_attribute.inner_join(pg_type)
-        .select((attname, typname, attnotnull))
-        .filter(attrelid.eq_any(table_oid(table)))
-        .filter(attnum.gt(0).and(attisdropped.ne(true)))
-        .order(attnum)
+    columns.select((column_name, udt_name, is_nullable))
+        .filter(table_name.eq(&table.name))
+        .filter(table_schema.nullable().eq(&table.schema))
+        .order(ordinal_position)
         .load(conn)
 }
-
 
 pub fn get_primary_keys(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<String>> {
-    use self::pg_attribute::dsl::*;
-    use self::pg_index::dsl::{pg_index, indisprimary, indexrelid, indrelid};
+    use self::information_schema::table_constraints::{self, constraint_type};
+    use self::information_schema::key_column_usage::dsl::*;
 
-    let pk_query = pg_index.select(indexrelid)
-        .filter(indrelid.eq_any(table_oid(table)))
-        .filter(indisprimary.eq(true));
+    let pk_query = table_constraints::table.select(table_constraints::constraint_name)
+        .filter(constraint_type.eq("PRIMARY KEY"));
 
-    pg_attribute.select(attname)
-        .filter(attrelid.eq_any(pk_query))
-        .order(attnum)
+    key_column_usage.select(column_name)
+        .filter(constraint_name.eq_any(pk_query))
+        .filter(table_name.eq(&table.name))
+        .filter(table_schema.nullable().eq(&table.schema))
+        .order(ordinal_position)
         .load(conn)
-}
-
-fn table_oid(table: &TableData) -> BoxedSelectStatement<Oid, pg_class::table, Pg> {
-    use self::pg_class::dsl::*;
-    use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
-
-    let schema_oid = pg_namespace.select(nsoid)
-        .filter(nspname.nullable().eq(&table.schema))
-        .limit(1);
-    pg_class.select(oid)
-        .filter(relname.eq(&table.name))
-        .filter(relnamespace.eq_any(schema_oid))
-        .limit(1)
-        .into_boxed()
 }
 
 pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
@@ -151,23 +106,109 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
 }
 
 #[cfg(test)]
-extern crate dotenv;
+mod tests {
+    extern crate dotenv;
 
-#[test]
-fn skip_views() {
+    use super::*;
     use self::dotenv::dotenv;
-    dotenv().ok();
 
-    let connection_url = ::std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in order to run tests");
-    let connection = PgConnection::establish(&connection_url).unwrap();
-    connection.begin_test_transaction().unwrap();
+    fn connection() -> PgConnection {
+        let _ = dotenv();
 
-    connection.execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)").unwrap();
-    connection.execute("CREATE VIEW a_view AS SELECT 42").unwrap();
+        let connection_url = ::std::env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set in order to run tests");
+        let connection = PgConnection::establish(&connection_url).unwrap();
+        connection.begin_test_transaction().unwrap();
+        connection
+    }
 
-    let table_names = load_table_names(&connection, None).unwrap();
+    #[test]
+    fn skip_views() {
+        let connection = connection();
 
-    assert!(table_names.contains(&TableData::new("a_regular_table", "public")));
-    assert!(!table_names.contains(&TableData::new("a_view", "public")));
+        connection.execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE VIEW a_view AS SELECT 42").unwrap();
+
+        let table_names = load_table_names(&connection, None).unwrap();
+
+        assert!(table_names.contains(&TableData::new("a_regular_table", "public")));
+        assert!(!table_names.contains(&TableData::new("a_view", "public")));
+    }
+
+    #[test]
+    fn load_table_names_loads_from_public_schema_if_none_given() {
+        let connection = connection();
+
+        connection.execute("CREATE TABLE load_table_names_loads_from_public_schema_if_none_given (id SERIAL PRIMARY KEY)")
+            .unwrap();
+
+        let table_names = load_table_names(&connection, None).unwrap();
+        for TableData { schema, .. } in table_names {
+            assert_eq!(Some("public".into()), schema);
+        }
+    }
+
+    #[test]
+    fn load_table_names_loads_from_custom_schema() {
+        let connection = connection();
+
+        connection.execute("CREATE SCHEMA test_schema").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)").unwrap();
+
+        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        assert_eq!(vec![TableData::new("table_1", "test_schema")], table_names);
+
+        connection.execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)").unwrap();
+
+        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        let expected = vec![
+            TableData::new("table_1", "test_schema"),
+            TableData::new("table_2", "test_schema"),
+        ];
+        assert_eq!(expected, table_names);
+
+        connection.execute("CREATE SCHEMA other_test_schema").unwrap();
+        connection.execute("CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)").unwrap();
+
+        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        let expected = vec![
+            TableData::new("table_1", "test_schema"),
+            TableData::new("table_2", "test_schema"),
+        ];
+        assert_eq!(expected, table_names);
+        let table_names = load_table_names(&connection, Some("other_test_schema")).unwrap();
+        assert_eq!(vec![TableData::new("table_1", "other_test_schema")], table_names);
+    }
+
+    #[test]
+    fn get_primary_keys_only_includes_primary_key() {
+        let connection = connection();
+
+        connection.execute("CREATE SCHEMA test_schema").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))").unwrap();
+
+        let table_1 = TableData::new("table_1", "test_schema");
+        let table_2 = TableData::new("table_2", "test_schema");
+        assert_eq!(vec!["id".to_string()], get_primary_keys(&connection, &table_1).unwrap());
+        assert_eq!(vec!["id".to_string(), "id2".to_string()], get_primary_keys(&connection, &table_2).unwrap());
+    }
+
+    #[test]
+    fn get_table_data_loads_column_information() {
+        let connection = connection();
+
+        connection.execute("CREATE SCHEMA test_schema").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)").unwrap();
+
+        let table_1 = TableData::new("table_1", "test_schema");
+        let table_2 = TableData::new("table_2", "test_schema");
+        let id = ColumnInformation::new("id", "int4", false);
+        let text_col = ColumnInformation::new("text_col", "varchar", true);
+        let not_null = ColumnInformation::new("not_null", "text", false);
+        let array_col = ColumnInformation::new("array_col", "_varchar", false);
+        assert_eq!(Ok(vec![id, text_col, not_null]), get_table_data(&connection, &table_1));
+        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2));
+    }
 }
