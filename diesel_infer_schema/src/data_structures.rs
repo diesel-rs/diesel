@@ -32,6 +32,7 @@ impl ColumnInformation {
     }
 }
 
+#[cfg(any(feature="mysql", feature="postgres"))]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
     DB: Backend + UsesInformationSchema + HasSqlType<ST>,
     (String, String, String): FromSqlRow<ST, DB>,
