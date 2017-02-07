@@ -34,4 +34,3 @@ harness = true
 name = "benchmarks"
 path = "tests/bench.rs"
 bench = true
-
