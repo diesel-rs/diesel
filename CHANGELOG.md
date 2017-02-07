@@ -13,6 +13,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Updated chrono to version 0.3.
 
+* Updated uuid to version 0.4.
+
 ## [0.10.0] - 2017-02-02
 
 ### Added
