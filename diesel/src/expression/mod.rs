@@ -106,8 +106,8 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// outer join is nullable, even if it wasn't before.
 ///
 /// Columns will implement this for their table. Certain special types, like
-/// `CountStar` and [`Bound`](bound/struct.Bound.html) will implement this for
-/// all sources. All other expressions will inherit this from their children.
+/// `CountStar` and `Bound` will implement this for all sources. All other
+/// expressions will inherit this from their children.
 pub trait SelectableExpression<
     QS,
     Type = <Self as Expression>::SqlType,
