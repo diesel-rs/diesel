@@ -17,7 +17,7 @@ chrono = "0.3"
 clap = "2.20.3"
 diesel = { version = "0.10.0", default-features = false }
 dotenv = "0.8.0"
-diesel_infer_schema = { version = "0.1.0", default-features = false, path = "../diesel_infer_schema" }
+diesel_infer_schema = "0.1.0"
 
 [dev-dependencies]
 tempdir = "0.3.4"
@@ -27,6 +27,7 @@ regex = "0.1.48"
 default = ["postgres", "sqlite"]
 postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
 sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
+mysql = ["diesel/mysql", "diesel_infer_schema/mysql"]
 
 [[test]]
 name = "tests"

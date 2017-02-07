@@ -24,6 +24,7 @@ default = []
 unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres", "diesel_codegen/postgres"]
 sqlite = ["diesel/sqlite", "diesel_codegen/sqlite"]
+mysql = ["diesel/mysql", "diesel_codegen/mysql"]
 
 [[test]]
 name = "integration_tests"

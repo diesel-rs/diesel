@@ -48,6 +48,8 @@ impl Binds {
             unsafe {
                 if let Some((mut bind, offset)) = data.bind_for_truncated_data() {
                     stmt.fetch_column(&mut bind, i, offset)?
+                } else {
+                    data.update_buffer_length()
                 }
             }
         }

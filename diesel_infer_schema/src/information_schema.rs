@@ -7,6 +7,8 @@ use diesel::query_builder::{QueryId, QueryFragment};
 use diesel::types::FromSql;
 #[cfg(feature="postgres")]
 use diesel::pg::Pg;
+#[cfg(feature="mysql")]
+use diesel::mysql::Mysql;
 
 use table_data::TableData;
 use super::data_structures::*;
@@ -29,6 +31,15 @@ impl UsesInformationSchema for Pg {
     }
 }
 
+#[cfg(feature="mysql")]
+impl UsesInformationSchema for Mysql {
+    type TypeColumn = self::information_schema::columns::column_type;
+
+    fn type_column() -> Self::TypeColumn {
+        self::information_schema::columns::column_type
+    }
+}
+
 mod information_schema {
     table! {
         information_schema.tables (table_schema, table_name) {
@@ -46,6 +57,7 @@ mod information_schema {
             is_nullable -> VarChar,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
+            column_type -> VarChar,
         }
     }
 
@@ -75,6 +87,12 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         &attr.type_name[1..]
     } else {
         &attr.type_name
+    };
+
+    let tpe = if let Some(idx) = tpe.find('(') {
+        &tpe[..idx]
+    } else {
+        tpe
     };
 
     Ok(ColumnType {

@@ -40,7 +40,6 @@ impl TypeMetadata for Mysql {
     type TypeMetadata = MysqlType;
 }
 
-impl SupportsReturningClause for Mysql {}
 impl SupportsDefaultKeyword for Mysql {}
 impl UsesAnsiSavepointSyntax for Mysql {}
 

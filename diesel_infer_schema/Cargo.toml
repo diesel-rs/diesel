@@ -21,4 +21,5 @@ dotenv = "0.8.0"
 default = []
 postgres = ["diesel/postgres", "uses_information_schema"]
 sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql", "uses_information_schema"]
 uses_information_schema = []

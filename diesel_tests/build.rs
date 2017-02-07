@@ -24,12 +24,25 @@ fn connection() -> SqliteConnection {
     SqliteConnection::establish(&database_url).unwrap()
 }
 
+#[cfg(feature = "mysql")]
+use self::diesel::mysql::MysqlConnection;
+#[cfg(feature = "mysql")]
+fn connection() -> MysqlConnection {
+    dotenv().ok();
+    let database_url = ::std::env::var("MYSQL_DATABASE_URL")
+        .or_else(|_| ::std::env::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set to run tests");
+    MysqlConnection::establish(&database_url).unwrap()
+}
 
 #[cfg(feature = "postgres")]
 const MIGRATION_SUBDIR: &'static str = "postgresql";
 
 #[cfg(feature = "sqlite")]
 const MIGRATION_SUBDIR: &'static str = "sqlite";
+
+#[cfg(feature = "mysql")]
+const MIGRATION_SUBDIR: &'static str = "mysql";
 
 fn main() {
     let migrations_dir = migrations::find_migrations_directory().unwrap().join(MIGRATION_SUBDIR);
