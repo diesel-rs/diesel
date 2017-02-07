@@ -61,8 +61,7 @@ table! {
 
 mod information_schema {
     table! {
-        information_schema.tables (table_catalog, table_schema, table_name) {
-            table_catalog -> VarChar,
+        information_schema.tables (table_schema, table_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
             table_type -> VarChar,
