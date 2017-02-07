@@ -12,9 +12,9 @@ mod data_structures;
 mod inference;
 mod table_data;
 
-#[cfg(any(feature = "mysql", feature = "postgres"))]
+#[cfg(feature="uses_information_schema")]
 mod information_schema;
-#[cfg(feature = "sqlite")]
+#[cfg(feature="sqlite")]
 mod sqlite;
 
 pub use codegen::*;

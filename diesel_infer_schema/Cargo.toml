@@ -19,5 +19,6 @@ dotenv = "0.8.0"
 
 [features]
 default = []
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres", "uses_information_schema"]
 sqlite = ["diesel/sqlite"]
+uses_information_schema = []

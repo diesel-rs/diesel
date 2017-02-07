@@ -1,9 +1,11 @@
 use diesel::*;
+#[cfg(feature="uses_information_schema")]
 use diesel::backend::Backend;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 use diesel::types::{HasSqlType, FromSqlRow};
 
+#[cfg(feature="uses_information_schema")]
 use super::information_schema::UsesInformationSchema;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +34,7 @@ impl ColumnInformation {
     }
 }
 
-#[cfg(any(feature="mysql", feature="postgres"))]
+#[cfg(feature="uses_information_schema")]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
     DB: Backend + UsesInformationSchema + HasSqlType<ST>,
     (String, String, String): FromSqlRow<ST, DB>,
