@@ -21,12 +21,8 @@ impl<'a> StatementIterator<'a> {
         let mut output_binds = Binds::from_output_types(result_types);
 
         unsafe {
-            ffi::mysql_stmt_bind_result(
-                stmt.stmt,
-                output_binds.mysql_binds().as_mut_ptr(),
-            );
+            output_binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?
         }
-        stmt.did_an_error_occur()?;
 
         Ok(StatementIterator {
             stmt: stmt,
@@ -45,16 +41,19 @@ impl<'a> StatementIterator<'a> {
     }
 
     fn next(&mut self) -> Option<QueryResult<MysqlRow>> {
-        self.output_binds.reset_dynamic_buffers();
         let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.stmt) };
         match next_row_result as libc::c_uint {
             ffi::MYSQL_NO_DATA => return None,
-            ffi::MYSQL_DATA_TRUNCATED => self.output_binds.populate_dynamic_buffers(self.stmt.stmt),
-            _ => {} // Either success or error which we check on the next line
-        }
-        match self.stmt.did_an_error_occur() {
-            Err(e) => return Some(Err(e)),
-            Ok(_) => {} // continue
+            ffi::MYSQL_DATA_TRUNCATED => {
+                let res = self.output_binds.populate_dynamic_buffers(&self.stmt);
+                if let Err(e) = res {
+                    return Some(Err(e));
+                }
+            }
+            0 => self.output_binds.update_buffer_lengths(),
+            _error => if let Err(e) = self.stmt.did_an_error_occur() {
+                return Some(Err(e));
+            }
         }
 
         Some(Ok(MysqlRow {

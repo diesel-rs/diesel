@@ -37,11 +37,12 @@ impl Statement {
 
     pub fn bind(&mut self, binds: Vec<(MysqlType, Option<Vec<u8>>)>) -> QueryResult<()> {
         let mut input_binds = Binds::from_input_data(binds);
-        let bind_ptr = input_binds.mysql_binds().as_mut_ptr();
+        input_binds.with_mysql_binds(|bind_ptr| {
+            // This relies on the invariant that the current value of `self.input_binds`
+            // will not change without this function being called
+            unsafe { ffi::mysql_stmt_bind_param(self.stmt, bind_ptr); }
+        });
         self.input_binds = Some(input_binds);
-        // This relies on the invariant that the current value of `self.input_binds`
-        // will not change without this function being called
-        unsafe { ffi::mysql_stmt_bind_param(self.stmt, bind_ptr); }
         self.did_an_error_occur()
     }
 
@@ -74,6 +75,25 @@ impl Statement {
             .into_owned()
     }
 
+    /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
+    /// you must call this function again before calling `mysql_stmt_fetch`.
+    pub unsafe fn bind_result(&self, binds: *mut ffi::MYSQL_BIND) -> QueryResult<()> {
+        ffi::mysql_stmt_bind_result(self.stmt, binds);
+        self.did_an_error_occur()
+    }
+
+    pub unsafe fn fetch_column(&self, bind: &mut ffi::MYSQL_BIND, idx: usize, offset: usize)
+        -> QueryResult<()>
+    {
+        ffi::mysql_stmt_fetch_column(
+            self.stmt,
+            bind,
+            idx as libc::c_uint,
+            offset as libc::c_ulong,
+        );
+        self.did_an_error_occur()
+    }
+
     fn did_an_error_occur(&self) -> QueryResult<()> {
         use result::DatabaseErrorKind;
         use result::Error::DatabaseError;
@@ -101,4 +121,3 @@ impl Drop for Statement {
         assert_eq!(0, drop_result, "@sgrif forgot to delete this assertion. Please open a github issue");
     }
 }
-
