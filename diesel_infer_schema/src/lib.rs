@@ -12,8 +12,8 @@ mod data_structures;
 mod inference;
 mod table_data;
 
-#[cfg(feature = "postgres")]
-mod pg;
+#[cfg(any(feature = "mysql", feature = "postgres"))]
+mod information_schema;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 

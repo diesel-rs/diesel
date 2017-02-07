@@ -26,7 +26,7 @@ pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(c) => ::sqlite::load_table_names(&c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => ::pg::load_table_names(&c, schema_name),
+        InferConnection::Pg(c) => ::information_schema::load_table_names(&c, schema_name),
     }
 }
 
@@ -68,7 +68,7 @@ pub fn get_table_data(conn: &InferConnection, table: &TableData)
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => ::sqlite::get_table_data(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::pg::get_table_data(c, table),
+        InferConnection::Pg(ref c) => ::information_schema::get_table_data(c, table),
     };
     if let Err(NotFound) = column_info {
         Err(format!("no table exists named {}", table.to_string()).into())
@@ -85,7 +85,7 @@ pub fn determine_column_type(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => ::sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => ::pg::determine_column_type(attr),
+        InferConnection::Pg(_) => ::information_schema::determine_column_type(attr),
     }
 }
 
@@ -97,7 +97,7 @@ pub fn get_primary_keys(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::pg::get_primary_keys(c, table),
+        InferConnection::Pg(ref c) => ::information_schema::get_primary_keys(c, table),
     });
     if primary_keys.is_empty() {
         Err(format!("Diesel only supports tables with primary keys. \

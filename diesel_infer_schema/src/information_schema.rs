@@ -1,10 +1,33 @@
 use std::error::Error;
 
 use diesel::*;
-use diesel::pg::PgConnection;
+use diesel::backend::Backend;
+use diesel::expression::NonAggregate;
+use diesel::query_builder::{QueryId, QueryFragment};
+use diesel::types::FromSql;
+#[cfg(feature="postgres")]
+use diesel::pg::Pg;
 
 use table_data::TableData;
 use super::data_structures::*;
+
+pub trait UsesInformationSchema: Backend {
+    type TypeColumn: SelectableExpression<
+        self::information_schema::columns::table,
+        types::Text,
+    > + NonAggregate + QueryId + QueryFragment<Self>;
+
+    fn type_column() -> Self::TypeColumn;
+}
+
+#[cfg(feature="postgres")]
+impl UsesInformationSchema for Pg {
+    type TypeColumn = self::information_schema::columns::udt_name;
+
+    fn type_column() -> Self::TypeColumn {
+        self::information_schema::columns::udt_name
+    }
+}
 
 mod information_schema {
     table! {
@@ -65,17 +88,28 @@ fn capitalize(name: &str) -> String {
     name[..1].to_uppercase() + &name[1..]
 }
 
-pub fn get_table_data(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<ColumnInformation>> {
+pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
+    -> QueryResult<Vec<ColumnInformation>> where
+        Conn: Connection,
+        Conn::Backend: UsesInformationSchema,
+        String: FromSql<types::Text, Conn::Backend>,
+{
     use self::information_schema::columns::dsl::*;
 
-    columns.select((column_name, udt_name, is_nullable))
+    let type_column = <Conn::Backend as UsesInformationSchema>::type_column();
+    columns.select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
         .filter(table_schema.nullable().eq(&table.schema))
         .order(ordinal_position)
         .load(conn)
 }
 
-pub fn get_primary_keys(conn: &PgConnection, table: &TableData) -> QueryResult<Vec<String>> {
+pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableData)
+    -> QueryResult<Vec<String>> where
+        Conn: Connection,
+        Conn::Backend: UsesInformationSchema,
+        String: FromSql<types::Text, Conn::Backend>,
+{
     use self::information_schema::table_constraints::{self, constraint_type};
     use self::information_schema::key_column_usage::dsl::*;
 
@@ -90,8 +124,11 @@ pub fn get_primary_keys(conn: &PgConnection, table: &TableData) -> QueryResult<V
         .load(conn)
 }
 
-pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
-    -> Result<Vec<TableData>, Box<Error>>
+pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
+    -> Result<Vec<TableData>, Box<Error>> where
+        Conn: Connection,
+        Conn::Backend: UsesInformationSchema,
+        String: FromSql<types::Text, Conn::Backend>,
 {
     use self::information_schema::tables::dsl::*;
 
@@ -105,12 +142,13 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
         .map_err(Into::into)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature="postgres"))]
 mod tests {
     extern crate dotenv;
 
     use super::*;
     use self::dotenv::dotenv;
+    use diesel::pg::PgConnection;
 
     fn connection() -> PgConnection {
         let _ = dotenv();

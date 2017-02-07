@@ -1,9 +1,10 @@
 use diesel::*;
-#[cfg(feature = "postgres")]
-use diesel::pg::Pg;
+use diesel::backend::Backend;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 use diesel::types::{HasSqlType, FromSqlRow};
+
+use super::information_schema::UsesInformationSchema;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -31,10 +32,9 @@ impl ColumnInformation {
     }
 }
 
-#[cfg(feature = "postgres")]
-impl<ST> Queryable<ST, Pg> for ColumnInformation where
-    Pg: HasSqlType<ST>,
-    (String, String, String): FromSqlRow<ST, Pg>,
+impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
+    DB: Backend + UsesInformationSchema + HasSqlType<ST>,
+    (String, String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String, String);
 
