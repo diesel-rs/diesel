@@ -5,34 +5,22 @@ use std::mem;
 use std::os::{raw as libc};
 
 pub struct Binds {
-    data: Vec<Vec<u8>>,
-    lengths: Vec<libc::c_ulong>,
-    is_nulls: Vec<ffi::my_bool>,
+    data: Vec<BindData>,
     mysql_binds: Vec<ffi::MYSQL_BIND>,
-    errors: Option<Vec<ffi::my_bool>>,
 }
 
 impl Binds {
     pub fn from_input_data(input: Vec<(MysqlType, Option<Vec<u8>>)>) -> Self {
-        let is_nulls = input.iter()
-            .map(|&(_, ref data)| if data.is_none() { 1 } else { 0 })
-            .collect();
-        let (types, data): (Vec<_>, Vec<_>) = input.into_iter()
-            .map(|(t, data)| (t, data.unwrap_or(Vec::new()))).unzip();
-        let lengths = data.iter().map(|x| x.len() as libc::c_ulong).collect();
-
-        let mysql_binds = types.into_iter().map(|tpe| {
+        let (mysql_binds, data) = input.into_iter().map(|(tpe, bytes)| {
             let mut bind: ffi::MYSQL_BIND = unsafe { mem::zeroed() };
             bind.buffer_type = mysql_type_to_ffi_type(tpe);
-            bind
-        }).collect();
+            let data = BindData::for_input(bytes);
+            (bind, data)
+        }).unzip();
 
         let mut res = Binds {
             data: data,
-            lengths: lengths,
-            is_nulls: is_nulls,
             mysql_binds: mysql_binds,
-            errors: None,
         };
         unsafe { res.link_mysql_bind_pointers(); }
         res
@@ -41,27 +29,16 @@ impl Binds {
     pub fn from_output_types<Iter>(types: Iter) -> Self where
         Iter: IntoIterator<Item=ffi::enum_field_types>,
     {
-        let mysql_binds = types.into_iter().map(|tpe| {
+        let (mysql_binds, data) = types.into_iter().map(|tpe| {
             let mut bind: ffi::MYSQL_BIND = unsafe { mem::zeroed() };
             bind.buffer_type = tpe;
-            bind
-        }).collect::<Vec<_>>();
-        let is_nulls = vec![0; mysql_binds.len()];
-        let errors = is_nulls.clone();
-        let data = mysql_binds.iter().map(|bind| {
-            match known_buffer_size_for_ffi_type(bind.buffer_type) {
-                Some(size) => vec![0; size as usize],
-                None => Vec::new(),
-            }
-        }).collect::<Vec<_>>();
-        let lengths = data.iter().map(|x| x.len() as libc::c_ulong).collect();
+            let data = BindData::for_output(tpe);
+            (bind, data)
+        }).unzip();
 
         let mut res = Binds {
             data: data,
-            lengths: lengths,
-            is_nulls: is_nulls,
             mysql_binds: mysql_binds,
-            errors: Some(errors),
         };
         unsafe { res.link_mysql_bind_pointers(); }
         res
@@ -74,21 +51,16 @@ impl Binds {
     /// The caller of this function must immediately check for errors
     /// after return
     pub fn populate_dynamic_buffers(&mut self, stmt: *mut ffi::MYSQL_STMT) {
-        use std::cmp::min;
-
-        for (i, buffer) in self.data.iter_mut().enumerate() {
-            if self.errors.as_ref().unwrap()[i] != 0 {
-                let written_bytes = buffer.len();
-                let needed_capacity = self.lengths[i] as usize;
-                buffer.reserve(needed_capacity - written_bytes);
-                self.mysql_binds[i].buffer = buffer.as_mut_ptr() as *mut libc::c_void;
-                mem::swap(&mut self.lengths[i], &mut self.mysql_binds[i].buffer_length);
+        for (i, data) in self.data.iter_mut().enumerate() {
+            let bind = &mut self.mysql_binds[i];
+            if data.is_truncated() {
+                data.reserve_to_fit(bind);
                 let load_result = unsafe {
                     ffi::mysql_stmt_fetch_column(
                         stmt,
-                        &mut self.mysql_binds[i],
+                        bind,
                         i as libc::c_uint,
-                        written_bytes as libc::c_ulong,
+                        0,
                     )
                 };
                 if load_result != 0 {
@@ -96,43 +68,107 @@ impl Binds {
                 }
             }
 
-            let actual_bytes_in_buffer = min(
-                self.mysql_binds[i].buffer_length,
-                self.lengths[i],
-            );
-            unsafe { buffer.set_len(actual_bytes_in_buffer as usize) }
+            data.update_buffer_len(bind);
         }
     }
 
     pub fn reset_dynamic_buffers(&mut self) {
-        for (i, bind) in self.mysql_binds.iter().enumerate() {
+        for (data, bind) in self.data.iter_mut().zip(&mut self.mysql_binds) {
             if known_buffer_size_for_ffi_type(bind.buffer_type).is_none() {
-                self.lengths[i] = 0;
-                unsafe { self.data[i].set_len(0) };
+                data.reset();
             }
         }
     }
 
     pub fn field_data(&self, idx: usize) -> Option<&[u8]> {
-        if self.is_nulls[idx] == 0 {
-            Some(&*self.data[idx])
+        self.data[idx].bytes()
+    }
+
+    unsafe fn link_mysql_bind_pointers(&mut self) {
+        for (data, bind) in self.data.iter_mut().zip(&mut self.mysql_binds) {
+            data.link_mysql_bind_pointers(bind);
+        }
+    }
+}
+
+struct BindData {
+    bytes: Vec<u8>,
+    length: libc::c_ulong,
+    is_null: ffi::my_bool,
+    is_truncated: Option<ffi::my_bool>,
+}
+
+impl BindData {
+    fn for_input(data: Option<Vec<u8>>) -> Self {
+        let is_null = if data.is_none() { 1 } else { 0 };
+        let bytes = data.unwrap_or(Vec::new());
+        let length = bytes.len() as libc::c_ulong;
+
+        BindData {
+            bytes: bytes,
+            length: length,
+            is_null: is_null,
+            is_truncated: None,
+        }
+    }
+
+    fn for_output(tpe: ffi::enum_field_types) -> Self {
+        let bytes = known_buffer_size_for_ffi_type(tpe)
+            .map(|len| vec![0; len])
+            .unwrap_or(Vec::new());
+        let length = bytes.len() as libc::c_ulong;
+
+        BindData {
+            bytes: bytes,
+            length: length,
+            is_null: 0,
+            is_truncated: Some(0),
+        }
+    }
+
+    fn is_truncated(&self) -> bool {
+        self.is_truncated.unwrap_or(0) != 0
+    }
+
+    fn bytes(&self) -> Option<&[u8]> {
+        if self.is_null == 0 {
+            Some(&*self.bytes)
         } else {
             None
         }
     }
 
-    // This function relies on the invariant that no further mutations to this
-    // struct will occur after this function has been called.
-    unsafe fn link_mysql_bind_pointers(&mut self) {
-        for (i, data) in self.data.iter_mut().enumerate() {
-            self.mysql_binds[i].buffer = data.as_mut_ptr() as *mut libc::c_void;
-            self.mysql_binds[i].buffer_length = data.capacity() as libc::c_ulong;
-            self.mysql_binds[i].length = &mut self.lengths[i];
-            self.mysql_binds[i].is_null = &mut self.is_nulls[i];
+    fn reset(&mut self) {
+        unsafe { self.bytes.set_len(0) };
+        self.length = 0;
+    }
 
-            if let Some(ref mut errors) = self.errors {
-                self.mysql_binds[i].error = &mut errors[i];
-            }
+    fn reserve_to_fit(&mut self, bind: &mut ffi::MYSQL_BIND) {
+        let written_bytes = self.bytes.capacity();
+        let needed_capacity = self.length as usize;
+        if needed_capacity > written_bytes {
+            self.bytes.reserve(needed_capacity - written_bytes);
+            // Re-link the buffer pointer since we just re-allocated
+            bind.buffer = self.bytes.as_mut_ptr() as *mut libc::c_void;
+            bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
+        }
+    }
+
+    fn update_buffer_len(&mut self, bind: &ffi::MYSQL_BIND) {
+        use std::cmp::min;
+
+        let actual_bytes_in_buffer = min(bind.buffer_length, self.length);
+        unsafe { self.bytes.set_len(actual_bytes_in_buffer as usize) }
+    }
+
+    unsafe fn link_mysql_bind_pointers(&mut self, bind: &mut ffi::MYSQL_BIND) {
+        bind.buffer = self.bytes.as_mut_ptr() as *mut libc::c_void;
+        bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
+        bind.length = &mut self.length;
+        bind.is_null = &mut self.is_null;
+
+        if let Some(ref mut is_truncated) = self.is_truncated {
+            bind.error = is_truncated;
         }
     }
 }
@@ -156,7 +192,7 @@ fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
     }
 }
 
-fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<libc::c_ulong> {
+fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     use std::mem::size_of;
     use self::ffi::enum_field_types as t;
 
@@ -173,7 +209,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<libc::c_
         t::MYSQL_TYPE_DATE |
         t::MYSQL_TYPE_DATETIME |
         t::MYSQL_TYPE_TIMESTAMP =>
-            Some(size_of::<ffi::MYSQL_TIME>() as libc::c_ulong),
+            Some(size_of::<ffi::MYSQL_TIME>()),
         _ => None,
     }
 }
