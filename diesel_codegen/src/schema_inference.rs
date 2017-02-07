@@ -30,7 +30,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
 
     let tables = table_names.iter()
         .map(|table| {
-            let mod_ident = syn::Ident::new(format!("infer_{}", table.name()));
+            let mod_ident = syn::Ident::new(format!("infer_{}", table.name));
             let table_name = table.to_string();
             quote! {
                 mod #mod_ident {
@@ -57,4 +57,3 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     expand_infer_table_from_schema(&database_url, &table_name.parse().unwrap())
         .expect(&format!("Could not infer table {}", table_name))
 }
-

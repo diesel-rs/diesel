@@ -98,11 +98,6 @@ pub fn get_primary_keys(
         InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => ::pg::get_primary_keys(c, table),
-        #[cfg(not(any(feature = "sqlite", feature = "postgres")))]
-        _ => {
-            let q: ::diesel::QueryResult<Vec<String>> = Ok(Vec::<String>::new());
-            q
-        },
     });
     if primary_keys.is_empty() {
         Err(format!("Diesel only supports tables with primary keys. \

@@ -126,10 +126,10 @@ fn table_oid(table: &TableData) -> BoxedSelectStatement<Oid, pg_class::table, Pg
     use self::pg_namespace::{table as pg_namespace, oid as nsoid, nspname};
 
     let schema_oid = pg_namespace.select(nsoid)
-        .filter(nspname.nullable().eq(table.schema()))
+        .filter(nspname.nullable().eq(&table.schema))
         .limit(1);
     pg_class.select(oid)
-        .filter(relname.eq(table.name()))
+        .filter(relname.eq(&table.name))
         .filter(relnamespace.eq_any(schema_oid))
         .limit(1)
         .into_boxed()
@@ -142,15 +142,12 @@ pub fn load_table_names(connection: &PgConnection, schema_name: Option<&str>)
 
     let schema_name = schema_name.unwrap_or("public");
 
-    let tns: Vec<String> = tables.select(table_name)
+    tables.select((table_name, table_schema))
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
-        .load(connection)?;
-
-    let tns = tns.iter().map(|n| TableData::new(n, Some(schema_name))).collect();
-
-    Ok(tns)
+        .load(connection)
+        .map_err(Into::into)
 }
 
 #[cfg(test)]
@@ -171,6 +168,6 @@ fn skip_views() {
 
     let table_names = load_table_names(&connection, None).unwrap();
 
-    assert!(table_names.contains(&TableData::new("a_regular_table", Some("public"))));
-    assert!(!table_names.contains(&TableData::new("a_view", Some("public"))));
+    assert!(table_names.contains(&TableData::new("a_regular_table", "public")));
+    assert!(!table_names.contains(&TableData::new("a_view", "public")));
 }

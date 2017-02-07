@@ -34,21 +34,20 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
                     main database".into());
     }
 
-    let tns: Vec<String> = sqlite_master.select(name)
+    Ok(sqlite_master.select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
         .filter(sql("type='table'"))
-        .load(connection)?;
-
-    let tns = tns.iter().map(|n| TableData::new(n, schema_name)).collect();
-
-    Ok(tns)
+        .load::<String>(connection)?
+        .into_iter()
+        .map(TableData::from_name)
+        .collect())
 }
 
 pub fn get_table_data(conn: &SqliteConnection, table: &TableData)
     -> QueryResult<Vec<ColumnInformation>>
 {
-    let query = format!("PRAGMA TABLE_INFO('{}')", table.name());
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
@@ -73,11 +72,11 @@ impl_Queryable! {
 }
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", table.name());
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
     let results = try!(sql::<pragma_table_info::SqlType>(&query)
         .load::<FullTableInfo>(conn));
-    Ok(results.iter()
-        .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
+    Ok(results.into_iter()
+        .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
         .collect())
 }
 
@@ -156,7 +155,7 @@ fn load_table_names_includes_tables_that_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(table_names.contains(&TableData::new("users", None)));
+    assert!(table_names.contains(&TableData::from_name("users")));
 }
 
 #[test]
@@ -164,7 +163,7 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(!table_names.contains(&TableData::new("__diesel_metadata", None)));
+    assert!(!table_names.contains(&TableData::from_name("__diesel_metadata")));
 }
 
 #[test]
@@ -173,7 +172,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![TableData::new("users", None)], table_names.unwrap());
+    assert_eq!(vec![TableData::from_name("users")], table_names.unwrap());
 }
 
 #[test]
@@ -182,7 +181,7 @@ fn load_table_names_excludes_views() {
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![TableData::new("users", None)], table_names.unwrap());
+    assert_eq!(vec![TableData::from_name("users")], table_names.unwrap());
 }
 
 #[test]

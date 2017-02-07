@@ -1,4 +1,5 @@
-#[macro_use]
+#![deny(warnings)]
+
 extern crate diesel;
 #[cfg(feature = "dotenv")]
 extern crate dotenv;

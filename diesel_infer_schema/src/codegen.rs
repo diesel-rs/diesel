@@ -16,14 +16,14 @@ pub fn expand_infer_table_from_schema(database_url: &str, table: &TableData)
     let primary_keys = get_primary_keys(&connection, table)?
         .into_iter()
         .map(syn::Ident::new);
-    let table_name = syn::Ident::new(&table.name()[..]);
+    let table_name = syn::Ident::new(&*table.name);
 
     let mut tokens = Vec::with_capacity(data.len());
 
     for a in data {
         tokens.push(column_def_tokens(&a, &connection)?);
     }
-    if let Some(ref schema) = *table.schema() {
+    if let Some(ref schema) = table.schema {
         if cfg!(not(feature = "postgres")) || schema != "public" {
             let schema_name = syn::Ident::new(&schema[..]);
             return Ok(quote!(table! {

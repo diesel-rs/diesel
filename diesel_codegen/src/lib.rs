@@ -9,7 +9,9 @@ macro_rules! t {
     };
 }
 
+#[cfg(feature = "diesel_codegen_shared")]
 extern crate diesel_codegen_shared;
+#[cfg(feature = "diesel_infer_schema")]
 extern crate diesel_infer_schema;
 extern crate diesel;
 #[macro_use]

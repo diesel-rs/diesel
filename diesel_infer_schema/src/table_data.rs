@@ -1,28 +1,42 @@
+use diesel::*;
+use diesel::backend::Backend;
+use diesel::types::{FromSqlRow, HasSqlType};
 use std::fmt;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TableData {
-    /// Table name
-    name: String,
-    /// Schema name
-    schema: Option<String>,
+    pub name: String,
+    pub schema: Option<String>,
 }
 
 impl TableData {
-    pub fn new(name: &str, schema: Option<&str>) -> TableData {
+    pub fn from_name<T: Into<String>>(name: T) -> Self {
         TableData {
-          name: name.into(),
-          schema: schema.map(String::from),
+            name: name.into(),
+            schema: None,
         }
     }
 
-    pub fn name(&self) -> &String {
-        &self.name
+    pub fn new<T, U>(name: T, schema: U) -> Self where
+        T: Into<String>,
+        U: Into<String>,
+    {
+        TableData {
+            name: name.into(),
+            schema: Some(schema.into()),
+        }
     }
+}
 
-    pub fn schema(&self) -> &Option<String> {
-        &self.schema
+impl<ST, DB> Queryable<ST, DB> for TableData where
+    DB: Backend + HasSqlType<ST>,
+    (String, String): FromSqlRow<ST, DB>,
+{
+    type Row = (String, String);
+
+    fn build((name, schema): Self::Row) -> Self {
+        TableData::new(name, schema)
     }
 }
 
@@ -43,8 +57,8 @@ impl FromStr for TableData {
     fn from_str(table_name: &str) -> Result<Self, Self::Err> {
         let mut parts = table_name.split('.');
         match (parts.next(), parts.next()) {
-            (Some(schema_name), Some(table_name)) => Ok(TableData::new(table_name, Some(schema_name))),
-            _ => Ok(TableData::new(table_name, None)),
+            (Some(schema), Some(name)) => Ok(TableData::new(name, schema)),
+            _ => Ok(TableData::from_name(table_name)),
         }
     }
 }
