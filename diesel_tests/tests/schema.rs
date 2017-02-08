@@ -2,6 +2,13 @@ use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
+#[cfg(all(feature="postgres", feature="backend_specific_database_url"))]
+infer_schema!("dotenv:PG_DATABASE_URL");
+#[cfg(all(feature="sqlite", feature="backend_specific_database_url"))]
+infer_schema!("dotenv:SQLITE_DATABASE_URL");
+#[cfg(all(feature="mysql", feature="backend_specific_database_url"))]
+infer_schema!("dotenv:MYSQL_DATABASE_URL");
+#[cfg(not(feature="backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
@@ -151,7 +158,8 @@ pub fn connection() -> TestConnection {
 #[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
     dotenv().ok();
-    let connection_url = env::var("DATABASE_URL")
+    let connection_url = env::var("PG_DATABASE_URL")
+        .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
 }

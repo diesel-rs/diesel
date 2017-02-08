@@ -21,8 +21,9 @@ cfg_if! {
 
         pub fn connection() -> TestConnection {
             dotenv().ok();
-            let database_url = env::var("DATABASE_URL")
-                .expect("DATABASE_URL must be set to run tests");
+            let database_url = env::var("PG_DATABASE_URL")
+                .or_else(|_| env::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests");
             let conn = PgConnection::establish(&database_url).unwrap();
             conn.begin_test_transaction().unwrap();
             conn
@@ -45,8 +46,9 @@ cfg_if! {
 
         pub fn connection_no_transaction() -> TestConnection {
             dotenv().ok();
-            let database_url = env::var("DATABASE_URL")
-                .expect("DATABASE_URL must be set to run tests");
+            let database_url = env::var("MYSQL_DATABASE_URL")
+                .or_else(|_| env::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests");
             MysqlConnection::establish(&database_url).unwrap()
         }
     } else {

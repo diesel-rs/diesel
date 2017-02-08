@@ -3,6 +3,9 @@ use schema::connection;
 
 mod using_infer_schema {
     use super::*;
+    #[cfg(feature="backend_specific_database_url")]
+    infer_schema!("dotenv:PG_DATABASE_URL", "custom_schema");
+    #[cfg(not(feature="backend_specific_database_url"))]
     infer_schema!("dotenv:DATABASE_URL", "custom_schema");
     use self::custom_schema::users;
 
@@ -27,6 +30,9 @@ mod using_infer_schema {
 mod using_infer_table_from_schema {
     use super::*;
     mod infer_users {
+        #[cfg(feature="backend_specific_database_url")]
+        infer_table_from_schema!("dotenv:PG_DATABASE_URL", "custom_schema.users");
+        #[cfg(not(feature="backend_specific_database_url"))]
         infer_table_from_schema!("dotenv:DATABASE_URL", "custom_schema.users");
     }
     use self::infer_users::users;
