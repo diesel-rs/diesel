@@ -1,3 +1,18 @@
+macro_rules! try_drop {
+    ($e:expr, $msg:expr) => { match $e {
+        Ok(x) => x,
+        Err(e) => {
+            use ::std::io::{Write, stderr};
+            if ::std::thread::panicking() {
+                write!(stderr(), "{}: {:?}", $msg, e);
+                return;
+            } else {
+                panic!("{}: {:?}", $msg, e);
+            }
+        }
+    }}
+}
+
 mod command;
 mod project_builder;
 
