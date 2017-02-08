@@ -1,6 +1,6 @@
 [package]
 name = "diesel_infer_schema"
-version = "0.1.0"
+version = "0.10.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides functionality to infer the schema of a database"
