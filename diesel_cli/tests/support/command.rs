@@ -66,6 +66,15 @@ impl CommandResult {
     pub fn code(&self) -> i32 {
         self.output.status.code().unwrap()
     }
+
+    #[allow(dead_code)]
+    pub fn result(self) -> Result<Self, Self> {
+        if self.is_success() {
+            Ok(self)
+        } else {
+            Err(self)
+        }
+    }
 }
 
 fn path_to_diesel_cli() -> PathBuf {

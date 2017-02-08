@@ -99,17 +99,7 @@ impl Project {
 #[cfg(feature = "postgres")]
 impl Drop for Project {
     fn drop(&mut self) {
-        use std::io::{self, Write};
-        use std::thread;
-
-        let result = self.command("database").arg("drop").run();
-        if !result.is_success() {
-            if thread::panicking() {
-                writeln!(io::stderr(), "Couldn't drop database: {:?}", result).unwrap();
-            } else {
-                panic!("Couldn't drop database: {:?}", result);
-            }
-        }
+        try_drop!(self.command("database").arg("drop").run().result(), "Couldn't drop database");
     }
 }
 
