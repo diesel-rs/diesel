@@ -259,7 +259,8 @@ mod tests {
             fn $test_name(val: $tpe) -> bool {
                 dotenv().ok();
 
-                let connection_url = ::std::env::var("DATABASE_URL")
+                let connection_url = ::std::env::var("PG_DATABASE_URL")
+                    .or_else(|_| ::std::env::var("DATABASE_URL"))
                     .expect("DATABASE_URL must be set in order to run tests");
                 let connection = PgConnection::establish(&connection_url).unwrap();
 

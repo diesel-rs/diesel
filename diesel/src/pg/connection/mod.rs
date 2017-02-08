@@ -207,7 +207,9 @@ mod tests {
 
     fn connection() -> PgConnection {
         dotenv().ok();
-        let database_url = env::var("DATABASE_URL").unwrap();
+        let database_url = env::var("PG_DATABASE_URL")
+            .or_else(|_| env::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
         PgConnection::establish(&database_url).unwrap()
     }
 }

@@ -164,14 +164,16 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
 mod tests {
     extern crate dotenv;
 
-    use super::*;
-    use self::dotenv::dotenv;
     use diesel::pg::PgConnection;
+    use self::dotenv::dotenv;
+    use std::env;
+    use super::*;
 
     fn connection() -> PgConnection {
         let _ = dotenv();
 
-        let connection_url = ::std::env::var("DATABASE_URL")
+        let connection_url = env::var("PG_DATABASE_URL")
+            .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
         let connection = PgConnection::establish(&connection_url).unwrap();
         connection.begin_test_transaction().unwrap();

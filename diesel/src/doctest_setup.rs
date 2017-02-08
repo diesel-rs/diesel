@@ -10,7 +10,7 @@ cfg_if! {
         type DB = diesel::pg::Pg;
 
         fn connection_no_data() -> diesel::pg::PgConnection {
-            let connection_url = database_url_from_env();
+            let connection_url = database_url_from_env("PG_DATABASE_URL");
             let connection = diesel::pg::PgConnection::establish(&connection_url).unwrap();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
@@ -55,7 +55,7 @@ cfg_if! {
         type DB = diesel::mysql::Mysql;
 
         fn connection_no_data() -> diesel::mysql::MysqlConnection {
-            let connection_url = database_url_from_env();
+            let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
             let connection = diesel::mysql::MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
 
@@ -81,10 +81,13 @@ cfg_if! {
     }
 }
 
-fn database_url_from_env() -> String {
+fn database_url_from_env(bakend_specific_env_var: &str) -> String {
+    use std::env;
+
     dotenv().ok();
 
-    ::std::env::var("DATABASE_URL")
+    env::var(bakend_specific_env_var)
+        .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }
 
