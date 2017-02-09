@@ -7,6 +7,8 @@ use query_dsl::*;
 use query_source::Queryable;
 use result::QueryResult;
 use types::HasSqlType;
+#[cfg(any(feature = "sqlite", feature = "mysql"))]
+use associations::Identifiable;
 
 pub trait SaveChangesDsl<Conn, ST> where
     Conn: Connection,
@@ -31,8 +33,6 @@ impl<T, ST, Conn> SaveChangesDsl<Conn, ST> for T where
 
 #[cfg(feature = "sqlite")]
 use sqlite::{SqliteConnection, Sqlite};
-#[cfg(feature = "sqlite")]
-use associations::Identifiable;
 
 #[cfg(feature = "sqlite")]
 impl<T, ST> SaveChangesDsl<SqliteConnection, ST> for T where
@@ -53,8 +53,6 @@ impl<T, ST> SaveChangesDsl<SqliteConnection, ST> for T where
 
 #[cfg(feature = "mysql")]
 use mysql::{MysqlConnection, Mysql};
-#[cfg(feature = "mysql")]
-use associations::Identifiable;
 
 #[cfg(feature = "mysql")]
 impl<T, ST> SaveChangesDsl<MysqlConnection, ST> for T where
