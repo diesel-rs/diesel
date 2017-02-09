@@ -59,20 +59,18 @@ fn migration_run_inserts_run_on_timestamps() {
     // By running a query that compares timestamps, we are also checking
     // that the auto-inserted values for the "run_on" column are valid.
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature="sqlite")]
     fn valid_run_on_timestamp(db: &database::Database) -> bool {
-        select(sql::<Bool>("EXISTS (SELECT run_on < DATETIME('now', '-1 hour') \
-                                    FROM __diesel_schema_migrations)"))
+        select(sql::<Bool>("EXISTS (SELECT 1 FROM __diesel_schema_migrations \
+                WHERE run_on < DATETIME('now', '+1 hour'))"))
             .get_result(&db.conn())
             .unwrap()
     }
 
-    #[cfg(feature = "postgres")]
+    #[cfg(feature="postgres")]
     fn valid_run_on_timestamp(db: &database::Database) -> bool {
-        select(sql::<Bool>("EXISTS (SELECT \
-                              run_on < (CAST('now' AS TIMESTAMP) - \
-                                        CAST('1 hour' AS INTERVAL)) \
-                              FROM __diesel_schema_migrations)"))
+        select(sql::<Bool>("EXISTS (SELECT 1 FROM __diesel_schema_migrations \
+                WHERE run_on < NOW() + INTERVAL '1 hour')"))
             .get_result(&db.conn())
             .unwrap()
     }

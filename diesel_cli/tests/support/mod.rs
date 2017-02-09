@@ -16,12 +16,8 @@ macro_rules! try_drop {
 mod command;
 mod project_builder;
 
-#[cfg(feature = "sqlite")]
-#[path="sqlite_database.rs"]
-pub mod database;
-
-#[cfg(feature = "postgres")]
-#[path="postgres_database.rs"]
+#[cfg_attr(feature="sqlite", path="sqlite_database.rs")]
+#[cfg_attr(feature="postgres", path="postgres_database.rs")]
 pub mod database;
 
 pub use self::project_builder::project;
