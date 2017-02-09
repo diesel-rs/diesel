@@ -1,7 +1,7 @@
 use super::{Statement, Binds, ffi, libc};
 use result::QueryResult;
 use row::Row;
-use mysql::Mysql;
+use mysql::{Mysql, MysqlType};
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
@@ -9,16 +9,8 @@ pub struct StatementIterator<'a> {
 }
 
 impl<'a> StatementIterator<'a> {
-    pub fn new(stmt: &'a mut Statement) -> QueryResult<Self> {
-        use result::Error::QueryBuilderError;
-
-        let mut result_metadata = match try!(stmt.result_metadata()) {
-            Some(result) => result,
-            None => return Err(QueryBuilderError("Attempted to get results \
-                on a query with no results".into())),
-        };
-        let result_types = result_metadata.fields().map(|f| f.type_);
-        let mut output_binds = Binds::from_output_types(result_types);
+    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
+        let mut output_binds = Binds::from_output_types(types);
 
         unsafe {
             output_binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?

@@ -12,8 +12,12 @@ use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
 impl<T, DB> HasSqlType<Nullable<T>> for DB where
     DB: Backend + HasSqlType<T>, T: NotNull,
 {
-    fn metadata() -> DB::TypeMetadata{
+    fn metadata() -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata()
+    }
+
+    fn row_metadata(out: &mut Vec<DB::TypeMetadata>) {
+        <DB as HasSqlType<T>>::row_metadata(out)
     }
 }
 

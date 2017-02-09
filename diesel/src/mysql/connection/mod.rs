@@ -1,6 +1,5 @@
 mod bind;
 mod raw;
-mod result;
 mod stmt;
 mod url;
 
@@ -62,7 +61,9 @@ impl Connection for MysqlConnection {
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
         stmt.execute()?;
-        stmt.results()?.map(|mut row| {
+        let mut metadata = Vec::new();
+        Mysql::row_metadata(&mut metadata);
+        stmt.results(metadata)?.map(|mut row| {
             U::Row::build_from_row(&mut row)
                 .map(U::build)
                 .map_err(DeserializationError)
