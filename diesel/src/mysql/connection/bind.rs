@@ -22,10 +22,11 @@ impl Binds {
         }
     }
 
-    pub fn from_output_types<Iter>(types: Iter) -> Self where
-        Iter: IntoIterator<Item=ffi::enum_field_types>,
-    {
-        let data = types.into_iter().map(BindData::for_output).collect();
+    pub fn from_output_types(types: Vec<MysqlType>) -> Self {
+        let data = types.into_iter()
+            .map(mysql_type_to_ffi_type)
+            .map(BindData::for_output)
+            .collect();
 
         Binds {
             data: data,
@@ -43,6 +44,7 @@ impl Binds {
 
     pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
         for (i, data) in self.data.iter_mut().enumerate() {
+            data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
             // at the end of this function
             unsafe {
@@ -112,6 +114,10 @@ impl BindData {
         self.is_truncated.unwrap_or(0) != 0
     }
 
+    fn is_fixed_size_buffer(&self) -> bool {
+        known_buffer_size_for_ffi_type(self.tpe).is_some()
+    }
+
     fn bytes(&self) -> Option<&[u8]> {
         if self.is_null == 0 {
             Some(&*self.bytes)
@@ -164,6 +170,16 @@ impl BindData {
             Some((bind, offset))
         } else {
             None
+        }
+    }
+
+    fn did_numeric_overflow_occur(&self) -> QueryResult<()> {
+        use result::Error::DeserializationError;
+
+        if self.is_truncated() && self.is_fixed_size_buffer() {
+            Err(DeserializationError("Numeric overflow/underflow occurred".into()))
+        } else {
+            Ok(())
         }
     }
 }

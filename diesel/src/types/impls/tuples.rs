@@ -23,6 +23,10 @@ macro_rules! tuple_impls {
                 fn metadata() -> DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
+
+                fn row_metadata(out: &mut Vec<DB::TypeMetadata>) {
+                    $(<DB as HasSqlType<$T>>::row_metadata(out);)+
+                }
             }
 
             impl<$($T),+> NotNull for ($($T,)+) {

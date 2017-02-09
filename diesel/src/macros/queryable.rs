@@ -166,65 +166,56 @@ mod tests {
     use expression::dsl::sql;
     use prelude::*;
     use test_helpers::connection;
-
-    cfg_if! {
-        if #[cfg(feature = "mysql")] {
-            type IntLiteralSql = ::types::BigInt;
-            type IntLiteralRust = i64;
-        } else {
-            type IntLiteralSql = ::types::Integer;
-            type IntLiteralRust = i32;
-        }
-    }
+    use types::Integer;
 
     #[test]
     fn named_struct_definition() {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         struct MyStruct {
-            foo: IntLiteralRust,
-            bar: IntLiteralRust,
+            foo: i32,
+            bar: i32,
         }
 
         impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             struct MyStruct {
-                foo: IntLiteralRust,
-                bar: IntLiteralRust,
+                foo: i32,
+                bar: i32,
             }
         }
 
         let conn = connection();
-        let data = ::select(sql::<(IntLiteralSql, IntLiteralSql)>("1, 2")).get_result(&conn);
+        let data = ::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
         assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
     }
 
     #[test]
     fn tuple_struct() {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        struct MyStruct(IntLiteralRust, IntLiteralRust);
+        struct MyStruct(i32, i32);
 
         impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-            struct MyStruct(#[column_name(foo)] IntLiteralRust, #[column_name(bar)] IntLiteralRust);
+            struct MyStruct(#[column_name(foo)] i32, #[column_name(bar)] i32);
         }
 
         let conn = connection();
-        let data = ::select(sql::<(IntLiteralSql, IntLiteralSql)>("1, 2")).get_result(&conn);
+        let data = ::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
         assert_eq!(Ok(MyStruct(1, 2)), data);
     }
 
     #[test]
     fn tuple_struct_without_column_name_annotations() {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        struct MyStruct(IntLiteralRust, IntLiteralRust);
+        struct MyStruct(i32, i32);
 
         impl_Queryable! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-            struct MyStruct(IntLiteralRust, IntLiteralRust);
+            struct MyStruct(i32, i32);
         }
 
         let conn = connection();
-        let data = ::select(sql::<(IntLiteralSql, IntLiteralSql)>("1, 2")).get_result(&conn);
+        let data = ::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
         assert_eq!(Ok(MyStruct(1, 2)), data);
     }
 }

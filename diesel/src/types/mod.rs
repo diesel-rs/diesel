@@ -251,6 +251,10 @@ pub use pg::types::sql_types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata() -> Self::TypeMetadata;
+
+    fn row_metadata(out: &mut Vec<Self::TypeMetadata>) {
+        out.push(Self::metadata())
+    }
 }
 
 pub trait NotNull {
