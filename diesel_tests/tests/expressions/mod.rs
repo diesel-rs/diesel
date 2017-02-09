@@ -55,13 +55,11 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_count_max() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE numbers (n integer)").unwrap();
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(max(n));
 
@@ -140,13 +138,11 @@ fn max_accepts_all_numeric_string_and_date_types() {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_min() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE numbers (n integer)").unwrap();
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(min(n));
 
@@ -173,13 +169,11 @@ fn function_with_multiple_arguments() {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE numbers (n INTEGER)").unwrap();
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(sum(n));
 
@@ -195,13 +189,11 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum_for_double() {
     use self::precision_numbers::columns::*;
     use self::precision_numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE precision_numbers (n DOUBLE PRECISION)").unwrap();
     connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)").unwrap();
     let source = numbers.select(sum(n));
 
@@ -218,13 +210,11 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum_for_nullable() {
     use self::nullable_doubles::columns::*;
     use self::nullable_doubles::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE nullable_doubles (n DOUBLE PRECISION)").unwrap();
     connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)").unwrap();
     let source = numbers.select(sum(n));
 
@@ -234,13 +224,11 @@ fn test_sum_for_nullable() {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_avg() {
     use self::precision_numbers::columns::*;
     use self::precision_numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE precision_numbers (n DOUBLE PRECISION)").unwrap();
     connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)").unwrap();
     let source = numbers.select(avg(n));
 
@@ -251,13 +239,11 @@ fn test_avg() {
 
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_avg_for_nullable() {
     use self::nullable_doubles::columns::*;
     use self::nullable_doubles::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE nullable_doubles (n DOUBLE PRECISION)").unwrap();
     connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)").unwrap();
     let source = numbers.select(avg(n));
 
@@ -273,7 +259,6 @@ fn test_avg_for_integer() {
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("CREATE TABLE numbers (n INTEGER)").unwrap();
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (6)").unwrap();
     let source = numbers.select(avg(n));
 

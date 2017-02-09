@@ -22,13 +22,10 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn find_with_non_serial_pk() {
     use self::users_with_name_pk::table as users;
 
     let connection = connection();
-    connection.execute("CREATE TABLE users_with_name_pk (name VARCHAR PRIMARY KEY)")
-        .unwrap();
     connection.execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 

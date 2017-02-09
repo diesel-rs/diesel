@@ -211,12 +211,10 @@ table! {
 }
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn filter_on_column_equality() {
     use self::points::dsl::*;
 
     let connection = connection();
-    connection.execute("CREATE TABLE points (x INTEGER NOT NULL, y INTEGER NOT NULL)").unwrap();
     connection.execute("INSERT INTO POINTS (x, y) VALUES (1, 1), (1, 2), (2, 2)").unwrap();
 
     let expected_data = vec![(1, 1), (2, 2)];
