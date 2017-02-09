@@ -4,16 +4,16 @@ use query_source::Queryable;
 use result::Error::DeserializationError;
 use result::QueryResult;
 use sqlite::Sqlite;
-use super::stmt::Statement;
+use super::stmt::StatementUse;
 use types::{HasSqlType, FromSqlRow};
 
 pub struct StatementIterator<'a, ST, T> {
-    stmt: &'a mut Statement,
+    stmt: StatementUse<'a>,
     _marker: PhantomData<(ST, T)>,
 }
 
 impl<'a, ST, T> StatementIterator<'a, ST, T> {
-    pub fn new(stmt: &'a mut Statement) -> Self {
+    pub fn new(stmt: StatementUse<'a>) -> Self {
         StatementIterator {
             stmt: stmt,
             _marker: PhantomData,
