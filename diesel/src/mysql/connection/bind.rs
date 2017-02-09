@@ -161,6 +161,7 @@ impl BindData {
 
             debug_assert!(truncated_amount > 0, "output buffers were invalidated \
                 without calling `mysql_stmt_bind_result`");
+            self.bytes.set_len(offset);
             self.bytes.reserve(truncated_amount);
             self.bytes.set_len(self.length as usize);
 
