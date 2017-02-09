@@ -5,6 +5,7 @@ use diesel::expression::dsl::sql;
 use diesel::*;
 
 #[test]
+#[cfg(not(feature="mysql"))] // ? IS NULL is invalid syntax for MySQL
 fn bind_params_are_passed_for_null_when_not_inserting() {
     let connection = connection();
     let query = select(sql::<Integer>("1"))

@@ -55,6 +55,7 @@ mod eager_loading_with_string_keys {
     }
 
     #[test]
+    #[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
     fn eager_loading_associations_for_multiple_records() {
         let connection = connection();
         connection.batch_execute(r#"

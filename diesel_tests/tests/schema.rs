@@ -82,12 +82,8 @@ impl<'a> ::diesel::associations::Identifiable for &'a Following {
     }
 }
 
-#[cfg(feature = "postgres")]
-#[path="postgres_specific_schema.rs"]
-mod backend_specifics;
-
-#[cfg(feature = "sqlite")]
-#[path="sqlite_specific_schema.rs"]
+#[cfg_attr(feature="postgres", path="postgres_specific_schema.rs")]
+#[cfg_attr(not(feature="postgres"), path="backend_specific_schema.rs")]
 mod backend_specifics;
 
 pub use self::backend_specifics::*;
@@ -146,6 +142,8 @@ pub struct NewComment<'a>(
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
 pub type TestConnection = ::diesel::sqlite::SqliteConnection;
+#[cfg(feature = "mysql")]
+pub type TestConnection = ::diesel::mysql::MysqlConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -172,6 +170,15 @@ pub fn connection_without_transaction() -> TestConnection {
     let connection = ::diesel::sqlite::SqliteConnection::establish(":memory:").unwrap();
     embedded_migrations::run(&connection).unwrap();
     connection
+}
+
+#[cfg(feature = "mysql")]
+pub fn connection_without_transaction() -> TestConnection {
+    dotenv().ok();
+    let connection_url = env::var("MYSQL_DATABASE_URL")
+        .or_else(|_| env::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+    ::diesel::mysql::MysqlConnection::establish(&connection_url).unwrap()
 }
 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);

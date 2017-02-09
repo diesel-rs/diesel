@@ -64,6 +64,7 @@ fn insert_records_with_custom_returning_clause() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
     use schema::users::table as users;
     use schema_dsl::*;
@@ -92,6 +93,7 @@ fn batch_insert_with_defaults() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_with_defaults() {
     use schema::users::table as users;
     use schema_dsl::*;
@@ -114,6 +116,7 @@ fn insert_with_defaults() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use schema::users::table as users;
     let connection = connection();

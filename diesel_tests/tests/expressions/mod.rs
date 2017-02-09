@@ -55,6 +55,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_count_max() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -139,6 +140,7 @@ fn max_accepts_all_numeric_string_and_date_types() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_min() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -171,6 +173,7 @@ fn function_with_multiple_arguments() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -192,6 +195,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum_for_double() {
     use self::precision_numbers::columns::*;
     use self::precision_numbers::table as numbers;
@@ -214,6 +218,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_sum_for_nullable() {
     use self::nullable_doubles::columns::*;
     use self::nullable_doubles::table as numbers;
@@ -229,6 +234,7 @@ fn test_sum_for_nullable() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_avg() {
     use self::precision_numbers::columns::*;
     use self::precision_numbers::table as numbers;
@@ -245,6 +251,7 @@ fn test_avg() {
 
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn test_avg_for_nullable() {
     use self::nullable_doubles::columns::*;
     use self::nullable_doubles::table as numbers;
@@ -295,7 +302,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite
+#[cfg(feature = "postgres")] // FIXME: We need to test this on MySQL
 fn test_avg_for_numeric() {
     use self::numeric::columns::*;
     use self::numeric::table as numeric;
