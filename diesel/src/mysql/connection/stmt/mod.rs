@@ -6,7 +6,7 @@ use std::os::{raw as libc};
 use std::ffi::CStr;
 
 use mysql::MysqlType;
-use result::QueryResult;
+use result::{QueryResult, DatabaseErrorKind};
 use self::iterator::StatementIterator;
 use super::bind::Binds;
 use super::result::RawResult;
@@ -95,7 +95,6 @@ impl Statement {
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {
-        use result::DatabaseErrorKind;
         use result::Error::DatabaseError;
 
         let error_message = self.last_error_message();
@@ -103,9 +102,20 @@ impl Statement {
             Ok(())
         } else {
             Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
+                self.last_error_type(),
                 Box::new(error_message),
             ))
+        }
+    }
+
+    fn last_error_type(&self) -> DatabaseErrorKind {
+        let last_error_number = unsafe  { ffi::mysql_stmt_errno(self.stmt) };
+        // These values are not exposed by the C API, but are documented
+        // at https://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html
+        // and are from the ANSI SQLSTATE standard
+        match last_error_number {
+            1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
+            _ => DatabaseErrorKind::__Unknown,
         }
     }
 }
