@@ -28,6 +28,7 @@ use schema::*;
 // }
 
 #[test]
+#[cfg(not(any(feature="sqlite", feature="mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[has_many(special_comments)]
