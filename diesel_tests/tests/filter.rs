@@ -211,6 +211,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn filter_on_column_equality() {
     use self::points::dsl::*;
 

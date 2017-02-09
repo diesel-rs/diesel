@@ -107,6 +107,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
@@ -128,6 +129,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();

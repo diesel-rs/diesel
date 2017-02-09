@@ -22,6 +22,7 @@ table! {
 }
 
 #[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn find_with_non_serial_pk() {
     use self::users_with_name_pk::table as users;
 
