@@ -71,7 +71,7 @@ fn test_updating_multiple_columns() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))]
+#[cfg(not(any(feature="sqlite", feature="mysql")))]
 fn update_returning_struct() {
     use schema::users::dsl::*;
 
@@ -85,7 +85,7 @@ fn update_returning_struct() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))]
+#[cfg(not(any(feature="sqlite", feature="mysql")))]
 fn update_with_custom_returning_clause() {
     use schema::users::dsl::*;
 

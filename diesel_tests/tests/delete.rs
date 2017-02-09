@@ -29,7 +29,7 @@ fn delete_single_record() {
 }
 
 #[test]
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(any(feature="sqlite", feature="mysql")))]
 fn return_deleted_records() {
     use schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
