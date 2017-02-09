@@ -10,7 +10,6 @@ pub type DatabaseResult<T> = Result<T, DatabaseError>;
 
 #[derive(Debug)]
 pub enum DatabaseError {
-    #[allow(dead_code)]
     CargoTomlNotFound,
     DatabaseUrlMissing,
     IoError(io::Error),

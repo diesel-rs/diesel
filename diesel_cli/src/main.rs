@@ -14,10 +14,6 @@ mod pretty_printing;
 
 use chrono::*;
 use clap::{ArgMatches,Shell};
-#[cfg(feature = "postgres")]
-use diesel::pg::PgConnection;
-#[cfg(feature = "sqlite")]
-use diesel::sqlite::SqliteConnection;
 use diesel::migrations::schema::*;
 use diesel::types::{FromSql, VarChar};
 use diesel::{migrations, Connection, Insertable};

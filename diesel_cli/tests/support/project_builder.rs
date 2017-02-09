@@ -67,12 +67,12 @@ impl Project {
             .collect()
     }
 
-    #[cfg(feature = "postgres")]
+    #[cfg(feature="postgres")]
     pub fn database_url(&self) -> String {
         format!("postgres://localhost/{}", self.name)
     }
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature="sqlite")]
     pub fn database_url(&self) -> String {
         self.directory.path().join(&self.name)
             .into_os_string()
@@ -96,7 +96,7 @@ impl Project {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(not(feature="sqlite"))]
 impl Drop for Project {
     fn drop(&mut self) {
         try_drop!(self.command("database").arg("drop").run().result(), "Couldn't drop database");
