@@ -20,6 +20,9 @@ pub trait UsesInformationSchema: Backend {
     > + NonAggregate + QueryId + QueryFragment<Self>;
 
     fn type_column() -> Self::TypeColumn;
+    fn default_schema<C>(conn: &C) -> QueryResult<String> where
+        C: Connection,
+        String: FromSql<types::Text, C::Backend>;
 }
 
 #[cfg(feature="postgres")]
@@ -29,6 +32,10 @@ impl UsesInformationSchema for Pg {
     fn type_column() -> Self::TypeColumn {
         self::information_schema::columns::udt_name
     }
+
+    fn default_schema<C>(_conn: &C) -> QueryResult<String> {
+        Ok("public".into())
+    }
 }
 
 #[cfg(feature="mysql")]
@@ -37,6 +44,14 @@ impl UsesInformationSchema for Mysql {
 
     fn type_column() -> Self::TypeColumn {
         self::information_schema::columns::column_type
+    }
+
+    fn default_schema<C>(conn: &C) -> QueryResult<String> where
+        C: Connection,
+        String: FromSql<types::Text, C::Backend>,
+    {
+        no_arg_sql_function!(database, types::VarChar);
+        select(database).get_result(conn)
     }
 }
 
@@ -114,7 +129,7 @@ pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
 {
     use self::information_schema::columns::dsl::*;
 
-    let type_column = <Conn::Backend as UsesInformationSchema>::type_column();
+    let type_column = Conn::Backend::type_column();
     columns.select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
         .filter(table_schema.nullable().eq(&table.schema))
@@ -150,7 +165,10 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
 {
     use self::information_schema::tables::dsl::*;
 
-    let schema_name = schema_name.unwrap_or("public");
+    let schema_name = match schema_name {
+        Some(name) => name.into(),
+        None => Conn::Backend::default_schema(connection)?,
+    };
 
     tables.select((table_name, table_schema))
         .filter(table_schema.eq(schema_name))
