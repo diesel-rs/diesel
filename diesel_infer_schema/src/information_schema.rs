@@ -156,6 +156,7 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
+        .order(table_name)
         .load(connection)
         .map_err(Into::into)
 }
