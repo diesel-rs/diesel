@@ -105,9 +105,9 @@ pub fn determine_column_type(
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => ::sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => ::information_schema::determine_column_type(attr),
+        InferConnection::Pg(_) => ::pg::determine_column_type(attr),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(_) => ::information_schema::determine_column_type(attr),
+        InferConnection::Mysql(_) => ::mysql::determine_column_type(attr),
     }
 }
 
