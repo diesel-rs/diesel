@@ -69,7 +69,12 @@ impl Project {
 
     #[cfg(feature="postgres")]
     pub fn database_url(&self) -> String {
-        format!("postgres://localhost/{}", self.name)
+        format!("postgres://localhost/diesel_{}", self.name)
+    }
+
+    #[cfg(feature="mysql")]
+    pub fn database_url(&self) -> String {
+        format!("mysql://localhost/diesel_{}", self.name)
     }
 
     #[cfg(feature="sqlite")]

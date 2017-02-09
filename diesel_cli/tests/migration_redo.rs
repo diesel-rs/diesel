@@ -6,8 +6,8 @@ fn migration_redo_runs_the_last_migration_down_and_up() {
         .folder("migrations")
         .build();
     p.create_migration("12345_create_users_table",
-                       "CREATE TABLE users ( id INTEGER )",
-                       "DROP TABLE users");
+                       "CREATE TABLE users (id INTEGER);",
+                       "DROP TABLE users;");
 
     // Make sure the project is setup
     p.command("setup").run();
