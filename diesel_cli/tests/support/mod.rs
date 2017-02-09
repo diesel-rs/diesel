@@ -4,7 +4,7 @@ macro_rules! try_drop {
         Err(e) => {
             use ::std::io::{Write, stderr};
             if ::std::thread::panicking() {
-                write!(stderr(), "{}: {:?}", $msg, e);
+                write!(stderr(), "{}: {:?}", $msg, e).unwrap();
                 return;
             } else {
                 panic!("{}: {:?}", $msg, e);

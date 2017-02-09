@@ -10,9 +10,7 @@ use diesel::{migrations, Connection, select, LoadDsl};
 use database_error::{DatabaseError, DatabaseResult};
 
 use std::error::Error;
-use std::{env, fs};
-
-use std::path::Path;
+use std::env;
 
 macro_rules! call_with_conn {
     (
@@ -73,7 +71,7 @@ fn create_database_if_needed(database_url: &String) -> DatabaseResult<()> {
         },
         #[cfg(feature = "sqlite")]
         "sqlite" => {
-            if !Path::new(database_url).exists() {
+            if !::std::path::Path::new(database_url).exists() {
                 println!("Creating database: {}", database_url);
                 try!(SqliteConnection::establish(database_url));
             }
@@ -114,7 +112,7 @@ fn drop_database(database_url: &String) -> DatabaseResult<()> {
         #[cfg(feature = "sqlite")]
         "sqlite" => {
             println!("Dropping database: {}", database_url);
-            try!(fs::remove_file(&database_url));
+            try!(::std::fs::remove_file(&database_url));
         },
         _ => unreachable!("The backend function should ensure we never get here."),
     }

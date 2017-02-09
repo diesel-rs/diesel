@@ -1,5 +1,6 @@
+#![cfg_attr(any(debug, test), deny(warnings))]
+
 extern crate chrono;
-#[macro_use]
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
