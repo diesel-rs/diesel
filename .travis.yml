@@ -33,6 +33,16 @@ script:
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_compile_tests && travis-cargo test)
   fi
+matrix:
+  allow_failures:
+    - rust: nightly
+  include:
+  - rust: nightly-2017-02-08
+    env: CLIPPY=YESPLEASE
+    script:
+    - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres" -- -Zno-trans)
+    - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres" -- -Zno-trans)
+    - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres" -- -Zno-trans)
 env:
   matrix:
     - BACKEND=sqlite
@@ -66,6 +76,3 @@ notifications:
     on_success: change
     on_failure: always
     on_start: never
-matrix:
-  allow_failures:
-    - rust: nightly

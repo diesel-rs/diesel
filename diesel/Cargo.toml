@@ -21,6 +21,7 @@ quickcheck = { version = "0.3.1", optional = true }
 serde_json = { version = ">=0.8.0, <0.10.0", optional = true }
 uuid = { version = ">=0.2.0, <0.5.0", optional = true, features = ["use_std"] }
 url = { version = "1.4.0", optional = true }
+clippy = {optional = true, version = "0.0.114"}
 
 [dev-dependencies]
 cfg-if = "0.1.0"
@@ -33,6 +34,7 @@ tempdir = "^0.3.4"
 default = ["with-deprecated"]
 extras = ["chrono", "serde_json", "uuid"]
 unstable = []
+lint = ["clippy"]
 large-tables = []
 huge-tables = ["large-tables"]
 postgres = ["pq-sys"]
