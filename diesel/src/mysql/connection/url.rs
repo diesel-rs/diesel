@@ -95,8 +95,8 @@ fn urls_must_have_zero_or_one_path_segments() {
 
 #[test]
 fn first_path_segment_is_treated_as_database() {
-    let foo_cstr = CString::new("foo".as_bytes()).unwrap();
-    let bar_cstr = CString::new("bar".as_bytes()).unwrap();
+    let foo_cstr = CString::new("foo").unwrap();
+    let bar_cstr = CString::new("bar").unwrap();
     assert_eq!(
         Some(&*foo_cstr),
         ConnectionOptions::parse("mysql://localhost/foo").unwrap().database()

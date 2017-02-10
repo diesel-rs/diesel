@@ -218,7 +218,7 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        for value in self.0.iter() {
+        for value in &self.0 {
             try!(value.collect_binds(out));
         }
         Ok(())

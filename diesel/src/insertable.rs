@@ -70,7 +70,9 @@ impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
     DB: Backend,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.0.clone().next().unwrap().column_names(out)
+        self.0.clone()
+            .next().expect("Tried to read column names from empty list of rows")
+            .column_names(out)
     }
 
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {

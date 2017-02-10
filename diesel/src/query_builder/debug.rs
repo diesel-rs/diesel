@@ -2,7 +2,7 @@ use backend::Debug;
 use super::{QueryBuilder, BuildQueryResult};
 
 #[doc(hidden)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DebugQueryBuilder {
     pub sql: String,
     pub bind_types: Vec<u32>,
@@ -10,10 +10,7 @@ pub struct DebugQueryBuilder {
 
 impl DebugQueryBuilder {
     pub fn new() -> Self {
-        DebugQueryBuilder {
-            sql: String::new(),
-            bind_types: Vec::new(),
-        }
+        DebugQueryBuilder::default()
     }
 }
 
@@ -24,7 +21,7 @@ impl QueryBuilder<Debug> for DebugQueryBuilder {
 
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult {
         self.push_sql("`");
-        self.push_sql(&identifier);
+        self.push_sql(identifier);
         self.push_sql("`");
         Ok(())
     }

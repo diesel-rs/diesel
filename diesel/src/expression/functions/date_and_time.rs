@@ -4,7 +4,7 @@ use query_builder::*;
 use result::QueryResult;
 use types::*;
 
-/// Represents the SQL CURRENT_TIMESTAMP constant. This is equivalent to the
+/// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone)]

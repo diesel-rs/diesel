@@ -141,7 +141,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
     Ok(())
 }
 
-/// Creates the __diesel_schema_migrations table if it doesn't exist. If the
+/// Creates the `__diesel_schema_migrations` table if it doesn't exist. If the
 /// table didn't exist, it also runs any pending migrations. Returns a
 /// `DatabaseError::ConnectionError` if it can't create the table, and exits
 /// with a migration error if it can't run migrations.
@@ -184,7 +184,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
     Ok(())
 }
 
-/// Returns true if the '__diesel_schema_migrations' table exists in the
+/// Returns true if the `__diesel_schema_migrations` table exists in the
 /// database we connect to, returns false if it does not.
 pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
     match InferConnection::establish(database_url).unwrap() {
@@ -220,7 +220,7 @@ pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
 pub fn database_url(matches: &ArgMatches) -> String {
     matches.value_of("DATABASE_URL")
         .map(|s| s.into())
-        .or(env::var("DATABASE_URL").ok())
+        .or_else(|| env::var("DATABASE_URL").ok())
         .unwrap_or_else(|| {
             handle_error(DatabaseError::DatabaseUrlMissing)
         })
@@ -228,7 +228,7 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature="postgres", feature="mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    let mut split: Vec<&str> = database_url.split("/").collect();
+    let mut split: Vec<&str> = database_url.split('/').collect();
     let database = split.pop().unwrap();
     let new_url = format!("{}/{}", split.join("/"), default_database);
     (database.to_owned(), new_url)

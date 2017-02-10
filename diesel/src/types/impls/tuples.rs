@@ -13,7 +13,7 @@ macro_rules! tuple_impls {
     ($(
         $Tuple:tt {
             $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
-        }
+    }
     )+) => {
         $(
             impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
@@ -75,6 +75,7 @@ macro_rules! tuple_impls {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
+            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
             impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
                 fn to_sql(&self, out: &mut DB::QueryBuilder)
                 -> BuildQueryResult {
@@ -110,6 +111,7 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
             }
 
+            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
             impl<$($T,)+ $($ST,)+ Tab, DB> InsertValues<DB>
                 for ($(ColumnInsertValue<$T, $ST>,)+) where
                     DB: Backend + SupportsDefaultKeyword,
@@ -134,8 +136,8 @@ macro_rules! tuple_impls {
                         if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        match &self.$idx {
-                            &ColumnInsertValue::Expression(_, ref value) => {
+                        match self.$idx {
+                            ColumnInsertValue::Expression(_, ref value) => {
                                 try!(value.to_sql(out));
                             }
                             _ => out.push_sql("DEFAULT"),
@@ -147,11 +149,8 @@ macro_rules! tuple_impls {
 
                 fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
                     $(
-                        match &self.$idx {
-                            &ColumnInsertValue::Expression(_, ref value) => {
-                                try!(value.collect_binds(out));
-                            }
-                            _ => {}
+                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
+                            try!(value.collect_binds(out));
                         }
                     )+
                     Ok(())
@@ -170,15 +169,12 @@ macro_rules! tuple_impls {
                 fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
                     let mut columns_present = false;
                     $(
-                        match &self.$idx {
-                            &ColumnInsertValue::Expression(..) => {
-                                if columns_present {
-                                    out.push_sql(", ");
-                                }
-                                try!(out.push_identifier($T::name()));
-                                columns_present = true;
+                        if let ColumnInsertValue::Expression(..) = self.$idx {
+                            if columns_present {
+                                out.push_sql(", ");
                             }
-                            _ => {}
+                            try!(out.push_identifier($T::name()));
+                            columns_present = true;
                         }
                     )+
                     Ok(())
@@ -189,15 +185,12 @@ macro_rules! tuple_impls {
                     out.push_sql("(");
                     let mut columns_present = false;
                     $(
-                        match &self.$idx {
-                            &ColumnInsertValue::Expression(_, ref value) => {
-                                if columns_present {
-                                    out.push_sql(", ");
-                                }
-                                try!(value.to_sql(out));
-                                columns_present = true;
+                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
+                            if columns_present {
+                                out.push_sql(", ");
                             }
-                            _ => {}
+                            try!(value.to_sql(out));
+                            columns_present = true;
                         }
                     )+
                     out.push_sql(")");
@@ -209,11 +202,8 @@ macro_rules! tuple_impls {
                     out: &mut <::sqlite::Sqlite as Backend>::BindCollector
                 ) -> QueryResult<()> {
                     $(
-                        match &self.$idx {
-                            &ColumnInsertValue::Expression(_, ref value) => {
-                                try!(value.collect_binds(out));
-                            }
-                            _ => {}
+                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
+                            try!(value.collect_binds(out));
                         }
                     )+
                     Ok(())

@@ -46,10 +46,10 @@ impl RawConnection {
             // Make sure you don't use the fake one!
             ffi::mysql_real_connect(
                 self.0,
-                host.map(|x| x.as_ptr()).unwrap_or(ptr::null_mut()),
+                host.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
                 user.as_ptr(),
-                password.map(|x| x.as_ptr()).unwrap_or(ptr::null_mut()),
-                database.map(|x| x.as_ptr()).unwrap_or(ptr::null_mut()),
+                password.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
+                database.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
                 port.unwrap_or(0) as u32,
                 ptr::null_mut(),
                 0,
@@ -150,11 +150,13 @@ impl Drop for RawConnection {
     }
 }
 
-/// In a nonmulti-threaded environment, mysql_init() invokes mysql_library_init() automatically as
-/// necessary. However, mysql_library_init() is not thread-safe in a multi-threaded environment,
-/// and thus neither is mysql_init(). Before calling mysql_init(), either call mysql_library_init()
-/// prior to spawning any threads, or use a mutex to protect the mysql_library_init() call. This
-/// should be done prior to any other client library call.
+/// > In a nonmulti-threaded environment, `mysql_init()` invokes
+/// > `mysql_library_init()` automatically as necessary. However,
+/// > `mysql_library_init()` is not thread-safe in a multi-threaded environment,
+/// > and thus neither is `mysql_init()`. Before calling `mysql_init()`, either
+/// > call `mysql_library_init()` prior to spawning any threads, or use a mutex
+/// > ot protect the `mysql_library_init()` call. This should be done prior to
+/// > any other client library call.
 ///
 /// https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html
 static MYSQL_THREAD_UNSAFE_INIT: Once = ONCE_INIT;

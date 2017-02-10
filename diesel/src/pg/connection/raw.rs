@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "clippy", allow(too_many_arguments))]
+
 extern crate pq_sys;
 extern crate libc;
 

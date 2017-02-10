@@ -12,7 +12,7 @@ mod json;
 ///
 /// Note: All types in this module can be accessed through `diesel::types`
 pub mod sql_types {
-    /// The OID SQL type. This is a PostgreSQL specific type.
+    /// The `OID` SQL type. This is a PostgreSQL specific type.
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///
@@ -45,7 +45,7 @@ pub mod sql_types {
     /// [DateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/datetime/struct.DateTime.html
     #[derive(Debug, Clone, Copy, Default)] pub struct Timestamptz;
 
-    /// The Array SQL type. This wraps another type to represent a SQL array of
+    /// The `Array` SQL type. This wraps another type to represent a SQL array of
     /// that type. Multidimensional arrays are not supported, nor are arrays
     /// containing null.
     ///
@@ -62,17 +62,17 @@ pub mod sql_types {
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default)] pub struct Array<ST>(ST);
 
-    /// Alias for SmallInt
+    /// Alias for `SmallInt`
     pub type SmallSerial = ::types::SmallInt;
 
-    /// Alias for Integer
+    /// Alias for `Integer`
     pub type Serial = ::types::Integer;
 
-    /// Alias for BigInt
+    /// Alias for `BigInt`
     pub type BigSerial = ::types::BigInt;
 
     #[cfg(feature = "uuid")]
-    /// The UUID SQL type. This type can only be used with `feature = "uuid"`
+    /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///

@@ -1,0 +1,10 @@
+cyclomatic-complexity-threshold = 30
+doc-valid-idents = [
+  "MiB", "GiB", "TiB", "PiB", "EiB",
+  "DirectX", "OpenGL", "TrueType",
+  "GPLv2", "GPLv3",
+  "GitHub",
+  "IPv4", "IPv6",
+  "JavaScript", "NaN", "OAuth",
+  "SQLite", "PostgreSQL"
+]

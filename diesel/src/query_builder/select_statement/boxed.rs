@@ -65,12 +65,9 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         out.push_sql(" FROM ");
         try!(self.from.from_clause().to_sql(out));
 
-        match self.where_clause {
-            Some(ref where_clause) => {
-                out.push_sql(" WHERE ");
-                try!(where_clause.to_sql(out));
-            }
-            None => {}
+        if let Some(ref where_clause) = self.where_clause {
+            out.push_sql(" WHERE ");
+            try!(where_clause.to_sql(out));
         }
 
         try!(self.order.to_sql(out));
@@ -84,11 +81,8 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         try!(self.select.collect_binds(out));
         try!(self.from.from_clause().collect_binds(out));
 
-        match self.where_clause {
-            Some(ref where_clause) => {
-                try!(where_clause.collect_binds(out));
-            }
-            None => {}
+        if let Some(ref where_clause) = self.where_clause {
+            try!(where_clause.collect_binds(out));
         }
 
         try!(self.order.collect_binds(out));
@@ -101,8 +95,7 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         self.distinct.is_safe_to_cache_prepared() &&
             self.select.is_safe_to_cache_prepared() &&
             self.from.from_clause().is_safe_to_cache_prepared() &&
-            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared())
-                .unwrap_or(true) &&
+            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true) &&
             self.order.is_safe_to_cache_prepared() &&
             self.limit.is_safe_to_cache_prepared() &&
             self.offset.is_safe_to_cache_prepared()

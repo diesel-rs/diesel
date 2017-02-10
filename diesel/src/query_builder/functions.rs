@@ -108,7 +108,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// Creates an insert statement. Will add the given data to a table. This
 /// function is not exported by default. As with other commands, the resulting
 /// query can return the inserted rows if you choose.
-pub fn insert<'a, T: ?Sized>(records: &'a T) -> IncompleteInsertStatement<&'a T, Insert> {
+pub fn insert<T: ?Sized>(records: &T) -> IncompleteInsertStatement<&T, Insert> {
     IncompleteInsertStatement::new(records, Insert)
 }
 

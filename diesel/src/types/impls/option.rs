@@ -62,7 +62,7 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     ST: NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        if let &Some(ref value) = self {
+        if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
             Ok(IsNull::Yes)
@@ -127,7 +127,7 @@ fn option_to_sql() {
     assert!(bytes.is_empty());
 
     let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
-    let expectd_bytes: Vec<_> = "Sean".as_bytes().into();
+    let expectd_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
     assert_eq!(expectd_bytes, bytes);
 }

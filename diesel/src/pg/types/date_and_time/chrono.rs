@@ -240,7 +240,7 @@ mod tests {
         let query = select(sql::<Time>("'12:00:00'::time").eq(noon));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 04, 2200);
+        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -256,7 +256,7 @@ mod tests {
         let query = select(sql::<Time>("'12:00:00'::time"));
         assert_eq!(Ok(noon), query.get_result::<NaiveTime>(&connection));
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 04, 2200);
+        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time"));
         assert_eq!(Ok(roughly_half_past_eleven), query.get_result::<NaiveTime>(&connection));
     }

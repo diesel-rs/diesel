@@ -40,7 +40,8 @@ impl PgResult {
             let count_str = str::from_utf8_unchecked(count_bytes);
             match count_str {
                 "" => 0,
-                _ => count_str.parse().unwrap()
+                _ => count_str.parse()
+                    .expect("Error parsing `rows_affected` as integer value")
             }
         }
     }

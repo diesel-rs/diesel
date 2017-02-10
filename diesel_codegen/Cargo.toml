@@ -15,6 +15,7 @@ quote = "0.3.12"
 dotenv = { version = "0.8.0", optional = true }
 diesel = { version = "0.10.0", default-features = false }
 diesel_infer_schema = { version = "0.10.1", default-features = false, optional = true }
+clippy = { optional = true, version = "=0.0.114" }
 
 [dev-dependencies]
 tempdir = "0.3.4"
@@ -25,6 +26,7 @@ proc-macro = true
 
 [features]
 default = ["dotenv"]
+lint = ["clippy"]
 postgres = ["diesel_infer_schema/postgres", "diesel/postgres"]
 sqlite = ["diesel_infer_schema/sqlite", "diesel/sqlite"]
 mysql = ["diesel_infer_schema/mysql", "diesel/mysql"]

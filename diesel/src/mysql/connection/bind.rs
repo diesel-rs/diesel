@@ -83,7 +83,7 @@ struct BindData {
 impl BindData {
     fn for_input(tpe: MysqlType, data: Option<Vec<u8>>) -> Self {
         let is_null = if data.is_none() { 1 } else { 0 };
-        let bytes = data.unwrap_or(Vec::new());
+        let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
 
         BindData {
@@ -98,7 +98,7 @@ impl BindData {
     fn for_output(tpe: ffi::enum_field_types) -> Self {
         let bytes = known_buffer_size_for_ffi_type(tpe)
             .map(|len| vec![0; len])
-            .unwrap_or(Vec::new());
+            .unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
 
         BindData {

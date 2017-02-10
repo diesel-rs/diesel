@@ -53,19 +53,27 @@ fn valid_sql_migration_directory(path: &Path) -> bool {
 }
 
 fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
-    try!(path.read_dir()).map(|e| {
-        Ok(try!(e).file_name().into_string().unwrap())
-    }).filter(|name| match name {
-        &Ok(ref n) => !n.starts_with("."),
+    try!(path.read_dir()).map(|entry| {
+        let file_name = try!(entry).file_name();
+
+        // FIXME(killercup): Decide whether to add MigrationError variant for this
+        match file_name.into_string() {
+            Ok(utf8_file_name) => Ok(utf8_file_name),
+            Err(original_os_string) =>
+                panic!("Can't convert file name `{:?}` into UTF8 string", original_os_string)
+        }
+    }).filter(|file_name| match *file_name {
+        Ok(ref name) => !name.starts_with('.'),
         _ => true
     }).collect()
 }
 
 #[doc(hidden)]
 pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
-    path.file_name().unwrap()
+    path.file_name()
+        .expect(&format!("Can't get file name from path `{:?}`", path))
         .to_string_lossy()
-        .split("_")
+        .split('_')
         .nth(0)
         .map(|s| Ok(s.into()))
         .unwrap_or_else(|| {

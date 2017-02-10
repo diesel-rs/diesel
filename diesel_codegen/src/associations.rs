@@ -28,7 +28,7 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
     let struct_name = &model.name;
 
     let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
-        to_foreign_key(&parent_struct.as_ref()));
+        to_foreign_key(parent_struct.as_ref()));
     let child_table_name = model.table_name();
     let fields = model.attrs.as_slice();
 
@@ -47,7 +47,7 @@ fn expand_has_many(model: &Model, options: AssociationOptions) -> quote::Tokens 
     let parent_table_name = model.table_name();
     let child_table_name = options.name;
     let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
-        to_foreign_key(&model.name.as_ref()));
+        to_foreign_key(model.name.as_ref()));
     let fields = model.attrs.as_slice();
 
     quote!(HasMany! {
@@ -79,8 +79,8 @@ fn build_association_options(
                 _ => return usage_error,
             };
             let foreign_key_name = options.iter()
-                .filter_map(|o| match o {
-                    &syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
+                .filter_map(|o| match *o {
+                    syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
                     _ => None
                 })
                 .find(|a| a.name() == "foreign_key")

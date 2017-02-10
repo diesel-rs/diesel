@@ -69,26 +69,26 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        let sign = match self {
-            &PgNumeric::Positive { .. } => 0,
-            &PgNumeric::Negative { .. } => 0x4000,
-            &PgNumeric::NaN => 0xC000,
+        let sign = match *self {
+            PgNumeric::Positive { .. } => 0,
+            PgNumeric::Negative { .. } => 0x4000,
+            PgNumeric::NaN => 0xC000,
         };
         let empty_vec = Vec::new();
-        let digits = match self {
-            &PgNumeric::Positive { ref digits, .. } => digits,
-            &PgNumeric::Negative { ref digits, .. } => digits,
-            &PgNumeric::NaN => &empty_vec,
+        let digits = match *self {
+            PgNumeric::Positive { ref digits, .. } |
+            PgNumeric::Negative { ref digits, .. } => digits,
+            PgNumeric::NaN => &empty_vec,
         };
-        let weight = match self {
-            &PgNumeric::Positive { weight, .. } => weight,
-            &PgNumeric::Negative { weight, .. } => weight,
-            &PgNumeric::NaN => 0,
+        let weight = match *self {
+            PgNumeric::Positive { weight, .. } |
+            PgNumeric::Negative { weight, .. } => weight,
+            PgNumeric::NaN => 0,
         };
-        let scale = match self {
-            &PgNumeric::Positive { scale, .. } => scale,
-            &PgNumeric::Negative { scale, .. } => scale,
-            &PgNumeric::NaN => 0,
+        let scale = match *self {
+            PgNumeric::Positive { scale, .. } |
+            PgNumeric::Negative { scale, .. } => scale,
+            PgNumeric::NaN => 0,
         };
         try!(out.write_u16::<NetworkEndian>(digits.len() as u16));
         try!(out.write_i16::<NetworkEndian>(weight));

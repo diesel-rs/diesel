@@ -2,6 +2,7 @@ use super::backend::Pg;
 use query_builder::{QueryBuilder, BuildQueryResult};
 
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct PgQueryBuilder {
     pub sql: String,
     bind_idx: u32,
@@ -9,10 +10,7 @@ pub struct PgQueryBuilder {
 
 impl PgQueryBuilder {
     pub fn new() -> Self {
-        PgQueryBuilder {
-            sql: String::new(),
-            bind_idx: 0,
-        }
+        PgQueryBuilder::default()
     }
 }
 

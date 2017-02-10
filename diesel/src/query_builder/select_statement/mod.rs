@@ -42,6 +42,7 @@ pub struct SelectStatement<
 }
 
 impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
+    #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
     pub fn new(
         select: S,
         from: F,

@@ -5,8 +5,6 @@ use std::{fmt, io};
 use std::path::PathBuf;
 use std::error::Error;
 
-use self::MigrationError::*;
-
 #[derive(Debug)]
 pub enum MigrationError {
     MigrationDirectoryNotFound,
@@ -18,10 +16,15 @@ pub enum MigrationError {
 impl Error for MigrationError {
     fn description(&self) -> &str {
         match *self {
-            MigrationDirectoryNotFound => "Unable to find migrations directory in this directory or any parent directories.",
-            UnknownMigrationFormat(_) => "Invalid migration directory, the directory's name should be <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.",
-            IoError(ref error) => error.description(),
-            UnknownMigrationVersion(_) => "Unable to find migration version to revert in the migrations directory.",
+            MigrationError::MigrationDirectoryNotFound =>
+                "Unable to find migrations directory in this directory or any parent directories.",
+            MigrationError::UnknownMigrationFormat(_) =>
+                "Invalid migration directory, the directory's name should be \
+                <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.",
+            MigrationError::IoError(ref error) =>
+                error.description(),
+            MigrationError::UnknownMigrationVersion(_) =>
+                "Unable to find migration version to revert in the migrations directory.",
         }
     }
 }
@@ -55,6 +58,7 @@ impl From<io::Error> for MigrationError {
 }
 
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "clippy", allow(enum_variant_names))]
 pub enum RunMigrationsError {
     MigrationError(MigrationError),
     QueryError(result::Error),

@@ -24,6 +24,7 @@ pub enum Query {
 }
 
 impl Query {
+    #[cfg_attr(feature = "clippy", allow(ptr_arg))]
     pub fn execute(
         &self,
         conn: &RawConnection,
@@ -34,8 +35,10 @@ impl Query {
                  .unwrap_or(ptr::null()))
             .collect::<Vec<_>>();
         let param_lengths = param_data.iter()
-            .map(|data| data.as_ref().map(|d| d.len() as libc::c_int)
-                 .unwrap_or(0))
+            .map(|data| data
+                .as_ref()
+                .map(|d| d.len() as libc::c_int)
+                .unwrap_or(0))
             .collect::<Vec<_>>();
         let internal_res = match *self {
             Query::Prepared { ref name, ref param_formats } => unsafe {
@@ -73,6 +76,7 @@ impl Query {
         })
     }
 
+    #[cfg_attr(feature = "clippy", allow(ptr_arg))]
     pub fn prepare(
         conn: &RawConnection,
         sql: &str,
@@ -87,7 +91,7 @@ impl Query {
                 name.as_ptr(),
                 sql.as_ptr(),
                 param_types.len() as libc::c_int,
-                param_types_to_ptr(Some(&param_types)),
+                param_types_to_ptr(Some(param_types)),
             )
         };
         try!(PgResult::new(internal_result?));

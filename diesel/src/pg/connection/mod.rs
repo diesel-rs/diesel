@@ -107,11 +107,12 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
+    #[cfg_attr(feature = "clippy", allow(type_complexity))]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
         -> QueryResult<(Rc<Query>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        source.collect_binds(&mut bind_collector).unwrap();
+        try!(source.collect_binds(&mut bind_collector));
         let (binds, bind_types) = bind_collector.binds.into_iter()
             .map(|(meta, bind)| (bind, meta.oid)).unzip();
 
@@ -142,7 +143,9 @@ extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc:
 extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const libc::c_char) {
     use std::io::Write;
     let c_str = unsafe { CStr::from_ptr(message) };
-    ::std::io::stderr().write(c_str.to_bytes()).unwrap();
+    ::std::io::stderr()
+        .write_all(c_str.to_bytes())
+        .expect("Error writing to `stderr`");
 }
 
 #[cfg(test)]

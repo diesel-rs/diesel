@@ -31,18 +31,17 @@ pub trait TransactionManager<Conn: Connection> {
 
 use std::cell::Cell;
 
-/// An implementation of TransactionManager which can be used for backends
+/// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct AnsiTransactionManager {
     transaction_depth: Cell<i32>,
 }
 
 impl AnsiTransactionManager {
     pub fn new() -> Self {
-        AnsiTransactionManager {
-            transaction_depth: Cell::new(0),
-        }
+        AnsiTransactionManager::default()
     }
 
     fn change_transaction_depth(&self, by: i32, query: QueryResult<()>) -> QueryResult<()> {

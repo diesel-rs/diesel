@@ -11,7 +11,7 @@ primitive_impls!(Uuid -> (uuid::Uuid, pg: (2950, 2951)));
 impl FromSql<types::Uuid, Pg> for uuid::Uuid {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let bytes = not_none!(bytes);
-        uuid::Uuid::from_bytes(&bytes).map_err(|e| e.into())
+        uuid::Uuid::from_bytes(bytes).map_err(|e| e.into())
     }
 }
 
