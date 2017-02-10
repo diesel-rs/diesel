@@ -117,7 +117,8 @@ pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigration
     Conn: MigrationConnection,
 {
     try!(setup_database(conn));
-    let latest_migration_version = try!(conn.latest_run_migration_version());
+    let latest_migration_version = conn.latest_run_migration_version()?
+        .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
     revert_migration_with_version(conn, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }

@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::{Expression, SelectableExpression};
 use query_builder::*;
 use result::QueryResult;
-use types::{SqlOrd, HasSqlType};
+use types::{SqlOrd, HasSqlType, IntoNullable};
 
 macro_rules! ord_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {
@@ -21,8 +21,10 @@ macro_rules! ord_function {
             target: T,
         }
 
-        impl<T: Expression> Expression for $type_name<T> {
-            type SqlType = T::SqlType;
+        impl<T: Expression> Expression for $type_name<T> where
+            T::SqlType: IntoNullable,
+        {
+            type SqlType = <T::SqlType as IntoNullable>::Nullable;
         }
 
         impl<T, DB> QueryFragment<DB> for $type_name<T> where
@@ -48,7 +50,9 @@ macro_rules! ord_function {
 
         impl_query_id!($type_name<T>);
 
-        impl<T: Expression, QS> SelectableExpression<QS> for $type_name<T> {
+        impl<T, QS> SelectableExpression<QS> for $type_name<T> where
+            $type_name<T>: Expression,
+        {
         }
     }
 }
