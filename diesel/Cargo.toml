@@ -31,6 +31,7 @@ tempdir = "^0.3.4"
 
 [features]
 default = ["with-deprecated"]
+extras = ["chrono", "serde_json", "uuid"]
 unstable = []
 large-tables = []
 huge-tables = ["large-tables"]

@@ -55,7 +55,7 @@ cfg_if! {
         type DB = diesel::mysql::Mysql;
 
         fn connection_no_data() -> diesel::mysql::MysqlConnection {
-            let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
+            let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
             let connection = diesel::mysql::MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
 
