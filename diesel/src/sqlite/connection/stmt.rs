@@ -167,32 +167,24 @@ impl Drop for Statement {
     }
 }
 
-use std::cell::RefCell;
-use std::ops::Deref;
-
-#[derive(Clone)]
-pub struct StatementUse {
-    statement: Rc<RefCell<Statement>>,
+pub struct StatementUse<'a> {
+    statement: &'a mut Statement,
 }
 
-impl StatementUse {
-    pub fn new(statement: Statement) -> Self {
+impl<'a> StatementUse<'a> {
+    pub fn new(statement: &'a mut Statement) -> Self {
         StatementUse {
-            statement: Rc::new(RefCell::new(statement)),
+            statement: statement,
         }
     }
-}
 
-impl Deref for StatementUse {
-    type Target = RefCell<Statement>;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.statement
+    pub fn step(&mut self) -> Option<SqliteRow> {
+        self.statement.step()
     }
 }
 
-impl Drop for StatementUse {
+impl<'a> Drop for StatementUse<'a> {
     fn drop(&mut self) {
-        self.statement.borrow_mut().reset();
+        self.statement.reset();
     }
 }

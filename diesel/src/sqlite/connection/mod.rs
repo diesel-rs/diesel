@@ -11,7 +11,7 @@ pub use self::sqlite_value::SqliteValue;
 
 use std::any::TypeId;
 use std::borrow::Cow;
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -30,7 +30,7 @@ use types::HasSqlType;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
-    statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
+    statement_cache: RefCell<HashMap<QueryCacheKey, Statement>>,
     raw_connection: Rc<RawConnection>,
     transaction_manager: AnsiTransactionManager,
 }
@@ -79,9 +79,10 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        let statement = try!(self.prepare_query(&source.as_query()));
-        let mut statement_ref = statement.borrow_mut();
-        StatementIterator::new(&mut statement_ref).collect()
+        let mut statement = try!(self.prepare_query(&source.as_query()));
+        let statement_use = StatementUse::new(&mut statement);
+        let x = StatementIterator::new(statement_use).collect();
+        x
     }
 
     #[doc(hidden)]
@@ -89,7 +90,7 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let stmt = try!(self.prepare_query(source));
-        try!(stmt.borrow().run());
+        try!(stmt.run());
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -110,46 +111,45 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
-    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<StatementUse> {
-        let result = try!(self.cached_prepared_statement(source));
+    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
+        -> QueryResult<RefMut<Statement>>
+    {
+        let mut stmt = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         try!(source.collect_binds(&mut bind_collector));
         {
-            let mut stmt = result.borrow_mut();
             for (tpe, value) in bind_collector.binds.into_iter() {
                 try!(stmt.bind(tpe, value));
             }
         }
 
-        Ok(result)
+        Ok(stmt)
     }
 
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
-        -> QueryResult<StatementUse>
+        -> QueryResult<RefMut<Statement>>
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = try!(cache_key(source));
-        let mut cache = self.statement_cache.borrow_mut();
+        refmut_map_result(self.statement_cache.borrow_mut(), |cache| {
+            match cache.entry(cache_key(source)?) {
+                Occupied(entry) => Ok(entry.into_mut()),
+                Vacant(entry) => {
+                    let statement = {
+                        let sql = try!(sql_from_cache_key(&entry.key(), source));
 
-        match cache.entry(cache_key) {
-            Occupied(entry) => Ok(entry.get().clone()),
-            Vacant(entry) => {
-                let statement = {
-                    let sql = try!(sql_from_cache_key(&entry.key(), source));
+                        Statement::prepare(&self.raw_connection, &sql)
+                    };
 
-                    Statement::prepare(&self.raw_connection, &sql)
-                        .map(StatementUse::new)
-                };
+                    // if !source.is_safe_to_cache_prepared() {
+                    //     return statement;
+                    // }
 
-                if !source.is_safe_to_cache_prepared() {
-                    return statement;
+                    Ok(entry.insert(try!(statement)))
                 }
-
-                Ok(entry.insert(try!(statement)).clone())
             }
-        }
+        })
     }
 }
 
@@ -179,6 +179,25 @@ fn to_sql<T: QueryFragment<Sqlite>>(source: &T) -> QueryResult<String> {
 
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
+}
+
+fn refmut_map_result<T, U, E, F>(refmut: RefMut<T>, f: F) -> Result<RefMut<U>, E> where
+    F: FnOnce(&mut T) -> Result<&mut U, E>,
+{
+    use std::mem;
+
+    let mut error = None;
+    let refmut = RefMut::map(refmut, |mutref| match f(mutref) {
+        Ok(x) => x,
+        Err(e) => {
+            error = Some(e);
+            unsafe { mem::uninitialized() }
+        }
+    });
+    match error {
+        Some(e) => Err(e),
+        None => Ok(refmut),
+    }
 }
 
 #[cfg(test)]
