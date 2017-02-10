@@ -8,6 +8,7 @@ pub struct StatementIterator<'a> {
     output_binds: Binds,
 }
 
+#[cfg_attr(feature = "clippy", allow(should_implement_trait))] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
@@ -37,7 +38,7 @@ impl<'a> StatementIterator<'a> {
         match next_row_result as libc::c_uint {
             ffi::MYSQL_NO_DATA => return None,
             ffi::MYSQL_DATA_TRUNCATED => {
-                let res = self.output_binds.populate_dynamic_buffers(&self.stmt);
+                let res = self.output_binds.populate_dynamic_buffers(self.stmt);
                 if let Err(e) = res {
                     return Some(Err(e));
                 }
