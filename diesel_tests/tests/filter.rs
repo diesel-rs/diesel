@@ -92,7 +92,7 @@ fn filter_after_joining() {
     use schema::users::name;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    connection.execute("INSERT INTO POSTS (id, title, user_id) VALUES
+    connection.execute("INSERT INTO posts (id, title, user_id) VALUES
                        (1, 'Hello', 1), (2, 'World', 2)")
         .unwrap();
 
@@ -215,7 +215,7 @@ fn filter_on_column_equality() {
     use self::points::dsl::*;
 
     let connection = connection();
-    connection.execute("INSERT INTO POINTS (x, y) VALUES (1, 1), (1, 2), (2, 2)").unwrap();
+    connection.execute("INSERT INTO points (x, y) VALUES (1, 1), (1, 2), (2, 2)").unwrap();
 
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.filter(x.eq(y));
