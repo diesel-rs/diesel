@@ -9,8 +9,8 @@ macro_rules! t {
     };
 }
 
-#[cfg(feature = "diesel_codegen_shared")]
-extern crate diesel_codegen_shared;
+#[cfg(feature = "dotenv")]
+extern crate dotenv;
 #[cfg(feature = "diesel_infer_schema")]
 extern crate diesel_infer_schema;
 extern crate diesel;
@@ -30,7 +30,10 @@ mod model;
 mod queryable;
 #[cfg(feature = "diesel_infer_schema")]
 mod schema_inference;
+#[cfg(feature = "diesel_infer_schema")]
+mod database_url;
 mod util;
+mod migrations;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
