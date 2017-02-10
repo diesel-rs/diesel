@@ -1,8 +1,25 @@
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database
 //! interactions. [A getting started guide](http://diesel.rs/guides/getting-started/) can be
 //! found on our website.
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
+
+// Built-in Lints
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+
+// Clippy lints
+#![cfg_attr(feature = "clippy", allow(unstable_features))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file="../clippy.toml")))]
+#![cfg_attr(feature = "clippy", allow(
+    option_map_unwrap_or_else, option_map_unwrap_or,
+    match_same_arms, type_complexity,
+))]
+#![cfg_attr(feature = "clippy", warn(
+    option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention,
+    mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
+    enum_glob_use, if_not_else, items_after_statements, used_underscore_binding,
+))]
+#![cfg_attr(all(test, feature = "clippy"), allow(result_unwrap_used))]
 
 extern crate byteorder;
 

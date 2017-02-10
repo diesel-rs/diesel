@@ -231,6 +231,7 @@ macro_rules! Insertable_column_expr {
 
 #[cfg(test)]
 #[allow(missing_debug_implementations, missing_copy_implementations)]
+#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     use prelude::*;
 

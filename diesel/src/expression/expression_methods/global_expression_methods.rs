@@ -20,7 +20,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     .filter(query.matches(indexed_search_column))
     ///     .order(rank.desc())
     /// ```
-    fn aliased<'a>(self, alias: &'a str) -> Aliased<'a, Self> {
+    fn aliased(self, alias: &str) -> Aliased<Self> {
         Aliased::new(self, alias)
     }
 

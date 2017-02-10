@@ -34,7 +34,7 @@ impl<'a, T, DB> QueryFragment<DB> for Aliased<'a, T> where
     T: QueryFragment<DB>,
 {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_identifier(&self.alias)
+        out.push_identifier(self.alias)
     }
 
     fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
