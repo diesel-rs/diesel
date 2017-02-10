@@ -55,9 +55,10 @@ fn reset_handles_postgres_urls_with_username_and_password() {
     db.execute("DROP ROLE IF EXISTS foo");
     db.execute("CREATE ROLE foo WITH LOGIN SUPERUSER PASSWORD 'password'");
 
+    let database_url = format!("postgres://foo:password@localhost/diesel_{}", p.name);
     let result = p.command("database")
         .arg("reset")
-        .env("DATABASE_URL", &format!("postgres://foo:password@localhost/{}", p.name))
+        .env("DATABASE_URL", &database_url)
         .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());

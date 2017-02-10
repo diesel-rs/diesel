@@ -75,6 +75,14 @@ fn migration_run_inserts_run_on_timestamps() {
             .unwrap()
     }
 
+    #[cfg(feature="mysql")]
+    fn valid_run_on_timestamp(db: &database::Database) -> bool {
+        select(sql::<Bool>("EXISTS (SELECT 1 FROM __diesel_schema_migrations \
+                WHERE run_on < NOW() + INTERVAL 1 HOUR)"))
+            .get_result(&db.conn())
+            .unwrap()
+    }
+
     assert!(valid_run_on_timestamp(&db),
             "Running a migration did not insert an updated run_on value");
 }

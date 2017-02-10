@@ -4,6 +4,8 @@ use diesel::expression::sql;
 use diesel::pg::PgConnection;
 #[cfg(feature="sqlite")]
 use diesel::sqlite::SqliteConnection;
+#[cfg(feature="mysql")]
+use diesel::mysql::MysqlConnection;
 use diesel::types::Bool;
 use diesel::{migrations, Connection, select, LoadDsl};
 
@@ -17,6 +19,8 @@ enum Backend {
     Pg,
     #[cfg(feature="sqlite")]
     Sqlite,
+    #[cfg(feature="mysql")]
+    Mysql,
 }
 
 impl Backend {
@@ -25,12 +29,15 @@ impl Backend {
             #[cfg(feature="postgres")]
             _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") =>
                 Backend::Pg,
+            #[cfg(feature="mysql")]
+            _ if database_url.starts_with("mysql://") =>
+                Backend::Mysql,
             #[cfg(feature="sqlite")]
             _ => Backend::Sqlite,
-            #[cfg(all(feature="postgres", not(feature="sqlite")))]
+            #[cfg(not(feature="sqlite"))]
             _ => {
-                panic!("{:?} is not a valid PostgreSQL URL. It should start with \
-                        `postgres://` or `postgresql://`", database_url);
+                panic!("{:?} is not a valid database URL. It should start with \
+                        `postgres://` or `mysql://`", database_url);
             }
         }
     }
@@ -41,6 +48,8 @@ pub enum InferConnection {
     Pg(PgConnection),
     #[cfg(feature="sqlite")]
     Sqlite(SqliteConnection),
+    #[cfg(feature="mysql")]
+    Mysql(MysqlConnection),
 }
 
 impl InferConnection {
@@ -52,6 +61,9 @@ impl InferConnection {
             #[cfg(feature="sqlite")]
             Backend::Sqlite => SqliteConnection::establish(database_url)
                     .map(InferConnection::Sqlite),
+            #[cfg(feature="mysql")]
+            Backend::Mysql => MysqlConnection::establish(database_url)
+                    .map(InferConnection::Mysql),
         }.map_err(Into::into)
     }
 }
@@ -73,6 +85,8 @@ macro_rules! call_with_conn {
             ::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
             #[cfg(feature="sqlite")]
             ::database::InferConnection::Sqlite(ref conn) => $($func)::+ (conn, $($args),*),
+            #[cfg(feature="mysql")]
+            ::database::InferConnection::Mysql(ref conn) => $($func)::+ (conn, $($args),*),
         }
     };
 }
@@ -100,7 +114,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
         #[cfg(feature="postgres")]
         Backend::Pg => {
             if PgConnection::establish(database_url).is_err() {
-                let (database, postgres_url) = split_pg_connection_string(database_url);
+                let (database, postgres_url) = change_database_of_url(database_url, "postgres");
                 println!("Creating database: {}", database);
                 let conn = try!(PgConnection::establish(&postgres_url));
                 try!(conn.execute(&format!("CREATE DATABASE {}", database)));
@@ -111,6 +125,15 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
             if !::std::path::Path::new(database_url).exists() {
                 println!("Creating database: {}", database_url);
                 try!(SqliteConnection::establish(database_url));
+            }
+        },
+        #[cfg(feature="mysql")]
+        Backend::Mysql => {
+            if MysqlConnection::establish(database_url).is_err() {
+                let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
+                println!("Creating database: {}", database);
+                let conn = try!(MysqlConnection::establish(&mysql_url));
+                try!(conn.execute(&format!("CREATE DATABASE {}", database)));
             }
         },
     }
@@ -138,7 +161,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
     match Backend::for_url(database_url) {
         #[cfg(feature="postgres")]
         Backend::Pg => {
-            let (database, postgres_url) = split_pg_connection_string(database_url);
+            let (database, postgres_url) = change_database_of_url(database_url, "postgres");
             println!("Dropping database: {}", database);
             let conn = try!(PgConnection::establish(&postgres_url));
             try!(conn.silence_notices(|| {
@@ -149,6 +172,13 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         Backend::Sqlite => {
             println!("Dropping database: {}", database_url);
             try!(::std::fs::remove_file(&database_url));
+        },
+        #[cfg(feature="mysql")]
+        Backend::Mysql => {
+            let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
+            println!("Dropping database: {}", database);
+            let conn = try!(MysqlConnection::establish(&mysql_url));
+            try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
         },
     }
     Ok(())
@@ -175,6 +205,15 @@ pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
                      AND name = '__diesel_schema_migrations')"))
                 .get_result(&conn)
         },
+        #[cfg(feature="mysql")]
+        InferConnection::Mysql(conn) => {
+            select(sql::<Bool>("EXISTS \
+                    (SELECT 1 \
+                     FROM information_schema.tables \
+                     WHERE table_name = '__diesel_schema_migrations'
+                     AND table_schema = DATABASE())"))
+                .get_result(&conn)
+        },
     }.map_err(Into::into)
 }
 
@@ -187,12 +226,12 @@ pub fn database_url(matches: &ArgMatches) -> String {
         })
 }
 
-#[cfg(feature="postgres")]
-fn split_pg_connection_string(database_url: &str) -> (String, String) {
+#[cfg(any(feature="postgres", feature="mysql"))]
+fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
     let mut split: Vec<&str> = database_url.split("/").collect();
     let database = split.pop().unwrap();
-    let postgres_url = format!("{}/{}", split.join("/"), "postgres");
-    (database.to_owned(), postgres_url)
+    let new_url = format!("{}/{}", split.join("/"), default_database);
+    (database.to_owned(), new_url)
 }
 
 fn handle_error<E: Error, T>(error: E) -> T {
@@ -200,9 +239,9 @@ fn handle_error<E: Error, T>(error: E) -> T {
     ::std::process::exit(1);
 }
 
-#[cfg(all(test, feature="postgres"))]
+#[cfg(all(test, any(feature="postgres", feature="mysql")))]
 mod tests {
-    use super::split_pg_connection_string;
+    use super::change_database_of_url;
 
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
@@ -210,7 +249,7 @@ mod tests {
         let base_url = "postgresql://localhost:5432".to_owned();
         let database_url = format!("{}/{}", base_url, database);
         let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
+        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
     }
 
     #[test]
@@ -219,6 +258,6 @@ mod tests {
         let base_url = "postgresql://user:password@localhost:5432".to_owned();
         let database_url = format!("{}/{}", base_url, database);
         let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), split_pg_connection_string(&database_url));
+        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
     }
 }
