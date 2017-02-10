@@ -109,7 +109,6 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
 }
 
 #[cfg(test)]
-#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     extern crate tempdir;
 

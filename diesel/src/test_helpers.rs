@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 use prelude::*;
 
 cfg_if! {

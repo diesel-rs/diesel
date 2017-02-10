@@ -34,16 +34,9 @@ use std::cell::Cell;
 /// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct AnsiTransactionManager {
     transaction_depth: Cell<i32>,
-}
-
-impl Default for AnsiTransactionManager {
-    fn default() -> Self {
-        AnsiTransactionManager {
-            transaction_depth: Cell::new(0),
-        }
-    }
 }
 
 impl AnsiTransactionManager {

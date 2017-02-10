@@ -263,7 +263,6 @@ pub fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, Migration
 }
 
 #[cfg(test)]
-#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     extern crate tempdir;
 

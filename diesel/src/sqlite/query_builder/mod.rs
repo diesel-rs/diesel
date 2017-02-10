@@ -6,16 +6,9 @@ pub mod functions;
 pub mod nodes;
 
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct SqliteQueryBuilder {
     pub sql: String,
-}
-
-impl Default for SqliteQueryBuilder {
-    fn default() -> Self {
-        SqliteQueryBuilder {
-            sql: String::new(),
-        }
-    }
 }
 
 impl SqliteQueryBuilder {

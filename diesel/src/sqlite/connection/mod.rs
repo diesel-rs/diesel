@@ -182,7 +182,6 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 }
 
 #[cfg(test)]
-#[cfg_attr(feature = "clippy", allow(result_unwrap_used))]
 mod tests {
     use expression::AsExpression;
     use expression::dsl::sql;

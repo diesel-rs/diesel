@@ -114,7 +114,6 @@ use pg::Pg;
 
 #[test]
 #[cfg(feature = "postgres")]
-#[cfg_attr(feature = "clippy", allow(string_lit_as_bytes))]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
     let mut bytes = Vec::<u8>::new();
@@ -128,7 +127,7 @@ fn option_to_sql() {
     assert!(bytes.is_empty());
 
     let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
-    let expectd_bytes: Vec<_> = "Sean".as_bytes().into();
+    let expectd_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
     assert_eq!(expectd_bytes, bytes);
 }
