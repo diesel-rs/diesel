@@ -4,7 +4,7 @@ extern crate diesel;
 extern crate diesel_codegen;
 
 #[derive(Identifiable)]
-//~^ ERROR custom derive attribute panicked
+//~^ ERROR proc-macro derive panicked
 //~| HELP Could not find a field named `id` on `User`
 pub struct User {
     name: String,

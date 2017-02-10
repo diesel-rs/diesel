@@ -11,7 +11,7 @@ table! {
 }
 
 #[derive(Insertable)]
-//~^ ERROR custom derive attribute panicked
+//~^ ERROR proc-macro derive panicked
 //~| HELP `#[derive(Insertable)]` does not support generic types
 #[table_name="users"]
 pub struct NewUser<T> {
