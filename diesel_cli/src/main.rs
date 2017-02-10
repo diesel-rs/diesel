@@ -176,7 +176,7 @@ fn should_redo_migration_in_transaction(t: &Any) -> bool {
 }
 
 #[cfg(not(feature="mysql"))]
-fn should_redo_migration_in_transaction(t: &Any) -> bool {
+fn should_redo_migration_in_transaction(_t: &Any) -> bool {
     true
 }
 
