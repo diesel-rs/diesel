@@ -62,4 +62,8 @@ fn reset_handles_postgres_urls_with_username_and_password() {
         .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());
+    assert!(result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}", result.stdout());
+    assert!(result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}", result.stdout());
 }
