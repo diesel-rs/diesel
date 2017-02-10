@@ -162,6 +162,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         #[cfg(feature="postgres")]
         Backend::Pg => {
             let (database, postgres_url) = change_database_of_url(database_url, "postgres");
+            println!("Dropping database: {}", database);
             let conn = try!(PgConnection::establish(&postgres_url));
             try!(conn.silence_notices(|| {
                 conn.execute(&format!("DROP DATABASE IF EXISTS {}", database))
