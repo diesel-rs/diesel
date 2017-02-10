@@ -2,7 +2,7 @@ use std::error::Error;
 
 use diesel::*;
 use diesel::expression::dsl::sql;
-use diesel::sqlite::SqliteConnection;
+use diesel::sqlite::{Sqlite, SqliteConnection};
 
 use table_data::TableData;
 use super::data_structures::*;
@@ -60,14 +60,18 @@ struct FullTableInfo {
     primary_key: bool,
 }
 
-impl_Queryable! {
-    struct FullTableInfo {
-        _cid: i32,
-        name: String,
-        _type_name: String,
-        _not_null: bool,
-        _dflt_value: Option<String>,
-        primary_key: bool,
+impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
+    type Row = (i32, String, String, bool, Option<String>, bool);
+
+    fn build(row: Self::Row) -> Self {
+        FullTableInfo{
+            _cid: row.0,
+            name: row.1,
+            _type_name: row.2,
+            _not_null: row.3,
+            _dflt_value: row.4,
+            primary_key: row.5,
+        }
     }
 }
 

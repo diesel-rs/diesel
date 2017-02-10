@@ -38,7 +38,7 @@ mod migrations;
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
-#[proc_macro_derive(Queryable)]
+#[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }

@@ -1,16 +1,20 @@
 use quote;
 use syn;
 
+use std::borrow::Cow;
+
 use util::*;
 
+#[derive(Debug)]
 pub struct Attr {
     pub column_name: Option<syn::Ident>,
     pub field_name: Option<syn::Ident>,
     pub ty: syn::Ty,
+    field_position: usize,
 }
 
 impl Attr {
-    pub fn from_struct_field(field: &syn::Field) -> Self {
+    pub fn from_struct_field((index, field): (usize, &syn::Field)) -> Self {
         let field_name = field.ident.clone();
         let column_name = ident_value_of_attr_with_name(&field.attrs, "column_name")
             .map(Clone::clone)
@@ -21,6 +25,14 @@ impl Attr {
             column_name: column_name,
             field_name: field_name,
             ty: ty,
+            field_position: index,
+        }
+    }
+
+    pub fn name_for_pattern(&self) -> Cow<syn::Ident> {
+        match self.field_name {
+            Some(ref name) => Cow::Borrowed(name),
+            None => Cow::Owned(format!("field_{}", self.field_position).into()),
         }
     }
 

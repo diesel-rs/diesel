@@ -12,7 +12,7 @@ pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
     let table_name = model.table_name();
     let struct_ty = &model.ty;
     let mut lifetimes = item.generics.lifetimes;
-    let attrs = model.attrs.into_iter()
+    let attrs = model.attrs.as_slice().iter()
         .filter(|a| a.column_name != Some(syn::Ident::new("id")))
         .collect::<Vec<_>>();
 

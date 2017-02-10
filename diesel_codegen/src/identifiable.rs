@@ -9,7 +9,7 @@ pub fn derive_identifiable(item: syn::MacroInput) -> Tokens {
     let struct_ty = &model.ty;
     let lifetimes = model.generics.lifetimes;
     let primary_key_names = model.primary_key_names;
-    let fields = model.attrs;
+    let fields = model.attrs.as_slice();
     for pk in &primary_key_names {
         if !fields.iter().any(|f| f.field_name.as_ref() == Some(pk)) {
             panic!("Could not find a field named `{}` on `{}`", pk, &model.name);
