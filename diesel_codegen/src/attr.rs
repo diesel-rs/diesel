@@ -3,6 +3,7 @@ use syn;
 
 use util::*;
 
+#[derive(Debug)]
 pub struct Attr {
     pub column_name: Option<syn::Ident>,
     pub field_name: Option<syn::Ident>,
