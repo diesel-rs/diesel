@@ -116,8 +116,8 @@ pub fn get_options_from_input(name: &str, attrs: &[Attribute], on_bug: fn() -> !
     let options = attrs.iter().find(|a| a.name() == name).map(|a| &a.value);
     match options {
         Some(&MetaItem::List(_, ref options)) => {
-            Some(options.iter().map(|o| match o {
-                &NestedMetaItem::MetaItem(ref m) => m.clone(),
+            Some(options.iter().map(|o| match *o {
+                NestedMetaItem::MetaItem(ref m) => m.clone(),
                 _ => on_bug(),
             }).collect())
         }

@@ -2,10 +2,10 @@ use std::borrow::Cow;
 use std::env;
 use std::error::Error;
 
-pub fn extract_database_url<'a>(url: &'a str) -> Result<Cow<'a, str>, String> {
+pub fn extract_database_url(url: &str) -> Result<Cow<str>, String> {
     if url.starts_with("dotenv:") {
         try!(load_dotenv_file());
-        return extract_database_url(&url[3..]);
+        extract_database_url(&url[3..])
     } else if url.starts_with("env:") {
         let var_name = &url[4..];
         env::var(var_name)

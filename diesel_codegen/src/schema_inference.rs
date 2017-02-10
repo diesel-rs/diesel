@@ -9,7 +9,7 @@ use util::{get_options_from_input, get_option, get_optional_option};
 pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
-               with your invocation of `infer_schema!");
+               with your invocation of `infer_schema`!");
     }
 
     let options = get_options_from_input("infer_schema_options", &input.attrs, bug)
@@ -46,7 +46,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
 pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
-               with your invocation of `infer_table_from_schema!");
+               with your invocation of `infer_table_from_schema`!");
     }
 
     let options = get_options_from_input("infer_table_from_schema_options", &input.attrs, bug)
