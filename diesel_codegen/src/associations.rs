@@ -8,7 +8,7 @@ pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
     let mut derived_associations = Vec::new();
     let model = t!(Model::from_item(&input, "Associations"));
 
-    for attr in &input.attrs {
+    for attr in input.attrs.as_slice() {
         if attr.name() == "has_many" {
             let options = t!(build_association_options(attr, "has_many"));
             derived_associations.push(expand_has_many(&model, options))
@@ -30,7 +30,7 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
     let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
         to_foreign_key(&parent_struct.as_ref()));
     let child_table_name = model.table_name();
-    let fields = &model.attrs;
+    let fields = model.attrs.as_slice();
 
     quote!(BelongsTo! {
         (
@@ -48,7 +48,7 @@ fn expand_has_many(model: &Model, options: AssociationOptions) -> quote::Tokens 
     let child_table_name = options.name;
     let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
         to_foreign_key(&model.name.as_ref()));
-    let fields = &model.attrs;
+    let fields = model.attrs.as_slice();
 
     quote!(HasMany! {
         (

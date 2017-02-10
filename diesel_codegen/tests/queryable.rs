@@ -1,15 +1,8 @@
-#[macro_use]
-extern crate cfg_if;
-#[macro_use]
-extern crate diesel_codegen;
-extern crate diesel;
-
-mod test_helpers;
-
 use diesel::expression::dsl::sql;
-use diesel::prelude::*;
-use test_helpers::connection;
+use diesel::*;
 use diesel::types::Integer;
+
+use test_helpers::connection;
 
 #[test]
 fn named_struct_definition() {
@@ -20,18 +13,17 @@ fn named_struct_definition() {
     }
 
     let conn = connection();
-    let data = ::diesel::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
+    let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
 }
 
 #[test]
 fn tuple_struct() {
-
    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable)]
    struct MyStruct(#[column_name(foo)] i32, #[column_name(bar)] i32);
 
    let conn = connection();
-   let data = ::diesel::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
+   let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
    assert_eq!(Ok(MyStruct(1, 2)), data);
 }
 
@@ -41,6 +33,6 @@ fn tuple_struct_without_column_name_annotations() {
     struct MyStruct(i32, i32);
 
     let conn = connection();
-    let data = ::diesel::select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
+    let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
 }

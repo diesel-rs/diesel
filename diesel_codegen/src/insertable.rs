@@ -19,7 +19,7 @@ pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
     let struct_ty = &model.ty;
     let table_name = &model.table_name();
     let lifetimes = model.generics.lifetimes;
-    let fields = model.attrs;
+    let fields = model.attrs.as_slice();
 
     quote!(impl_Insertable! {
         (

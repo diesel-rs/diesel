@@ -3,10 +3,9 @@ use syn;
 use attr::Attr;
 use util::*;
 
-#[derive(Debug)]
 pub struct Model {
     pub ty: syn::Ty,
-    pub attrs: Vec<Attr>,
+    pub attrs: ModelAttrs,
     pub name: syn::Ident,
     pub generics: syn::Generics,
     pub primary_key_names: Vec<syn::Ident>,
@@ -15,12 +14,11 @@ pub struct Model {
 
 impl Model {
     pub fn from_item(item: &syn::MacroInput, derived_from: &str) -> Result<Self, String> {
-        let fields = match item.body {
+        let attrs = match item.body {
             syn::Body::Enum(..) => return Err(format!(
                 "#[derive({})] cannot be used with enums", derived_from)),
-            syn::Body::Struct(ref fields) => fields.fields(),
+            syn::Body::Struct(ref fields) => ModelAttrs::from_struct_body(fields),
         };
-        let attrs = fields.into_iter().map(Attr::from_struct_field).collect();
         let ty = struct_ty(item.ident.clone(), &item.generics);
         let name = item.ident.clone();
         let generics = item.generics.clone();
@@ -49,6 +47,10 @@ impl Model {
     pub fn has_table_name_annotation(&self) -> bool {
         self.table_name_from_annotation.is_some()
     }
+
+    pub fn is_tuple_struct(&self) -> bool {
+        self.attrs.is_tuple()
+    }
 }
 
 pub fn infer_association_name(name: &str) -> String {
@@ -71,6 +73,40 @@ fn infer_table_name(name: &str) -> String {
     let mut result = infer_association_name(name);
     result.push('s');
     result
+}
+
+pub enum ModelAttrs {
+    Struct(Vec<Attr>),
+    Tuple(Vec<Attr>),
+}
+
+impl ModelAttrs {
+    fn from_struct_body(body: &syn::VariantData) -> Self {
+        let attrs = body.fields()
+            .into_iter()
+            .enumerate()
+            .map(Attr::from_struct_field)
+            .collect();
+
+        match *body {
+            syn::VariantData::Struct(_) => ModelAttrs::Struct(attrs),
+            _ => ModelAttrs::Tuple(attrs),
+        }
+    }
+
+    pub fn as_slice(&self) -> &[Attr] {
+        match *self {
+            ModelAttrs::Struct(ref attrs) => &*attrs,
+            ModelAttrs::Tuple(ref attrs) => &*attrs,
+        }
+    }
+
+    pub fn is_tuple(&self) -> bool {
+        match *self {
+            ModelAttrs::Struct(_) => false,
+            ModelAttrs::Tuple(_) => true,
+        }
+    }
 }
 
 #[test]

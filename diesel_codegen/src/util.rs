@@ -1,3 +1,4 @@
+use quote::Tokens;
 use syn::*;
 
 use ast_builder::ty_ident;
@@ -140,4 +141,13 @@ pub fn get_optional_option<'a>(
 ) -> Option<&'a str> {
     options.iter().find(|a| a.name() == option_name)
         .map(|a| str_value_of_meta_item(a, option_name))
+}
+
+pub fn wrap_item_in_const(const_name: Ident, item: Tokens) -> Tokens {
+    quote! {
+        const #const_name: () = {
+            extern crate diesel;
+            #item
+        };
+    }
 }

@@ -1,59 +1,60 @@
 use quote::Tokens;
 use syn;
 
+use attr::Attr;
 use model::Model;
+use util::wrap_item_in_const;
 
 pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     let model = t!(Model::from_item(&item, "Queryable"));
-    
-    let struct_name = &model.name;
-    let ty_params = &model.generics.ty_params;
-    let lifetimes = &model.generics.lifetimes;
-    let struct_ty = if !ty_params.is_empty() || !lifetimes.is_empty(){
-        quote!(#struct_name<#(#lifetimes,)* #(#ty_params,)*>)
-    } else {
-        quote!(#struct_name)
-    };
-    let row_ty = model.attrs.iter().map(|a| &a.ty);
-    let field_names = model.attrs.iter().enumerate().map(|(counter, a)| a.field_name.clone()
-        .unwrap_or_else(||{
-            syn::Ident::from(format!("t_{}", counter))
-    }));
-    
+
+    let generics = syn::aster::from_generics(model.generics.clone())
+        .ty_param_id("__DB")
+        .ty_param_id("__ST")
+        .build();
+    let struct_ty = &model.ty;
+
+    let row_ty = model.attrs.as_slice().iter().map(|a| &a.ty);
     let row_ty = quote!((#(#row_ty,)*));
+
+    let build_expr = build_expr_for_model(&model);
+    let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
     let row_pat = quote!((#(#field_names,)*));
-    let field_names = model.attrs.iter().enumerate().map(|(counter, a)|
-         a.field_name.clone().map(|name| {
-             quote!(#name:#name)
-         })
-        .unwrap_or_else(||{
-            let r = syn::Ident::from(format!("t_{}", counter));
-            quote!(#r)
-    }));
-    let build_expr = if model.attrs[0].field_name.is_some(){
-        quote!(#struct_name {#(#field_names,)*})
-    } else {
-        quote!(#struct_name (#(#field_names,)*))
-    };
 
-    let dummy_const = syn::Ident::new(format!("_IMPL_QUERYABLE_FOR_{}", struct_name));
+    let model_name_uppercase = model.name.as_ref().to_uppercase();
+    let dummy_const = format!("_IMPL_QUERYABLE_FOR_{}", model_name_uppercase).into();
 
-    quote!(
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        const #dummy_const: () = {
-            extern crate diesel as _diesel;
-            #[automatically_derived]
-            impl<#(#lifetimes,)* #(#ty_params,)* __DB, __ST> _diesel::Queryable<__ST, __DB> for #struct_ty where
-                __DB: _diesel::backend::Backend + _diesel::types::HasSqlType<__ST>,
-                #row_ty: _diesel::types::FromSqlRow<__ST, __DB>,
-            {
-               type Row = #row_ty;
-               
-               fn build(row: Self::Row) -> Self {
-                   let #row_pat = row;
-                   #build_expr
-               }
-            }
-        };)
+    wrap_item_in_const(dummy_const, quote!(
+        impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
+            __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
+            #row_ty: diesel::types::FromSqlRow<__ST, __DB>,
+        {
+           type Row = #row_ty;
+
+           fn build(#row_pat: Self::Row) -> Self {
+               #build_expr
+           }
+        }
+    ))
 }
 
+fn build_expr_for_model(model: &Model) -> Tokens {
+    let struct_name = &model.name;
+    let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
+
+    let field_assignments = field_names.map(|field_name| {
+        if model.is_tuple_struct() {
+            quote!(#field_name)
+        } else {
+            quote!(#field_name: #field_name)
+        }
+    });
+
+    if model.is_tuple_struct() {
+        quote!(#struct_name(#(#field_assignments),*))
+    } else {
+        quote!(#struct_name {
+            #(#field_assignments,)*
+        })
+    }
+}
