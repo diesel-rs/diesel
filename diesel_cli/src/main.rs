@@ -74,6 +74,8 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(database_url, redo_latest_migration);
         }
         ("generate", Some(args)) => {
+            use std::io::Write;
+
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
@@ -87,10 +89,13 @@ fn run_migration_command(matches: &ArgMatches) {
 
             let up_path = migration_dir.join("up.sql");
             println!("Creating {}", migration_dir_relative.join("up.sql").display());
-            fs::File::create(up_path).unwrap();
+            let mut up = fs::File::create(up_path).unwrap();
+            up.write_all(b"-- Your SQL goes here").unwrap();
+
             let down_path = migration_dir.join("down.sql");
             println!("Creating {}", migration_dir_relative.join("down.sql").display());
-            fs::File::create(down_path).unwrap();
+            let mut down = fs::File::create(down_path).unwrap();
+            down.write_all(b"-- This file should undo anything in `up.sql`").unwrap();
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
