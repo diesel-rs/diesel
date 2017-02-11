@@ -8,6 +8,9 @@ use query_source::QuerySource;
 /// [`.desc()`](../../expression/expression_methods/global_expression_methods/trait.ExpressionMethods.html#method.desc)
 /// and [`.asc()`](../../expression/expression_methods/global_expression_methods/trait.ExpressionMethods.html#method.asc)
 ///
+/// Ordering by multiple columns can be achieved by passing a tuple of those
+/// columns.
+///
 /// This is automatically implemented for the various query builder types.
 pub trait OrderDsl<Expr: Expression>: AsQuery {
     type Output: AsQuery<SqlType=Self::SqlType>;
