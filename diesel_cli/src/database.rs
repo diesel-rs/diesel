@@ -7,7 +7,7 @@ use diesel::sqlite::SqliteConnection;
 #[cfg(feature="mysql")]
 use diesel::mysql::MysqlConnection;
 use diesel::types::Bool;
-use diesel::{migrations, Connection, select, LoadDsl};
+use diesel::*;
 
 use database_error::{DatabaseError, DatabaseResult};
 
@@ -162,26 +162,71 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         #[cfg(feature="postgres")]
         Backend::Pg => {
             let (database, postgres_url) = change_database_of_url(database_url, "postgres");
-            println!("Dropping database: {}", database);
             let conn = try!(PgConnection::establish(&postgres_url));
-            try!(conn.silence_notices(|| {
-                conn.execute(&format!("DROP DATABASE IF EXISTS {}", database))
-            }));
+            if try!(pg_database_exists(&conn, &database)) {
+                println!("Dropping database: {}", database);
+                try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
+            }
         },
         #[cfg(feature="sqlite")]
         Backend::Sqlite => {
-            println!("Dropping database: {}", database_url);
-            try!(::std::fs::remove_file(&database_url));
+            use std::path::Path;
+            use std::fs;
+
+            if Path::new(database_url).exists() {
+                println!("Dropping database: {}", database_url);
+                try!(fs::remove_file(&database_url));
+            }
         },
         #[cfg(feature="mysql")]
         Backend::Mysql => {
             let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
-            println!("Dropping database: {}", database);
             let conn = try!(MysqlConnection::establish(&mysql_url));
-            try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
+            if try!(mysql_database_exists(&conn, &database)) {
+                println!("Dropping database: {}", database);
+                try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
+            }
         },
     }
     Ok(())
+}
+
+#[cfg(feature="postgres")]
+table! {
+    pg_database (datname) {
+        datname -> Text,
+        datistemplate -> Bool,
+    }
+}
+
+#[cfg(feature="postgres")]
+fn pg_database_exists(conn: &PgConnection, database_name: &str) -> QueryResult<bool> {
+    use self::pg_database::dsl::*;
+
+    pg_database.select(datname) // here come dat name!!!! o shit waddup!!!!
+        .filter(datname.eq(database_name))
+        .filter(datistemplate.eq(false))
+        .get_result::<String>(conn)
+        .optional()
+        .map(|x| x.is_some())
+}
+
+#[cfg(feature="mysql")]
+table! {
+    information_schema.schemata (schema_name) {
+        schema_name -> Text,
+    }
+}
+
+#[cfg(feature="mysql")]
+fn mysql_database_exists(conn: &MysqlConnection, database_name: &str) -> QueryResult<bool> {
+    use self::schemata::dsl::*;
+
+    schemata.select(schema_name)
+        .filter(schema_name.eq(database_name))
+        .get_result::<String>(conn)
+        .optional()
+        .map(|x| x.is_some())
 }
 
 /// Returns true if the `__diesel_schema_migrations` table exists in the

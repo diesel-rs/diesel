@@ -16,6 +16,7 @@
 
 extern crate chrono;
 extern crate clap;
+#[cfg_attr(any(feature="mysql", feature="postgres"), macro_use)]
 extern crate diesel;
 extern crate dotenv;
 extern crate diesel_infer_schema;
