@@ -4,7 +4,7 @@ use query_builder::{QueryBuilder, BuildQueryResult};
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct PgQueryBuilder {
-    pub sql: String,
+    sql: String,
     bind_idx: u32,
 }
 
@@ -30,5 +30,9 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
         self.bind_idx += 1;
         let sql = format!("${}", self.bind_idx);
         self.push_sql(&sql);
+    }
+
+    fn finish(self) -> String {
+        self.sql
     }
 }

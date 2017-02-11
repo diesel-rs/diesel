@@ -8,7 +8,7 @@ pub mod nodes;
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct SqliteQueryBuilder {
-    pub sql: String,
+    sql: String,
 }
 
 impl SqliteQueryBuilder {
@@ -31,5 +31,9 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
 
     fn push_bind_param(&mut self) {
         self.push_sql("?");
+    }
+
+    fn finish(self) -> String {
+        self.sql
     }
 }

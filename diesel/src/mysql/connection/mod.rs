@@ -103,8 +103,10 @@ impl MysqlConnection {
         try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
         let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
         try!(source.collect_binds(&mut bind_collector));
-        let mut stmt = try!(self.raw_connection.prepare(&query_builder.sql));
-        try!(stmt.bind(bind_collector.binds));
+        let mut stmt = try!(self.raw_connection.prepare(&query_builder.finish()));
+        let metadata = bind_collector.metadata;
+        let binds = bind_collector.binds;
+        try!(stmt.bind(metadata.into_iter().zip(binds)));
         Ok(stmt)
     }
 }

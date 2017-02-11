@@ -57,6 +57,7 @@ pub trait QueryBuilder<DB: Backend> {
     fn push_sql(&mut self, sql: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
     fn push_bind_param(&mut self);
+    fn finish(self) -> String;
 }
 
 /// A complete SQL query with a return type. This can be a select statement, or

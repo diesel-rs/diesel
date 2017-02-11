@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use connection::{SimpleConnection, Connection, AnsiTransactionManager};
 use pg::{Pg, PgQueryBuilder};
-use query_builder::{AsQuery, QueryFragment, QueryId};
+use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
@@ -113,19 +113,19 @@ impl PgConnection {
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         try!(source.collect_binds(&mut bind_collector));
-        let (binds, bind_types) = bind_collector.binds.into_iter()
-            .map(|(meta, bind)| (bind, meta.oid)).unzip();
+        let binds = bind_collector.binds;
+        let metadata = bind_collector.metadata;
 
         let query = if source.is_safe_to_cache_prepared() {
             try!(self.statement_cache.cached_query(
                 &self.raw_connection,
                 source,
-                bind_types,
+                &metadata,
             ))
         } else {
             let mut query_builder = PgQueryBuilder::new();
             try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
-            Rc::new(try!(Query::sql(&query_builder.sql, Some(bind_types))))
+            Rc::new(try!(Query::sql(&query_builder.finish(), Some(metadata))))
         };
 
         Ok((query, binds))

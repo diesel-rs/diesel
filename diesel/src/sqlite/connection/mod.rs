@@ -9,36 +9,26 @@ mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
-use std::any::TypeId;
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use connection::{SimpleConnection, Connection, AnsiTransactionManager};
+use connection::*;
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::*;
 use result::*;
-use result::Error::QueryBuilderError;
 use self::raw::RawConnection;
 use self::statement_iterator::StatementIterator;
 use self::stmt::{Statement, StatementUse};
 use sqlite::Sqlite;
-use super::query_builder::SqliteQueryBuilder;
 use types::HasSqlType;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
-    statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
+    statement_cache: RefCell<HashMap<StatementCacheKey<Sqlite>, StatementUse>>,
     raw_connection: Rc<RawConnection>,
     transaction_manager: AnsiTransactionManager,
-}
-
-#[derive(Hash, PartialEq, Eq)]
-enum QueryCacheKey {
-    Sql(String),
-    Type(TypeId),
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -117,7 +107,9 @@ impl SqliteConnection {
         try!(source.collect_binds(&mut bind_collector));
         {
             let mut stmt = result.borrow_mut();
-            for (tpe, value) in bind_collector.binds {
+            let metadata = bind_collector.metadata;
+            let binds = bind_collector.binds;
+            for (tpe, value) in metadata.into_iter().zip(binds) {
                 try!(stmt.bind(tpe, value));
             }
         }
@@ -130,14 +122,14 @@ impl SqliteConnection {
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = try!(cache_key(source));
+        let cache_key = try!(StatementCacheKey::for_source(source, &[]));
         let mut cache = self.statement_cache.borrow_mut();
 
         match cache.entry(cache_key) {
             Occupied(entry) => Ok(entry.get().clone()),
             Vacant(entry) => {
                 let statement = {
-                    let sql = try!(sql_from_cache_key(&entry.key(), source));
+                    let sql = try!(entry.key().sql(source));
 
                     Statement::prepare(&self.raw_connection, &sql)
                         .map(StatementUse::new)
@@ -151,30 +143,6 @@ impl SqliteConnection {
             }
         }
     }
-}
-
-fn cache_key<T: QueryFragment<Sqlite> + QueryId>(source: &T)
-    -> QueryResult<QueryCacheKey>
-{
-    match T::query_id() {
-        Some(id) => Ok(QueryCacheKey::Type(id)),
-        None => to_sql(source).map(QueryCacheKey::Sql),
-    }
-}
-
-fn sql_from_cache_key<'a, T: QueryFragment<Sqlite>>(key: &'a QueryCacheKey, source: &T)
-    -> QueryResult<Cow<'a, str>>
-{
-    match *key {
-        QueryCacheKey::Sql(ref sql) => Ok(Cow::Borrowed(sql)),
-        _ => to_sql(source).map(Cow::Owned),
-    }
-}
-
-fn to_sql<T: QueryFragment<Sqlite>>(source: &T) -> QueryResult<String> {
-    let mut query_builder = SqliteQueryBuilder::new();
-    try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
-    Ok(query_builder.sql)
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {

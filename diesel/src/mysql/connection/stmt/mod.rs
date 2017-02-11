@@ -34,7 +34,9 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    pub fn bind(&mut self, binds: Vec<(MysqlType, Option<Vec<u8>>)>) -> QueryResult<()> {
+    pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()> where
+        Iter: IntoIterator<Item=(MysqlType, Option<Vec<u8>>)>,
+    {
         let mut input_binds = Binds::from_input_data(binds);
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
