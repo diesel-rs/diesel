@@ -29,6 +29,37 @@ Creating migrations.\\d{14}_hello.down.sql\
 }
 
 #[test]
+fn migration_generate_creates_a_migration_with_initital_contents() {
+    let p = project("migration_name")
+        .folder("migrations")
+        .build();
+    let result = p.command("migration")
+        .arg("generate")
+        .arg("hello")
+        .run();
+    assert!(result.is_success(), "Command failed: {:?}", result);
+
+    let migrations = p.migrations();
+    let migration = &migrations[0];
+
+    let up = file_content(&migration.path().join("up.sql"));
+    let down = file_content(&migration.path().join("down.sql"));
+
+    assert_eq!(up.trim(), "-- Your SQL goes here");
+    assert_eq!(down.trim(), "-- This file should undo anything in `up.sql`");
+
+    fn file_content<P: AsRef<::std::path::Path>>(path: P) -> String {
+        use std::io::Read;
+
+        let mut file = ::std::fs::File::open(path).unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+
+        contents
+    }
+}
+
+#[test]
 fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name")
         .folder("migrations")
