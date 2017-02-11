@@ -6,6 +6,7 @@ mod cache;
 use std::ffi::CString;
 use std::ptr;
 
+use pg::PgTypeMetadata;
 use super::result::PgResult;
 use result::QueryResult;
 
@@ -69,10 +70,10 @@ impl Query {
         PgResult::new(internal_res?)
     }
 
-    pub fn sql(sql: &str, param_types: Option<Vec<u32>>) -> QueryResult<Self> {
+    pub fn sql(sql: &str, param_types: Option<Vec<PgTypeMetadata>>) -> QueryResult<Self> {
         Ok(Query::Sql {
             query: try!(CString::new(sql)),
-            param_types: param_types,
+            param_types: param_types.map(|meta| meta.into_iter().map(|x| x.oid).collect()),
         })
     }
 
@@ -81,17 +82,18 @@ impl Query {
         conn: &RawConnection,
         sql: &str,
         name: &str,
-        param_types: &Vec<u32>,
+        param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
         let name = try!(CString::new(name));
         let sql = try!(CString::new(sql));
+        let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
         let internal_result = unsafe {
             conn.prepare(
                 name.as_ptr(),
                 sql.as_ptr(),
                 param_types.len() as libc::c_int,
-                param_types_to_ptr(Some(param_types)),
+                param_types_to_ptr(Some(&param_types_vec)),
             )
         };
         try!(PgResult::new(internal_result?));

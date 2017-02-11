@@ -5,10 +5,11 @@ use query_builder::bind_collector::RawBytesBindCollector;
 use super::connection::SqliteValue;
 use super::query_builder::SqliteQueryBuilder;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Sqlite;
 
-#[allow(missing_debug_implementations, missing_copy_implementations)]
+#[allow(missing_debug_implementations)]
+#[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub enum SqliteType {
     Binary,
     Text,

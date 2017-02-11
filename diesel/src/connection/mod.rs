@@ -1,3 +1,4 @@
+mod statement_cache;
 mod transaction_manager;
 
 use backend::Backend;
@@ -7,6 +8,8 @@ use result::*;
 use types::HasSqlType;
 
 pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
+#[doc(hidden)]
+pub use self::statement_cache::StatementCacheKey;
 
 pub trait SimpleConnection {
     #[doc(hidden)]

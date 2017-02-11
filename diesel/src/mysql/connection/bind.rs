@@ -12,7 +12,9 @@ pub struct Binds {
 }
 
 impl Binds {
-    pub fn from_input_data(input: Vec<(MysqlType, Option<Vec<u8>>)>) -> Self {
+    pub fn from_input_data<Iter>(input: Iter) -> Self where
+        Iter: IntoIterator<Item=(MysqlType, Option<Vec<u8>>)>,
+    {
         let data = input.into_iter().map(|(tpe, bytes)| {
             BindData::for_input(tpe, bytes)
         }).collect();

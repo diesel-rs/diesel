@@ -4,7 +4,7 @@ use query_builder::{QueryBuilder, BuildQueryResult};
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct MysqlQueryBuilder {
-    pub sql: String,
+    sql: String,
 }
 
 impl MysqlQueryBuilder {
@@ -27,5 +27,9 @@ impl QueryBuilder<Mysql> for MysqlQueryBuilder {
 
     fn push_bind_param(&mut self) {
         self.push_sql("?");
+    }
+
+    fn finish(self) -> String {
+        self.sql
     }
 }

@@ -4,8 +4,7 @@ use super::{QueryBuilder, BuildQueryResult};
 #[doc(hidden)]
 #[derive(Debug, Default)]
 pub struct DebugQueryBuilder {
-    pub sql: String,
-    pub bind_types: Vec<u32>,
+    sql: String,
 }
 
 impl DebugQueryBuilder {
@@ -28,5 +27,9 @@ impl QueryBuilder<Debug> for DebugQueryBuilder {
 
     fn push_bind_param(&mut self) {
         self.push_sql("?");
+    }
+
+    fn finish(self) -> String {
+        self.sql
     }
 }
