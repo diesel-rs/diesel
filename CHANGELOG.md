@@ -6,6 +6,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Queries constructed using [`diesel::select`][select-0.11.0] now work properly
+  when [boxed][boxed-0.11.0].
+
+[select-0.11.0]: http://docs.diesel.rs/diesel/fn.select.html
+[boxed-0.11.0]: http://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
+
 ### Changed
 
 * It is no longer possible to exhaustively match against

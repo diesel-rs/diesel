@@ -200,6 +200,34 @@ mod tests {
     }
 
     #[test]
+    fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
+        let connection = connection();
+
+        let query = ::select(AsExpression::<Integer>::as_expression(1)).into_boxed::<Pg>();
+        let query2 = ::select(AsExpression::<VarChar>::as_expression("hi")).into_boxed::<Pg>();
+
+        assert_eq!(0, connection.statement_cache.len());
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
+        let connection = connection();
+
+        sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+        let hi = AsExpression::<VarChar>::as_expression("HI");
+        let query = ::select(hi).into_boxed::<Pg>();
+        let query2 = ::select(lower(hi)).into_boxed::<Pg>();
+
+        assert_eq!(0, connection.statement_cache.len());
+        assert_eq!(Ok("HI".to_string()), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
     fn queries_with_sql_literal_nodes_are_not_cached() {
         let connection = connection();
         let query = ::select(sql::<Integer>("1"));

@@ -102,6 +102,49 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
     }
 }
 
+impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> where
+    DB: Backend,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql("SELECT ");
+        try!(self.distinct.to_sql(out));
+        try!(self.select.to_sql(out));
+
+        if let Some(ref where_clause) = self.where_clause {
+            out.push_sql(" WHERE ");
+            try!(where_clause.to_sql(out));
+        }
+
+        try!(self.order.to_sql(out));
+        try!(self.limit.to_sql(out));
+        try!(self.offset.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.distinct.collect_binds(out));
+        try!(self.select.collect_binds(out));
+
+        if let Some(ref where_clause) = self.where_clause {
+            try!(where_clause.collect_binds(out));
+        }
+
+        try!(self.order.collect_binds(out));
+        try!(self.limit.collect_binds(out));
+        try!(self.offset.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.distinct.is_safe_to_cache_prepared() &&
+            self.select.is_safe_to_cache_prepared() &&
+            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true) &&
+            self.order.is_safe_to_cache_prepared() &&
+            self.limit.is_safe_to_cache_prepared() &&
+            self.offset.is_safe_to_cache_prepared()
+    }
+}
+
 impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     type QueryId = ();
 

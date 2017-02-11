@@ -29,6 +29,7 @@ pub mod count;
 pub mod exists;
 pub mod expression_methods;
 #[doc(hidden)]
+#[macro_use]
 pub mod functions;
 #[doc(hidden)]
 pub mod grouped;
