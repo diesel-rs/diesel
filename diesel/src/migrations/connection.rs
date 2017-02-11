@@ -12,7 +12,7 @@ use types::{FromSql, VarChar};
 /// should be useable where this trait is required.
 pub trait MigrationConnection: Connection {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>>;
-    fn latest_run_migration_version(&self) -> QueryResult<String>;
+    fn latest_run_migration_version(&self) -> QueryResult<Option<String>>;
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
 }
 
@@ -27,7 +27,7 @@ impl<T> MigrationConnection for T where
             .map(FromIterator::from_iter)
     }
 
-    fn latest_run_migration_version(&self) -> QueryResult<String> {
+    fn latest_run_migration_version(&self) -> QueryResult<Option<String>> {
         use ::expression::dsl::max;
         __diesel_schema_migrations.select(max(version))
             .first(self)

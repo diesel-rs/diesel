@@ -13,6 +13,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Updated chrono to version 0.3.
 
+* [`max`][max-0.11.0] and [`min`][min-0.11.0] are now always nullable. The database will
+  return `NULL` when the table is empty.
+
+[max-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.max.html
+[min-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.min.html
+
 ## [0.10.1] - 2017-02-08
 
 ### Fixed

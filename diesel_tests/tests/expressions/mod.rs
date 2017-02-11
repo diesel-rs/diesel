@@ -63,9 +63,11 @@ fn test_count_max() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(max(n));
 
-    assert_eq!(Ok(5), source.first(&connection));
+    assert_eq!(Ok(Some(5)), source.first(&connection));
     connection.execute("DELETE FROM numbers WHERE n = 5").unwrap();
-    assert_eq!(Ok(2), source.first(&connection));
+    assert_eq!(Ok(Some(2)), source.first(&connection));
+    connection.execute("DELETE FROM numbers").unwrap();
+    assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
 #[test]
@@ -79,9 +81,11 @@ fn max_returns_same_type_as_expression_being_maximized() {
         NewUser::new("A", None),
     ];
     insert(data).into(users).execute(&connection).unwrap();
-    assert_eq!(Ok("C".to_string()), source.first(&connection));
+    assert_eq!(Ok(Some("C".to_string())), source.first(&connection));
     connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
-    assert_eq!(Ok("B".to_string()), source.first(&connection));
+    assert_eq!(Ok(Some("B".to_string())), source.first(&connection));
+    connection.execute("DELETE FROM users").unwrap();
+    assert_eq!(Ok(None::<String>), source.first(&connection));
 }
 
 use std::marker::PhantomData;
@@ -146,9 +150,11 @@ fn test_min() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(min(n));
 
-    assert_eq!(Ok(1), source.first(&connection));
+    assert_eq!(Ok(Some(1)), source.first(&connection));
     connection.execute("DELETE FROM numbers WHERE n = 1").unwrap();
-    assert_eq!(Ok(2), source.first(&connection));
+    assert_eq!(Ok(Some(2)), source.first(&connection));
+    connection.execute("DELETE FROM numbers").unwrap();
+    assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
 sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);

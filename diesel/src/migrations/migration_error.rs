@@ -11,6 +11,7 @@ pub enum MigrationError {
     UnknownMigrationFormat(PathBuf),
     IoError(io::Error),
     UnknownMigrationVersion(String),
+    NoMigrationRun,
 }
 
 impl Error for MigrationError {
@@ -25,6 +26,8 @@ impl Error for MigrationError {
                 error.description(),
             MigrationError::UnknownMigrationVersion(_) =>
                 "Unable to find migration version to revert in the migrations directory.",
+            MigrationError::NoMigrationRun =>
+                "No migrations have been run. Did you forget `diesel migration run`?",
         }
     }
 }
