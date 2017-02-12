@@ -43,6 +43,7 @@ matrix:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
+    - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
 env:
   matrix:
     - BACKEND=sqlite
@@ -59,7 +60,7 @@ env:
 after_success:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono uuid")
+    (cd diesel && travis-cargo doc -- --features "postgres sqlite mysql extras")
     mkdir diesel/target
     mv target/doc diesel/target/doc
     echo "docs.diesel.rs" > diesel/target/doc/CNAME

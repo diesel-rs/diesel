@@ -9,8 +9,6 @@ mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use connection::*;
@@ -26,7 +24,7 @@ use types::HasSqlType;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
-    statement_cache: RefCell<HashMap<StatementCacheKey<Sqlite>, StatementUse>>,
+    statement_cache: StatementCache<Sqlite, StatementUse>,
     raw_connection: Rc<RawConnection>,
     transaction_manager: AnsiTransactionManager,
 }
@@ -49,7 +47,7 @@ impl Connection for SqliteConnection {
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| {
             SqliteConnection {
-                statement_cache: RefCell::new(HashMap::new()),
+                statement_cache: StatementCache::new(),
                 raw_connection: Rc::new(conn),
                 transaction_manager: AnsiTransactionManager::new(),
             }
@@ -120,28 +118,10 @@ impl SqliteConnection {
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
         -> QueryResult<StatementUse>
     {
-        use std::collections::hash_map::Entry::{Occupied, Vacant};
-
-        let cache_key = try!(StatementCacheKey::for_source(source, &[]));
-        let mut cache = self.statement_cache.borrow_mut();
-
-        match cache.entry(cache_key) {
-            Occupied(entry) => Ok(entry.get().clone()),
-            Vacant(entry) => {
-                let statement = {
-                    let sql = try!(entry.key().sql(source));
-
-                    Statement::prepare(&self.raw_connection, &sql)
-                        .map(StatementUse::new)
-                };
-
-                if !source.is_safe_to_cache_prepared() {
-                    return statement;
-                }
-
-                Ok(entry.insert(try!(statement)).clone())
-            }
-        }
+        self.statement_cache.cached_statement(source, &[], |sql| {
+            Statement::prepare(&self.raw_connection, sql)
+                .map(StatementUse::new)
+        })
     }
 }
 
@@ -164,7 +144,7 @@ mod tests {
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(1, connection.statement_cache.borrow().len());
+        assert_eq!(1, connection.statement_cache.len());
     }
 
     #[test]
@@ -173,7 +153,7 @@ mod tests {
         let query = ::select(sql::<Integer>("1"));
 
         assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.borrow().len());
+        assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
@@ -183,7 +163,7 @@ mod tests {
         let query = ::select(one_as_expr.eq(sql::<Integer>("1")));
 
         assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.borrow().len());
+        assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
@@ -193,7 +173,7 @@ mod tests {
         let query = ::select(one_as_expr.eq_any(vec![1, 2, 3]));
 
         assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(0, connection.statement_cache.borrow().len());
+        assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
@@ -203,6 +183,6 @@ mod tests {
         let query = ::select(one_as_expr.eq_any(::select(one_as_expr)));
 
         assert_eq!(Ok(true), query.get_result(&connection));
-        assert_eq!(1, connection.statement_cache.borrow().len());
+        assert_eq!(1, connection.statement_cache.len());
     }
 }

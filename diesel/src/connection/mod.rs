@@ -9,7 +9,7 @@ use types::HasSqlType;
 
 pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
 #[doc(hidden)]
-pub use self::statement_cache::StatementCacheKey;
+pub use self::statement_cache::{StatementCache, StatementCacheKey};
 
 pub trait SimpleConnection {
     #[doc(hidden)]

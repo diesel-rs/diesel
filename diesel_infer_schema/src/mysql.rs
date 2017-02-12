@@ -20,7 +20,7 @@ fn determine_type_name(sql_type_name: &str) -> &str {
     } else if let Some(idx) = sql_type_name.find('(') {
         &sql_type_name[..idx]
     } else {
-        &sql_type_name
+        sql_type_name
     }
 }
 

@@ -1,7 +1,6 @@
 extern crate pq_sys;
 extern crate libc;
 
-mod cache;
 
 use std::ffi::CString;
 use std::ptr;
@@ -10,7 +9,6 @@ use pg::PgTypeMetadata;
 use super::result::PgResult;
 use result::QueryResult;
 
-pub use self::cache::StatementCache;
 pub use super::raw::RawConnection;
 
 pub enum Query {
