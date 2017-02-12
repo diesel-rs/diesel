@@ -47,29 +47,6 @@ impl RawConnection {
         RawResult::new(PQexec(self.internal_connection, query), self)
     }
 
-    pub unsafe fn exec_params(
-        &self,
-        query: *const libc::c_char,
-        param_count: libc::c_int,
-        param_types: *const Oid,
-        param_values: *const *const libc::c_char,
-        param_lengths: *const libc::c_int,
-        param_formats: *const libc::c_int,
-        result_format: libc::c_int,
-    ) -> QueryResult<RawResult> {
-        let ptr = PQexecParams(
-            self.internal_connection,
-            query,
-            param_count,
-            param_types,
-            param_values,
-            param_lengths,
-            param_formats,
-            result_format,
-        );
-        RawResult::new(ptr, self)
-    }
-
     pub unsafe fn exec_prepared(
         &self,
         stmt_name: *const libc::c_char,

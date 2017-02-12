@@ -11,18 +11,12 @@ use result::QueryResult;
 
 pub use super::raw::RawConnection;
 
-pub enum Query {
-    Prepared {
-        name: CString,
-        param_formats: Vec<libc::c_int>,
-    },
-    Sql {
-        query: CString,
-        param_types: Option<Vec<u32>>,
-    },
+pub struct Statement {
+    name: CString,
+    param_formats: Vec<libc::c_int>,
 }
 
-impl Query {
+impl Statement {
     #[cfg_attr(feature = "clippy", allow(ptr_arg))]
     pub fn execute(
         &self,
@@ -39,50 +33,28 @@ impl Query {
                 .map(|d| d.len() as libc::c_int)
                 .unwrap_or(0))
             .collect::<Vec<_>>();
-        let internal_res = match *self {
-            Query::Prepared { ref name, ref param_formats } => unsafe {
-                conn.exec_prepared(
-                    name.as_ptr(),
-                    params_pointer.len() as libc::c_int,
-                    params_pointer.as_ptr(),
-                    param_lengths.as_ptr(),
-                    param_formats.as_ptr(),
-                    1,
-                )
-            },
-            Query::Sql { ref query, ref param_types } => {
-                let param_types_ptr = param_types_to_ptr(param_types.as_ref());
-                let param_formats = vec![1; param_data.len()];
-                unsafe { conn.exec_params(
-                    query.as_ptr(),
-                    params_pointer.len() as libc::c_int,
-                    param_types_ptr,
-                    params_pointer.as_ptr(),
-                    param_lengths.as_ptr(),
-                    param_formats.as_ptr(),
-                    1,
-                ) }
-            }
+        let internal_res = unsafe {
+            conn.exec_prepared(
+                self.name.as_ptr(),
+                params_pointer.len() as libc::c_int,
+                params_pointer.as_ptr(),
+                param_lengths.as_ptr(),
+                self.param_formats.as_ptr(),
+                1,
+            )
         };
 
         PgResult::new(internal_res?)
-    }
-
-    pub fn sql(sql: &str, param_types: Option<Vec<PgTypeMetadata>>) -> QueryResult<Self> {
-        Ok(Query::Sql {
-            query: try!(CString::new(sql)),
-            param_types: param_types.map(|meta| meta.into_iter().map(|x| x.oid).collect()),
-        })
     }
 
     #[cfg_attr(feature = "clippy", allow(ptr_arg))]
     pub fn prepare(
         conn: &RawConnection,
         sql: &str,
-        name: &str,
+        name: Option<&str>,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
-        let name = try!(CString::new(name));
+        let name = try!(CString::new(name.unwrap_or("")));
         let sql = try!(CString::new(sql));
         let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
@@ -96,7 +68,7 @@ impl Query {
         };
         try!(PgResult::new(internal_result?));
 
-        Ok(Query::Prepared {
+        Ok(Statement {
             name: name,
             param_formats: vec![1; param_types.len()],
         })

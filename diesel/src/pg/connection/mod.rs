@@ -11,7 +11,7 @@ use std::ffi::{CString, CStr};
 use std::rc::Rc;
 
 use connection::*;
-use pg::{Pg, PgQueryBuilder};
+use pg::Pg;
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -19,7 +19,7 @@ use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
-use self::stmt::Query;
+use self::stmt::Statement;
 use types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
@@ -29,7 +29,7 @@ use types::HasSqlType;
 pub struct PgConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
-    statement_cache: StatementCache<Pg, Rc<Query>>,
+    statement_cache: StatementCache<Pg, Rc<Statement>>,
 }
 
 unsafe impl Send for PgConnection {}
@@ -109,35 +109,33 @@ impl Connection for PgConnection {
 impl PgConnection {
     #[cfg_attr(feature = "clippy", allow(type_complexity))]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
-        -> QueryResult<(Rc<Query>, Vec<Option<Vec<u8>>>)>
+        -> QueryResult<(Rc<Statement>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         try!(source.collect_binds(&mut bind_collector));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
-        let query = if source.is_safe_to_cache_prepared() {
-            let cache_len = self.statement_cache.len();
-            try!(self.statement_cache.cached_statement(source, &metadata, |sql| {
-                let query_name = format!("__diesel_stmt_{}", cache_len);
-                Query::prepare(
-                    &self.raw_connection,
-                    sql,
-                    &query_name,
-                    &metadata,
-                ).map(Rc::new)
-            }))
-        } else {
-            let mut query_builder = PgQueryBuilder::new();
-            try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
-            Rc::new(try!(Query::sql(&query_builder.finish(), Some(metadata))))
-        };
+        let cache_len = self.statement_cache.len();
+        let query = self.statement_cache.cached_statement(source, &metadata, |sql| {
+            let query_name = if source.is_safe_to_cache_prepared() {
+                Some(format!("__diesel_stmt_{}", cache_len))
+            } else {
+                None
+            };
+            Statement::prepare(
+                &self.raw_connection,
+                sql,
+                query_name.as_ref().map(|s| &**s),
+                &metadata,
+            ).map(Rc::new)
+        });
 
-        Ok((query, binds))
+        Ok((query?, binds))
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
-        let query = try!(Query::sql(query, None));
+        let query = try!(Statement::prepare(&self.raw_connection, query, None, &[]));
         query.execute(&self.raw_connection, &Vec::new())
     }
 }
