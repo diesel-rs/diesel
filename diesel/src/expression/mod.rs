@@ -24,6 +24,8 @@ pub mod array_comparison;
 #[doc(hidden)]
 pub mod bound;
 #[doc(hidden)]
+pub mod coerce;
+#[doc(hidden)]
 pub mod count;
 #[doc(hidden)]
 pub mod exists;

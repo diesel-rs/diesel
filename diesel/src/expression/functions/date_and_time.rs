@@ -42,3 +42,19 @@ operator_allowed!(now, Sub, sub);
 sql_function!(date, date_t, (x: Timestamp) -> Date,
 "Represents the SQL `DATE` function. The argument should be a Timestamp
 expression, and the return value will be an expression of type Date");
+
+#[cfg(feature="postgres")]
+use expression::AsExpression;
+#[cfg(feature="postgres")]
+use expression::coerce::Coerce;
+#[cfg(feature="postgres")]
+use types::Timestamptz;
+
+#[cfg(feature="postgres")]
+impl AsExpression<Timestamptz> for now {
+    type Expression = Coerce<now, Timestamptz>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}

@@ -27,6 +27,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [max-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.max.html
 [min-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.min.html
 
+* [`now`][now-0.11.0] can now be used as an expression of type `Timestamptz`.
+
+[now-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/struct.now.html
+
 ## [0.10.1] - 2017-02-08
 
 ### Fixed
