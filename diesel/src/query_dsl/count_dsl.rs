@@ -20,7 +20,7 @@ use super::SelectDsl;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let count = users.count().first(&connection);
+/// let count = users.count().get_result(&connection);
 /// assert_eq!(Ok(2), count);
 /// # }
 /// ```
