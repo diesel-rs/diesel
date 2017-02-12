@@ -43,6 +43,7 @@ matrix:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
+    - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
 env:
   matrix:
     - BACKEND=sqlite
