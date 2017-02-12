@@ -55,6 +55,7 @@ impl UsesInformationSchema for Mysql {
     }
 }
 
+#[cfg_attr(feature = "clippy", allow(module_inception))]
 mod information_schema {
     table! {
         information_schema.tables (table_schema, table_name) {

@@ -50,7 +50,9 @@ impl fmt::Display for TableData {
 }
 
 #[derive(Debug)]
+#[allow(missing_copy_implementations)]
 pub enum Never {}
+
 impl FromStr for TableData {
     type Err = Never;
 
