@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+BACKENDS="sqlite postgres mysql"
+
+check() {
+    cargo rustc --quiet --features "lint $BACKENDS $1" -- -Zno-trans
+}
+
+(cd diesel &&
+    check "unstable extras" &&
+    echo "✔ diesel core crate looks good!")
+
+(cd diesel_infer_schema &&
+    check &&
+    echo "✔ infer schema crate looks good!")
+
+(cd diesel_codegen &&
+    check &&
+    echo "✔ codegen crate looks good!")
+
+(cd diesel_cli &&
+    check &&
+    echo "✔ cli crate looks good!")
