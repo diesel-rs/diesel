@@ -17,7 +17,7 @@ elif [ "$1" = "compile" ]; then
   shift
   (cd diesel_compile_tests && cargo test $*)
 else
-  (cd diesel && cargo test --no-default-features --features "extras sqlite postgres mysql" $*)
+  (cd diesel && cargo test --no-default-features --features "lint extras sqlite postgres mysql" $*)
   (cd diesel_cli && cargo test --features "sqlite" --no-default-features $*)
   (cd diesel_infer_schema && cargo test --features "sqlite" $*)
   (cd diesel_codegen && cargo test --features "sqlite" $*)

@@ -10,7 +10,7 @@ mod stmt;
 use std::ffi::{CString, CStr};
 use std::rc::Rc;
 
-use connection::{SimpleConnection, Connection, AnsiTransactionManager};
+use connection::*;
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
@@ -19,7 +19,7 @@ use result::*;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
-use self::stmt::{Query, StatementCache};
+use self::stmt::Query;
 use types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
@@ -29,7 +29,7 @@ use types::HasSqlType;
 pub struct PgConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
-    statement_cache: StatementCache,
+    statement_cache: StatementCache<Pg, Rc<Query>>,
 }
 
 unsafe impl Send for PgConnection {}
@@ -117,11 +117,16 @@ impl PgConnection {
         let metadata = bind_collector.metadata;
 
         let query = if source.is_safe_to_cache_prepared() {
-            try!(self.statement_cache.cached_query(
-                &self.raw_connection,
-                source,
-                &metadata,
-            ))
+            let cache_len = self.statement_cache.len();
+            try!(self.statement_cache.cached_statement(source, &metadata, |sql| {
+                let query_name = format!("__diesel_stmt_{}", cache_len);
+                Query::prepare(
+                    &self.raw_connection,
+                    sql,
+                    &query_name,
+                    &metadata,
+                ).map(Rc::new)
+            }))
         } else {
             let mut query_builder = PgQueryBuilder::new();
             try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
@@ -170,21 +175,6 @@ mod tests {
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(1, connection.statement_cache.len());
-    }
-
-    #[test]
-    fn different_queries_have_unique_names() {
-        let connection = connection();
-
-        let one = AsExpression::<Integer>::as_expression(1);
-        let query = ::select(one);
-        let query2 = ::select(one.eq(one));
-
-        assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(Ok(true), query2.get_result(&connection));
-
-        let statement_names = connection.statement_cache.statement_names();
-        assert_eq!(2, statement_names.len());
     }
 
     #[test]
