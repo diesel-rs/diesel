@@ -37,7 +37,7 @@ impl<'insert, 'a, DB> Insertable<Table, DB> for &'insert NewMigration<'a> where
         type SqlType<T> = <T as Expression>::SqlType;
         type Nullable<T> = <T as IntoNullable>::Nullable;
 
-        let ref version = self.0;
+        let version = &self.0;
         (ColumnInsertValue::Expression(self::__diesel_schema_migrations::version,
             AsExpression::<Nullable<SqlType<Version>>>::as_expression(version)),)
     }
