@@ -17,7 +17,7 @@ pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     let row_ty = model.attrs.as_slice().iter().map(|a| &a.ty);
     let row_ty = quote!((#(#row_ty,)*));
 
-    let build_expr = build_expr_for_model(&model);
+    let build_expr = model.build_expr(quote!());
     let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
     let row_pat = quote!((#(#field_names,)*));
 
@@ -38,23 +38,3 @@ pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     ))
 }
 
-fn build_expr_for_model(model: &Model) -> Tokens {
-    let struct_name = &model.name;
-    let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
-
-    let field_assignments = field_names.map(|field_name| {
-        if model.is_tuple_struct() {
-            quote!(#field_name)
-        } else {
-            quote!(#field_name: #field_name)
-        }
-    });
-
-    if model.is_tuple_struct() {
-        quote!(#struct_name(#(#field_assignments),*))
-    } else {
-        quote!(#struct_name {
-            #(#field_assignments,)*
-        })
-    }
-}

@@ -51,6 +51,27 @@ impl Model {
     pub fn is_tuple_struct(&self) -> bool {
         self.attrs.is_tuple()
     }
+
+    pub fn build_expr(&self, suffix: ::quote::Tokens) -> ::quote::Tokens {
+        let struct_name = &self.name;
+        let field_names = self.attrs.as_slice().iter().map(Attr::name_for_pattern);
+
+        let field_assignments = field_names.map(|field_name| {
+            if self.is_tuple_struct() {
+                quote!(#suffix #field_name)
+            } else {
+                quote!(#field_name: #suffix #field_name)
+            }
+        });
+
+        if self.is_tuple_struct() {
+            quote!(#struct_name(#(#field_assignments),*))
+        } else {
+            quote!(#struct_name {
+                #(#field_assignments,)*
+            })
+        }
+    }
 }
 
 pub fn infer_association_name(name: &str) -> String {

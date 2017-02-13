@@ -16,10 +16,9 @@
 /// # Example
 ///
 /// ```
-/// # #[macro_use] extern crate diesel_codegen;
+/// # include!("src/doctest_setup.rs");
 /// # #[macro_use] extern crate diesel;
 /// # table! { users { id -> Integer, name -> VarChar, } }
-/// # include!("src/doctest_setup.rs");
 ///
 /// #[derive(PartialEq, Debug, Queryable)]
 /// struct User {

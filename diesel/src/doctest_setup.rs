@@ -1,5 +1,6 @@
 extern crate dotenv;
 #[macro_use] extern crate cfg_if;
+#[macro_use] extern crate diesel_codegen;
 
 use diesel::prelude::*;
 use self::dotenv::dotenv;
@@ -91,8 +92,9 @@ fn database_url_from_env(bakend_specific_env_var: &str) -> String {
         .expect("DATABASE_URL must be set in order to run tests")
 }
 
-#[derive(Clone)]
+#[derive(Clone, Insertable)]
 #[allow(dead_code)]
+#[table_name = "users"]
 struct NewUser {
     name: String,
 }
@@ -102,12 +104,5 @@ impl NewUser {
         NewUser {
             name: name.into(),
         }
-    }
-}
-
-impl_Insertable! {
-    (users)
-    struct NewUser {
-        name: String,
     }
 }

@@ -1,4 +1,5 @@
 #[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
 use diesel::pg::PgConnection;
@@ -10,12 +11,12 @@ table! {
     }
 }
 
-pub struct NewUser(String);
-
-impl_Insertable! {
-    (users)
-    pub struct NewUser(#[column_name(name)] String,);
-}
+#[derive(Insertable)]
+#[table_name = "users"]
+pub struct NewUser(
+    #[column_name(name)]
+    String
+);
 
 fn main() {
     use self::users::dsl::*;
