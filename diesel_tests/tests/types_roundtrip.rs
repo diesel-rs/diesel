@@ -40,36 +40,26 @@ pub fn test_type_round_trips<ST, T>(value: T) -> bool where
 pub fn id<A>(a: A) -> A { a }
 
 macro_rules! test_round_trip {
-    ($test_name:ident, $sql_type:ident, $tpe:ty) => {
+    ($test_name:ident, $sql_type:ty, $tpe:ty) => {
         test_round_trip!($test_name, $sql_type, $tpe, id);
     };
 
-    ($test_name:ident, $sql_type:ident, $tpe:ty, $map_fn:ident) => {
+    ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident) => {
         #[test]
         fn $test_name() {
+            use diesel::types::*;
+
             fn round_trip(val: $tpe) -> bool {
-                test_type_round_trips::<types::$sql_type, _>($map_fn(val))
+                test_type_round_trips::<$sql_type, _>($map_fn(val))
             }
 
             fn option_round_trip(val: Option<$tpe>) -> bool {
                 let val = val.map($map_fn);
-                test_type_round_trips::<types::Nullable<types::$sql_type>, _>(val)
-            }
-
-            #[cfg(feature = "postgres")]
-            fn vec_round_trip(val: Vec<$tpe>) -> bool {
-                let val: Vec<_> = val.into_iter().map($map_fn).collect();
-                test_type_round_trips::<types::Array<types::$sql_type>, _>(val)
-            }
-
-            #[cfg(not(feature = "postgres"))]
-            fn vec_round_trip(_: Vec<$tpe>) -> bool {
-                true
+                test_type_round_trips::<Nullable<$sql_type>, _>(val)
             }
 
             quickcheck(round_trip as fn($tpe) -> bool);
             quickcheck(option_round_trip as fn(Option<$tpe>) -> bool);
-            quickcheck(vec_round_trip as fn(Vec<$tpe>) -> bool);
         }
     }
 }
@@ -109,6 +99,9 @@ mod pg_types {
     test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
     test_round_trip!(naive_datetime_roundtrips_tz, Timestamptz, (i64, u32), mk_naive_datetime);
     test_round_trip!(uuid_roundtrips, Uuid, (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)), mk_uuid);
+    test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
+    test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
+    test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
