@@ -1,14 +1,6 @@
 use schema::*;
 use diesel::*;
-
-macro_rules! try_no_coerce {
-    ($e:expr) => ({
-        match $e {
-            Ok(e) => e,
-            Err(e) => return Err(e),
-        }
-    })
-}
+use diesel::result::Error;
 
 #[test]
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
@@ -19,10 +11,10 @@ fn transaction_executes_fn_in_a_sql_transaction() {
     setup_test_table(&conn1, test_name);
     let get_count = |conn| count_test_table(conn, test_name);
 
-    conn1.transaction(|| {
+    conn1.transaction::<_, Error, _>(|| {
         assert_eq!(0, get_count(&conn1));
         assert_eq!(0, get_count(&conn2));
-        try_no_coerce!(conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
+        try!(conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
         assert_eq!(1, get_count(&conn1));
         assert_eq!(0, get_count(&conn2));
         Ok(())
@@ -38,7 +30,7 @@ fn transaction_executes_fn_in_a_sql_transaction() {
 fn transaction_returns_the_returned_value() {
     let conn1 = connection_without_transaction();
 
-    assert_eq!(Ok(1), conn1.transaction::<_, (), _>(|| Ok(1)));
+    assert_eq!(Ok(1), conn1.transaction::<_, Error, _>(|| Ok(1)));
 }
 
 #[test]
@@ -48,9 +40,9 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     setup_test_table(&connection, test_name);
     let get_count = || count_test_table(&connection, test_name);
 
-    let _ = connection.transaction::<(), (), _>(|| {
+    let _ = connection.transaction::<(), _, _>(|| {
         connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
-        Err(())
+        Err(Error::RollbackTransaction)
     });
     assert_eq!(0, get_count());
 
@@ -64,22 +56,22 @@ fn transactions_can_be_nested() {
     setup_test_table(&connection, test_name);
     let get_count = || count_test_table(&connection, test_name);
 
-    let _ = connection.transaction::<(), (), _>(|| {
+    let _ = connection.transaction::<(), _, _>(|| {
         connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
         assert_eq!(1, get_count());
-        let _ = connection.transaction::<(), (), _>(|| {
+        let _ = connection.transaction::<(), _, _>(|| {
             connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
             assert_eq!(2, get_count());
-            Err(())
+            Err(Error::RollbackTransaction)
         });
         assert_eq!(1, get_count());
-        let _ = connection.transaction::<(), (), _>(|| {
+        let _ = connection.transaction::<(), Error, _>(|| {
             connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)).unwrap();
             assert_eq!(2, get_count());
             Ok(())
         });
         assert_eq!(2, get_count());
-        Err(())
+        Err(Error::RollbackTransaction)
     });
     assert_eq!(0, get_count());
 
@@ -92,8 +84,8 @@ fn test_transaction_always_rolls_back() {
     let test_name = "test_transaction_always_rolls_back";
     setup_test_table(&connection, test_name);
 
-    let result = connection.test_transaction(|| {
-        try_no_coerce!(connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
+    let result = connection.test_transaction::<_, Error, _>(|| {
+        try!(connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
         assert_eq!(1, count_test_table(&connection, test_name));
         Ok("success")
     });

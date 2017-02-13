@@ -31,6 +31,17 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [now-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/struct.now.html
 
+* [`Connection::transaction`][transaction-0.11.0] now returns your error
+  directly instead of wrapping it in `TransactionError`. It requires that the
+  error implement `From<diesel::result::Error>`
+
+[transaction-0.11.0]: http://docs.diesel.rs/diesel/connection/trait.Connection.html#method.transaction
+
+### Removed
+
+* `result::TransactionError`
+* `result::TransactionResult`
+
 ## [0.10.1] - 2017-02-08
 
 ### Fixed

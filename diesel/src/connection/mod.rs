@@ -34,8 +34,9 @@ pub trait Connection: SimpleConnection + Sized {
     /// function returns an `Err`,
     /// [`TransactionError::UserReturnedError`](../result/enum.TransactionError.html#variant.UserReturnedError)
     /// will be returned wrapping that value.
-    fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
+    fn transaction<T, E, F>(&self, f: F) -> Result<T, E> where
         F: FnOnce() -> Result<T, E>,
+        E: From<Error>,
     {
         let transaction_manager = self.transaction_manager();
         try!(transaction_manager.begin_transaction(self));
@@ -46,7 +47,7 @@ pub trait Connection: SimpleConnection + Sized {
             },
             Err(e) => {
                 try!(transaction_manager.rollback_transaction(self));
-                Err(TransactionError::UserReturnedError(e))
+                Err(e)
             },
         }
     }
@@ -67,7 +68,7 @@ pub trait Connection: SimpleConnection + Sized {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|| {
             user_result = f().ok();
-            Err(())
+            Err(Error::RollbackTransaction)
         });
         user_result.expect("Transaction did not succeed")
     }

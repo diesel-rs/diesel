@@ -227,20 +227,19 @@ fn run_migration<Conn>(conn: &Conn, migration: &Migration, output: &mut Write)
         try!(migration.run(conn));
         try!(conn.insert_new_migration(migration.version()));
         Ok(())
-    }).map_err(|e| e.into())
+    })
 }
 
 fn revert_migration<Conn: Connection>(conn: &Conn, migration: Box<Migration>, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
-    try!(conn.transaction(|| {
+    conn.transaction(|| {
         try!(writeln!(output, "Rolling back migration {}", migration.version()));
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
         try!(::delete(target).execute(conn));
         Ok(())
-    }));
-    Ok(())
+    })
 }
 
 /// Returns the directory containing migrations. Will look at for

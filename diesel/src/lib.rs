@@ -123,7 +123,7 @@ pub mod prelude {
     pub use insertable::Insertable;
     pub use query_dsl::*;
     pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
-    pub use result::{QueryResult, TransactionError, TransactionResult, ConnectionError, ConnectionResult, OptionalExtension};
+    pub use result::{QueryResult, ConnectionError, ConnectionResult, OptionalExtension};
 }
 
 pub use prelude::*;

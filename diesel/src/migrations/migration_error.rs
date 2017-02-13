@@ -1,4 +1,4 @@
-use result::{self, TransactionError};
+use result;
 
 use std::convert::From;
 use std::{fmt, io};
@@ -97,15 +97,5 @@ impl From<result::Error> for RunMigrationsError {
 impl From<io::Error> for RunMigrationsError {
     fn from(e: io::Error) -> Self {
         RunMigrationsError::MigrationError(e.into())
-    }
-}
-
-impl From<TransactionError<RunMigrationsError>> for RunMigrationsError {
-    fn from(e: TransactionError<RunMigrationsError>) -> Self {
-        use result::TransactionError::*;
-        match e {
-            CouldntCreateTransaction(e) => RunMigrationsError::from(e),
-            UserReturnedError(e) => e,
-        }
     }
 }

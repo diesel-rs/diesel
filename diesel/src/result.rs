@@ -15,6 +15,11 @@ pub enum Error {
     QueryBuilderError(Box<StdError+Send+Sync>),
     DeserializationError(Box<StdError+Send+Sync>),
     SerializationError(Box<StdError+Send+Sync>),
+    /// You can return this variant inside of a transaction when you want to
+    /// roll it back, but have no actual error to return. Diesel will never
+    /// return this variant unless you gave it to us, and it can be safely
+    /// ignored in error handling.
+    RollbackTransaction,
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -68,15 +73,8 @@ pub enum ConnectionError {
     __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
-#[derive(Debug, PartialEq)]
-pub enum TransactionError<E> {
-    CouldntCreateTransaction(Error),
-    UserReturnedError(E),
-}
-
 pub type QueryResult<T> = Result<T, Error>;
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
-pub type TransactionResult<T, E> = Result<T, TransactionError<E>>;
 
 pub trait OptionalExtension<T> {
     fn optional(self) -> Result<Option<T>, Error>;
@@ -104,21 +102,6 @@ impl From<NulError> for Error {
     }
 }
 
-impl<E> From<Error> for TransactionError<E> {
-    fn from(e: Error) -> Self {
-        TransactionError::CouldntCreateTransaction(e)
-    }
-}
-
-impl From<TransactionError<Error>> for Error {
-    fn from(e: TransactionError<Error>) -> Self {
-        match e {
-            TransactionError::CouldntCreateTransaction(e) |
-            TransactionError::UserReturnedError(e) => e,
-        }
-    }
-}
-
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -128,6 +111,7 @@ impl Display for Error {
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
+            Error::RollbackTransaction => write!(f, "{}", self.description()),
             Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -142,6 +126,7 @@ impl StdError for Error {
             Error::QueryBuilderError(ref e) => e.description(),
             Error::DeserializationError(ref e) => e.description(),
             Error::SerializationError(ref e) => e.description(),
+            Error::RollbackTransaction => "The current transaction was aborted",
             Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -165,24 +150,6 @@ impl StdError for ConnectionError {
             ConnectionError::BadConnection(ref s) => s,
             ConnectionError::InvalidConnectionUrl(ref s) => s,
             ConnectionError::__Nonexhaustive => unreachable!(),
-        }
-    }
-}
-
-impl<E: Display> Display for TransactionError<E> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TransactionError::CouldntCreateTransaction(ref e) => e.fmt(f),
-            TransactionError::UserReturnedError(ref e) => e.fmt(f),
-        }
-    }
-}
-
-impl<E: StdError> StdError for TransactionError<E> {
-    fn description(&self) -> &str {
-        match *self {
-            TransactionError::CouldntCreateTransaction(ref e) => e.description(),
-            TransactionError::UserReturnedError(ref e) => e.description(),
         }
     }
 }
