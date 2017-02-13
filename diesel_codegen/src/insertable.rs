@@ -51,12 +51,20 @@ fn generate_impl_insertable(model: &Model) -> quote::Tokens {
     );
     let value_tuple = quote!((#(#value_tuple,)*));
 
+    let helper_types = quote!(
+        type SqlType<T> = <T as Expression>::SqlType;
+        type Nullable<T> = <T as IntoNullable>::Nullable;
+    );
+
     let value_fn = quote!(
         #[allow(non_shorthand_field_patterns)]
         fn values(self) -> Self::Values {
             use diesel::expression::{AsExpression, Expression};
             use diesel::insertable::ColumnInsertValue;
             use diesel::types::IntoNullable;
+
+            #helper_types
+
             let #build_expr = *self;
             #value_tuple
         });
@@ -77,7 +85,7 @@ fn generate_impl_insertable(model: &Model) -> quote::Tokens {
 fn make_column_insert_value_definition(
     a: &Attr,
     table_name: &syn::Ident,
-    struct_name: &str
+    struct_name: &str,
 ) -> quote::Tokens {
     let column_name = a.column_name
         .as_ref()
@@ -94,10 +102,19 @@ fn make_column_insert_value_definition(
         >)
 }
 
+fn make_column_insert_expression(column: &quote::Tokens, ident: quote::Tokens) -> quote::Tokens {
+    quote!(
+        ColumnInsertValue::Expression(
+            #column,
+            AsExpression::<Nullable<SqlType<#column>>>::as_expression(#ident)
+        )
+    )
+}
+
 fn make_column_insert_value(
     a: &Attr,
     table_name: &syn::Ident,
-    struct_name: &str
+    struct_name: &str,
 ) -> quote::Tokens {
     let column_name = a.column_name
         .as_ref()
@@ -106,29 +123,19 @@ fn make_column_insert_value(
     let column = quote!(#table_name::#column_name);
     let field_access = a.name_for_pattern();
 
+
     match a.field_kind() {
         "option" => {
+            let inner = make_column_insert_expression(&column, quote!(value));
             quote!(
                 match #field_access {
-                    value @ &Some(_) => {
-                        ColumnInsertValue::Expression(
-                            #column,
-                            AsExpression::<<<#column as Expression>::SqlType
-                                as IntoNullable>::Nullable>::as_expression(value)
-                        )
-                    },
+                    value @ &Some(_) => { #inner },
                     &None => ColumnInsertValue::Default(#column),
                 }
             )
         }
         "regular" => {
-            quote!(
-                ColumnInsertValue::Expression(
-                    #column,
-                    AsExpression::<<<#column as Expression>::SqlType
-                        as IntoNullable>::Nullable>::as_expression(#field_access)
-                )
-            )
+            make_column_insert_expression(&column, quote!(#field_access))
         },
         _ => panic!("Unknown field kind while implementing Insertable for {}", struct_name),
     }
@@ -141,15 +148,15 @@ fn generate_impl_into_insert_statement(model: &Model) -> quote::Tokens {
         .ty_param_id("Op")
         .ty_param_id("Ret")
         .with_predicates(model.generics.lifetimes
-                         .iter()
-                         .map(|l|{
-                             syn::WherePredicate::RegionPredicate(
-                                 syn::WhereRegionPredicate{
-                                     lifetime: l.lifetime.clone(),
-                                     bounds: vec![insert.lifetime.clone()]
-                                 }
-                             )
-                         }))
+            .iter()
+            .map(|l| {
+                syn::WherePredicate::RegionPredicate(
+                    syn::WhereRegionPredicate{
+                        lifetime: l.lifetime.clone(),
+                        bounds: vec![insert.lifetime.clone()],
+                    }
+                )
+            }))
         .build();
 
     let struct_ty = &model.ty;
@@ -160,7 +167,7 @@ fn generate_impl_into_insert_statement(model: &Model) -> quote::Tokens {
             self,
             target: #table_name::table,
             operator: Op,
-            returning: Ret
+            returning: Ret,
         ) -> Self::InsertStatement {
             diesel::query_builder::insert_statement::InsertStatement::new(
                 target,
@@ -175,7 +182,7 @@ fn generate_impl_into_insert_statement(model: &Model) -> quote::Tokens {
         impl#generics diesel::query_builder::insert_statement::IntoInsertStatement<
             #table_name::table,
             Op,
-             Ret
+            Ret,
         > for &'insert #struct_ty
         {
             type InsertStatement =
@@ -183,7 +190,7 @@ fn generate_impl_into_insert_statement(model: &Model) -> quote::Tokens {
                     #table_name::table,
                     Self,
                     Op,
-                    Ret
+                    Ret,
                 >;
 
             #into_insert_statement

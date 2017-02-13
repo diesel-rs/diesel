@@ -10,7 +10,6 @@ table! {
 
 #[test]
 fn simple_struct_definition() {
-
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser {
@@ -99,7 +98,6 @@ test_struct_definition! {
 
 #[test]
 fn named_struct_with_renamed_field() {
-
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser {
