@@ -105,10 +105,15 @@ pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
 {
     use self::information_schema::columns::dsl::*;
 
+    let schema_name = match table.schema {
+        Some(ref name) => name.clone(),
+        None => Conn::Backend::default_schema(conn)?,
+    };
+
     let type_column = Conn::Backend::type_column();
     columns.select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.nullable().eq(&table.schema))
+        .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
 }
@@ -125,10 +130,15 @@ pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableData)
     let pk_query = table_constraints::table.select(table_constraints::constraint_name)
         .filter(constraint_type.eq("PRIMARY KEY"));
 
+    let schema_name = match table.schema {
+        Some(ref name) => name.clone(),
+        None => Conn::Backend::default_schema(conn)?,
+    };
+
     key_column_usage.select(column_name)
         .filter(constraint_name.eq_any(pk_query))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.nullable().eq(&table.schema))
+        .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
 }
