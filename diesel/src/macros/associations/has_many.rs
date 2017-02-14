@@ -16,18 +16,21 @@
 ///
 /// ```no_run
 /// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
 /// # table! { users { id -> Integer, } }
 /// # table! { posts { id -> Integer, user_id -> Integer, } }
+/// #[derive(Identifiable)]
+/// #[table_name = "users"]
 /// pub struct User {
 ///     id: i32,
 /// }
-/// # impl_Identifiable! { #[table_name(users)] struct User { id: i32, } }
 ///
+/// #[derive(Identifiable)]
+/// #[table_name = "posts"]
 /// pub struct Post {
 ///     id: i32,
 ///     user_id: i32,
 /// }
-/// # impl_Identifiable! { #[table_name(posts)] struct Post { id: i32, user_id: i32, } }
 ///
 /// HasMany! {
 ///     (posts, foreign_key = user_id)
