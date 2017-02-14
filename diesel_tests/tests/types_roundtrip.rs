@@ -102,6 +102,7 @@ mod pg_types {
     test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
     test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
+    test_round_trip!(array_of_nullable_roundtrips, Array<Nullable<Text>>, Vec<Option<String>>);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
@@ -131,7 +132,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "postgres")]
 mod unstable_types {
-    use super::{quickcheck, types, test_type_round_trips};
+    use super::{quickcheck, test_type_round_trips};
     use std::time::*;
 
     fn strip_nanosecond_precision(time: SystemTime) -> SystemTime {

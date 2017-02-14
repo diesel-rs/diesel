@@ -134,10 +134,14 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
         let mut buffer = Vec::new();
         for elem in self.iter() {
             let is_null = try!(elem.to_sql(&mut buffer));
-            assert!(is_null == IsNull::No, "Arrays containing null are not supported");
-            try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
-            try!(out.write_all(&buffer));
-            buffer.clear();
+            if let IsNull::No = is_null {
+                try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
+                try!(out.write_all(&buffer));
+                buffer.clear();
+            } else {
+                // https://github.com/postgres/postgres/blob/82f8107b92c9104ec9d9465f3f6a4c6dab4c124a/src/backend/utils/adt/arrayfuncs.c#L1461
+                try!(out.write_i32::<NetworkEndian>(-1));
+            }
         }
 
         Ok(IsNull::No)

@@ -14,6 +14,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [select-0.11.0]: http://docs.diesel.rs/diesel/fn.select.html
 [boxed-0.11.0]: http://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
 
+* Arrays containing null are now supported. `infer_schema!` will never infer an
+  array that contains null, but a `table!` definition which specifies a type of
+  `Array<Nullable<X>>` can now be deserialized to `Vec<Option<T>>`
+
 ### Changed
 
 * It is no longer possible to exhaustively match against
