@@ -37,10 +37,14 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
     }
 }
 
+/// This impl relies on the fact that the only time `T::SqlType` will differ
+/// from `T::SqlTypeForSelect` is to make the right side of a left join become
+/// nullable.
 impl<T, QS> SelectableExpression<QS> for Nullable<T> where
     T: SelectableExpression<QS>,
     Nullable<T>: Expression,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<T: QueryId> QueryId for Nullable<T> {

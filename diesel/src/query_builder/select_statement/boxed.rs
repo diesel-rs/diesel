@@ -20,7 +20,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     order: Box<QueryFragment<DB> + 'a>,
     limit: Box<QueryFragment<DB> + 'a>,
     offset: Box<QueryFragment<DB> + 'a>,
-    _marker: PhantomData<(ST, DB)>,
+    _marker: PhantomData<ST>,
 }
 
 impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
@@ -153,12 +153,12 @@ impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB, Type, Selection> SelectDsl<Selection, Type>
+impl<'a, ST, QS, DB, Selection> SelectDsl<Selection, Selection::SqlTypeForSelect>
     for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend + HasSqlType<Type>,
-        Selection: SelectableExpression<QS, Type> + QueryFragment<DB> + 'a,
+        DB: Backend + HasSqlType<Selection::SqlTypeForSelect>,
+        Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'a, Type, QS, DB>;
+    type Output = BoxedSelectStatement<'a, Selection::SqlTypeForSelect, QS, DB>;
 
     fn select(self, selection: Selection) -> Self::Output {
         BoxedSelectStatement::new(

@@ -55,6 +55,7 @@ macro_rules! fold_function {
             $type_name<T>: Expression,
             T: SelectableExpression<QS>,
         {
+            type SqlTypeForSelect = Self::SqlType;
         }
     }
 }

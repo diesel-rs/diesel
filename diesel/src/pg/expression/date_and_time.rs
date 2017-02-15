@@ -88,5 +88,7 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
 impl<Ts, Tz, Qs> SelectableExpression<Qs> for AtTimeZone<Ts, Tz> where
     AtTimeZone<Ts, Tz>: Expression,
     Ts: SelectableExpression<Qs>,
-    Tz: SelectableExpression<Tz>,
-{}
+    Tz: SelectableExpression<Qs>,
+{
+    type SqlTypeForSelect = Self::SqlType;
+}

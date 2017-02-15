@@ -3,8 +3,6 @@ mod boxed;
 
 pub use self::boxed::BoxedSelectStatement;
 
-use std::marker::PhantomData;
-
 use backend::Backend;
 use expression::*;
 use query_source::*;
@@ -20,7 +18,6 @@ use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub struct SelectStatement<
-    SqlType,
     Select,
     From,
     Distinct = NoDistinctClause,
@@ -38,10 +35,9 @@ pub struct SelectStatement<
     limit: Limit,
     offset: Offset,
     group_by: GroupBy,
-    _marker: PhantomData<SqlType>,
 }
 
-impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
+impl<S, F, D, W, O, L, Of, G> SelectStatement<S, F, D, W, O, L, Of, G> {
     #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
     pub fn new(
         select: S,
@@ -62,12 +58,11 @@ impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
             limit: limit,
             offset: offset,
             group_by: group_by,
-            _marker: PhantomData,
         }
     }
 
     pub fn inner_join<T>(self, other: T)
-        -> SelectStatement<ST, S, InnerJoinSource<F, T>, D, W, O, L, Of, G> where
+        -> SelectStatement<S, InnerJoinSource<F, T>, D, W, O, L, Of, G> where
             T: Table,
             F: Table + JoinTo<T, joins::Inner>,
     {
@@ -84,7 +79,7 @@ impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
     }
 
     pub fn left_outer_join<T>(self, other: T)
-        -> SelectStatement<ST, S, LeftOuterJoinSource<F, T>, D, W, O, L, Of, G> where
+        -> SelectStatement<S, LeftOuterJoinSource<F, T>, D, W, O, L, Of, G> where
             T: Table,
             F: Table + JoinTo<T, joins::LeftOuter>,
     {
@@ -101,7 +96,7 @@ impl<ST, S, F, D, W, O, L, Of, G> SelectStatement<ST, S, F, D, W, O, L, Of, G> {
     }
 }
 
-impl<ST, S, F> SelectStatement<ST, S, F> {
+impl<S, F> SelectStatement<S, F> {
     pub fn simple(select: S, from: F) -> Self {
         SelectStatement::new(
             select,
@@ -116,31 +111,31 @@ impl<ST, S, F> SelectStatement<ST, S, F> {
     }
 }
 
-impl<ST, S, F, D, W, O, L, Of, G> Query
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        S: SelectableExpression<F, ST>,
+impl<S, F, D, W, O, L, Of, G> Query
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F>,
 {
-    type SqlType = ST;
+    type SqlType = S::SqlTypeForSelect;
 }
 
 #[cfg(feature = "postgres")]
-impl<ST, S, F, D, W, O, L, Of, G> Expression
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        S: SelectableExpression<F, ST>,
+impl<S, F, D, W, O, L, Of, G> Expression
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F>,
 {
-    type SqlType = ::types::Array<ST>;
+    type SqlType = ::types::Array<S::SqlTypeForSelect>;
 }
 
 #[cfg(not(feature = "postgres"))]
-impl<ST, S, F, D, W, O, L, Of, G> Expression
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        S: SelectableExpression<F, ST>,
+impl<S, F, D, W, O, L, Of, G> Expression
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        S: SelectableExpression<F>,
 {
-    type SqlType = ST;
+    type SqlType = S::SqlTypeForSelect;
 }
 
-impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
+impl<S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
         DB: Backend,
         S: QueryFragment<DB>,
         F: QuerySource,
@@ -190,8 +185,8 @@ impl<ST, S, F, D, W, O, L, Of, G, DB> QueryFragment<DB>
     }
 }
 
-impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
-    for SelectStatement<ST, S, (), D, W, O, L, Of, G> where
+impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
+    for SelectStatement<S, (), D, W, O, L, Of, G> where
         DB: Backend,
         S: QueryFragment<DB>,
         D: QueryFragment<DB>,
@@ -235,16 +230,17 @@ impl<ST, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
     }
 }
 
-impl_query_id!(SelectStatement<ST, S, F, D, W, O, L, Of, G>);
+impl_query_id!(SelectStatement<S, F, D, W, O, L, Of, G>);
 
-impl<ST, S, F, D, W, O, L, Of, G, QS> SelectableExpression<QS>
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        SelectStatement<ST, S, F, D, W, O, L, Of, G>: Expression,
+impl<S, F, D, W, O, L, Of, G, QS> SelectableExpression<QS>
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
-impl<ST, S, F, D, W, O, L, Of, G> NonAggregate
-    for SelectStatement<ST, S, F, D, W, O, L, Of, G> where
-        SelectStatement<ST, S, F, D, W, O, L, Of, G>: Expression,
+impl<S, F, D, W, O, L, Of, G> NonAggregate
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
 {
 }

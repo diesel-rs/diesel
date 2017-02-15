@@ -20,9 +20,6 @@ impl<'a, Expr> Aliased<'a, Expr> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct FromEverywhere;
-
 impl<'a, T> Expression for Aliased<'a, T> where
     T: Expression,
 {
@@ -57,7 +54,9 @@ impl<'a, T> QueryId for Aliased<'a, T> {
 // FIXME This is incorrect, should only be selectable from WithQuerySource
 impl<'a, T, QS> SelectableExpression<QS> for Aliased<'a, T> where
     Aliased<'a, T>: Expression,
+    T: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<'a, T: Expression + Copy> QuerySource for Aliased<'a, T> {

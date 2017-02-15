@@ -59,6 +59,7 @@ macro_rules! numeric_operation {
             Rhs: SelectableExpression<QS>,
             $name<Lhs, Rhs>: Expression,
         {
+            type SqlTypeForSelect = Self::SqlType;
         }
 
         impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs> where

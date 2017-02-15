@@ -143,6 +143,7 @@ impl<Expr, QS> SelectableExpression<QS> for Any<Expr> where
     Any<Expr>: Expression,
     Expr: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<Expr> NonAggregate for Any<Expr> where
@@ -216,6 +217,7 @@ impl<Expr, QS> SelectableExpression<QS> for All<Expr> where
     All<Expr>: Expression,
     Expr: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<Expr> NonAggregate for All<Expr> where

@@ -15,11 +15,4 @@ fn main() {
 
     let source = users.select((id, count(users.star())));
     //~^ ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
 }

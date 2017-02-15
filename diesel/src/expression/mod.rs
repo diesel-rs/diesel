@@ -104,29 +104,30 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
     }
 }
 
-/// Indicates that an expression can be selected from a source. The second type
-/// argument is optional, but is used to indicate that the right side of a left
-/// outer join is nullable, even if it wasn't before.
+/// Indicates that an expression can be selected from a source. The associated
+/// type is usually the same as `Expression::SqlType`, but is used to indicate
+/// that a column is always nullable when it appears on the right side of a left
+/// outer join, even if it wasn't nullable to begin with.
 ///
 /// Columns will implement this for their table. Certain special types, like
 /// `CountStar` and `Bound` will implement this for all sources. All other
 /// expressions will inherit this from their children.
-pub trait SelectableExpression<
-    QS,
-    Type = <Self as Expression>::SqlType,
->: Expression {
+pub trait SelectableExpression<QS>: Expression {
+    type SqlTypeForSelect;
 }
 
-impl<T: ?Sized, ST, QS> SelectableExpression<QS, ST> for Box<T> where
-    T: SelectableExpression<QS, ST>,
+impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T> where
+    T: SelectableExpression<QS>,
     Box<T>: Expression,
 {
+    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
-impl<'a, T: ?Sized, ST, QS> SelectableExpression<QS, ST> for &'a T where
-    T: SelectableExpression<QS, ST>,
+impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
+    T: SelectableExpression<QS>,
     &'a T: Expression,
 {
+    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 /// Marker trait to indicate that an expression does not include any aggregate
@@ -147,24 +148,24 @@ use query_builder::{QueryFragment, QueryId};
 /// Helper trait used when boxing expressions. This exists to work around the
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
-pub trait BoxableExpression<QS, ST, DB> where
+pub trait BoxableExpression<QS, DB> where
     DB: Backend,
     Self: Expression,
-    Self: SelectableExpression<QS, ST>,
+    Self: SelectableExpression<QS>,
     Self: NonAggregate,
     Self: QueryFragment<DB>,
 {}
 
-impl<QS, T, ST, DB> BoxableExpression<QS, ST, DB> for T where
+impl<QS, T, DB> BoxableExpression<QS, DB> for T where
     DB: Backend,
     T: Expression,
-    T: SelectableExpression<QS, ST>,
+    T: SelectableExpression<QS>,
     T: NonAggregate,
     T: QueryFragment<DB>,
 {
 }
 
-impl<QS, ST, DB> QueryId for BoxableExpression<QS, ST, DB, SqlType=ST> {
+impl<QS, ST, STS, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST, SqlTypeForSelect=STS> {
     type QueryId = ();
 
     fn has_static_query_id() -> bool {

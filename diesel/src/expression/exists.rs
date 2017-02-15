@@ -52,6 +52,7 @@ impl<T> Expression for Exists<T> where
 impl<T, QS> SelectableExpression<QS> for Exists<T> where
     Exists<T>: Expression,
 {
+    type SqlTypeForSelect = Bool;
 }
 
 impl<T> NonAggregate for Exists<T> {

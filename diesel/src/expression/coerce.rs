@@ -41,6 +41,7 @@ impl<T, ST> Expression for Coerce<T, ST> where
 impl<T, ST, QS> SelectableExpression<QS> for Coerce<T, ST> where
     T: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where

@@ -57,6 +57,7 @@ impl<T, U, QS> SelectableExpression<QS> for In<T, U> where
     T: SelectableExpression<QS>,
     U: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<T, U, QS> SelectableExpression<QS> for NotIn<T, U> where
@@ -64,6 +65,7 @@ impl<T, U, QS> SelectableExpression<QS> for NotIn<T, U> where
     T: SelectableExpression<QS>,
     U: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<T, U> NonAggregate for In<T, U> where
@@ -163,9 +165,10 @@ pub trait MaybeEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl<ST, S, F, W, O, L, Of> AsInExpression<ST>
-    for SelectStatement<ST, S, F, W, O, L, Of> where
-        Subselect<SelectStatement<ST, S, F, W, O, L, Of>, ST>: Expression<SqlType=ST>,
+impl<ST, S, F, W, O, L, Of, G> AsInExpression<ST>
+    for SelectStatement<S, F, W, O, L, Of, G> where
+        SelectStatement<S, F, W, O, L, Of, G>: Query<SqlType=ST>,
+        Subselect<SelectStatement<S, F, W, O, L, Of>, ST>: Expression,
 {
     type InExpression = Subselect<Self, ST>;
 
@@ -202,6 +205,7 @@ impl<T, QS> SelectableExpression<QS> for Many<T> where
     Many<T>: Expression,
     T: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<T, DB> QueryFragment<DB> for Many<T> where
@@ -251,6 +255,7 @@ impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where
     Subselect<T, ST>: Expression,
     T: Query,
 {
+    type SqlTypeForSelect = ST;
 }
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where

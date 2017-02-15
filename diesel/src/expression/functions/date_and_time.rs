@@ -15,6 +15,7 @@ impl Expression for now {
 }
 
 impl<QS> SelectableExpression<QS> for now {
+    type SqlTypeForSelect = Timestamp;
 }
 
 impl NonAggregate for now {
