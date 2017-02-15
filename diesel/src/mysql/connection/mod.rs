@@ -3,7 +3,7 @@ mod raw;
 mod stmt;
 mod url;
 
-use connection::{Connection, SimpleConnection, AnsiTransactionManager};
+use connection::*;
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -12,13 +12,13 @@ use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use super::query_builder::MysqlQueryBuilder;
 use types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
+    statement_cache: StatementCache<Mysql, Statement>,
 }
 
 impl SimpleConnection for MysqlConnection {
@@ -40,6 +40,7 @@ impl Connection for MysqlConnection {
         Ok(MysqlConnection {
             raw_connection: raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
+            statement_cache: StatementCache::new(),
         })
     }
 
@@ -96,14 +97,14 @@ impl Connection for MysqlConnection {
 }
 
 impl MysqlConnection {
-    fn prepare_query<T>(&self, source: &T) -> QueryResult<Statement> where
+    fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>> where
         T: QueryFragment<Mysql> + QueryId,
     {
-        let mut query_builder = MysqlQueryBuilder::new();
-        try!(source.to_sql(&mut query_builder).map_err(Error::QueryBuilderError));
+        let mut stmt = self.statement_cache.cached_statement(source, &[], |sql| {
+            self.raw_connection.prepare(sql)
+        })?;
         let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
         try!(source.collect_binds(&mut bind_collector));
-        let mut stmt = try!(self.raw_connection.prepare(&query_builder.finish()));
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         try!(stmt.bind(metadata.into_iter().zip(binds)));
