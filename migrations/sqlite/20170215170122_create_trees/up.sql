@@ -1,0 +1,4 @@
+CREATE TABLE trees (
+  id INTEGER PRIMARY KEY NOT NULL,
+  parent_id INTEGER
+);

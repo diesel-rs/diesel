@@ -135,6 +135,42 @@ fn associations_can_be_grouped_multiple_levels_deep() {
     assert_eq!(expected_data, data);
 }
 
+#[test]
+fn self_referencing_associations() {
+    #[derive(Insertable, Queryable, Associations, Identifiable)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[table_name="trees"]
+    #[belongs_to(Tree, foreign_key="parent_id")]
+    struct Tree {
+        id: i32,
+        parent_id: Option<i32>,
+    }
+
+    let conn = connection();
+    let test_data = vec![
+        Tree { id: 1, parent_id: None },
+        Tree { id: 2, parent_id: None },
+        Tree { id: 3, parent_id: Some(1) },
+        Tree { id: 4, parent_id: Some(2) },
+        Tree { id: 5, parent_id: Some(1) },
+    ];
+    insert(&test_data).into(trees::table)
+        .execute(&conn).unwrap();
+
+    let parents = trees::table.filter(trees::parent_id.is_null())
+        .load::<Tree>(&conn).unwrap();
+    let children = Tree::belonging_to(&parents)
+        .load::<Tree>(&conn).unwrap();
+    let children = children.grouped_by(&parents);
+    let data = parents.into_iter().zip(children).collect::<Vec<_>>();
+
+    let expected_data = vec![
+        (test_data[0], vec![test_data[2], test_data[4]]),
+        (test_data[1], vec![test_data[3]]),
+    ];
+    assert_eq!(expected_data, data);
+}
+
 fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let connection = connection_with_sean_and_tess_in_users_table();
     insert(&NewUser::new("Jim", None)).into(users::table).execute(&connection).unwrap();

@@ -18,6 +18,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   array that contains null, but a `table!` definition which specifies a type of
   `Array<Nullable<X>>` can now be deserialized to `Vec<Option<T>>`
 
+* [`#[belongs_to]`][belongs-to-0.11.0] associations can now be self referential.
+  This will generate the code required for
+  [`belonging_to`][belonging-to-0.11.0], without generating code for performing
+  a join.
+
 ### Changed
 
 * It is no longer possible to exhaustively match against
