@@ -226,25 +226,27 @@ macro_rules! BelongsTo {
             $($rest:tt)*
         })+],
     ) => {
-        joinable_inner!(
-            left_table_ty = $child_table_name::table,
-            right_table_ty = <$parent_struct as $crate::associations::HasTable>::Table,
-            right_table_expr = <$parent_struct as $crate::associations::HasTable>::table(),
-            foreign_key = $child_table_name::$foreign_key_name,
-            primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
-            primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
-        );
+        static_cond!(if $struct_name != $parent_struct {
+            joinable_inner!(
+                left_table_ty = $child_table_name::table,
+                right_table_ty = <$parent_struct as $crate::associations::HasTable>::Table,
+                right_table_expr = <$parent_struct as $crate::associations::HasTable>::table(),
+                foreign_key = $child_table_name::$foreign_key_name,
+                primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
+                primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
+            );
 
-        $(select_column_inner!(
-            $child_table_name::table,
-            <$parent_struct as $crate::associations::HasTable>::Table,
-            $child_table_name::$column_name,
-        );)+
-        select_column_inner!(
-            $child_table_name::table,
-            <$parent_struct as $crate::associations::HasTable>::Table,
-            $child_table_name::star,
-        );
+            $(select_column_inner!(
+                $child_table_name::table,
+                <$parent_struct as $crate::associations::HasTable>::Table,
+                $child_table_name::$column_name,
+            );)+
+            select_column_inner!(
+                $child_table_name::table,
+                <$parent_struct as $crate::associations::HasTable>::Table,
+                $child_table_name::star,
+            );
+        });
     };
 
     // Handle struct with no generics
