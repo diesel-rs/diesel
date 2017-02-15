@@ -1,10 +1,11 @@
-#[macro_use]
-extern crate diesel;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::types::*;
 use diesel::expression::dsl::*;
+use diesel::pg::upsert::*;
 
 table! {
     users {
@@ -14,6 +15,10 @@ table! {
 }
 
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+
+#[derive(Insertable)]
+#[table_name="users"]
+struct NewUser(#[column_name(name)] &'static str);
 
 // NOTE: This test is meant to be comprehensive, but not exhaustive.
 fn main() {
@@ -33,4 +38,7 @@ fn main() {
     users.select(id).filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&connection);
     //~^ ERROR E0277
+    insert(&NewUser("Sean").on_conflict_do_nothing()).into(users)
+        .execute(&connection);
+    //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
 }

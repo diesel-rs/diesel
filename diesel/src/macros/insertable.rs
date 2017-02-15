@@ -207,6 +207,11 @@ macro_rules! impl_Insertable {
                 )
             }
         }
+    } __diesel_parse_as_item! {
+        impl<$($lifetime: 'insert,)* 'insert> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
+            for &'insert $struct_ty
+        {
+        }
     }};
 }
 

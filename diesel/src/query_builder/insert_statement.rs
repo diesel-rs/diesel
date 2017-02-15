@@ -41,7 +41,9 @@ pub trait IntoInsertStatement<Tab, Op, Ret> {
         -> Self::InsertStatement;
 }
 
-impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a [T] {
+impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a [T] where
+    &'a T: UndecoratedInsertRecord<Tab>,
+{
     type InsertStatement = BatchInsertStatement<Tab, Self, Op, Ret>;
 
     fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
@@ -56,7 +58,9 @@ impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a [T] {
     }
 }
 
-impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a Vec<T> {
+impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a Vec<T> where
+    &'a [T]: IntoInsertStatement<Tab, Op, Ret>,
+{
     type InsertStatement = <&'a [T] as IntoInsertStatement<Tab, Op, Ret>>::InsertStatement;
 
     fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
@@ -342,3 +346,20 @@ impl<DB: Backend> QueryFragment<DB> for Insert {
 }
 
 impl_query_id!(Insert);
+
+/// Marker trait to indicate that no additional operations have been added
+/// to a record for insert. Used to prevent things like
+/// `insert(&vec![user.on_conflict_do_nothing(), user2.on_conflict_do_nothing()])`
+/// from compiling.
+pub trait UndecoratedInsertRecord<Table> {
+}
+
+impl<'a, T, Table> UndecoratedInsertRecord<Table> for &'a [T] where
+    &'a T: UndecoratedInsertRecord<Table>,
+{
+}
+
+impl<'a, T, Table> UndecoratedInsertRecord<Table> for &'a Vec<T> where
+    &'a [T]: UndecoratedInsertRecord<Table>,
+{
+}
