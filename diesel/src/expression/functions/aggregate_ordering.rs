@@ -52,6 +52,7 @@ macro_rules! ord_function {
 
         impl<T, QS> SelectableExpression<QS> for $type_name<T> where
             $type_name<T>: Expression,
+            T: SelectableExpression<QS>,
         {
         }
     }
