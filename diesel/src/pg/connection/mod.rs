@@ -8,7 +8,6 @@ pub mod result;
 mod stmt;
 
 use std::ffi::{CString, CStr};
-use std::rc::Rc;
 
 use connection::*;
 use pg::Pg;
@@ -29,7 +28,7 @@ use types::HasSqlType;
 pub struct PgConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
-    statement_cache: StatementCache<Pg, Rc<Statement>>,
+    statement_cache: StatementCache<Pg, Statement>,
 }
 
 unsafe impl Send for PgConnection {}
@@ -109,7 +108,7 @@ impl Connection for PgConnection {
 impl PgConnection {
     #[cfg_attr(feature = "clippy", allow(type_complexity))]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
-        -> QueryResult<(Rc<Statement>, Vec<Option<Vec<u8>>>)>
+        -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         try!(source.collect_binds(&mut bind_collector));
@@ -128,7 +127,7 @@ impl PgConnection {
                 sql,
                 query_name.as_ref().map(|s| &**s),
                 &metadata,
-            ).map(Rc::new)
+            )
         });
 
         Ok((query?, binds))

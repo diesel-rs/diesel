@@ -24,7 +24,7 @@ use types::HasSqlType;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
-    statement_cache: StatementCache<Sqlite, StatementUse>,
+    statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: Rc<RawConnection>,
     transaction_manager: AnsiTransactionManager,
 }
@@ -67,17 +67,19 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        let statement = try!(self.prepare_query(&source.as_query()));
-        let mut statement_ref = statement.borrow_mut();
-        StatementIterator::new(&mut statement_ref).collect()
+        let mut statement = try!(self.prepare_query(&source.as_query()));
+        let statement_use = StatementUse::new(&mut statement);
+        let iter = StatementIterator::new(statement_use);
+        iter.collect()
     }
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let stmt = try!(self.prepare_query(source));
-        try!(stmt.borrow().run());
+        let mut statement = try!(self.prepare_query(source));
+        let statement_use = StatementUse::new(&mut statement);
+        try!(statement_use.run());
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -98,29 +100,25 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
-    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<StatementUse> {
-        let result = try!(self.cached_prepared_statement(source));
+    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<MaybeCached<Statement>> {
+        let mut statement = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         try!(source.collect_binds(&mut bind_collector));
-        {
-            let mut stmt = result.borrow_mut();
-            let metadata = bind_collector.metadata;
-            let binds = bind_collector.binds;
-            for (tpe, value) in metadata.into_iter().zip(binds) {
-                try!(stmt.bind(tpe, value));
-            }
+        let metadata = bind_collector.metadata;
+        let binds = bind_collector.binds;
+        for (tpe, value) in metadata.into_iter().zip(binds) {
+            try!(statement.bind(tpe, value));
         }
 
-        Ok(result)
+        Ok(statement)
     }
 
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
-        -> QueryResult<StatementUse>
+        -> QueryResult<MaybeCached<Statement>>
     {
         self.statement_cache.cached_statement(source, &[], |sql| {
             Statement::prepare(&self.raw_connection, sql)
-                .map(StatementUse::new)
         })
     }
 }

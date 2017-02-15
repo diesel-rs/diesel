@@ -40,7 +40,7 @@ impl Statement {
             })
     }
 
-    pub fn run(&self) -> QueryResult<()> {
+    fn run(&self) -> QueryResult<()> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
             _ => Err(last_error(&self.raw_connection)),
@@ -119,7 +119,7 @@ impl Statement {
         ensure_sqlite_ok(result, &self.raw_connection)
     }
 
-    pub fn step(&mut self) -> Option<SqliteRow> {
+    fn step(&mut self) -> Option<SqliteRow> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE => None,
             ffi::SQLITE_ROW => Some(SqliteRow::new(self.inner_statement)),
@@ -168,32 +168,28 @@ impl Drop for Statement {
     }
 }
 
-use std::cell::RefCell;
-use std::ops::Deref;
-
-#[derive(Clone)]
-pub struct StatementUse {
-    statement: Rc<RefCell<Statement>>,
+pub struct StatementUse<'a> {
+    statement: &'a mut Statement,
 }
 
-impl StatementUse {
-    pub fn new(statement: Statement) -> Self {
+impl<'a> StatementUse<'a> {
+    pub fn new(statement: &'a mut Statement) -> Self {
         StatementUse {
-            statement: Rc::new(RefCell::new(statement)),
+            statement: statement,
         }
     }
-}
 
-impl Deref for StatementUse {
-    type Target = RefCell<Statement>;
+    pub fn run(&self) -> QueryResult<()> {
+        self.statement.run()
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &*self.statement
+    pub fn step(&mut self) -> Option<SqliteRow> {
+        self.statement.step()
     }
 }
 
-impl Drop for StatementUse {
+impl<'a> Drop for StatementUse<'a> {
     fn drop(&mut self) {
-        self.statement.borrow_mut().reset();
+        self.statement.reset();
     }
 }
