@@ -111,6 +111,15 @@ mod pg_types {
     }
 }
 
+#[cfg(feature = "mysql")]
+mod mysql_types {
+    use super::*;
+
+    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+}
+
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
     NaiveDateTime::from_timestamp(data.0, data.1 / 1000)
 }
@@ -123,11 +132,20 @@ pub fn mk_datetime(data: (i64, u32)) -> DateTime<UTC> {
     DateTime::from_utc(mk_naive_datetime(data), UTC)
 }
 
+#[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
     let latest_chrono_date = date::MAX;
     let num_days_representable = latest_chrono_date.signed_duration_since(earliest_pg_date).num_days();
     earliest_pg_date + Duration::days(days as i64 % num_days_representable)
+}
+
+#[cfg(feature = "mysql")]
+pub fn mk_naive_date(days: u32) -> NaiveDate {
+    let earliest_mysql_date = NaiveDate::from_ymd(1000, 01, 01);
+    let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
+    let num_days_representable = latest_mysql_date.signed_duration_since(earliest_mysql_date).num_days();
+    earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
 }
 
 #[cfg(feature = "postgres")]

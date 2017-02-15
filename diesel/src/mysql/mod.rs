@@ -1,6 +1,6 @@
 mod backend;
 mod connection;
-// mod types;
+mod types;
 
 pub mod query_builder;
 
