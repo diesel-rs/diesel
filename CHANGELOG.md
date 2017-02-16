@@ -34,6 +34,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   [`belonging_to`][belonging-to-0.11.0], without generating code for performing
   a join.
 
+* Added support for the `rust-lang-deprecated/time` crate on PostgreSQL. To use
+  it, add `features = ["deprecated-time"]`
+
 ### Changed
 
 * It is no longer possible to exhaustively match against

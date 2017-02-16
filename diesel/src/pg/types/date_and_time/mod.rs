@@ -13,6 +13,8 @@ mod quickcheck_impls;
 mod std_time;
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "deprecated-time")]
+mod deprecated_time;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Timestamps are represented in Postgres as a 64 bit signed integer representing the number of
