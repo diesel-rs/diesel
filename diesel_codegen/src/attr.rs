@@ -36,7 +36,7 @@ impl Attr {
         }
     }
 
-    fn field_kind(&self) -> &str {
+    pub fn field_kind(&self) -> &str {
         if is_option_ty(&self.ty) {
             "option"
         } else if self.column_name.is_none() && self.field_name.is_none() {
