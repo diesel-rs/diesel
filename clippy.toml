@@ -6,5 +6,5 @@ doc-valid-idents = [
   "GitHub",
   "IPv4", "IPv6",
   "JavaScript", "NaN", "OAuth",
-  "SQLite", "PostgreSQL"
+  "SQLite", "PostgreSQL", "MySQL"
 ]
