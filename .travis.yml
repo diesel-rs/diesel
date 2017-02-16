@@ -7,7 +7,7 @@ rust:
   - nightly
 cache: cargo
 addons:
-  postgresql: '9.4'
+  postgresql: '9.5'
 before_script:
   - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH

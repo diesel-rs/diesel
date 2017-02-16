@@ -4,6 +4,7 @@ mod backend;
 mod query_builder;
 mod connection;
 pub mod types;
+pub mod upsert;
 
 pub use self::backend::{Pg, PgTypeMetadata};
 pub use self::connection::PgConnection;
