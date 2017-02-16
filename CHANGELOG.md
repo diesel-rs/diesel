@@ -10,7 +10,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for MySQL as an additional backend. Diesel CLI will install with
   MySQL support by default. To enable it for Diesel and Diesel Codegen, add
-  `features = ["mysql]` to Cargo.toml. See [the docs][mysql-0.11.0] for details.
+  `features = ["mysql"]` to Cargo.toml. See [the docs][mysql-0.11.0] for details.
 
 [mysql-0.11.0]: http://docs.diesel.rs/diesel/mysql/index.html
 
