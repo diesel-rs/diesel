@@ -34,6 +34,7 @@ impl<T, QS> SelectableExpression<QS> for Grouped<T> where
     T: SelectableExpression<QS>,
     Grouped<T>: Expression,
 {
+    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<T: NonAggregate> NonAggregate for Grouped<T> where

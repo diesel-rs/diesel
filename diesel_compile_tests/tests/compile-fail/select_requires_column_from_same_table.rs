@@ -20,10 +20,4 @@ table! {
 fn main() {
     let select_id = users::table.select(posts::id);
     //~^ ERROR SelectableExpression
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
 }

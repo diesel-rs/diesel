@@ -66,6 +66,7 @@ impl<T: QueryId, U> QueryId for Bound<T, U> {
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
     Bound<T, U>: Expression,
 {
+    type SqlTypeForSelect = T;
 }
 
 impl<T, U> NonAggregate for Bound<T, U> where

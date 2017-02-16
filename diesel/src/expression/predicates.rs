@@ -30,6 +30,7 @@ macro_rules! infix_predicate_body {
             T: $crate::expression::SelectableExpression<QS>,
             U: $crate::expression::SelectableExpression<QS>,
         {
+            type SqlTypeForSelect = Self::SqlType;
         }
 
         impl<T, U> $crate::expression::NonAggregate for $name<T, U> where
@@ -219,6 +220,7 @@ macro_rules! postfix_predicate_body {
         impl<T, QS> $crate::expression::SelectableExpression<QS> for $name<T> where
             T: $crate::expression::SelectableExpression<QS>,
         {
+            type SqlTypeForSelect = Self::SqlType;
         }
 
         impl<T> $crate::expression::NonAggregate for $name<T> where

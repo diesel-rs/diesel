@@ -1,12 +1,10 @@
-use std::marker::PhantomData;
-
 use backend::*;
 use expression::{AsExpression, Expression, SelectableExpression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use query_builder::debug::DebugQueryBuilder;
 use result::QueryResult;
-use types::{Array, HasSqlType};
+use types::Array;
 
 /// Creates a PostgreSQL `ANY` expression.
 ///
@@ -38,8 +36,7 @@ use types::{Array, HasSqlType};
 /// assert_eq!(Ok(vec![sean, jim]), data.load(&connection));
 /// # }
 /// ```
-pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
-    Pg: HasSqlType<ST>,
+pub fn any<ST, T>(vals: T) -> Any<T::Expression> where
     T: AsExpression<Array<ST>>,
 {
     Any::new(vals.as_expression())
@@ -74,8 +71,7 @@ pub fn any<ST, T>(vals: T) -> Any<T::Expression, ST> where
 /// assert_eq!(Ok(vec![tess]), data.load(&connection));
 /// # }
 /// ```
-pub fn all<ST, T>(vals: T) -> All<T::Expression, ST> where
-    Pg: HasSqlType<ST>,
+pub fn all<ST, T>(vals: T) -> All<T::Expression> where
     T: AsExpression<Array<ST>>,
 {
     All::new(vals.as_expression())
@@ -83,28 +79,25 @@ pub fn all<ST, T>(vals: T) -> All<T::Expression, ST> where
 
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone)]
-pub struct Any<Expr, ST> {
+pub struct Any<Expr> {
     expr: Expr,
-    _marker: PhantomData<ST>,
 }
 
-impl<Expr, ST> Any<Expr, ST> {
+impl<Expr> Any<Expr> {
     fn new(expr: Expr) -> Self {
         Any {
             expr: expr,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<Expr, ST> Expression for Any<Expr, ST> where
-    Pg: HasSqlType<ST>,
+impl<Expr, ST> Expression for Any<Expr> where
     Expr: Expression<SqlType=Array<ST>>,
 {
     type SqlType = ST;
 }
 
-impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
+impl<Expr> QueryFragment<Pg> for Any<Expr> where
     Expr: QueryFragment<Pg>,
 {
     fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
@@ -124,7 +117,7 @@ impl<Expr, ST> QueryFragment<Pg> for Any<Expr, ST> where
     }
 }
 
-impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
+impl<Expr> QueryFragment<Debug> for Any<Expr> where
     Expr: QueryFragment<Debug>,
 {
     fn to_sql(&self, out: &mut DebugQueryBuilder) -> BuildQueryResult {
@@ -144,45 +137,41 @@ impl<Expr, ST> QueryFragment<Debug> for Any<Expr, ST> where
     }
 }
 
-impl_query_id!(Any<Expr, ST>);
+impl_query_id!(Any<Expr>);
 
-impl<Expr, ST, QS> SelectableExpression<QS> for Any<Expr, ST> where
-    Pg: HasSqlType<ST>,
-    Any<Expr, ST>: Expression,
+impl<Expr, QS> SelectableExpression<QS> for Any<Expr> where
+    Any<Expr>: Expression,
     Expr: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
-impl<Expr, ST> NonAggregate for Any<Expr, ST> where
+impl<Expr> NonAggregate for Any<Expr> where
     Expr: NonAggregate,
-    Any<Expr, ST>: Expression,
 {
 }
 
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone)]
-pub struct All<Expr, ST> {
+pub struct All<Expr> {
     expr: Expr,
-    _marker: PhantomData<ST>,
 }
 
-impl<Expr, ST> All<Expr, ST> {
+impl<Expr> All<Expr> {
     fn new(expr: Expr) -> Self {
         All {
             expr: expr,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<Expr, ST> Expression for All<Expr, ST> where
-    Pg: HasSqlType<ST>,
+impl<Expr, ST> Expression for All<Expr> where
     Expr: Expression<SqlType=Array<ST>>,
 {
     type SqlType = ST;
 }
 
-impl<Expr, ST> QueryFragment<Pg> for All<Expr, ST> where
+impl<Expr> QueryFragment<Pg> for All<Expr> where
     Expr: QueryFragment<Pg>,
 {
     fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
@@ -202,7 +191,7 @@ impl<Expr, ST> QueryFragment<Pg> for All<Expr, ST> where
     }
 }
 
-impl<Expr, ST> QueryFragment<Debug> for All<Expr, ST> where
+impl<Expr> QueryFragment<Debug> for All<Expr> where
     Expr: QueryFragment<Debug>,
 {
     fn to_sql(&self, out: &mut DebugQueryBuilder) -> BuildQueryResult {
@@ -222,17 +211,16 @@ impl<Expr, ST> QueryFragment<Debug> for All<Expr, ST> where
     }
 }
 
-impl_query_id!(All<Expr, ST>);
+impl_query_id!(All<Expr>);
 
-impl<Expr, ST, QS> SelectableExpression<QS> for All<Expr, ST> where
-    Pg: HasSqlType<ST>,
-    All<Expr, ST>: Expression,
+impl<Expr, QS> SelectableExpression<QS> for All<Expr> where
+    All<Expr>: Expression,
     Expr: SelectableExpression<QS>,
 {
+    type SqlTypeForSelect = Self::SqlType;
 }
 
-impl<Expr, ST> NonAggregate for All<Expr, ST> where
+impl<Expr> NonAggregate for All<Expr> where
     Expr: NonAggregate,
-    All<Expr, ST>: Expression,
 {
 }

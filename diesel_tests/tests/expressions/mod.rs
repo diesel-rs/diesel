@@ -114,7 +114,9 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}
+impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {
+    type SqlTypeForSelect = T;
+}
 
 fn arbitrary<T>() -> Arbitrary<T> {
     Arbitrary { _marker: PhantomData }

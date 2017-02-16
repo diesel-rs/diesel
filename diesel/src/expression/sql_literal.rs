@@ -51,6 +51,7 @@ impl<ST> Query for SqlLiteral<ST> {
 }
 
 impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
+    type SqlTypeForSelect = ST;
 }
 
 impl<ST> NonAggregate for SqlLiteral<ST> {

@@ -115,7 +115,7 @@ pub fn insert<T: ?Sized>(records: &T) -> IncompleteInsertStatement<&T, Insert> {
 /// Creates a bare select statement, with no from clause. Primarily used for
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
-pub fn select<T>(expression: T) -> SelectStatement<T::SqlType, T, ()> where
+pub fn select<T>(expression: T) -> SelectStatement<T, ()> where
     T: Expression,
 {
     SelectStatement::simple(expression, ())

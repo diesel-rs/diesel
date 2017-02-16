@@ -51,10 +51,11 @@ macro_rules! fold_function {
 
         impl_query_id!($type_name<T>);
 
-        impl<ST, T, QS> SelectableExpression<QS> for $type_name<T> where
-            ST: Foldable,
-            T: Expression<SqlType=ST>,
+        impl<T, QS> SelectableExpression<QS> for $type_name<T> where
+            $type_name<T>: Expression,
+            T: SelectableExpression<QS>,
         {
+            type SqlTypeForSelect = Self::SqlType;
         }
     }
 }

@@ -16,7 +16,7 @@ use super::data_structures::*;
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
         self::information_schema::columns::table,
-        types::Text,
+        SqlTypeForSelect=types::Text,
     > + NonAggregate + QueryId + QueryFragment<Self>;
 
     fn type_column() -> Self::TypeColumn;

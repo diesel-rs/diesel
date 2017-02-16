@@ -46,6 +46,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [transaction-0.11.0]: http://docs.diesel.rs/diesel/connection/trait.Connection.html#method.transaction
 
+* The way tuples of columns from the right side of left outer joins interact
+  with `.select` has changed. If you are deserializing into an option of a tuple
+  (instead of a tuple of options), you will need to explicitly call
+  `.nullable()`. (e.g. `.select(users::name, (posts::title,
+  posts::body).nullable())`)
+
 ### Removed
 
 * `result::TransactionError`

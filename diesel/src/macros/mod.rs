@@ -31,19 +31,24 @@ macro_rules! __diesel_column {
 
         impl_query_id!($column_name);
 
-        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {}
-
-        impl<'a, ST, Left, Right> SelectableExpression<
-            $crate::WithQuerySource<'a, Left, Right>, ST> for $column_name where
-            $column_name: SelectableExpression<Left, ST>
-        {
+        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {
+            type SqlTypeForSelect = $Type;
         }
 
-        impl<ST, Source, Predicate> SelectableExpression<
-            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>, ST>
-            for $column_name where
-                $column_name: SelectableExpression<Source, ST>
+        impl<'a, Left, Right> SelectableExpression<
+            $crate::WithQuerySource<'a, Left, Right>,
+        > for $column_name where
+            $column_name: SelectableExpression<Left>,
         {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Source, Predicate> SelectableExpression<
+            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
+        > for $column_name where
+            $column_name: SelectableExpression<Source>,
+        {
+            type SqlTypeForSelect = $Type;
         }
 
         impl $crate::expression::NonAggregate for $column_name {}
@@ -301,7 +306,7 @@ macro_rules! table_body {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<SqlType, ($($column_name,)+), Self>;
+                type Query = SelectStatement<($($column_name,)+), Self>;
 
                 fn as_query(self) -> Self::Query {
                     SelectStatement::simple(all_columns, self)
@@ -376,7 +381,9 @@ macro_rules! table_body {
                     }
                 }
 
-                impl SelectableExpression<table> for star {}
+                impl SelectableExpression<table> for star {
+                    type SqlTypeForSelect = Self::SqlType;
+                }
 
                 $(__diesel_column!(table, $column_name -> $column_ty);)+
             }
@@ -485,26 +492,29 @@ macro_rules! select_column_inner {
             $crate::query_source::InnerJoinSource<$child, $parent>,
         > for $column
         {
+            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::InnerJoinSource<$parent, $child>,
         > for $column
         {
+            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-            <<$column as $crate::Expression>::SqlType
-                as $crate::types::IntoNullable>::Nullable,
         > for $column
         {
+            type SqlTypeForSelect = <<Self as $crate::Expression>::SqlType
+                as $crate::types::IntoNullable>::Nullable;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$parent, $child>,
         > for $column
         {
+            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
     }
 }

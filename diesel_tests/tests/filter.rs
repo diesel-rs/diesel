@@ -260,7 +260,7 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
-    fn by_name(name: &str) -> Box<BoxableExpression<users::table, types::Bool, TestBackend, SqlType=types::Bool>> {
+    fn by_name(name: &str) -> Box<BoxableExpression<users::table, TestBackend, SqlType=types::Bool, SqlTypeForSelect=types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

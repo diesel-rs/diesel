@@ -28,5 +28,4 @@ fn main() {
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
-    //~| ERROR E0277
 }

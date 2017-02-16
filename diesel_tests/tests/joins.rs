@@ -128,7 +128,27 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
 }
 
 #[test]
-fn select_multiple_from_right_side_returns_optional_tuple() {
+fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    connection.execute("INSERT INTO posts (user_id, title) VALUES
+        (1, 'Hello'),
+        (1, 'World')
+    ").unwrap();
+
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Hello".to_string())),
+    ];
+    let source = users::table.left_outer_join(posts::table)
+        .select((users::name, posts::title))
+        .filter(posts::title.eq("Hello"));
+    let actual_data: Vec<_> = source.load(&connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[test]
+fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_called() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     connection.execute("INSERT INTO posts (user_id, title, body) VALUES
@@ -142,7 +162,7 @@ fn select_multiple_from_right_side_returns_optional_tuple() {
         None,
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((posts::title, posts::body));
+    let source = users::table.left_outer_join(posts::table).select((posts::title, posts::body).nullable());
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -165,7 +185,7 @@ fn select_complex_from_left_join() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body)));
+    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body).nullable()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -188,7 +208,7 @@ fn select_right_side_with_nullable_column_first() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title)));
+    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title).nullable()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);

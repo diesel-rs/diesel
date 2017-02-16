@@ -1,4 +1,6 @@
+use prelude::*;
 use expression::SelectableExpression;
+use expression::nullable::Nullable;
 use query_builder::*;
 use result::QueryResult;
 use super::{QuerySource, Table};
@@ -35,13 +37,12 @@ impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
     Right: Table,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
-                                   InnerJoinSource<Left, Right>,
-                                   (Left::SqlType, Right::SqlType),
-                               >,
+        InnerJoinSource<Left, Right>,
+        SqlTypeForSelect=(Left::SqlType, Right::SqlType),
+    >,
 {
     type SqlType = (Left::SqlType, Right::SqlType);
     type Query = SelectStatement<
-        (Left::SqlType, Right::SqlType),
         (Left::AllColumns, Right::AllColumns),
         Self,
     >;
@@ -84,20 +85,22 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
     Right::SqlType: IntoNullable,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<
-                                   LeftOuterJoinSource<Left, Right>,
-                                   (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable),
-                               >,
+    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
+        LeftOuterJoinSource<Left, Right>,
+        SqlTypeForSelect=(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
+    >,
 {
     type SqlType = (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
     type Query = SelectStatement<
-        Self::SqlType,
-        (Left::AllColumns, Right::AllColumns),
+        (Left::AllColumns, Nullable<Right::AllColumns>),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
+        SelectStatement::simple(
+            (Left::all_columns(), Right::all_columns().nullable()),
+            self,
+        )
     }
 }
 

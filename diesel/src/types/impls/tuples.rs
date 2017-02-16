@@ -210,21 +210,11 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($ST),+, QS>
-                SelectableExpression<QS, ($($ST,)+)>
-                for ($($T,)+) where
-                $($T: SelectableExpression<QS, $ST>),+,
+            impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
+                $($T: SelectableExpression<QS>,)+
                 ($($T,)+): Expression,
             {
-            }
-
-            impl<$($T),+, $($ST),+, QS>
-                SelectableExpression<QS, Nullable<($($ST,)+)>>
-                for ($($T,)+) where
-                $($ST: IntoNullable,)+
-                $($T: SelectableExpression<QS, $ST::Nullable, SqlType=$ST>),+,
-                ($($T,)+): Expression,
-            {
+                type SqlTypeForSelect = ($($T::SqlTypeForSelect,)+);
             }
 
             impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
