@@ -86,3 +86,25 @@ fn migration_run_inserts_run_on_timestamps() {
     assert!(valid_run_on_timestamp(&db),
             "Running a migration did not insert an updated run_on value");
 }
+
+#[test]
+fn empty_migrations_are_not_valid() {
+    let p = project("migration_run_empty")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_empty_migration",
+        "",
+        ""
+    );
+
+    let result = p.command("migration")
+        .arg("run")
+        .run();
+
+    assert!(!result.is_success());
+    assert!(result.stdout().contains("empty migration"));
+}
