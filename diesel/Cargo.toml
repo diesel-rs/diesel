@@ -16,7 +16,7 @@ byteorder = "1.0"
 chrono = { version = "0.3", optional = true }
 libc = "0.2.*"
 libsqlite3-sys = { version = ">= 0.4.0, <0.7.0", optional = true }
-mysqlclient-sys = { git = "https://github.com/sgrif/mysqlclient-sys.git", optional = true }
+mysqlclient-sys = { git = "https://github.com/sgrif/mysqlclient-sys.git", optional = true, rev = "3b1daa0f3a8f41fd685f470a3f2db7ca57857862" }
 pq-sys = { version = "^0.2.0", optional = true }
 quickcheck = { version = "0.3.1", optional = true }
 serde_json = { version = ">=0.8.0, <0.10.0", optional = true }
