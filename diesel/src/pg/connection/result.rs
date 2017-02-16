@@ -1,13 +1,13 @@
 extern crate pq_sys;
-extern crate libc;
+
+use self::pq_sys::*;
+use std::ffi::CStr;
+use std::os::raw as libc;
+use std::{str, slice};
 
 use result::{Error, QueryResult, DatabaseErrorInformation, DatabaseErrorKind};
 use super::row::PgRow;
 use super::raw::RawResult;
-
-use self::pq_sys::*;
-use std::ffi::CStr;
-use std::{str, slice};
 
 pub struct PgResult {
     internal_result: RawResult,
@@ -15,6 +15,8 @@ pub struct PgResult {
 
 impl PgResult {
     pub fn new(internal_result: RawResult) -> QueryResult<Self> {
+        use self::ExecStatusType::*;
+
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
             PGRES_COMMAND_OK | PGRES_TUPLES_OK => {

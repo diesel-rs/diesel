@@ -1,10 +1,10 @@
 #![cfg_attr(feature = "clippy", allow(too_many_arguments))]
 
 extern crate pq_sys;
-extern crate libc;
 
 use self::pq_sys::*;
 use std::ffi::{CString, CStr};
+use std::os::raw as libc;
 use std::{str, ptr};
 
 use result::*;
@@ -16,6 +16,8 @@ pub struct RawConnection {
 
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
+        use self::ConnStatusType::*;
+
         let connection_string = try!(CString::new(database_url));
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };

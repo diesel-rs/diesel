@@ -1,5 +1,3 @@
-extern crate libc;
-
 mod cursor;
 pub mod raw;
 mod row;
@@ -8,6 +6,7 @@ pub mod result;
 mod stmt;
 
 use std::ffi::{CString, CStr};
+use std::os::raw as libc;
 
 use connection::*;
 use pg::Pg;

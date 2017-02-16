@@ -1,8 +1,7 @@
 extern crate pq_sys;
-extern crate libc;
-
 
 use std::ffi::CString;
+use std::os::raw as libc;
 use std::ptr;
 
 use pg::PgTypeMetadata;
