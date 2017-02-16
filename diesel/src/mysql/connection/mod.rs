@@ -15,6 +15,8 @@ use super::backend::Mysql;
 use types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
+/// A connection to a MySQL database. Connection URLs should be in the form
+/// mysql://[user[:password]@]host/database_name
 pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
