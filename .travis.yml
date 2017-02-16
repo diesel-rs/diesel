@@ -22,6 +22,9 @@ script:
   if [[ "$BACKEND" == postgres ]]; then
     (cd examples/postgres && ./test_all)
   fi &&
+  if [[ "$BACKEND" == mysql ]]; then
+    (cd examples/mysql && ./test_all)
+  fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_codegen && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
