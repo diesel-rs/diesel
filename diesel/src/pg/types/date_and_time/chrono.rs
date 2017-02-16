@@ -12,9 +12,6 @@ use super::{PgDate, PgTime, PgTimestamp};
 use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
 
 expression_impls! {
-    Date -> NaiveDate,
-    Time -> NaiveTime,
-    Timestamp -> NaiveDateTime,
     Timestamptz -> NaiveDateTime,
     Timestamptz -> DateTime<UTC>,
     Timestamptz -> DateTime<FixedOffset>,
@@ -22,9 +19,6 @@ expression_impls! {
 }
 
 queryable_impls! {
-    Date -> NaiveDate,
-    Time -> NaiveTime,
-    Timestamp -> NaiveDateTime,
     Timestamptz -> NaiveDateTime,
     Timestamptz -> DateTime<UTC>,
 }
