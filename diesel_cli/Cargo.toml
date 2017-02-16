@@ -26,7 +26,7 @@ tempdir = "0.3.4"
 regex = "0.1.48"
 
 [features]
-default = ["postgres", "sqlite"]
+default = ["postgres", "sqlite", "mysql"]
 lint = ["clippy"]
 postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
 sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
