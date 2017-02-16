@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "0.10.1"
+version = "0.11.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
@@ -27,7 +27,7 @@ uuid = { version = ">=0.2.0, <0.5.0", optional = true, features = ["use_std"] }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-diesel_codegen = "0.10.0"
+diesel_codegen = "0.11.0"
 dotenv = "0.8.0"
 quickcheck = "0.3.1"
 tempdir = "^0.3.4"

@@ -4,7 +4,7 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.11.0] - 2017-02-16
 
 ### Added
 
@@ -22,8 +22,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Queries constructed using [`diesel::select`][select-0.11.0] now work properly
   when [boxed][boxed-0.11.0].
 
-[select-0.11.0]: http://docs.diesel.rs/diesel/fn.select.html
-[boxed-0.11.0]: http://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
+[select-0.11.0]: https://docs.rs/diesel/0.11.0/diesel/fn.select.html
+[boxed-0.11.0]: http://docs.rs/diesel/0.11.0/prelude/trait.BoxedDsl.html
 
 * Arrays containing null are now supported. `infer_schema!` will never infer an
   array that contains null, but a `table!` definition which specifies a type of
@@ -33,6 +33,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   This will generate the code required for
   [`belonging_to`][belonging-to-0.11.0], without generating code for performing
   a join.
+
+[belongs-to-0.11.0]: https://docs.rs/diesel/0.11.0/diesel/associations/trait.BelongsTo.html
+[belonging-to-0.11.0]: https://docs.rs/diesel/0.11.0/diesel/prelude/trait.BelongingToDsl.html#tymethod.belonging_to
 
 * Added support for the `rust-lang-deprecated/time` crate on PostgreSQL. To use
   it, add `features = ["deprecated-time"]`
@@ -690,3 +693,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.9.1]: https://github.com/diesel-rs/diesel/compare/v0.9.0...v0.9.1
 [0.10.0]: https://github.com/diesel-rs/diesel/compare/v0.9.1...v0.10.0
 [0.10.1]: https://github.com/diesel-rs/diesel/compare/v0.10.0...v0.10.1
+[0.11.0]: https://github.com/diesel-rs/diesel/compare/v0.10.1...v0.11.0
