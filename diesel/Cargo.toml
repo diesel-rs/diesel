@@ -4,6 +4,7 @@ version = "0.10.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
+readme = "README.md"
 documentation = "http://docs.diesel.rs"
 homepage = "http://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
