@@ -36,9 +36,21 @@ impl Backend {
             _ => Backend::Sqlite,
             #[cfg(not(feature="sqlite"))]
             _ => {
-                panic!("{:?} is not a valid database URL. It should start with \
-                        `postgres://` or `mysql://`", database_url);
-            }
+                let mut available_schemas: Vec<&str> = Vec::new();
+
+                // One of these will always be true, or you are compiling
+                // diesel_cli without a backend. And why would you ever want to
+                // do that?
+                if cfg!(feature="postgres") {
+                    available_schemes.push("`postgres://`");
+                }
+                if cfg!(feature="mysql") {
+                    available_schemes.push("`mysql://`");
+                }
+
+                panic!("`{}` is not a valid database URL. It should start with {}",
+                    database_url, available_schemes.join(" or "));
+            },
         }
     }
 }
