@@ -15,13 +15,13 @@ impl<T> OnConflictDoNothing<T> {
     }
 }
 
-impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a OnConflictDoNothing<T> {
-    type InsertStatement = InsertStatement<Tab, Self, Op, Ret>;
+impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a OnConflictDoNothing<T> {
+    type InsertStatement = InsertStatement<Tab, Self, Op>;
 
-    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+    fn into_insert_statement(self, target: Tab, operator: Op)
         -> Self::InsertStatement
     {
-        InsertStatement::new(target, self, operator, returning)
+        InsertStatement::no_returning_clause(target, self, operator)
     }
 }
 

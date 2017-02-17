@@ -193,17 +193,16 @@ macro_rules! impl_Insertable {
         }
 
     } __diesel_parse_as_item! {
-        impl<$($lifetime: 'insert,)* 'insert, Op, Ret> $crate::query_builder::insert_statement::IntoInsertStatement<$table_name::table, Op, Ret>
+        impl<$($lifetime: 'insert,)* 'insert, Op> $crate::query_builder::insert_statement::IntoInsertStatement<$table_name::table, Op>
             for &'insert $struct_ty
         {
-            type InsertStatement = $crate::query_builder::insert_statement::InsertStatement<$table_name::table, Self, Op, Ret>;
+            type InsertStatement = $crate::query_builder::insert_statement::InsertStatement<$table_name::table, Self, Op>;
 
-            fn into_insert_statement(self, target: $table_name::table, operator: Op, returning: Ret) -> Self::InsertStatement {
-                $crate::query_builder::insert_statement::InsertStatement::new(
+            fn into_insert_statement(self, target: $table_name::table, operator: Op) -> Self::InsertStatement {
+                $crate::query_builder::insert_statement::InsertStatement::no_returning_clause(
                     target,
                     self,
                     operator,
-                    returning,
                 )
             }
         }
