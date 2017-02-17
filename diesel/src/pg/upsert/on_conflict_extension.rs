@@ -7,6 +7,8 @@ pub trait OnConflictExtension {
     ///
     /// # Examples
     ///
+    /// ### Single Record
+    ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
@@ -44,6 +46,8 @@ pub trait OnConflictExtension {
     /// # }
     /// ```
     ///
+    /// ### Vec of Records
+    ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
@@ -76,10 +80,46 @@ pub trait OnConflictExtension {
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
     /// ```
+    ///
+    /// ### Slice of records
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Clone, Copy, Insertable)]
+    /// # #[table_name="users"]
+    /// # struct User<'a> {
+    /// #     id: i32,
+    /// #     name: &'a str,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// use self::diesel::pg::upsert::*;
+    ///
+    /// #     let conn = establish_connection();
+    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// let user = User { id: 1, name: "Sean", };
+    ///
+    /// let new_users: &[User] = &[user, user];
+    /// let inserted_row_count = diesel::insert(&new_users.on_conflict_do_nothing())
+    ///     .into(users).execute(&conn);
+    /// assert_eq!(Ok(1), inserted_row_count);
+    /// # }
+    /// ```
     fn on_conflict_do_nothing(&self) -> OnConflictDoNothing<&Self> {
         OnConflictDoNothing::new(self)
     }
 }
 
-impl<T> OnConflictExtension for T {
+impl<T: ?Sized> OnConflictExtension for T {
 }
