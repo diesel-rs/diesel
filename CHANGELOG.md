@@ -10,6 +10,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `.on_conflict_do_nothing()` now interacts with slices properly.
 
+* `MysqlConnection` now implements `Send`, which is required for connection
+  pooling.
+
 ## [0.11.0] - 2017-02-16
 
 ### Added

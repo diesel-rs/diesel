@@ -16,7 +16,7 @@ pub trait SimpleConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
-pub trait Connection: SimpleConnection + Sized {
+pub trait Connection: SimpleConnection + Sized + Send {
     type Backend: Backend;
     #[doc(hidden)]
     type TransactionManager: TransactionManager<Self>;
