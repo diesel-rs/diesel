@@ -104,6 +104,11 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
     let mut sql = String::new();
     let mut file = try!(File::open(path));
     try!(file.read_to_string(&mut sql));
+
+    if sql.is_empty() {
+        return Err(RunMigrationsError::EmptyMigration);
+    }
+
     try!(conn.batch_execute(&sql));
     Ok(())
 }

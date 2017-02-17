@@ -65,6 +65,7 @@ impl From<io::Error> for MigrationError {
 pub enum RunMigrationsError {
     MigrationError(MigrationError),
     QueryError(result::Error),
+    EmptyMigration,
 }
 
 impl Error for RunMigrationsError {
@@ -72,6 +73,7 @@ impl Error for RunMigrationsError {
         match *self {
             RunMigrationsError::MigrationError(ref error) => error.description(),
             RunMigrationsError::QueryError(ref error) => error.description(),
+            RunMigrationsError::EmptyMigration => "Attempted to run an empty migration.",
         }
     }
 }

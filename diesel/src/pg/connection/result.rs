@@ -24,6 +24,10 @@ impl PgResult {
                     internal_result: internal_result,
                 })
             },
+            PGRES_EMPTY_QUERY => {
+                let error_message = "Received an empty query".to_string();
+                Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, Box::new(error_message)))
+            },
             _ => {
                 let error_kind = match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
                     Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
