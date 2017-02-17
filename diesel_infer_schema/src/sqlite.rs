@@ -38,6 +38,7 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
         .filter(sql("type='table'"))
+        .order(name)
         .load::<String>(connection)?
         .into_iter()
         .map(TableData::from_name)
@@ -199,4 +200,18 @@ fn load_table_names_returns_error_when_given_schema_name() {
         Err(e) => assert!(e.description().starts_with("sqlite cannot infer \
             schema for databases")),
     }
+}
+
+#[test]
+fn load_table_names_output_is_ordered() {
+    let conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+
+    let table_names = load_table_names(&conn, None).unwrap()
+        .iter()
+        .map(|table| table.to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
 }
