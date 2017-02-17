@@ -36,7 +36,7 @@ impl Backend {
             _ => Backend::Sqlite,
             #[cfg(not(feature="sqlite"))]
             _ => {
-                let mut available_schemas: Vec<&str> = Vec::new();
+                let mut available_schemes: Vec<&str> = Vec::new();
 
                 // One of these will always be true, or you are compiling
                 // diesel_cli without a backend. And why would you ever want to
