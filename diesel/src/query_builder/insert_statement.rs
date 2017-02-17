@@ -28,45 +28,45 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
 
     /// Specify which table the data passed to `insert` should be added to.
     pub fn into<S>(self, target: S) -> T::InsertStatement where
-        T: IntoInsertStatement<S, Op, NoReturningClause>,
+        T: IntoInsertStatement<S, Op>,
     {
-        self.records.into_insert_statement(target, self.operator, NoReturningClause)
+        self.records.into_insert_statement(target, self.operator)
     }
 }
 
-pub trait IntoInsertStatement<Tab, Op, Ret> {
+pub trait IntoInsertStatement<Tab, Op> {
     type InsertStatement;
 
-    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+    fn into_insert_statement(self, target: Tab, operator: Op)
         -> Self::InsertStatement;
 }
 
-impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a [T] where
+impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a [T] where
     &'a T: UndecoratedInsertRecord<Tab>,
 {
-    type InsertStatement = BatchInsertStatement<Tab, Self, Op, Ret>;
+    type InsertStatement = BatchInsertStatement<Tab, Self, Op, NoReturningClause>;
 
-    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+    fn into_insert_statement(self, target: Tab, operator: Op)
         -> Self::InsertStatement
     {
         BatchInsertStatement {
             operator: operator,
             target: target,
             records: self,
-            returning: returning,
+            returning: NoReturningClause,
         }
     }
 }
 
-impl<'a, T, Tab, Op, Ret> IntoInsertStatement<Tab, Op, Ret> for &'a Vec<T> where
-    &'a [T]: IntoInsertStatement<Tab, Op, Ret>,
+impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a Vec<T> where
+    &'a [T]: IntoInsertStatement<Tab, Op>,
 {
-    type InsertStatement = <&'a [T] as IntoInsertStatement<Tab, Op, Ret>>::InsertStatement;
+    type InsertStatement = <&'a [T] as IntoInsertStatement<Tab, Op>>::InsertStatement;
 
-    fn into_insert_statement(self, target: Tab, operator: Op, returning: Ret)
+    fn into_insert_statement(self, target: Tab, operator: Op)
         -> Self::InsertStatement
     {
-        (&**self).into_insert_statement(target, operator, returning)
+        (&**self).into_insert_statement(target, operator)
     }
 }
 
@@ -76,6 +76,12 @@ pub struct InsertStatement<T, U, Op=Insert, Ret=NoReturningClause> {
     target: T,
     records: U,
     returning: Ret,
+}
+
+impl<T, U, Op> InsertStatement<T, U, Op> {
+    pub fn no_returning_clause(target: T, records: U, operator: Op) -> Self {
+        InsertStatement::new(target, records, operator, NoReturningClause)
+    }
 }
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
