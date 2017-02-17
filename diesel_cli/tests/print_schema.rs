@@ -119,3 +119,65 @@ r"table! {
 ");
     }
 }
+
+#[test]
+fn run_infer_schema_order() {
+    let p = project("print_schema_order").build();
+    let db = database(&p.database_url());
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    db.execute("CREATE TABLE def (id INTEGER PRIMARY KEY);");
+    db.execute("CREATE TABLE abc (id INTEGER PRIMARY KEY);");
+    db.execute("CREATE TABLE ghi (id INTEGER PRIMARY KEY);");
+
+    assert!(db.table_exists("def"));
+    assert!(db.table_exists("abc"));
+    assert!(db.table_exists("ghi"));
+
+    let result = p.command("print-schema").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    if cfg!(feature = "sqlite") {
+        assert_eq!(result.stdout(),
+r"table! {
+    abc (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+table! {
+    def (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+table! {
+    ghi (id) {
+        id -> Nullable<Integer>,
+    }
+}
+");
+    } else if cfg!(feature = "postgres") {
+        assert_eq!(result.stdout(),
+r"table! {
+    abc (id) {
+        id -> Int4,
+    }
+}
+
+table! {
+    def (id) {
+        id -> Int4,
+    }
+}
+
+table! {
+    ghi (id) {
+        id -> Int4,
+    }
+}
+");
+    }
+}

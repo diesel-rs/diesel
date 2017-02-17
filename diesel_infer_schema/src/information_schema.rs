@@ -244,6 +244,24 @@ mod tests {
     }
 
     #[test]
+    fn load_table_names_output_is_ordered() {
+        let connection = connection();
+        connection.execute("CREATE TABLE ccc (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE TABLE aaa (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE TABLE bbb (id SERIAL PRIMARY KEY)").unwrap();
+
+        let table_names = load_table_names(&connection, None).unwrap()
+            .iter()
+            .map(|table| table.to_string())
+            .collect::<Vec<_>>();
+        if cfg!(feature="mysql") {
+            assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
+        } else if cfg!(feature="postgres") {
+            assert_eq!(vec!["public.aaa", "public.bbb", "public.ccc"], table_names);
+        }
+    }
+
+    #[test]
     fn get_primary_keys_only_includes_primary_key() {
         let connection = connection();
 
