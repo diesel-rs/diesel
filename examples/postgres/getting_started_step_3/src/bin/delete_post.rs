@@ -1,12 +1,12 @@
-extern crate diesel_demo_step_3;
+extern crate diesel_demo_step_3_pg;
 extern crate diesel;
 
 use diesel::prelude::*;
-use diesel_demo_step_3::*;
+use diesel_demo_step_3_pg::*;
 use std::env::args;
 
 fn main() {
-    use diesel_demo_step_3::schema::posts::dsl::*;
+    use self::schema::posts::dsl::*;
 
     let target = args().nth(1).expect("Expected a target to match against");
     let pattern = format!("%{}%", target);

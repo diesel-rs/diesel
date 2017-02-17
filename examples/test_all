@@ -1,14 +1,6 @@
 #!/bin/sh
 set -e
 
-cd ../diesel_cli
-cargo build
-cd ../examples
-export DATABASE_URL="postgres://localhost/diesel_examples"
-
 for dir in $(find . -type d -maxdepth 1 -mindepth 1); do
-  cd $dir
-  ../../target/debug/diesel database reset
-  cargo build
-  cd ..
+  (cd $dir && ./test_all)
 done

@@ -1,5 +1,5 @@
 [package]
-name = "diesel_demo_step_2"
+name = "diesel_demo_step_1_pg"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 

@@ -1,12 +1,12 @@
-extern crate diesel_demo_step_3;
+extern crate diesel_demo_step_2_pg;
 extern crate diesel;
 
-use diesel_demo_step_3::*;
-use diesel_demo_step_3::models::*;
+use diesel_demo_step_2_pg::*;
+use self::models::*;
 use diesel::prelude::*;
 
 fn main() {
-    use diesel_demo_step_3::schema::posts::dsl::*;
+    use self::schema::posts::dsl::*;
 
     let connection = establish_connection();
     let results = posts.filter(published.eq(true))

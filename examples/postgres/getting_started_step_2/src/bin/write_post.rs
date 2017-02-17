@@ -1,7 +1,7 @@
-extern crate diesel_demo_step_2;
+extern crate diesel_demo_step_2_pg;
 extern crate diesel;
 
-use self::diesel_demo_step_2::*;
+use diesel_demo_step_2_pg::*;
 use std::io::{stdin, Read};
 
 fn main() {

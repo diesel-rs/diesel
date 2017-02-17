@@ -1,2 +1,8 @@
 #!/bin/sh
-cd diesel_cli && cargo run -- $@
+set -e
+
+SCRIPT_DIR=$(dirname "$0")
+ABSOLUTE_SCRIPT_DIR=$(cd "$SCRIPT_DIR" && pwd)
+BASE_DIR=$(dirname "$ABSOLUTE_SCRIPT_DIR")
+$(cd $BASE_DIR/diesel_cli && cargo build --quiet)
+$BASE_DIR/target/debug/diesel $@
