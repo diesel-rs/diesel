@@ -23,6 +23,8 @@ pub struct MysqlConnection {
     statement_cache: StatementCache<Mysql, Statement>,
 }
 
+unsafe impl Send for MysqlConnection {}
+
 impl SimpleConnection for MysqlConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         self.raw_connection.enable_multi_statements(|| {
