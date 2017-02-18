@@ -246,19 +246,16 @@ mod tests {
     #[test]
     fn load_table_names_output_is_ordered() {
         let connection = connection();
-        connection.execute("CREATE TABLE ccc (id SERIAL PRIMARY KEY)").unwrap();
-        connection.execute("CREATE TABLE aaa (id SERIAL PRIMARY KEY)").unwrap();
-        connection.execute("CREATE TABLE bbb (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE SCHEMA test_schema").unwrap();
+        connection.execute("CREATE TABLE test_schema.ccc (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE TABLE test_schema.aaa (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE TABLE test_schema.bbb (id SERIAL PRIMARY KEY)").unwrap();
 
-        let table_names = load_table_names(&connection, None).unwrap()
+        let table_names = load_table_names(&connection, Some("test_schema")).unwrap()
             .iter()
             .map(|table| table.to_string())
             .collect::<Vec<_>>();
-        if cfg!(feature="mysql") {
-            assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
-        } else if cfg!(feature="postgres") {
-            assert_eq!(vec!["public.aaa", "public.bbb", "public.ccc"], table_names);
-        }
+        assert_eq!(vec!["test_schema.aaa", "test_schema.bbb", "test_schema.ccc"], table_names);
     }
 
     #[test]
