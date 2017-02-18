@@ -160,7 +160,7 @@ macro_rules! impl_Insertable {
         impl<$($lifetime,)* 'insert, DB> $crate::insertable::Insertable<$table_name::table, DB>
             for &'insert $struct_ty where
                 DB: $crate::backend::Backend,
-                ($(
+                Hlist!($(
                     $crate::insertable::ColumnInsertValue<
                         $table_name::$column_name,
                         $crate::expression::helper_types::AsNullableExpr<
@@ -170,7 +170,7 @@ macro_rules! impl_Insertable {
                     >
                 ,)+): $crate::insertable::InsertValues<DB>,
         {
-            type Values = ($(
+            type Values = Hlist!($(
                 $crate::insertable::ColumnInsertValue<
                     $table_name::$column_name,
                     $crate::expression::helper_types::AsNullableExpr<
@@ -186,7 +186,7 @@ macro_rules! impl_Insertable {
                 use $crate::insertable::ColumnInsertValue;
                 use $crate::types::IntoNullable;
                 let $self_to_columns = *self;
-                ($(
+                hlist!($(
                     Insertable_column_expr!($table_name::$column_name, $column_name, $field_kind)
                 ,)+)
             }

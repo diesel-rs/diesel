@@ -7,6 +7,8 @@ use query_builder::{QueryBuilder, BuildQueryResult};
 use query_source::{Table, Column};
 use types::IntoNullable;
 
+mod hlist_impls;
+
 /// Represents that a structure can be used to to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
 /// inserting more than one record.

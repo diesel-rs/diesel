@@ -1,13 +1,12 @@
 use associations::BelongsTo;
-use backend::{Backend, SupportsDefaultKeyword};
+use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
-use insertable::{ColumnInsertValue, InsertValues};
 use query_builder::*;
-use query_source::{Queryable, Table, Column};
+use query_source::Queryable;
 use result::QueryResult;
 use row::Row;
 use std::error::Error;
-use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
+use types::{HasSqlType, FromSqlRow, Nullable, NotNull};
 
 macro_rules! tuple_impls {
     ($(
@@ -109,105 +108,6 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
-            }
-
-            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
-            impl<$($T,)+ $($ST,)+ Tab, DB> InsertValues<DB>
-                for ($(ColumnInsertValue<$T, $ST>,)+) where
-                    DB: Backend + SupportsDefaultKeyword,
-                    Tab: Table,
-                    $($T: Column<Table=Tab>,)+
-                    $($T::SqlType: IntoNullable,)+
-                    $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<DB>,)+
-            {
-                fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                    $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
-                        }
-                        try!(out.push_identifier($T::name()));
-                    )+
-                    Ok(())
-                }
-
-                fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                    out.push_sql("(");
-                    $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
-                        }
-                        match self.$idx {
-                            ColumnInsertValue::Expression(_, ref value) => {
-                                try!(value.to_sql(out));
-                            }
-                            _ => out.push_sql("DEFAULT"),
-                        }
-                    )+
-                    out.push_sql(")");
-                    Ok(())
-                }
-
-                fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            try!(value.collect_binds(out));
-                        }
-                    )+
-                    Ok(())
-                }
-            }
-
-            #[cfg(feature = "sqlite")]
-            impl<$($T,)+ $($ST,)+ Tab> InsertValues<::sqlite::Sqlite>
-                for ($(ColumnInsertValue<$T, $ST>,)+) where
-                    Tab: Table,
-                    $($T: Column<Table=Tab>,)+
-                    $($T::SqlType: IntoNullable,)+
-                    $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<::sqlite::Sqlite>,)+
-            {
-                #[allow(unused_assignments)]
-                fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
-                    let mut columns_present = false;
-                    $(
-                        if let ColumnInsertValue::Expression(..) = self.$idx {
-                            if columns_present {
-                                out.push_sql(", ");
-                            }
-                            try!(out.push_identifier($T::name()));
-                            columns_present = true;
-                        }
-                    )+
-                    Ok(())
-                }
-
-                #[allow(unused_assignments)]
-                fn values_clause(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
-                    out.push_sql("(");
-                    let mut columns_present = false;
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            if columns_present {
-                                out.push_sql(", ");
-                            }
-                            try!(value.to_sql(out));
-                            columns_present = true;
-                        }
-                    )+
-                    out.push_sql(")");
-                    Ok(())
-                }
-
-                fn values_bind_params(
-                    &self,
-                    out: &mut <::sqlite::Sqlite as Backend>::BindCollector
-                ) -> QueryResult<()> {
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            try!(value.collect_binds(out));
-                        }
-                    )+
-                    Ok(())
-                }
             }
 
             impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
