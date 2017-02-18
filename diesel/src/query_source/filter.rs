@@ -9,6 +9,7 @@ use query_source::QuerySource;
 use types::Bool;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct FilteredQuerySource<Source, Predicate> {
     source: Source,
     predicate: Predicate,
