@@ -62,6 +62,7 @@ pub use self::dsl::*;
 pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;
+use hlist::*;
 
 /// Represents a typed fragment of SQL. Apps should not need to implement this
 /// type directly, but it may be common to use this as type boundaries.
@@ -79,6 +80,17 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
 
 impl<'a, T: Expression + ?Sized> Expression for &'a T {
     type SqlType = T::SqlType;
+}
+
+impl<Head, Tail> Expression for Cons<Head, Tail> where
+    Head: Expression + NonAggregate,
+    Tail: Expression + NonAggregate,
+{
+    type SqlType = Cons<Head::SqlType, Tail::SqlType>;
+}
+
+impl Expression for Nil {
+    type SqlType = Nil;
 }
 
 /// Describes how a type can be represented as an expression for a given type.
@@ -130,6 +142,18 @@ impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
     type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
+impl<Head, Tail, QS> SelectableExpression<QS> for Cons<Head, Tail> where
+    Head: SelectableExpression<QS>,
+    Tail: SelectableExpression<QS>,
+    Cons<Head, Tail>: Expression,
+{
+    type SqlTypeForSelect = Cons<Head::SqlTypeForSelect, Tail::SqlTypeForSelect>;
+}
+
+impl<QS> SelectableExpression<QS> for Nil {
+    type SqlTypeForSelect = Nil;
+}
+
 /// Marker trait to indicate that an expression does not include any aggregate
 /// functions. Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
@@ -141,6 +165,15 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
 }
 
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
+}
+
+impl<Head, Tail> NonAggregate for Cons<Head, Tail> where
+    Head: NonAggregate,
+    Tail: NonAggregate,
+{
+}
+
+impl NonAggregate for Nil {
 }
 
 use query_builder::{QueryFragment, QueryId};

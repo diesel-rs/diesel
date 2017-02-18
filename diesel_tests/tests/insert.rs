@@ -52,7 +52,7 @@ fn insert_records_with_custom_returning_clause() {
 
     let inserted_users = insert(new_users)
         .into(users)
-        .returning((name, hair_color))
+        .returning(hlist!(name, hair_color))
         .get_results::<(String, Option<String>)>(&connection)
         .unwrap();
     let expected_users = vec![
@@ -71,7 +71,7 @@ fn batch_insert_with_defaults() {
 
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    create_table("users", (
+    create_table("users", hlist!(
         integer("id").primary_key().auto_increment(),
         string("name").not_null(),
         string("hair_color").not_null().default("'Green'"),
@@ -100,7 +100,7 @@ fn insert_with_defaults() {
 
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    create_table("users", (
+    create_table("users", hlist!(
         integer("id").primary_key().auto_increment(),
         string("name").not_null(),
         string("hair_color").not_null().default("'Green'"),

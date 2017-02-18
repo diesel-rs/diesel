@@ -93,7 +93,7 @@ fn update_with_custom_returning_clause() {
     let sean = find_user_by_name("Sean", &connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
-        .returning((name, hair_color))
+        .returning(hlist!(name, hair_color))
         .get_result::<(String, Option<String>)>(&connection);
     let expected_result = ("Sean".to_string(), Some("black".to_string()));
 

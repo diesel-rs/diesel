@@ -26,6 +26,20 @@ macro_rules! Hlist {
     };
 }
 
+#[macro_export]
+macro_rules! hlist_pat {
+    // Empty list
+    () => { $crate::hlist::Nil };
+
+    // List without trailing commas
+    ($($item:pat),+) => { hlist_pat!($($item,)+) };
+
+    // List with at least one item
+    ($first:pat, $($rest:pat,)*) => {
+        $crate::hlist::Cons($first, hlist_pat!($($rest,)*))
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use hlist::*;

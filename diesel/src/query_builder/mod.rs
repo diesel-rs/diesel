@@ -42,11 +42,12 @@ pub use self::insert_statement::IncompleteInsertStatement;
 use std::error::Error;
 
 use backend::Backend;
+use hlist::*;
 use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
-pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
+pub type BuildQueryResult<T=()> = Result<T, Box<Error+Send+Sync>>;
 
 /// Apps should not need to concern themselves with this trait.
 ///
@@ -128,6 +129,46 @@ impl<DB: Backend> QueryFragment<DB> for () {
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         true
+    }
+}
+
+impl<Head, Head2, Tail, DB> QueryFragment<DB> for Cons<Head, Cons<Head2, Tail>> where
+    DB: Backend,
+    Head: QueryFragment<DB>,
+    Cons<Head2, Tail>: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        try!(self.0.to_sql(out));
+        out.push_sql(", ");
+        try!(self.1.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
+        try!(self.1.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared() && self.1.is_safe_to_cache_prepared()
+    }
+}
+
+impl<Head, DB> QueryFragment<DB> for Cons<Head, Nil> where
+    DB: Backend,
+    Head: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        self.0.to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.0.collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
     }
 }
 

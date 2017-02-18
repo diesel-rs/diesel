@@ -1,3 +1,4 @@
+use hlist::*;
 use std::any::{Any, TypeId};
 use super::QueryFragment;
 
@@ -46,6 +47,9 @@ impl<DB> QueryId for QueryFragment<DB> {
         false
     }
 }
+
+impl_query_id!(Cons<T, U>);
+impl_query_id!(Nil);
 
 #[cfg(test)]
 mod tests {

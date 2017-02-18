@@ -28,7 +28,7 @@ macro_rules! sql_function_body {
 
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*> $crate::expression::Expression for $struct_name<$($arg_name),*> where
-            for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
+            for <'a> Hlist!($(&'a $arg_name),*): $crate::expression::Expression,
         {
             type SqlType = $return_type;
         }
@@ -36,25 +36,25 @@ macro_rules! sql_function_body {
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*, DB> $crate::query_builder::QueryFragment<DB> for $struct_name<$($arg_name),*> where
             DB: $crate::backend::Backend,
-            for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
+            for <'a> Hlist!($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
         {
             fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
                 use $crate::query_builder::QueryBuilder;
                 out.push_sql(concat!(stringify!($fn_name), "("));
                 try!($crate::query_builder::QueryFragment::to_sql(
-                        &($(&self.$arg_name),*), out));
+                        &hlist!($(&self.$arg_name),*), out));
                 out.push_sql(")");
                 Ok(())
             }
 
             fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
                 try!($crate::query_builder::QueryFragment::collect_binds(
-                        &($(&self.$arg_name),*), out));
+                        &hlist!($(&self.$arg_name),*), out));
                 Ok(())
             }
 
             fn is_safe_to_cache_prepared(&self) -> bool {
-                ($(&self.$arg_name),*).is_safe_to_cache_prepared()
+                hlist!($(&self.$arg_name),*).is_safe_to_cache_prepared()
             }
         }
 

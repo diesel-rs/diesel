@@ -36,19 +36,19 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
     Right: Table,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<
+    Hlist!(Left::AllColumns, Right::AllColumns): SelectableExpression<
         InnerJoinSource<Left, Right>,
-        SqlTypeForSelect=(Left::SqlType, Right::SqlType),
+        SqlTypeForSelect=Hlist!(Left::SqlType, Right::SqlType),
     >,
 {
-    type SqlType = (Left::SqlType, Right::SqlType);
+    type SqlType = Hlist!(Left::SqlType, Right::SqlType);
     type Query = SelectStatement<
-        (Left::AllColumns, Right::AllColumns),
+        Hlist!(Left::AllColumns, Right::AllColumns),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
+        SelectStatement::simple(hlist!(Left::all_columns(), Right::all_columns()), self)
     }
 }
 
@@ -85,20 +85,20 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
     Right::SqlType: IntoNullable,
-    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
+    Hlist!(Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
         LeftOuterJoinSource<Left, Right>,
-        SqlTypeForSelect=(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
+        SqlTypeForSelect=Hlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
     >,
 {
-    type SqlType = (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
+    type SqlType = Hlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
     type Query = SelectStatement<
-        (Left::AllColumns, Nullable<Right::AllColumns>),
+        Hlist!(Left::AllColumns, Nullable<Right::AllColumns>),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
         SelectStatement::simple(
-            (Left::all_columns(), Right::all_columns().nullable()),
+            hlist!(Left::all_columns(), Right::all_columns().nullable()),
             self,
         )
     }

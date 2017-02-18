@@ -111,7 +111,7 @@ pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
     };
 
     let type_column = Conn::Backend::type_column();
-    columns.select((column_name, type_column, is_nullable))
+    columns.select(hlist!(column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
@@ -156,7 +156,7 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
         None => Conn::Backend::default_schema(connection)?,
     };
 
-    tables.select((table_name, table_schema))
+    tables.select(hlist!(table_name, table_schema))
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))

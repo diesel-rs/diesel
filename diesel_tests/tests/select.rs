@@ -15,7 +15,7 @@ fn selecting_basic_data() {
         ("Tess".to_string(), None::<String>),
      ];
     let actual_data: Vec<_> = users
-        .select((name, hair_color))
+        .select(hlist!(name, hair_color))
         .load(&connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
@@ -33,7 +33,7 @@ fn selecting_a_struct() {
         NewUser::new("Tess", None),
     ];
     let actual_users: Vec<_> = users
-        .select((name, hair_color))
+        .select(hlist!(name, hair_color))
         .load(&connection).unwrap();
     assert_eq!(expected_users, actual_users);
 }
@@ -77,7 +77,7 @@ fn selecting_nullable_followed_by_non_null() {
     connection.execute("INSERT INTO users (name) VALUES ('Sean')")
         .unwrap();
 
-    let source = users.select((hair_color, name));
+    let source = users.select(hlist!(hair_color, name));
     let expected_data = vec![(None::<String>, "Sean".to_string())];
     let data: Vec<_> = source.load(&connection).unwrap();
 
@@ -112,7 +112,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
     let connection = connection();
-    create_table("select", (
+    create_table("select", hlist!(
         integer("id").primary_key().auto_increment(),
         integer("join").not_null(),
     )).execute(&connection).unwrap();
@@ -133,7 +133,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
 fn selecting_columns_with_different_definition_order() {
     let connection = connection();
     connection.execute("DROP TABLE users").unwrap();
-    create_table("users", (
+    create_table("users", hlist!(
         integer("id").primary_key().auto_increment(),
         string("hair_color"),
         string("name").not_null(),

@@ -1,12 +1,9 @@
 use associations::BelongsTo;
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
-use query_builder::*;
 use query_source::Queryable;
-use result::QueryResult;
 use row::Row;
 use std::error::Error;
-use types::{HasSqlType, FromSqlRow, Nullable, NotNull};
+use types::{HasSqlType, FromSqlRow, Nullable};
 
 macro_rules! tuple_impls {
     ($(
@@ -15,38 +12,22 @@ macro_rules! tuple_impls {
     }
     )+) => {
         $(
-            impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
-                $(DB: HasSqlType<$T>),+,
-                DB: Backend,
-            {
-                fn metadata() -> DB::TypeMetadata {
-                    unreachable!("Tuples should never implement `ToSql` directly");
-                }
-
-                fn row_metadata(out: &mut Vec<DB::TypeMetadata>) {
-                    $(<DB as HasSqlType<$T>>::row_metadata(out);)+
-                }
-            }
-
-            impl<$($T),+> NotNull for ($($T,)+) {
-            }
-
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<($($ST,)+), DB> for ($($T,)+) where
+            impl<$($T),+, $($ST),+, DB> FromSqlRow<Hlist!($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: FromSqlRow<$ST, DB>),+,
                 $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
+                DB: HasSqlType<Hlist!($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
             }
 
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
+            impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<Hlist!($($ST,)+)>, DB> for Option<($($T,)+)> where
                 DB: Backend,
                 $($T: FromSqlRow<$ST, DB>),+,
                 $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
+                DB: HasSqlType<Hlist!($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     if row.next_is_null($Tuple) {
@@ -57,64 +38,17 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
+            impl<$($T),+, $($ST),+, DB> Queryable<Hlist!($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: Queryable<$ST, DB>),+,
                 $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
+                DB: HasSqlType<Hlist!($($ST,)+)>,
             {
                 type Row = ($($T::Row,)+);
 
                 fn build(row: Self::Row) -> Self {
                     ($($T::build(row.$idx),)+)
                 }
-            }
-
-            impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
-                type SqlType = ($(<$T as Expression>::SqlType,)+);
-            }
-
-            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
-            impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
-                fn to_sql(&self, out: &mut DB::QueryBuilder)
-                -> BuildQueryResult {
-                    $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
-                        }
-                        try!(self.$idx.to_sql(out));
-                    )+
-                    Ok(())
-                }
-
-                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                    $(
-                        try!(self.$idx.collect_binds(out));
-                    )+
-                    Ok(())
-                }
-
-                fn is_safe_to_cache_prepared(&self) -> bool {
-                    $(self.$idx.is_safe_to_cache_prepared() &&)+ true
-                }
-            }
-
-            impl<$($T: QueryId),+> QueryId for ($($T,)+) {
-                type QueryId = ($($T::QueryId,)+);
-
-                fn has_static_query_id() -> bool {
-                    $($T::has_static_query_id() &&)+ true
-                }
-            }
-
-            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
-            }
-
-            impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
-                $($T: SelectableExpression<QS>,)+
-                ($($T,)+): Expression,
-            {
-                type SqlTypeForSelect = ($($T::SqlTypeForSelect,)+);
             }
 
             impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where

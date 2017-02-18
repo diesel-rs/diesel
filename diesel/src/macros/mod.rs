@@ -134,7 +134,7 @@ macro_rules! __diesel_column {
 /// #     use self::followings::dsl::*;
 /// #     // Poor man's assert_eq! -- since this is type level this would fail
 /// #     // to compile if the wrong primary key were generated
-/// #     let (user_id {}, post_id {}) = followings.primary_key();
+/// #     let hlist_pat!(user_id {}, post_id {}) = followings.primary_key();
 /// # }
 /// ```
 ///
@@ -253,8 +253,8 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
-            primary_key_ty = ($(columns::$pk,)+),
-            primary_key_expr = ($(columns::$pk,)+),
+            primary_key_ty = Hlist!($(columns::$pk,)+),
+            primary_key_expr = hlist!($(columns::$pk,)+),
             columns = [$($column_name -> $Type,)+],
         }
     };
@@ -285,7 +285,7 @@ macro_rules! table_body {
             }
 
             #[allow(non_upper_case_globals, dead_code)]
-            pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
+            pub const all_columns: Hlist!($($column_name,)+) = hlist!($($column_name,)+);
 
             #[allow(non_camel_case_types, missing_debug_implementations)]
             #[derive(Debug, Clone, Copy)]
@@ -298,7 +298,7 @@ macro_rules! table_body {
                 }
             }
 
-            pub type SqlType = ($($column_ty,)+);
+            pub type SqlType = Hlist!($($column_ty,)+);
 
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
@@ -306,7 +306,7 @@ macro_rules! table_body {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<($($column_name,)+), Self>;
+                type Query = SelectStatement<Hlist!($($column_name,)+), Self>;
 
                 fn as_query(self) -> Self::Query {
                     SelectStatement::simple(all_columns, self)
@@ -315,14 +315,14 @@ macro_rules! table_body {
 
             impl Table for table {
                 type PrimaryKey = $primary_key_ty;
-                type AllColumns = ($($column_name,)+);
+                type AllColumns = Hlist!($($column_name,)+);
 
                 fn primary_key(&self) -> Self::PrimaryKey {
                     $primary_key_expr
                 }
 
                 fn all_columns() -> Self::AllColumns {
-                    ($($column_name,)+)
+                    hlist!($($column_name,)+)
                 }
             }
 
