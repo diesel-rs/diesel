@@ -1,9 +1,7 @@
 use associations::BelongsTo;
 use backend::Backend;
 use query_source::Queryable;
-use row::Row;
-use std::error::Error;
-use types::{HasSqlType, FromSqlRow, Nullable};
+use types::{HasSqlType, FromSqlRow};
 
 macro_rules! tuple_impls {
     ($(
@@ -12,42 +10,17 @@ macro_rules! tuple_impls {
     }
     )+) => {
         $(
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<Hlist!($($ST,)+), DB> for ($($T,)+) where
-                DB: Backend,
-                $($T: FromSqlRow<$ST, DB>),+,
-                $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<Hlist!($($ST,)+)>,
-            {
-                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    Ok(($(try!($T::build_from_row(row)),)+))
-                }
-            }
-
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<Hlist!($($ST,)+)>, DB> for Option<($($T,)+)> where
-                DB: Backend,
-                $($T: FromSqlRow<$ST, DB>),+,
-                $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<Hlist!($($ST,)+)>,
-            {
-                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    if row.next_is_null($Tuple) {
-                        Ok(None)
-                    } else {
-                        Ok(Some(($(try!($T::build_from_row(row)),)+)))
-                    }
-                }
-            }
-
             impl<$($T),+, $($ST),+, DB> Queryable<Hlist!($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: Queryable<$ST, DB>),+,
                 $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<Hlist!($($ST,)+)>,
+                Hlist!($($T::Row,)+): FromSqlRow<Hlist!($($ST,)+), DB>,
             {
-                type Row = ($($T::Row,)+);
+                type Row = Hlist!($($T::Row,)+);
 
-                fn build(row: Self::Row) -> Self {
-                    ($($T::build(row.$idx),)+)
+                #[allow(non_snake_case)]
+                fn build(hlist_pat!($($ST,)+): Self::Row) -> Self {
+                    ($($T::build($ST),)+)
                 }
             }
 

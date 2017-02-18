@@ -37,23 +37,23 @@ impl ColumnInformation {
 #[cfg(feature="uses_information_schema")]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
     DB: Backend + UsesInformationSchema + HasSqlType<ST>,
-    (String, String, String): FromSqlRow<ST, DB>,
+    Hlist!(String, String, String): FromSqlRow<ST, DB>,
 {
-    type Row = (String, String, String);
+    type Row = Hlist!(String, String, String);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.0, row.1, row.2 == "YES")
+    fn build(hlist_pat!(col, ty, is_nullable): Self::Row) -> Self {
+        ColumnInformation::new(col, ty, is_nullable == "YES")
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
     Sqlite: HasSqlType<ST>,
-    (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
+    Hlist!(i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
 {
-    type Row = (i32, String, String, bool, Option<String>, bool);
+    type Row = Hlist!(i32, String, String, bool, Option<String>, bool);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.1, row.2, !row.3)
+    fn build(hlist_pat!(_, col, ty, not_null, _, _): Self::Row) -> Self {
+        ColumnInformation::new(col, ty, !not_null)
     }
 }
