@@ -3,7 +3,7 @@ use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, NonAggregate};
 use insertable::{ColumnInsertValue, InsertValues};
 use query_builder::*;
-use query_source::{QuerySource, Queryable, Table, Column};
+use query_source::{Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
 use std::error::Error;
@@ -215,50 +215,6 @@ macro_rules! tuple_impls {
                 ($($T,)+): Expression,
             {
                 type SqlTypeForSelect = ($($T::SqlTypeForSelect,)+);
-            }
-
-            impl<Target, $($T,)+> AsChangeset for ($($T,)+) where
-                $($T: AsChangeset<Target=Target>,)+
-                Target: QuerySource,
-            {
-                type Target = Target;
-                type Changeset = ($($T::Changeset,)+);
-
-                fn as_changeset(self) -> Self::Changeset {
-                    ($(self.$idx.as_changeset(),)+)
-                }
-            }
-
-            impl<DB, $($T,)+> Changeset<DB> for ($($T,)+) where
-                DB: Backend,
-                $($T: Changeset<DB>,)+
-            {
-                fn is_noop(&self) -> bool {
-                    $(self.$idx.is_noop() &&)+ true
-                }
-
-                #[allow(unused_assignments)]
-                fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                    let mut needs_comma = false;
-                    $(
-                        let noop_element = self.$idx.is_noop();
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            try!(self.$idx.to_sql(out));
-                            needs_comma = true;
-                        }
-                    )+
-                    Ok(())
-                }
-
-                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                    $(
-                        try!(self.$idx.collect_binds(out));
-                    )+
-                    Ok(())
-                }
             }
 
             impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
