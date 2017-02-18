@@ -105,6 +105,12 @@ fn empty_migrations_are_not_valid() {
         .arg("run")
         .run();
 
-    assert!(!result.is_success());
+    assert!(!result.is_success(),
+        "This should not succeed!\n\n\
+        stdout: {:?}\n\n\
+        stderr: {:?}",
+        result.stdout(),
+        result.stderr(),
+    );
     assert!(result.stdout().contains("empty migration"));
 }
