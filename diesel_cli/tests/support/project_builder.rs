@@ -74,7 +74,14 @@ impl Project {
 
     #[cfg(feature="mysql")]
     pub fn database_url(&self) -> String {
-        format!("mysql://localhost/diesel_{}", self.name)
+        use std::env;
+
+        if env::var_os("APPVEYOR").is_some() {
+            let password = env::var("MYSQL_PWD").unwrap();
+            format!("mysql://root:{}@localhost/diesel_{}", password, self.name)
+        } else {
+            format!("mysql://localhost/diesel_{}", self.name)
+        }
     }
 
     #[cfg(feature="sqlite")]
