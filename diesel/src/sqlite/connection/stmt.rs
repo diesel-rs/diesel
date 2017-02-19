@@ -147,6 +147,7 @@ fn last_error(raw_connection: &RawConnection) -> Error {
     let error_kind = match raw_connection.last_error_code() {
         ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY =>
             DatabaseErrorKind::UniqueViolation,
+        ffi::SQLITE_CONSTRAINT_FOREIGNKEY => DatabaseErrorKind::ForeignKeyViolation,
         _ => DatabaseErrorKind::__Unknown,
     };
     DatabaseError(error_kind, error_information)

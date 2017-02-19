@@ -1,7 +1,7 @@
 use diesel;
 use diesel::prelude::*;
 use diesel::result::Error::DatabaseError;
-use diesel::result::DatabaseErrorKind::UniqueViolation;
+use diesel::result::DatabaseErrorKind::{UniqueViolation, ForeignKeyViolation};
 use schema::*;
 
 #[test]
@@ -59,4 +59,13 @@ fn cached_prepared_statements_can_be_reused_after_error() {
     });
 
     connection.test_transaction(|| query.execute(&connection));
+}
+
+#[test]
+fn foreign_key_violation() {
+    let connection = connection();
+
+    let failure = diesel::insert(&NewPost::new(0, "Test", Some("Body"))).into(posts::table)
+        .execute(&connection);
+    assert_matches!(failure, Err(DatabaseError(ForeignKeyViolation, _)));
 }
