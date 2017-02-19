@@ -138,6 +138,32 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
+#[derive(PartialEq, Eq, Debug, Clone, Insertable)]
+#[table_name="fk_inits"]
+pub struct FkInit {
+    id: i32,
+}
+
+impl FkInit {
+    pub fn new(id: i32) -> Self {
+        FkInit { id: id }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
+#[belongs_to(FkInit)]
+#[table_name="fk_tests"]
+pub struct FkTest {
+    id: i32,
+    fk_id: i32,
+}
+
+impl FkTest {
+    pub fn new(id: i32, fk_id: i32) -> Self {
+        FkTest{ id: id, fk_id: fk_id }
+    }
+}
+
 #[cfg(feature = "postgres")]
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]

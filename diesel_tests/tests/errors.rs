@@ -62,10 +62,27 @@ fn cached_prepared_statements_can_be_reused_after_error() {
 }
 
 #[test]
-fn foreign_key_violation() {
+fn foreign_key_violation_detected() {
     let connection = connection();
 
-    let failure = diesel::insert(&NewPost::new(0, "Test", Some("Body"))).into(posts::table)
+    let failure = diesel::insert(&FkTest::new(1, 100)).into(fk_tests::table)
         .execute(&connection);
     assert_matches!(failure, Err(DatabaseError(ForeignKeyViolation, _)));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn foreign_key_violation_correct_constraint_name() {
+    let connection = connection();
+
+    let failure = diesel::insert(&FkTest::new(1, 100)).into(fk_tests::table)
+        .execute(&connection);
+    match failure {
+        Err(DatabaseError(ForeignKeyViolation, e)) => {
+            assert_eq!(Some("fk_tests"), e.table_name());
+            assert_eq!(None, e.column_name());
+            assert_eq!(Some("fk_tests_fk_id_fkey"), e.constraint_name());
+        },
+        _ => panic!("{:?} did not match Err(DatabaseError(ForeignKeyViolation, e))", failure),
+    }
 }
