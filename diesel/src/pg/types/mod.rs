@@ -164,17 +164,11 @@ pub mod sql_types {
     ///     address: serde_json::Value,
     /// }
     ///
+    /// #[derive(Insertable)]
+    /// #[table_name="contacts"]
     /// struct NewContact {
     ///     name: String,
     ///     address: serde_json::Value,
-    /// }
-    ///
-    /// impl_Insertable! {
-    ///     (contacts)
-    ///     struct NewContact {
-    ///         name: String,
-    ///         address: serde_json::Value,
-    ///     }
     /// }
     ///
     /// table! {
