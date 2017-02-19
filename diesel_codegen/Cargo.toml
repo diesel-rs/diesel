@@ -34,3 +34,6 @@ mysql = ["diesel_infer_schema/mysql", "diesel/mysql"]
 
 [[test]]
 name = "tests"
+
+[badges]
+travis-ci = { repository = "diesel-rs/diesel" }

@@ -44,3 +44,6 @@ sqlite = ["libsqlite3-sys", "libc"]
 mysql = ["mysqlclient-sys", "url"]
 with-deprecated = []
 deprecated-time = ["time"]
+
+[badges]
+travis-ci = { repository = "diesel-rs/diesel" }
