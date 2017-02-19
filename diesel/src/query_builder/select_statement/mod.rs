@@ -17,6 +17,7 @@ use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
+#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
     Select,
     From,
