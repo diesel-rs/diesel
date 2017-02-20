@@ -47,8 +47,11 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    pub fn execute(&self) -> QueryResult<()> {
-        unsafe { ffi::mysql_stmt_execute(self.stmt); }
+    /// This function should be called instead of `results` on queries which
+    /// have no return value. It should never be called on a statement on
+    /// which `results` has previously been called?
+    pub unsafe fn execute(&self) -> QueryResult<()> {
+        ffi::mysql_stmt_execute(self.stmt);
         self.did_an_error_occur()
     }
 
@@ -57,7 +60,10 @@ impl Statement {
         affected_rows as usize
     }
 
-    pub fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
+    /// This function should be called instead of `execute` for queries which
+    /// have a return value. After calling this function, `execute` can never
+    /// be called on this statement.
+    pub unsafe fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
 
