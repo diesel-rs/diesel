@@ -14,7 +14,8 @@ impl<'a> StatementIterator<'a> {
         let mut output_binds = Binds::from_output_types(types);
 
         unsafe {
-            output_binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?
+            output_binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
+            stmt.execute()?;
         }
 
         Ok(StatementIterator {
