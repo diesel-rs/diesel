@@ -46,6 +46,7 @@ pub fn build_cli() -> App<'static, 'static> {
                 specified in your DATABASE_URL, and runs existing migrations.");
 
     let database_subcommand = SubCommand::with_name("database")
+        .alias("db")
         .about("A group of commands for setting up and resetting your database.")
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(SubCommand::with_name("setup")
