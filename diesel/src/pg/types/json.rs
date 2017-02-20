@@ -73,7 +73,7 @@ fn some_json_from_sql() {
 fn bad_json_from_sql() {
     let uuid: Result<serde_json::Value, Box<Error+Send+Sync>> =
         FromSql::<types::Json, Pg>::from_sql(Some(b"boom"));
-    assert_eq!(uuid.unwrap_err().description(), "syntax error");
+    assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn some_jsonb_from_sql() {
 fn bad_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, Box<Error+Send+Sync>> =
         FromSql::<types::Jsonb, Pg>::from_sql(Some(b"\x01boom"));
-    assert_eq!(uuid.unwrap_err().description(), "syntax error");
+    assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
