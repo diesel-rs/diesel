@@ -65,10 +65,10 @@ impl Connection for MysqlConnection {
         use types::FromSqlRow;
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
-        stmt.execute()?;
         let mut metadata = Vec::new();
         Mysql::row_metadata(&mut metadata);
-        stmt.results(metadata)?.map(|mut row| {
+        let results = unsafe { stmt.results(metadata)? };
+        results.map(|mut row| {
             U::Row::build_from_row(&mut row)
                 .map(U::build)
                 .map_err(DeserializationError)
@@ -85,7 +85,7 @@ impl Connection for MysqlConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let stmt = try!(self.prepare_query(source));
-        try!(stmt.execute());
+        unsafe { try!(stmt.execute()); }
         Ok(stmt.affected_rows())
     }
 
