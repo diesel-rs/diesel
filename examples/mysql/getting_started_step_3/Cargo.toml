@@ -1,0 +1,9 @@
+[package]
+name = "diesel_demo_step_3_mysql"
+version = "0.1.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[dependencies]
+diesel = { version = "0.11.0", features = ["mysql"] }
+diesel_codegen = { version = "0.11.0", features = ["mysql"] }
+dotenv = "0.8.0"
