@@ -4,6 +4,12 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.11.3] - 2017-02-21
+
+### Fixed
+
+* Corrected a memory safety violation when using MySQL.
+
 ## [0.11.2] - 2017-02-19
 
 ### Changed
@@ -713,3 +719,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.11.0]: https://github.com/diesel-rs/diesel/compare/v0.10.1...v0.11.0
 [0.11.1]: https://github.com/diesel-rs/diesel/compare/v0.11.0...v0.11.1
 [0.11.2]: https://github.com/diesel-rs/diesel/compare/v0.11.1...v0.11.2
+[0.11.3]: https://github.com/diesel-rs/diesel/compare/v0.11.2...v0.11.3
