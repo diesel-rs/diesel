@@ -3,7 +3,7 @@ set -e
 
 export DATABASE_URL="postgres://localhost/diesel_examples"
 
-for dir in $(find . -type d -maxdepth 1 -mindepth 1); do
+for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
   ../../../bin/diesel database reset
   cargo build
