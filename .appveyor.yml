@@ -1,0 +1,84 @@
+version: 1.0.{build}
+
+# MySQL fails to link on 2015
+image: Visual Studio 2013
+
+branches:
+  only:
+    - master
+    - appveyor_nonsense
+
+services:
+  - postgresql95
+  - mysql
+
+cache:
+  - C:\Users\appveyor\.cargo
+
+install:
+  - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init -yv --default-toolchain stable --default-host %target%
+  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+  - rustc -vV
+  - cargo -vV
+  - appveyor DownloadFile https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip -FileName sqlite3.zip
+  - 7z e sqlite3.zip -y
+  - set SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
+
+build: false
+
+before_test:
+  - SET PATH=%PATH%;C:\MinGW\bin
+  # `cargo test` is broken with rustup. https://github.com/rust-lang/cargo/issues/3394
+  - ps: $Env:PATH += ";" + (get-item (rustup which cargo)).Directory.FullName
+  # setup pg databases
+  - SET PATH=C:\Program Files\PostgreSQL\9.5\bin;%PATH%
+  - createdb diesel_test
+  # setup mysql databases
+  - SET PATH=C:\Program Files\MySQL\MySQL Server 5.7\bin;C:\Program Files\MySQL\MySQL Server 5.7\lib;%PATH%
+  - mysql -e "create database diesel_test; create database diesel_unit_test;" -uroot
+
+test_script:
+  - cd diesel
+  - cargo test --features "%backend% extras"
+  - cd ../diesel_cli
+  - cargo test --no-default-features --features "%backend%"
+  - cd ../diesel_codegen
+  - cargo test --features "%backend%"
+  - cd ../diesel_tests
+  - cargo test --features "%backend%"
+
+environment:
+  global:
+    PGUSER: postgres
+    PGPASSWORD: Password12!
+    MYSQL_PWD: Password12!
+
+  matrix:
+    - target: x86_64-pc-windows-msvc
+      backend: postgres
+      DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_test
+    # SQLite doesn't distribute a static lib
+    # - target: x86_64-pc-windows-msvc
+    #   backend: sqlite
+    #   DATABASE_URL: test.db
+    - target: x86_64-pc-windows-msvc
+      backend: mysql
+      DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_test
+      MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_unit_test
+      # Neither mysql_config or pkg-config work for this on Windows
+      MYSQLCLIENT_LIB_DIR: C:\Program Files\MySQL\MySQL Server 5.7\lib
+      RUST_TEST_THREADS: 1
+    - target: x86_64-pc-windows-gnu
+      backend: postgres
+      DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_test
+    - target: x86_64-pc-windows-gnu
+      backend: sqlite
+      DATABASE_URL: test.db
+    - target: x86_64-pc-windows-gnu
+      backend: mysql
+      DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_test
+      MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_unit_test
+      # Neither mysql_config or pkg-config work for this on Windows
+      MYSQLCLIENT_LIB_DIR: C:\Program Files\MySQL\MySQL Server 5.7\lib
+      RUST_TEST_THREADS: 1
