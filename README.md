@@ -4,7 +4,7 @@ A safe, extensible ORM and Query Builder for Rust
 ==========================================================
 
 [![Build Status](https://travis-ci.org/diesel-rs/diesel.svg)](https://travis-ci.org/diesel-rs/diesel)
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/hw4sbb2po2qv?svg=true)](https://ci.appveyor.com/project/sgrif/diesel)
+[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/hw4sbb2po2qbkjiv?svg=true)](https://ci.appveyor.com/project/sgrif/diesel)
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
