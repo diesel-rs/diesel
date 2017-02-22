@@ -15,4 +15,6 @@ pub mod data_types {
     pub use super::types::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
     #[doc(inline)]
     pub use super::types::floats::PgNumeric;
+    #[doc(inline)]
+    pub use super::types::money::PgMoney;
 }

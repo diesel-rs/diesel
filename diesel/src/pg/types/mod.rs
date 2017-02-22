@@ -7,6 +7,7 @@ mod primitives;
 mod uuid;
 #[cfg(feature = "serde_json")]
 mod json;
+pub mod money;
 
 /// PostgreSQL specific SQL types
 ///
@@ -204,4 +205,18 @@ pub mod sql_types {
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Jsonb;
+
+    /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`PgMoney`][PgMoney]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`PgMoney`][PgMoney]
+    ///
+    /// [PgMoney]: /diesel/pg/data_types/struct.PgMoney.html
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Money;
 }
