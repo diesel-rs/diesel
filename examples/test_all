@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
 
-for dir in $(find . -type d -maxdepth 1 -mindepth 1); do
+for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   (cd $dir && ./test_all)
 done
