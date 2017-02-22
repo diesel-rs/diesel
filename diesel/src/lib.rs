@@ -2,7 +2,6 @@
 //! interactions. [A getting started guide](http://diesel.rs/guides/getting-started/) can be
 //! found on our website.
 #![cfg_attr(feature = "unstable", feature(specialization))]
-#![recursion_limit="128"]
 
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
