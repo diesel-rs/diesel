@@ -210,13 +210,13 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///
-    /// - [`Cents`][Cents]
+    /// - [`PgCents`][PgCents]
     ///
     /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
     ///
-    /// - [`Cents`][Cents]
+    /// - [`PgCents`][PgCents]
     ///
-    /// [Cents]: /diesel/pg/data_types/struct.Cents.html
+    /// [PgCents]: /diesel/pg/data_types/struct.PgCents.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Money;
 }
