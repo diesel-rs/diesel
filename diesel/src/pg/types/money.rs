@@ -31,6 +31,20 @@ impl ToSql<types::Money, Pg> for Cents {
     }
 }
 
+#[cfg(feature = "quickcheck")]
+mod quickcheck_impls {
+    extern crate quickcheck;
+
+    use self::quickcheck::{Arbitrary, Gen};
+    use super::Cents;
+
+    impl Arbitrary for Cents {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+            Cents(i64::arbitrary(g))
+        }
+    }
+}
+
 #[test]
 fn cents_to_sql() {
     let mut bytes = vec![];
