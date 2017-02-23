@@ -1,12 +1,12 @@
-extern crate diesel_demo_sqlite;
+extern crate diesel_demo_step_3_sqlite;
 extern crate diesel;
 
 use self::diesel::prelude::*;
-use self::diesel_demo_sqlite::*;
+use self::diesel_demo_step_3_sqlite::*;
 use std::env::args;
 
 fn main() {
-    use diesel_demo_sqlite::schema::posts::dsl::{posts, published};
+    use diesel_demo_step_3_sqlite::schema::posts::dsl::{posts, published};
 
     let id = args()
         .nth(1)

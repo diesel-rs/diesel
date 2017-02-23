@@ -1,10 +1,10 @@
 [package]
-name = "diesel_demo_sqlite"
+name = "diesel_demo_step_3_sqlite"
 version = "0.1.0"
 license = "MIT"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 
 [dependencies]
-diesel = "0.10"
-diesel_codegen = { version = "0.10", features = ["sqlite"] }
+diesel = { version = "0.11.0", features = ["sqlite"] }
+diesel_codegen = { version = "0.11.0", features = ["sqlite"] }
 dotenv = "0.8"

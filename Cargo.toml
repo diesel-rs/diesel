@@ -13,6 +13,7 @@ members = [
     "examples/postgres/getting_started_step_1",
     "examples/postgres/getting_started_step_2",
     "examples/postgres/getting_started_step_3",
+    "examples/sqlite/getting_started_step_3",
 ]
 
 [replace]

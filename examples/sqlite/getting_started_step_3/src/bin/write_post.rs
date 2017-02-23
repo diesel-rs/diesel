@@ -1,7 +1,7 @@
-extern crate diesel_demo_sqlite;
+extern crate diesel_demo_step_3_sqlite;
 extern crate diesel;
 
-use self::diesel_demo_sqlite::*;
+use self::diesel_demo_step_3_sqlite::*;
 use std::io::{stdin, Read};
 
 fn main() {
