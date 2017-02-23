@@ -1,6 +1,14 @@
 use schema::*;
 use diesel::*;
 
+macro_rules! assert_sets_eq {
+    ($set1:expr, $set2:expr) => {
+        let set1 = {$set1};
+        let set2 = {$set2};
+        assert!(set1.iter().all(|si| set2.contains(si)) && set2.iter().all(|si| set1.contains(si)));
+    };
+}
+
 #[test]
 fn filter_by_int_equality() {
     use schema::users::dsl::*;
@@ -48,7 +56,7 @@ fn filter_by_equality_on_nullable_columns() {
     let jim = data[2].clone();
 
     let source = users.filter(hair_color.eq("black"));
-    assert_eq!(vec![sean, jim], source.load(&connection).unwrap());
+    assert_sets_eq!(vec![sean, jim], source.load(&connection).unwrap());
     let source = users.filter(hair_color.eq("brown"));
     assert_eq!(vec![tess], source.load(&connection).unwrap());
 }
@@ -220,7 +228,7 @@ fn filter_on_column_equality() {
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.filter(x.eq(y));
     let data: Vec<_> = query.load(&connection).unwrap();
-    assert_eq!(expected_data, data);
+    assert_sets_eq!(expected_data, data);
 }
 
 #[test]
@@ -234,7 +242,7 @@ fn filter_with_or() {
     let data: Vec<_> = users.filter(name.eq("Sean").or(name.eq("Tess")))
         .load(&connection).unwrap();
 
-    assert_eq!(expected_users, data);
+    assert_sets_eq!(expected_users, data);
 }
 
 #[test]
