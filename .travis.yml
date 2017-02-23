@@ -25,6 +25,9 @@ script:
   if [[ "$BACKEND" == mysql ]]; then
     (cd examples/mysql && ./test_all)
   fi &&
+  if [[ "$BACKEND" == sqlite ]]; then
+    (cd examples/sqlite && ./test_all)
+  fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_codegen && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
