@@ -16,5 +16,5 @@ pub mod data_types {
     #[doc(inline)]
     pub use super::types::floats::PgNumeric;
     #[doc(inline)]
-    pub use super::types::money::PgMoney;
+    pub use super::types::money::Cents;
 }
