@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 
 /// Money is reprsented in Postgres as a 64 bit signed integer. The fractional precision of the
-/// value is determined by the [lc_monetary setting of the database](https://www.postgresql.org/docs/9.1/static/datatype-money.html).
+/// value is determined by the [`lc_monetary` setting of the database](https://www.postgresql.org/docs/9.6/static/datatype-money.html).
 /// This struct is a dumb wrapper type, meant only to indicate the integer's meaning.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PgMoney(pub i64);
