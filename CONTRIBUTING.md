@@ -57,30 +57,30 @@ Thank you! We'll try to get back to you as soon as possible.
 2. Install the system libraries needed to interface with the database systems
    you which to use.
 
-    These are the same as when compiling diesel. In general, it is a good idea
-    to have _all_ drivers installed so you can run all tests locally.
+   These are the same as when compiling diesel. In general, it is a good idea
+   to have _all_ drivers installed so you can run all tests locally.
 
-    *Shortcut:* On macOS, you don't need to install anything to work with SQLite
-    and for PostgreSQL you'll only need the server (`libpq` is installed by
-    default). So, to get started, `brew install postgresql mysql` and follow the
-    instructions shown to set up the database servers.
+   *Shortcut:* On macOS, you don't need to install anything to work with SQLite
+   and for PostgreSQL you'll only need the server (`libpq` is installed by
+   default). So, to get started, `brew install postgresql mysql` and follow the
+   instructions shown to set up the database servers.
 3. Clone this repository and open it in your favorite editor.
 4. Create a `.env` file in the `diesel/` directory, and add the connection
    details for your databases.
 
-    For example:
+   For example:
 
-    ```
-    PG_DATABASE_URL=postgresql://localhost/diesel_test
-    SQLITE_DATABASE_URL=/tmp/diesel_test.sqlite
-    MYSQL_DATABASE_URL=mysql://localhost/diesel_test
-    MYSQL_UNIT_TEST_DATABASE_URL=mysql://localhost/diesel_unit_tests
-    ```
+   ```
+   PG_DATABASE_URL=postgresql://localhost/diesel_test
+   SQLITE_DATABASE_URL=/tmp/diesel_test.sqlite
+   MYSQL_DATABASE_URL=mysql://localhost/diesel_test
+   MYSQL_UNIT_TEST_DATABASE_URL=mysql://localhost/diesel_unit_tests
+   ```
 
-    *Note:* If you didn't specify the MySQL user to be one with elevated
-    permissions, you'll want to a command like ```mysql -c "GRANT ALL ON
-    `diesel_%`.* TO ''@'localhost';" -uroot```, or something similar for the
-    user that you've specified.
+   *Note:* If you didn't specify the MySQL user to be one with elevated
+   permissions, you'll want to a command like ```mysql -c "GRANT ALL ON
+   `diesel_%`.* TO ''@'localhost';" -uroot```, or something similar for the
+   user that you've specified.
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
