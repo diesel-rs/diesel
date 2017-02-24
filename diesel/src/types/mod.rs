@@ -132,6 +132,9 @@ use std::io::Write;
 /// [`Double`](struct.Double.html) should be used instead.
 #[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
 
+#[cfg(not(feature="postgres"))]
+impl NotNull for Numeric {}
+
 /// The text SQL type.
 ///
 /// On all backends strings must be valid UTF-8.

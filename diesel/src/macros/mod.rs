@@ -38,6 +38,70 @@ macro_rules! __diesel_column {
         impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
+        impl<Right> SelectableExpression<
+            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+        {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Left> SelectableExpression<
+            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+        {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Right> SelectableExpression<
+            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+        {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Left> SelectableExpression<
+            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+        {
+            type SqlTypeForSelect = <$Type as IntoNullable>::Nullable;
+        }
+
+        impl<Right> AppearsOnTable<
+            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+        {
+        }
+
+        impl<Right> AppearsOnTable<
+            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+        {
+        }
+
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {
@@ -468,66 +532,6 @@ macro_rules! joinable_inner {
                     join_type,
                 )
             }
-        }
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_workaround {
-    ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent::table, $child::table, $parent::$column_name);)+
-        select_column_inner!($parent::table, $child::table, $parent::star);
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_inner {
-    ($parent:ty, $child:ty, $column:ty $(,)*) => {
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child, $parent>,
-        > for $column {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent, $child>,
-        > for $column {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-        > for $column {
-            type SqlTypeForSelect = <<Self as $crate::Expression>::SqlType
-                as $crate::types::IntoNullable>::Nullable;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
-        > for $column {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::AppearsOnTable<
-            $crate::query_source::InnerJoinSource<$child, $parent>,
-        > for $column {
-        }
-
-        impl $crate::expression::AppearsOnTable<
-            $crate::query_source::InnerJoinSource<$parent, $child>,
-        > for $column {
-        }
-
-        impl $crate::expression::AppearsOnTable<
-            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-        > for $column {
-        }
-
-        impl $crate::expression::AppearsOnTable<
-            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
-        > for $column {
         }
     }
 }

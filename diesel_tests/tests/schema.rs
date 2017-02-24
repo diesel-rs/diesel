@@ -90,9 +90,6 @@ pub use self::backend_specifics::*;
 
 numeric_expr!(users::id);
 
-select_column_workaround!(users -> comments (id, name, hair_color));
-select_column_workaround!(comments -> users (id, post_id, text));
-
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]

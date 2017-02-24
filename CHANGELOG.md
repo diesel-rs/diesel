@@ -18,6 +18,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   thought out. The functionality they provided will return as joins are further
   revamped.
 
+* The internal use macro `select_column_workaround!` has been removed. If you
+  were relying on this internal macro, you can simply delete the line that was
+  calling it.
+
 ## [0.11.4] - 2017-02-21
 
 ### Fixed
