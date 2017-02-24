@@ -4,6 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Fixed
+
+* `diesel_codegen` will provide a more useful error message when it encounters
+  an unsupported type that contains a space in MySQL.
+
 ## [0.11.4] - 2017-02-21
 
 ### Fixed

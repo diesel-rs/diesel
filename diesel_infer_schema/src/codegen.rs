@@ -21,7 +21,7 @@ pub fn expand_infer_table_from_schema(database_url: &str, table: &TableData)
     let mut tokens = Vec::with_capacity(data.len());
 
     for a in data {
-        tokens.push(column_def_tokens(&a, &connection)?);
+        tokens.push(column_def_tokens(table, &a, &connection)?);
     }
     let default_schema = default_schema(&connection);
     if table.schema != default_schema {
@@ -54,11 +54,20 @@ pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens
 }
 
 fn column_def_tokens(
+    table: &TableData,
     column: &ColumnInformation,
     connection: &InferConnection,
 ) -> Result<quote::Tokens, Box<Error>> {
     let column_name = syn::Ident::new(&*column.column_name);
-    let column_type = try!(determine_column_type(column, connection));
+    let column_type = match determine_column_type(column, connection) {
+        Ok(t) => t,
+        Err(e) => return Err(format!(
+            "Error determining type of {}.{}: {}",
+            table,
+            column.column_name,
+            e,
+        ).into()),
+    };
     let tpe = if column_type.path[0] == "diesel" && column_type.path[1] == "types" {
         let path_segments = column_type.path
             .into_iter()
