@@ -11,6 +11,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `diesel_codegen` will provide a more useful error message when it encounters
   an unsupported type that contains a space in MySQL.
 
+### Removed
+
+* `WithDsl` and `Aliased` have been removed. They were a feature that was
+  actually closer to a cross join than the names implied, and wasn't fully
+  thought out. The functionality they provided will return as joins are further
+  revamped.
+
 ## [0.11.4] - 2017-02-21
 
 ### Fixed

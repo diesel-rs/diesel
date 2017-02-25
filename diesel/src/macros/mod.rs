@@ -35,14 +35,6 @@ macro_rules! __diesel_column {
             type SqlTypeForSelect = $Type;
         }
 
-        impl<'a, Left, Right> SelectableExpression<
-            $crate::WithQuerySource<'a, Left, Right>,
-        > for $column_name where
-            $column_name: SelectableExpression<Left>,
-        {
-            type SqlTypeForSelect = $Type;
-        }
-
         impl<Source, Predicate> SelectableExpression<
             $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
         > for $column_name where

@@ -100,8 +100,6 @@ pub mod helper_types {
     /// Represents the return type of `.offset()`
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
-    /// Represents the return type of `.with(aliased_expr)`
-    pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
 
     use super::associations::HasTable;
     use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};

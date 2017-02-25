@@ -1,6 +1,5 @@
 use backend::Backend;
 use expression::*;
-use expression::aliased::Aliased;
 use query_builder::distinct_clause::DistinctClause;
 use query_builder::group_by_clause::*;
 use query_builder::limit_clause::*;
@@ -146,27 +145,6 @@ impl<ST, S, F, D, W, O, L, Of, G> OffsetDsl
             self.order,
             self.limit,
             offset_clause,
-            self.group_by,
-        )
-    }
-}
-
-impl<'a, S, F, D, W, O, L, Of, G, Expr> WithDsl<'a, Expr>
-    for SelectStatement<S, F, D, W, O, L, Of, G> where
-        SelectStatement<S, WithQuerySource<'a, F, Expr>, D, W, O, L, Of, G>: Query,
-{
-    type Output = SelectStatement<S, WithQuerySource<'a, F, Expr>, D, W, O, L, Of, G>;
-
-    fn with(self, expr: Aliased<'a, Expr>) -> Self::Output {
-        let source = WithQuerySource::new(self.from, expr);
-        SelectStatement::new(
-            self.select,
-            source,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
             self.group_by,
         )
     }

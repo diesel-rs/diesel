@@ -1,29 +1,8 @@
 use expression::{Expression, AsExpression, nullable};
-use expression::aliased::Aliased;
 use expression::array_comparison::{In, NotIn, AsInExpression};
 use expression::predicates::*;
 
 pub trait ExpressionMethods: Expression + Sized {
-    /// Alias an expression for use alongside
-    /// [`with`](../../../prelude/trait.WithDsl.html).
-    ///
-    /// While you will need to give it a name to alias as, you should not need
-    /// to reference the alias elsewhere. You can pass the returned expression
-    /// anywhere you want to reference the alias.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// let query = plain_to_tsquery(search_text).aliased("q");
-    /// let rank = ts_rank(query, indexed_search_column).aliased("rank");
-    /// crates.with(query).with(rank)
-    ///     .filter(query.matches(indexed_search_column))
-    ///     .order(rank.desc())
-    /// ```
-    fn aliased(self, alias: &str) -> Aliased<Self> {
-        Aliased::new(self, alias)
-    }
-
     /// Creates a SQL `=` expression.
     ///
     /// # Example
