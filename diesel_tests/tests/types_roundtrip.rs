@@ -93,7 +93,7 @@ mod pg_types {
     test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp);
     test_round_trip!(interval_roundtrips, Interval, PgInterval);
     test_round_trip!(numeric_roundtrips, Numeric, PgNumeric);
-    test_round_trip!(money_roundtrips, Money, PgCents);
+    test_round_trip!(money_roundtrips, Money, PgMoney);
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);

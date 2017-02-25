@@ -423,20 +423,20 @@ fn pg_jsonb_to_sql_jsonb() {
 #[test]
 #[cfg(feature = "postgres")]
 fn pg_cents_from_sql() {
-    use diesel::data_types::PgCents;
+    use diesel::data_types::PgMoney;
     let query = "'726249766681478.40'::money";
-    let expected_value = PgCents(72624976668147840);
+    let expected_value = PgMoney(72624976668147840);
     assert_eq!(expected_value,
-               query_single_value::<Money, PgCents>(query));
+               query_single_value::<Money, PgMoney>(query));
 }
 
 #[test]
 #[cfg(feature = "postgres")]
 fn pg_cents_to_sql_cents() {
-    use diesel::data_types::PgCents;
+    use diesel::data_types::PgMoney;
     let expected_value = "'726249766681478.40'::money";
-    let value = PgCents(72624976668147840);
-    assert!(query_to_sql_equality::<Money, PgCents>(expected_value, value));
+    let value = PgMoney(72624976668147840);
+    assert!(query_to_sql_equality::<Money, PgMoney>(expected_value, value));
 }
 
 #[test]
