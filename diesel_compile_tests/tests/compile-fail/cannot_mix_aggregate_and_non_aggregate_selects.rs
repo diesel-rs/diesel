@@ -13,6 +13,6 @@ table! {
 fn main() {
     use self::users::dsl::*;
 
-    let source = users.select((id, count(users.star())));
+    let source = users.select(hlist!(id, count(users.star())));
     //~^ ERROR E0277
 }

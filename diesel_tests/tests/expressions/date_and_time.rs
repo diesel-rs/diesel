@@ -127,7 +127,7 @@ fn interval_is_deserialized_properly() {
     let connection = connection();
 
     let data = select(sql::
-        <(types::Interval, types::Interval, types::Interval, types::Interval)>(
+        <Hlist!(types::Interval, types::Interval, types::Interval, types::Interval)>(
             "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval"))
         .first(&connection);
@@ -162,13 +162,13 @@ fn adding_interval_to_timestamp() {
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
-    create_table("has_timestamps", (
+    create_table("has_timestamps", hlist!(
         integer("id").primary_key().auto_increment(),
         timestamp("created_at").not_null(),
         timestamp("updated_at").not_null().default("CURRENT_TIMESTAMP"),
     )).execute(conn).unwrap();
 
-    create_table("has_time", (
+    create_table("has_time", hlist!(
         integer("id").primary_key().auto_increment(),
         time("time").not_null(),
     )).execute(conn).unwrap();

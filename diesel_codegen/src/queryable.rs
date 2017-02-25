@@ -15,11 +15,11 @@ pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
     let struct_ty = &model.ty;
 
     let row_ty = model.attrs.as_slice().iter().map(|a| &a.ty);
-    let row_ty = quote!((#(#row_ty,)*));
+    let row_ty = quote!(Hlist!(#(#row_ty,)*));
 
     let build_expr = build_expr_for_model(&model);
     let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
-    let row_pat = quote!((#(#field_names,)*));
+    let row_pat = quote!(hlist_pat!(#(#field_names,)*));
 
     let model_name_uppercase = model.name.as_ref().to_uppercase();
     let dummy_const = format!("_IMPL_QUERYABLE_FOR_{}", model_name_uppercase).into();

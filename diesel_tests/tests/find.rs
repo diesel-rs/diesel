@@ -48,8 +48,8 @@ fn find_with_composite_pk() {
         .execute(&connection)
         .unwrap();
 
-    assert_eq!(Ok(first_following), followings.find((1, 1)).first(&connection));
-    assert_eq!(Ok(second_following), followings.find((1, 2)).first(&connection));
-    assert_eq!(Ok(third_following), followings.find((2, 1)).first(&connection));
-    assert_eq!(Ok(None::<Following>), followings.find((2, 2)).first(&connection).optional());
+    assert_eq!(Ok(first_following), followings.find(hlist!(1, 1)).first(&connection));
+    assert_eq!(Ok(second_following), followings.find(hlist!(1, 2)).first(&connection));
+    assert_eq!(Ok(third_following), followings.find(hlist!(2, 1)).first(&connection));
+    assert_eq!(Ok(None::<Following>), followings.find(hlist!(2, 2)).first(&connection).optional());
 }

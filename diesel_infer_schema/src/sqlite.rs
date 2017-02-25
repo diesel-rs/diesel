@@ -53,25 +53,17 @@ pub fn get_table_data(conn: &SqliteConnection, table: &TableData)
 }
 
 struct FullTableInfo {
-    _cid: i32,
     name: String,
-    _type_name: String,
-    _not_null: bool,
-    _dflt_value: Option<String>,
     primary_key: bool,
 }
 
 impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
-    type Row = (i32, String, String, bool, Option<String>, bool);
+    type Row = Hlist!(i32, String, String, bool, Option<String>, bool);
 
-    fn build(row: Self::Row) -> Self {
-        FullTableInfo{
-            _cid: row.0,
-            name: row.1,
-            _type_name: row.2,
-            _not_null: row.3,
-            _dflt_value: row.4,
-            primary_key: row.5,
+    fn build(hlist_pat!(_, name, _, _, _, primary_key): Self::Row) -> Self {
+        FullTableInfo {
+            name: name,
+            primary_key: primary_key,
         }
     }
 }

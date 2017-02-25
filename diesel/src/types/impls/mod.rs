@@ -182,6 +182,7 @@ macro_rules! debug_to_sql {
 
 mod date_and_time;
 pub mod floats;
+mod hlist;
 mod integers;
 pub mod option;
 mod primitives;

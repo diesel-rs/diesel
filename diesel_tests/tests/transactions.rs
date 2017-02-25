@@ -106,7 +106,7 @@ fn test_transaction_panics_on_error() {
 
 fn setup_test_table(connection: &TestConnection, table_name: &str) {
     use schema_dsl::*;
-    create_table(table_name, (
+    create_table(table_name, hlist!(
         integer("id").primary_key().auto_increment(),
     )).execute(connection).unwrap();
 }

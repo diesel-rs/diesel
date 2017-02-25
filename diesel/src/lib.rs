@@ -23,12 +23,11 @@
 
 extern crate byteorder;
 
+#[cfg(test)] #[macro_use] extern crate assert_matches;
+#[cfg(test)] #[macro_use] extern crate cfg_if;
+
 #[macro_use]
 mod macros;
-
-#[cfg(test)]
-#[macro_use]
-extern crate cfg_if;
 
 #[cfg(test)]
 pub mod test_helpers;
@@ -38,6 +37,7 @@ pub mod backend;
 pub mod connection;
 #[macro_use]
 pub mod expression;
+pub mod hlist;
 #[doc(hidden)]
 pub mod insertable;
 pub mod query_builder;

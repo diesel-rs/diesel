@@ -60,7 +60,7 @@ fn test_updating_multiple_columns() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
 
-    update(users.filter(id.eq(sean.id))).set((
+    update(users.filter(id.eq(sean.id))).set(hlist!(
         name.eq("Jim"),
         hair_color.eq(Some("black")),
     )).execute(&connection).unwrap();
@@ -93,7 +93,7 @@ fn update_with_custom_returning_clause() {
     let sean = find_user_by_name("Sean", &connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
-        .returning((name, hair_color))
+        .returning(hlist!(name, hair_color))
         .get_result::<(String, Option<String>)>(&connection);
     let expected_result = ("Sean".to_string(), Some("black".to_string()));
 

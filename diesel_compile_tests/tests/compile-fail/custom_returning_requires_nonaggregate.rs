@@ -28,6 +28,6 @@ fn main() {
     let new_user = NewUser {
         name: "Foobar".to_string(),
     };
-    let stmt = insert(&new_user).into(users).returning((name, count(name)));
+    let stmt = insert(&new_user).into(users).returning(hlist!(name, count(name)));
     //~^ ERROR NonAggregate
 }

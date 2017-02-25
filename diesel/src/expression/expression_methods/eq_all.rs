@@ -1,9 +1,10 @@
 use expression::Expression;
-use expression::predicates::And;
 use expression::expression_methods::*;
+use expression::predicates::And;
+use hlist::*;
 use types::Bool;
 
-/// This method is used by `FindDsl` to work with tuples. Because we cannot
+/// This method is used by `FindDsl` to work with hlists. Because we cannot
 /// express this without specialization or overlapping impls, it is brute force
 /// implemented on columns in the `column!` macro.
 #[doc(hidden)]
@@ -13,45 +14,24 @@ pub trait EqAll<Rhs> {
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
 
-// FIXME: This is much easier to represent with a macro once macro types are stable
-// which appears to be slated for 1.13
-impl<L1, L2, R1, R2> EqAll<(R1, R2)> for (L1, L2) where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
+impl<L1, L2, LTail, R1, R2, RTail> EqAll<Cons<R1, Cons<R2, RTail>>>
+    for Cons<L1, Cons<L2, LTail>> where
+        L1: EqAll<R1>,
+        Cons<L2, LTail>: EqAll<Cons<R2, RTail>>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, <L2 as EqAll<R2>>::Output>;
+    type Output = And<<L1 as EqAll<R1>>::Output, <Cons<L2, LTail> as EqAll<Cons<R2, RTail>>>::Output>;
 
-    fn eq_all(self, rhs: (R1, R2)) -> Self::Output {
+    fn eq_all(self, rhs: Cons<R1, Cons<R2, RTail>>) -> Self::Output {
         self.0.eq_all(rhs.0).and(self.1.eq_all(rhs.1))
     }
 }
 
-impl<L1, L2, L3, R1, R2, R3> EqAll<(R1, R2, R3)> for (L1, L2, L3) where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-    L3: EqAll<R3>,
+impl<Left, Right> EqAll<Cons<Right, Nil>> for Cons<Left, Nil> where
+    Left: EqAll<Right>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>>;
+    type Output = <Left as EqAll<Right>>::Output;
 
-    fn eq_all(self, rhs: (R1, R2, R3)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(
-            self.1.eq_all(rhs.1).and(self.2.eq_all(rhs.2)))
-    }
-}
-
-impl<L1, L2, L3, L4, R1, R2, R3, R4> EqAll<(R1, R2, R3, R4)> for (L1, L2, L3, L4) where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-    L3: EqAll<R3>,
-    L4: EqAll<R4>,
-{
-    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, <L4 as EqAll<R4>>::Output>>>;
-
-    fn eq_all(self, rhs: (R1, R2, R3, R4)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(
-            self.1.eq_all(rhs.1).and(
-            self.2.eq_all(rhs.2).and(
-            self.3.eq_all(rhs.3)
-            )))
+    fn eq_all(self, rhs: Cons<Right, Nil>) -> Self::Output {
+        self.0.eq_all(rhs.0)
     }
 }

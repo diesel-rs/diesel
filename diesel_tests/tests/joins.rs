@@ -56,7 +56,7 @@ fn select_multiple_from_join() {
     ").unwrap();
 
     let source = posts::table.inner_join(users::table)
-        .select((users::name, posts::title));
+        .select(hlist!(users::name, posts::title));
 
     let expected_data = vec![
         ("Sean".to_string(), "Hello".to_string()),
@@ -121,7 +121,7 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         ("Sean".to_string(), Some("World".to_string())),
         ("Tess".to_string(), None),
     ];
-    let source = users::table.left_outer_join(posts::table).select((users::name, posts::title));
+    let source = users::table.left_outer_join(posts::table).select(hlist!(users::name, posts::title));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -140,7 +140,7 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
         ("Sean".to_string(), Some("Hello".to_string())),
     ];
     let source = users::table.left_outer_join(posts::table)
-        .select((users::name, posts::title))
+        .select(hlist!(users::name, posts::title))
         .filter(posts::title.eq("Hello"));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
@@ -162,7 +162,7 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
         None,
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((posts::title, posts::body).nullable());
+    let source = users::table.left_outer_join(posts::table).select(hlist!(posts::title, posts::body).nullable());
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -185,7 +185,7 @@ fn select_complex_from_left_join() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::title, posts::body).nullable()));
+    let source = users::table.left_outer_join(posts::table).select(hlist!(users::all_columns, hlist!(posts::title, posts::body).nullable()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -208,7 +208,7 @@ fn select_right_side_with_nullable_column_first() {
         (tess, None),
     ];
 
-    let source = users::table.left_outer_join(posts::table).select((users::all_columns, (posts::body, posts::title).nullable()));
+    let source = users::table.left_outer_join(posts::table).select(hlist!(users::all_columns, hlist!(posts::body, posts::title).nullable()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);

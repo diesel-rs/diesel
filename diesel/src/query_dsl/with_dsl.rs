@@ -47,10 +47,10 @@ impl<'a, Left, Right> QuerySource for WithQuerySource<'a, Left, Right> where
     Left: QuerySource,
     Aliased<'a, Right>: QuerySource + Expression,
 {
-    type FromClause = PgOnly<(Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause)>;
+    type FromClause = PgOnly<Hlist!(Left::FromClause, <Aliased<'a, Right> as QuerySource>::FromClause)>;
 
     fn from_clause(&self) -> Self::FromClause {
-        PgOnly((self.left.from_clause(), self.right.from_clause()))
+        PgOnly(hlist!(self.left.from_clause(), self.right.from_clause()))
     }
 }
 

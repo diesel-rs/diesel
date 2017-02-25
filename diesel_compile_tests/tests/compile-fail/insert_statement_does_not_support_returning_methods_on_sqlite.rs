@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate diesel;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
 use diesel::sqlite::{Sqlite, SqliteQueryBuilder, SqliteConnection};
@@ -13,32 +13,15 @@ table! {
     }
 }
 
+#[derive(Queryable)]
 pub struct User {
     id: i32,
     name: String,
 }
 
-use diesel::types::FromSqlRow;
-
-impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
-    (i32, String): FromSqlRow<(Integer, VarChar), DB>,
-{
-    type Row = (i32, String);
-
-    fn build(row: Self::Row) -> Self {
-        User {
-            id: row.0,
-            name: row.1,
-        }
-    }
-}
-
-pub struct NewUser(String);
-
-impl_Insertable! {
-    (users)
-    pub struct NewUser(#[column_name(name)] String,);
-}
+#[derive(Insertable)]
+#[table_name="users"]
+pub struct NewUser(#[column_name(name)] String);
 
 fn main() {
     let connection = SqliteConnection::establish(":memory:").unwrap();
