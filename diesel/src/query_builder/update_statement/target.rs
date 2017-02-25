@@ -6,7 +6,7 @@ use query_dsl::FindDsl;
 #[derive(Debug)]
 pub struct UpdateTarget<Table, WhereClause> {
     pub table: Table,
-    pub where_clause: Option<WhereClause>,
+    pub where_clause: WhereClause,
 }
 
 pub trait IntoUpdateTarget: HasTable {

@@ -38,21 +38,6 @@ macro_rules! __diesel_column {
         impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
-        impl<Source, Predicate> SelectableExpression<
-            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
-        > for $column_name where
-            $column_name: SelectableExpression<Source>,
-        {
-            type SqlTypeForSelect = $Type;
-        }
-
-        impl<Source, Predicate> AppearsOnTable<
-            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
-        > for $column_name where
-            $column_name: AppearsOnTable<Source>,
-        {
-        }
-
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {
@@ -308,10 +293,10 @@ macro_rules! table_body {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<($($column_name,)+), Self>;
+                type Query = SelectStatement<Self>;
 
                 fn as_query(self) -> Self::Query {
-                    SelectStatement::simple(all_columns, self)
+                    SelectStatement::simple(self)
                 }
             }
 
@@ -337,13 +322,10 @@ macro_rules! table_body {
             }
 
             impl IntoUpdateTarget for table {
-                type WhereClause = ();
+                type WhereClause = <<Self as AsQuery>::Query as IntoUpdateTarget>::WhereClause;
 
                 fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
-                    UpdateTarget {
-                        table: self,
-                        where_clause: None,
-                    }
+                    self.as_query().into_update_target()
                 }
             }
 
@@ -402,9 +384,14 @@ macro_rules! __diesel_table_query_source_impl {
     ($table_struct:ident, public, $table_name:ident) => {
         impl QuerySource for $table_struct {
             type FromClause = Identifier<'static>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
                 Identifier(stringify!($table_name))
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };
@@ -412,6 +399,7 @@ macro_rules! __diesel_table_query_source_impl {
     ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
         impl QuerySource for $table_struct {
             type FromClause = InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
                 InfixNode::new(
@@ -419,6 +407,10 @@ macro_rules! __diesel_table_query_source_impl {
                     Identifier(stringify!($table_name)),
                     ".",
                 )
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };

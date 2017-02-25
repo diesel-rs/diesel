@@ -2,8 +2,6 @@
 //! shouldn't need to interact with these types during normal usage, other than
 //! the methods on [`Table`](/diesel/query_source/trait.Table.html)
 #[doc(hidden)]
-pub mod filter;
-#[doc(hidden)]
 pub mod joins;
 
 use backend::Backend;
@@ -29,7 +27,10 @@ pub trait Queryable<ST, DB> where
 #[doc(hidden)]
 pub trait QuerySource {
     type FromClause;
+    type DefaultSelection: SelectableExpression<Self>;
+
     fn from_clause(&self) -> Self::FromClause;
+    fn default_selection(&self) -> Self::DefaultSelection;
 }
 
 /// A column on a database table. Types which implement this trait should have

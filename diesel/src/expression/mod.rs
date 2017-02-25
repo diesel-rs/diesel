@@ -108,7 +108,7 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// SQL type doesn't matter (everything except `select` and `returning`). For
 /// places where nullability is important, `SelectableExpression` is used
 /// instead.
-pub trait AppearsOnTable<QS>: Expression {
+pub trait AppearsOnTable<QS: ?Sized>: Expression {
 }
 
 impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T> where
@@ -131,7 +131,7 @@ impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
 /// Columns will implement this for their table. Certain special types, like
 /// `CountStar` and `Bound` will implement this for all sources. All other
 /// expressions will inherit this from their children.
-pub trait SelectableExpression<QS>: AppearsOnTable<QS> {
+pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {
     type SqlTypeForSelect;
 }
 
