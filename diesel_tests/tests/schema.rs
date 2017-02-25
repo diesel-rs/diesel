@@ -138,6 +138,19 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
+#[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
+#[table_name="fk_tests"]
+pub struct FkTest {
+    id: i32,
+    fk_id: i32,
+}
+
+impl FkTest {
+    pub fn new(id: i32, fk_id: i32) -> Self {
+        FkTest{ id: id, fk_id: fk_id }
+    }
+}
+
 #[cfg(feature = "postgres")]
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
@@ -149,6 +162,8 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
+    #[cfg(feature = "sqlite")]
+    result.execute("PRAGMA foreign_keys = ON").unwrap();
     result.begin_test_transaction().unwrap();
     result
 }
