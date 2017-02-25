@@ -81,12 +81,12 @@ cfg_if! {
     }
 }
 
-fn database_url_from_env(bakend_specific_env_var: &str) -> String {
+fn database_url_from_env(backend_specific_env_var: &str) -> String {
     use std::env;
 
     dotenv().ok();
 
-    env::var(bakend_specific_env_var)
+    env::var(backend_specific_env_var)
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }
