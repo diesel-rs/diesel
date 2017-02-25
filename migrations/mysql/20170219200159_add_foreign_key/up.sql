@@ -4,5 +4,6 @@ CREATE TABLE fk_inits (
 
 CREATE TABLE fk_tests (
     id INTEGER PRIMARY KEY,
-    fk_id INTEGER NOT NULL REFERENCES fk_inits(id)
+    fk_id INTEGER NOT NULL,
+    FOREIGN KEY (fk_id) REFERENCES fk_inits (id)
 );

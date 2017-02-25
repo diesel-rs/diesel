@@ -138,20 +138,7 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
-#[derive(PartialEq, Eq, Debug, Clone, Insertable)]
-#[table_name="fk_inits"]
-pub struct FkInit {
-    id: i32,
-}
-
-impl FkInit {
-    pub fn new(id: i32) -> Self {
-        FkInit { id: id }
-    }
-}
-
 #[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
-#[belongs_to(FkInit)]
 #[table_name="fk_tests"]
 pub struct FkTest {
     id: i32,
@@ -175,6 +162,8 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
+    #[cfg(feature = "sqlite")]
+    result.execute("PRAGMA foreign_keys = ON").unwrap();
     result.begin_test_transaction().unwrap();
     result
 }
