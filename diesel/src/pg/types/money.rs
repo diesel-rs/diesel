@@ -1,5 +1,6 @@
 //! Support for Money values under PostgreSQL.
 use std::error::Error;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
 
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
@@ -39,6 +40,32 @@ impl ToSql<types::Money, Pg> for PgMoney {
     }
 }
 
+impl Add for PgMoney {
+    type Output = Self;
+    fn add(self, rhs: PgMoney) -> Self::Output {
+        PgMoney(self.0 + rhs.0)
+    }
+}
+
+impl AddAssign for PgMoney {
+    fn add_assign(&mut self, rhs: PgMoney) {
+        self.0 += rhs.0;
+    }
+}
+
+impl Sub for PgMoney {
+    type Output = Self;
+    fn sub(self, rhs: PgMoney) -> Self::Output {
+        PgMoney(self.0 - rhs.0)
+    }
+}
+
+impl SubAssign for PgMoney {
+    fn sub_assign(&mut self, rhs: PgMoney) {
+        self.0 -= rhs.0;
+    }
+}
+
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls {
     extern crate quickcheck;
@@ -51,4 +78,18 @@ mod quickcheck_impls {
             PgMoney(i64::arbitrary(g))
         }
     }
+}
+
+#[test]
+fn add_money() {
+    let c1 = PgMoney(123);
+    let c2 = PgMoney(456);
+    assert_eq!(PgMoney(579), c1 + c2);
+}
+
+#[test]
+fn sub_money() {
+    let c1 = PgMoney(123);
+    let c2 = PgMoney(456);
+    assert_eq!(PgMoney(-333), c1 - c2);
 }
