@@ -235,6 +235,7 @@ macro_rules! postfix_expression {
     }
 }
 
+infix_expression!(Concat, " || ", ::types::Text);
 infix_predicate!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
 infix_predicate!(Escape, " ESCAPE ");

@@ -6,6 +6,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for the SQL concatenation operator `||`. See [the docs for
+  `.concat`][concat-0.12.0] for more details
+
+[concat-0.12.0]: http://docs.diesel.rs/diesel/expression/expression_methods/text_expression_methods/trait.TextExpressionMethods.html#method.concat
+
 ### Fixed
 
 * `diesel_codegen` will provide a more useful error message when it encounters
