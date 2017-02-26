@@ -4,9 +4,17 @@ use std::io::prelude::*;
 
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 
-/// Money is represented in Postgres as a 64 bit signed integer. The fractional precision of the
-/// value is determined by the [`lc_monetary` setting of the database](https://www.postgresql.org/docs/9.6/static/datatype-money.html).
-/// This struct is a dumb wrapper type, meant only to indicate the integer's meaning.
+/// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
+/// type, meant only to indicate the integer's meaning.  The fractional precision of the value is
+/// determined by the [`lc_monetary` setting of the database](https://www.postgresql.org/docs/9.6/static/datatype-money.html).
+/// This struct is re-exported as `Cents` as a convenient and conventional expression of a typical
+/// unit of 1/100th of currency. For other names or precisions, users might consider a differently
+/// named `use` of the `PgMoney` struct.
+///
+/// ```rust
+/// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
+/// use diesel::data_types::PgMoney as Fils;  // 1/1000th unit of Dinar
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PgMoney(pub i64);
 
