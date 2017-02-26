@@ -210,11 +210,11 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///
-    /// - [`PgMoney`][PgMoney]
+    /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
     /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
     ///
-    /// - [`PgMoney`][PgMoney]
+    /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
     /// [PgMoney]: /diesel/pg/data_types/struct.PgMoney.html
     ///
