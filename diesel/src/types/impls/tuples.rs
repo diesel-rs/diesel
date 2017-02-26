@@ -1,6 +1,6 @@
 use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, SelectableExpression, AppearsOnTable, NonAggregate};
 use insertable::{ColumnInsertValue, InsertValues};
 use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
@@ -212,9 +212,15 @@ macro_rules! tuple_impls {
 
             impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
                 $($T: SelectableExpression<QS>,)+
-                ($($T,)+): Expression,
+                ($($T,)+): AppearsOnTable<QS>,
             {
                 type SqlTypeForSelect = ($($T::SqlTypeForSelect,)+);
+            }
+
+            impl<$($T,)+ QS> AppearsOnTable<QS> for ($($T,)+) where
+                $($T: AppearsOnTable<QS>,)+
+                ($($T,)+): Expression,
+            {
             }
 
             impl<Target, $($T,)+> AsChangeset for ($($T,)+) where

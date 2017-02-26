@@ -1,5 +1,5 @@
 use backend::*;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use result::QueryResult;
@@ -62,6 +62,7 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
 }
 
 impl_query_id!(AtTimeZone<Ts, Tz>);
+impl_selectable_expression!(AtTimeZone<Ts, Tz>);
 
 impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
     Ts: QueryFragment<Debug>,
@@ -83,12 +84,4 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
         self.timestamp.is_safe_to_cache_prepared() &&
             self.timezone.is_safe_to_cache_prepared()
     }
-}
-
-impl<Ts, Tz, Qs> SelectableExpression<Qs> for AtTimeZone<Ts, Tz> where
-    AtTimeZone<Ts, Tz>: Expression,
-    Ts: SelectableExpression<Qs>,
-    Tz: SelectableExpression<Qs>,
-{
-    type SqlTypeForSelect = Self::SqlType;
 }

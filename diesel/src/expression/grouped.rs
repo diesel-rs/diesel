@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 
@@ -29,13 +29,7 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
 }
 
 impl_query_id!(Grouped<T>);
-
-impl<T, QS> SelectableExpression<QS> for Grouped<T> where
-    T: SelectableExpression<QS>,
-    Grouped<T>: Expression,
-{
-    type SqlTypeForSelect = T::SqlTypeForSelect;
-}
+impl_selectable_expression!(Grouped<T>);
 
 impl<T: NonAggregate> NonAggregate for Grouped<T> where
     Grouped<T>: Expression,

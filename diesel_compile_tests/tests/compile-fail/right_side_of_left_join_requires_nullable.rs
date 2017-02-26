@@ -30,11 +30,11 @@ fn main() {
 
     // Valid
     let _ = join.select(posts::title.nullable());
+    // FIXME: This doesn't compile but we want it to
     // Valid -- NULL to a function will return null
-    let _ = join.select(lower(posts::title).nullable());
-    // FIXME: This compiles and is unsound
+    let _ = join.select(lower(posts::title).nullable()); //~ ERROR E0271
     // Invalid, only Nullable<title> is selectable
-    let _ = join.select(lower(posts::title));
+    let _ = join.select(lower(posts::title)); //~ ERROR E0271
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable())); //~ ERROR E0271
 }

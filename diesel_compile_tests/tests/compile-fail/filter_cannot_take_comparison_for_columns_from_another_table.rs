@@ -19,7 +19,7 @@ table! {
 
 fn main() {
     let _ = users::table.filter(posts::id.eq(1));
-    //~^ ERROR SelectableExpression
+    //~^ ERROR AppearsOnTable
     let _ = users::table.filter(users::name.eq(posts::title));
-    //~^ ERROR SelectableExpression
+    //~^ ERROR AppearsOnTable
 }

@@ -102,6 +102,27 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
     }
 }
 
+/// Indicates that all elements of an expression are valid given a from clause.
+/// This is used to ensure that `users.filter(posts::id.eq(1))` fails to
+/// compile. This constraint is only used in places where the nullability of a
+/// SQL type doesn't matter (everything except `select` and `returning`). For
+/// places where nullability is important, `SelectableExpression` is used
+/// instead.
+pub trait AppearsOnTable<QS>: Expression {
+}
+
+impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T> where
+    T: AppearsOnTable<QS>,
+    Box<T>: Expression,
+{
+}
+
+impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
+    T: AppearsOnTable<QS>,
+    &'a T: Expression,
+{
+}
+
 /// Indicates that an expression can be selected from a source. The associated
 /// type is usually the same as `Expression::SqlType`, but is used to indicate
 /// that a column is always nullable when it appears on the right side of a left
@@ -110,20 +131,20 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// Columns will implement this for their table. Certain special types, like
 /// `CountStar` and `Bound` will implement this for all sources. All other
 /// expressions will inherit this from their children.
-pub trait SelectableExpression<QS>: Expression {
+pub trait SelectableExpression<QS>: AppearsOnTable<QS> {
     type SqlTypeForSelect;
 }
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T> where
     T: SelectableExpression<QS>,
-    Box<T>: Expression,
+    Box<T>: AppearsOnTable<QS>,
 {
     type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
     T: SelectableExpression<QS>,
-    &'a T: Expression,
+    &'a T: AppearsOnTable<QS>,
 {
     type SqlTypeForSelect = T::SqlTypeForSelect;
 }

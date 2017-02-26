@@ -1,5 +1,5 @@
 use associations::HasTable;
-use expression::{SelectableExpression, NonAggregate};
+use expression::{AppearsOnTable, NonAggregate};
 use expression::expression_methods::*;
 use expression::predicates::And;
 use helper_types::Filter;
@@ -25,7 +25,7 @@ impl<Source, Predicate> FilteredQuerySource<Source, Predicate> {
 }
 
 impl<Source, Predicate> AsQuery for FilteredQuerySource<Source, Predicate> where
-    Predicate: SelectableExpression<Source, SqlType=Bool> + NonAggregate,
+    Predicate: AppearsOnTable<Source, SqlType=Bool> + NonAggregate,
     Source: QuerySource + AsQuery,
     Source::Query: FilterDsl<Predicate>,
 {
@@ -42,8 +42,8 @@ impl<Source, Predicate, NewPredicate, ST> FilterDsl<NewPredicate>
     for FilteredQuerySource<Source, Predicate> where
         FilteredQuerySource<Source, Predicate>: AsQuery<SqlType=ST>,
         FilteredQuerySource<Source, And<Predicate, NewPredicate>>: AsQuery<SqlType=ST>,
-        Predicate: SelectableExpression<Source, SqlType=Bool>,
-        NewPredicate: SelectableExpression<Source, SqlType=Bool> + NonAggregate,
+        Predicate: AppearsOnTable<Source, SqlType=Bool>,
+        NewPredicate: AppearsOnTable<Source, SqlType=Bool> + NonAggregate,
 {
     type Output = FilteredQuerySource<Source, And<Predicate, NewPredicate>>;
 
@@ -76,7 +76,7 @@ impl<Source, Predicate> HasTable for FilteredQuerySource<Source, Predicate> wher
 
 impl<Source, Predicate> IntoUpdateTarget for FilteredQuerySource<Source, Predicate> where
     FilteredQuerySource<Source, Predicate>: HasTable,
-    Predicate: SelectableExpression<Source, SqlType=Bool>,
+    Predicate: AppearsOnTable<Source, SqlType=Bool>,
 {
     type WhereClause = Predicate;
 

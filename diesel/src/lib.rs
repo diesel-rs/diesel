@@ -100,7 +100,6 @@ pub mod helper_types {
     /// Represents the return type of `.offset()`
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
-
     use super::associations::HasTable;
     use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};
     /// Represents the return type of `update(lhs).set(rhs)`
@@ -115,7 +114,7 @@ pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use associations::GroupedBy;
     pub use connection::Connection;
-    pub use expression::{Expression, SelectableExpression, BoxableExpression};
+    pub use expression::{Expression, SelectableExpression, AppearsOnTable, BoxableExpression};
     pub use expression::expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;

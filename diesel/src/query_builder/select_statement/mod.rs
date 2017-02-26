@@ -235,9 +235,15 @@ impl_query_id!(SelectStatement<S, F, D, W, O, L, Of, G>);
 
 impl<S, F, D, W, O, L, Of, G, QS> SelectableExpression<QS>
     for SelectStatement<S, F, D, W, O, L, Of, G> where
-        SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
+        SelectStatement<S, F, D, W, O, L, Of, G>: AppearsOnTable<QS>,
 {
     type SqlTypeForSelect = Self::SqlType;
+}
+
+impl<S, F, D, W, O, L, Of, G, QS> AppearsOnTable<QS>
+    for SelectStatement<S, F, D, W, O, L, Of, G> where
+        SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
+{
 }
 
 impl<S, F, D, W, O, L, Of, G> NonAggregate

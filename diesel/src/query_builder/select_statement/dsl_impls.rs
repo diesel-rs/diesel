@@ -58,7 +58,7 @@ impl<ST, S, F, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
     for SelectStatement<S, F, D, W, O, L, Of, G> where
         SelectStatement<S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
         SelectStatement<S, F, D, W::Output, O, L, Of, G>: Query<SqlType=ST>,
-        Predicate: SelectableExpression<F, SqlType=Bool> + NonAggregate,
+        Predicate: AppearsOnTable<F, SqlType=Bool> + NonAggregate,
         W: WhereAnd<Predicate>,
 {
     type Output = SelectStatement<S, F, D, W::Output, O, L, Of, G>;
@@ -79,7 +79,7 @@ impl<ST, S, F, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
 
 impl<ST, S, F, D, W, O, L, Of, G, Expr> OrderDsl<Expr>
     for SelectStatement<S, F, D, W, O, L, Of, G> where
-        Expr: SelectableExpression<F>,
+        Expr: AppearsOnTable<F>,
         SelectStatement<S, F, D, W, O, L, Of, G>: AsQuery<SqlType=ST>,
         SelectStatement<S, F, D, W, OrderClause<Expr>, L, Of, G>: AsQuery<SqlType=ST>,
 {

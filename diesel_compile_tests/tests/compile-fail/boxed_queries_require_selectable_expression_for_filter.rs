@@ -20,5 +20,5 @@ table! {
 
 fn main() {
     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
-    //~^ ERROR SelectableExpression
+    //~^ ERROR AppearsOnTable
 }

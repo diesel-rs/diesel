@@ -62,10 +62,20 @@ macro_rules! sql_function_body {
 
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<$($arg_name),*> where
-            $($arg_name: $crate::expression::SelectableExpression<QS>,)*
-            $struct_name<$($arg_name),*>: $crate::expression::Expression,
+            $($arg_name: $crate::expression::SelectableExpression<
+              QS,
+              SqlTypeForSelect = <$arg_name as $crate::expression::Expression>::SqlType,
+            >,)*
+            $struct_name<$($arg_name),*>: $crate::expression::AppearsOnTable<QS>,
         {
             type SqlTypeForSelect = Self::SqlType;
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<$($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<$($arg_name),*> where
+            $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
+            $struct_name<$($arg_name),*>: $crate::expression::Expression,
+        {
         }
 
         #[allow(non_camel_case_types)]
@@ -134,6 +144,9 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 
         impl<QS> $crate::expression::SelectableExpression<QS> for $type_name {
             type SqlTypeForSelect = $return_type;
+        }
+
+        impl<QS> $crate::expression::AppearsOnTable<QS> for $type_name {
         }
 
         impl $crate::expression::NonAggregate for $type_name {

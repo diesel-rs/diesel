@@ -31,8 +31,11 @@ macro_rules! __diesel_column {
 
         impl_query_id!($column_name);
 
-        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {
+        impl SelectableExpression<$($table)::*> for $column_name {
             type SqlTypeForSelect = $Type;
+        }
+
+        impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
         impl<Source, Predicate> SelectableExpression<
@@ -41,6 +44,13 @@ macro_rules! __diesel_column {
             $column_name: SelectableExpression<Source>,
         {
             type SqlTypeForSelect = $Type;
+        }
+
+        impl<Source, Predicate> AppearsOnTable<
+            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
+        > for $column_name where
+            $column_name: AppearsOnTable<Source>,
+        {
         }
 
         impl $crate::expression::NonAggregate for $column_name {}
@@ -341,7 +351,7 @@ macro_rules! table_body {
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Expression, SelectableExpression, QuerySource};
+                use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::result::QueryResult;
@@ -375,6 +385,9 @@ macro_rules! table_body {
 
                 impl SelectableExpression<table> for star {
                     type SqlTypeForSelect = Self::SqlType;
+                }
+
+                impl AppearsOnTable<table> for star {
                 }
 
                 $(__diesel_column!(table, $column_name -> $column_ty);)+
@@ -482,31 +495,47 @@ macro_rules! select_column_inner {
     ($parent:ty, $child:ty, $column:ty $(,)*) => {
         impl $crate::expression::SelectableExpression<
             $crate::query_source::InnerJoinSource<$child, $parent>,
-        > for $column
-        {
+        > for $column {
             type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::InnerJoinSource<$parent, $child>,
-        > for $column
-        {
+        > for $column {
             type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-        > for $column
-        {
+        > for $column {
             type SqlTypeForSelect = <<Self as $crate::Expression>::SqlType
                 as $crate::types::IntoNullable>::Nullable;
         }
 
         impl $crate::expression::SelectableExpression<
             $crate::query_source::LeftOuterJoinSource<$parent, $child>,
-        > for $column
-        {
+        > for $column {
             type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
+        }
+
+        impl $crate::expression::AppearsOnTable<
+            $crate::query_source::InnerJoinSource<$child, $parent>,
+        > for $column {
+        }
+
+        impl $crate::expression::AppearsOnTable<
+            $crate::query_source::InnerJoinSource<$parent, $child>,
+        > for $column {
+        }
+
+        impl $crate::expression::AppearsOnTable<
+            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
+        > for $column {
+        }
+
+        impl $crate::expression::AppearsOnTable<
+            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
+        > for $column {
         }
     }
 }
@@ -601,6 +630,7 @@ macro_rules! print_sql {
 
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
+#[macro_use] mod internal;
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 #[macro_use] mod static_cond;

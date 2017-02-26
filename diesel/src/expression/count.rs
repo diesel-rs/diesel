@@ -1,7 +1,7 @@
 use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
-use super::{Expression, SelectableExpression};
+use super::Expression;
 use types::BigInt;
 
 /// Creates a SQL `COUNT` expression
@@ -78,10 +78,7 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
 }
 
 impl_query_id!(Count<T>);
-
-impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
-    type SqlTypeForSelect = BigInt;
-}
+impl_selectable_expression!(Count<T>);
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -106,8 +103,5 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
     }
 }
 
-impl<QS> SelectableExpression<QS> for CountStar {
-    type SqlTypeForSelect = BigInt;
-}
-
 impl_query_id!(CountStar);
+impl_selectable_expression!(CountStar);

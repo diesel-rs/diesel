@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 use types::*;
@@ -12,10 +12,6 @@ pub struct now;
 
 impl Expression for now {
     type SqlType = Timestamp;
-}
-
-impl<QS> SelectableExpression<QS> for now {
-    type SqlTypeForSelect = Timestamp;
 }
 
 impl NonAggregate for now {
@@ -37,6 +33,7 @@ impl<DB: Backend> QueryFragment<DB> for now {
 }
 
 impl_query_id!(now);
+impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);

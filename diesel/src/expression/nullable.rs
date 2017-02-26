@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 use types::IntoNullable;
@@ -42,9 +42,15 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
 /// nullable.
 impl<T, QS> SelectableExpression<QS> for Nullable<T> where
     T: SelectableExpression<QS>,
-    Nullable<T>: Expression,
+    Nullable<T>: AppearsOnTable<QS>,
 {
     type SqlTypeForSelect = Self::SqlType;
+}
+
+impl<T, QS> AppearsOnTable<QS> for Nullable<T> where
+    T: AppearsOnTable<QS>,
+    Nullable<T>: Expression,
+{
 }
 
 impl<T: QueryId> QueryId for Nullable<T> {
