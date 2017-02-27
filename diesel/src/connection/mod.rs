@@ -4,17 +4,16 @@ use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
 
-/// To perform simple operations to the backed that implements this trait.
-/// `SimpleConnection` will be used for migrations. Every backend shall implement
-/// their own way to run migrations scripts.
+/// Perform simple operations on a backend
 pub trait SimpleConnection {
-    /// Brings the ability to execute multiple SQL statements within the same string.
-    /// This function is tipically used on migrations where the statements to upgrade or
+    /// Execute multiple SQL statements within the same string.
+    ///
+    /// This function is typically used in migrations where the statements to upgrade or
     /// downgrade the database are stored in SQL batch files.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
-/// Provides functionality to perform connections to the backend.
+/// Perform connections to a backend.
 pub trait Connection: SimpleConnection + Sized {
     /// The backend this connections represents.
     type Backend: Backend;
