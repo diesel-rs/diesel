@@ -422,25 +422,6 @@ fn pg_jsonb_to_sql_jsonb() {
 
 #[test]
 #[cfg(feature = "postgres")]
-fn pg_cents_from_sql() {
-    use diesel::data_types::PgMoney;
-    let query = "'726249766681478.40'::money";
-    let expected_value = PgMoney(72624976668147840);
-    assert_eq!(expected_value,
-               query_single_value::<Money, PgMoney>(query));
-}
-
-#[test]
-#[cfg(feature = "postgres")]
-fn pg_cents_to_sql_cents() {
-    use diesel::data_types::PgMoney;
-    let expected_value = "'726249766681478.40'::money";
-    let value = PgMoney(72624976668147840);
-    assert!(query_to_sql_equality::<Money, PgMoney>(expected_value, value));
-}
-
-#[test]
-#[cfg(feature = "postgres")]
 fn text_array_can_be_assigned_to_varchar_array_column() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
