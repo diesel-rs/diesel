@@ -18,6 +18,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   thought out. The functionality they provided will return as joins are further
   revamped.
 
+### Added
+
+* Added support for the PostgreSQL [`Money` type][pg-money].
+
+[pg-money]: https://www.postgresql.org/docs/9.6/static/datatype-money.html
+
 ## [0.11.4] - 2017-02-21
 
 ### Fixed
