@@ -8,6 +8,25 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Changed
 
+* It is no longer possible to exhaustively match against
+  `result::ConnectionError`.
+
+## [0.10.0] - 2017-02-02
+
+### Added
+
+* Added support for the PostgreSQL [`json` and `jsonb` types][pg-json]. They can
+  be mapped to/from `serde_json::Value`. The `serde` feature must be enabled to
+  use the JSON types.
+
+[pg-json]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
+
+* Added the `print-schema` command to Diesel CLI. This command will print the
+  output of the `infer_schema!` macro. For more information run `diesel help
+  print-schema`.
+
+### Changed
+
 * When possible, we will use deprecation warnings for breaking changes.
   Deprecated code requires the `with-deprecated` feature, which is enabled by
   default.
@@ -598,3 +617,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.8.2]: https://github.com/diesel-rs/diesel/compare/v0.8.1...v0.8.2
 [0.9.0]: https://github.com/diesel-rs/diesel/compare/v0.8.2...v0.9.0
 [0.9.1]: https://github.com/diesel-rs/diesel/compare/v0.9.0...v0.9.1
+[0.10.0]: https://github.com/diesel-rs/diesel/compare/v0.9.1...v0.10.0

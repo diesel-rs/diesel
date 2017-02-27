@@ -1,10 +1,14 @@
+mod transaction_manager;
+
 use backend::Backend;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
 
-/// Perform simple operations on a backend
+pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
+
+/// Perform simple operations on a backend.
 pub trait SimpleConnection {
     /// Execute multiple SQL statements within the same string.
     ///
@@ -17,6 +21,8 @@ pub trait SimpleConnection {
 pub trait Connection: SimpleConnection + Sized {
     /// The backend this connections represents.
     type Backend: Backend;
+    #[doc(hidden)]
+    type TransactionManager: TransactionManager<Self>;
 
     /// Establishes a new connection to the database at the given URL. The URL
     /// should be a valid connection string for a given backend. See the
@@ -34,14 +40,15 @@ pub trait Connection: SimpleConnection + Sized {
     fn transaction<T, E, F>(&self, f: F) -> TransactionResult<T, E> where
         F: FnOnce() -> Result<T, E>,
     {
-        try!(self.begin_transaction());
+        let transaction_manager = self.transaction_manager();
+        try!(transaction_manager.begin_transaction(self));
         match f() {
             Ok(value) => {
-                try!(self.commit_transaction());
+                try!(transaction_manager.commit_transaction(self));
                 Ok(value)
             },
             Err(e) => {
-                try!(self.rollback_transaction());
+                try!(transaction_manager.rollback_transaction(self));
                 Err(TransactionError::UserReturnedError(e))
             },
         }
@@ -50,8 +57,9 @@ pub trait Connection: SimpleConnection + Sized {
     /// Creates a transaction that will never be committed. This is useful for
     /// tests. Panics if called while inside of a transaction.
     fn begin_test_transaction(&self) -> QueryResult<()> {
-        assert_eq!(self.get_transaction_depth(), 0);
-        self.begin_transaction()
+        let transaction_manager = self.transaction_manager();
+        assert_eq!(transaction_manager.get_transaction_depth(), 0);
+        transaction_manager.begin_transaction(self)
     }
 
     /// Executes the given function inside a transaction, but does not commit
@@ -93,10 +101,6 @@ pub trait Connection: SimpleConnection + Sized {
         T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
-    #[doc(hidden)] fn begin_transaction(&self) -> QueryResult<()>;
-    #[doc(hidden)] fn rollback_transaction(&self) -> QueryResult<()>;
-    #[doc(hidden)] fn commit_transaction(&self) -> QueryResult<()>;
-    #[doc(hidden)] fn get_transaction_depth(&self) -> i32;
-
+    #[doc(hidden)] fn transaction_manager(&self) -> &Self::TransactionManager;
     #[doc(hidden)] fn setup_helper_functions(&self);
 }

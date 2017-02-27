@@ -10,6 +10,7 @@ macro_rules! t {
 }
 
 extern crate diesel_codegen_shared;
+extern crate diesel_infer_schema;
 extern crate diesel;
 #[macro_use]
 extern crate quote;

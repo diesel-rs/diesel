@@ -4,8 +4,14 @@
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 #![cfg_attr(feature = "unstable", feature(specialization))]
 
+extern crate byteorder;
+
 #[macro_use]
 mod macros;
+
+#[cfg(test)]
+#[macro_use]
+extern crate cfg_if;
 
 #[cfg(test)]
 pub mod test_helpers;
@@ -25,6 +31,8 @@ pub mod types;
 #[cfg(feature = "with-deprecated")]
 pub use self::insertable as persistable;
 
+#[cfg(feature = "mysql")]
+pub mod mysql;
 #[cfg(feature = "postgres")]
 pub mod pg;
 #[cfg(feature = "sqlite")]

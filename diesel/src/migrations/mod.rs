@@ -195,14 +195,14 @@ fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, Migration
 
 /// Run all pending migrations in the given list. Apps should likely be calling
 /// `run_pending_migrations` or `run_pending_migrations_in_directory` instead.
-pub fn run_migrations<Conn, List, M>(
+pub fn run_migrations<Conn, List>(
     conn: &Conn,
     migrations: List,
     output: &mut Write,
 ) -> Result<(), RunMigrationsError> where
     Conn: MigrationConnection,
-    List: IntoIterator<Item=M>,
-    M: ::std::ops::Deref<Target=Migration>,
+    List: IntoIterator,
+    List::Item: Migration,
 {
     try!(setup_database(conn));
     let already_run = try!(conn.previously_run_migration_versions());
@@ -213,7 +213,7 @@ pub fn run_migrations<Conn, List, M>(
 
     pending_migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in pending_migrations {
-        try!(run_migration(conn, &*migration, output));
+        try!(run_migration(conn, &migration, output));
     }
     Ok(())
 }

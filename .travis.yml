@@ -23,6 +23,7 @@ script:
     (cd examples && ./test_all)
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
+  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_codegen_shared && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
@@ -45,8 +46,10 @@ after_success:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     (cd diesel && travis-cargo doc -- --features "postgres sqlite chrono uuid")
-    (echo "docs.diesel.rs" > ../diesel/target/doc/CNAME)
-    (travis-cargo doc-upload)
+    mkdir diesel/target
+    mv target/doc diesel/target/doc
+    echo "docs.diesel.rs" > diesel/target/doc/CNAME
+    (cd diesel && travis-cargo doc-upload)
   fi
 branches:
   only:
@@ -62,4 +65,4 @@ notifications:
     on_start: never
 matrix:
   allow_failures:
-    - rust: stable
+    - rust: nightly

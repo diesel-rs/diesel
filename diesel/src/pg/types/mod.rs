@@ -5,6 +5,8 @@ mod integers;
 mod primitives;
 #[cfg(feature = "uuid")]
 mod uuid;
+#[cfg(feature = "serde_json")]
+mod json;
 
 /// PostgreSQL specific SQL types
 ///
@@ -88,4 +90,130 @@ pub mod sql_types {
 
     #[doc(hidden)]
     pub type Bpchar = ::types::VarChar;
+
+    #[cfg(feature = "serde_json")]
+    /// The JSON SQL type.  This type can only be used with `feature =
+    /// "serde_json"`
+    ///
+    /// Normally you should prefer `Jsonb` instead, for the reasons
+    /// discussed there.
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`serde_json::Value`][Value]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`serde_json`][Value]
+    ///
+    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Json;
+
+    #[cfg(feature = "serde_json")]
+    /// The `jsonb` SQL type.  This type can only be used with `feature =
+    /// "serde_json"`
+    ///
+    /// `jsonb` offers [several advantages][adv] over regular JSON:
+    ///
+    /// > There are two JSON data types: `json` and `jsonb`. They accept almost
+    /// > identical sets of values as input. The major practical difference
+    /// > is one of efficiency. The `json` data type stores an exact copy of
+    /// > the input text, which processing functions must reparse on each
+    /// > execution; while `jsonb` data is stored in a decomposed binary format
+    /// > that makes it slightly slower to input due to added conversion
+    /// > overhead, but significantly faster to process, since no reparsing
+    /// > is needed. `jsonb` also supports indexing, which can be a significant
+    /// > advantage.
+    /// >
+    /// > ...In general, most applications should prefer to store JSON data as
+    /// > `jsonb`, unless there are quite specialized needs, such as legacy
+    /// > assumptions about ordering of object keys.
+    ///
+    /// [adv]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`serde_json::Value`][Value]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`serde_json`][Value]
+    ///
+    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// extern crate serde_json;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Serial,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// struct Contact {
+    ///     id: i32,
+    ///     name: String,
+    ///     address: serde_json::Value,
+    /// }
+    ///
+    /// impl_Queryable! {
+    ///     struct Contact {
+    ///         id: i32,
+    ///         name: String,
+    ///         address: serde_json::Value,
+    ///     }
+    /// }
+    ///
+    /// struct NewContact {
+    ///     name: String,
+    ///     address: serde_json::Value,
+    /// }
+    ///
+    /// impl_Insertable! {
+    ///     (contacts)
+    ///     struct NewContact {
+    ///         name: String,
+    ///         address: serde_json::Value,
+    ///     }
+    /// }
+    ///
+    /// table! {
+    ///     contacts {
+    ///         id -> Integer,
+    ///         name -> VarChar,
+    ///         address -> Jsonb,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use self::diesel::insert;
+    /// #     use self::contacts::dsl::*;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").unwrap();
+    /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// }"#).unwrap();
+    /// let new_contact = NewContact {
+    ///     name: "Claus".into(),
+    ///     address: santas_address.clone()
+    /// };
+    /// let inserted_contact = insert(&new_contact).into(contacts)
+    ///     .get_result::<Contact>(&connection).unwrap();
+    /// assert_eq!(santas_address, inserted_contact.address);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default)] pub struct Jsonb;
 }

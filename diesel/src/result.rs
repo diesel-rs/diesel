@@ -62,6 +62,9 @@ impl DatabaseErrorInformation for String {
 pub enum ConnectionError {
     InvalidCString(NulError),
     BadConnection(String),
+    InvalidConnectionUrl(String),
+    #[doc(hidden)]
+    __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
 #[derive(Debug, PartialEq)]
@@ -148,6 +151,8 @@ impl Display for ConnectionError {
         match self {
             &ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
             &ConnectionError::BadConnection(ref s) => write!(f, "{}", &s),
+            &ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", &s),
+            &ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 }
@@ -157,6 +162,8 @@ impl StdError for ConnectionError {
         match self {
             &ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
             &ConnectionError::BadConnection(ref s) => &s,
+            &ConnectionError::InvalidConnectionUrl(ref s) => &s,
+            &ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 }

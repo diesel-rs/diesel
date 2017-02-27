@@ -11,11 +11,11 @@ pub use self::sqlite_value::SqliteValue;
 
 use std::any::TypeId;
 use std::borrow::Cow;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use connection::{SimpleConnection, Connection};
+use connection::{SimpleConnection, Connection, AnsiTransactionManager};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::*;
@@ -32,7 +32,7 @@ use types::HasSqlType;
 pub struct SqliteConnection {
     statement_cache: RefCell<HashMap<QueryCacheKey, StatementUse>>,
     raw_connection: Rc<RawConnection>,
-    transaction_depth: Cell<i32>,
+    transaction_manager: AnsiTransactionManager,
 }
 
 #[derive(Hash, PartialEq, Eq)]
@@ -54,13 +54,14 @@ impl SimpleConnection for SqliteConnection {
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
+    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| {
             SqliteConnection {
                 statement_cache: RefCell::new(HashMap::new()),
                 raw_connection: Rc::new(conn),
-                transaction_depth: Cell::new(0),
+                transaction_manager: AnsiTransactionManager::new(),
             }
         })
     }
@@ -98,40 +99,8 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn begin_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            self.execute("BEGIN")
-        } else {
-            self.execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
-    }
-
-    #[doc(hidden)]
-    fn rollback_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth == 1 {
-            self.execute("ROLLBACK")
-        } else {
-            self.execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    #[doc(hidden)]
-    fn commit_transaction(&self) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth <= 1 {
-            self.execute("COMMIT")
-        } else {
-            self.execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
-                                  transaction_depth - 1))
-        })
-    }
-
-    #[doc(hidden)]
-    fn get_transaction_depth(&self) -> i32 {
-        self.transaction_depth.get()
+    fn transaction_manager(&self) -> &Self::TransactionManager {
+        &self.transaction_manager
     }
 
     #[doc(hidden)]
@@ -154,13 +123,6 @@ impl SqliteConnection {
         }
 
         Ok(result)
-    }
-
-    fn change_transaction_depth(&self, by: i32, query: QueryResult<usize>) -> QueryResult<()> {
-        if query.is_ok() {
-            self.transaction_depth.set(self.transaction_depth.get() + by);
-        }
-        query.map(|_| ())
     }
 
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
