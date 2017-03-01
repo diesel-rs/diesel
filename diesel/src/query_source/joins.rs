@@ -1,9 +1,6 @@
 use prelude::*;
-use expression::SelectableExpression;
 use expression::nullable::Nullable;
 use query_builder::*;
-use result::QueryResult;
-use super::{QuerySource, Table};
 use types::IntoNullable;
 
 #[derive(Debug, Clone, Copy)]
