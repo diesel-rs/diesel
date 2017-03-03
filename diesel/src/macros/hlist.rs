@@ -1,4 +1,13 @@
 #[macro_export]
+/// Alias for `hlist!`.
+///
+/// Since `hlist!` is quite a generic name, we also export it with a more
+/// specific name that is unlikely to collide with other crates.  The generic
+/// names can be disabled by enabling the `conservative-macro-names` feature.
+///
+/// If you are writing a crate which adds features to diesel, not an
+/// application, you should always use this macro instead of `hlist!` in order
+/// to be compatible with applications which disable the more generic names.
 macro_rules! diesel_hlist {
     // Empty list
     () => { $crate::hlist::Nil };
@@ -13,6 +22,15 @@ macro_rules! diesel_hlist {
 }
 
 #[macro_export]
+/// Alias for `Hlist!`.
+///
+/// Since `Hlist!` is quite a generic name, we also export it with a more
+/// specific name that is unlikely to collide with other crates.  The generic
+/// names can be disabled by enabling the `conservative-macro-names` feature.
+///
+/// If you are writing a crate which adds features to diesel, not an
+/// application, you should always use this macro instead of `Hlist!` in order
+/// to be compatible with applications which disable the more generic names.
 macro_rules! DieselHlist {
     // Empty list
     () => { $crate::hlist::Nil };
@@ -27,6 +45,15 @@ macro_rules! DieselHlist {
 }
 
 #[macro_export]
+/// Alias for `hlist_pat!`.
+///
+/// Since `hlist_pat!` is quite a generic name, we also export it with a more
+/// specific name that is unlikely to collide with other crates.  The generic
+/// names can be disabled by enabling the `conservative-macro-names` feature.
+///
+/// If you are writing a crate which adds features to diesel, not an
+/// application, you should always use this macro instead of `hlist_pat!` in order
+/// to be compatible with applications which disable the more generic names.
 macro_rules! diesel_hlist_pat {
     // Empty list
     () => { $crate::hlist::Nil };
@@ -44,16 +71,51 @@ macro_rules! diesel_hlist_pat {
 #[macro_use]
 mod hlist_rename {
     #[macro_export]
+    /// Constructs a variable length argument list.
+    ///
+    /// A list of arguments to be passed to a function which takes a variable
+    /// number of arguments, such as
+    /// [`select`](prelude/trait.SelectDsl.html#tymethod.select) and
+    /// [`order`](prelude/trait.OrderDsl.html#tymethod.order).
+    ///
+    /// Note: This macro has a generic name which may conflict with other
+    /// crates. You can disable the generic names by enabling the
+    /// `conservative-macro-names` feature. This macro is also exported as
+    /// `diesel_hlist!`.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// users.select(hlist!(id, name))
+    /// ```
     macro_rules! hlist {
         ($($args:tt)*) => { diesel_hlist!($($args)*) }
     }
 
     #[macro_export]
+    /// The type of a variable length argument list.
+    ///
+    /// Similar to `hlist!`, but used in type positions. The type of `hlist!(1,
+    /// "foo", MyStruct)` will be `Hlist!(i32, &str, MyStruct)`.
+    ///
+    /// Note: This macro has a generic name which may conflict with other
+    /// crates. You can disable the generic names by enabling the
+    /// `conservative-macro-names` feature. This macro is also exported as
+    /// `DieselHlist!`.
     macro_rules! Hlist {
         ($($args:tt)*) => { DieselHlist!($($args)*) }
     }
 
     #[macro_export]
+    /// A pattern which matches variable length argument lists.
+    ///
+    /// Similar to `hlist!`, but used in pattern positions. A value of
+    /// `hlist!(1, "foo", MyStruct)` will match `hlist_pat!(x, y, z)`.
+    ///
+    /// Note: This macro has a generic name which may conflict with other
+    /// crates. You can disable the generic names by enabling the
+    /// `conservative-macro-names` feature. This macro is also exported as
+    /// `diesel_hlist_pat!`.
     macro_rules! hlist_pat {
         ($($args:tt)*) => { diesel_hlist_pat!($($args)*) }
     }

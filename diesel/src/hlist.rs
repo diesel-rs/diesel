@@ -1,11 +1,58 @@
+//! A heterogeneous list used by Diesel to emulate variadic functions.
+//!
+//! Most applications will not need to concern themselves with this module. See
+//! the [`hlist!` macro](../macro.hlist.html) for common usage.
+//!
+//! A heterogeneous list, or hlist for short, is a singly linked list where the
+//! type of each element may differ. This is represented statically in the type.
+//!
+//! Hlists are very similar to tuples in that they are finite, and heterogenous.
+//! In general, you can think of `diesel_hlist!(1, "foo", MyStruct)` as
+//! analogous to `(1, ("foo", (MyStruct, ())))`.
+//!
+//! However, they are significantly easier to work with in a generic context
+//! than tuples. To implement a trait for all hlists, you need to implement that
+//! trait for `Cons<Head, Tail>` and `Nil`. To implement a trait for all tuples,
+//! you will need one impl per tuple size that you wish to support. The tradeoff
+//! for this is that they are somewhat more difficult to work with in a
+//! non-generic context. They cannot be indexed, they must be accessed via
+//! pattern matching.
+//!
+//! Diesel exposes three macros to work with hlists. Hlists can be constructed
+//! using [`diesel_hlist!`](../macro.diesel_hlist.html). The type of an hlist
+//! can be referenced using [`DieselHlist!`](../macro.DieselHlist.html).
+//! Patterns which match hlists can be constructed using
+//! [`diesel_hlist_pat!`](../macro.diesel_hlist_pat.html). The type of
+//! `diesel_hlist!(1, "foo", MyStruct)` is `DieselHlist!(i32, &str, MyStruct)`
+//! and matches the pattern `diesel_hlist_pat!(x, y, z)`.
+
 use std::fmt::{Debug, Formatter, Error as FmtError};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// An hlist which contains one or more items. `Tail` will always either be
+/// `Cons` or `Nil`.
 pub struct Cons<Head, Tail>(pub Head, pub Tail);
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// An empty hlist.
 pub struct Nil;
 
+/// Utility trait for working with hlists
 pub trait Hlist {
+    /// The total length of a list.
+    ///
+    /// Since this is represented in the type, this function does not take
+    /// `&self`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # use diesel::hlist::*;
+    /// # fn main() {
+    /// assert_eq!(0, <DieselHlist!()>::len());
+    /// assert_eq!(1, <DieselHlist!(i32)>::len());
+    /// assert_eq!(2, <DieselHlist!(i32, &str)>::len());
+    /// # }
     fn len() -> usize;
 }
 
