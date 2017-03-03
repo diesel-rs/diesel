@@ -36,19 +36,19 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
     Right: Table,
-    Hlist!(Left::AllColumns, Right::AllColumns): SelectableExpression<
+    DieselHlist!(Left::AllColumns, Right::AllColumns): SelectableExpression<
         InnerJoinSource<Left, Right>,
-        SqlTypeForSelect=Hlist!(Left::SqlType, Right::SqlType),
+        SqlTypeForSelect=DieselHlist!(Left::SqlType, Right::SqlType),
     >,
 {
-    type SqlType = Hlist!(Left::SqlType, Right::SqlType);
+    type SqlType = DieselHlist!(Left::SqlType, Right::SqlType);
     type Query = SelectStatement<
-        Hlist!(Left::AllColumns, Right::AllColumns),
+        DieselHlist!(Left::AllColumns, Right::AllColumns),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple(hlist!(Left::all_columns(), Right::all_columns()), self)
+        SelectStatement::simple(diesel_hlist!(Left::all_columns(), Right::all_columns()), self)
     }
 }
 
@@ -85,20 +85,20 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
     Right::SqlType: IntoNullable,
-    Hlist!(Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
+    DieselHlist!(Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
         LeftOuterJoinSource<Left, Right>,
-        SqlTypeForSelect=Hlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
+        SqlTypeForSelect=DieselHlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
     >,
 {
-    type SqlType = Hlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
+    type SqlType = DieselHlist!(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
     type Query = SelectStatement<
-        Hlist!(Left::AllColumns, Nullable<Right::AllColumns>),
+        DieselHlist!(Left::AllColumns, Nullable<Right::AllColumns>),
         Self,
     >;
 
     fn as_query(self) -> Self::Query {
         SelectStatement::simple(
-            hlist!(Left::all_columns(), Right::all_columns().nullable()),
+            diesel_hlist!(Left::all_columns(), Right::all_columns().nullable()),
             self,
         )
     }

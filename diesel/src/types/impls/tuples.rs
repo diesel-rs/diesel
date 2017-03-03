@@ -7,13 +7,13 @@ macro_rules! tuple_impls {
     ($($T:ident,)+) => {
         impl<$($T,)+ ST, DB> Queryable<ST, DB> for ($($T,)+) where
             DB: Backend + HasSqlType<ST>,
-            Hlist!($($T,)+): Queryable<ST, DB>,
+            DieselHlist!($($T,)+): Queryable<ST, DB>,
         {
-            type Row = <Hlist!($($T,)+) as Queryable<ST, DB>>::Row;
+            type Row = <DieselHlist!($($T,)+) as Queryable<ST, DB>>::Row;
 
             #[allow(non_snake_case)]
             fn build(row: Self::Row) -> Self {
-                let hlist_pat!($($T,)+) = Queryable::build(row);
+                let diesel_hlist_pat!($($T,)+) = Queryable::build(row);
                 ($($T,)+)
             }
         }

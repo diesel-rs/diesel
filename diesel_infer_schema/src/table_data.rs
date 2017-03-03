@@ -31,11 +31,11 @@ impl TableData {
 
 impl<ST, DB> Queryable<ST, DB> for TableData where
     DB: Backend + HasSqlType<ST>,
-    Hlist!(String, String): FromSqlRow<ST, DB>,
+    DieselHlist!(String, String): FromSqlRow<ST, DB>,
 {
-    type Row = Hlist!(String, String);
+    type Row = DieselHlist!(String, String);
 
-    fn build(hlist_pat!(name, schema): Self::Row) -> Self {
+    fn build(diesel_hlist_pat!(name, schema): Self::Row) -> Self {
         TableData::new(name, schema)
     }
 }

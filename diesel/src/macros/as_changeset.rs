@@ -146,7 +146,7 @@ macro_rules! impl_AsChangeset {
                 treat_none_as_null = $treat_none_as_null,
                 $($headers)*
             ),
-            changeset_ty = Hlist!($(
+            changeset_ty = DieselHlist!($(
                 AsChangeset_changeset_ty! {
                     table_name = $table_name,
                     treat_none_as_null = $treat_none_as_null,
@@ -225,7 +225,7 @@ macro_rules! impl_AsChangeset {
                 fn as_changeset(self) -> Self::Changeset {
                     use $crate::prelude::ExpressionMethods;
                     let $self_to_columns = *self;
-                    hlist!($(
+                    diesel_hlist!($(
                         AsChangeset_column_expr!(
                             $table_name::$column_name,
                             $column_name,

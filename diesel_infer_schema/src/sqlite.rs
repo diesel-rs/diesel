@@ -58,9 +58,9 @@ struct FullTableInfo {
 }
 
 impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
-    type Row = Hlist!(i32, String, String, bool, Option<String>, bool);
+    type Row = DieselHlist!(i32, String, String, bool, Option<String>, bool);
 
-    fn build(hlist_pat!(_, name, _, _, _, primary_key): Self::Row) -> Self {
+    fn build(diesel_hlist_pat!(_, name, _, _, _, primary_key): Self::Row) -> Self {
         FullTableInfo {
             name: name,
             primary_key: primary_key,

@@ -37,11 +37,11 @@ impl ColumnInformation {
 #[cfg(feature="uses_information_schema")]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
     DB: Backend + UsesInformationSchema + HasSqlType<ST>,
-    Hlist!(String, String, String): FromSqlRow<ST, DB>,
+    DieselHlist!(String, String, String): FromSqlRow<ST, DB>,
 {
-    type Row = Hlist!(String, String, String);
+    type Row = DieselHlist!(String, String, String);
 
-    fn build(hlist_pat!(col, ty, is_nullable): Self::Row) -> Self {
+    fn build(diesel_hlist_pat!(col, ty, is_nullable): Self::Row) -> Self {
         ColumnInformation::new(col, ty, is_nullable == "YES")
     }
 }
@@ -49,11 +49,11 @@ impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
     Sqlite: HasSqlType<ST>,
-    Hlist!(i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
+    DieselHlist!(i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
 {
-    type Row = Hlist!(i32, String, String, bool, Option<String>, bool);
+    type Row = DieselHlist!(i32, String, String, bool, Option<String>, bool);
 
-    fn build(hlist_pat!(_, col, ty, not_null, _, _): Self::Row) -> Self {
+    fn build(diesel_hlist_pat!(_, col, ty, not_null, _, _): Self::Row) -> Self {
         ColumnInformation::new(col, ty, !not_null)
     }
 }

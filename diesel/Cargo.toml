@@ -37,14 +37,13 @@ tempdir = "^0.3.4"
 default = ["with-deprecated"]
 extras = ["chrono", "serde_json", "uuid", "deprecated-time"]
 unstable = []
+conservative-macro-names = []
+deprecated-time = ["time"]
 lint = ["clippy"]
-large-tables = []
-huge-tables = ["large-tables"]
+mysql = ["mysqlclient-sys", "url"]
 postgres = ["pq-sys"]
 sqlite = ["libsqlite3-sys", "libc"]
-mysql = ["mysqlclient-sys", "url"]
 with-deprecated = []
-deprecated-time = ["time"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
