@@ -2,9 +2,10 @@ use hlist::*;
 use super::*;
 use query_builder::QueryFragment;
 
-impl<Head, Tail, DB> InsertValues<DB> for Cons<Head, Tail> where
+impl<Head, Tail, DB> InsertValues<DB> for (Head, ...Tail) where
     DB: Backend,
-    Cons<Head, Tail>: InsertValuesRecursive<DB>,
+    (Head, ...Tail): InsertValuesRecursive<DB>,
+    Tail: Tuple,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
         InsertValuesRecursive::<DB>::column_names(self, false, out)
@@ -23,14 +24,14 @@ impl<Head, Tail, DB> InsertValues<DB> for Cons<Head, Tail> where
 }
 
 #[doc(hidden)]
-pub trait InsertValuesRecursive<DB: Backend> {
+pub trait InsertValuesRecursive<DB: Backend>: Tuple {
     fn column_names(&self, comma_needed: bool, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_clause(&self, comma_needed: bool, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
 }
 
 impl<Col, Expr, Tail, DB> InsertValuesRecursive<DB>
-    for Cons<ColumnInsertValue<Col, Expr>, Tail> where
+    for (ColumnInsertValue<Col, Expr>, ...Tail) where
         DB: Backend + SupportsDefaultKeyword,
         Col: Column,
         Col::SqlType: IntoNullable,
@@ -71,7 +72,7 @@ use sqlite::Sqlite;
 
 #[cfg(feature="sqlite")]
 impl<Col, Expr, Tail> InsertValuesRecursive<Sqlite>
-    for Cons<ColumnInsertValue<Col, Expr>, Tail> where
+    for (ColumnInsertValue<Col, Expr>, ...Tail) where
         Col: Column,
         Col::SqlType: IntoNullable,
         Expr: Expression<SqlType=<Col::SqlType as IntoNullable>::Nullable> + QueryFragment<Sqlite>,
@@ -118,7 +119,7 @@ impl<Col, Expr, Tail> InsertValuesRecursive<Sqlite>
     }
 }
 
-impl<DB: Backend> InsertValuesRecursive<DB> for Nil {
+impl<DB: Backend> InsertValuesRecursive<DB> for () {
     fn column_names(&self, _: bool, _: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }

@@ -48,8 +48,25 @@ impl<DB> QueryId for QueryFragment<DB> {
     }
 }
 
-impl_query_id!(Cons<T, U>);
-impl_query_id!(Nil);
+impl<Head, ...Tail> QueryId for (Head, ...Tail) where
+    Head: QueryId,
+    Tail: Tuple + QueryId,
+    Tail::QueryId: Tuple,
+{
+    type QueryId = (Head::QueryId, ...Tail::QueryId);
+
+    fn has_static_query_id() -> bool {
+        Head::has_static_query_id() && Tail::has_static_query_id()
+    }
+}
+
+impl QueryId for () {
+    type QueryId = ();
+
+    fn has_static_query_id() -> bool {
+        true
+    }
+}
 
 #[cfg(test)]
 mod tests {

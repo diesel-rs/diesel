@@ -132,30 +132,40 @@ impl<DB: Backend> QueryFragment<DB> for () {
     }
 }
 
-impl<Head, Head2, Tail, DB> QueryFragment<DB> for Cons<Head, Cons<Head2, Tail>> where
+trait QueryFragmentTuple<DB>: Tuple {
+    fn to_sql(self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+    fn collect_binds(self, out: &mut DB::BindCollector) -> QueryResult<()>;
+    fn is_safe_to_cache_prepared(self) -> bool;
+}
+
+impl<Head, Head2, Tail, DB> QueryFragmentTuple<DB> for (Head, Head2, ...Tail) where
     DB: Backend,
     Head: QueryFragment<DB>,
-    Cons<Head2, Tail>: QueryFragment<DB>,
+    Tail: Tuple,
+    (Head2, ...Tail): QueryFragmentTuple<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0.to_sql(out));
+    fn to_sql(self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        let (head, ...tail) = self;
+        try!(head.to_sql(out));
         out.push_sql(", ");
-        try!(self.1.to_sql(out));
+        try!(tail.to_sql(out));
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
-        try!(self.1.collect_binds(out));
+    fn collect_binds(self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        let (head, ...tail) = self;
+        try!(head.collect_binds(out));
+        try!(tail.collect_binds(out));
         Ok(())
     }
 
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.is_safe_to_cache_prepared() && self.1.is_safe_to_cache_prepared()
+    fn is_safe_to_cache_prepared(self) -> bool {
+        let (head, ...tail) = self;
+        head.is_safe_to_cache_prepared() && tail.is_safe_to_cache_prepared()
     }
 }
 
-impl<Head, DB> QueryFragment<DB> for Cons<Head, Nil> where
+impl<Head, DB> QueryFragmentTuple<DB> for (Head,) where
     DB: Backend,
     Head: QueryFragment<DB>,
 {
@@ -169,6 +179,24 @@ impl<Head, DB> QueryFragment<DB> for Cons<Head, Nil> where
 
     fn is_safe_to_cache_prepared(&self) -> bool {
         self.0.is_safe_to_cache_prepared()
+    }
+}
+
+impl<T, DB> QueryFragment<DB> for (...T) where
+    DB: Backend,
+    T: Tuple,
+    for<'a> T::AsRefs<'a>: QueryFragmentTuple<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        self.elements_as_ref().to_sql(out)
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.elements_as_ref().collect_binds(out)
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.elements_as_ref().is_safe_to_cache_prepared(out)
     }
 }
 

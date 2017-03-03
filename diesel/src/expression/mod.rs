@@ -82,15 +82,17 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
     type SqlType = T::SqlType;
 }
 
-impl<Head, Tail> Expression for Cons<Head, Tail> where
+impl<Head, Tail> Expression for (Head, ...Tail) where
     Head: Expression + NonAggregate,
     Tail: Expression + NonAggregate,
+    Tail: Tuple,
+    Tail::SqlType: Tuple,
 {
-    type SqlType = Cons<Head::SqlType, Tail::SqlType>;
+    type SqlType = (Head::SqlType, ...Tail::SqlType);
 }
 
-impl Expression for Nil {
-    type SqlType = Nil;
+impl Expression for () {
+    type SqlType = ();
 }
 
 /// Describes how a type can be represented as an expression for a given type.
@@ -142,16 +144,18 @@ impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
     type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
-impl<Head, Tail, QS> SelectableExpression<QS> for Cons<Head, Tail> where
+impl<Head, Tail, QS> SelectableExpression<QS> for (Head, ...Tail) where
     Head: SelectableExpression<QS>,
     Tail: SelectableExpression<QS>,
-    Cons<Head, Tail>: Expression,
+    (Head, ...Tail): Expression,
+    Tail: Tuple,
+    Tail::SqlTypeForSelect: Tuple,
 {
-    type SqlTypeForSelect = Cons<Head::SqlTypeForSelect, Tail::SqlTypeForSelect>;
+    type SqlTypeForSelect = (Head::SqlTypeForSelect, ...Tail::SqlTypeForSelect);
 }
 
-impl<QS> SelectableExpression<QS> for Nil {
-    type SqlTypeForSelect = Nil;
+impl<QS> SelectableExpression<QS> for () {
+    type SqlTypeForSelect = ();
 }
 
 /// Marker trait to indicate that an expression does not include any aggregate
@@ -167,13 +171,13 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
 }
 
-impl<Head, Tail> NonAggregate for Cons<Head, Tail> where
+impl<Head, Tail> NonAggregate for (Head, ...Tail) where
     Head: NonAggregate,
-    Tail: NonAggregate,
+    Tail: NonAggregate + Tuple,
 {
 }
 
-impl NonAggregate for Nil {
+impl NonAggregate for () {
 }
 
 use query_builder::{QueryFragment, QueryId};
