@@ -14,14 +14,14 @@ pub trait EqAll<Rhs> {
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
 
-impl<L1, L2, LTail, R1, R2, RTail> EqAll<Cons<R1, Cons<R2, RTail>>>
-    for Cons<L1, Cons<L2, LTail>> where
-        L1: EqAll<R1>,
-        Cons<L2, LTail>: EqAll<Cons<R2, RTail>>,
+impl<LHead, LTail, RHead, RTail> EqAll<Cons<RHead, RTail>>
+    for Cons<LHead, LTail> where
+        LHead: EqAll<RHead>,
+        LTail: EqAll<RTail>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, <Cons<L2, LTail> as EqAll<Cons<R2, RTail>>>::Output>;
+    type Output = And<<LHead as EqAll<RHead>>::Output, <LTail as EqAll<RTail>>::Output>;
 
-    fn eq_all(self, rhs: Cons<R1, Cons<R2, RTail>>) -> Self::Output {
+    fn eq_all(self, rhs: Cons<RHead, RTail>) -> Self::Output {
         self.0.eq_all(rhs.0).and(self.1.eq_all(rhs.1))
     }
 }
