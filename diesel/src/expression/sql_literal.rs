@@ -1,8 +1,9 @@
+use std::marker::PhantomData;
+
 use backend::Backend;
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
-use std::marker::PhantomData;
-use super::{Expression, SelectableExpression, NonAggregate};
 use types::HasSqlType;
 
 #[derive(Debug, Clone)]
@@ -52,6 +53,9 @@ impl<ST> Query for SqlLiteral<ST> {
 
 impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
     type SqlTypeForSelect = ST;
+}
+
+impl<QS, ST> AppearsOnTable<QS> for SqlLiteral<ST> {
 }
 
 impl<ST> NonAggregate for SqlLiteral<ST> {

@@ -336,8 +336,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #  }
     /// #
     /// #  joinable!(posts -> users (user_id));
-    /// #  select_column_workaround!(posts -> users (id, user_id, author_name));
-    /// #  select_column_workaround!(users -> posts (id, name));
     ///
     /// fn main() {
     ///     use self::users::dsl::*;

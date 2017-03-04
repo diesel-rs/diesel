@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 
@@ -42,6 +42,11 @@ impl<T, ST, QS> SelectableExpression<QS> for Coerce<T, ST> where
     T: SelectableExpression<QS>,
 {
     type SqlTypeForSelect = Self::SqlType;
+}
+
+impl<T, ST, QS> AppearsOnTable<QS> for Coerce<T, ST> where
+    T: AppearsOnTable<QS>,
+{
 }
 
 impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where

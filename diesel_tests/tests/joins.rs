@@ -234,6 +234,53 @@ fn select_then_join() {
     assert_eq!(expected_data, data);
 }
 
+// FIXME: This is fixed by the new join design which removes the associated type
+// form `SelectableExpression`
+// #[test]
+// fn selecting_complex_expression_from_right_side_of_left_join() {
+//     use diesel::types::Text;
+
+//     let connection = connection_with_sean_and_tess_in_users_table();
+//     let new_posts = vec![
+//         NewPost::new(1, "Post One", None),
+//         NewPost::new(1, "Post Two", None),
+//     ];
+//     insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+//     sql_function!(lower, lower_t, (x: Text) -> Text);
+
+//     let titles = users::table.left_outer_join(posts::table)
+//         .select(lower(posts::title).nullable())
+//         .order((users::id, posts::id))
+//         .load(&connection);
+//     let expected_data = vec![Some("post one".to_string()), Some("post two".to_string()), None];
+//     assert_eq!(Ok(expected_data), titles);
+// }
+
+// FIXME: This is fixed by the new join design which removes the associated type
+// form `SelectableExpression`
+// #[test]
+// fn selecting_complex_expression_from_both_sides_of_outer_join() {
+//     use diesel::types::Text;
+
+//     let connection = connection_with_sean_and_tess_in_users_table();
+//     let new_posts = vec![
+//         NewPost::new(1, "Post One", None),
+//         NewPost::new(1, "Post Two", None),
+//     ];
+//     insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+
+//     let titles = users::table.left_outer_join(posts::table)
+//         .select(users::name.concat(" wrote ").concat(posts::title).nullable())
+//         .order((users::id, posts::id))
+//         .load(&connection);
+//     let expected_data = vec![
+//         Some("Sean wrote Post One".to_string()),
+//         Some("Sean wrote Post Two".to_string()),
+//         None,
+//     ];
+//     assert_eq!(Ok(expected_data), titles);
+// }
+
 #[test]
 fn join_through_other() {
     use schema::users::dsl::*;

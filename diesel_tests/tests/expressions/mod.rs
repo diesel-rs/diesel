@@ -101,6 +101,9 @@ impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {
     type SqlTypeForSelect = T;
 }
 
+impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {
+}
+
 fn arbitrary<T>() -> Arbitrary<T> {
     Arbitrary { _marker: PhantomData }
 }

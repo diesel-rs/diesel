@@ -105,17 +105,6 @@ macro_rules! HasMany {
             primary_key_ty = <$parent_table_name::table as $crate::query_source::Table>::PrimaryKey,
             primary_key_expr = $crate::Table::primary_key(&$parent_table_name::table),
         }
-
-        $(select_column_inner!(
-            $parent_table_name::table,
-            $child_table,
-            $parent_table_name::$column_name,
-        );)+
-        select_column_inner!(
-            $parent_table_name::table,
-            $child_table,
-            $parent_table_name::star,
-        );
     };
 
     // Handle struct with no generics

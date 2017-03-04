@@ -4,7 +4,6 @@ use expression::nullable::Nullable;
 use query_builder::*;
 use result::QueryResult;
 use super::{QuerySource, Table};
-use types::IntoNullable;
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -25,30 +24,30 @@ impl<Left, Right> InnerJoinSource<Left, Right> {
 impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, Inner>,
     Right: Table,
+    (Left::AllColumns, Right::AllColumns): SelectableExpression<
+        InnerJoinSource<Left, Right>,
+    >,
 {
     type FromClause = <Left as JoinTo<Right, Inner>>::JoinClause;
+    type DefaultSelection = (Left::AllColumns, Right::AllColumns);
 
     fn from_clause(&self) -> Self::FromClause {
         self.left.join_clause(Inner)
     }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        (Left::all_columns(), Right::all_columns())
+    }
 }
 
 impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right, Inner>,
-    Right: Table,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<
-        InnerJoinSource<Left, Right>,
-        SqlTypeForSelect=(Left::SqlType, Right::SqlType),
-    >,
+    SelectStatement<InnerJoinSource<Left, Right>>: Query,
 {
-    type SqlType = (Left::SqlType, Right::SqlType);
-    type Query = SelectStatement<
-        (Left::AllColumns, Right::AllColumns),
-        Self,
-    >;
+    type SqlType = <SelectStatement<Self> as Query>::SqlType;
+    type Query = SelectStatement<Self>;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple((Left::all_columns(), Right::all_columns()), self)
+        SelectStatement::simple(self)
     }
 }
 
@@ -73,34 +72,30 @@ impl<Left, Right> LeftOuterJoinSource<Left, Right> {
 impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
+    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
+        LeftOuterJoinSource<Left, Right>,
+    >,
 {
     type FromClause = <Left as JoinTo<Right, LeftOuter>>::JoinClause;
+    type DefaultSelection = (Left::AllColumns, Nullable<Right::AllColumns>);
 
     fn from_clause(&self) -> Self::FromClause {
         self.left.join_clause(LeftOuter)
     }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        (Left::all_columns(), Right::all_columns().nullable())
+    }
 }
 
 impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
-    Left: Table + JoinTo<Right, LeftOuter>,
-    Right: Table,
-    Right::SqlType: IntoNullable,
-    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
-        LeftOuterJoinSource<Left, Right>,
-        SqlTypeForSelect=(Left::SqlType, <Right::SqlType as IntoNullable>::Nullable)
-    >,
+    SelectStatement<LeftOuterJoinSource<Left, Right>>: Query,
 {
-    type SqlType = (Left::SqlType, <Right::SqlType as IntoNullable>::Nullable);
-    type Query = SelectStatement<
-        (Left::AllColumns, Nullable<Right::AllColumns>),
-        Self,
-    >;
+    type SqlType = <SelectStatement<Self> as Query>::SqlType;
+    type Query = SelectStatement<Self>;
 
     fn as_query(self) -> Self::Query {
-        SelectStatement::simple(
-            (Left::all_columns(), Right::all_columns().nullable()),
-            self,
-        )
+        SelectStatement::simple(self)
     }
 }
 

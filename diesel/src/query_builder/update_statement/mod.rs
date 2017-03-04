@@ -39,7 +39,7 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
 #[derive(Debug, Copy, Clone)]
 pub struct UpdateStatement<T, U, V> {
     table: T,
-    where_clause: Option<U>,
+    where_clause: U,
     values: V,
 }
 
@@ -60,19 +60,14 @@ impl<T, U, V, DB> QueryFragment<DB> for UpdateStatement<T, U, V> where
         try!(self.table.from_clause().to_sql(out));
         out.push_sql(" SET ");
         try!(self.values.to_sql(out));
-        if let Some(ref clause) = self.where_clause {
-            out.push_sql(" WHERE ");
-            try!(clause.to_sql(out));
-        }
+        try!(self.where_clause.to_sql(out));
         Ok(())
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         try!(self.table.from_clause().collect_binds(out));
         try!(self.values.collect_binds(out));
-        if let Some(ref clause) = self.where_clause {
-            try!(clause.collect_binds(out));
-        }
+        try!(self.where_clause.collect_binds(out));
         Ok(())
     }
 

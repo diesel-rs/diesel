@@ -22,6 +22,9 @@ fn main() {
     let stuff = users::table.select((posts::id, posts::user_id));
     //~^ ERROR Selectable
     //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     let stuff = users::table.select((posts::id, users::name));
     //~^ ERROR Selectable
+    //~| ERROR E0277
 }

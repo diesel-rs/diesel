@@ -18,19 +18,13 @@ macro_rules! infix_predicate_body {
         }
 
         impl_query_id!($name<T, U>);
+        impl_selectable_expression!($name<T, U>);
 
         impl<T, U> $crate::expression::Expression for $name<T, U> where
             T: $crate::expression::Expression,
             U: $crate::expression::Expression,
         {
             type SqlType = $return_type;
-        }
-
-        impl<T, U, QS> $crate::expression::SelectableExpression<QS> for $name<T, U> where
-            T: $crate::expression::SelectableExpression<QS>,
-            U: $crate::expression::SelectableExpression<QS>,
-        {
-            type SqlTypeForSelect = Self::SqlType;
         }
 
         impl<T, U> $crate::expression::NonAggregate for $name<T, U> where
@@ -190,6 +184,7 @@ macro_rules! postfix_predicate_body {
         }
 
         impl_query_id!($name<T>);
+        impl_selectable_expression!($name<T>);
 
         impl<T> $crate::expression::Expression for $name<T> where
             T: $crate::expression::Expression,
@@ -217,12 +212,6 @@ macro_rules! postfix_predicate_body {
             }
         }
 
-        impl<T, QS> $crate::expression::SelectableExpression<QS> for $name<T> where
-            T: $crate::expression::SelectableExpression<QS>,
-        {
-            type SqlTypeForSelect = Self::SqlType;
-        }
-
         impl<T> $crate::expression::NonAggregate for $name<T> where
             T: $crate::expression::NonAggregate,
         {
@@ -246,6 +235,7 @@ macro_rules! postfix_expression {
     }
 }
 
+infix_expression!(Concat, " || ", ::types::Text);
 infix_predicate!(And, " AND ");
 infix_predicate!(Between, " BETWEEN ");
 infix_predicate!(Escape, " ESCAPE ");
@@ -269,12 +259,12 @@ use backend::Backend;
 use query_source::Column;
 use query_builder::*;
 use result::QueryResult;
-use super::SelectableExpression;
+use super::AppearsOnTable;
 
 impl<T, U, DB> Changeset<DB> for Eq<T, U> where
     DB: Backend,
     T: Column,
-    U: SelectableExpression<T::Table> + QueryFragment<DB>,
+    U: AppearsOnTable<T::Table> + QueryFragment<DB>,
 {
     fn is_noop(&self) -> bool {
         false
@@ -293,7 +283,7 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
 
 impl<T, U> AsChangeset for Eq<T, U> where
     T: Column,
-    U: SelectableExpression<T::Table>,
+    U: AppearsOnTable<T::Table>,
 {
     type Target = T::Table;
     type Changeset = Self;

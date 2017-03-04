@@ -38,14 +38,18 @@ impl Connection for MysqlConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
+        use result::ConnectionError::CouldntSetupConfiguration;
+
         let raw_connection = RawConnection::new();
         let connection_options = try!(ConnectionOptions::parse(database_url));
         try!(raw_connection.connect(&connection_options));
-        Ok(MysqlConnection {
+        let conn = MysqlConnection {
             raw_connection: raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
             statement_cache: StatementCache::new(),
-        })
+        };
+        try!(conn.set_config_options().map_err(CouldntSetupConfiguration));
+        Ok(conn)
     }
 
     #[doc(hidden)]
@@ -113,5 +117,10 @@ impl MysqlConnection {
         let binds = bind_collector.binds;
         try!(stmt.bind(metadata.into_iter().zip(binds)));
         Ok(stmt)
+    }
+
+    fn set_config_options(&self) -> QueryResult<()> {
+        try!(self.execute("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))"));
+        Ok(())
     }
 }

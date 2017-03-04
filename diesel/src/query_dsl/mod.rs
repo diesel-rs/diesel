@@ -28,4 +28,4 @@ pub use self::load_dsl::{LoadDsl, ExecuteDsl};
 pub use self::offset_dsl::OffsetDsl;
 pub use self::order_dsl::OrderDsl;
 pub use self::save_changes_dsl::SaveChangesDsl;
-pub use self::select_dsl::{SelectDsl, SelectSqlDsl};
+pub use self::select_dsl::SelectDsl;

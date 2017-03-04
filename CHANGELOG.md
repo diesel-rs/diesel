@@ -6,6 +6,17 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for the SQL concatenation operator `||`. See [the docs for
+  `.concat`][concat-0.12.0] for more details.
+
+[concat-0.12.0]: http://docs.diesel.rs/diesel/expression/expression_methods/text_expression_methods/trait.TextExpressionMethods.html#method.concat
+
+* Added support for the PostgreSQL [`Money` type][pg-money-0.12.0].
+
+[pg-money-0.12.0]: https://www.postgresql.org/docs/9.6/static/datatype-money.html
+
 ### Fixed
 
 * `diesel_codegen` will provide a more useful error message when it encounters
@@ -18,11 +29,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   thought out. The functionality they provided will return as joins are further
   revamped.
 
-### Added
-
-* Added support for the PostgreSQL [`Money` type][pg-money].
-
-[pg-money]: https://www.postgresql.org/docs/9.6/static/datatype-money.html
+* The internal use macro `select_column_workaround!` has been removed. If you
+  were relying on this internal macro, you can simply delete the line that was
+  calling it.
 
 ## [0.11.4] - 2017-02-21
 

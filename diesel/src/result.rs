@@ -70,6 +70,11 @@ pub enum ConnectionError {
     InvalidCString(NulError),
     BadConnection(String),
     InvalidConnectionUrl(String),
+    /// Diesel may try to automatically set session specific configuration
+    /// values, such as UTF8 encoding, or enabling the `||` operator on MySQL.
+    /// This variant is returned if an error occurred executing the query to set
+    /// those options. Diesel will never affect global configuration.
+    CouldntSetupConfiguration(Error),
     #[doc(hidden)]
     __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
@@ -139,6 +144,7 @@ impl Display for ConnectionError {
             ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
             ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
             ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
+            ConnectionError::CouldntSetupConfiguration(ref e) => e.fmt(f),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
@@ -150,6 +156,7 @@ impl StdError for ConnectionError {
             ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
             ConnectionError::BadConnection(ref s) => s,
             ConnectionError::InvalidConnectionUrl(ref s) => s,
+            ConnectionError::CouldntSetupConfiguration(ref e) => e.description(),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }

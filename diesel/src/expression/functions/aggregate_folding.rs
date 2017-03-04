@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression};
+use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
 use types::{Foldable, HasSqlType};
@@ -50,13 +50,7 @@ macro_rules! fold_function {
         }
 
         impl_query_id!($type_name<T>);
-
-        impl<T, QS> SelectableExpression<QS> for $type_name<T> where
-            $type_name<T>: Expression,
-            T: SelectableExpression<QS>,
-        {
-            type SqlTypeForSelect = Self::SqlType;
-        }
+        impl_selectable_expression!($type_name<T>);
     }
 }
 

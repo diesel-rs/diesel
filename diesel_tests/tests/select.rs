@@ -54,11 +54,13 @@ fn with_safe_select() {
 
 #[test]
 fn with_select_sql() {
+    use diesel::expression::dsl::sql;
+
     let connection = connection();
     connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    let select_count = users::table.select_sql::<types::BigInt>("COUNT(*)");
+    let select_count = users::table.select(sql::<types::BigInt>("COUNT(*)"));
     let get_count = || select_count.clone().first::<i64>(&connection);
 
     assert_eq!(Ok(2), get_count());

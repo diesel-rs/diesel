@@ -31,16 +31,75 @@ macro_rules! __diesel_column {
 
         impl_query_id!($column_name);
 
-        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {
+        impl SelectableExpression<$($table)::*> for $column_name {
             type SqlTypeForSelect = $Type;
         }
 
-        impl<Source, Predicate> SelectableExpression<
-            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
+        impl AppearsOnTable<$($table)::*> for $column_name {
+        }
+
+        impl<Right> SelectableExpression<
+            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
         > for $column_name where
-            $column_name: SelectableExpression<Source>,
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
         {
             type SqlTypeForSelect = $Type;
+        }
+
+        impl<Left> SelectableExpression<
+            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+        {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Right> SelectableExpression<
+            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+        {
+            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Left> SelectableExpression<
+            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+        {
+            type SqlTypeForSelect = <$Type as IntoNullable>::Nullable;
+        }
+
+        impl<Right> AppearsOnTable<
+            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+        {
+        }
+
+        impl<Right> AppearsOnTable<
+            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+        {
         }
 
         impl $crate::expression::NonAggregate for $column_name {}
@@ -298,10 +357,10 @@ macro_rules! table_body {
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<($($column_name,)+), Self>;
+                type Query = SelectStatement<Self>;
 
                 fn as_query(self) -> Self::Query {
-                    SelectStatement::simple(all_columns, self)
+                    SelectStatement::simple(self)
                 }
             }
 
@@ -327,13 +386,10 @@ macro_rules! table_body {
             }
 
             impl IntoUpdateTarget for table {
-                type WhereClause = ();
+                type WhereClause = <<Self as AsQuery>::Query as IntoUpdateTarget>::WhereClause;
 
                 fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
-                    UpdateTarget {
-                        table: self,
-                        where_clause: None,
-                    }
+                    self.as_query().into_update_target()
                 }
             }
 
@@ -341,7 +397,7 @@ macro_rules! table_body {
 
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Expression, SelectableExpression, QuerySource};
+                use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::result::QueryResult;
@@ -377,6 +433,9 @@ macro_rules! table_body {
                     type SqlTypeForSelect = Self::SqlType;
                 }
 
+                impl AppearsOnTable<table> for star {
+                }
+
                 $(__diesel_column!(table, $column_name -> $column_ty);)+
             }
         }
@@ -389,9 +448,14 @@ macro_rules! __diesel_table_query_source_impl {
     ($table_struct:ident, public, $table_name:ident) => {
         impl QuerySource for $table_struct {
             type FromClause = Identifier<'static>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
                 Identifier(stringify!($table_name))
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };
@@ -399,6 +463,7 @@ macro_rules! __diesel_table_query_source_impl {
     ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
         impl QuerySource for $table_struct {
             type FromClause = InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
                 InfixNode::new(
@@ -406,6 +471,10 @@ macro_rules! __diesel_table_query_source_impl {
                     Identifier(stringify!($table_name)),
                     ".",
                 )
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };
@@ -463,50 +532,6 @@ macro_rules! joinable_inner {
                     join_type,
                 )
             }
-        }
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_workaround {
-    ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent::table, $child::table, $parent::$column_name);)+
-        select_column_inner!($parent::table, $child::table, $parent::star);
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_inner {
-    ($parent:ty, $child:ty, $column:ty $(,)*) => {
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child, $parent>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent, $child>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-        > for $column
-        {
-            type SqlTypeForSelect = <<Self as $crate::Expression>::SqlType
-                as $crate::types::IntoNullable>::Nullable;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
         }
     }
 }
@@ -601,6 +626,7 @@ macro_rules! print_sql {
 
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
+#[macro_use] mod internal;
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 #[macro_use] mod static_cond;

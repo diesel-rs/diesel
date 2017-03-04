@@ -26,23 +26,3 @@ impl<T, Selection, Type> SelectDsl<Selection, Type> for T where
         self.as_query().select(selection)
     }
 }
-
-#[doc(hidden)]
-pub trait SelectSqlDsl: Sized {
-    fn select_sql<A>(self, columns: &str)
-        -> <Self as SelectDsl<SqlLiteral<A>>>::Output where
-        Self: SelectDsl<SqlLiteral<A>>,
-    {
-        self.select_sql_inner(columns)
-    }
-
-    fn select_sql_inner<A, S>(self, columns: S)
-        -> <Self as SelectDsl<SqlLiteral<A>>>::Output where
-        S: Into<String>,
-        Self: SelectDsl<SqlLiteral<A>>,
-    {
-        self.select(SqlLiteral::new(columns.into()))
-    }
-}
-
-impl<T> SelectSqlDsl for T {}

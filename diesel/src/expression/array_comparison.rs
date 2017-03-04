@@ -52,22 +52,6 @@ impl<T, U> Expression for NotIn<T, U> where
     type SqlType = Bool;
 }
 
-impl<T, U, QS> SelectableExpression<QS> for In<T, U> where
-    In<T, U>: Expression,
-    T: SelectableExpression<QS>,
-    U: SelectableExpression<QS>,
-{
-    type SqlTypeForSelect = Self::SqlType;
-}
-
-impl<T, U, QS> SelectableExpression<QS> for NotIn<T, U> where
-    NotIn<T, U>: Expression,
-    T: SelectableExpression<QS>,
-    U: SelectableExpression<QS>,
-{
-    type SqlTypeForSelect = Self::SqlType;
-}
-
 impl<T, U> NonAggregate for In<T, U> where
     In<T, U>: Expression,
 {
@@ -138,6 +122,8 @@ impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
 
 impl_query_id!(In<T, U>);
 impl_query_id!(NotIn<T, U>);
+impl_selectable_expression!(In<T, U>);
+impl_selectable_expression!(NotIn<T, U>);
 
 use std::marker::PhantomData;
 use query_builder::{SelectStatement, BoxedSelectStatement};
@@ -202,10 +188,16 @@ impl<T> MaybeEmpty for Many<T> {
 }
 
 impl<T, QS> SelectableExpression<QS> for Many<T> where
-    Many<T>: Expression,
+    Many<T>: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
 {
     type SqlTypeForSelect = T::SqlTypeForSelect;
+}
+
+impl<T, QS> AppearsOnTable<QS> for Many<T> where
+    Many<T>: Expression,
+    T: AppearsOnTable<QS>,
+{
 }
 
 impl<T, DB> QueryFragment<DB> for Many<T> where
@@ -252,10 +244,16 @@ impl<T, ST> MaybeEmpty for Subselect<T, ST> {
 }
 
 impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where
-    Subselect<T, ST>: Expression,
+    Subselect<T, ST>: AppearsOnTable<QS>,
     T: Query,
 {
     type SqlTypeForSelect = ST;
+}
+
+impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST> where
+    Subselect<T, ST>: Expression,
+    T: Query,
+{
 }
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where

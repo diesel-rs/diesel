@@ -1,8 +1,7 @@
-use expression::{Expression, NonAggregate};
-use query_builder::AsQuery;
-use query_source::filter::FilteredQuerySource;
-use query_source::{Table, InnerJoinSource, LeftOuterJoinSource};
-use types::Bool;
+use expression::expression_methods::*;
+use helper_types::Filter;
+use query_builder::{AsQuery, Query};
+use query_source::*;
 
 /// Adds to the `WHERE` clause of a query. If there is already a `WHERE` clause,
 /// the result will be `old AND new`. This is automatically implemented for the
@@ -38,27 +37,16 @@ pub trait FilterDsl<Predicate>: AsQuery {
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
 
-pub trait NotFiltered {
-}
-
-impl<T, Predicate, ST> FilterDsl<Predicate> for T where
-    Predicate: Expression<SqlType=Bool> + NonAggregate,
-    FilteredQuerySource<T, Predicate>: AsQuery<SqlType=ST>,
-    T: AsQuery<SqlType=ST> + NotFiltered,
+impl<T, U, Predicate> FilterDsl<Predicate> for T where
+    T: QuerySource + AsQuery<SqlType=<U as Query>::SqlType, Query=U>,
+    U: Query + FilterDsl<Predicate, SqlType=<U as Query>::SqlType>,
 {
-    type Output = FilteredQuerySource<Self, Predicate>;
+    type Output = Filter<U, Predicate>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
-        FilteredQuerySource::new(self, predicate)
+        self.as_query().filter(predicate)
     }
 }
-
-impl<T: Table> NotFiltered for T {}
-impl<Left, Right> NotFiltered for InnerJoinSource<Left, Right> {}
-impl<Left, Right> NotFiltered for LeftOuterJoinSource<Left, Right> {}
-
-use expression::expression_methods::*;
-use helper_types::Filter;
 
 /// Attempts to find a single record from the given table by primary key.
 ///
