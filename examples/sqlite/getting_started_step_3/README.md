@@ -2,11 +2,7 @@
 
 Diesel's `Getting Started` guide using SQLite instead of Postgresql
 
-### License
-
-MIT
-
-### Usage
+## Usage
 
 ```
 $ echo "DATABASE_URL=file:test.db" > .env
