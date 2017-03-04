@@ -153,12 +153,12 @@ impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB, Selection> SelectDsl<Selection, Selection::SqlTypeForSelect>
+impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
     for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend + HasSqlType<Selection::SqlTypeForSelect>,
+        DB: Backend + HasSqlType<Selection::SqlType>,
         Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'a, Selection::SqlTypeForSelect, QS, DB>;
+    type Output = BoxedSelectStatement<'a, Selection::SqlType, QS, DB>;
 
     fn select(self, selection: Selection) -> Self::Output {
         BoxedSelectStatement::new(

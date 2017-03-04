@@ -32,7 +32,6 @@ macro_rules! __diesel_column {
         impl_query_id!($column_name);
 
         impl SelectableExpression<$($table)::*> for $column_name {
-            type SqlTypeForSelect = $Type;
         }
 
         impl AppearsOnTable<$($table)::*> for $column_name {
@@ -44,7 +43,6 @@ macro_rules! __diesel_column {
             Right: Table,
             $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
         {
-            type SqlTypeForSelect = $Type;
         }
 
         impl<Left> SelectableExpression<
@@ -52,7 +50,6 @@ macro_rules! __diesel_column {
         > for $column_name where
             Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
         {
-            type SqlTypeForSelect = $Type;
         }
 
         impl<Right> SelectableExpression<
@@ -61,15 +58,6 @@ macro_rules! __diesel_column {
             Right: Table,
             $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
         {
-            type SqlTypeForSelect = $Type;
-        }
-
-        impl<Left> SelectableExpression<
-            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
-        > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
-        {
-            type SqlTypeForSelect = <$Type as IntoNullable>::Nullable;
         }
 
         impl<Right> AppearsOnTable<
@@ -430,7 +418,6 @@ macro_rules! table_body {
                 }
 
                 impl SelectableExpression<table> for star {
-                    type SqlTypeForSelect = Self::SqlType;
                 }
 
                 impl AppearsOnTable<table> for star {

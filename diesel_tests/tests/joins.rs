@@ -121,7 +121,7 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         ("Sean".to_string(), Some("World".to_string())),
         ("Tess".to_string(), None),
     ];
-    let source = users::table.left_outer_join(posts::table).select((users::name, posts::title));
+    let source = users::table.left_outer_join(posts::table).select((users::name, posts::title.nullable()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -140,7 +140,7 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
         ("Sean".to_string(), Some("Hello".to_string())),
     ];
     let source = users::table.left_outer_join(posts::table)
-        .select((users::name, posts::title))
+        .select((users::name, posts::title.nullable()))
         .filter(posts::title.eq("Hello"));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
@@ -234,52 +234,46 @@ fn select_then_join() {
     assert_eq!(expected_data, data);
 }
 
-// FIXME: This is fixed by the new join design which removes the associated type
-// form `SelectableExpression`
-// #[test]
-// fn selecting_complex_expression_from_right_side_of_left_join() {
-//     use diesel::types::Text;
+#[test]
+fn selecting_complex_expression_from_right_side_of_left_join() {
+    use diesel::types::Text;
 
-//     let connection = connection_with_sean_and_tess_in_users_table();
-//     let new_posts = vec![
-//         NewPost::new(1, "Post One", None),
-//         NewPost::new(1, "Post Two", None),
-//     ];
-//     insert(&new_posts).into(posts::table).execute(&connection).unwrap();
-//     sql_function!(lower, lower_t, (x: Text) -> Text);
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let new_posts = vec![
+        NewPost::new(1, "Post One", None),
+        NewPost::new(1, "Post Two", None),
+    ];
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+    sql_function!(lower, lower_t, (x: Text) -> Text);
 
-//     let titles = users::table.left_outer_join(posts::table)
-//         .select(lower(posts::title).nullable())
-//         .order((users::id, posts::id))
-//         .load(&connection);
-//     let expected_data = vec![Some("post one".to_string()), Some("post two".to_string()), None];
-//     assert_eq!(Ok(expected_data), titles);
-// }
+    let titles = users::table.left_outer_join(posts::table)
+        .select(lower(posts::title).nullable())
+        .order((users::id, posts::id))
+        .load(&connection);
+    let expected_data = vec![Some("post one".to_string()), Some("post two".to_string()), None];
+    assert_eq!(Ok(expected_data), titles);
+}
 
-// FIXME: This is fixed by the new join design which removes the associated type
-// form `SelectableExpression`
-// #[test]
-// fn selecting_complex_expression_from_both_sides_of_outer_join() {
-//     use diesel::types::Text;
+#[test]
+fn selecting_complex_expression_from_both_sides_of_outer_join() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let new_posts = vec![
+        NewPost::new(1, "Post One", None),
+        NewPost::new(1, "Post Two", None),
+    ];
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
 
-//     let connection = connection_with_sean_and_tess_in_users_table();
-//     let new_posts = vec![
-//         NewPost::new(1, "Post One", None),
-//         NewPost::new(1, "Post Two", None),
-//     ];
-//     insert(&new_posts).into(posts::table).execute(&connection).unwrap();
-
-//     let titles = users::table.left_outer_join(posts::table)
-//         .select(users::name.concat(" wrote ").concat(posts::title).nullable())
-//         .order((users::id, posts::id))
-//         .load(&connection);
-//     let expected_data = vec![
-//         Some("Sean wrote Post One".to_string()),
-//         Some("Sean wrote Post Two".to_string()),
-//         None,
-//     ];
-//     assert_eq!(Ok(expected_data), titles);
-// }
+    let titles = users::table.left_outer_join(posts::table)
+        .select(users::name.concat(" wrote ").concat(posts::title).nullable())
+        .order((users::id, posts::id))
+        .load(&connection);
+    let expected_data = vec![
+        Some("Sean wrote Post One".to_string()),
+        Some("Sean wrote Post Two".to_string()),
+        None,
+    ];
+    assert_eq!(Ok(expected_data), titles);
+}
 
 #[test]
 fn join_through_other() {

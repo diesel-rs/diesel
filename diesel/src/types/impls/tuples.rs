@@ -214,7 +214,6 @@ macro_rules! tuple_impls {
                 $($T: SelectableExpression<QS>,)+
                 ($($T,)+): AppearsOnTable<QS>,
             {
-                type SqlTypeForSelect = ($($T::SqlTypeForSelect,)+);
             }
 
             impl<$($T,)+ QS> AppearsOnTable<QS> for ($($T,)+) where

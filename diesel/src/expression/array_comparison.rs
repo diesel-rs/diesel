@@ -191,7 +191,6 @@ impl<T, QS> SelectableExpression<QS> for Many<T> where
     Many<T>: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
 {
-    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<T, QS> AppearsOnTable<QS> for Many<T> where
@@ -247,7 +246,6 @@ impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where
     Subselect<T, ST>: AppearsOnTable<QS>,
     T: Query,
 {
-    type SqlTypeForSelect = ST;
 }
 
 impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST> where

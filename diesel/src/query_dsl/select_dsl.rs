@@ -6,21 +6,18 @@ use query_source::QuerySource;
 /// will be overridden. The expression passed to `select` must actually be valid
 /// for the query (only contains columns from the target table, doesn't mix
 /// aggregate + non-aggregate expressions, etc).
-pub trait SelectDsl<
-    Selection: Expression,
-    Type = <Selection as Expression>::SqlType,
-> {
-    type Output: Query<SqlType=Type>;
+pub trait SelectDsl<Selection: Expression> {
+    type Output: Query<SqlType=<Selection as Expression>::SqlType>;
 
     fn select(self, selection: Selection) -> Self::Output;
 }
 
-impl<T, Selection, Type> SelectDsl<Selection, Type> for T where
+impl<T, Selection> SelectDsl<Selection> for T where
     Selection: Expression,
     T: QuerySource + AsQuery,
-    T::Query: SelectDsl<Selection, Type>,
+    T::Query: SelectDsl<Selection>,
 {
-    type Output = <T::Query as SelectDsl<Selection, Type>>::Output;
+    type Output = <T::Query as SelectDsl<Selection>>::Output;
 
     fn select(self, selection: Selection) -> Self::Output {
         self.as_query().select(selection)

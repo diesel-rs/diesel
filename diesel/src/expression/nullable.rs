@@ -37,16 +37,8 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
     }
 }
 
-/// This impl relies on the fact that the only time `T::SqlType` will differ
-/// from `T::SqlTypeForSelect` is to make the right side of a left join become
-/// nullable.
-impl<T, QS> SelectableExpression<QS> for Nullable<T> where
-    T: SelectableExpression<QS>,
-    Nullable<T>: AppearsOnTable<QS>,
-{
-    type SqlTypeForSelect = Self::SqlType;
-}
-
+/// Nullable can be used in where clauses everywhere, but can only be used in
+/// select clauses for outer joins.
 impl<T, QS> AppearsOnTable<QS> for Nullable<T> where
     T: AppearsOnTable<QS>,
     Nullable<T>: Expression,

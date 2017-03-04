@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::SelectableExpression;
+use expression::{Expression, SelectableExpression};
 use query_builder::*;
 use query_source::QuerySource;
 
@@ -18,13 +18,13 @@ pub trait SelectClauseExpression<QS> {
 impl<T, QS> SelectClauseExpression<QS> for SelectClause<T> where
     T: SelectableExpression<QS>,
 {
-    type SelectClauseSqlType = T::SqlTypeForSelect;
+    type SelectClauseSqlType = T::SqlType;
 }
 
 impl<QS> SelectClauseExpression<QS> for DefaultSelectClause where
     QS: QuerySource,
 {
-    type SelectClauseSqlType = <QS::DefaultSelection as SelectableExpression<QS>>::SqlTypeForSelect;
+    type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
 }
 
 pub trait SelectClauseQueryFragment<QS, DB: Backend> {

@@ -22,12 +22,8 @@ macro_rules! impl_selectable_expression {
         impl<$($ty_params,)* QS> $crate::expression::SelectableExpression<QS>
             for $struct_ty where
                 $struct_ty: $crate::expression::AppearsOnTable<QS>,
-                $($ty_params: $crate::expression::SelectableExpression<
-                  QS,
-                  SqlTypeForSelect = <$ty_params as $crate::expression::Expression>::SqlType,
-                >,)*
+                $($ty_params: $crate::expression::SelectableExpression<QS>,)*
         {
-            type SqlTypeForSelect = <$struct_ty as $crate::expression::Expression>::SqlType;
         }
 
         impl<$($ty_params,)* QS> $crate::expression::AppearsOnTable<QS>

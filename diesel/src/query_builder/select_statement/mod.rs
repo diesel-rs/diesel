@@ -238,7 +238,6 @@ impl<F, S, D, W, O, L, Of, G, QS> SelectableExpression<QS>
     for SelectStatement<F, S, D, W, O, L, Of, G> where
         SelectStatement<F, S, D, W, O, L, Of, G>: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<S, F, D, W, O, L, Of, G, QS> AppearsOnTable<QS>
