@@ -20,8 +20,6 @@ table! {
 }
 
 joinable!(posts -> users (user_id));
-select_column_workaround!(posts -> users (id, title, user_id));
-select_column_workaround!(users -> posts (id, name));
 sql_function!(lower, lower_t, (x: Text) -> Text);
 
 fn main() {
