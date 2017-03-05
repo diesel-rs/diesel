@@ -25,6 +25,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Diesel CLI: Added `db` as an alias for `database`, so you can now write `diesel db setup` (which is almost 40% faster!).
 
+* The `table!` macro now allows you to use types from crates outside of Diesel.
+  You can specify where types should be imported from by doing: `table! { use
+  some_modules::*; foo { columns... }`. Not specifying any any modules is
+  equivalent to `use diesel::types::*;`.
+
 ### Fixed
 
 * `diesel_codegen` will provide a more useful error message when it encounters

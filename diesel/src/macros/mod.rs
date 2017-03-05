@@ -177,6 +177,32 @@ macro_rules! __diesel_column {
 /// # }
 /// ```
 ///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import. Note that the path given has to be an absolute path
+/// relative to the crate root. You cannot use `self` or `super`.
+///
+/// ```
+/// #[macro_use] extern crate diesel;
+/// # /*
+/// extern crate diesel_full_text_search;
+/// # */
+/// # mod diesel_full_text_search {
+/// #     pub struct TsVector;
+/// # }
+///
+/// table! {
+///     use diesel::types::*;
+///     use diesel_full_text_search::*;
+///
+///     posts {
+///         id -> Integer,
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
@@ -222,47 +248,61 @@ macro_rules! __diesel_column {
 /// ```
 #[macro_export]
 macro_rules! table {
+    // Put `use` statements at the end because macro_rules! cannot figure out
+    // if `use` is an ident or not (hint: It's not)
     (
-        $name:ident $body:tt
+        use $($import:tt)::+; $($rest:tt)+
+    ) => {
+        table!($($rest)+ use $($import)::+;);
+    };
+
+    // Add the primary key if it's not present
+    (
+        $($table_name:ident).+ {$($body:tt)*}
+        $($imports:tt)*
     ) => {
         table! {
-            public . $name (id) $body
+            $($table_name).+ (id) {$($body)*} $($imports)*
         }
     };
 
+    // Add the schema name if it's not present
     (
-        $schema_name:ident . $name:ident $body:tt
+        $name:ident $(($($pk:ident),+))* {$($body:tt)*}
+        $($imports:tt)*
     ) => {
         table! {
-            $schema_name . $name (id) $body
+            public . $name $(($($pk),+))* {$($body)*} $($imports)*
         }
     };
 
+    // Import `diesel::types::*` if no imports were given
     (
-        $name:ident $pk:tt $body:tt
+        $($table_name:ident).+ $(($($pk:ident),+))* {$($body:tt)*}
     ) => {
         table! {
-            public . $name $pk $body
+            $($table_name).+ $(($($pk),+))* {$($body)*}
+            use $crate::types::*;
         }
     };
 
+    // Terminal with single-column pk
     (
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
+        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk) $body
+            $schema_name . $name ($pk) $body $($imports)+
         }
     };
 
+    // Terminal with composite pk (add a trailing comma)
     (
-        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) {
-            $($column_name:ident -> $Type:ty,)+
-        }
+        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
+        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk, $($composite_pk,)+) {
-                $($column_name -> $Type,)+
-            }
+            $schema_name . $name ($pk, $($composite_pk,)+) $body $($imports)+
         }
     };
 }
@@ -274,6 +314,7 @@ macro_rules! table_body {
         $schema_name:ident . $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
         }
+        $(use $($import:tt)::+;)+
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -281,6 +322,7 @@ macro_rules! table_body {
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
             columns = [$($column_name -> $Type,)+],
+            imports = ($($($import)::+),+),
         }
     };
 
@@ -288,6 +330,7 @@ macro_rules! table_body {
         $schema_name:ident . $name:ident ($($pk:ident,)+) {
             $($column_name:ident -> $Type:ty,)+
         }
+        $(use $($import:tt)::+;)+
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -295,6 +338,7 @@ macro_rules! table_body {
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
             columns = [$($column_name -> $Type,)+],
+            imports = ($($($import)::+),+),
         }
     };
 
@@ -304,18 +348,18 @@ macro_rules! table_body {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $column_ty:ty,)+],
+        imports = ($($($import:tt)::+),+),
     ) => {
         pub mod $table_name {
             #![allow(dead_code)]
-            #![allow(unused_imports)] // FIXME: Once we revamp type imports this can be removed
             use $crate::{
                 QuerySource,
                 Table,
             };
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
-            use $crate::query_builder::nodes::{Identifier, InfixNode};
-            use $crate::types::*;
+            use $crate::query_builder::nodes::Identifier;
+            $(use $($import)::+;)+
             pub use self::columns::*;
 
             pub mod dsl {
@@ -389,7 +433,7 @@ macro_rules! table_body {
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
                 use $crate::result::QueryResult;
-                use $crate::types::*;
+                $(use $($import)::+;)+
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]
@@ -449,11 +493,12 @@ macro_rules! __diesel_table_query_source_impl {
 
     ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
         impl QuerySource for $table_struct {
-            type FromClause = InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type FromClause = $crate::query_builder::nodes::
+                InfixNode<'static, Identifier<'static>, Identifier<'static>>;
             type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
-                InfixNode::new(
+                $crate::query_builder::nodes::InfixNode::new(
                     Identifier(stringify!($schema_name)),
                     Identifier(stringify!($table_name)),
                     ".",
@@ -632,6 +677,20 @@ mod tests {
         foo.bars {
             id -> Integer,
             baz -> Text,
+        }
+    }
+
+    mod my_types {
+        pub struct MyCustomType;
+    }
+
+    table! {
+        use types::*;
+        use macros::tests::my_types::*;
+
+        table_with_custom_types {
+            id -> Integer,
+            my_type -> MyCustomType,
         }
     }
 
