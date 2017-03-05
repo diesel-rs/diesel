@@ -26,13 +26,14 @@ fn main() {
     let conn = PgConnection::establish("some url").unwrap();
     let join = users::table.left_outer_join(posts::table);
 
+    // Invalid, only Nullable<title> is selectable
+    let _ = join.select(posts::title); //~ ERROR E0277
     // Valid
     let _ = join.select(posts::title.nullable());
-    // FIXME: This doesn't compile but we want it to
     // Valid -- NULL to a function will return null
-    let _ = join.select(lower(posts::title).nullable()); //~ ERROR E0271
+    let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
-    let _ = join.select(lower(posts::title)); //~ ERROR E0271
+    let _ = join.select(lower(posts::title)); //~ ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable())); //~ ERROR E0271
 }

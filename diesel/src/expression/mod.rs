@@ -123,30 +123,27 @@ impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
 {
 }
 
-/// Indicates that an expression can be selected from a source. The associated
-/// type is usually the same as `Expression::SqlType`, but is used to indicate
-/// that a column is always nullable when it appears on the right side of a left
-/// outer join, even if it wasn't nullable to begin with.
+/// Indicates that an expression can be selected from a source. Columns will
+/// implement this for their table. Certain special types, like `CountStar` and
+/// `Bound` will implement this for all sources. Most compound expressions will
+/// implement this if each of their parts implement it.
 ///
-/// Columns will implement this for their table. Certain special types, like
-/// `CountStar` and `Bound` will implement this for all sources. All other
-/// expressions will inherit this from their children.
+/// Notably, columns will not implement this trait for the right side of a left
+/// join. To select a column or expression using a column from the right side of
+/// a left join, you must call `.nullable()` on it.
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {
-    type SqlTypeForSelect;
 }
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T> where
     T: SelectableExpression<QS>,
     Box<T>: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
     T: SelectableExpression<QS>,
     &'a T: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 /// Marker trait to indicate that an expression does not include any aggregate
@@ -184,7 +181,7 @@ impl<QS, T, DB> BoxableExpression<QS, DB> for T where
 {
 }
 
-impl<QS, ST, STS, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST, SqlTypeForSelect=STS> {
+impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST> {
     type QueryId = ();
 
     fn has_static_query_id() -> bool {

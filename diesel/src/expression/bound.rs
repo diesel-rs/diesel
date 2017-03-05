@@ -66,7 +66,6 @@ impl<T: QueryId, U> QueryId for Bound<T, U> {
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
     Bound<T, U>: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = T;
 }
 
 impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U> where

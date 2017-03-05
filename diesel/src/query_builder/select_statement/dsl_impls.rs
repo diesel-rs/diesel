@@ -16,9 +16,9 @@ use query_source::QuerySource;
 use super::BoxedSelectStatement;
 use types::{self, Bool};
 
-impl<F, S, D, W, O, L, Of, G, Selection, Type> SelectDsl<Selection, Type>
+impl<F, S, D, W, O, L, Of, G, Selection, Type> SelectDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G> where
-        Selection: Expression,
+        Selection: Expression<SqlType=Type>,
         SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G>: Query<SqlType=Type>,
 {
     type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G>;
@@ -186,7 +186,7 @@ impl<'a, F, S, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
         L: QueryFragment<DB> + 'a,
         Of: QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'a, S::SqlTypeForSelect, F, DB>;
+    type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
@@ -214,7 +214,7 @@ impl<'a, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
 {
     type Output = BoxedSelectStatement<
         'a,
-        <F::DefaultSelection as SelectableExpression<F>>::SqlTypeForSelect,
+        <F::DefaultSelection as Expression>::SqlType,
         F,
         DB,
     >;

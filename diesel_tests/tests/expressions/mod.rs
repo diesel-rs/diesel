@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, connection_with_sean_and_tess_in_users_table};
+use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -98,7 +98,6 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
 }
 
 impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {
-    type SqlTypeForSelect = T;
 }
 
 impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {

@@ -101,6 +101,13 @@ impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
 
 impl_query_id!(LeftOuterJoinSource<Left, Right>);
 
+impl<Left, Right, T> SelectableExpression<LeftOuterJoinSource<Left, Right>>
+    for Nullable<T> where
+        T: SelectableExpression<InnerJoinSource<Left, Right>>,
+        Nullable<T>: AppearsOnTable<LeftOuterJoinSource<Left, Right>>,
+{
+}
+
 /// Indicates that two tables can be used together in a JOIN clause.
 /// Implementations of this trait will be generated for you automatically by
 /// the [association annotations](FIXME: Add link) from codegen.

@@ -76,8 +76,8 @@ pub mod helper_types {
     use super::expression::helper_types::Eq;
 
     /// Represents the return type of `.select(selection)`
-    pub type Select<Source, Selection, Type = <Selection as super::Expression>::SqlType> =
-        <Source as SelectDsl<Selection, Type>>::Output;
+    pub type Select<Source, Selection> =
+        <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> =

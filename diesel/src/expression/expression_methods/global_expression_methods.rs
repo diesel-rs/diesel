@@ -286,7 +286,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let order = "name";
-    /// let ordering: Box<BoxableExpression<users, DB, SqlType=(), SqlTypeForSelect=()>> =
+    /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
     ///     if order == "name" {
     ///         Box::new(name.desc())
     ///     } else {

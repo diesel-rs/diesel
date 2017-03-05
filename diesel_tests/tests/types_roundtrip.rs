@@ -17,7 +17,7 @@ pub fn test_type_round_trips<ST, T>(value: T) -> bool where
     ST: QueryId,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST> + Queryable<ST, <TestConnection as Connection>::Backend> + PartialEq + Clone + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlTypeForSelect=ST> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType=ST> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
 {
     let connection = connection();
     let query = select(AsExpression::<ST>::as_expression(value.clone()));
