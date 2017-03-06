@@ -104,7 +104,8 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> IncompleteUpdateStatement<T::Ta
 /// # }
 /// ```
 pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::WhereClause> {
-    DeleteStatement::new(source.into_update_target())
+    let target = source.into_update_target();
+    DeleteStatement::new(target.table, target.where_clause)
 }
 
 /// Creates an insert statement. Will add the given data to a table. This
