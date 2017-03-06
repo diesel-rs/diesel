@@ -40,35 +40,39 @@ impl ToSql<types::Money, Pg> for PgMoney {
     }
 }
 
-/// # Panics
-/// will `panic!` on overflow
 impl Add for PgMoney {
     type Output = Self;
+    /// # Panics
+    ///
+    /// Performs a checked addition, and will `panic!` on overflow in both `debug` and `release`.
     fn add(self, rhs: PgMoney) -> Self::Output {
         self.0.checked_add(rhs.0).map(PgMoney).expect("overflow adding money amounts")
     }
 }
 
-/// # Panics
-/// will `panic!` on overflow
 impl AddAssign for PgMoney {
+    /// # Panics
+    ///
+    /// Performs a checked addition, and will `panic!` on overflow in both `debug` and `release`.
     fn add_assign(&mut self, rhs: PgMoney) {
         self.0 = self.0.checked_add(rhs.0).expect("overflow adding money amounts")
     }
 }
 
-/// # Panics
-/// will `panic!` on underflow
 impl Sub for PgMoney {
     type Output = Self;
+    /// # Panics
+    ///
+    /// Performs a checked subtraction, and will `panic!` on underflow in both `debug` and `release`.
     fn sub(self, rhs: PgMoney) -> Self::Output {
         self.0.checked_sub(rhs.0).map(PgMoney).expect("underflow subtracting money amounts")
     }
 }
 
-/// # Panics
-/// will `panic!` on underflow
 impl SubAssign for PgMoney {
+    /// # Panics
+    ///
+    /// Performs a checked subtraction, and will `panic!` on underflow in both `debug` and `release`.
     fn sub_assign(&mut self, rhs: PgMoney) {
         self.0 = self.0.checked_sub(rhs.0).expect("underflow subtracting money amounts")
     }
