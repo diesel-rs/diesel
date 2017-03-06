@@ -1,6 +1,6 @@
 //! Support for Money values under PostgreSQL.
 use std::error::Error;
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
 
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
@@ -40,17 +40,37 @@ impl ToSql<types::Money, Pg> for PgMoney {
     }
 }
 
+/// # Panics
+/// will `panic!` on overflow
 impl Add for PgMoney {
-    type Output = Option<PgMoney>;
+    type Output = Self;
     fn add(self, rhs: PgMoney) -> Self::Output {
-        self.0.checked_add(rhs.0).map(PgMoney)
+        self.0.checked_add(rhs.0).map(PgMoney).expect("overflow adding money amounts")
     }
 }
 
+/// # Panics
+/// will `panic!` on overflow
+impl AddAssign for PgMoney {
+    fn add_assign(&mut self, rhs: PgMoney) {
+        self.0 += rhs.0
+    }
+}
+
+/// # Panics
+/// will `panic!` on underflow
 impl Sub for PgMoney {
-    type Output = Option<PgMoney>;
+    type Output = Self;
     fn sub(self, rhs: PgMoney) -> Self::Output {
-        self.0.checked_sub(rhs.0).map(PgMoney)
+        self.0.checked_sub(rhs.0).map(PgMoney).expect("underflow subtracting money amounts")
+    }
+}
+
+/// # Panics
+/// will `panic!` on underflow
+impl SubAssign for PgMoney {
+    fn sub_assign(&mut self, rhs: PgMoney) {
+        self.0 -= rhs.0
     }
 }
 
@@ -72,26 +92,28 @@ mod quickcheck_impls {
 fn add_money() {
     let c1 = PgMoney(123);
     let c2 = PgMoney(456);
-    assert_eq!(Some(PgMoney(579)), c1 + c2);
+    assert_eq!(PgMoney(579), c1 + c2);
 }
 
 #[test]
+#[should_panic]
 fn add_money_overflow() {
     let c1 = PgMoney(::std::i64::MAX);
     let c2 = PgMoney(1);
-    assert_eq!(None, c1 + c2);
+    let _overflow = c1 + c2;
 }
 
 #[test]
 fn sub_money() {
     let c1 = PgMoney(123);
     let c2 = PgMoney(456);
-    assert_eq!(Some(PgMoney(-333)), c1 - c2);
+    assert_eq!(PgMoney(-333), c1 - c2);
 }
 
 #[test]
+#[should_panic]
 fn sub_money_underflow() {
     let c1 = PgMoney(::std::i64::MIN);
     let c2 = PgMoney(1);
-    assert_eq!(None, c1 - c2);
+    let _underflow = c1 - c2;
 }
