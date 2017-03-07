@@ -1,5 +1,4 @@
 extern crate libsqlite3_sys as ffi;
-extern crate libc;
 
 #[doc(hidden)]
 pub mod raw;
@@ -9,6 +8,7 @@ mod sqlite_value;
 
 pub use self::sqlite_value::SqliteValue;
 
+use std::os::raw as libc;
 use std::rc::Rc;
 
 use connection::*;
