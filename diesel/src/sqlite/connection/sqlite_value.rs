@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
-extern crate libc;
 
+use std::os::raw as libc;
 use std::{slice, str};
 
 use sqlite::Sqlite;

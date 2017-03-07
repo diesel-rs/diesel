@@ -1,8 +1,8 @@
 extern crate libsqlite3_sys as ffi;
-extern crate libc;
 
 use std::ffi::CString;
 use std::io::{stderr, Write};
+use std::os::raw as libc;
 use std::ptr;
 use std::rc::Rc;
 

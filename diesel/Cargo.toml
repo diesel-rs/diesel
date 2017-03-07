@@ -15,8 +15,7 @@ categories = ["database"]
 byteorder = "1.0"
 chrono = { version = "0.3", optional = true }
 clippy = { optional = true, version = "=0.0.114" }
-libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.4.0, <0.7.0", optional = true }
+libsqlite3-sys = { version = ">=0.7.1, <0.8.0", optional = true }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }
 pq-sys = { version = ">=0.3.0, <0.5.0", optional = true }
 quickcheck = { version = "0.3.1", optional = true }
@@ -40,7 +39,7 @@ lint = ["clippy"]
 large-tables = []
 huge-tables = ["large-tables"]
 postgres = ["pq-sys"]
-sqlite = ["libsqlite3-sys", "libc"]
+sqlite = ["libsqlite3-sys"]
 mysql = ["mysqlclient-sys", "url"]
 with-deprecated = []
 deprecated-time = ["time"]
