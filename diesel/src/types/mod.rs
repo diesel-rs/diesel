@@ -249,6 +249,12 @@ pub type VarChar = Text;
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)] pub struct Nullable<ST: NotNull>(ST);
 
+#[derive(Debug, Clone, Copy, Default)] pub struct Unsigned<ST>(ST);
+
+#[doc(hidden)] pub type UInt2 = Unsigned<SmallInt>;
+#[doc(hidden)] pub type UInt4 = Unsigned<Integer>;
+#[doc(hidden)] pub type UInt8 = Unsigned<BigInt>;
+
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
 

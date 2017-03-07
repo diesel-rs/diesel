@@ -1,10 +1,12 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 
-use mysql::{Mysql, MysqlType};
+use byteorder::{WriteBytesExt};
+use mysql::{Mysql, MysqlType, backend};
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{ToSql, IsNull, FromSql, HasSqlType};
+use types::{ToSql, IsNull, FromSql, HasSqlType, Unsigned};
+use backend::Backend;
 
 impl ToSql<::types::Bool, Mysql> for bool {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
@@ -40,3 +42,49 @@ impl HasSqlType<::types::Timestamp> for Mysql {
         MysqlType::Timestamp
     }
 }
+
+impl FromSql<Unsigned<::types::SmallInt>, Mysql> for u16 {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError+Send+Sync>> {
+        let value: i16 = FromSql::<::types::SmallInt, Mysql>::from_sql(bytes)?;
+        Ok(value as u16)
+    }
+}
+
+impl ToSql<Unsigned<::types::SmallInt>, Mysql> for u16 {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+        out.write_u16::<<backend::Mysql as Backend>::ByteOrder>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<StdError+Send+Sync>)
+    }
+}
+
+impl FromSql<Unsigned<::types::Integer>, Mysql> for u32 {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError+Send+Sync>> {
+        let value: i32 = FromSql::<::types::Integer, Mysql>::from_sql(bytes)?;
+        Ok(value as u32)
+    }
+}
+
+impl ToSql<Unsigned<::types::Integer>, Mysql> for u32 {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+        out.write_u32::<<backend::Mysql as Backend>::ByteOrder>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<StdError+Send+Sync>)
+    }
+}
+
+impl FromSql<Unsigned<::types::BigInt>, Mysql> for u64 {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError+Send+Sync>> {
+        let value: i64 = FromSql::<::types::BigInt, Mysql>::from_sql(bytes)?;
+        Ok(value as u64)
+    }
+}
+
+impl ToSql<Unsigned<::types::BigInt>, Mysql> for u64 {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+        out.write_u64::<<backend::Mysql as Backend>::ByteOrder>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<StdError+Send+Sync>)
+    }
+}
+
