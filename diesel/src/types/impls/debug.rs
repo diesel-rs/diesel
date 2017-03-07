@@ -3,7 +3,6 @@ use std::error::Error;
 use std::time::SystemTime;
 
 use backend::Debug;
-use data_types::*;
 use types::*;
 
 macro_rules! debug_to_sql {
@@ -22,6 +21,7 @@ debug_to_sql!(Timestamp, SystemTime);
 #[cfg(feature = "postgres")]
 mod pg_impls {
     use super::*;
+    use data_types::*;
 
     debug_to_sql!(Timestamp, PgTimestamp);
     debug_to_sql!(Timestamptz, PgTimestamp);
@@ -34,7 +34,9 @@ mod pg_impls {
 mod chrono_impls {
     extern crate chrono;
     use super::*;
-    use chrono::*;
+    use self::chrono::{NaiveDateTime, NaiveTime, NaiveDate};
+    #[cfg(feature = "postgres")]
+    use self::chrono::{DateTime, TimeZone};
 
     debug_to_sql!(Timestamp, NaiveDateTime);
     debug_to_sql!(Time, NaiveTime);
