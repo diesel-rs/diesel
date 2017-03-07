@@ -52,18 +52,14 @@ matrix:
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && cargo test)
 env:
-  # TODO: get rid of DATABASE_URL throughout.
   # TODO: why is there no database specified for Postgres?
   matrix:
     - BACKEND=sqlite
-      DATABASE_URL=/tmp/test.db
       SQLITE_DATABASE_URL=/tmp/test.db
     - BACKEND=postgres
-      DATABASE_URL=postgres://postgres@localhost/
       PG_DATABASE_URL=postgres://postgres@localhost/
       PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
     - BACKEND=mysql
-      DATABASE_URL=mysql://travis@localhost/diesel_test
       MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
       MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
       MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
