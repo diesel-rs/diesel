@@ -226,14 +226,17 @@ pub type VarChar = Text;
 ///
 /// - [`std::time::SystemTime`][SystemTime]
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"`
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime]
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"`
 ///
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
+/// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Timestamp;
 
 /// The nullable SQL type. This wraps another SQL type to indicate that it can
