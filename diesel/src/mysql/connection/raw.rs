@@ -6,7 +6,7 @@ use std::ptr;
 use std::sync::{Once, ONCE_INIT};
 
 use result::{ConnectionResult, ConnectionError, QueryResult};
-use super::url::ConnectionOptions;
+use super::url::{ConnectionOptions, SslMode};
 use super::stmt::Statement;
 
 pub struct RawConnection(*mut ffi::MYSQL);
@@ -22,20 +22,16 @@ impl RawConnection {
         }
         let result = RawConnection(raw_connection);
 
-        // This is only non-zero for unrecognized options, which should never happen.
-        let charset_result = unsafe { ffi::mysql_options(
-            result.0,
+        result.set_option(
             ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
-            b"utf8mb4\0".as_ptr() as *const libc::c_void,
-        ) };
-        assert_eq!(0, charset_result, "MYSQL_SET_CHARSET_NAME was not \
-                   recognized as an option by MySQL. This should never \
-                   happen.");
+            b"utf8mb4\0".as_ptr(),
+        );
 
         result
     }
 
     pub fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
+        self.set_ssl_options(connection_options);
         let host = connection_options.host();
         let user = connection_options.user();
         let password = connection_options.password();
@@ -141,6 +137,33 @@ impl RawConnection {
                 Box::new(error_message),
             ))
         }
+    }
+
+    fn set_ssl_options(&self, opts: &ConnectionOptions) {
+        use self::ffi::mysql_ssl_mode::*;
+
+        if let Some(ssl_mode) = opts.ssl_mode() {
+            let value = match ssl_mode {
+                SslMode::Disabled => SSL_MODE_DISABLED,
+                SslMode::Preferred => SSL_MODE_PREFERRED,
+                SslMode::Required => SSL_MODE_REQUIRED,
+                SslMode::VerifyCa => SSL_MODE_VERIFY_CA,
+                SslMode::VerifyIdentity => SSL_MODE_VERIFY_IDENTITY,
+            };
+            self.set_option(ffi::mysql_option::MYSQL_OPT_SSL_MODE, &value);
+        }
+    }
+
+    fn set_option<T>(&self, opt: ffi::mysql_option, value: *const T) {
+        // This is only non-zero for unrecognized options, which should never
+        // happen, since we're passing an enum variant
+        let result = unsafe { ffi::mysql_options(
+            self.0,
+            opt,
+            value as *const libc::c_void,
+        ) };
+        assert_eq!(0, result, "mysql_option was not recognized as an option by \
+            MySQL. This should never happen.");
     }
 }
 

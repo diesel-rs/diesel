@@ -26,6 +26,9 @@ extern crate byteorder;
 #[macro_use]
 mod macros;
 
+#[cfg(all(test, feature = "mysql"))]
+#[macro_use]
+extern crate assert_matches;
 #[cfg(test)]
 #[macro_use]
 extern crate cfg_if;

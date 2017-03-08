@@ -11,6 +11,16 @@ pub struct ConnectionOptions {
     password: Option<CString>,
     database: Option<CString>,
     port: Option<u16>,
+    ssl_mode: Option<SslMode>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum SslMode {
+    Disabled,
+    Preferred,
+    Required,
+    VerifyCa,
+    VerifyIdentity,
 }
 
 impl ConnectionOptions {
@@ -41,6 +51,21 @@ impl ConnectionOptions {
             Some("") | None => None,
             Some(segment) => Some(try!(CString::new(segment.as_bytes()))),
         };
+        let ssl_mode = url.query_pairs().find(|&(ref k, _)| k == "sslmode")
+            .map(|(_, v)| match &*v {
+                "disable" | "disabled" => Ok(Some(SslMode::Disabled)),
+                "prefer" | "preferred" => Ok(Some(SslMode::Preferred)),
+                "require" | "required" => Ok(Some(SslMode::Required)),
+                "verify-ca" | "verify_ca" => Ok(Some(SslMode::VerifyCa)),
+                "verify-identity" |
+                "verify_identity" => Ok(Some(SslMode::VerifyIdentity)),
+                _ => {
+                    let msg = format!("Invalid sslmode `{}`. Valid options are \
+                        `disable`, `prefer`, `require`, `verify-ca`, or \
+                        `verify-identity`.", v);
+                    Err(ConnectionError::InvalidConnectionUrl(msg.into()))
+                }
+            }).unwrap_or(Ok(None));
 
         Ok(ConnectionOptions {
             host: host,
@@ -48,6 +73,7 @@ impl ConnectionOptions {
             password: password,
             database: database,
             port: url.port(),
+            ssl_mode: ssl_mode?,
         })
     }
 
@@ -69,6 +95,10 @@ impl ConnectionOptions {
 
     pub fn port(&self) -> Option<u16> {
         self.port
+    }
+
+    pub fn ssl_mode(&self) -> Option<SslMode> {
+        self.ssl_mode
     }
 }
 
@@ -108,5 +138,41 @@ fn first_path_segment_is_treated_as_database() {
     assert_eq!(
         None,
         ConnectionOptions::parse("mysql://localhost").unwrap().database()
+    );
+}
+
+#[test]
+fn sslmode_is_extracted_from_url() {
+    fn ssl_mode(url: &str) -> ConnectionResult<Option<SslMode>> {
+        ConnectionOptions::parse(url).map(|opts| opts.ssl_mode())
+    }
+
+    assert_matches!(
+        ssl_mode("mysql://localhost"),
+        Ok(None)
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=invalid"),
+        Err(ConnectionError::InvalidConnectionUrl(_))
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=disable"),
+        Ok(Some(SslMode::Disabled))
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=prefer"),
+        Ok(Some(SslMode::Preferred))
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=require"),
+        Ok(Some(SslMode::Required))
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=verify-ca"),
+        Ok(Some(SslMode::VerifyCa))
+    );
+    assert_matches!(
+        ssl_mode("mysql://localhost?sslmode=verify-identity"),
+        Ok(Some(SslMode::VerifyIdentity))
     );
 }
