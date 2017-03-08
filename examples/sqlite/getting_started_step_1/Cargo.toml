@@ -1,0 +1,10 @@
+[package]
+name = "diesel_demo_step_1_sqlite"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+authors = ["Taryn Hill <taryn@phrohdoh.com>"]
+
+[dependencies]
+diesel = { version = "0.11.0", features = ["sqlite"] }
+diesel_codegen = { version = "0.11.0", features = ["sqlite"] }
+dotenv = "0.8"
