@@ -69,6 +69,7 @@ use std::io::Write;
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
 #[derive(Debug, Clone, Copy, Default)] pub struct SmallInt;
 #[doc(hidden)] pub type Int2 = SmallInt;
+#[doc(hidden)] pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
@@ -97,6 +98,7 @@ use std::io::Write;
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
 #[derive(Debug, Clone, Copy, Default)] pub struct BigInt;
 #[doc(hidden)] pub type Int8 = BigInt;
+#[doc(hidden)] pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
