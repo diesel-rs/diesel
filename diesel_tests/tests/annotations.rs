@@ -148,6 +148,20 @@ mod lifetimes_with_names_other_than_a {
     }
 }
 
+mod insertable_with_cow {
+    #![allow(dead_code)]
+    use schema::posts;
+    use std::borrow::Cow;
+
+    #[derive(Insertable)]
+    #[table_name="posts"]
+    pub struct MyPost<'a> {
+        id: i32,
+        title: Cow<'a, str>,
+        body: Cow<'a, str>,
+    }
+}
+
 mod custom_foreign_keys_are_respected_on_belongs_to {
     #![allow(dead_code)]
 
