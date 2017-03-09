@@ -114,7 +114,7 @@ use expression::bound::Bound;
 use expression::{AsExpression, Expression};
 impl <'a, T: ?Sized, ST> ::expression::AsExpression<ST> for Cow<'a, T> where
     T: 'a + ToOwned,
-    Bound<ST, Self>: Expression<SqlType=ST>,
+    Bound<ST, Cow<'a, T>>: Expression<SqlType=ST>,
 {
     type Expression = Bound<ST, Self>;
 
