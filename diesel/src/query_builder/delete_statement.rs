@@ -1,63 +1,80 @@
-use backend::{Backend, SupportsReturningClause};
-use expression::{Expression, SelectableExpression, NonAggregate};
+use backend::Backend;
+use expression::SelectableExpression;
 use query_builder::*;
+use query_builder::returning_clause::*;
 use query_source::Table;
 use result::QueryResult;
 
 #[derive(Debug)]
-pub struct DeleteStatement<T, U>(UpdateTarget<T, U>);
+pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
+    table: T,
+    where_clause: U,
+    returning: Ret,
+}
 
-impl<T, U> DeleteStatement<T, U> {
+impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     #[doc(hidden)]
-    pub fn new(t: UpdateTarget<T, U>) -> Self {
-        DeleteStatement(t)
-    }
-}
-
-impl<T, U, DB> QueryFragment<DB> for DeleteStatement<T, U> where
-    DB: Backend,
-    T: Table,
-    T::FromClause: QueryFragment<DB>,
-    U: QueryFragment<DB>,
-{
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_sql("DELETE FROM ");
-        try!(self.0.table.from_clause().to_sql(out));
-        try!(self.0.where_clause.to_sql(out));
-        Ok(())
-    }
-
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.table.from_clause().collect_binds(out));
-        try!(self.0.where_clause.collect_binds(out));
-        Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.table.from_clause().is_safe_to_cache_prepared() &&
-            self.0.where_clause.is_safe_to_cache_prepared()
-    }
-}
-
-impl_query_id!(noop: DeleteStatement<T, U>);
-
-impl<T, U> AsQuery for DeleteStatement<T, U> where
-    T: Table,
-    <T as Table>::AllColumns: Expression + SelectableExpression<T>,
-    DeleteQuery<<T as Table>::AllColumns, DeleteStatement<T, U>>: Query,
-{
-    type SqlType = <Self::Query as Query>::SqlType;
-    type Query = DeleteQuery<<T as Table>::AllColumns, DeleteStatement<T, U>>;
-
-    fn as_query(self) -> Self::Query {
-        DeleteQuery {
-            returning: T::all_columns(),
-            statement: self,
+    pub fn new(table: T, where_clause: U) -> Self {
+        DeleteStatement {
+            table: table,
+            where_clause: where_clause,
+            returning: NoReturningClause,
         }
     }
 }
 
-impl<T, U> DeleteStatement<T, U> {
+impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
+    DB: Backend,
+    T: Table,
+    T::FromClause: QueryFragment<DB>,
+    U: QueryFragment<DB>,
+    Ret: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        out.push_sql("DELETE FROM ");
+        try!(self.table.from_clause().to_sql(out));
+        try!(self.where_clause.to_sql(out));
+        try!(self.returning.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        try!(self.table.from_clause().collect_binds(out));
+        try!(self.where_clause.collect_binds(out));
+        try!(self.returning.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.table.from_clause().is_safe_to_cache_prepared() &&
+            self.where_clause.is_safe_to_cache_prepared() &&
+            self.returning.is_safe_to_cache_prepared()
+    }
+}
+
+impl_query_id!(DeleteStatement<T, U, Ret>);
+
+impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause> where
+    T: Table,
+    T::AllColumns: SelectableExpression<T>,
+    DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
+{
+    type SqlType = <Self::Query as Query>::SqlType;
+    type Query = DeleteStatement<T, U, ReturningClause<T::AllColumns>>;
+
+    fn as_query(self) -> Self::Query {
+        self.returning(T::all_columns())
+    }
+}
+
+impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>> where
+    T: Table,
+    Ret: SelectableExpression<T>,
+{
+    type SqlType = Ret::SqlType;
+}
+
+impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.
     ///
     /// # Examples
@@ -87,52 +104,14 @@ impl<T, U> DeleteStatement<T, U> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> DeleteQuery<E, Self> where
-        E: Expression + SelectableExpression<T>,
-        DeleteQuery<E, Self>: Query,
+    pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>> where
+        E: SelectableExpression<T>,
+        DeleteStatement<T, U, ReturningClause<E>>: Query,
     {
-        DeleteQuery {
-            returning: returns,
-            statement: self,
+        DeleteStatement {
+            table: self.table,
+            where_clause: self.where_clause,
+            returning: ReturningClause(returns),
         }
     }
 }
-
-#[doc(hidden)]
-#[derive(Debug, Copy, Clone)]
-pub struct DeleteQuery<T, U> {
-    returning: T,
-    statement: U,
-}
-
-impl<T, U> Query for DeleteQuery<T, U> where
-    T: Expression + NonAggregate,
-{
-    type SqlType = T::SqlType;
-}
-
-impl<T, U, DB> QueryFragment<DB> for DeleteQuery<T, U> where
-    DB: Backend + SupportsReturningClause,
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
-{
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.statement.to_sql(out));
-        out.push_sql(" RETURNING ");
-        try!(self.returning.to_sql(out));
-        Ok(())
-    }
-
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.statement.collect_binds(out));
-        try!(self.returning.collect_binds(out));
-        Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.statement.is_safe_to_cache_prepared() &&
-            self.returning.is_safe_to_cache_prepared()
-    }
-}
-
-impl_query_id!(noop: DeleteQuery<T, U>);
