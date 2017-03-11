@@ -2,7 +2,7 @@
 #![deny(warnings, missing_copy_implementations)]
 
 // Clippy lints
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
+#![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file="../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(

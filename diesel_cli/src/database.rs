@@ -291,6 +291,7 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
     (database.to_owned(), new_url)
 }
 
+#[cfg_attr(feature="clippy", allow(needless_pass_by_value))]
 fn handle_error<E: Error, T>(error: E) -> T {
     println!("{}", error);
     ::std::process::exit(1);

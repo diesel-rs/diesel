@@ -43,7 +43,7 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2017-02-09
+  - rust: nightly-2017-03-04
     env: CLIPPY=YESPLEASE
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres mysql" -- -Zno-trans)
