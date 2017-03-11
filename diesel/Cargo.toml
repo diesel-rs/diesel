@@ -14,7 +14,7 @@ categories = ["database"]
 [dependencies]
 byteorder = "1.0"
 chrono = { version = "0.3", optional = true }
-clippy = { optional = true, version = "=0.0.114" }
+clippy = { optional = true, version = "=0.0.118" }
 libsqlite3-sys = { version = ">=0.7.1, <0.8.0", optional = true }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }
 pq-sys = { version = ">=0.3.0, <0.5.0", optional = true }
