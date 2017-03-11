@@ -109,3 +109,27 @@ impl <'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T> where
         FromSql::<ST, DB>::from_sql(row.take())
     }
 }
+
+use expression::bound::Bound;
+use expression::{AsExpression, Expression};
+impl <'a, T: ?Sized, ST> ::expression::AsExpression<ST> for Cow<'a, T> where
+    T: 'a + ToOwned,
+    Bound<ST, Cow<'a, T>>: Expression<SqlType=ST>,
+{
+    type Expression = Bound<ST, Self>;
+
+    fn as_expression(self) -> Self::Expression {
+        Bound::new(self)
+    }
+}
+
+impl <'a, 'b, T: ?Sized, ST> ::expression::AsExpression<ST> for &'b Cow<'a, T> where
+    T: 'a + ToOwned,
+    &'b T: AsExpression<ST>,
+{
+    type Expression = <&'b T as AsExpression<ST>>::Expression;
+
+    fn as_expression(self) -> Self::Expression {
+        (&**self).as_expression()
+    }
+}
