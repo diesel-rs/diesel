@@ -78,15 +78,15 @@ impl<'a, Records, Target, Action, Tab> Insertable<Tab, Pg>
         Records: Insertable<Tab, Pg> + Copy,
         Records: UndecoratedInsertRecord<Tab>,
         Target: OnConflictTarget<Tab> + Copy,
-        Action: Copy,
+        Action: IntoConflictAction<Tab> + Copy,
 {
-    type Values = OnConflictValues<Records::Values, Target, Action>;
+    type Values = OnConflictValues<Records::Values, Target, Action::Action>;
 
     fn values(self) -> Self::Values {
         OnConflictValues {
             values: self.records.values(),
             target: self.target,
-            action: self.action,
+            action: self.action.into_conflict_action(),
         }
     }
 }
@@ -102,6 +102,7 @@ pub struct OnConflictValues<Values, Target, Action> {
 impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Target, Action> where
     Values: InsertValues<Pg>,
     Target: QueryFragment<Pg>,
+    Action: QueryFragment<Pg>,
 {
     fn column_names(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
         self.values.column_names(out)
@@ -111,11 +112,14 @@ impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Targe
         try!(self.values.values_clause(out));
         out.push_sql(" ON CONFLICT");
         try!(self.target.to_sql(out));
-        out.push_sql(" DO NOTHING");
+        try!(self.action.to_sql(out));
         Ok(())
     }
 
     fn values_bind_params(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        self.values.values_bind_params(out)
+        try!(self.values.values_bind_params(out));
+        try!(self.target.collect_binds(out));
+        try!(self.action.collect_binds(out));
+        Ok(())
     }
 }

@@ -91,7 +91,7 @@ pub trait OnConflictExtension {
     /// `Action` can be one of:
     ///
     /// - [`do_nothing()`](fn.do_nothing.html)
-    /// - [`do_update()`]
+    /// - [`do_update()`](fn.do_update.html)
     ///
     /// # Examples
     ///

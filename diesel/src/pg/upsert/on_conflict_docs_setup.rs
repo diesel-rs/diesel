@@ -7,7 +7,7 @@ table! {
     }
 }
 
-#[derive(Clone, Copy, Insertable)]
+#[derive(Clone, Copy, Insertable, AsChangeset)]
 #[table_name="users"]
 struct User<'a> {
     id: i32,

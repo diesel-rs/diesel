@@ -8,6 +8,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for the majority of PG upsert (`INSERT ON CONFLICT`). We now
+  support specifying the constraint, as well as `DO UPDATE` in addition to `DO
+  NOTHING`. See [the module docs][upsert-0.12.0] for details.
+
+[upsert-0.12.0]: http://docs.diesel.rs/diesel/pg/upsert/index.html
+
 * Added support for the SQL concatenation operator `||`. See [the docs for
   `.concat`][concat-0.12.0] for more details.
 

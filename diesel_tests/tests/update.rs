@@ -272,3 +272,22 @@ fn update_with_no_changes() {
     let changes = Changes { name: None, hair_color: None, };
     update(users::table).set(&changes).execute(&connection).unwrap();
 }
+
+#[test]
+#[cfg(feature="postgres")]
+fn upsert_with_no_changes_executes_do_nothing() {
+    use diesel::pg::upsert::*;
+
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    struct Changes {
+        hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let result = insert(&User::new(1, "Sean")
+       .on_conflict(users::id, do_update().set(&Changes { hair_color: None }))
+    ).into(users::table).execute(&connection);
+
+    assert_eq!(Ok(0), result);
+}
