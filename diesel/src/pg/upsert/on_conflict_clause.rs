@@ -77,7 +77,7 @@ impl<'a, Records, Target, Action, Tab> Insertable<Tab, Pg>
         Tab: Table,
         Records: Insertable<Tab, Pg> + Copy,
         Records: UndecoratedInsertRecord<Tab>,
-        Target: OnConflictTarget<Tab> + Copy,
+        Target: OnConflictTarget<Tab> + Clone,
         Action: IntoConflictAction<Tab> + Copy,
 {
     type Values = OnConflictValues<Records::Values, Target, Action::Action>;
@@ -85,7 +85,7 @@ impl<'a, Records, Target, Action, Tab> Insertable<Tab, Pg>
     fn values(self) -> Self::Values {
         OnConflictValues {
             values: self.records.values(),
-            target: self.target,
+            target: self.target.clone(),
             action: self.action.into_conflict_action(),
         }
     }
