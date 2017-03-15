@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-export DATABASE_URL="/tmp/test.db"
+export DATABASE_URL="/tmp/test_examples.db"
 
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
