@@ -291,3 +291,36 @@ fn upsert_with_no_changes_executes_do_nothing() {
 
     assert_eq!(Ok(0), result);
 }
+
+#[test]
+#[cfg(feature="postgres")]
+fn upsert_with_sql_literal_for_target() {
+    use diesel::expression::dsl::sql;
+    use diesel::pg::upsert::*;
+    use diesel::types::Text;
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    connection.execute("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'").unwrap();
+
+    let new_users = vec![
+        NewUser::new("Sean", Some("Green")),
+        NewUser::new("Tess", Some("Blue")),
+    ];
+    let conflict_target = sql::<Text>("(name) WHERE name != 'Tess'");
+    let conflict_action = do_update().set(hair_color.eq(excluded(hair_color)));
+    insert(&new_users.on_conflict(conflict_target, conflict_action))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let data = users.select((name, hair_color))
+        .order(id)
+        .load(&connection);
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Green".to_string())),
+        ("Tess".to_string(), None),
+        ("Tess".to_string(), Some("Blue".to_string())),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}

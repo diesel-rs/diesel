@@ -1,4 +1,5 @@
 use backend::Backend;
+use expression::SqlLiteral;
 use pg::Pg;
 use query_builder::*;
 use query_source::Column;
@@ -97,6 +98,30 @@ impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
 }
 
 impl<T: Column> OnConflictTarget<T::Table> for ConflictTarget<T> {
+}
+
+impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
+    SqlLiteral<ST>: QueryFragment<Pg>,
+{
+    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+        out.push_sql(" ");
+        try!(self.0.to_sql(out));
+        Ok(())
+    }
+
+    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+        try!(self.0.collect_binds(out));
+        Ok(())
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> bool {
+        self.0.is_safe_to_cache_prepared()
+    }
+}
+
+impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> where
+    ConflictTarget<SqlLiteral<ST>>: QueryFragment<Pg>,
+{
 }
 
 impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
