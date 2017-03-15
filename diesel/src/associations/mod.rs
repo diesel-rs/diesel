@@ -8,7 +8,9 @@
 //! [open-issue]: https://github.com/diesel-rs/diesel/issues/new
 //! [gitter]: https://gitter.im/diesel-rs/diesel
 //!
-//! Note: This guide is written assuming the usage of `diesel_codegen` or `diesel_codegen_syntex`.
+//! Note: The derives in this guide are provided by `diesel_codegen`. Make sure you have
+//! `#[macro_use] extern crate diesel_codegen;` at the root of your crate.
+//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with `#[has_many]` and
 //! `#[belongs_to]`.
@@ -35,13 +37,15 @@
 //!
 //! `#[has_many]` should be passed the name of the table that the children will be loaded from,
 //! while `#[belongs_to]` is given the name of the struct that represents the parent. Both types
-//! must implement the [`Identifiable`][identifiable] trait.
+//! must implement the [`Identifiable`][identifiable] trait. The struct or table referenced in your
+//! association has to be in scope, so you'll need `use schema::posts` or similar to bring the
+//! table into scope, and `use some_module::User` if `User` were in a different module.
 //!
 //! [Identifiable]: trait.Identifiable.html
 //!
 //! `#[has_many]` actually has no behavior on its own. It only enables joining between the two
-//! tables. If you are only accessing data through the [`belonging_to`][belonging-to] method, you
-//! only need to define the `#[belongs_to]` side.
+//! tables. If you are only writing `children.inner_join(parents)` or
+//! `Child::belonging_to(&parents)`, you only need to define the `#[belongs_to]` side.
 //!
 //! Once the associations are defined, you can join between the two tables using the
 //! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
