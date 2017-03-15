@@ -23,6 +23,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [pg-money-0.12.0]: https://www.postgresql.org/docs/9.6/static/datatype-money.html
 
+* Diesel CLI: Added `db` as an alias for `database`, so you can now write `diesel db setup` (which is almost 40% faster!).
+
 ### Fixed
 
 * `diesel_codegen` will provide a more useful error message when it encounters
