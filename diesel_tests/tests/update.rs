@@ -324,3 +324,46 @@ fn upsert_with_sql_literal_for_target() {
     ];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+fn update_with_custom_pk() {
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    #[primary_key(name)]
+    #[allow(dead_code)]
+    struct Changes<'a> {
+        name: &'a str,
+        hair_color: Option<&'a str>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    update(users::table.find(1))
+        .set(&Changes { name: "Jim", hair_color: Some("Black") })
+        .execute(&connection)
+        .unwrap();
+    let user = users::table.find(1).first(&connection);
+    let expected_user = User::with_hair_color(1, "Sean", "Black");
+    assert_eq!(Ok(expected_user), user);
+}
+
+#[test]
+fn update_with_custom_composite_pk() {
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    #[primary_key(id, hair_color)]
+    #[allow(dead_code)]
+    struct Changes<'a> {
+        id: i32,
+        name: &'a str,
+        hair_color: Option<&'a str>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    update(users::table.find(1))
+        .set(&Changes { id: 2, name: "Jim", hair_color: Some("Blue") })
+        .execute(&connection)
+        .unwrap();
+    let user = users::table.find(1).first(&connection);
+    let expected_user = User::new(1, "Jim");
+    assert_eq!(Ok(expected_user), user);
+}

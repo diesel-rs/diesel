@@ -30,6 +30,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `diesel_codegen` will provide a more useful error message when it encounters
   an unsupported type that contains a space in MySQL.
 
+* `#[derive(AsChangeset)]` will now respect custom `#[primary_key]` annotations,
+  and avoid setting those columns.
+
 ### Removed
 
 * `WithDsl` and `Aliased` have been removed. They were a feature that was
