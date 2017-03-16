@@ -1,6 +1,6 @@
 [package]
 name = "diesel_infer_schema"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides functionality to infer the schema of a database"
@@ -10,7 +10,7 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [dependencies]
-diesel = { version = "0.11.0", default-features = false }
+diesel = { version = "0.12.0", default-features = false }
 syn = "0.11.4"
 quote = "0.3.1"
 clippy = { optional = true, version = "=0.0.118" }

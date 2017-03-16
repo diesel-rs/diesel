@@ -4,7 +4,7 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.12.0] - 2016-03-16
 
 ### Added
 
@@ -48,6 +48,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The internal use macro `select_column_workaround!` has been removed. If you
   were relying on this internal macro, you can simply delete the line that was
   calling it.
+
+* Columns from the right side of a left join will now need to have `.nullable()`
+  explicitly called to be passed to `.select`. This allows it to compose better
+  with functions that don't normally take nullable columns (e.g.
+  `lower(name).nullable()`).
 
 ## [0.11.4] - 2017-02-21
 
@@ -769,3 +774,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.11.1]: https://github.com/diesel-rs/diesel/compare/v0.11.0...v0.11.1
 [0.11.2]: https://github.com/diesel-rs/diesel/compare/v0.11.1...v0.11.2
 [0.11.4]: https://github.com/diesel-rs/diesel/compare/v0.11.2...v0.11.4
+[0.12.0]: https://github.com/diesel-rs/diesel/compare/v0.11.4...v0.12.0
