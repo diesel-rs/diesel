@@ -362,27 +362,40 @@ macro_rules! table_body {
             $(use $($import)::+;)+
             pub use self::columns::*;
 
+            /// Re-exports all of the columns of this table, as well as the
+            /// table struct renamed to the module name. This is meant to be
+            /// glob imported for functions which only deal with one table.
             pub mod dsl {
                 pub use super::columns::{$($column_name),+};
                 pub use super::table as $table_name;
             }
 
             #[allow(non_upper_case_globals, dead_code)]
+            /// A tuple of all of the columns on this table
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
-            #[allow(non_camel_case_types, missing_debug_implementations)]
+            #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy)]
+            /// The actual table struct
+            ///
+            /// This is the type which provides the base methods of the query
+            /// builder, such as `.select` and `.filter`.
             pub struct table;
 
             impl table {
                 #[allow(dead_code)]
+                /// Represents `table_name.*`, which is sometimes necessary
+                /// for efficient count queries. It cannot be used in place of
+                /// `all_columns`
                 pub fn star(&self) -> star {
                     star
                 }
             }
 
+            /// The SQL type of all of the columns on this table
             pub type SqlType = ($($column_ty,)+);
 
+            /// Helper type for reperesenting a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
             __diesel_table_query_source_impl!(table, $schema_name, $table_name);
@@ -427,6 +440,7 @@ macro_rules! table_body {
 
             impl_query_id!(table);
 
+            /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
@@ -437,6 +451,10 @@ macro_rules! table_body {
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]
+                /// Represents `table_name.*`, which is sometimes needed for
+                /// efficient count queries. It cannot be used in place of
+                /// `all_columns`, and has a `SqlType` of `()` to prevent it
+                /// being used that way
                 pub struct star;
 
                 impl Expression for star {
