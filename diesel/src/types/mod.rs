@@ -19,6 +19,8 @@ mod ord;
 pub mod impls;
 mod fold;
 
+use std::fmt;
+
 #[doc(hidden)]
 pub mod structs {
     pub mod data_types {
@@ -318,7 +320,7 @@ pub enum IsNull {
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
-pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
+pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 
