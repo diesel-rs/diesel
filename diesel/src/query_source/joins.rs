@@ -6,33 +6,50 @@ use result::QueryResult;
 use super::{QuerySource, Table};
 
 #[derive(Debug, Clone, Copy)]
-#[doc(hidden)]
-pub struct InnerJoinSource<Left, Right> {
+/// A query source representing the join between two tables
+pub struct Join<Left, Right, Kind> {
     left: Left,
     right: Right,
+    kind: Kind,
 }
 
-impl<Left, Right> InnerJoinSource<Left, Right> {
-    pub fn new(left: Left, right: Right) -> Self {
-        InnerJoinSource {
+impl<Left, Right, Kind> Join<Left, Right, Kind> {
+    pub fn new(left: Left, right: Right) -> Self where
+        Kind: Default,
+    {
+        Join {
             left: left,
             right: right,
+            kind: Kind::default(),
         }
     }
 }
 
-impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
+impl<Left, Right, Kind> AsQuery for Join<Left, Right, Kind> where
+    SelectStatement<Join<Left, Right, Kind>>: Query,
+{
+    type SqlType = <SelectStatement<Self> as Query>::SqlType;
+    type Query = SelectStatement<Self>;
+
+    fn as_query(self) -> Self::Query {
+        SelectStatement::simple(self)
+    }
+}
+
+impl_query_id!(Join<Left, Right, Kind>);
+
+impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
     Left: Table + JoinTo<Right, Inner>,
     Right: Table,
     (Left::AllColumns, Right::AllColumns): SelectableExpression<
-        InnerJoinSource<Left, Right>,
+        Join<Left, Right, Inner>,
     >,
 {
     type FromClause = <Left as JoinTo<Right, Inner>>::JoinClause;
     type DefaultSelection = (Left::AllColumns, Right::AllColumns);
 
     fn from_clause(&self) -> Self::FromClause {
-        self.left.join_clause(Inner)
+        self.left.join_clause(self.kind)
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
@@ -40,47 +57,18 @@ impl<Left, Right> QuerySource for InnerJoinSource<Left, Right> where
     }
 }
 
-impl<Left, Right> AsQuery for InnerJoinSource<Left, Right> where
-    SelectStatement<InnerJoinSource<Left, Right>>: Query,
-{
-    type SqlType = <SelectStatement<Self> as Query>::SqlType;
-    type Query = SelectStatement<Self>;
-
-    fn as_query(self) -> Self::Query {
-        SelectStatement::simple(self)
-    }
-}
-
-impl_query_id!(InnerJoinSource<Left, Right>);
-
-#[derive(Debug, Clone, Copy)]
-#[doc(hidden)]
-pub struct LeftOuterJoinSource<Left, Right> {
-    left: Left,
-    right: Right,
-}
-
-impl<Left, Right> LeftOuterJoinSource<Left, Right> {
-    pub fn new(left: Left, right: Right) -> Self {
-        LeftOuterJoinSource {
-            left: left,
-            right: right,
-        }
-    }
-}
-
-impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
+impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
     Left: Table + JoinTo<Right, LeftOuter>,
     Right: Table,
     (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
-        LeftOuterJoinSource<Left, Right>,
+        Join<Left, Right, LeftOuter>,
     >,
 {
     type FromClause = <Left as JoinTo<Right, LeftOuter>>::JoinClause;
     type DefaultSelection = (Left::AllColumns, Nullable<Right::AllColumns>);
 
     fn from_clause(&self) -> Self::FromClause {
-        self.left.join_clause(LeftOuter)
+        self.left.join_clause(self.kind)
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
@@ -88,23 +76,10 @@ impl<Left, Right> QuerySource for LeftOuterJoinSource<Left, Right> where
     }
 }
 
-impl<Left, Right> AsQuery for LeftOuterJoinSource<Left, Right> where
-    SelectStatement<LeftOuterJoinSource<Left, Right>>: Query,
-{
-    type SqlType = <SelectStatement<Self> as Query>::SqlType;
-    type Query = SelectStatement<Self>;
-
-    fn as_query(self) -> Self::Query {
-        SelectStatement::simple(self)
-    }
-}
-
-impl_query_id!(LeftOuterJoinSource<Left, Right>);
-
-impl<Left, Right, T> SelectableExpression<LeftOuterJoinSource<Left, Right>>
+impl<Left, Right, T> SelectableExpression<Join<Left, Right, LeftOuter>>
     for Nullable<T> where
-        T: SelectableExpression<InnerJoinSource<Left, Right>>,
-        Nullable<T>: AppearsOnTable<LeftOuterJoinSource<Left, Right>>,
+        T: SelectableExpression<Join<Left, Right, Inner>>,
+        Nullable<T>: AppearsOnTable<Join<Left, Right, LeftOuter>>,
 {
 }
 
@@ -121,8 +96,9 @@ pub trait JoinTo<T: Table, JoinType>: Table {
 use backend::Backend;
 
 #[doc(hidden)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Inner;
+impl_query_id!(Inner);
 
 impl<DB: Backend> QueryFragment<DB> for Inner {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
@@ -140,8 +116,9 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 }
 
 #[doc(hidden)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct LeftOuter;
+impl_query_id!(LeftOuter);
 
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {

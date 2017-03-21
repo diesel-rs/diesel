@@ -37,56 +37,47 @@ macro_rules! __diesel_column {
         impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
-        impl<Right> SelectableExpression<
-            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+        impl<Right, Kind> SelectableExpression<
+            Join<$($table)::*, Right, Kind>,
         > for $column_name where
-            Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+            $column_name: AppearsOnTable<Join<$($table)::*, Right, Kind>>,
         {
         }
 
         impl<Left> SelectableExpression<
-            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
-        {
-        }
-
-        impl<Right> SelectableExpression<
-            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
-        > for $column_name where
-            Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+            Left: $crate::JoinTo<$($table)::*, Inner>
         {
         }
 
         impl<Right> AppearsOnTable<
-            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+            Join<$($table)::*, Right, Inner>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+            $($table)::*: $crate::JoinTo<Right, Inner>
         {
         }
 
         impl<Left> AppearsOnTable<
-            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+            Left: $crate::JoinTo<$($table)::*, Inner>
         {
         }
 
         impl<Right> AppearsOnTable<
-            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+            Join<$($table)::*, Right, LeftOuter>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+            $($table)::*: $crate::JoinTo<Right, LeftOuter>
         {
         }
 
         impl<Left> AppearsOnTable<
-            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, LeftOuter>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+            Left: $crate::JoinTo<$($table)::*, LeftOuter>
         {
         }
 
@@ -446,6 +437,7 @@ macro_rules! table_body {
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::query_source::joins::{Join, Inner, LeftOuter};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
