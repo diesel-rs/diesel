@@ -204,7 +204,7 @@ macro_rules! __diesel_column {
 /// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
 /// instead of `users::table.filter(users::name.eq("Sean"))`.
 ///
-/// all_columns
+/// `all_columns`
 /// -----------
 ///
 /// A constant will be assigned called `all_columns`. This is what will be
@@ -222,7 +222,7 @@ macro_rules! __diesel_column {
 /// count statements however. It can also be accessed through the `Table.star()`
 /// method.
 ///
-/// SqlType
+/// `SqlType`
 /// -------
 ///
 /// A type alias called `SqlType` will be created. It will be the SQL type of
@@ -231,7 +231,7 @@ macro_rules! __diesel_column {
 ///
 /// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
 ///
-/// BoxedQuery
+/// `BoxedQuery`
 /// ----------
 ///
 /// ```ignore
@@ -601,7 +601,7 @@ macro_rules! join_through {
     }
 }
 
-/// Takes a query QueryFragment expression as an argument and returns a string
+/// Takes a query `QueryFragment` expression as an argument and returns a string
 /// of SQL with placeholders for the dynamic values.
 ///
 /// # Example
@@ -636,7 +636,7 @@ macro_rules! debug_sql {
     }};
 }
 
-/// Takes takes a query QueryFragment expression as an argument and prints out
+/// Takes takes a query `QueryFragment` expression as an argument and prints out
 /// the SQL with placeholders for the dynamic values.
 ///
 /// # Example
