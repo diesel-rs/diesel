@@ -17,7 +17,7 @@ name = "diesel"
 chrono = "0.3"
 clap = "2.20.3"
 diesel = { version = "0.12.0", default-features = false }
-dotenv = "0.8.0"
+dotenv = ">=0.8, <0.10"
 diesel_infer_schema = "0.12.0"
 clippy = { optional = true, version = "=0.0.118" }
 

@@ -7,14 +7,14 @@ build = "build.rs"
 
 [build-dependencies]
 diesel = { path = "../diesel", default-features = false }
-dotenv = "0.8.0"
+dotenv = ">=0.8, <0.10"
 
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.3" }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json"] }
 diesel_codegen = { path = "../diesel_codegen" }
-dotenv = "0.8.0"
+dotenv = ">=0.8, <0.10"
 quickcheck = { version = "0.3.1", features = ["unstable"] }
 uuid = { version = ">=0.2.0, <0.5.0" }
 serde_json = "0.9"
