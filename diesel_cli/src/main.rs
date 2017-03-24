@@ -119,6 +119,11 @@ fn run_migration_command(matches: &ArgMatches) {
                 println!("  [{}] {}", x, name);
             }
         }
+        ("pending", Some(_)) => {
+            let database_url = database::database_url(matches);
+            let result = call_with_conn!(database_url, migrations::any_pending_migrations);
+            println!("{:?}", result.unwrap());
+        }
         ("generate", Some(args)) => {
             use std::io::Write;
 
