@@ -16,8 +16,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
 
     // check overall output
     let expected_stdout = Regex::new("\
-Creating migrations.\\d*_hello.up.sql
-Creating migrations.\\d*_hello.down.sql\
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
+Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
         ").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));

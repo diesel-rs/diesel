@@ -39,6 +39,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   tables. You will need to explicitly invoke `joinable!` instead, unless you are
   using `infer_schema!`
 
+* Changed the migration directory name format to `%Y-%m-%d-%H%M%S`.
+
 ### Removed
 
 * `debug_sql!` has been deprecated in favor of `diesel::debug_sql`.
