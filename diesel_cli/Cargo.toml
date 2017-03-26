@@ -24,6 +24,7 @@ clippy = { optional = true, version = "=0.0.121" }
 [dev-dependencies]
 tempdir = "0.3.4"
 regex = "0.1.48"
+url = { version = "1.4.0" }
 
 [features]
 default = ["postgres", "sqlite", "mysql"]

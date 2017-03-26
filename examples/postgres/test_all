@@ -1,7 +1,10 @@
 #!/bin/sh
 set -e
 
-export DATABASE_URL="postgres://localhost/diesel_examples"
+set -a
+if [ -f ../../.env ]; then . ../../.env; fi
+DATABASE_URL=${PG_EXAMPLE_DATABASE_URL}
+set +a
 
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
