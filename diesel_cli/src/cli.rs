@@ -26,6 +26,8 @@ pub fn build_cli() -> App<'static, 'static> {
         ).subcommand(SubCommand::with_name("redo")
             .about("Reverts and re-runs the latest migration. Useful \
                     for testing that a migration can in fact be reverted.")
+        ).subcommand(SubCommand::with_name("list")
+            .about("Lists all available migrations, marking those that have been applied.")
         ).subcommand(SubCommand::with_name("generate")
             .about("Generate a new migration with the given name, and \
                     the current timestamp as the version"

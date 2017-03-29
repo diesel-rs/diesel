@@ -79,6 +79,9 @@ use {Connection, QueryResult};
 use std::env;
 use std::path::{PathBuf, Path};
 
+
+pub static TIMESTAMP_FORMAT: &'static str ="%Y%m%d%H%M%S";
+
 /// Runs all migrations that have not yet been run. This function will print all progress to
 /// stdout. This function will return an `Err` if some error occurs reading the migrations, or if
 /// any migration fails to run. Each migration is run in its own transaction, so some migrations
@@ -106,6 +109,22 @@ pub fn run_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &P
 {
     let all_migrations = try!(migrations_in_directory(migrations_dir));
     run_migrations(conn, all_migrations, output)
+}
+
+/// Compares migrations found in `migrations_dir` to those that have been applied.
+/// Returns a list of pathbufs and whether they have been applied.
+pub fn mark_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path)
+    -> Result<Vec<(Option<PathBuf>, bool)>, RunMigrationsError> where
+        Conn: MigrationConnection,
+{
+    let migrations = migrations_in_directory(migrations_dir)?;
+    setup_database(conn)?;
+    let already_run = conn.previously_run_migration_versions()?;
+    let migrations = migrations.into_iter().map(|m| {
+        let applied = already_run.contains(&m.version().to_string());
+        (m.file_path().map(|p| p.to_path_buf()), applied)
+    }).collect();
+    Ok(migrations)
 }
 
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
