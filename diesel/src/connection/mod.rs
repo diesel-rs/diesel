@@ -36,10 +36,8 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// a transaction is already occurring, savepoints will be used to emulate a nested
     /// transaction.
     ///
-    /// If the function returns an `Ok`, that value will be returned.  If the
-    /// function returns an `Err`,
-    /// [`TransactionError::UserReturnedError`](../result/enum.TransactionError.html#variant.UserReturnedError)
-    /// will be returned wrapping that value.
+    /// The error returned from the function must implement
+    /// `From<diesel::result::Error>`.
     fn transaction<T, E, F>(&self, f: F) -> Result<T, E> where
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
