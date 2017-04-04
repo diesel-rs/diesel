@@ -85,7 +85,7 @@ impl<Left, Right, T> SelectableExpression<Join<Left, Right, LeftOuter>>
 
 /// Indicates that two tables can be used together in a JOIN clause.
 /// Implementations of this trait will be generated for you automatically by
-/// the [association annotations](FIXME: Add link) from codegen.
+/// the [association annotations](../associations/index.html) from codegen.
 pub trait JoinTo<T: Table, JoinType>: Table {
     #[doc(hidden)]
     type JoinClause;
