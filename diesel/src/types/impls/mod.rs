@@ -177,3 +177,4 @@ mod integers;
 pub mod option;
 mod primitives;
 mod tuples;
+mod decimal;
