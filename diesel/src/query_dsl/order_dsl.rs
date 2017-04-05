@@ -33,7 +33,11 @@ use query_source::QuerySource;
 /// use self::users::dsl::{users, id, name};
 /// // load all users' names, ordered by their name descending
 /// let ordered_names = users.select(name).order(name.desc()).load(&connection).unwrap();
-/// assert_eq!(Ok(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")]), ordered_names);
+/// assert_eq!(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")], ordered_names);
+///
+/// connection.execute("INSERT INTO users (name) VALUES ('Stan')").unwrap();
+/// let ordered_name_id_pairs = users.filter(name.eq("Stan")).select((name, id)).order((name.asc(), id.desc())).load(&connection).unwrap();
+/// assert_eq!(vec![(String::from("Saul"), 1), (String::from("Stan"), 2), (String::from("Stan"), 1), (String::from("Steve"), 1)], ordered_name_id_pairs);
 /// # }
 /// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
