@@ -12,6 +12,28 @@ use query_source::QuerySource;
 /// columns.
 ///
 /// This is automatically implemented for the various query builder types.
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use diesel::result::Error::NotFound;
+/// let connection = establish_connection();
+/// use self::users::dsl::*;
+/// // load the users, ordered by their ID descending and then by their name descending.
+/// // note: the id and name fields are imported from self::users::dsl::* and use the name of the columns in the DB, not in the struct.
+/// users.order((id.desc(), name.desc())).load::<User>(&connection).unwrap();
+/// # }
+/// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
     type Output: AsQuery<SqlType=Self::SqlType>;
 
