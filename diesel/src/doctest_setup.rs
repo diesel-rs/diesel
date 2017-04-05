@@ -98,7 +98,7 @@ cfg_if! {
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 species TEXT NOT NULL,
                 legs INTEGER NOT NULL,
-                name VARCHAR
+                name TEXT
             ) CHARACTER SET utf8mb4").unwrap();
             connection.execute("INSERT INTO animals (species, legs, name) VALUES
                                ('dog', 4, 'Jack'),
