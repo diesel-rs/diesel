@@ -43,7 +43,7 @@ expression, and the return value will be an expression of type Date.
 
 # Example
 
-```rust
+```ignore
 # #[macro_use] extern crate diesel;
 # extern crate chrono;
 # include!(\"src/doctest_setup.rs\");
