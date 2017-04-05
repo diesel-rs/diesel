@@ -12,6 +12,35 @@ use query_source::QuerySource;
 /// columns.
 ///
 /// This is automatically implemented for the various query builder types.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// use self::users::dsl::{users, id, name};
+///
+/// let connection = establish_connection();
+/// # connection.execute("DELETE FROM users").unwrap();
+/// connection.execute("INSERT INTO users (name) VALUES ('Saul'), ('Steve'), ('Stan')").unwrap();
+/// // load all users' names, ordered by their name descending
+/// let ordered_names: Vec<String> = users.select(name).order(name.desc()).load(&connection).unwrap();
+/// assert_eq!(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")], ordered_names);
+///
+/// connection.execute("INSERT INTO users (name) VALUES ('Stan')").unwrap();
+/// let ordered_name_id_pairs = users.select((name, id)).order((name.asc(), id.desc())).load(&connection).unwrap();
+/// assert_eq!(vec![(String::from("Saul"), 3), (String::from("Stan"), 6), (String::from("Stan"), 5), (String::from("Steve"), 4)], ordered_name_id_pairs);
+/// # }
+/// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
     type Output: AsQuery<SqlType=Self::SqlType>;
 
