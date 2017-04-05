@@ -41,7 +41,7 @@ sql_function!(date, date_t, (x: Timestamp) -> Date,
 "Represents the SQL `DATE` function. The argument should be a Timestamp
 expression, and the return value will be an expression of type Date.
 
-# Example
+# Examples
 
 ```ignore
 # #[macro_use] extern crate diesel;

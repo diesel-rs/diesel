@@ -57,7 +57,7 @@ ord_function!(max, Max, "MAX",
 "Represents a SQL `MAX` function. This function can only take types which are
 ordered.
 
-# Example
+# Examples
 
 ```rust
 # #[macro_use] extern crate diesel;
@@ -82,7 +82,7 @@ ord_function!(min, Min, "MIN",
 "Represents a SQL `MIN` function. This function can only take types which are
 ordered.
 
-# Example
+# Examples
 
 ```rust
 # #[macro_use] extern crate diesel;

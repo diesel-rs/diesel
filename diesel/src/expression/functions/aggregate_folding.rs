@@ -58,7 +58,7 @@ fold_function!(sum, Sum, "SUM",
 "Represents a SQL `SUM` function. This function can only take types which are
 Foldable.
 
-# Example
+# Examples
 
 ```rust
 # #[macro_use] extern crate diesel;
@@ -83,7 +83,7 @@ fold_function!(avg, Avg, "AVG",
 "Represents a SQL `AVG` function. This function can only take types which are
 Foldable.
 
-# Example
+# Examples
 
 ```rust
 # #[macro_use] extern crate diesel;

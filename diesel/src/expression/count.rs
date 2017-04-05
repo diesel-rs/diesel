@@ -10,7 +10,7 @@ use types::BigInt;
 /// it specifically as `diesel::expression::count`, or glob import
 /// `diesel::expression::dsl::*`
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -46,7 +46,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// it specifically as `diesel::expression::count_star`, or glob import
 /// `diesel::expression::dsl::*`
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
