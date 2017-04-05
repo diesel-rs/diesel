@@ -12,7 +12,8 @@ use query_source::QuerySource;
 /// columns.
 ///
 /// This is automatically implemented for the various query builder types.
-/// # Example
+///
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -26,12 +27,13 @@ use query_source::QuerySource;
 /// # }
 /// #
 /// # fn main() {
-/// #     use diesel::result::Error::NotFound;
 /// let connection = establish_connection();
-/// use self::users::dsl::*;
-/// // load the users, ordered by their ID descending and then by their name descending.
-/// // note: the id and name fields are imported from self::users::dsl::* and use the name of the columns in the DB, not in the struct.
-/// users.order((id.desc(), name.desc())).load::<User>(&connection).unwrap();
+/// #     connection.execute("DELETE FROM users").unwrap();
+/// connection.execute("INSERT INTO users (name) VALUES ('Saul'), ('Steve'), ('Stan')").unwrap();
+/// use self::users::dsl::{users, id, name};
+/// // load all users' names, ordered by their name descending
+/// let ordered_names = users.select(name).order(name.desc()).load(&connection).unwrap();
+/// assert_eq!(Ok(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")]), ordered_names);
 /// # }
 /// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
