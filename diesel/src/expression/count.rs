@@ -23,7 +23,7 @@ use types::BigInt;
 /// #         name -> VarChar,
 /// #     }
 /// # }
-///
+/// #
 /// # fn main() {
 /// #     use self::animals::dsl::*;
 /// #     let connection = establish_connection();
