@@ -23,11 +23,11 @@ use types::BigInt;
 /// #         name -> VarChar,
 /// #     }
 /// # }
-/// #
+///
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use self::animals::dsl::*;
 /// #     let connection = establish_connection();
-/// assert_eq!(Ok(2), users.select(count(name)).first(&connection));
+/// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
 /// # }
 /// ```
 pub fn count<T: Expression>(t: T) -> Count<T> {
