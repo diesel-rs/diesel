@@ -27,17 +27,18 @@ use query_source::QuerySource;
 /// # }
 /// #
 /// # fn main() {
-/// let connection = establish_connection();
-/// #     connection.execute("DELETE FROM users").unwrap();
-/// connection.execute("INSERT INTO users (name) VALUES ('Saul'), ('Steve'), ('Stan')").unwrap();
 /// use self::users::dsl::{users, id, name};
+///
+/// let connection = establish_connection();
+/// # connection.execute("DELETE FROM users").unwrap();
+/// connection.execute("INSERT INTO users (name) VALUES ('Saul'), ('Steve'), ('Stan')").unwrap();
 /// // load all users' names, ordered by their name descending
-/// let ordered_names = users.select(name).order(name.desc()).load(&connection).unwrap();
+/// let ordered_names: Vec<String> = users.select(name).order(name.desc()).load(&connection).unwrap();
 /// assert_eq!(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")], ordered_names);
 ///
 /// connection.execute("INSERT INTO users (name) VALUES ('Stan')").unwrap();
-/// let ordered_name_id_pairs = users.filter(name.eq("Stan")).select((name, id)).order((name.asc(), id.desc())).load(&connection).unwrap();
-/// assert_eq!(vec![(String::from("Saul"), 1), (String::from("Stan"), 2), (String::from("Stan"), 1), (String::from("Steve"), 1)], ordered_name_id_pairs);
+/// let ordered_name_id_pairs = users.select((name, id)).order((name.asc(), id.desc())).load(&connection).unwrap();
+/// assert_eq!(vec![(String::from("Saul"), 3), (String::from("Stan"), 6), (String::from("Stan"), 5), (String::from("Steve"), 4)], ordered_name_id_pairs);
 /// # }
 /// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
