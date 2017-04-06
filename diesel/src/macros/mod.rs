@@ -1,7 +1,11 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> $Type:ty) => {
+    ($($table:ident)::*, $column_name:ident -> $Type:ty, $($doc:meta),*) => {
+
+        $(
+            #[$doc]
+        )*
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy)]
         pub struct $column_name;
@@ -183,6 +187,26 @@ macro_rules! __diesel_column {
 /// # fn main() {}
 /// ```
 ///
+///
+/// If you want to add documentation for the generated code you could use the
+/// following syntax:
+///
+/// ```
+/// #[macro_use] extern crate diesel;
+///
+/// table! {
+///
+///     /// Table documentation
+///     posts {
+///         /// Id column documentation
+///         id -> Integer,
+///         /// Title column documentation
+///         title -> Text,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
@@ -228,108 +252,235 @@ macro_rules! __diesel_column {
 /// ```
 #[macro_export]
 macro_rules! table {
-    // Put `use` statements at the end because macro_rules! cannot figure out
-    // if `use` is an ident or not (hint: It's not)
+    // Put imports into the import field
     (
-        use $($import:tt)::+; $($rest:tt)+
+        @parse
+        import = [$(use $($import:tt)::+;)*];
+        doc = [$($doc:meta,)*];
+        use $($new_import:tt)::+; $($rest:tt)+
     ) => {
-        table!($($rest)+ use $($import)::+;);
+        table! {
+            @parse
+            import = [$(use $($import)::+;)* use $($new_import)::+;];
+            doc = [$($doc,)*];
+            $($rest)+
+        }
     };
-
+    // Put doc annotation into the doc field
+    (
+        @parse
+        import = [$(use $($import:tt)::+;)*];
+        doc = [$($doc:meta,)*];
+        #[$new_doc:meta] $($rest:tt)+
+    ) => {
+        table! {
+            @parse
+            import = [$(use $($import)::+;)*];
+            doc = [$($doc,)*$new_doc,];
+            $($rest)+
+        }
+    };
+    // Forward to next parsing step
+    (
+        @parse
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($doc:meta,)*];
+        $($rest:tt)+
+    ) => {
+        table! {
+            @parse_body
+            import = [$(use $($import)::+;)*];
+            doc = [$($doc,)*];
+            $($rest)+
+        }
+    };
+    // Forward to next parsing step and add default import (diesel::types::*)
+    (
+        @parse
+        import = [];
+        doc = [$($doc:meta,)*];
+        $($rest:tt)+
+    ) => {
+        table! {
+            @parse_body
+            import = [use $crate::types::*;];
+            doc = [$($doc,)*];
+            $($rest)+
+        }
+    };
     // Add the primary key if it's not present
     (
+        @parse_body
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($doc:meta,)*];
         $($table_name:ident).+ {$($body:tt)*}
-        $($imports:tt)*
     ) => {
         table! {
-            $($table_name).+ (id) {$($body)*} $($imports)*
+            @parse_body
+            import = [$(use $($import)::+;)+];
+            doc = [$($doc,)*];
+            $($table_name).+ (id) {$($body)*}
         }
     };
-
     // Add the schema name if it's not present
     (
+        @parse_body
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($doc:meta,)*];
         $name:ident $(($($pk:ident),+))* {$($body:tt)*}
-        $($imports:tt)*
     ) => {
         table! {
-            public . $name $(($($pk),+))* {$($body)*} $($imports)*
+            @parse_body
+            import = [$(use $($import)::+;)+];
+            doc = [$($doc,)*];
+            public . $name $(($($pk),+))* {$($body)*}
         }
     };
-
-    // Import `diesel::types::*` if no imports were given
-    (
-        $($table_name:ident).+ $(($($pk:ident),+))* {$($body:tt)*}
-    ) => {
-        table! {
-            $($table_name).+ $(($($pk),+))* {$($body)*}
-            use $crate::types::*;
-        }
-    };
-
     // Terminal with single-column pk
     (
+        @parse_body
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($doc:meta,)*];
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
-        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk) $body $($imports)+
+            $schema_name . $name ($pk) $body
+            import = [$(use $($import)::+;)+];
+            doc = [$($doc)*];
         }
     };
 
     // Terminal with composite pk (add a trailing comma)
     (
+        @parse_body
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($doc:meta,)*];
         $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
-        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk, $($composite_pk,)+) $body $($imports)+
+            $schema_name . $name ($pk, $($composite_pk,)+) $body
+            import = [$(use $($import)::+;)+];
+            doc = [$($doc)*];
         }
     };
+    // Terminal with invalid syntax
+    (
+        @parse_body
+        import = [$(use $($import:tt)::+;)*];
+        doc = [$($doc:meta,)*];
+        $($rest:tt)*
+    ) => {
+        const ERROR:i32 = "invalid table! syntax";
+    };
+    // Put a parse annotation and empty fields for imports and documentation on top
+    // This is the entry point for parsing the table dsl
+    ($($rest:tt)+) => {
+        table! {
+            @parse
+            import = [];
+            doc = [];
+            $($rest)+
+        }
+    }
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! table_body {
     (
-        $schema_name:ident . $name:ident ($pk:ident) {
-            $($column_name:ident -> $Type:ty,)+
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:meta)*],)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:meta)*],
+        #[$new_doc:meta] $new_column_name:ident -> $new_type:ty,
+        $($body:tt)*
+    )=> {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
+                       $new_column_name -> $new_type; doc = [$new_doc],],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            $($body)*
         }
-        $(use $($import:tt)::+;)+
+    };
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:meta)*],)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:meta)*],
+        $new_column_name:ident -> $new_type:ty,
+        $($body:tt)*
+    )=> {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
+                       $new_column_name -> $new_type; doc = [],],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            $($body)*
+        }
+    };
+    (
+        $schema_name:ident . $name:ident ($pk:ident) {
+            $($body:tt)+
+        }
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($table_doc:meta)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
-            columns = [$($column_name -> $Type,)+],
+            columns = [],
             imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            $($body)+
         }
     };
-
     (
         $schema_name:ident . $name:ident ($($pk:ident,)+) {
-            $($column_name:ident -> $Type:ty,)+
+            $($body:tt)+
         }
-        $(use $($import:tt)::+;)+
+        import = [$(use $($import:tt)::+;)+];
+        doc = [$($table_doc:meta)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
-            columns = [$($column_name -> $Type,)+],
+            columns = [],
             imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            $($body)+
         }
     };
-
     (
         schema_name = $schema_name:ident,
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $column_ty:ty,)+],
+        columns = [$($column_name:ident -> $column_ty:ty; doc = [$($doc:meta)*] ,)+],
         imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:meta)*],
     ) => {
+        $(
+            #[$table_doc]
+        )*
         pub mod $table_name {
             #![allow(dead_code)]
             use $crate::{
@@ -458,7 +609,7 @@ macro_rules! table_body {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column!(table, $column_name -> $column_ty);)+
+                $(__diesel_column!(table, $column_name -> $column_ty, $($doc),*);)+
             }
         }
     }
