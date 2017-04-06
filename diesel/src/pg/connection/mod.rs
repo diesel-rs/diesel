@@ -96,12 +96,16 @@ impl Connection for PgConnection {
         &self.transaction_manager
     }
 
+    #[cfg(not(feature = "skip-timestamp-helpers"))]
     #[doc(hidden)]
     fn setup_helper_functions(&self) {
         self.batch_execute(
             include_str!("setup/timestamp_helpers.sql")
         ).expect("Error creating timestamp helper functions for Pg");
     }
+
+    #[cfg(feature = "skip-timestamp-helpers")]
+    fn setup_helper_functions(&self) { }
 }
 
 impl PgConnection {
