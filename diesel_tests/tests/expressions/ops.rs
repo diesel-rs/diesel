@@ -93,6 +93,77 @@ fn dividing_column() {
 }
 
 #[test]
+fn test_adding_nullables() {
+    use schema::nullable_table::dsl::*;
+    let connection = connection_with_nullable_table_data();
+
+    let expected_data = vec![None, None, Some(2), Some(3), Some(2)];
+    let data = nullable_table.select(value + Some(1)).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data: Vec<Option<i32>> = vec![None; 5];
+    let data = nullable_table.select(value + None as Option<i32>).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![None, None, Some(2), Some(4), Some(2)];
+    let data = nullable_table.select(value + value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn test_substracting_nullables() {
+    use schema::nullable_table::dsl::*;
+    let connection = connection_with_nullable_table_data();
+
+    let expected_data = vec![None, None, Some(0), Some(1), Some(0)];
+    let data = nullable_table.select(value - Some(1)).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data: Vec<Option<i32>> = vec![None; 5];
+    let data = nullable_table.select(value - None as Option<i32>).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![None, None, Some(0), Some(0), Some(0)];
+    let data = nullable_table.select(value - value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn test_multiplying_nullables() {
+    use schema::nullable_table::dsl::*;
+    let connection = connection_with_nullable_table_data();
+
+    let expected_data = vec![None, None, Some(3), Some(6), Some(3)];
+    let data = nullable_table.select(value * Some(3)).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data: Vec<Option<i32>> = vec![None; 5];
+    let data = nullable_table.select(value * None as Option<i32>).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![None, None, Some(1), Some(4), Some(1)];
+    let data = nullable_table.select(value * value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn test_dividing_nullables() {
+    use schema::nullable_table::dsl::*;
+    let connection = connection_with_nullable_table_data();
+
+    let expected_data = vec![None, None, Some(0), Some(1), Some(0)];
+    let data = nullable_table.select(value / Some(2)).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data: Vec<Option<i32>> = vec![None; 5];
+    let data = nullable_table.select(value / None as Option<i32>).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![None, None, Some(1), Some(1), Some(1)];
+    let data = nullable_table.select(value / value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+#[test]
 fn mix_and_match_all_numeric_ops() {
     use schema::users::dsl::*;
 
