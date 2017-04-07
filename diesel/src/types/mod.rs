@@ -132,8 +132,22 @@ use std::io::Write;
 
 /// The numeric SQL type.
 ///
-/// This type does not currently have any corresponding Rust types. On SQLite,
-/// [`Double`](struct.Double.html) should be used instead.
+/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+///
+/// - [`bigdecimal::BigDecimal`][bigdecimal] (currenty PostgreSQL only, requires the `numeric`
+/// feature, which depends on the
+/// [`bigdecimal`][bigdecimal] crate)
+///
+/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+///
+/// - [`bigdecimal::BigDecimal`][BigDecimal] (currenty PostgreSQL only, requires the `numeric`
+/// feature, which depends on the
+/// [`bigdecimal`][bigdecimal] crate)
+///
+/// On SQLite, [`Double`](struct.Double.html) should be used instead.
+///
+/// [BigDecimal]: /bigdecimal/struct.BigDecimal.html
+/// [bigdecimal]: /bigdecimal/index.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
 
 #[cfg(not(feature="postgres"))]
