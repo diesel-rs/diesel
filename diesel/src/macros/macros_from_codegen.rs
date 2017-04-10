@@ -73,17 +73,35 @@ macro_rules! infer_table_from_schema {
 /// This macro can only be used in combination with the `diesel_codegen` or
 /// `diesel_codegen_syntex` crates. It will not work on its own.
 ///
-/// # Example
+/// # Example:
 ///
 /// ```rust
-/// embed_migrations!();
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// # table! {
+/// #   users {
+/// #       id -> Integer,
+/// #       name -> VarChar,
+/// #   }
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # embed_migrations!("../migrations/postgresql");
+/// # #[cfg(feature = "mysql")]
+/// # embed_migrations!("../migrations/mysql");
+/// # #[cfg(feature = "sqlite")]
+/// embed_migrations!("../migrations/sqlite");
 ///
-/// // This will run the necessary migrations.
-/// embedded_migrations::run(&connection);
+/// fn main() {
+///     let connection = establish_connection();
 ///
-/// // By default the output is thrown out. If you want to redirect it to stdout, you should
-/// // call embedded_migrations::run_with_output.
-/// embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+///     // This will run the necessary migrations.
+///     embedded_migrations::run(&connection);
+///
+///     // By default the output is thrown out. If you want to redirect it to stdout, you
+///     // should call embedded_migrations::run_with_output.
+///     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+/// }
 /// ```
 macro_rules! embed_migrations {
     () => {
