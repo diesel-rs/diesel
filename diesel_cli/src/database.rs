@@ -285,25 +285,57 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature="postgres", feature="mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    // the database name will always start with the 3rd forward slash and end with
-    // the end of the string (postgres only: or the next '?').
+    // This method accepts a valid MySQL or Postgres connection string returns the
+    // name of the database and a new connection string to the database specified
+    // by the default_database argument. If the database name is not specified
+    // in the connection string, then we return an empty string.
+    //
+    // Connection string formats
+    //         mysql://[user[:password]@]host/database_name
+    //    postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
+    //
+    // By inspection we see that database name always directly follows the third '/'.
+    // The database name is terminated either by the end of the string, or in the case
+    // with Postgres only, by the next occurance of '?'.
+    // We can sacrfice correctness by prohibiting MySQL database names containing a
+    // '?' character and use the same parsing rule for both formats.
 
     let mut split: Vec<&str> = database_url.splitn(4, '/').collect();
+    // These are the only possible results
+    //   MySQL: ["mysql:", "", "[user[:password]@]host"]
+    //   MySQL: ["mysql:", "", "[user[:password]@]host", "database_name"]
+    //   Postgres: ["postgresql:", "", "[user[:password]@][netloc][:port]"]
+    //   Postgres: ["postgresql:", "", "[user[:password]@][netloc][:port]", "dbname[?param1=value1&...]"]
+
     if split.len() == 4 {
+        // If there are four elements, then by definition the tail must contain the database
+        // name for both Postgres or MySQL. Now perform the hacky step of assuming that the
+        // first '?' character appearing in the tail terminates the database name.
         let tail = split.pop().unwrap();
         let mut tail_searcher = tail.splitn(2, '?');
+        // we will always return at least one element from the split iterator. This is the
+        // database name even if the database name is an empty string
         let database = match tail_searcher.next() {
             Some(dbname) => dbname,
             None => panic!("String::splitn(2, '/') returned zero fragments"),
         };
+        // If this is a postgres connection string we need to separate the parameters slug
+        // from the database name.
         let new_url = match tail_searcher.next() {
+            // Now that we have destructured the connection string completely, we reassemble
+            // a connection string for the default_database.
             Some(parameters) => format!("{}/{}?{}", split.join("/"), default_database, parameters),
             None => format!("{}/{}", split.join("/"), default_database),
         };
         (database.to_owned(), new_url)
     } else {
-        let new_url = format!("{}/{}", split.join("/"), default_database);
-        ("".to_owned(), new_url)
+        // There were only 3 elements so the user failed to provide a database name.
+        // We return an empty string for the database name so the caller can handle
+        // this logic error. We can still generate a valid connection string for the
+        // default_database though, so we append the default_database onto the end of
+        // the connection string
+        split.push(default_database);
+        ("".to_owned(), split.join("/"))
     }
 
 }
@@ -321,21 +353,39 @@ mod tests {
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
         // format: (original_string, dbname, expected_changed_string)
-        let test_cases: [(&'static str, &'static str, &'static str); 11] =
-            [ ("postgresql://", "", "postgresql:///postgres")
-            , ("postgresql://localhost", "" ,"postgresql://localhost/postgres")
-            , ("postgresql://localhost:5433", "", "postgresql://localhost:5433/postgres")
-            , ("postgresql://localhost/mydb", "mydb", "postgresql://localhost/postgres")
-            , ("postgresql://user@localhost", "","postgresql://user@localhost/postgres")
-            , ("postgresql://user:secret@localhost", "", "postgresql://user:secret@localhost/postgres")
-            , ("postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp", "otherdb", "postgresql://other@localhost/postgres?connect_timeout=10&application_name=myapp" )
-            , ("postgresql:///mydb?host=localhost&port=5433", "mydb", "postgresql:///postgres?host=localhost&port=5433")
-            , ("postgresql://[2001:db8::1234]/database", "database", "postgresql://[2001:db8::1234]/postgres")
-            , ("postgresql:///dbname?host=/var/lib/postgresql", "dbname", "postgresql:///postgres?host=/var/lib/postgresql")
-            , ("postgresql://%2Fvar%2Flib%2Fpostgresql/dbname", "dbname", "postgresql://%2Fvar%2Flib%2Fpostgresql/postgres")
-            ];
-        for &(database_url, database, postgres_url) in test_cases.iter() {
+        let test_cases: [(&'static str, &'static str, &'static str); 11] = [
+            ("postgresql://", "", "postgresql:///postgres"),
+            ("postgresql://localhost", "" ,"postgresql://localhost/postgres"),
+            ("postgresql://localhost:5433", "", "postgresql://localhost:5433/postgres"),
+            ("postgresql://localhost/mydb", "mydb", "postgresql://localhost/postgres"),
+            ("postgresql://user@localhost", "","postgresql://user@localhost/postgres"),
+            ("postgresql://user:secret@localhost", "", "postgresql://user:secret@localhost/postgres"),
+            ("postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp", "otherdb", "postgresql://other@localhost/postgres?connect_timeout=10&application_name=myapp" ),
+            ("postgresql:///mydb?host=localhost&port=5433", "mydb", "postgresql:///postgres?host=localhost&port=5433"),
+            ("postgresql://[2001:db8::1234]/database", "database", "postgresql://[2001:db8::1234]/postgres"),
+            ("postgresql:///dbname?host=/var/lib/postgresql", "dbname", "postgresql:///postgres?host=/var/lib/postgresql"),
+            ("postgresql://%2Fvar%2Flib%2Fpostgresql/dbname", "dbname", "postgresql://%2Fvar%2Flib%2Fpostgresql/postgres"),
+        ];
+        for &(database_url, database, postgres_url) in &test_cases {
             assert_eq!((database.to_owned(), postgres_url.to_owned()), change_database_of_url(database_url, "postgres"));
+        }
+    }
+
+    #[test]
+    fn split_mysql_connection_string_returns_mysql_url_and_database() {
+        // format: (original_string, dbname, expected_changed_string)
+        let test_cases: [(&'static str, &'static str, &'static str); 8] = [
+            ("mysql://", "", "mysql:///information_schema"),
+            ("mysql://localhost", "" ,"mysql://localhost/information_schema"),
+            ("mysql://localhost:5433", "", "mysql://localhost:5433/information_schema"),
+            ("mysql://localhost/mydb", "mydb", "mysql://localhost/information_schema"),
+            ("mysql://user@localhost", "","mysql://user@localhost/information_schema"),
+            ("mysql://user:secret@localhost", "", "mysql://user:secret@localhost/information_schema"),
+            ("mysql://other@localhost/otherdb", "otherdb", "mysql://other@localhost/information_schema"),
+            ("mysql://other@localhost:1122/otherdb", "otherdb", "mysql://other@localhost:1122/information_schema"),
+        ];
+        for &(database_url, database, mysql_url) in &test_cases {
+            assert_eq!((database.to_owned(), mysql_url.to_owned()), change_database_of_url(database_url, "information_schema"));
         }
     }
 }
