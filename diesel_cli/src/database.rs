@@ -287,8 +287,10 @@ pub fn database_url(matches: &ArgMatches) -> String {
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
     // This method accepts a valid MySQL or Postgres connection string returns the
     // name of the database and a new connection string to the database specified
-    // by the default_database argument. If the database name is not specified
-    // in the connection string, then we return an empty string.
+    // by the default_database argument. If the database name is not specified in
+    // the connection string then we default to an empty string. NOTE: This function
+    // does not validate connection strings (look at the signature, no Option or
+    // Result is there).
     //
     // Connection string formats
     //         mysql://[user[:password]@]host/database_name
