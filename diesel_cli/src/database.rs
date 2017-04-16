@@ -285,10 +285,27 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature="postgres", feature="mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    let mut split: Vec<&str> = database_url.split('/').collect();
-    let database = split.pop().unwrap();
-    let new_url = format!("{}/{}", split.join("/"), default_database);
-    (database.to_owned(), new_url)
+    // the database name will always start with the 3rd forward slash and end with
+    // the end of the string (postgres only: or the next '?').
+
+    let mut split: Vec<&str> = database_url.splitn(4, '/').collect();
+    if split.len() == 4 {
+        let tail = split.pop().unwrap();
+        let mut tail_searcher = tail.splitn(2, '?');
+        let database = match tail_searcher.next() {
+            Some(dbname) => dbname,
+            None => panic!("String::splitn(2, '/') returned zero fragments"),
+        };
+        let new_url = match tail_searcher.next() {
+            Some(parameters) => format!("{}/{}?{}", split.join("/"), default_database, parameters),
+            None => format!("{}/{}", split.join("/"), default_database),
+        };
+        (database.to_owned(), new_url)
+    } else {
+        let new_url = format!("{}/{}", split.join("/"), default_database);
+        ("".to_string(), new_url)
+    }
+
 }
 
 #[cfg_attr(feature="clippy", allow(needless_pass_by_value))]
@@ -303,19 +320,22 @@ mod tests {
 
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
-    }
-
-    #[test]
-    fn split_pg_connection_string_handles_user_and_password() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
+        // format: (original_string, dbname, expected_changed_string)
+        let test_cases: [(&'static str, &'static str, &'static str); 11] =
+            [ ("postgresql://", "", "postgresql:///postgres")
+            , ("postgresql://localhost", "" ,"postgresql://localhost/postgres")
+            , ("postgresql://localhost:5433", "", "postgresql://localhost:5433/postgres")
+            , ("postgresql://localhost/mydb", "mydb", "postgresql://localhost/postgres")
+            , ("postgresql://user@localhost", "","postgresql://user@localhost/postgres")
+            , ("postgresql://user:secret@localhost", "", "postgresql://user:secret@localhost/postgres")
+            , ("postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp", "otherdb", "postgresql://other@localhost/postgres?connect_timeout=10&application_name=myapp" )
+            , ("postgresql:///mydb?host=localhost&port=5433", "mydb", "postgresql:///postgres?host=localhost&port=5433")
+            , ("postgresql://[2001:db8::1234]/database", "database", "postgresql://[2001:db8::1234]/postgres")
+            , ("postgresql:///dbname?host=/var/lib/postgresql", "dbname", "postgresql:///postgres?host=/var/lib/postgresql")
+            , ("postgresql://%2Fvar%2Flib%2Fpostgresql/dbname", "dbname", "postgresql://%2Fvar%2Flib%2Fpostgresql/postgres")
+            ];
+        for &(database_url, database, postgres_url) in test_cases.iter() {
+            assert_eq!((database.to_owned(), postgres_url.to_owned()), change_database_of_url(database_url, "postgres"));
+        }
     }
 }
