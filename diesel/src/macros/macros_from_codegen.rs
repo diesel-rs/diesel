@@ -73,7 +73,7 @@ macro_rules! infer_table_from_schema {
 /// This macro can only be used in combination with the `diesel_codegen` or
 /// `diesel_codegen_syntex` crates. It will not work on its own.
 ///
-/// # Example:
+/// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
