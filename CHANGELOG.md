@@ -4,6 +4,12 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
+
 ## [0.12.0] - 2016-03-16
 
 ### Added
