@@ -10,6 +10,43 @@ use types::HasSqlType;
 /// Available for when you truly cannot represent something using the expression
 /// DSL. You will need to provide the type of the expression, in addition to the
 /// SQL. The compiler will be unable to verify the correctness of this type.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
+/// use diesel::expression::sql;
+/// use diesel::types::{Bool, Integer, Text};
+/// # include!("src/doctest_setup.rs");
+/// # table! {
+/// #   users {
+/// #       id -> Integer,
+/// #       name -> VarChar,
+/// #   }
+/// # }
+///
+/// #[derive(PartialEq, Debug, Queryable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     let connection = establish_connection();
+/// let query = sql::<Bool>("INSERT INTO users(name) VALUES('Ruby')");
+/// query.execute(&connection).expect("Can't insert in users");
+///
+/// let query = sql::<(Integer, Text)>("SELECT id, name FROM users WHERE name='Ruby';");
+/// let users = query.load::<User>(&connection).expect("Can't query users");
+/// assert_eq!(users, vec![User{id: 3, name: "Ruby".to_owned()}]);
+///
+/// let query = sql::<(Integer, Text)>("SELECT id, name FROM users WHERE name='Ruby';");
+/// let query = users::table.filter(sql::<Bool>("name='Ruby'"));
+/// let users = query.load::<User>(&connection).expect("Can't query users");
+/// assert_eq!(users, vec![User{id: 3, name: "Ruby".to_owned()}]);
+/// # }
+/// ```
 pub struct SqlLiteral<ST> {
     sql: String,
     _marker: PhantomData<ST>,
