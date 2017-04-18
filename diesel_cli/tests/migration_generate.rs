@@ -1,6 +1,8 @@
 use regex::Regex;
+use chrono::prelude::*;
 
 use support::project;
+use diesel::migrations::TIMESTAMP_FORMAT;
 
 #[test]
 fn migration_generate_creates_a_migration_with_the_proper_name() {
@@ -12,12 +14,23 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
         .arg("hello")
         .run();
 
+    // check overall output
     let expected_stdout = Regex::new("\
-Creating migrations.\\d{14}_hello.up.sql
-Creating migrations.\\d{14}_hello.down.sql\
+Creating migrations.\\d*_hello.up.sql
+Creating migrations.\\d*_hello.down.sql\
         ").unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
+
+    // check timestamps are properly formatted
+    let captured_timestamps = Regex::new(r"(?P<stamp>\d*)_hello").unwrap();
+    let mut stamps_found = 0;
+    for caps in captured_timestamps.captures_iter(result.stdout()) {
+        let timestamp = UTC.datetime_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
+        assert!(timestamp.is_ok(), "Found invalid timestamp format: {:?}", &caps["stamp"]);
+        stamps_found += 1;
+    }
+    assert_eq!(stamps_found, 2);
 
     let migrations = p.migrations();
     assert_eq!(1, migrations.len());
