@@ -43,6 +43,10 @@
 //!
 //! [Identifiable]: trait.Identifiable.html
 //!
+//! If the name of your foreign key doesn't follow the convention `tablename_id`, you can specify a
+//! custom one to `#[has_many]` and `#[belongs_to]` by adding a `foreign_key` argument to the
+//! attribute like so `#[has_many, foreign_key="mykey"]`.
+//!
 //! `#[has_many]` actually has no behavior on its own. It only enables joining between the two
 //! tables. If you are only writing `children.inner_join(parents)` or
 //! `Child::belonging_to(&parents)`, you only need to define the `#[belongs_to]` side.
