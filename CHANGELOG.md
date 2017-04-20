@@ -16,7 +16,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Addded support for unsigned types in MySQL.
 
 
-## [0.12.0] - 2016-03-16
+## [0.12.0] - 2017-03-16
 
 ### Added
 
