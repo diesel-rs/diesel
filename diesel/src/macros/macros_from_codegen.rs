@@ -106,6 +106,7 @@ macro_rules! infer_table_from_schema {
 /// ```
 macro_rules! embed_migrations {
     () => {
+        #[allow(dead_code)]
         mod embedded_migrations {
             #[derive(EmbedMigrations)]
             struct _Dummy;
@@ -113,6 +114,7 @@ macro_rules! embed_migrations {
     };
 
     ($migrations_path: expr) => {
+        #[allow(dead_code)]
         mod embedded_migrations {
             #[derive(EmbedMigrations)]
             #[embed_migrations_options(migrations_path=$migrations_path)]
