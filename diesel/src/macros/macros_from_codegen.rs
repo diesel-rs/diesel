@@ -88,9 +88,9 @@ macro_rules! infer_table_from_schema {
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # embed_migrations!("../migrations/postgresql");
-/// # #[cfg(feature = "mysql")]
+/// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
 /// # embed_migrations!("../migrations/mysql");
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
 /// embed_migrations!("../migrations/sqlite");
 ///
 /// fn main() {
