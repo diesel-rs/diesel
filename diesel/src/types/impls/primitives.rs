@@ -9,6 +9,9 @@ primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)
 primitive_impls!(SmallInt -> (i16, pg: (21, 1005), sqlite: (SmallInt), mysql: (Short)));
 primitive_impls!(Integer -> (i32, pg: (23, 1007), sqlite: (Integer), mysql: (Long)));
 primitive_impls!(BigInt -> (i64, pg: (20, 1016), sqlite: (Long), mysql: (LongLong)));
+primitive_impls!(UInt2 -> (u16, mysql: (Short)));
+primitive_impls!(UInt4 -> (u32, mysql: (Long)));
+primitive_impls!(UInt8 -> (u64, mysql: (LongLong)));
 
 primitive_impls!(Float -> (f32, pg: (700, 1021), sqlite: (Float), mysql: (Float)));
 primitive_impls!(Double -> (f64, pg: (701, 1022), sqlite: (Double), mysql: (Double)));
