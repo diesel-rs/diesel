@@ -30,9 +30,19 @@ macro_rules! numeric_type {
             type Output = super::$tpe;
         }
 
+        impl Add for super::Nullable<super::$tpe> {
+            type Rhs = super::Nullable<super::$tpe>;
+            type Output = super::Nullable<super::$tpe>;
+        }
+
         impl Sub for super::$tpe {
             type Rhs = super::$tpe;
             type Output = super::$tpe;
+        }
+
+        impl Sub for super::Nullable<super::$tpe> {
+            type Rhs = super::Nullable<super::$tpe>;
+            type Output = super::Nullable<super::$tpe>;
         }
 
         impl Mul for super::$tpe {
@@ -40,9 +50,19 @@ macro_rules! numeric_type {
             type Output = super::$tpe;
         }
 
+        impl Mul for super::Nullable<super::$tpe> {
+            type Rhs = super::Nullable<super::$tpe>;
+            type Output = super::Nullable<super::$tpe>;
+        }
+
         impl Div for super::$tpe {
             type Rhs = super::$tpe;
             type Output = super::$tpe;
+        }
+
+        impl Div for super::Nullable<super::$tpe> {
+            type Rhs = super::Nullable<super::$tpe>;
+            type Output = super::Nullable<super::$tpe>;
         }
         )*
     }
