@@ -6,7 +6,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+
+### Added
+
+* Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
+
 * Added support for adding two nullable columns.
+
 
 ## [0.12.0] - 2016-03-16
 
