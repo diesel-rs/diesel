@@ -13,6 +13,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for adding two nullable columns.
 
+* Addded support for unsigned types in MySQL.
+
 
 ## [0.12.0] - 2016-03-16
 
