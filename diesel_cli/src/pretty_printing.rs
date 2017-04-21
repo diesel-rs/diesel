@@ -18,6 +18,7 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
     let mut indent = String::new();
     let mut skip_space = false;
     let mut last_char = ' ';
+    let mut inside_parenthesis = false;
 
     for c in schema.chars() {
         // The `quote!` macro inserts whitespaces at some strange location,
@@ -63,12 +64,25 @@ pub fn format_schema(schema: &str) -> Result<String, FmtError> {
             write!(out, "\n{}", indent)?;
         }
 
+        // Keep track of our parenthesis level
+        match c {
+            '(' => inside_parenthesis = true,
+            ')' => inside_parenthesis = false,
+             _ => {}
+        }
+
         write!(out, "{}", c)?;
 
         // We need to insert newlines in some places and adjust the indent.
         // Also, we need to remember if we could skip the next whitespace.
         match c {
-            ',' | '}' => {
+            ',' => {
+                if !inside_parenthesis {
+                    skip_space = true;
+                    write!(out, "\n{}", indent)?;
+                }
+            },
+            '}' => {
                 skip_space = true;
                 write!(out, "\n{}", indent)?;
             }
@@ -161,7 +175,9 @@ r"table! {
         username -> ::diesel::types::Varchar,
         password -> ::diesel::types::Varchar,
     }
-}"
-
+}";
+        test_no_newline_after_comma_inside_parenthetis:
+            "(a, b)" =>
+            "(a, b)"
     }
 }

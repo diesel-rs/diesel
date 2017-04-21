@@ -181,3 +181,38 @@ table! {
 ");
     }
 }
+
+#[test]
+fn run_infer_schema_compound_primary_key() {
+    let p = project("print_schema_compound_primary_key").build();
+    let db = database(&p.database_url());
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    db.execute("CREATE TABLE asd (id INTEGER, qsd INTEGER, PRIMARY KEY (id, qsd));");
+
+    let result = p.command("print-schema").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    if cfg!(feature = "sqlite") {
+        assert_eq!(result.stdout(),
+r"table! {
+    asd (id, qsd) {
+        id -> Nullable<Integer>,
+        qsd -> Nullable<Integer>,
+    }
+}
+");
+    } else if cfg!(feature = "postgtres") {
+        assert_eq!(result.stdout(),
+r"table! {
+    asd (id, qsd) {
+        id -> Int4,
+        qsd -> Int4,
+    }
+}
+");
+    }
+}
