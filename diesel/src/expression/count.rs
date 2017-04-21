@@ -1,7 +1,7 @@
 use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
-use super::{Expression, SelectableExpression};
+use super::Expression;
 use types::BigInt;
 
 /// Creates a SQL `COUNT` expression
@@ -9,6 +9,27 @@ use types::BigInt;
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically as `diesel::expression::count`, or glob import
 /// `diesel::expression::dsl::*`
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// # use diesel::expression::dsl::*;
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::animals::dsl::*;
+/// #     let connection = establish_connection();
+/// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
+/// # }
+/// ```
 pub fn count<T: Expression>(t: T) -> Count<T> {
     Count {
         target: t,
@@ -25,7 +46,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// it specifically as `diesel::expression::count_star`, or glob import
 /// `diesel::expression::dsl::*`
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -78,10 +99,7 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
 }
 
 impl_query_id!(Count<T>);
-
-impl<T: Expression, QS> SelectableExpression<QS> for Count<T> {
-    type SqlTypeForSelect = BigInt;
-}
+impl_selectable_expression!(Count<T>);
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -106,8 +124,5 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
     }
 }
 
-impl<QS> SelectableExpression<QS> for CountStar {
-    type SqlTypeForSelect = BigInt;
-}
-
 impl_query_id!(CountStar);
+impl_selectable_expression!(CountStar);

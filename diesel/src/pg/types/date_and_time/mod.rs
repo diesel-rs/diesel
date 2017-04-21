@@ -113,8 +113,6 @@ impl ToSql<types::Timestamp, Pg> for PgTimestamp {
     }
 }
 
-debug_to_sql!(types::Timestamp, PgTimestamp);
-
 impl FromSql<types::Timestamp, Pg> for PgTimestamp {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes)
@@ -128,8 +126,6 @@ impl ToSql<types::Timestamptz, Pg> for PgTimestamp {
     }
 }
 
-debug_to_sql!(types::Timestamptz, PgTimestamp);
-
 impl FromSql<types::Timestamptz, Pg> for PgTimestamp {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         FromSql::<types::Timestamp, Pg>::from_sql(bytes)
@@ -141,8 +137,6 @@ impl ToSql<types::Date, Pg> for PgDate {
         ToSql::<types::Integer, Pg>::to_sql(&self.0, out)
     }
 }
-
-debug_to_sql!(types::Date, PgDate);
 
 impl FromSql<types::Date, Pg> for PgDate {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
@@ -156,8 +150,6 @@ impl ToSql<types::Time, Pg> for PgTime {
         ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
-
-debug_to_sql!(types::Time, PgTime);
 
 impl FromSql<types::Time, Pg> for PgTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
@@ -174,8 +166,6 @@ impl ToSql<types::Interval, Pg> for PgInterval {
         Ok(IsNull::No)
     }
 }
-
-debug_to_sql!(types::Interval, PgInterval);
 
 impl FromSql<types::Interval, Pg> for PgInterval {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {

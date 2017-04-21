@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 use types::Bool;
@@ -49,12 +49,6 @@ impl<T> Expression for Exists<T> where
     type SqlType = Bool;
 }
 
-impl<T, QS> SelectableExpression<QS> for Exists<T> where
-    Exists<T>: Expression,
-{
-    type SqlTypeForSelect = Bool;
-}
-
 impl<T> NonAggregate for Exists<T> {
 }
 
@@ -80,3 +74,4 @@ impl<T, DB> QueryFragment<DB> for Exists<T> where
 }
 
 impl_query_id!(Exists<T>);
+impl_selectable_expression!(Exists<T>);

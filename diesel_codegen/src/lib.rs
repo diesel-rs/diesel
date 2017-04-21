@@ -2,7 +2,7 @@
 #![deny(warnings, missing_copy_implementations)]
 
 // Clippy lints
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
+#![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file="../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(
@@ -66,7 +66,7 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
 }
 
-#[proc_macro_derive(AsChangeset, attributes(table_name, column_name, changeset_options))]
+#[proc_macro_derive(AsChangeset, attributes(table_name, primary_key, column_name, changeset_options))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }

@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 use types::IntoNullable;
@@ -37,14 +37,12 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
     }
 }
 
-/// This impl relies on the fact that the only time `T::SqlType` will differ
-/// from `T::SqlTypeForSelect` is to make the right side of a left join become
-/// nullable.
-impl<T, QS> SelectableExpression<QS> for Nullable<T> where
-    T: SelectableExpression<QS>,
+/// Nullable can be used in where clauses everywhere, but can only be used in
+/// select clauses for outer joins.
+impl<T, QS> AppearsOnTable<QS> for Nullable<T> where
+    T: AppearsOnTable<QS>,
     Nullable<T>: Expression,
 {
-    type SqlTypeForSelect = Self::SqlType;
 }
 
 impl<T: QueryId> QueryId for Nullable<T> {

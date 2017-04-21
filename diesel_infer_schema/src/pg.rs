@@ -14,6 +14,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
         is_array: is_array,
         is_nullable: attr.nullable,
+        is_unsigned: false,
     })
 }
 

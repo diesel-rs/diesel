@@ -1,3 +1,5 @@
+extern crate url;
+
 use support::{database, project};
 
 #[test]
@@ -55,7 +57,13 @@ fn reset_handles_postgres_urls_with_username_and_password() {
     db.execute("DROP ROLE IF EXISTS foo");
     db.execute("CREATE ROLE foo WITH LOGIN SUPERUSER PASSWORD 'password'");
 
-    let database_url = format!("postgres://foo:password@localhost/diesel_{}", p.name);
+    let database_url = {
+        let mut new_url = url::Url::parse(&p.database_url()).expect("invalid url");
+        new_url.set_username("foo").expect("could not set username");
+        new_url.set_password(Some("password")).expect("could not set password");
+        new_url.to_string()
+    };
+
     let result = p.command("database")
         .arg("reset")
         .env("DATABASE_URL", &database_url)

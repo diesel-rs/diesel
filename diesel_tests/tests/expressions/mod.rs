@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, connection_with_sean_and_tess_in_users_table};
+use schema::{connection, NewUser};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -29,23 +29,6 @@ fn test_count_star() {
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     assert!(debug_sql!(source).starts_with("SELECT COUNT(*) FROM"));
-}
-
-use diesel::types::VarChar;
-sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
-
-#[test]
-#[cfg(feature = "postgres")]
-fn test_with_expression_aliased() {
-    let n = lower("sean").aliased("n");
-    assert_eq!(
-        "SELECT `users`.`id` FROM `users`, lower(?) `n` WHERE `n` = ?",
-        debug_sql!(users.with(n).filter(n.eq("Sean")).select(id))
-    );
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let result = users.with(n).filter(n.eq("sean")).select(name)
-        .first::<String>(&connection);
-    assert_eq!(Ok("Sean".into()), result);
 }
 
 table! {
@@ -115,7 +98,9 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
 }
 
 impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {
-    type SqlTypeForSelect = T;
+}
+
+impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {
 }
 
 fn arbitrary<T>() -> Arbitrary<T> {

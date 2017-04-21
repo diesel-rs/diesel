@@ -18,8 +18,6 @@
 pub mod ops;
 
 #[doc(hidden)]
-pub mod aliased;
-#[doc(hidden)]
 pub mod array_comparison;
 #[doc(hidden)]
 pub mod bound;
@@ -104,30 +102,48 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
     }
 }
 
-/// Indicates that an expression can be selected from a source. The associated
-/// type is usually the same as `Expression::SqlType`, but is used to indicate
-/// that a column is always nullable when it appears on the right side of a left
-/// outer join, even if it wasn't nullable to begin with.
+/// Indicates that all elements of an expression are valid given a from clause.
+/// This is used to ensure that `users.filter(posts::id.eq(1))` fails to
+/// compile. This constraint is only used in places where the nullability of a
+/// SQL type doesn't matter (everything except `select` and `returning`). For
+/// places where nullability is important, `SelectableExpression` is used
+/// instead.
+pub trait AppearsOnTable<QS: ?Sized>: Expression {
+}
+
+impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T> where
+    T: AppearsOnTable<QS>,
+    Box<T>: Expression,
+{
+}
+
+impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
+    T: AppearsOnTable<QS>,
+    &'a T: Expression,
+{
+}
+
+/// Indicates that an expression can be selected from a source. Columns will
+/// implement this for their table. Certain special types, like `CountStar` and
+/// `Bound` will implement this for all sources. Most compound expressions will
+/// implement this if each of their parts implement it.
 ///
-/// Columns will implement this for their table. Certain special types, like
-/// `CountStar` and `Bound` will implement this for all sources. All other
-/// expressions will inherit this from their children.
-pub trait SelectableExpression<QS>: Expression {
-    type SqlTypeForSelect;
+/// Notably, columns will not implement this trait for the right side of a left
+/// join. To select a column or expression using a column from the right side of
+/// a left join, you must call `.nullable()` on it.
+pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {
 }
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T> where
     T: SelectableExpression<QS>,
-    Box<T>: Expression,
+    Box<T>: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
     T: SelectableExpression<QS>,
-    &'a T: Expression,
+    &'a T: AppearsOnTable<QS>,
 {
-    type SqlTypeForSelect = T::SqlTypeForSelect;
 }
 
 /// Marker trait to indicate that an expression does not include any aggregate
@@ -165,7 +181,7 @@ impl<QS, T, DB> BoxableExpression<QS, DB> for T where
 {
 }
 
-impl<QS, ST, STS, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST, SqlTypeForSelect=STS> {
+impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST> {
     type QueryId = ();
 
     fn has_static_query_id() -> bool {

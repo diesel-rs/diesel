@@ -36,4 +36,5 @@ fn main() {
     };
     let stmt = insert(&new_user).into(users).returning((name, bad::age));
     //~^ ERROR SelectableExpression
+    //~| ERROR AppearsOnTable
 }

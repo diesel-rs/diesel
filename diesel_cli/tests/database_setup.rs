@@ -63,3 +63,18 @@ fn database_setup_runs_migrations_if_no_schema_table() {
         "Unexpected stdout {}", result.stdout());
     assert!(db.table_exists("users"));
 }
+
+#[test]
+fn database_abbreviated_as_db() {
+    let p = project("database_abbreviated_as_db").folder("migrations").build();
+    let db = database(&p.database_url());
+
+    let result = p.command("db")
+        .arg("setup")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}", result.stdout());
+    assert!(db.exists());
+}

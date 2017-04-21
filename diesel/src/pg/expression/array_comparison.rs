@@ -1,5 +1,5 @@
 use backend::*;
-use expression::{AsExpression, Expression, SelectableExpression, NonAggregate};
+use expression::{AsExpression, Expression, NonAggregate};
 use pg::{Pg, PgQueryBuilder};
 use query_builder::*;
 use query_builder::debug::DebugQueryBuilder;
@@ -138,13 +138,7 @@ impl<Expr> QueryFragment<Debug> for Any<Expr> where
 }
 
 impl_query_id!(Any<Expr>);
-
-impl<Expr, QS> SelectableExpression<QS> for Any<Expr> where
-    Any<Expr>: Expression,
-    Expr: SelectableExpression<QS>,
-{
-    type SqlTypeForSelect = Self::SqlType;
-}
+impl_selectable_expression!(Any<Expr>);
 
 impl<Expr> NonAggregate for Any<Expr> where
     Expr: NonAggregate,
@@ -212,13 +206,7 @@ impl<Expr> QueryFragment<Debug> for All<Expr> where
 }
 
 impl_query_id!(All<Expr>);
-
-impl<Expr, QS> SelectableExpression<QS> for All<Expr> where
-    All<Expr>: Expression,
-    Expr: SelectableExpression<QS>,
-{
-    type SqlTypeForSelect = Self::SqlType;
-}
+impl_selectable_expression!(All<Expr>);
 
 impl<Expr> NonAggregate for All<Expr> where
     Expr: NonAggregate,

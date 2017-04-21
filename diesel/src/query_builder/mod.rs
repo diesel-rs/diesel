@@ -18,6 +18,7 @@ mod limit_clause;
 mod offset_clause;
 mod order_clause;
 mod returning_clause;
+mod select_clause;
 mod select_statement;
 pub mod where_clause;
 pub mod insert_statement;

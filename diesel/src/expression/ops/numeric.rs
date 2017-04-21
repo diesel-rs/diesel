@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 use types;
@@ -53,14 +53,7 @@ macro_rules! numeric_operation {
         }
 
         impl_query_id!($name<Lhs, Rhs>);
-
-        impl<Lhs, Rhs, QS> SelectableExpression<QS> for $name<Lhs, Rhs> where
-            Lhs: SelectableExpression<QS>,
-            Rhs: SelectableExpression<QS>,
-            $name<Lhs, Rhs>: Expression,
-        {
-            type SqlTypeForSelect = Self::SqlType;
-        }
+        impl_selectable_expression!($name<Lhs, Rhs>);
 
         impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs> where
             Lhs: NonAggregate,

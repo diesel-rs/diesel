@@ -76,8 +76,8 @@ pub mod helper_types {
     use super::expression::helper_types::Eq;
 
     /// Represents the return type of `.select(selection)`
-    pub type Select<Source, Selection, Type = <Selection as super::Expression>::SqlType> =
-        <Source as SelectDsl<Selection, Type>>::Output;
+    pub type Select<Source, Selection> =
+        <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> =
@@ -100,9 +100,6 @@ pub mod helper_types {
     /// Represents the return type of `.offset()`
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
-    /// Represents the return type of `.with(aliased_expr)`
-    pub type With<'a, Source, Other> = <Source as WithDsl<'a, Other>>::Output;
-
     use super::associations::HasTable;
     use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};
     /// Represents the return type of `update(lhs).set(rhs)`
@@ -115,9 +112,9 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    pub use associations::GroupedBy;
+    pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
-    pub use expression::{Expression, SelectableExpression, BoxableExpression};
+    pub use expression::{Expression, SelectableExpression, AppearsOnTable, BoxableExpression};
     pub use expression::expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;

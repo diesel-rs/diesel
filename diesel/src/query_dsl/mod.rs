@@ -15,7 +15,6 @@ pub mod filter_dsl;
 mod save_changes_dsl;
 mod offset_dsl;
 mod order_dsl;
-mod with_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::boxed_dsl::BoxedDsl;
@@ -29,5 +28,4 @@ pub use self::load_dsl::{LoadDsl, ExecuteDsl};
 pub use self::offset_dsl::OffsetDsl;
 pub use self::order_dsl::OrderDsl;
 pub use self::save_changes_dsl::SaveChangesDsl;
-pub use self::select_dsl::{SelectDsl, SelectSqlDsl};
-pub use self::with_dsl::{WithDsl, WithQuerySource};
+pub use self::select_dsl::SelectDsl;

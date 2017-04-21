@@ -113,6 +113,7 @@ impl Statement {
         // and are from the ANSI SQLSTATE standard
         match last_error_number {
             1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
+            1216 | 1217 | 1451 | 1452 | 1830 | 1834 => DatabaseErrorKind::ForeignKeyViolation,
             _ => DatabaseErrorKind::__Unknown,
         }
     }

@@ -20,5 +20,5 @@ table! {
 
 fn main() {
     users::table.into_boxed::<Pg>().order(posts::title.desc());
-    //~^ ERROR SelectableExpression
+    //~^ ERROR AppearsOnTable
 }

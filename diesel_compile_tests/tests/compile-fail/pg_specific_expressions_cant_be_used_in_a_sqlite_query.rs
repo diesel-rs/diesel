@@ -31,10 +31,6 @@ fn main() {
     users.select(id).filter(name.is_not_distinct_from("Sean"))
         .load::<i32>(&connection);
     //~^ ERROR E0277
-    let n = lower("sean").aliased("n");
-    users.with(n).select(id)
-        .load::<i32>(&connection);
-    //~^ ERROR E0277
     users.select(id).filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&connection);
     //~^ ERROR E0277

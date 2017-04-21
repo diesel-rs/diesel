@@ -26,6 +26,8 @@ pub fn build_cli() -> App<'static, 'static> {
         ).subcommand(SubCommand::with_name("redo")
             .about("Reverts and re-runs the latest migration. Useful \
                     for testing that a migration can in fact be reverted.")
+        ).subcommand(SubCommand::with_name("list")
+            .about("Lists all available migrations, marking those that have been applied.")
         ).subcommand(SubCommand::with_name("generate")
             .about("Generate a new migration with the given name, and \
                     the current timestamp as the version"
@@ -46,6 +48,7 @@ pub fn build_cli() -> App<'static, 'static> {
                 specified in your DATABASE_URL, and runs existing migrations.");
 
     let database_subcommand = SubCommand::with_name("database")
+        .alias("db")
         .about("A group of commands for setting up and resetting your database.")
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(SubCommand::with_name("setup")

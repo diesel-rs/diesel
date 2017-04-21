@@ -78,7 +78,7 @@ mod tests {
     fn queries_with_different_types_have_different_ids() {
         let id1 = query_id(users::table.select(users::name));
         let id2 = query_id(users::table.select(users::id));
-        assert!(id1 != id2);
+        assert_ne!(id1, id2);
     }
 
     #[test]

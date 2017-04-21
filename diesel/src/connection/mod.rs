@@ -11,12 +11,18 @@ pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
 #[doc(hidden)]
 pub use self::statement_cache::{StatementCache, StatementCacheKey, MaybeCached};
 
+/// Perform simple operations on a backend.
 pub trait SimpleConnection {
-    #[doc(hidden)]
+    /// Execute multiple SQL statements within the same string.
+    ///
+    /// This function is typically used in migrations where the statements to upgrade or
+    /// downgrade the database are stored in SQL batch files.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
+/// Perform connections to a backend.
 pub trait Connection: SimpleConnection + Sized + Send {
+    /// The backend this connection represents.
     type Backend: Backend;
     #[doc(hidden)]
     type TransactionManager: TransactionManager<Self>;
@@ -30,10 +36,8 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// a transaction is already occurring, savepoints will be used to emulate a nested
     /// transaction.
     ///
-    /// If the function returns an `Ok`, that value will be returned.  If the
-    /// function returns an `Err`,
-    /// [`TransactionError::UserReturnedError`](../result/enum.TransactionError.html#variant.UserReturnedError)
-    /// will be returned wrapping that value.
+    /// The error returned from the function must implement
+    /// `From<diesel::result::Error>`.
     fn transaction<T, E, F>(&self, f: F) -> Result<T, E> where
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,

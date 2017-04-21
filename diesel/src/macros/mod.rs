@@ -31,24 +31,54 @@ macro_rules! __diesel_column {
 
         impl_query_id!($column_name);
 
-        impl $crate::expression::SelectableExpression<$($table)::*> for $column_name {
-            type SqlTypeForSelect = $Type;
+        impl SelectableExpression<$($table)::*> for $column_name {
         }
 
-        impl<'a, Left, Right> SelectableExpression<
-            $crate::WithQuerySource<'a, Left, Right>,
-        > for $column_name where
-            $column_name: SelectableExpression<Left>,
-        {
-            type SqlTypeForSelect = $Type;
+        impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
-        impl<Source, Predicate> SelectableExpression<
-            $crate::query_source::filter::FilteredQuerySource<Source, Predicate>,
+        impl<Right, Kind> SelectableExpression<
+            Join<$($table)::*, Right, Kind>,
         > for $column_name where
-            $column_name: SelectableExpression<Source>,
+            $column_name: AppearsOnTable<Join<$($table)::*, Right, Kind>>,
         {
-            type SqlTypeForSelect = $Type;
+        }
+
+        impl<Left> SelectableExpression<
+            Join<Left, $($table)::*, Inner>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, Inner>
+        {
+        }
+
+        impl<Right> AppearsOnTable<
+            Join<$($table)::*, Right, Inner>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, Inner>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            Join<Left, $($table)::*, Inner>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, Inner>
+        {
+        }
+
+        impl<Right> AppearsOnTable<
+            Join<$($table)::*, Right, LeftOuter>,
+        > for $column_name where
+            Right: Table,
+            $($table)::*: $crate::JoinTo<Right, LeftOuter>
+        {
+        }
+
+        impl<Left> AppearsOnTable<
+            Join<Left, $($table)::*, LeftOuter>,
+        > for $column_name where
+            Left: $crate::JoinTo<$($table)::*, LeftOuter>
+        {
         }
 
         impl $crate::expression::NonAggregate for $column_name {}
@@ -138,6 +168,32 @@ macro_rules! __diesel_column {
 /// # }
 /// ```
 ///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import. Note that the path given has to be an absolute path
+/// relative to the crate root. You cannot use `self` or `super`.
+///
+/// ```
+/// #[macro_use] extern crate diesel;
+/// # /*
+/// extern crate diesel_full_text_search;
+/// # */
+/// # mod diesel_full_text_search {
+/// #     pub struct TsVector;
+/// # }
+///
+/// table! {
+///     use diesel::types::*;
+///     use diesel_full_text_search::*;
+///
+///     posts {
+///         id -> Integer,
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
@@ -148,7 +204,7 @@ macro_rules! __diesel_column {
 /// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
 /// instead of `users::table.filter(users::name.eq("Sean"))`.
 ///
-/// all_columns
+/// `all_columns`
 /// -----------
 ///
 /// A constant will be assigned called `all_columns`. This is what will be
@@ -166,7 +222,7 @@ macro_rules! __diesel_column {
 /// count statements however. It can also be accessed through the `Table.star()`
 /// method.
 ///
-/// SqlType
+/// `SqlType`
 /// -------
 ///
 /// A type alias called `SqlType` will be created. It will be the SQL type of
@@ -175,7 +231,7 @@ macro_rules! __diesel_column {
 ///
 /// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
 ///
-/// BoxedQuery
+/// `BoxedQuery`
 /// ----------
 ///
 /// ```ignore
@@ -183,47 +239,61 @@ macro_rules! __diesel_column {
 /// ```
 #[macro_export]
 macro_rules! table {
+    // Put `use` statements at the end because macro_rules! cannot figure out
+    // if `use` is an ident or not (hint: It's not)
     (
-        $name:ident $body:tt
+        use $($import:tt)::+; $($rest:tt)+
+    ) => {
+        table!($($rest)+ use $($import)::+;);
+    };
+
+    // Add the primary key if it's not present
+    (
+        $($table_name:ident).+ {$($body:tt)*}
+        $($imports:tt)*
     ) => {
         table! {
-            public . $name (id) $body
+            $($table_name).+ (id) {$($body)*} $($imports)*
         }
     };
 
+    // Add the schema name if it's not present
     (
-        $schema_name:ident . $name:ident $body:tt
+        $name:ident $(($($pk:ident),+))* {$($body:tt)*}
+        $($imports:tt)*
     ) => {
         table! {
-            $schema_name . $name (id) $body
+            public . $name $(($($pk),+))* {$($body)*} $($imports)*
         }
     };
 
+    // Import `diesel::types::*` if no imports were given
     (
-        $name:ident $pk:tt $body:tt
+        $($table_name:ident).+ $(($($pk:ident),+))* {$($body:tt)*}
     ) => {
         table! {
-            public . $name $pk $body
+            $($table_name).+ $(($($pk),+))* {$($body)*}
+            use $crate::types::*;
         }
     };
 
+    // Terminal with single-column pk
     (
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
+        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk) $body
+            $schema_name . $name ($pk) $body $($imports)+
         }
     };
 
+    // Terminal with composite pk (add a trailing comma)
     (
-        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) {
-            $($column_name:ident -> $Type:ty,)+
-        }
+        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
+        $($imports:tt)+
     ) => {
         table_body! {
-            $schema_name . $name ($pk, $($composite_pk,)+) {
-                $($column_name -> $Type,)+
-            }
+            $schema_name . $name ($pk, $($composite_pk,)+) $body $($imports)+
         }
     };
 }
@@ -235,6 +305,7 @@ macro_rules! table_body {
         $schema_name:ident . $name:ident ($pk:ident) {
             $($column_name:ident -> $Type:ty,)+
         }
+        $(use $($import:tt)::+;)+
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -242,6 +313,7 @@ macro_rules! table_body {
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
             columns = [$($column_name -> $Type,)+],
+            imports = ($($($import)::+),+),
         }
     };
 
@@ -249,6 +321,7 @@ macro_rules! table_body {
         $schema_name:ident . $name:ident ($($pk:ident,)+) {
             $($column_name:ident -> $Type:ty,)+
         }
+        $(use $($import:tt)::+;)+
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -256,6 +329,7 @@ macro_rules! table_body {
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
             columns = [$($column_name -> $Type,)+],
+            imports = ($($($import)::+),+),
         }
     };
 
@@ -265,51 +339,64 @@ macro_rules! table_body {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $column_ty:ty,)+],
+        imports = ($($($import:tt)::+),+),
     ) => {
         pub mod $table_name {
             #![allow(dead_code)]
-            #![allow(unused_imports)] // FIXME: Once we revamp type imports this can be removed
             use $crate::{
                 QuerySource,
                 Table,
             };
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
-            use $crate::query_builder::nodes::{Identifier, InfixNode};
-            use $crate::types::*;
+            use $crate::query_builder::nodes::Identifier;
+            $(use $($import)::+;)+
             pub use self::columns::*;
 
+            /// Re-exports all of the columns of this table, as well as the
+            /// table struct renamed to the module name. This is meant to be
+            /// glob imported for functions which only deal with one table.
             pub mod dsl {
                 pub use super::columns::{$($column_name),+};
                 pub use super::table as $table_name;
             }
 
             #[allow(non_upper_case_globals, dead_code)]
+            /// A tuple of all of the columns on this table
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
-            #[allow(non_camel_case_types, missing_debug_implementations)]
+            #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy)]
+            /// The actual table struct
+            ///
+            /// This is the type which provides the base methods of the query
+            /// builder, such as `.select` and `.filter`.
             pub struct table;
 
             impl table {
                 #[allow(dead_code)]
+                /// Represents `table_name.*`, which is sometimes necessary
+                /// for efficient count queries. It cannot be used in place of
+                /// `all_columns`
                 pub fn star(&self) -> star {
                     star
                 }
             }
 
+            /// The SQL type of all of the columns on this table
             pub type SqlType = ($($column_ty,)+);
 
+            /// Helper type for reperesenting a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
             __diesel_table_query_source_impl!(table, $schema_name, $table_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
-                type Query = SelectStatement<($($column_name,)+), Self>;
+                type Query = SelectStatement<Self>;
 
                 fn as_query(self) -> Self::Query {
-                    SelectStatement::simple(all_columns, self)
+                    SelectStatement::simple(self)
                 }
             }
 
@@ -335,28 +422,31 @@ macro_rules! table_body {
             }
 
             impl IntoUpdateTarget for table {
-                type WhereClause = ();
+                type WhereClause = <<Self as AsQuery>::Query as IntoUpdateTarget>::WhereClause;
 
                 fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
-                    UpdateTarget {
-                        table: self,
-                        where_clause: None,
-                    }
+                    self.as_query().into_update_target()
                 }
             }
 
             impl_query_id!(table);
 
+            /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Expression, SelectableExpression, QuerySource};
+                use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::query_source::joins::{Join, Inner, LeftOuter};
                 use $crate::result::QueryResult;
-                use $crate::types::*;
+                $(use $($import)::+;)+
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]
+                /// Represents `table_name.*`, which is sometimes needed for
+                /// efficient count queries. It cannot be used in place of
+                /// `all_columns`, and has a `SqlType` of `()` to prevent it
+                /// being used that way
                 pub struct star;
 
                 impl Expression for star {
@@ -382,7 +472,9 @@ macro_rules! table_body {
                 }
 
                 impl SelectableExpression<table> for star {
-                    type SqlTypeForSelect = Self::SqlType;
+                }
+
+                impl AppearsOnTable<table> for star {
                 }
 
                 $(__diesel_column!(table, $column_name -> $column_ty);)+
@@ -397,23 +489,34 @@ macro_rules! __diesel_table_query_source_impl {
     ($table_struct:ident, public, $table_name:ident) => {
         impl QuerySource for $table_struct {
             type FromClause = Identifier<'static>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
                 Identifier(stringify!($table_name))
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };
 
     ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
         impl QuerySource for $table_struct {
-            type FromClause = InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type FromClause = $crate::query_builder::nodes::
+                InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
-                InfixNode::new(
+                $crate::query_builder::nodes::InfixNode::new(
                     Identifier(stringify!($schema_name)),
                     Identifier(stringify!($table_name)),
                     ".",
                 )
+            }
+
+            fn default_selection(&self) -> Self::DefaultSelection {
+                Self::all_columns()
             }
         }
     };
@@ -477,50 +580,6 @@ macro_rules! joinable_inner {
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! select_column_workaround {
-    ($parent:ident -> $child:ident ($($column_name:ident),+)) => {
-        $(select_column_inner!($parent::table, $child::table, $parent::$column_name);)+
-        select_column_inner!($parent::table, $child::table, $parent::star);
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! select_column_inner {
-    ($parent:ty, $child:ty, $column:ty $(,)*) => {
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$child, $parent>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::InnerJoinSource<$parent, $child>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$child, $parent>,
-        > for $column
-        {
-            type SqlTypeForSelect = <<Self as $crate::Expression>::SqlType
-                as $crate::types::IntoNullable>::Nullable;
-        }
-
-        impl $crate::expression::SelectableExpression<
-            $crate::query_source::LeftOuterJoinSource<$parent, $child>,
-        > for $column
-        {
-            type SqlTypeForSelect = <Self as $crate::Expression>::SqlType;
-        }
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
 macro_rules! join_through {
     ($parent:ident -> $through:ident -> $child:ident) => {
         impl<JoinType: Copy> $crate::JoinTo<$child::table, JoinType> for $parent::table {
@@ -542,7 +601,7 @@ macro_rules! join_through {
     }
 }
 
-/// Takes a query QueryFragment expression as an argument and returns a string
+/// Takes a query `QueryFragment` expression as an argument and returns a string
 /// of SQL with placeholders for the dynamic values.
 ///
 /// # Example
@@ -577,7 +636,7 @@ macro_rules! debug_sql {
     }};
 }
 
-/// Takes takes a query QueryFragment expression as an argument and prints out
+/// Takes takes a query `QueryFragment` expression as an argument and prints out
 /// the SQL with placeholders for the dynamic values.
 ///
 /// # Example
@@ -609,6 +668,7 @@ macro_rules! print_sql {
 
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
+#[macro_use] mod internal;
 #[macro_use] mod parse;
 #[macro_use] mod query_id;
 #[macro_use] mod static_cond;
@@ -627,6 +687,20 @@ mod tests {
         foo.bars {
             id -> Integer,
             baz -> Text,
+        }
+    }
+
+    mod my_types {
+        pub struct MyCustomType;
+    }
+
+    table! {
+        use types::*;
+        use macros::tests::my_types::*;
+
+        table_with_custom_types {
+            id -> Integer,
+            my_type -> MyCustomType,
         }
     }
 

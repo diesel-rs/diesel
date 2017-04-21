@@ -13,7 +13,10 @@ pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
     let struct_ty = &model.ty;
     let mut lifetimes = item.generics.lifetimes;
     let attrs = model.attrs.as_slice().iter()
-        .filter(|a| a.column_name != Some(syn::Ident::new("id")))
+        .filter(|a| match a.column_name {
+            Some(ref name) => !model.primary_key_names.contains(name),
+            None => true,
+        })
         .collect::<Vec<_>>();
 
     if lifetimes.is_empty() {

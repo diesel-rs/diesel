@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
@@ -16,14 +16,15 @@ name = "diesel"
 [dependencies]
 chrono = "0.3"
 clap = "2.20.3"
-diesel = { version = "0.11.0", default-features = false }
-dotenv = "0.8.0"
-diesel_infer_schema = "0.11.0"
-clippy = { optional = true, version = "=0.0.114" }
+diesel = { version = "0.12.0", default-features = false }
+dotenv = ">=0.8, <0.10"
+diesel_infer_schema = "0.12.0"
+clippy = { optional = true, version = "=0.0.125" }
 
 [dev-dependencies]
 tempdir = "0.3.4"
 regex = "0.1.48"
+url = { version = "1.4.0" }
 
 [features]
 default = ["postgres", "sqlite", "mysql"]
@@ -37,4 +38,4 @@ name = "tests"
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "diesel-rs/diesel" }
+appveyor = { repository = "sgrif/diesel" }

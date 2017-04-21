@@ -19,6 +19,8 @@ mod ord;
 pub mod impls;
 mod fold;
 
+use std::fmt;
+
 #[doc(hidden)]
 pub mod structs {
     pub mod data_types {
@@ -69,6 +71,7 @@ use std::io::Write;
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
 #[derive(Debug, Clone, Copy, Default)] pub struct SmallInt;
 #[doc(hidden)] pub type Int2 = SmallInt;
+#[doc(hidden)] pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
@@ -97,6 +100,7 @@ use std::io::Write;
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
 #[derive(Debug, Clone, Copy, Default)] pub struct BigInt;
 #[doc(hidden)] pub type Int8 = BigInt;
+#[doc(hidden)] pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
@@ -131,6 +135,9 @@ use std::io::Write;
 /// This type does not currently have any corresponding Rust types. On SQLite,
 /// [`Double`](struct.Double.html) should be used instead.
 #[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
+
+#[cfg(not(feature="postgres"))]
+impl NotNull for Numeric {}
 
 /// The text SQL type.
 ///
@@ -221,16 +228,19 @@ pub type VarChar = Text;
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
-/// - [`std::time::SystemTime`][SystemTime]
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// - [`std::time::SystemTime`][SystemTime] (PG only)
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"` (PG and MySQL only)
+/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
-/// - [`std::time::SystemTime`][SystemTime]
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// - [`std::time::SystemTime`][SystemTime] (PG only)
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"` (PG and MySQL only)
+/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
+/// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Timestamp;
 
 /// The nullable SQL type. This wraps another SQL type to indicate that it can
@@ -245,6 +255,12 @@ pub type VarChar = Text;
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)] pub struct Nullable<ST: NotNull>(ST);
+
+#[derive(Debug, Clone, Copy, Default)] pub struct Unsigned<ST>(ST);
+
+#[doc(hidden)] pub type UInt2 = Unsigned<SmallInt>;
+#[doc(hidden)] pub type UInt4 = Unsigned<Integer>;
+#[doc(hidden)] pub type UInt8 = Unsigned<BigInt>;
 
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
@@ -310,7 +326,7 @@ pub enum IsNull {
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
-pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
+pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 

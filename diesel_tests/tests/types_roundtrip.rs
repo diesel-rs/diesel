@@ -17,7 +17,7 @@ pub fn test_type_round_trips<ST, T>(value: T) -> bool where
     ST: QueryId,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST> + Queryable<ST, <TestConnection as Connection>::Backend> + PartialEq + Clone + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlTypeForSelect=ST> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType=ST> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
 {
     let connection = connection();
     let query = select(AsExpression::<ST>::as_expression(value.clone()));
@@ -93,6 +93,7 @@ mod pg_types {
     test_round_trip!(timestamp_roundtrips, Timestamp, PgTimestamp);
     test_round_trip!(interval_roundtrips, Interval, PgInterval);
     test_round_trip!(numeric_roundtrips, Numeric, PgNumeric);
+    test_round_trip!(money_roundtrips, Money, PgMoney);
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);

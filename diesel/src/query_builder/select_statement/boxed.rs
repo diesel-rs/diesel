@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
-use expression::{SelectableExpression, NonAggregate, AsExpression};
+use expression::*;
 use query_builder::*;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
@@ -153,12 +153,12 @@ impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB, Selection> SelectDsl<Selection, Selection::SqlTypeForSelect>
+impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
     for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend + HasSqlType<Selection::SqlTypeForSelect>,
+        DB: Backend + HasSqlType<Selection::SqlType>,
         Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'a, Selection::SqlTypeForSelect, QS, DB>;
+    type Output = BoxedSelectStatement<'a, Selection::SqlType, QS, DB>;
 
     fn select(self, selection: Selection) -> Self::Output {
         BoxedSelectStatement::new(
@@ -176,7 +176,7 @@ impl<'a, ST, QS, DB, Selection> SelectDsl<Selection, Selection::SqlTypeForSelect
 impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate>
     for BoxedSelectStatement<'a, ST, QS, DB> where
         DB: Backend + HasSqlType<ST> + 'a,
-        Predicate: SelectableExpression<QS, SqlType=Bool> + NonAggregate,
+        Predicate: AppearsOnTable<QS, SqlType=Bool> + NonAggregate,
         Predicate: QueryFragment<DB> + 'a,
 {
     type Output = Self;
@@ -220,7 +220,7 @@ impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB> where
 impl<'a, ST, QS, DB, Order> OrderDsl<Order>
     for BoxedSelectStatement<'a, ST, QS, DB> where
         DB: Backend,
-        Order: QueryFragment<DB> + SelectableExpression<QS> + 'a,
+        Order: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
         BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;

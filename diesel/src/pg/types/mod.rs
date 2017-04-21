@@ -7,6 +7,7 @@ mod primitives;
 mod uuid;
 #[cfg(feature = "serde_json")]
 mod json;
+pub mod money;
 
 /// PostgreSQL specific SQL types
 ///
@@ -204,4 +205,76 @@ pub mod sql_types {
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Jsonb;
+
+    /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
+    ///
+    /// [PgMoney]: /diesel/pg/data_types/struct.PgMoney.html
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Serial,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    ///
+    /// use diesel::data_types::Cents;
+    ///
+    /// #[derive(Queryable)]
+    /// struct Item {
+    ///     id: i32,
+    ///     name: String,
+    ///     price: Cents,
+    /// }
+    ///
+    /// #[derive(Insertable)]
+    /// #[table_name="items"]
+    /// struct NewItem {
+    ///     name: String,
+    ///     price: Cents,
+    /// }
+    ///
+    /// table! {
+    ///     items {
+    ///         id -> Integer,
+    ///         name -> VarChar,
+    ///         price -> Money,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use self::diesel::insert;
+    /// #     use self::items::dsl::*;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE items (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         price MONEY NOT NULL
+    /// #     )").unwrap();
+    /// let new_item = NewItem {
+    ///     name: "Shiny Thing".into(),
+    ///     price: Cents(123456),
+    /// };
+    /// let inserted_item = insert(&new_item).into(items)
+    ///     .get_result::<Item>(&connection).unwrap();
+    /// assert_eq!(Cents(123456), inserted_item.price);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default)] pub struct Money;
 }

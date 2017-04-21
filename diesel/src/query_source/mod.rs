@@ -2,18 +2,15 @@
 //! shouldn't need to interact with these types during normal usage, other than
 //! the methods on [`Table`](/diesel/query_source/trait.Table.html)
 #[doc(hidden)]
-pub mod filter;
-#[doc(hidden)]
 pub mod joins;
 
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
-#[doc(hidden)]
-pub use self::joins::{InnerJoinSource, LeftOuterJoinSource};
 use types::{FromSqlRow, HasSqlType};
 
 pub use self::joins::JoinTo;
+use self::joins::*;
 
 /// Trait indicating that a record can be queried from the database. This trait
 /// can be derived automatically using `diesel_codegen`. This trait can only be derived for
@@ -29,7 +26,10 @@ pub trait Queryable<ST, DB> where
 #[doc(hidden)]
 pub trait QuerySource {
     type FromClause;
+    type DefaultSelection: SelectableExpression<Self>;
+
     fn from_clause(&self) -> Self::FromClause;
+    fn default_selection(&self) -> Self::DefaultSelection;
 }
 
 /// A column on a database table. Types which implement this trait should have
@@ -49,17 +49,17 @@ pub trait Table: QuerySource + AsQuery + Sized {
     fn primary_key(&self) -> Self::PrimaryKey;
     fn all_columns() -> Self::AllColumns;
 
-    fn inner_join<T>(self, other: T) -> InnerJoinSource<Self, T> where
+    fn inner_join<T>(self, other: T) -> Join<Self, T, Inner> where
         T: Table,
-        Self: JoinTo<T, joins::Inner>,
+        Self: JoinTo<T, Inner>,
     {
-        InnerJoinSource::new(self, other)
+        Join::new(self, other)
     }
 
-    fn left_outer_join<T>(self, other: T) -> LeftOuterJoinSource<Self, T> where
+    fn left_outer_join<T>(self, other: T) -> Join<Self, T, LeftOuter> where
         T: Table,
-        Self: JoinTo<T, joins::LeftOuter>,
+        Self: JoinTo<T, LeftOuter>,
     {
-        LeftOuterJoinSource::new(self, other)
+        Join::new(self, other)
     }
 }

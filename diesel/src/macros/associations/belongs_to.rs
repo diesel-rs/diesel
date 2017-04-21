@@ -235,17 +235,6 @@ macro_rules! BelongsTo {
                 primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
                 primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
             );
-
-            $(select_column_inner!(
-                $child_table_name::table,
-                <$parent_struct as $crate::associations::HasTable>::Table,
-                $child_table_name::$column_name,
-            );)+
-            select_column_inner!(
-                $child_table_name::table,
-                <$parent_struct as $crate::associations::HasTable>::Table,
-                $child_table_name::star,
-            );
         });
     };
 

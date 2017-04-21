@@ -272,3 +272,98 @@ fn update_with_no_changes() {
     let changes = Changes { name: None, hair_color: None, };
     update(users::table).set(&changes).execute(&connection).unwrap();
 }
+
+#[test]
+#[cfg(feature="postgres")]
+fn upsert_with_no_changes_executes_do_nothing() {
+    use diesel::pg::upsert::*;
+
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    struct Changes {
+        hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let result = insert(&User::new(1, "Sean")
+       .on_conflict(users::id, do_update().set(&Changes { hair_color: None }))
+    ).into(users::table).execute(&connection);
+
+    assert_eq!(Ok(0), result);
+}
+
+#[test]
+#[cfg(feature="postgres")]
+fn upsert_with_sql_literal_for_target() {
+    use diesel::expression::dsl::sql;
+    use diesel::pg::upsert::*;
+    use diesel::types::Text;
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    connection.execute("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'").unwrap();
+
+    let new_users = vec![
+        NewUser::new("Sean", Some("Green")),
+        NewUser::new("Tess", Some("Blue")),
+    ];
+    let conflict_target = sql::<Text>("(name) WHERE name != 'Tess'");
+    let conflict_action = do_update().set(hair_color.eq(excluded(hair_color)));
+    insert(&new_users.on_conflict(conflict_target, conflict_action))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let data = users.select((name, hair_color))
+        .order(id)
+        .load(&connection);
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Green".to_string())),
+        ("Tess".to_string(), None),
+        ("Tess".to_string(), Some("Blue".to_string())),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn update_with_custom_pk() {
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    #[primary_key(name)]
+    #[allow(dead_code)]
+    struct Changes<'a> {
+        name: &'a str,
+        hair_color: Option<&'a str>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    update(users::table.find(1))
+        .set(&Changes { name: "Jim", hair_color: Some("Black") })
+        .execute(&connection)
+        .unwrap();
+    let user = users::table.find(1).first(&connection);
+    let expected_user = User::with_hair_color(1, "Sean", "Black");
+    assert_eq!(Ok(expected_user), user);
+}
+
+#[test]
+fn update_with_custom_composite_pk() {
+    #[derive(AsChangeset)]
+    #[table_name="users"]
+    #[primary_key(id, hair_color)]
+    #[allow(dead_code)]
+    struct Changes<'a> {
+        id: i32,
+        name: &'a str,
+        hair_color: Option<&'a str>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    update(users::table.find(1))
+        .set(&Changes { id: 2, name: "Jim", hair_color: Some("Blue") })
+        .execute(&connection)
+        .unwrap();
+    let user = users::table.find(1).first(&connection);
+    let expected_user = User::new(1, "Jim");
+    assert_eq!(Ok(expected_user), user);
+}

@@ -4,7 +4,7 @@ use backend::Backend;
 use query_builder::*;
 use result::Error::SerializationError;
 use result::QueryResult;
-use super::{Expression, SelectableExpression, NonAggregate};
+use super::*;
 use types::{HasSqlType, ToSql, IsNull};
 
 #[derive(Debug, Clone, Copy)]
@@ -64,9 +64,13 @@ impl<T: QueryId, U> QueryId for Bound<T, U> {
 }
 
 impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where
+    Bound<T, U>: AppearsOnTable<QS>,
+{
+}
+
+impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U> where
     Bound<T, U>: Expression,
 {
-    type SqlTypeForSelect = T;
 }
 
 impl<T, U> NonAggregate for Bound<T, U> where

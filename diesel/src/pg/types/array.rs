@@ -1,5 +1,6 @@
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
+use std::fmt;
 use std::io::Write;
 
 use backend::Debug;
@@ -46,8 +47,8 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
         let num_elements = try!(bytes.read_i32::<NetworkEndian>());
         let lower_bound = try!(bytes.read_i32::<NetworkEndian>());
 
-        assert!(num_dimensions == 1, "multi-dimensional arrays are not supported");
-        assert!(lower_bound == 1, "lower bound must be 1");
+        assert_eq!(num_dimensions, 1, "multi-dimensional arrays are not supported");
+        assert_eq!(lower_bound, 1, "lower bound must be 1");
 
         (0..num_elements).map(|_| {
             let elem_size = try!(bytes.read_i32::<NetworkEndian>());
@@ -160,6 +161,7 @@ impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
+    T: fmt::Debug,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (self as &[T]).to_sql(out)

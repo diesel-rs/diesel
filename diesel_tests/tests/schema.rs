@@ -90,9 +90,6 @@ pub use self::backend_specifics::*;
 
 numeric_expr!(users::id);
 
-select_column_workaround!(users -> comments (id, name, hair_color));
-select_column_workaround!(comments -> users (id, post_id, text));
-
 join_through!(users -> posts -> comments);
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
@@ -138,6 +135,28 @@ pub struct NewComment<'a>(
     pub &'a str,
 );
 
+#[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
+#[table_name="fk_tests"]
+pub struct FkTest {
+    id: i32,
+    fk_id: i32,
+}
+
+impl FkTest {
+    pub fn new(id: i32, fk_id: i32) -> Self {
+        FkTest{ id: id, fk_id: fk_id }
+    }
+}
+
+numeric_expr!(nullable_table::value);
+
+#[derive(Queryable, Insertable)]
+#[table_name="nullable_table"]
+pub struct NullableColumn {
+    id: i32,
+    value: Option<i32>,
+}
+
 #[cfg(feature = "postgres")]
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
@@ -149,6 +168,8 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
+    #[cfg(feature = "sqlite")]
+    result.execute("PRAGMA foreign_keys = ON").unwrap();
     result.begin_test_transaction().unwrap();
     result
 }
@@ -188,6 +209,22 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     ensure_primary_key_seq_greater_than(2, &connection);
+    connection
+}
+
+pub fn connection_with_nullable_table_data() -> TestConnection {
+    let connection = connection();
+
+    let test_data = vec![
+        NullableColumn { id: 1, value: None },
+        NullableColumn { id: 2, value: None },
+        NullableColumn { id: 3, value: Some(1) },
+        NullableColumn { id: 4, value: Some(2) },
+        NullableColumn { id: 5, value: Some(1) },
+    ];
+    insert(&test_data).into(nullable_table::table)
+        .execute(&connection).unwrap();
+
     connection
 }
 

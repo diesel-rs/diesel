@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression};
+use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
 use types::{SqlOrd, HasSqlType, IntoNullable};
@@ -49,20 +49,56 @@ macro_rules! ord_function {
         }
 
         impl_query_id!($type_name<T>);
-
-        impl<T, QS> SelectableExpression<QS> for $type_name<T> where
-            $type_name<T>: Expression,
-            T: SelectableExpression<QS>,
-        {
-            type SqlTypeForSelect = Self::SqlType;
-        }
+        impl_selectable_expression!($type_name<T>);
     }
 }
 
 ord_function!(max, Max, "MAX",
 "Represents a SQL `MAX` function. This function can only take types which are
-ordered.");
+ordered.
+
+# Examples
+
+```rust
+# #[macro_use] extern crate diesel;
+# include!(\"src/doctest_setup.rs\");
+# use diesel::expression::dsl::*;
+#
+# table! {
+#     users {
+#         id -> Integer,
+#         name -> VarChar,
+#     }
+# }
+#
+# fn main() {
+#     use self::animals::dsl::*;
+#     let connection = establish_connection();
+assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
+# }
+");
 
 ord_function!(min, Min, "MIN",
 "Represents a SQL `MIN` function. This function can only take types which are
-ordered.");
+ordered.
+
+# Examples
+
+```rust
+# #[macro_use] extern crate diesel;
+# include!(\"src/doctest_setup.rs\");
+# use diesel::expression::dsl::*;
+#
+# table! {
+#     users {
+#         id -> Integer,
+#         name -> VarChar,
+#     }
+# }
+#
+# fn main() {
+#     use self::animals::dsl::*;
+#     let connection = establish_connection();
+assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
+# }
+");

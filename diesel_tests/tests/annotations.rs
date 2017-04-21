@@ -2,13 +2,12 @@ use diesel::*;
 use schema::*;
 
 // FIXME: Bring this test back once we can figure out how to allow multiple structs
-// on the same table to use `#[belongs_to]` without overlapping the `SelectableExpression`
-// impls
+// on the same table to use `#[belongs_to]` without overlapping the `JoinTo` impls
 // #[test]
 // fn association_where_struct_name_doesnt_match_table_name() {
 //     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 //     #[belongs_to(Post)]
-//     #[table_name(comments)]
+//     #[table_name="comments"]
 //     struct OtherComment {
 //         id: i32,
 //         post_id: i32
@@ -22,7 +21,7 @@ use schema::*;
 //     insert(&NewComment(post.id, "comment")).into(comments::table)
 //         .execute(&connection).unwrap();
 
-//     let comment_text = OtherComment::belonging_to(&post).select(special_comments::text)
+//     let comment_text = OtherComment::belonging_to(&post).select(comments::text)
 //         .first::<String>(&connection);
 //     assert_eq!(Ok("comment".into()), comment_text);
 // }
@@ -146,6 +145,20 @@ mod lifetimes_with_names_other_than_a {
         id: i32,
         title: &'b str,
         body: &'a str,
+    }
+}
+
+mod insertable_with_cow {
+    #![allow(dead_code)]
+    use schema::posts;
+    use std::borrow::Cow;
+
+    #[derive(Insertable)]
+    #[table_name="posts"]
+    pub struct MyPost<'a> {
+        id: i32,
+        title: Cow<'a, str>,
+        body: Cow<'a, str>,
     }
 }
 

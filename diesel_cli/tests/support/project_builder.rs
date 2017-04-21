@@ -1,3 +1,6 @@
+extern crate url;
+extern crate dotenv;
+
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
@@ -67,21 +70,33 @@ impl Project {
             .collect()
     }
 
+    #[cfg(any(feature="postgres", feature="mysql"))]
+    fn database_url_from_env(&self, var: &str) -> url::Url {
+        use self::dotenv::dotenv;
+        use std::env;
+        dotenv().ok();
+
+        let mut db_url = url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap())
+            .unwrap();
+        db_url.set_path(&format!("diesel_{}", &self.name));
+        db_url
+    }
+
+
     #[cfg(feature="postgres")]
     pub fn database_url(&self) -> String {
-        format!("postgres://localhost/diesel_{}", self.name)
+        self.database_url_from_env("PG_DATABASE_URL").to_string()
     }
 
     #[cfg(feature="mysql")]
     pub fn database_url(&self) -> String {
         use std::env;
 
+        let mut db_url = self.database_url_from_env("MYSQL_DATABASE_URL");
         if env::var_os("APPVEYOR").is_some() {
-            let password = env::var("MYSQL_PWD").unwrap();
-            format!("mysql://root:{}@localhost/diesel_{}", password, self.name)
-        } else {
-            format!("mysql://localhost/diesel_{}", self.name)
+            db_url.set_password(Some(&env::var("MYSQL_PWD").unwrap())).unwrap();
         }
+        db_url.to_string()
     }
 
     #[cfg(feature="sqlite")]

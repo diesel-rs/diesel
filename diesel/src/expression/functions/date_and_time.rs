@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 use types::*;
@@ -12,10 +12,6 @@ pub struct now;
 
 impl Expression for now {
     type SqlType = Timestamp;
-}
-
-impl<QS> SelectableExpression<QS> for now {
-    type SqlTypeForSelect = Timestamp;
 }
 
 impl NonAggregate for now {
@@ -37,12 +33,34 @@ impl<DB: Backend> QueryFragment<DB> for now {
 }
 
 impl_query_id!(now);
+impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
 sql_function!(date, date_t, (x: Timestamp) -> Date,
 "Represents the SQL `DATE` function. The argument should be a Timestamp
-expression, and the return value will be an expression of type Date");
+expression, and the return value will be an expression of type Date.
+
+# Examples
+
+```ignore
+# #[macro_use] extern crate diesel;
+# extern crate chrono;
+# include!(\"src/doctest_setup.rs\");
+# use diesel::expression::dsl::*;
+#
+# table! {
+#     users {
+#         id -> Integer,
+#         name -> VarChar,
+#     }
+# }
+#
+# fn main() {
+#     let connection = establish_connection();
+let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
+# }
+");
 
 #[cfg(feature="postgres")]
 use expression::AsExpression;

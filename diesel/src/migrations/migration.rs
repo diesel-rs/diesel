@@ -7,6 +7,9 @@ pub trait Migration {
     fn version(&self) -> &str;
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
     fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
+    fn file_path(&self) -> Option<&Path> {
+        None
+    }
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
@@ -30,6 +33,9 @@ impl Migration for Box<Migration> {
     fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).revert(conn)
     }
+    fn file_path(&self) -> Option<&Path> {
+        (&**self).file_path()
+    }
 }
 
 impl<'a> Migration for &'a Migration {
@@ -43,6 +49,9 @@ impl<'a> Migration for &'a Migration {
 
     fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).revert(conn)
+    }
+    fn file_path(&self) -> Option<&Path> {
+        (&**self).file_path()
     }
 }
 
@@ -87,6 +96,10 @@ use std::io::Read;
 struct SqlFileMigration(PathBuf, String);
 
 impl Migration for SqlFileMigration {
+    fn file_path(&self) -> Option<&Path> {
+        Some(self.0.as_path())
+    }
+
     fn version(&self) -> &str {
         &self.1
     }

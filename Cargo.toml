@@ -13,9 +13,12 @@ members = [
     "examples/postgres/getting_started_step_1",
     "examples/postgres/getting_started_step_2",
     "examples/postgres/getting_started_step_3",
+    "examples/sqlite/getting_started_step_1",
+    "examples/sqlite/getting_started_step_2",
+    "examples/sqlite/getting_started_step_3",
 ]
 
 [replace]
-"diesel:0.11.4" = { path = "diesel" }
-"diesel_codegen:0.11.0" = { path = "diesel_codegen" }
-"diesel_infer_schema:0.11.0" = { path = "diesel_infer_schema" }
+"diesel:0.12.0" = { path = "diesel" }
+"diesel_codegen:0.12.0" = { path = "diesel_codegen" }
+"diesel_infer_schema:0.12.0" = { path = "diesel_infer_schema" }

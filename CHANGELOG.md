@@ -4,6 +4,68 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+
+### Added
+
+* Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
+
+* Added support for adding two nullable columns.
+
+* Addded support for unsigned types in MySQL.
+
+
+## [0.12.0] - 2017-03-16
+
+### Added
+
+* Added support for the majority of PG upsert (`INSERT ON CONFLICT`). We now
+  support specifying the constraint, as well as `DO UPDATE` in addition to `DO
+  NOTHING`. See [the module docs][upsert-0.12.0] for details.
+
+[upsert-0.12.0]: http://docs.diesel.rs/diesel/pg/upsert/index.html
+
+* Added support for the SQL concatenation operator `||`. See [the docs for
+  `.concat`][concat-0.12.0] for more details.
+
+[concat-0.12.0]: http://docs.diesel.rs/diesel/expression/expression_methods/text_expression_methods/trait.TextExpressionMethods.html#method.concat
+
+* Added support for the PostgreSQL [`Money` type][pg-money-0.12.0].
+
+[pg-money-0.12.0]: https://www.postgresql.org/docs/9.6/static/datatype-money.html
+
+* Diesel CLI: Added `db` as an alias for `database`, so you can now write `diesel db setup` (which is almost 40% faster!).
+
+* The `table!` macro now allows you to use types from crates outside of Diesel.
+  You can specify where types should be imported from by doing: `table! { use
+  some_modules::*; foo { columns... }`. Not specifying any any modules is
+  equivalent to `use diesel::types::*;`.
+
+### Fixed
+
+* `diesel_codegen` will provide a more useful error message when it encounters
+  an unsupported type that contains a space in MySQL.
+
+* `#[derive(AsChangeset)]` will now respect custom `#[primary_key]` annotations,
+  and avoid setting those columns.
+
+### Removed
+
+* `WithDsl` and `Aliased` have been removed. They were a feature that was
+  actually closer to a cross join than the names implied, and wasn't fully
+  thought out. The functionality they provided will return as joins are further
+  revamped.
+
+* The internal use macro `select_column_workaround!` has been removed. If you
+  were relying on this internal macro, you can simply delete the line that was
+  calling it.
+
+* Columns from the right side of a left join will now need to have `.nullable()`
+  explicitly called to be passed to `.select`. This allows it to compose better
+  with functions that don't normally take nullable columns (e.g.
+  `lower(name).nullable()`).
+
 ## [0.11.4] - 2017-02-21
 
 ### Fixed
@@ -724,3 +786,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.11.1]: https://github.com/diesel-rs/diesel/compare/v0.11.0...v0.11.1
 [0.11.2]: https://github.com/diesel-rs/diesel/compare/v0.11.1...v0.11.2
 [0.11.4]: https://github.com/diesel-rs/diesel/compare/v0.11.2...v0.11.4
+[0.12.0]: https://github.com/diesel-rs/diesel/compare/v0.11.4...v0.12.0

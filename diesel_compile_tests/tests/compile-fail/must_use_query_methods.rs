@@ -26,7 +26,5 @@ fn main() {
     st.filter(b.eq(true)); //~ ERROR unused result
     st.filter(b.eq(true)).limit(1); //~ ERROR unused result
 
-    st.select(b).with(st.select(b).aliased("s2")); //~ ERROR unused result
-
     let _thingies = st.filter(b.eq(true)); // No ERROR
 }

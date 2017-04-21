@@ -66,8 +66,6 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
     }
 }
 
-debug_to_sql!(Timestamptz, NaiveDateTime);
-
 impl FromSql<Timestamptz, Pg> for DateTime<UTC> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let naive_date_time = try!(<NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes));
@@ -78,12 +76,6 @@ impl FromSql<Timestamptz, Pg> for DateTime<UTC> {
 impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
-    }
-}
-
-impl<TZ: TimeZone> ToSql<Timestamptz, ::backend::Debug> for DateTime<TZ> {
-    fn to_sql<W: Write>(&self, _: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        Ok(IsNull::No)
     }
 }
 
