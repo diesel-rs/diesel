@@ -31,8 +31,8 @@ use super::nodes::Replace;
 /// #     use self::diesel::{insert, insert_or_replace};
 /// #     use self::diesel::sqlite::SqliteConnection;
 /// #
-/// #     let conn = SqliteConnection::establish(":memory:").unwrap();
-/// #     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR)").unwrap();
+/// #     let conn = try!(SqliteConnection::establish(":memory:"));
+/// #     try!(conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR)"));
 /// insert(&NewUser::new("Sean")).into(users).execute(&conn).unwrap();
 /// insert(&NewUser::new("Tess")).into(users).execute(&conn).unwrap();
 ///

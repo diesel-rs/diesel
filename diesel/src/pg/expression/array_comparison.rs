@@ -29,7 +29,7 @@ use types::Array;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
+/// #     try!(connection.execute("INSERT INTO users (name) VALUES ('Jim')"));
 /// let sean = (1, "Sean".to_string());
 /// let jim = (3, "Jim".to_string());
 /// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));

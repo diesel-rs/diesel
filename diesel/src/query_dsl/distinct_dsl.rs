@@ -20,9 +20,8 @@ use query_source::QuerySource;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// #     connection.execute("DELETE FROM users").unwrap();
-/// connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Sean')")
-///     .unwrap();
+/// #     try!(connection.execute("DELETE FROM users"));
+/// try!(connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Sean')"));
 /// let names = users.select(name).load(&connection);
 /// let distinct_names = users.select(name).distinct().load(&connection);
 ///
