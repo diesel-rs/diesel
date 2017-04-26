@@ -13,7 +13,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for adding two nullable columns.
 
-* Addded support for unsigned types in MySQL.
+* Added support for unsigned types in MySQL.
+
+* Added the `any_pending_migrations` function to determine if there are any pending migrations in the migrations directory.
+
+* Added the `migration pending` command to the Diesel CLI to run the `any_pending_migrations` function and report the output.
 
 
 ## [0.12.0] - 2017-03-16
