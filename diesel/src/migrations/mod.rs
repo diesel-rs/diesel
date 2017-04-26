@@ -127,6 +127,24 @@ pub fn mark_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path)
     Ok(migrations)
 }
 
+// Returns true if there are outstanding migrations in the migrations directory, otherwise
+// returns false. Returns an `Err` if there are problems with migration setup.
+///
+/// See the [module level documentation](index.html) for information on how migrations should be
+/// structured, and where Diesel will look for them by default.
+pub fn any_pending_migrations<Conn>(conn: &Conn) -> Result<bool, RunMigrationsError> where
+    Conn: MigrationConnection
+{
+    let migrations_dir = find_migrations_directory()?;
+    let all_migrations = migrations_in_directory(&migrations_dir)?;
+    let already_run = conn.previously_run_migration_versions()?;
+
+    let pending = all_migrations.into_iter()
+        .any(|m| !already_run.contains(&m.version().to_string()));
+
+    Ok(pending)
+}
+
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
 /// `Err` if no migrations have ever been run.
 ///
