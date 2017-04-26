@@ -16,7 +16,7 @@ quote = "0.3.12"
 dotenv = { version = ">=0.8, <0.10", optional = true }
 diesel = { version = "0.12.0", default-features = false }
 diesel_infer_schema = { version = "0.12.0", default-features = false, optional = true }
-clippy = { optional = true, version = "=0.0.125" }
+clippy = { optional = true, version = "=0.0.126" }
 
 [dev-dependencies]
 tempdir = "0.3.4"
