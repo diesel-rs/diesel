@@ -14,25 +14,12 @@ pub struct Join<Left, Right, Kind> {
 }
 
 impl<Left, Right, Kind> Join<Left, Right, Kind> {
-    pub fn new(left: Left, right: Right) -> Self where
-        Kind: Default,
-    {
+    pub fn new(left: Left, right: Right, kind: Kind) -> Self {
         Join {
             left: left,
             right: right,
-            kind: Kind::default(),
+            kind: kind,
         }
-    }
-}
-
-impl<Left, Right, Kind> AsQuery for Join<Left, Right, Kind> where
-    SelectStatement<Join<Left, Right, Kind>>: Query,
-{
-    type SqlType = <SelectStatement<Self> as Query>::SqlType;
-    type Query = SelectStatement<Self>;
-
-    fn as_query(self) -> Self::Query {
-        SelectStatement::simple(self)
     }
 }
 
