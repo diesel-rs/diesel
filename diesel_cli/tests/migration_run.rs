@@ -108,3 +108,72 @@ fn empty_migrations_are_not_valid() {
     assert!(!result.is_success());
     assert!(result.stdout().contains("empty migration"));
 }
+
+#[test]
+fn any_pending_migrations_works() {
+    let p = project("any_pending_migrations_one")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration("12345_create_users_table",
+                       "CREATE TABLE users ( id INTEGER )",
+                       "DROP TABLE users");
+
+    let result = p.command("migration")
+        .arg("pending")
+        .run();
+
+    assert!(result.stdout().contains("true\n"));
+}
+
+#[test]
+fn any_pending_migrations_after_running() {
+    let p = project("any_pending_migrations")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration("12345_create_users_table",
+                       "CREATE TABLE users ( id INTEGER )",
+                       "DROP TABLE users");
+
+    p.command("migration")
+        .arg("run")
+        .run();
+
+    let result = p.command("migration")
+        .arg("pending")
+        .run();
+
+    assert!(result.stdout().contains("false\n"));
+}
+
+#[test]
+fn any_pending_migrations_after_running_and_creating() {
+    let p = project("any_pending_migrations_run_then_create")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration("12345_create_users_table",
+                       "CREATE TABLE users ( id INTEGER )",
+                       "DROP TABLE users");
+
+    p.command("migration")
+        .arg("run")
+        .run();
+
+    p.create_migration("123456_create_posts_table",
+                       "CREATE TABLE posts ( id INTEGER )",
+                       "DROP TABLE posts");
+
+    let result = p.command("migration")
+        .arg("pending")
+        .run();
+
+    assert!(result.stdout().contains("true\n"));
+}

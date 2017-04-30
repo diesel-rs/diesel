@@ -1,5 +1,6 @@
 use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
+use std::fmt;
 use std::io::Write;
 
 use backend::Debug;
@@ -160,6 +161,7 @@ impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
+    T: fmt::Debug,
 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
         (self as &[T]).to_sql(out)

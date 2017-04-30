@@ -19,6 +19,8 @@ mod ord;
 pub mod impls;
 mod fold;
 
+use std::fmt;
+
 #[doc(hidden)]
 pub mod structs {
     pub mod data_types {
@@ -254,6 +256,12 @@ pub type VarChar = Text;
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)] pub struct Nullable<ST: NotNull>(ST);
 
+#[derive(Debug, Clone, Copy, Default)] pub struct Unsigned<ST>(ST);
+
+#[doc(hidden)] pub type UInt2 = Unsigned<SmallInt>;
+#[doc(hidden)] pub type UInt4 = Unsigned<Integer>;
+#[doc(hidden)] pub type UInt8 = Unsigned<BigInt>;
+
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
 
@@ -318,7 +326,7 @@ pub enum IsNull {
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
-pub trait ToSql<A, DB: Backend + HasSqlType<A>> {
+pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 

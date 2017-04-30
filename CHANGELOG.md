@@ -4,7 +4,23 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## [0.12.0] - 2016-03-16
+## Unreleased
+
+
+### Added
+
+* Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
+
+* Added support for adding two nullable columns.
+
+* Added support for unsigned types in MySQL.
+
+* Added the `any_pending_migrations` function to determine if there are any pending migrations in the migrations directory.
+
+* Added the `migration pending` command to the Diesel CLI to run the `any_pending_migrations` function and report the output.
+
+
+## [0.12.0] - 2017-03-16
 
 ### Added
 

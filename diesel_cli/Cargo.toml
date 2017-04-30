@@ -17,14 +17,15 @@ name = "diesel"
 chrono = "0.3"
 clap = "2.20.3"
 diesel = { version = "0.12.0", default-features = false }
-dotenv = "0.8.0"
+dotenv = ">=0.8, <0.10"
 diesel_infer_schema = "0.12.0"
-clippy = { optional = true, version = "=0.0.118" }
 url = "1.4"
+clippy = { optional = true, version = "=0.0.126" }
 
 [dev-dependencies]
 tempdir = "0.3.4"
 regex = "0.1.48"
+url = { version = "1.4.0" }
 
 [features]
 default = ["postgres", "sqlite", "mysql"]
@@ -38,4 +39,4 @@ name = "tests"
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "diesel-rs/diesel" }
+appveyor = { repository = "sgrif/diesel" }

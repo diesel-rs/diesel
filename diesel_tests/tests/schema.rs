@@ -90,8 +90,6 @@ pub use self::backend_specifics::*;
 
 numeric_expr!(users::id);
 
-join_through!(users -> posts -> comments);
-
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[table_name = "users"]
 pub struct NewUser {
@@ -148,6 +146,15 @@ impl FkTest {
     }
 }
 
+numeric_expr!(nullable_table::value);
+
+#[derive(Queryable, Insertable)]
+#[table_name="nullable_table"]
+pub struct NullableColumn {
+    id: i32,
+    value: Option<i32>,
+}
+
 #[cfg(feature = "postgres")]
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
@@ -200,6 +207,22 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     ensure_primary_key_seq_greater_than(2, &connection);
+    connection
+}
+
+pub fn connection_with_nullable_table_data() -> TestConnection {
+    let connection = connection();
+
+    let test_data = vec![
+        NullableColumn { id: 1, value: None },
+        NullableColumn { id: 2, value: None },
+        NullableColumn { id: 3, value: Some(1) },
+        NullableColumn { id: 4, value: Some(2) },
+        NullableColumn { id: 5, value: Some(1) },
+    ];
+    insert(&test_data).into(nullable_table::table)
+        .execute(&connection).unwrap();
+
     connection
 }
 

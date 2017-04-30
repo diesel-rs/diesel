@@ -56,8 +56,53 @@ macro_rules! fold_function {
 
 fold_function!(sum, Sum, "SUM",
 "Represents a SQL `SUM` function. This function can only take types which are
-Foldable.");
+Foldable.
+
+# Examples
+
+```rust
+# #[macro_use] extern crate diesel;
+# include!(\"src/doctest_setup.rs\");
+# use diesel::expression::dsl::*;
+#
+# table! {
+#     users {
+#         id -> Integer,
+#         name -> VarChar,
+#     }
+# }
+#
+# fn main() {
+#     use self::animals::dsl::*;
+#     let connection = establish_connection();
+assert_eq!(Ok(12i64), animals.select(sum(legs)).first(&connection));
+# }
+");
 
 fold_function!(avg, Avg, "AVG",
 "Represents a SQL `AVG` function. This function can only take types which are
-Foldable.");
+Foldable.
+
+# Examples
+
+```rust
+# #[macro_use] extern crate diesel;
+# include!(\"src/doctest_setup.rs\");
+# use diesel::expression::dsl::*;
+#
+# table! {
+#     users {
+#         id -> Integer,
+#         name -> VarChar,
+#     }
+# }
+#
+# fn main() {
+#     use self::animals::dsl::*;
+#     let connection = establish_connection();
+// assert_eq!(Ok(6f64), animals.select(avg(legs)).first(&connection));
+// TODO: There doesn't currently seem to be a way to use avg with integers, since
+// they return a `Numeric` which doesn't have a corresponding Rust type.
+# }
+```
+");

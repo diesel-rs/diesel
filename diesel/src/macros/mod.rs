@@ -37,56 +37,47 @@ macro_rules! __diesel_column {
         impl AppearsOnTable<$($table)::*> for $column_name {
         }
 
-        impl<Right> SelectableExpression<
-            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+        impl<Right, Kind> SelectableExpression<
+            Join<$($table)::*, Right, Kind>,
         > for $column_name where
-            Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+            $column_name: AppearsOnTable<Join<$($table)::*, Right, Kind>>,
         {
         }
 
         impl<Left> SelectableExpression<
-            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
-        {
-        }
-
-        impl<Right> SelectableExpression<
-            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
-        > for $column_name where
-            Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+            Left: $crate::JoinTo<$($table)::*, Inner>
         {
         }
 
         impl<Right> AppearsOnTable<
-            $crate::query_source::joins::InnerJoinSource<$($table)::*, Right>,
+            Join<$($table)::*, Right, Inner>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::Inner>
+            $($table)::*: $crate::JoinTo<Right, Inner>
         {
         }
 
         impl<Left> AppearsOnTable<
-            $crate::query_source::joins::InnerJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::Inner>
+            Left: $crate::JoinTo<$($table)::*, Inner>
         {
         }
 
         impl<Right> AppearsOnTable<
-            $crate::query_source::joins::LeftOuterJoinSource<$($table)::*, Right>,
+            Join<$($table)::*, Right, LeftOuter>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, $crate::query_source::joins::LeftOuter>
+            $($table)::*: $crate::JoinTo<Right, LeftOuter>
         {
         }
 
         impl<Left> AppearsOnTable<
-            $crate::query_source::joins::LeftOuterJoinSource<Left, $($table)::*>,
+            Join<Left, $($table)::*, LeftOuter>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, $crate::query_source::joins::LeftOuter>
+            Left: $crate::JoinTo<$($table)::*, LeftOuter>
         {
         }
 
@@ -213,7 +204,7 @@ macro_rules! __diesel_column {
 /// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
 /// instead of `users::table.filter(users::name.eq("Sean"))`.
 ///
-/// all_columns
+/// `all_columns`
 /// -----------
 ///
 /// A constant will be assigned called `all_columns`. This is what will be
@@ -231,7 +222,7 @@ macro_rules! __diesel_column {
 /// count statements however. It can also be accessed through the `Table.star()`
 /// method.
 ///
-/// SqlType
+/// `SqlType`
 /// -------
 ///
 /// A type alias called `SqlType` will be created. It will be the SQL type of
@@ -240,7 +231,7 @@ macro_rules! __diesel_column {
 ///
 /// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
 ///
-/// BoxedQuery
+/// `BoxedQuery`
 /// ----------
 ///
 /// ```ignore
@@ -446,6 +437,7 @@ macro_rules! table_body {
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::query_source::joins::{Join, Inner, LeftOuter};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
@@ -586,30 +578,7 @@ macro_rules! joinable_inner {
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! join_through {
-    ($parent:ident -> $through:ident -> $child:ident) => {
-        impl<JoinType: Copy> $crate::JoinTo<$child::table, JoinType> for $parent::table {
-            type JoinClause = <
-                <$parent::table as $crate::JoinTo<$through::table, JoinType>>::JoinClause
-                as $crate::query_builder::nodes::CombinedJoin<
-                    <$through::table as $crate::JoinTo<$child::table, JoinType>>::JoinClause,
-                >>::Output;
-
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::query_builder::nodes::CombinedJoin;
-                let parent_to_through = $crate::JoinTo::<$through::table, JoinType>
-                    ::join_clause(&$parent::table, join_type);
-                let through_to_child = $crate::JoinTo::<$child::table, JoinType>
-                    ::join_clause(&$through::table, join_type);
-                parent_to_through.combine_with(through_to_child)
-            }
-        }
-    }
-}
-
-/// Takes a query QueryFragment expression as an argument and returns a string
+/// Takes a query `QueryFragment` expression as an argument and returns a string
 /// of SQL with placeholders for the dynamic values.
 ///
 /// # Example
@@ -644,7 +613,7 @@ macro_rules! debug_sql {
     }};
 }
 
-/// Takes takes a query QueryFragment expression as an argument and prints out
+/// Takes takes a query `QueryFragment` expression as an argument and prints out
 /// the SQL with placeholders for the dynamic values.
 ///
 /// # Example

@@ -10,9 +10,9 @@ use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
-use super::select_clause::*;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
+use super::select_clause::*;
 use super::where_clause::NoWhereClause;
 use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
 
@@ -61,40 +61,6 @@ impl<F, S, D, W, O, L, Of, G> SelectStatement<F, S, D, W, O, L, Of, G> {
             offset: offset,
             group_by: group_by,
         }
-    }
-
-    pub fn inner_join<T>(self, other: T)
-        -> SelectStatement<InnerJoinSource<F, T>, S, D, W, O, L, Of, G> where
-            T: Table,
-            F: Table + JoinTo<T, joins::Inner>,
-    {
-        SelectStatement::new(
-            self.select,
-            self.from.inner_join(other),
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-        )
-    }
-
-    pub fn left_outer_join<T>(self, other: T)
-        -> SelectStatement<LeftOuterJoinSource<F, T>, S, D, W, O, L, Of, G> where
-            T: Table,
-            F: Table + JoinTo<T, joins::LeftOuter>,
-    {
-        SelectStatement::new(
-            self.select,
-            self.from.left_outer_join(other),
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-        )
     }
 }
 

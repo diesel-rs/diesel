@@ -4,6 +4,7 @@ pub mod boxed_dsl;
 mod count_dsl;
 mod distinct_dsl;
 mod group_by_dsl;
+mod join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
 #[doc(hidden)]
@@ -23,6 +24,7 @@ pub use self::distinct_dsl::DistinctDsl;
 pub use self::filter_dsl::{FilterDsl, FindDsl};
 #[doc(hidden)]
 pub use self::group_by_dsl::GroupByDsl;
+pub use self::join_dsl::{InternalJoinDsl, JoinDsl};
 pub use self::limit_dsl::LimitDsl;
 pub use self::load_dsl::{LoadDsl, ExecuteDsl};
 pub use self::offset_dsl::OffsetDsl;
