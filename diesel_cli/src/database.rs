@@ -1,4 +1,5 @@
 use clap::ArgMatches;
+#[cfg(any(feature="postgres", feature="mysql"))]
 use url::Url;
 use diesel::expression::sql;
 #[cfg(feature="postgres")]
