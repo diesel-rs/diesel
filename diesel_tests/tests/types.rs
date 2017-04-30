@@ -1,11 +1,15 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 extern crate chrono;
+#[cfg(feature="postgres")]
+extern crate bigdecimal;
 
 use schema::*;
 use diesel::*;
 #[cfg(feature="postgres")]
 use diesel::pg::Pg;
 use diesel::types::*;
+
+use quickcheck::quickcheck;
 
 table! {
     has_timestamps {
@@ -423,6 +427,39 @@ fn pg_numeric_from_sql() {
     let query = "'NaN'::numeric";
     let expected_value = PgNumeric::NaN;
     assert_eq!(expected_value, query_single_value::<Numeric, PgNumeric>(query));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_numeric_bigdecimal_to_sql() {
+    use self::bigdecimal::BigDecimal;
+
+    fn correct_rep(integer: u64, decimal: u64) -> bool {
+        let expected = format!("{}.{}", integer, decimal);
+        let value: BigDecimal = expected.parse().expect("Could not parse to a BigDecimal");
+        query_to_sql_equality::<Numeric, BigDecimal>(&expected, value)
+    }
+
+    quickcheck(correct_rep as fn(u64, u64) -> bool);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_numeric_bigdecimal_from_sql() {
+    use self::bigdecimal::BigDecimal;
+
+    let query = "1.0::numeric";
+    let expected_value: BigDecimal = "1.0".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+
+    let query = "141.00::numeric";
+    let expected_value: BigDecimal = "141.00".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+
+    // Some non standard values:
+    let query = "18446744073709551616::numeric"; // 2^64; doesn't fit in u64
+    let expected_value: BigDecimal = "18446744073709551616.00".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
 }
 
 #[test]
