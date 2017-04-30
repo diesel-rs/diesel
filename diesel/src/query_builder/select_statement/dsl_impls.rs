@@ -13,8 +13,29 @@ use query_builder::{AsQuery, Query, QueryFragment, SelectStatement};
 use query_dsl::*;
 use query_dsl::boxed_dsl::InternalBoxedDsl;
 use query_source::QuerySource;
+use query_source::joins::Join;
 use super::BoxedSelectStatement;
 use types::{self, Bool};
+
+impl<F, S, D, W, O, L, Of, G, Rhs, Kind> InternalJoinDsl<Rhs, Kind>
+    for SelectStatement<F, S, D, W, O, L, Of, G> where
+        SelectStatement<Join<F, Rhs, Kind>, S, D, W, O, L, Of, G>: AsQuery,
+{
+    type Output = SelectStatement<Join<F, Rhs, Kind>, S, D, W, O, L, Of, G>;
+
+    fn join(self, rhs: Rhs, kind: Kind) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            Join::new(self.from, rhs, kind),
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+        )
+    }
+}
 
 impl<F, S, D, W, O, L, Of, G, Selection, Type> SelectDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G> where

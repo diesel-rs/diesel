@@ -6,7 +6,6 @@ pub use self::boxed::BoxedSelectStatement;
 use backend::Backend;
 use expression::*;
 use query_source::*;
-use query_source::joins::Join;
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
@@ -62,40 +61,6 @@ impl<F, S, D, W, O, L, Of, G> SelectStatement<F, S, D, W, O, L, Of, G> {
             offset: offset,
             group_by: group_by,
         }
-    }
-
-    pub fn inner_join<T>(self, other: T)
-        -> SelectStatement<Join<F, T, joins::Inner>, S, D, W, O, L, Of, G> where
-            T: Table,
-            F: Table + JoinTo<T, joins::Inner>,
-    {
-        SelectStatement::new(
-            self.select,
-            self.from.inner_join(other),
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-        )
-    }
-
-    pub fn left_outer_join<T>(self, other: T)
-        -> SelectStatement<Join<F, T, joins::LeftOuter>, S, D, W, O, L, Of, G> where
-            T: Table,
-            F: Table + JoinTo<T, joins::LeftOuter>,
-    {
-        SelectStatement::new(
-            self.select,
-            self.from.left_outer_join(other),
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-        )
     }
 }
 

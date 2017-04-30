@@ -10,7 +10,6 @@ use query_builder::*;
 use types::{FromSqlRow, HasSqlType};
 
 pub use self::joins::JoinTo;
-use self::joins::*;
 
 /// Trait indicating that a record can be queried from the database. This trait
 /// can be derived automatically using `diesel_codegen`. This trait can only be derived for
@@ -48,18 +47,4 @@ pub trait Table: QuerySource + AsQuery + Sized {
 
     fn primary_key(&self) -> Self::PrimaryKey;
     fn all_columns() -> Self::AllColumns;
-
-    fn inner_join<T>(self, other: T) -> Join<Self, T, Inner> where
-        T: Table,
-        Self: JoinTo<T, Inner>,
-    {
-        Join::new(self, other)
-    }
-
-    fn left_outer_join<T>(self, other: T) -> Join<Self, T, LeftOuter> where
-        T: Table,
-        Self: JoinTo<T, LeftOuter>,
-    {
-        Join::new(self, other)
-    }
 }
