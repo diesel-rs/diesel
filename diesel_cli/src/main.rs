@@ -20,6 +20,7 @@ extern crate clap;
 extern crate diesel;
 extern crate dotenv;
 extern crate diesel_infer_schema;
+extern crate url;
 
 mod database_error;
 #[macro_use]
