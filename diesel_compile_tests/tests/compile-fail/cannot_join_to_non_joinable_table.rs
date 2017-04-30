@@ -19,9 +19,15 @@ table! {
 
 fn main() {
     let _ = users::table.inner_join(posts::table);
-    //~^ ERROR E0277
+    //~^ ERROR JoinTo
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     //~| ERROR E0277
     let _ = users::table.left_outer_join(posts::table);
-    //~^ ERROR E0277
+    //~^ ERROR JoinTo
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     //~| ERROR E0277
 }

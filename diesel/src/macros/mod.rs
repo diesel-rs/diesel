@@ -43,7 +43,7 @@ macro_rules! __diesel_column {
         impl<Left> SelectableExpression<
             Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, Inner>
+            Left: $crate::JoinTo<$($table)::*>
         {
         }
 
@@ -51,14 +51,14 @@ macro_rules! __diesel_column {
             Join<$($table)::*, Right, Inner>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, Inner>
+            $($table)::*: $crate::JoinTo<Right>
         {
         }
 
         impl<Left> AppearsOnTable<
             Join<Left, $($table)::*, Inner>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, Inner>
+            Left: $crate::JoinTo<$($table)::*>
         {
         }
 
@@ -66,14 +66,26 @@ macro_rules! __diesel_column {
             Join<$($table)::*, Right, LeftOuter>,
         > for $column_name where
             Right: Table,
-            $($table)::*: $crate::JoinTo<Right, LeftOuter>
+            $($table)::*: $crate::JoinTo<Right>
         {
         }
 
         impl<Left> AppearsOnTable<
             Join<Left, $($table)::*, LeftOuter>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*, LeftOuter>
+            Left: $crate::JoinTo<$($table)::*>
+        {
+        }
+
+        // FIXME: Remove this when overlapping marker traits are stable
+        impl<Join, On> AppearsOnTable<JoinOn<Join, On>> for $column_name where
+            $column_name: AppearsOnTable<Join>,
+        {
+        }
+
+        // FIXME: Remove this when overlapping marker traits are stable
+        impl<Join, On> SelectableExpression<JoinOn<Join, On>> for $column_name where
+            $column_name: SelectableExpression<Join>,
         {
         }
 
@@ -433,7 +445,7 @@ macro_rules! table_body {
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment, AstPass};
-                use $crate::query_source::joins::{Join, Inner, LeftOuter};
+                use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
@@ -545,26 +557,16 @@ macro_rules! joinable_inner {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
     ) => {
-        impl<JoinType> $crate::JoinTo<$right_table_ty, JoinType> for $left_table_ty {
-            type JoinClause = $crate::query_builder::nodes::Join<
-                <$left_table_ty as $crate::QuerySource>::FromClause,
-                <$right_table_ty as $crate::QuerySource>::FromClause,
-                $crate::expression::helper_types::Eq<
-                    $crate::expression::nullable::Nullable<$foreign_key>,
-                    $crate::expression::nullable::Nullable<$primary_key_ty>,
-                >,
-                JoinType,
+        impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
+            type JoinOnClause = $crate::expression::helper_types::Eq<
+                $crate::expression::nullable::Nullable<$foreign_key>,
+                $crate::expression::nullable::Nullable<$primary_key_ty>,
             >;
 
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::{QuerySource, ExpressionMethods};
+            fn join_on_clause() -> Self::JoinOnClause {
+                use $crate::ExpressionMethods;
 
-                $crate::query_builder::nodes::Join::new(
-                    self.from_clause(),
-                    $right_table_expr.from_clause(),
-                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
-                    join_type,
-                )
+                $foreign_key.nullable().eq($primary_key_expr.nullable())
             }
         }
     }

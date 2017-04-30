@@ -13,6 +13,16 @@ pub struct Join<Left, Right, Kind> {
     kind: Kind,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
+/// A query source representing the join between two tables with an explicit
+/// `ON` given. `Join` should usually be referenced instead, as all "type
+/// safety" traits are implemented in terms of `Join` implementing them.
+pub struct JoinOn<Join, On> {
+    join: Join,
+    on: On,
+}
+
 impl<Left, Right, Kind> Join<Left, Right, Kind> {
     pub fn new(left: Left, right: Right, kind: Kind) -> Self {
         Join {
@@ -21,22 +31,30 @@ impl<Left, Right, Kind> Join<Left, Right, Kind> {
             kind: kind,
         }
     }
+
+    #[doc(hidden)]
+    pub fn on<On>(self, on: On) -> JoinOn<Self, On> {
+        JoinOn {
+            join: self,
+            on: on,
+        }
+    }
 }
 
 impl_query_id!(Join<Left, Right, Kind>);
+impl_query_id!(JoinOn<Join, On>);
 
 impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
-    Left: Table + JoinTo<Right, Inner>,
+    Left: Table + JoinTo<Right>,
     Right: Table,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<
-        Join<Left, Right, Inner>,
-    >,
+    (Left::AllColumns, Right::AllColumns): SelectableExpression<Self>,
+    Self: Clone,
 {
-    type FromClause = <Left as JoinTo<Right, Inner>>::JoinClause;
+    type FromClause = Self;
     type DefaultSelection = (Left::AllColumns, Right::AllColumns);
 
     fn from_clause(&self) -> Self::FromClause {
-        self.left.join_clause(self.kind)
+        self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
@@ -45,21 +63,65 @@ impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
 }
 
 impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
-    Left: Table + JoinTo<Right, LeftOuter>,
+    Left: Table + JoinTo<Right>,
     Right: Table,
-    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<
-        Join<Left, Right, LeftOuter>,
-    >,
+    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<Self>,
+    Self: Clone,
 {
-    type FromClause = <Left as JoinTo<Right, LeftOuter>>::JoinClause;
+    type FromClause = Self;
     type DefaultSelection = (Left::AllColumns, Nullable<Right::AllColumns>);
 
     fn from_clause(&self) -> Self::FromClause {
-        self.left.join_clause(self.kind)
+        self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
         (Left::all_columns(), Right::all_columns().nullable())
+    }
+}
+
+impl<Join, On> QuerySource for JoinOn<Join, On> where
+    Join: QuerySource,
+    On: AppearsOnTable<Join::FromClause> + Clone,
+    Join::DefaultSelection: SelectableExpression<Self>,
+{
+    type FromClause = nodes::InfixNode<'static, Join::FromClause, On>;
+    type DefaultSelection = Join::DefaultSelection;
+
+    fn from_clause(&self) -> Self::FromClause {
+        nodes::InfixNode::new(
+            self.join.from_clause(),
+            self.on.clone(),
+            " ON ",
+        )
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self.join.default_selection()
+    }
+}
+
+impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
+    DB: Backend,
+    Left: QuerySource,
+    Left::FromClause: QueryFragment<DB>,
+    Right: QuerySource,
+    Right::FromClause: QueryFragment<DB>,
+    Kind: QueryFragment<DB>,
+{
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+        self.left.from_clause().to_sql(out)?;
+        self.kind.to_sql(out)?;
+        out.push_sql(" JOIN ");
+        self.right.from_clause().to_sql(out)?;
+        Ok(())
+    }
+
+    fn walk_ast(&self, out: &mut AstPass<DB>) -> QueryResult<()> {
+        self.left.from_clause().walk_ast(out)?;
+        self.kind.walk_ast(out)?;
+        self.right.from_clause().walk_ast(out)?;
+        Ok(())
     }
 }
 
@@ -70,14 +132,34 @@ impl<Left, Right, T> SelectableExpression<Join<Left, Right, LeftOuter>>
 {
 }
 
+// FIXME: Remove this when overlapping marker traits are stable
+impl<Left, Right, On, T> SelectableExpression<JoinOn<Join<Left, Right, LeftOuter>, On>>
+    for Nullable<T> where
+        T: SelectableExpression<Join<Left, Right, Inner>>,
+        Nullable<T>: AppearsOnTable<JoinOn<Join<Left, Right, LeftOuter>, On>>,
+{
+}
+
+// FIXME: We want these blanket impls when overlapping marker traits are stable
+// impl<T, Join, On> AppearsOnTable<JoinOn<Join, On>> for T where
+//     T: AppearsOnTable<Join>,
+// {
+// }
+
+// FIXME: We want these blanket impls when overlapping marker traits are stable
+// impl<T, Join, On> SelectableExpression<JoinOn<Join, On>> for T where
+//     T: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
+// {
+// }
+
 /// Indicates that two tables can be used together in a JOIN clause.
 /// Implementations of this trait will be generated for you automatically by
 /// the [association annotations](../associations/index.html) from codegen.
-pub trait JoinTo<T: Table, JoinType>: Table {
+pub trait JoinTo<T> {
     #[doc(hidden)]
-    type JoinClause;
+    type JoinOnClause;
     #[doc(hidden)]
-    fn join_clause(&self, join_type: JoinType) -> Self::JoinClause;
+    fn join_on_clause() -> Self::JoinOnClause;
 }
 
 use backend::Backend;

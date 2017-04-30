@@ -13,20 +13,20 @@ use query_builder::{AsQuery, Query, QueryFragment, SelectStatement};
 use query_dsl::*;
 use query_dsl::boxed_dsl::InternalBoxedDsl;
 use query_source::QuerySource;
-use query_source::joins::Join;
+use query_source::joins::{Join, JoinOn, JoinTo};
 use super::BoxedSelectStatement;
 use types::{self, Bool};
 
-impl<F, S, D, W, O, L, Of, G, Rhs, Kind> InternalJoinDsl<Rhs, Kind>
+impl<F, S, D, W, O, L, Of, G, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G> where
-        SelectStatement<Join<F, Rhs, Kind>, S, D, W, O, L, Of, G>: AsQuery,
+        SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G>: AsQuery,
 {
-    type Output = SelectStatement<Join<F, Rhs, Kind>, S, D, W, O, L, Of, G>;
+    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G>;
 
-    fn join(self, rhs: Rhs, kind: Kind) -> Self::Output {
+    fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
         SelectStatement::new(
             self.select,
-            Join::new(self.from, rhs, kind),
+            Join::new(self.from, rhs, kind).on(on),
             self.distinct,
             self.where_clause,
             self.order,
@@ -274,5 +274,19 @@ impl<F, W> IntoUpdateTarget
             table: Self::table(),
             where_clause: self.where_clause,
         }
+    }
+}
+
+// FIXME: Should we disable joining when `.group_by` has been called? Are there
+// any other query methods where a join no longer has the same semantics as
+// joining on just the table?
+impl<F, S, D, W, O, L, Of, G, Rhs> JoinTo<Rhs>
+    for SelectStatement<F, S, D, W, O, L, Of, G> where
+        F: JoinTo<Rhs>,
+{
+    type JoinOnClause = F::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        F::join_on_clause()
     }
 }
