@@ -578,29 +578,6 @@ macro_rules! joinable_inner {
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! join_through {
-    ($parent:ident -> $through:ident -> $child:ident) => {
-        impl<JoinType: Copy> $crate::JoinTo<$child::table, JoinType> for $parent::table {
-            type JoinClause = <
-                <$parent::table as $crate::JoinTo<$through::table, JoinType>>::JoinClause
-                as $crate::query_builder::nodes::CombinedJoin<
-                    <$through::table as $crate::JoinTo<$child::table, JoinType>>::JoinClause,
-                >>::Output;
-
-            fn join_clause(&self, join_type: JoinType) -> Self::JoinClause {
-                use $crate::query_builder::nodes::CombinedJoin;
-                let parent_to_through = $crate::JoinTo::<$through::table, JoinType>
-                    ::join_clause(&$parent::table, join_type);
-                let through_to_child = $crate::JoinTo::<$child::table, JoinType>
-                    ::join_clause(&$through::table, join_type);
-                parent_to_through.combine_with(through_to_child)
-            }
-        }
-    }
-}
-
 /// Takes a query `QueryFragment` expression as an argument and returns a string
 /// of SQL with placeholders for the dynamic values.
 ///

@@ -274,33 +274,3 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
     ];
     assert_eq!(Ok(expected_data), titles);
 }
-
-#[test]
-fn join_through_other() {
-    use schema::users::dsl::*;
-    let connection = connection_with_sean_and_tess_in_users_table();
-
-    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
-    insert(&vec![
-        NewPost::new(1, "Hello", None), NewPost::new(2, "World", None),
-        NewPost::new(1, "Hello again!", None),
-    ]).into(posts::table).execute(&connection).unwrap();
-    let posts = posts::table.load::<Post>(&connection).unwrap();
-    insert(&vec![
-        NewComment(posts[0].id, "OMG"), NewComment(posts[1].id, "WTF"),
-        NewComment(posts[2].id, "Best post ever!!!")
-    ]).into(comments::table).execute(&connection).unwrap();
-    let comments = comments::table.load::<Comment>(&connection).unwrap();
-
-    let data = users.inner_join(comments::table).load(&connection)
-        .unwrap();
-
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    let expected_data = vec![
-        (sean.clone(), comments[0].clone()),
-        (tess, comments[1].clone()),
-        (sean, comments[2].clone()),
-    ];
-    assert_eq!(expected_data, data);
-}

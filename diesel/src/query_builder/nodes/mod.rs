@@ -38,25 +38,6 @@ impl<T, U, V, W> Join<T, U, V, W> {
     }
 }
 
-pub trait CombinedJoin<Other> {
-    type Output;
-
-    fn combine_with(self, other: Other) -> Self::Output;
-}
-
-impl<T, U, UU, V, VV, W, WW> CombinedJoin<Join<U, UU, VV, WW>> for Join<T, U, V, W> {
-    type Output = Join<
-        Self,
-        UU,
-        VV,
-        WW,
-    >;
-
-    fn combine_with(self, other: Join<U, UU, VV, WW>) -> Self::Output {
-        Join::new(self, other.rhs, other.predicate, other.join_type)
-    }
-}
-
 impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
     DB: Backend,
     T: QueryFragment<DB>,

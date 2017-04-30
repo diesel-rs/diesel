@@ -90,8 +90,6 @@ pub use self::backend_specifics::*;
 
 numeric_expr!(users::id);
 
-join_through!(users -> posts -> comments);
-
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[table_name = "users"]
 pub struct NewUser {
