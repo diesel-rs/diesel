@@ -16,12 +16,12 @@ cache:
   - C:\Users\appveyor\.cargo
 
 install:
-  - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - curl -fsS --retry 3 --retry-connrefused -o rustup-init.exe https://win.rustup.rs/
   - rustup-init -yv --default-toolchain stable --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
-  - appveyor DownloadFile https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip -FileName sqlite3.zip
+  - curl -fsS --retry 3 --retry-connrefused -o sqlite3.zip https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip
   - 7z e sqlite3.zip -y
   - set SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
 
