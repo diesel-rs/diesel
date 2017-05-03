@@ -66,14 +66,16 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(database_url, migrations::run_pending_migrations_in_directory(&dir, &mut stdout()))
                 .unwrap_or_else(handle_error);
         }
-        ("revert", Some(_)) => {
+        ("revert", Some(args)) => {
             let database_url = database::database_url(matches);
-            call_with_conn!(database_url, migrations::revert_latest_migration)
+            let dir = migrations_dir(args);
+            call_with_conn!(database_url, migrations::revert_latest_migration_in_directory(&dir))
                 .unwrap_or_else(handle_error);
         }
-        ("redo", Some(_)) => {
+        ("redo", Some(args)) => {
             let database_url = database::database_url(matches);
-            call_with_conn!(database_url, redo_latest_migration);
+            let dir = migrations_dir(args);
+            call_with_conn!(database_url, redo_latest_migration(&dir));
         }
         ("list", Some(args)) => {
             use std::cmp::Ordering;
@@ -219,15 +221,15 @@ fn search_for_cargo_toml_directory(path: &Path) -> DatabaseResult<PathBuf> {
 
 /// Reverts the most recent migration, and then runs it again, all in a
 /// transaction. If either part fails, the transaction is not committed.
-fn redo_latest_migration<Conn>(conn: &Conn) where
+fn redo_latest_migration<Conn>(conn: &Conn, migrations_dir: &Path) where
         Conn: Connection + Any,
         String: FromSql<VarChar, Conn::Backend>,
         for<'a> &'a NewMigration<'a>:
             Insertable<__diesel_schema_migrations::table, Conn::Backend>,
 {
     let migration_inner = || {
-        let reverted_version = try!(migrations::revert_latest_migration(conn));
-        migrations::run_migration_with_version(conn, &reverted_version, &mut stdout())
+        let reverted_version = try!(migrations::revert_latest_migration_in_directory(conn, migrations_dir));
+        migrations::run_migration_with_version(conn, migrations_dir, &reverted_version, &mut stdout())
     };
     if should_redo_migration_in_transaction(conn) {
         conn.transaction(migration_inner).unwrap_or_else(handle_error);

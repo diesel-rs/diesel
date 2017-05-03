@@ -135,35 +135,41 @@ pub fn mark_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path)
 pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigrationsError> where
     Conn: MigrationConnection,
 {
+    let migrations_dir = try!(find_migrations_directory());
+    revert_latest_migration_in_directory(conn, &migrations_dir)
+}
+
+pub fn revert_latest_migration_in_directory<Conn>(conn: &Conn, path: &Path) -> Result<String, RunMigrationsError> where
+    Conn: MigrationConnection,
+{
     try!(setup_database(conn));
     let latest_migration_version = conn.latest_run_migration_version()?
         .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
-    revert_migration_with_version(conn, &latest_migration_version, &mut stdout())
+    revert_migration_with_version(conn, path, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }
 
 #[doc(hidden)]
-pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, ver: &str, output: &mut Write)
+pub fn revert_migration_with_version<Conn: Connection>(conn: &Conn, migrations_dir: &Path, ver: &str, output: &mut Write)
     -> Result<(), RunMigrationsError>
 {
-    migration_with_version(ver)
+    migration_with_version(migrations_dir, ver)
         .map_err(|e| e.into())
         .and_then(|m| revert_migration(conn, m, output))
 }
 
 #[doc(hidden)]
-pub fn run_migration_with_version<Conn>(conn: &Conn, ver: &str, output: &mut Write)
+pub fn run_migration_with_version<Conn>(conn: &Conn, migrations_dir: &Path, ver: &str, output: &mut Write)
     -> Result<(), RunMigrationsError> where
         Conn: MigrationConnection,
 {
-    migration_with_version(ver)
+    migration_with_version(migrations_dir, ver)
         .map_err(|e| e.into())
         .and_then(|m| run_migration(conn, &*m, output))
 }
 
-fn migration_with_version(ver: &str) -> Result<Box<Migration>, MigrationError> {
-    let migrations_dir = try!(find_migrations_directory());
-    let all_migrations = try!(migrations_in_directory(&migrations_dir));
+fn migration_with_version(migrations_dir: &Path, ver: &str) -> Result<Box<Migration>, MigrationError> {
+    let all_migrations = try!(migrations_in_directory(migrations_dir));
     let migration = all_migrations.into_iter().find(|m| {
         m.version() == ver
     });
