@@ -83,7 +83,7 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [Vec]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
+    /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default)] pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
