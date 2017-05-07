@@ -14,8 +14,7 @@ pub trait LoadDsl<Conn: Connection>: Sized where
 {
     type SqlType;
 
-    /// Executes the given query, returning an `Iterator` over the returned
-    /// rows.
+    /// Executes the given query, returning a `Vec` with the returned rows.
     fn load<U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
         U: Queryable<Self::SqlType, Conn::Backend>;
 
@@ -38,7 +37,7 @@ pub trait LoadDsl<Conn: Connection>: Sized where
     fn get_result<U>(self, conn: &Conn) -> QueryResult<U> where
         U: Queryable<Self::SqlType, Conn::Backend>;
 
-    /// Runs the command, returning an `Iterator` over the affected rows.
+    /// Runs the command, returning an `Vec` with the affected rows.
     fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>> where
         U: Queryable<Self::SqlType, Conn::Backend>,
     {
