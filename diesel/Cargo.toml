@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "0.12.0"
+version = "0.12.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
@@ -13,7 +13,7 @@ categories = ["database"]
 
 [dependencies]
 byteorder = "1.0"
-chrono = { version = "0.3", optional = true }
+chrono = { version = "=0.3.0", optional = true }
 clippy = { optional = true, version = "=0.0.118" }
 libsqlite3-sys = { version = ">=0.7.1, <0.8.0", optional = true }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }

@@ -4,6 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.12.1] - 2017-05-07
+
+### Changed
+
+* Locked the chrono dependency to require exactly `0.3.0` instead of a semver
+  restriction. This restriction is required for the 0.12 line of releases to
+  continue compiling, as the chrono project is including breaking changes in
+  patch releases.
+
 ## [0.12.0] - 2016-03-16
 
 ### Added
