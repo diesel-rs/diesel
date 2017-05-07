@@ -6,7 +6,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-
 ### Added
 
 * Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
@@ -19,6 +18,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added the `migration pending` command to the Diesel CLI to run the `any_pending_migrations` function and report the output.
 
+## [0.12.1] - 2017-05-07
+
+### Changed
+
+* Locked the chrono dependency to require exactly `0.3.0` instead of a semver
+  restriction. This restriction is required for the 0.12 line of releases to
+  continue compiling, as the chrono project is including breaking changes in
+  patch releases.
 
 ## [0.12.0] - 2017-03-16
 
