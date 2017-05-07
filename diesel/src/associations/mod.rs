@@ -15,7 +15,14 @@
 //! relationship. You can declare an association between two records with `#[has_many]` and
 //! `#[belongs_to]`.
 //!
-//! ```ignore
+//! ```rust
+//! // You need to have the table definitions from `infer_schema!` or `table!` in scope to
+//! // derive Identifiable.
+//! # #[macro_use] extern crate diesel;
+//! # #[macro_use] extern crate diesel_codegen;
+//! # include!("src/doctest_setup.rs");
+//! use schema::{posts, users};
+//!
 //! #[derive(Identifiable, Queryable, Associations)]
 //! #[has_many(posts)]
 //! pub struct User {
@@ -23,6 +30,7 @@
 //!     name: String,
 //! }
 //!
+//! # #[derive(Debug, PartialEq)]
 //! #[derive(Identifiable, Queryable, Associations)]
 //! #[belongs_to(User)]
 //! pub struct Post {
@@ -30,6 +38,13 @@
 //!     user_id: i32,
 //!     title: String,
 //! }
+//!
+//! # fn main() {
+//! # let connection = establish_connection();
+//! # let user = users::table.find(2).get_result::<User>(&connection).unwrap();
+//! # let posts = Post::belonging_to(&user).load::<Post>(&connection);
+//! # assert_eq!(posts, Ok(vec![Post { id: 3, user_id: 2, title: "My first post too".to_owned() }]));
+//! # }
 //! ```
 //!
 //! Note that in addition to the `#[has_many]` and `#[belongs_to]` annotations, we also need to

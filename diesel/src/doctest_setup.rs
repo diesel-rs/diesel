@@ -15,6 +15,7 @@ cfg_if! {
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals").unwrap();
+            connection.execute("DROP TABLE IF EXISTS posts").unwrap();
 
             connection
         }
@@ -38,6 +39,16 @@ cfg_if! {
             connection.execute("INSERT INTO animals (species, legs, name) VALUES
                                ('dog', 4, 'Jack'),
                                ('spider', 8, null)").unwrap();
+
+            connection.execute("CREATE TABLE posts (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title VARCHAR NOT NULL
+            )").unwrap();
+            connection.execute("INSERT INTO posts (user_id, title) VALUES
+                (1, 'My first post'),
+                (1, 'About Rust'),
+                (2, 'My first post too')").unwrap();
 
             connection
         }
@@ -69,6 +80,16 @@ cfg_if! {
                                ('dog', 4, 'Jack'),
                                ('spider', 8, null)").unwrap();
 
+            connection.execute("CREATE TABLE posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title VARCHAR NOT NULL
+            )").unwrap();
+            connection.execute("INSERT INTO posts (user_id, title) VALUES
+                (1, 'My first post'),
+                (1, 'About Rust'),
+                (2, 'My first post too')").unwrap();
+
             connection
         }
     } else if #[cfg(feature = "mysql")] {
@@ -80,6 +101,7 @@ cfg_if! {
             let connection = diesel::mysql::MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals").unwrap();
+            connection.execute("DROP TABLE IF EXISTS posts").unwrap();
 
             connection
         }
@@ -103,6 +125,16 @@ cfg_if! {
             connection.execute("INSERT INTO animals (species, legs, name) VALUES
                                ('dog', 4, 'Jack'),
                                ('spider', 8, null)").unwrap();
+
+            connection.execute("CREATE TABLE posts (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").unwrap();
+            connection.execute("INSERT INTO posts (user_id, title) VALUES
+                (1, 'My first post'),
+                (1, 'About Rust'),
+                (2, 'My first post too')").unwrap();
 
             connection.begin_test_transaction().unwrap();
             connection
@@ -177,5 +209,21 @@ impl_Insertable! {
         species: String,
         legs: i32,
         name: Option<String>,
+    }
+}
+
+mod schema {
+    table! {
+        posts {
+            id -> Integer,
+            user_id -> Integer,
+            title -> VarChar,
+        }
+    }
+    table! {
+        users {
+            id -> Integer,
+            name -> VarChar,
+        }
     }
 }
