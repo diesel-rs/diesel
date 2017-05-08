@@ -50,7 +50,6 @@ matrix:
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_compile_tests && cargo test)
 env:
   # TODO: why is there no database specified for Postgres?
   matrix:
