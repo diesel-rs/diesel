@@ -105,6 +105,29 @@ fn filter_by_like() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn filter_by_ilike() {
+    use schema::users::dsl::*;
+
+    let connection = connection();
+    let data = vec![
+        NewUser::new("Sean Griffin", None),
+        NewUser::new("Tess Griffin", None),
+        NewUser::new("Jim", None),
+    ];
+    insert(&data).into(users).execute(&connection).unwrap();
+    let data = users.load::<User>(&connection).unwrap();
+    let sean = data[0].clone();
+    let tess = data[1].clone();
+    let jim = data[2].clone();
+
+    assert_eq!(vec![sean, tess],
+        users.filter(name.ilike("%grifFin")).order(id.asc()).load(&connection).unwrap());
+    assert_eq!(vec![jim],
+        users.filter(name.not_ilike("%grifFin")).order(id.asc()).load(&connection).unwrap());
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn filter_by_any() {
     use schema::users::dsl::*;
     use diesel::expression::dsl::any;

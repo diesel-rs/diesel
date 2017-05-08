@@ -4,6 +4,8 @@ pub mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
 pub mod predicates;
+#[doc(hidden)]
+pub mod helper_types;
 
 mod date_and_time;
 

@@ -8,6 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for `ILIKE` in PostgreSQL.
+
 * Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
 
 * Added support for adding two nullable columns.
