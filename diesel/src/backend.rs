@@ -1,6 +1,7 @@
 use byteorder::{ByteOrder, NativeEndian};
 
-use query_builder::{QueryBuilder, BindCollector};
+use query_builder::QueryBuilder;
+use query_builder::bind_collector::{BindCollector, RawBytesBindCollector};
 use query_builder::debug::DebugQueryBuilder;
 use types::{self, HasSqlType};
 
@@ -37,16 +38,9 @@ pub struct Debug;
 
 impl Backend for Debug {
     type QueryBuilder = DebugQueryBuilder;
-    type BindCollector = ();
+    type BindCollector = RawBytesBindCollector<Self>;
     type RawValue = ();
     type ByteOrder = NativeEndian;
-}
-
-impl BindCollector<Debug> for () {
-    fn push_bound_value<T>(&mut self, _binds: Option<Vec<u8>>) where
-        Debug: HasSqlType<T>,
-    {
-    }
 }
 
 impl TypeMetadata for Debug {
