@@ -1,8 +1,12 @@
 use backend::{Backend, TypeMetadata};
-use types::HasSqlType;
+use result::Error::SerializationError;
+use result::QueryResult;
+use types::{HasSqlType, ToSql, IsNull};
 
 pub trait BindCollector<DB: Backend> {
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where DB: HasSqlType<T>;
+    fn push_bound_value<T, U>(&mut self, bind: &U) -> QueryResult<()> where
+        DB: HasSqlType<T>,
+        U: ToSql<T, DB>;
 }
 
 #[derive(Debug)]
@@ -21,8 +25,16 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
 }
 
 impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB> {
-    fn push_bound_value<T>(&mut self, bind: Option<Vec<u8>>) where DB: HasSqlType<T> {
+    fn push_bound_value<T, U>(&mut self, bind: &U) -> QueryResult<()> where
+        DB: HasSqlType<T>,
+        U: ToSql<T, DB>,
+    {
+        let mut bytes = Vec::new();
+        match bind.to_sql(&mut bytes).map_err(SerializationError)? {
+            IsNull::No => self.binds.push(Some(bytes)),
+            IsNull::Yes => self.binds.push(None),
+        }
         self.metadata.push(<DB as HasSqlType<T>>::metadata());
-        self.binds.push(bind);
+        Ok(())
     }
 }

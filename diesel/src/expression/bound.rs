@@ -2,10 +2,9 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use query_builder::*;
-use result::Error::SerializationError;
 use result::QueryResult;
 use super::*;
-use types::{HasSqlType, ToSql, IsNull};
+use types::{HasSqlType, ToSql};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {
@@ -36,18 +35,7 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
     }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        let mut bytes = Vec::new();
-        let is_null = try!(self.item.to_sql(&mut bytes).map_err(SerializationError));
-        match is_null {
-            IsNull::Yes => {
-                out.push_bound_value::<T>(None);
-                Ok(())
-            }
-            IsNull::No => {
-                out.push_bound_value::<T>(Some(bytes));
-                Ok(())
-            }
-        }
+        out.push_bound_value(&self.item)
     }
 
     fn is_safe_to_cache_prepared(&self) -> bool {
