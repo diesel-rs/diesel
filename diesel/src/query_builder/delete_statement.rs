@@ -38,17 +38,11 @@ impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.table.from_clause().collect_binds(out));
-        try!(self.where_clause.collect_binds(out));
-        try!(self.returning.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.table.from_clause().walk_ast(pass)?;
+        self.where_clause.walk_ast(pass)?;
+        self.returning.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.table.from_clause().is_safe_to_cache_prepared() &&
-            self.where_clause.is_safe_to_cache_prepared() &&
-            self.returning.is_safe_to_cache_prepared()
     }
 }
 

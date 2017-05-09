@@ -56,12 +56,8 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
         self.expr.to_sql(out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.expr.collect_binds(out)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.expr.is_safe_to_cache_prepared()
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)
     }
 }
 

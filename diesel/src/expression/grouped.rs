@@ -18,13 +18,9 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.0.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.is_safe_to_cache_prepared()
     }
 }
 

@@ -75,10 +75,8 @@ macro_rules! tuple_impls {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
-            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
             impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
-                fn to_sql(&self, out: &mut DB::QueryBuilder)
-                -> BuildQueryResult {
+                fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
@@ -88,15 +86,9 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                    $(
-                        try!(self.$idx.collect_binds(out));
-                    )+
+                fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+                    $(self.$idx.walk_ast(pass)?;)+
                     Ok(())
-                }
-
-                fn is_safe_to_cache_prepared(&self) -> bool {
-                    $(self.$idx.is_safe_to_cache_prepared() &&)+ true
                 }
             }
 

@@ -6,7 +6,7 @@ macro_rules! simple_clause {
     ($no_clause:ident, $clause:ident, $sql:expr, backend_bounds = $($backend_bounds:ident),*) => {
         use backend::Backend;
         use result::QueryResult;
-        use super::{QueryFragment, QueryBuilder, BuildQueryResult};
+        use super::{QueryFragment, QueryBuilder, BuildQueryResult, AstPass};
 
         #[derive(Debug, Clone, Copy)]
         pub struct $no_clause;
@@ -16,12 +16,8 @@ macro_rules! simple_clause {
                 Ok(())
             }
 
-            fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+            fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                true
             }
         }
 
@@ -39,12 +35,8 @@ macro_rules! simple_clause {
                 self.0.to_sql(out)
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                self.0.collect_binds(out)
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.0.is_safe_to_cache_prepared()
+            fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+                self.0.walk_ast(pass)
             }
         }
 

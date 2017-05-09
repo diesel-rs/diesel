@@ -1,7 +1,7 @@
 use backend::Backend;
 use expression::*;
 use expression::helper_types::SqlTypeOf;
-use query_builder::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
+use query_builder::*;
 use result::QueryResult;
 use types::Bool;
 
@@ -79,15 +79,10 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.left.collect_binds(out));
-        try!(self.values.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.left.walk_ast(pass)?;
+        self.values.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.left.is_safe_to_cache_prepared() &&
-            self.values.is_safe_to_cache_prepared()
     }
 }
 
@@ -108,15 +103,10 @@ impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.left.collect_binds(out));
-        try!(self.values.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.left.walk_ast(pass)?;
+        self.values.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.left.is_safe_to_cache_prepared() &&
-            self.values.is_safe_to_cache_prepared()
     }
 }
 
@@ -212,15 +202,15 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        for value in &self.0 {
-            try!(value.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            for value in &self.0 {
+                value.walk_ast(pass)?;
+            }
         }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -262,12 +252,8 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
         self.values.to_sql(out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.values.collect_binds(out)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.values.is_safe_to_cache_prepared()
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.values.walk_ast(pass)
     }
 }
 

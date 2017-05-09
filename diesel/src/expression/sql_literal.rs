@@ -40,12 +40,11 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 

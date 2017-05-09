@@ -50,15 +50,10 @@ macro_rules! global_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
-                try!(self.left.collect_binds(out));
-                try!(self.right.collect_binds(out));
+            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass)?;
+                self.right.walk_ast(pass)?;
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.left.is_safe_to_cache_prepared() &&
-                    self.right.is_safe_to_cache_prepared()
             }
         }
     }
@@ -81,17 +76,10 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn collect_binds(&self, out: &mut <$backend as $crate::backend::Backend>::BindCollector)
-                -> $crate::result::QueryResult<()>
-            {
-                try!(self.left.collect_binds(out));
-                try!(self.right.collect_binds(out));
+            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<$backend>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass)?;
+                self.right.walk_ast(pass)?;
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.left.is_safe_to_cache_prepared() &&
-                    self.right.is_safe_to_cache_prepared()
             }
         }
 
@@ -110,18 +98,10 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn collect_binds(
-                &self,
-                out: &mut <$crate::backend::Debug as $crate::backend::Backend>::BindCollector,
-            ) -> $crate::result::QueryResult<()> {
-                try!(self.left.collect_binds(out));
-                try!(self.right.collect_binds(out));
+            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass)?;
+                self.right.walk_ast(pass)?;
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.left.is_safe_to_cache_prepared() &&
-                    self.right.is_safe_to_cache_prepared()
             }
         }
     }
@@ -202,13 +182,9 @@ macro_rules! postfix_predicate_body {
                 Ok(())
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
-                try!(self.expr.collect_binds(out));
+            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                self.expr.walk_ast(pass)?;
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.expr.is_safe_to_cache_prepared()
             }
         }
 

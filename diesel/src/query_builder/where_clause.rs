@@ -3,7 +3,7 @@ use expression::*;
 use expression::expression_methods::*;
 use expression::predicates::And;
 use result::QueryResult;
-use super::{QueryFragment, QueryBuilder, BuildQueryResult};
+use super::*;
 use types::Bool;
 
 pub trait WhereAnd<Predicate> {
@@ -22,12 +22,8 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -59,12 +55,8 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
         self.0.to_sql(out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.0.collect_binds(out)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.is_safe_to_cache_prepared()
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.0.walk_ast(pass)
     }
 }
 

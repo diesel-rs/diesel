@@ -47,14 +47,10 @@ macro_rules! sql_function_body {
                 Ok(())
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
-                try!($crate::query_builder::QueryFragment::collect_binds(
-                        &($(&self.$arg_name),*), out));
+            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                try!($crate::query_builder::QueryFragment::walk_ast(
+                        &($(&self.$arg_name),*), pass));
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                ($(&self.$arg_name),*).is_safe_to_cache_prepared()
             }
         }
 
@@ -166,12 +162,8 @@ macro_rules! no_arg_sql_function_body {
                 Ok(())
             }
 
-            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, _: &mut $crate::query_builder::AstPass<DB>) -> QueryResult<()> {
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                true
             }
         }
     };
@@ -188,12 +180,8 @@ macro_rules! no_arg_sql_function_body {
                 Ok(())
             }
 
-            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, _: &mut $crate::query_builder::AstPass<DB>) -> QueryResult<()> {
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                true
             }
         }
     };

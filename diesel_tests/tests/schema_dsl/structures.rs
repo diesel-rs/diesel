@@ -86,13 +86,13 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.columns.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.columns.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -114,12 +114,11 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -141,13 +140,13 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.0.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -163,13 +162,13 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Sqlite>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.0.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -183,12 +182,13 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.0.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -202,13 +202,13 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.0.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -225,13 +225,13 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.column.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.column.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 

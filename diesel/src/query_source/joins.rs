@@ -93,12 +93,8 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -113,11 +109,7 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }

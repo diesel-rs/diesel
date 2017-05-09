@@ -29,8 +29,7 @@ impl<QS> SelectClauseExpression<QS> for DefaultSelectClause where
 
 pub trait SelectClauseQueryFragment<QS, DB: Backend> {
     fn to_sql(&self, source: &QS, out: &mut DB::QueryBuilder) -> BuildQueryResult;
-    fn collect_binds(&self, source: &QS, out: &mut DB::BindCollector) -> QueryResult<()>;
-    fn is_safe_to_cache_prepared(&self, source: &QS) -> bool;
+    fn walk_ast(&self, source: &QS, pass: &mut AstPass<DB>) -> QueryResult<()>;
 }
 
 impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T> where
@@ -41,12 +40,8 @@ impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T> where
         self.0.to_sql(out)
     }
 
-    fn collect_binds(&self, _: &QS, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.0.collect_binds(out)
-    }
-
-    fn is_safe_to_cache_prepared(&self, _: &QS) -> bool {
-        self.0.is_safe_to_cache_prepared()
+    fn walk_ast(&self, _: &QS, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.0.walk_ast(pass)
     }
 }
 
@@ -59,11 +54,7 @@ impl<QS, DB> SelectClauseQueryFragment<QS, DB> for DefaultSelectClause where
         source.default_selection().to_sql(out)
     }
 
-    fn collect_binds(&self, source: &QS, out: &mut DB::BindCollector) -> QueryResult<()> {
-        source.default_selection().collect_binds(out)
-    }
-
-    fn is_safe_to_cache_prepared(&self, source: &QS) -> bool {
-        source.default_selection().is_safe_to_cache_prepared()
+    fn walk_ast(&self, source: &QS, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        source.default_selection().walk_ast(pass)
     }
 }

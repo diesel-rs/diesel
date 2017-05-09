@@ -88,13 +88,8 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.target.collect_binds(out));
-        Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.target.is_safe_to_cache_prepared()
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.target.walk_ast(pass)
     }
 }
 
@@ -115,12 +110,8 @@ impl<DB: Backend> QueryFragment<DB> for CountStar {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 

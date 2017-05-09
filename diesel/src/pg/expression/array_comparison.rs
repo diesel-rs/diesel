@@ -107,13 +107,9 @@ impl<Expr> QueryFragment<Pg> for Any<Expr> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.expr.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.expr.is_safe_to_cache_prepared()
     }
 }
 
@@ -127,13 +123,9 @@ impl<Expr> QueryFragment<Debug> for Any<Expr> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.expr.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Debug>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.expr.is_safe_to_cache_prepared()
     }
 }
 
@@ -175,13 +167,9 @@ impl<Expr> QueryFragment<Pg> for All<Expr> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.expr.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.expr.is_safe_to_cache_prepared()
     }
 }
 
@@ -195,13 +183,9 @@ impl<Expr> QueryFragment<Debug> for All<Expr> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Debug as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.expr.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Debug>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.expr.is_safe_to_cache_prepared()
     }
 }
 

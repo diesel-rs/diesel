@@ -116,7 +116,7 @@ impl PgConnection {
 
         let cache_len = self.statement_cache.len();
         let query = self.statement_cache.cached_statement(source, &metadata, |sql| {
-            let query_name = if source.is_safe_to_cache_prepared() {
+            let query_name = if source.is_safe_to_cache_prepared()? {
                 Some(format!("__diesel_stmt_{}", cache_len))
             } else {
                 None

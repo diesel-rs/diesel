@@ -40,15 +40,11 @@ macro_rules! numeric_operation {
                 self.rhs.to_sql(out)
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                try!(self.lhs.collect_binds(out));
-                try!(self.rhs.collect_binds(out));
-                Ok(())
-            }
 
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.lhs.is_safe_to_cache_prepared() &&
-                    self.rhs.is_safe_to_cache_prepared()
+            fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+                self.lhs.walk_ast(pass)?;
+                self.rhs.walk_ast(pass)?;
+                Ok(())
             }
         }
 

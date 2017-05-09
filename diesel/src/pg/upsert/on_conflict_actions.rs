@@ -128,12 +128,8 @@ impl QueryFragment<Pg> for DoNothing {
         Ok(())
     }
 
-    fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -167,13 +163,12 @@ impl<T> QueryFragment<Pg> for DoUpdate<T> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.changeset.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+        match *pass {
+            AstPass::CollectBinds(ref mut out) => self.changeset.collect_binds(out)?,
+            AstPass::IsSafeToCachePrepared(ref mut result) => **result = false,
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 
@@ -190,12 +185,8 @@ impl<T> QueryFragment<Pg> for Excluded<T> where
         Ok(())
     }
 
-    fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 

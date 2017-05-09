@@ -20,12 +20,8 @@ macro_rules! __diesel_column {
                 out.push_identifier(stringify!($column_name))
             }
 
-            fn collect_binds(&self, _out: &mut DB::BindCollector) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, _: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                true
             }
         }
 
@@ -436,7 +432,7 @@ macro_rules! table_body {
                 use super::table;
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
-                use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+                use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment, AstPass};
                 use $crate::query_source::joins::{Join, Inner, LeftOuter};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
@@ -462,12 +458,8 @@ macro_rules! table_body {
                         Ok(())
                     }
 
-                    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+                    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
                         Ok(())
-                    }
-
-                    fn is_safe_to_cache_prepared(&self) -> bool {
-                        true
                     }
                 }
 

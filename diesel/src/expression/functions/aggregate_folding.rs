@@ -39,13 +39,9 @@ macro_rules! fold_function {
                 Ok(())
             }
 
-            fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                try!(self.target.collect_binds(out));
+            fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+                self.target.walk_ast(pass)?;
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                self.target.is_safe_to_cache_prepared()
             }
         }
 

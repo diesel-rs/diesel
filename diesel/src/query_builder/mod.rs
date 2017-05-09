@@ -73,6 +73,16 @@ impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
 }
 
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub enum AstPass<'a, DB> where
+    DB: Backend,
+    DB::BindCollector: 'a,
+{
+    CollectBinds(&'a mut DB::BindCollector),
+    IsSafeToCachePrepared(&'a mut bool),
+}
+
 /// An untyped fragment of SQL. This may be a complete SQL command (such as
 /// an update statement without a `RETURNING` clause), or a subsection (such as
 /// our internal types used to represent a `WHERE` clause). All methods on
@@ -80,8 +90,17 @@ impl<'a, T: Query> Query for &'a T {
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
-    fn is_safe_to_cache_prepared(&self) -> bool;
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()>;
+
+    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+        self.walk_ast(&mut AstPass::CollectBinds(out))
+    }
+
+    fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
+        let mut result = true;
+        self.walk_ast(&mut AstPass::IsSafeToCachePrepared(&mut result))?;
+        Ok(result)
+    }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
@@ -92,12 +111,8 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
         QueryFragment::to_sql(&**self, out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        QueryFragment::collect_binds(&**self, out)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        QueryFragment::is_safe_to_cache_prepared(&**self)
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
     }
 }
 
@@ -109,26 +124,18 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
         QueryFragment::to_sql(&**self, out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        QueryFragment::collect_binds(&**self, out)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        QueryFragment::is_safe_to_cache_prepared(&**self)
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
     }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
-    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn to_sql(&self, _: &mut DB::QueryBuilder) -> BuildQueryResult {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 

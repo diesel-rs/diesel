@@ -137,7 +137,7 @@ impl<DB, Statement> StatementCache<DB, Statement> where
 
         let cache_key = try!(StatementCacheKey::for_source(source, bind_types));
 
-        if !source.is_safe_to_cache_prepared() {
+        if !source.is_safe_to_cache_prepared()? {
             let sql = try!(cache_key.sql(source));
             return prepare_fn(&sql).map(MaybeCached::CannotCache)
         }

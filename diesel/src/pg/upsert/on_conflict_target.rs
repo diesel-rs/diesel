@@ -64,12 +64,8 @@ impl QueryFragment<Pg> for NoConflictTarget {
         Ok(())
     }
 
-    fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -88,12 +84,8 @@ impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
         Ok(())
     }
 
-    fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -109,13 +101,9 @@ impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.0.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+        self.0.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.0.is_safe_to_cache_prepared()
     }
 }
 
@@ -131,12 +119,8 @@ impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
         Ok(())
     }
 
-    fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -160,12 +144,8 @@ macro_rules! on_conflict_tuples {
                 Ok(())
             }
 
-            fn collect_binds(&self, _: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
+            fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
                 Ok(())
-            }
-
-            fn is_safe_to_cache_prepared(&self) -> bool {
-                true
             }
         }
 

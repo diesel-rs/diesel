@@ -24,7 +24,7 @@ use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::NoWhereClause;
-use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult};
+use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult, AstPass};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -139,27 +139,16 @@ impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.distinct.collect_binds(out));
-        try!(self.select.collect_binds(&self.from, out));
-        try!(self.from.from_clause().collect_binds(out));
-        try!(self.where_clause.collect_binds(out));
-        try!(self.group_by.collect_binds(out));
-        try!(self.order.collect_binds(out));
-        try!(self.limit.collect_binds(out));
-        try!(self.offset.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass)?;
+        self.select.walk_ast(&self.from, pass)?;
+        self.from.from_clause().walk_ast(pass)?;
+        self.where_clause.walk_ast(pass)?;
+        self.group_by.walk_ast(pass)?;
+        self.order.walk_ast(pass)?;
+        self.limit.walk_ast(pass)?;
+        self.offset.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.distinct.is_safe_to_cache_prepared() &&
-            self.select.is_safe_to_cache_prepared(&self.from) &&
-            self.from.from_clause().is_safe_to_cache_prepared() &&
-            self.where_clause.is_safe_to_cache_prepared() &&
-            self.group_by.is_safe_to_cache_prepared() &&
-            self.order.is_safe_to_cache_prepared() &&
-            self.limit.is_safe_to_cache_prepared() &&
-            self.offset.is_safe_to_cache_prepared()
     }
 }
 
@@ -186,25 +175,15 @@ impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.distinct.collect_binds(out));
-        try!(self.select.collect_binds(&(), out));
-        try!(self.where_clause.collect_binds(out));
-        try!(self.group_by.collect_binds(out));
-        try!(self.order.collect_binds(out));
-        try!(self.limit.collect_binds(out));
-        try!(self.offset.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass)?;
+        self.select.walk_ast(&(), pass)?;
+        self.where_clause.walk_ast(pass)?;
+        self.group_by.walk_ast(pass)?;
+        self.order.walk_ast(pass)?;
+        self.limit.walk_ast(pass)?;
+        self.offset.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.distinct.is_safe_to_cache_prepared() &&
-            self.select.is_safe_to_cache_prepared(&()) &&
-            self.where_clause.is_safe_to_cache_prepared() &&
-            self.group_by.is_safe_to_cache_prepared() &&
-            self.order.is_safe_to_cache_prepared() &&
-            self.limit.is_safe_to_cache_prepared() &&
-            self.offset.is_safe_to_cache_prepared()
     }
 }
 

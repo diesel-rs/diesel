@@ -1,5 +1,5 @@
 use backend::Backend;
-use query_builder::{QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use result::QueryResult;
 use sqlite::Sqlite;
 
@@ -12,12 +12,8 @@ impl QueryFragment<Sqlite> for Replace {
         Ok(())
     }
 
-    fn collect_binds(&self, _out: &mut <Sqlite as Backend>::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<Sqlite>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 

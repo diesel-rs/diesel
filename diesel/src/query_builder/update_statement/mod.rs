@@ -6,7 +6,7 @@ pub use self::target::{UpdateTarget, IntoUpdateTarget};
 
 use backend::Backend;
 use expression::{Expression, SelectableExpression, NonAggregate};
-use query_builder::{Query, AsQuery, QueryFragment, QueryBuilder, BuildQueryResult};
+use query_builder::*;
 use query_builder::returning_clause::*;
 use query_source::Table;
 use result::QueryResult;
@@ -69,16 +69,20 @@ impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.table.from_clause().collect_binds(out));
-        try!(self.values.collect_binds(out));
-        try!(self.where_clause.collect_binds(out));
-        try!(self.returning.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
+            **result = false;
+        } else {
+            self.table.from_clause().walk_ast(pass)?;
+            // FIXME: Let's see if we can move `Changeset` into AST passes
+            // on `QueryFragment`
+            if let AstPass::CollectBinds(ref mut out) = *pass {
+                self.values.collect_binds(out)?;
+            }
+            self.where_clause.walk_ast(pass)?;
+            self.returning.walk_ast(pass)?;
+        }
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        false
     }
 }
 

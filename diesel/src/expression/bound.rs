@@ -34,12 +34,11 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        out.push_bound_value(&self.item)
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::CollectBinds(ref mut out) = *pass {
+            out.push_bound_value(&self.item)?;
+        }
+        Ok(())
     }
 }
 

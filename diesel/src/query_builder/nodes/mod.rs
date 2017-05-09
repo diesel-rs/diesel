@@ -1,5 +1,5 @@
 use backend::Backend;
-use query_builder::{QueryBuilder, BuildQueryResult, QueryFragment};
+use query_builder::*;
 use result::QueryResult;
 
 #[derive(Debug, Copy, Clone)]
@@ -10,12 +10,8 @@ impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
         out.push_identifier(self.0)
     }
 
-    fn collect_binds(&self, _out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        true
     }
 }
 
@@ -55,19 +51,12 @@ impl<T, U, V, W, DB> QueryFragment<DB> for Join<T, U, V, W> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.lhs.collect_binds(out));
-        try!(self.join_type.collect_binds(out));
-        try!(self.rhs.collect_binds(out));
-        try!(self.predicate.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.lhs.walk_ast(pass)?;
+        self.join_type.walk_ast(pass)?;
+        self.rhs.walk_ast(pass)?;
+        self.predicate.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.lhs.is_safe_to_cache_prepared() &&
-            self.join_type.is_safe_to_cache_prepared() &&
-            self.rhs.is_safe_to_cache_prepared() &&
-            self.predicate.is_safe_to_cache_prepared()
     }
 }
 
@@ -100,14 +89,9 @@ impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.lhs.collect_binds(out));
-        try!(self.rhs.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.lhs.walk_ast(pass)?;
+        self.rhs.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.lhs.is_safe_to_cache_prepared() &&
-            self.rhs.is_safe_to_cache_prepared()
     }
 }

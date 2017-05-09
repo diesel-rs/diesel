@@ -76,29 +76,19 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.distinct.collect_binds(out));
-        try!(self.select.collect_binds(out));
-        try!(self.from.from_clause().collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass)?;
+        self.select.walk_ast(pass)?;
+        self.from.from_clause().walk_ast(pass)?;
 
         if let Some(ref where_clause) = self.where_clause {
-            try!(where_clause.collect_binds(out));
+            where_clause.walk_ast(pass)?;
         }
 
-        try!(self.order.collect_binds(out));
-        try!(self.limit.collect_binds(out));
-        try!(self.offset.collect_binds(out));
+        self.order.walk_ast(pass)?;
+        self.limit.walk_ast(pass)?;
+        self.offset.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.distinct.is_safe_to_cache_prepared() &&
-            self.select.is_safe_to_cache_prepared() &&
-            self.from.from_clause().is_safe_to_cache_prepared() &&
-            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true) &&
-            self.order.is_safe_to_cache_prepared() &&
-            self.limit.is_safe_to_cache_prepared() &&
-            self.offset.is_safe_to_cache_prepared()
     }
 }
 
@@ -121,27 +111,18 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
         Ok(())
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        try!(self.distinct.collect_binds(out));
-        try!(self.select.collect_binds(out));
+    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass)?;
+        self.select.walk_ast(pass)?;
 
         if let Some(ref where_clause) = self.where_clause {
-            try!(where_clause.collect_binds(out));
+            where_clause.walk_ast(pass)?;
         }
 
-        try!(self.order.collect_binds(out));
-        try!(self.limit.collect_binds(out));
-        try!(self.offset.collect_binds(out));
+        self.order.walk_ast(pass)?;
+        self.limit.walk_ast(pass)?;
+        self.offset.walk_ast(pass)?;
         Ok(())
-    }
-
-    fn is_safe_to_cache_prepared(&self) -> bool {
-        self.distinct.is_safe_to_cache_prepared() &&
-            self.select.is_safe_to_cache_prepared() &&
-            self.where_clause.as_ref().map(|w| w.is_safe_to_cache_prepared()).unwrap_or(true) &&
-            self.order.is_safe_to_cache_prepared() &&
-            self.limit.is_safe_to_cache_prepared() &&
-            self.offset.is_safe_to_cache_prepared()
     }
 }
 
