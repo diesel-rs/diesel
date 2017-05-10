@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use util::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Attr {
     pub column_name: Option<syn::Ident>,
     pub field_name: Option<syn::Ident>,
