@@ -139,15 +139,15 @@ impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass)?;
-        self.select.walk_ast(&self.from, pass)?;
-        self.from.from_clause().walk_ast(pass)?;
-        self.where_clause.walk_ast(pass)?;
-        self.group_by.walk_ast(pass)?;
-        self.order.walk_ast(pass)?;
-        self.limit.walk_ast(pass)?;
-        self.offset.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass.reborrow())?;
+        self.select.walk_ast(&self.from, pass.reborrow())?;
+        self.from.from_clause().walk_ast(pass.reborrow())?;
+        self.where_clause.walk_ast(pass.reborrow())?;
+        self.group_by.walk_ast(pass.reborrow())?;
+        self.order.walk_ast(pass.reborrow())?;
+        self.limit.walk_ast(pass.reborrow())?;
+        self.offset.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -175,14 +175,14 @@ impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass)?;
-        self.select.walk_ast(&(), pass)?;
-        self.where_clause.walk_ast(pass)?;
-        self.group_by.walk_ast(pass)?;
-        self.order.walk_ast(pass)?;
-        self.limit.walk_ast(pass)?;
-        self.offset.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.distinct.walk_ast(pass.reborrow())?;
+        self.select.walk_ast(&(), pass.reborrow())?;
+        self.where_clause.walk_ast(pass.reborrow())?;
+        self.group_by.walk_ast(pass.reborrow())?;
+        self.order.walk_ast(pass.reborrow())?;
+        self.limit.walk_ast(pass.reborrow())?;
+        self.offset.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

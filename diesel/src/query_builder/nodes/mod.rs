@@ -10,7 +10,7 @@ impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
         out.push_identifier(self.0)
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -44,9 +44,9 @@ impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.lhs.walk_ast(pass)?;
-        self.rhs.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.lhs.walk_ast(pass.reborrow())?;
+        self.rhs.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

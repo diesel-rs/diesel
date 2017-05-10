@@ -12,7 +12,7 @@ impl<DB: Backend> QueryFragment<DB> for NoDistinctClause {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -25,7 +25,7 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

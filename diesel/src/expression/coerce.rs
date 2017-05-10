@@ -56,7 +56,7 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
         self.expr.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }
 }

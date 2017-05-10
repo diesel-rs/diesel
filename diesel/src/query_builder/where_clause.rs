@@ -22,7 +22,7 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -55,7 +55,7 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
         self.0.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }

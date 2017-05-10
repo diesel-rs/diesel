@@ -47,7 +47,7 @@ macro_rules! sql_function_body {
                 Ok(())
             }
 
-            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, pass: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 try!($crate::query_builder::QueryFragment::walk_ast(
                         &($(&self.$arg_name),*), pass));
                 Ok(())
@@ -180,7 +180,7 @@ macro_rules! no_arg_sql_function_body {
                 Ok(())
             }
 
-            fn walk_ast(&self, _: &mut $crate::query_builder::AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast(&self, _: $crate::query_builder::AstPass<DB>) -> QueryResult<()> {
                 Ok(())
             }
         }

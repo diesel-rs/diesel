@@ -117,10 +117,10 @@ impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
         Ok(())
     }
 
-    fn walk_ast(&self, out: &mut AstPass<DB>) -> QueryResult<()> {
-        self.left.from_clause().walk_ast(out)?;
-        self.kind.walk_ast(out)?;
-        self.right.from_clause().walk_ast(out)?;
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        self.left.from_clause().walk_ast(out.reborrow())?;
+        self.kind.walk_ast(out.reborrow())?;
+        self.right.from_clause().walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -175,7 +175,7 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -191,7 +191,7 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

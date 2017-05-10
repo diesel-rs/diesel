@@ -83,6 +83,22 @@ pub enum AstPass<'a, DB> where
     IsSafeToCachePrepared(&'a mut bool),
 }
 
+impl<'a, DB> AstPass<'a, DB> where
+    DB: Backend,
+    DB::BindCollector: 'a,
+{
+    /// Effectively copies `self`, with a narrower lifetime. This method
+    /// matches the semantics of the implicit reborrow that occurs when passing
+    /// a reference by value in Rust.
+    pub fn reborrow(&mut self) -> AstPass<DB> {
+        use self::AstPass::*;
+        match *self {
+            CollectBinds(ref mut collector) => CollectBinds(&mut **collector),
+            IsSafeToCachePrepared(ref mut result) => IsSafeToCachePrepared(&mut **result),
+        }
+    }
+}
+
 /// An untyped fragment of SQL. This may be a complete SQL command (such as
 /// an update statement without a `RETURNING` clause), or a subsection (such as
 /// our internal types used to represent a `WHERE` clause). All methods on
@@ -90,15 +106,15 @@ pub enum AstPass<'a, DB> where
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()>;
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.walk_ast(&mut AstPass::CollectBinds(out))
+        self.walk_ast(AstPass::CollectBinds(out))
     }
 
     fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(&mut AstPass::IsSafeToCachePrepared(&mut result))?;
+        self.walk_ast(AstPass::IsSafeToCachePrepared(&mut result))?;
         Ok(result)
     }
 }
@@ -111,7 +127,7 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
         QueryFragment::to_sql(&**self, out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
@@ -124,7 +140,7 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
         QueryFragment::to_sql(&**self, out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
@@ -134,7 +150,7 @@ impl<DB: Backend> QueryFragment<DB> for () {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

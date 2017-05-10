@@ -86,8 +86,8 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-                    $(self.$idx.walk_ast(pass)?;)+
+                fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+                    $(self.$idx.walk_ast(pass.reborrow())?;)+
                     Ok(())
                 }
             }

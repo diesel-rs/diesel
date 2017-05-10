@@ -50,9 +50,9 @@ macro_rules! global_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass)?;
-                self.right.walk_ast(pass)?;
+            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(pass.reborrow())?;
                 Ok(())
             }
         }
@@ -76,9 +76,9 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<$backend>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass)?;
-                self.right.walk_ast(pass)?;
+            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<$backend>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(pass.reborrow())?;
                 Ok(())
             }
         }
@@ -98,9 +98,9 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 self.right.to_sql(out)
             }
 
-            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass)?;
-                self.right.walk_ast(pass)?;
+            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(pass.reborrow())?;
                 Ok(())
             }
         }
@@ -182,7 +182,7 @@ macro_rules! postfix_predicate_body {
                 Ok(())
             }
 
-            fn walk_ast(&self, pass: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, pass: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 self.expr.walk_ast(pass)?;
                 Ok(())
             }

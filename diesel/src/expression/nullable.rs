@@ -28,7 +28,7 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
         self.0.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }

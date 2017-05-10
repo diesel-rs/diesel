@@ -116,17 +116,17 @@ impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret> whe
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
-            **result = false;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(result) = pass {
+            *result = false;
         } else {
             let values = self.records.values();
-            self.operator.walk_ast(pass)?;
-            self.target.from_clause().walk_ast(pass)?;
-            if let AstPass::CollectBinds(ref mut out) = *pass {
+            self.operator.walk_ast(pass.reborrow())?;
+            self.target.from_clause().walk_ast(pass.reborrow())?;
+            if let AstPass::CollectBinds(ref mut out) = pass {
                 values.values_bind_params(out)?;
             }
-            self.returning.walk_ast(pass)?;
+            self.returning.walk_ast(pass.reborrow())?;
         }
         Ok(())
     }
@@ -344,7 +344,7 @@ impl<DB: Backend> QueryFragment<DB> for Insert {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

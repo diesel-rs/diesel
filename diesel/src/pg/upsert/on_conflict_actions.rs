@@ -128,7 +128,7 @@ impl QueryFragment<Pg> for DoNothing {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -163,10 +163,10 @@ impl<T> QueryFragment<Pg> for DoUpdate<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
-        match *pass {
-            AstPass::CollectBinds(ref mut out) => self.changeset.collect_binds(out)?,
-            AstPass::IsSafeToCachePrepared(ref mut result) => **result = false,
+    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
+        match pass {
+            AstPass::CollectBinds(out) => self.changeset.collect_binds(out)?,
+            AstPass::IsSafeToCachePrepared(result) => *result = false,
         }
         Ok(())
     }
@@ -185,7 +185,7 @@ impl<T> QueryFragment<Pg> for Excluded<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }

@@ -88,7 +88,7 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

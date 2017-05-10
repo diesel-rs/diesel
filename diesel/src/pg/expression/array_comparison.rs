@@ -107,7 +107,7 @@ impl<Expr> QueryFragment<Pg> for Any<Expr> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
         self.expr.walk_ast(pass)?;
         Ok(())
     }
@@ -123,7 +123,7 @@ impl<Expr> QueryFragment<Debug> for Any<Expr> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Debug>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<Debug>) -> QueryResult<()> {
         self.expr.walk_ast(pass)?;
         Ok(())
     }
@@ -167,7 +167,7 @@ impl<Expr> QueryFragment<Pg> for All<Expr> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
         self.expr.walk_ast(pass)?;
         Ok(())
     }
@@ -183,7 +183,7 @@ impl<Expr> QueryFragment<Debug> for All<Expr> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Debug>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<Debug>) -> QueryResult<()> {
         self.expr.walk_ast(pass)?;
         Ok(())
     }

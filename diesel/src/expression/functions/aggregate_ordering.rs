@@ -38,7 +38,7 @@ macro_rules! ord_function {
                 Ok(())
             }
 
-            fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
                 self.target.walk_ast(pass)?;
                 Ok(())
             }

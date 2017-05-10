@@ -40,9 +40,9 @@ impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
-            **result = false;
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(result) = pass {
+            *result = false;
         }
         Ok(())
     }

@@ -63,7 +63,7 @@ impl<T, DB> QueryFragment<DB> for Exists<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)?;
         Ok(())
     }

@@ -20,7 +20,7 @@ macro_rules! __diesel_column {
                 out.push_identifier(stringify!($column_name))
             }
 
-            fn walk_ast(&self, _: &mut $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast(&self, _: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 Ok(())
             }
         }
@@ -470,7 +470,7 @@ macro_rules! table_body {
                         Ok(())
                     }
 
-                    fn walk_ast(&self, _: &mut AstPass<DB>) -> QueryResult<()> {
+                    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
                         Ok(())
                     }
                 }

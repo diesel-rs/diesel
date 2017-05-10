@@ -34,8 +34,8 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::CollectBinds(ref mut out) = *pass {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::CollectBinds(out) = pass {
             out.push_bound_value(&self.item)?;
         }
         Ok(())

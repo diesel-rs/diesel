@@ -79,9 +79,9 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.left.walk_ast(pass)?;
-        self.values.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.left.walk_ast(pass.reborrow())?;
+        self.values.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -103,9 +103,9 @@ impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.left.walk_ast(pass)?;
-        self.values.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.left.walk_ast(pass.reborrow())?;
+        self.values.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -202,12 +202,12 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(ref mut result) = *pass {
-            **result = false;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        if let AstPass::IsSafeToCachePrepared(result) = pass {
+            *result = false;
         } else {
             for value in &self.0 {
-                value.walk_ast(pass)?;
+                value.walk_ast(pass.reborrow())?;
             }
         }
         Ok(())
@@ -252,7 +252,7 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
         self.values.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.values.walk_ast(pass)
     }
 }

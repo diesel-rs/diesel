@@ -38,10 +38,10 @@ impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-        self.table.from_clause().walk_ast(pass)?;
-        self.where_clause.walk_ast(pass)?;
-        self.returning.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        self.table.from_clause().walk_ast(pass.reborrow())?;
+        self.where_clause.walk_ast(pass.reborrow())?;
+        self.returning.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

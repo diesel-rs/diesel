@@ -12,7 +12,7 @@ impl QueryFragment<Sqlite> for Replace {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Sqlite>) -> QueryResult<()> {
         Ok(())
     }
 }

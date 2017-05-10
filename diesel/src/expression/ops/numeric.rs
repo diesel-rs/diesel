@@ -41,9 +41,9 @@ macro_rules! numeric_operation {
             }
 
 
-            fn walk_ast(&self, pass: &mut AstPass<DB>) -> QueryResult<()> {
-                self.lhs.walk_ast(pass)?;
-                self.rhs.walk_ast(pass)?;
+            fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+                self.lhs.walk_ast(pass.reborrow())?;
+                self.rhs.walk_ast(pass.reborrow())?;
                 Ok(())
             }
         }

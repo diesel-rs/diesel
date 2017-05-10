@@ -64,7 +64,7 @@ impl QueryFragment<Pg> for NoConflictTarget {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -84,7 +84,7 @@ impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -101,7 +101,7 @@ impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
         self.0.walk_ast(pass)?;
         Ok(())
     }
@@ -119,7 +119,7 @@ impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
         Ok(())
     }
 
-    fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -144,7 +144,7 @@ macro_rules! on_conflict_tuples {
                 Ok(())
             }
 
-            fn walk_ast(&self, _: &mut AstPass<Pg>) -> QueryResult<()> {
+            fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
                 Ok(())
             }
         }

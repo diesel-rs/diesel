@@ -49,9 +49,9 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
         self.timezone.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Pg>) -> QueryResult<()> {
-        self.timestamp.walk_ast(pass)?;
-        self.timezone.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
+        self.timestamp.walk_ast(pass.reborrow())?;
+        self.timezone.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -69,9 +69,9 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
         self.timezone.to_sql(out)
     }
 
-    fn walk_ast(&self, pass: &mut AstPass<Debug>) -> QueryResult<()> {
-        self.timestamp.walk_ast(pass)?;
-        self.timezone.walk_ast(pass)?;
+    fn walk_ast(&self, mut pass: AstPass<Debug>) -> QueryResult<()> {
+        self.timestamp.walk_ast(pass.reborrow())?;
+        self.timezone.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
