@@ -33,6 +33,7 @@ pub mod expression_methods;
 pub mod functions;
 #[doc(hidden)]
 pub mod grouped;
+#[macro_use]
 pub mod helper_types;
 #[doc(hidden)]
 pub mod nullable;

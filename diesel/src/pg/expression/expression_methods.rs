@@ -1,6 +1,6 @@
 use expression::{Expression, AsExpression};
 use super::predicates::*;
-use types::Array;
+use types::{Array, Text};
 
 pub trait PgExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `IS NOT DISTINCT FROM` expression. This behaves
@@ -313,3 +313,17 @@ pub trait SortExpressionMethods : Sized {
 impl<T> SortExpressionMethods for Asc<T> {}
 
 impl<T> SortExpressionMethods for Desc<T> {}
+
+pub trait PgTextExpressionMethods: Expression<SqlType=Text> + Sized {
+    /// Returns a SQL `ILIKE` expression
+    fn ilike<T: AsExpression<Text>>(self, other: T) -> ILike<Self, T::Expression> {
+        ILike::new(self.as_expression(), other.as_expression())
+    }
+
+    /// Returns a SQL `NOT ILIKE` expression
+    fn not_ilike<T: AsExpression<Text>>(self, other: T) -> NotILike<Self, T::Expression> {
+        NotILike::new(self.as_expression(), other.as_expression())
+    }
+}
+
+impl<T: Expression<SqlType=Text>> PgTextExpressionMethods for T {}
