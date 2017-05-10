@@ -58,7 +58,7 @@ pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
 /// [`QueryFragment`](trait.QueryFragment.html) manually.
 pub trait QueryBuilder<DB: Backend> {
     fn push_sql(&mut self, sql: &str);
-    fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
+    fn push_identifier(&mut self, identifier: &str) -> QueryResult<()>;
     fn push_bind_param(&mut self);
     fn finish(self) -> String;
 }
@@ -81,8 +81,11 @@ impl<'a, T: Query> Query for &'a T {
 /// [`Connection`](../connection/trait.Connection.html) that execute a query require this
 /// trait to be implemented.
 pub trait QueryFragment<DB: Backend> {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
+
+    fn to_sql(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
+        self.walk_ast(AstPass::to_sql(out))
+    }
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
         self.walk_ast(AstPass::collect_binds(out))
@@ -99,10 +102,6 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        QueryFragment::to_sql(&**self, out)
-    }
-
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
@@ -112,20 +111,12 @@ impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        QueryFragment::to_sql(&**self, out)
-    }
-
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
-    fn to_sql(&self, _: &mut DB::QueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }

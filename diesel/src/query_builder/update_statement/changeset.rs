@@ -1,5 +1,5 @@
 use backend::Backend;
-use query_builder::{BuildQueryResult, AstPass};
+use query_builder::AstPass;
 use query_source::QuerySource;
 use result::QueryResult;
 
@@ -28,7 +28,6 @@ pub trait AsChangeset {
 /// Apps should not need to concern themselves with this trait.
 pub trait Changeset<DB: Backend> {
     fn is_noop(&self) -> bool;
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 }
 
@@ -44,13 +43,6 @@ impl<T: AsChangeset> AsChangeset for Option<T> {
 impl<T: Changeset<DB>, DB: Backend> Changeset<DB> for Option<T> {
     fn is_noop(&self) -> bool {
         self.is_none()
-    }
-
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        match *self {
-            Some(ref c) => c.to_sql(out),
-            None => Ok(()),
-        }
     }
 
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {

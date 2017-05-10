@@ -30,18 +30,11 @@ impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
     U: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("DELETE FROM ");
-        try!(self.table.from_clause().to_sql(out));
-        try!(self.where_clause.to_sql(out));
-        try!(self.returning.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.table.from_clause().walk_ast(pass.reborrow())?;
-        self.where_clause.walk_ast(pass.reborrow())?;
-        self.returning.walk_ast(pass.reborrow())?;
+        self.table.from_clause().walk_ast(out.reborrow())?;
+        self.where_clause.walk_ast(out.reborrow())?;
+        self.returning.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

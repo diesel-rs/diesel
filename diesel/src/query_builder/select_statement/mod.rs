@@ -24,7 +24,7 @@ use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::NoWhereClause;
-use super::{Query, QueryBuilder, QueryFragment, BuildQueryResult, AstPass};
+use super::{Query, QueryFragment, AstPass};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -125,29 +125,17 @@ impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Of: QueryFragment<DB>,
         G: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
-        try!(self.distinct.to_sql(out));
-        try!(self.select.to_sql(&self.from, out));
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(&self.from, out.reborrow())?;
         out.push_sql(" FROM ");
-        try!(self.from.from_clause().to_sql(out));
-        try!(self.where_clause.to_sql(out));
-        try!(self.group_by.to_sql(out));
-        try!(self.order.to_sql(out));
-        try!(self.limit.to_sql(out));
-        try!(self.offset.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass.reborrow())?;
-        self.select.walk_ast(&self.from, pass.reborrow())?;
-        self.from.from_clause().walk_ast(pass.reborrow())?;
-        self.where_clause.walk_ast(pass.reborrow())?;
-        self.group_by.walk_ast(pass.reborrow())?;
-        self.order.walk_ast(pass.reborrow())?;
-        self.limit.walk_ast(pass.reborrow())?;
-        self.offset.walk_ast(pass.reborrow())?;
+        self.from.from_clause().walk_ast(out.reborrow())?;
+        self.where_clause.walk_ast(out.reborrow())?;
+        self.group_by.walk_ast(out.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -163,26 +151,15 @@ impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
         Of: QueryFragment<DB>,
         G: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
-        try!(self.distinct.to_sql(out));
-        try!(self.select.to_sql(&(), out));
-        try!(self.where_clause.to_sql(out));
-        try!(self.group_by.to_sql(out));
-        try!(self.order.to_sql(out));
-        try!(self.limit.to_sql(out));
-        try!(self.offset.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass.reborrow())?;
-        self.select.walk_ast(&(), pass.reborrow())?;
-        self.where_clause.walk_ast(pass.reborrow())?;
-        self.group_by.walk_ast(pass.reborrow())?;
-        self.order.walk_ast(pass.reborrow())?;
-        self.limit.walk_ast(pass.reborrow())?;
-        self.offset.walk_ast(pass.reborrow())?;
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(&(), out.reborrow())?;
+        self.where_clause.walk_ast(out.reborrow())?;
+        self.group_by.walk_ast(out.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

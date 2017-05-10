@@ -76,18 +76,13 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
-                fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        try!(self.$idx.to_sql(out));
+                        self.$idx.walk_ast(out.reborrow())?;
                     )+
-                    Ok(())
-                }
-
-                fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-                    $(self.$idx.walk_ast(pass.reborrow())?;)+
                     Ok(())
                 }
             }
@@ -112,7 +107,7 @@ macro_rules! tuple_impls {
                     $($T::SqlType: IntoNullable,)+
                     $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<DB>,)+
             {
-                fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
@@ -122,29 +117,19 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     out.push_sql("(");
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        match self.$idx {
-                            ColumnInsertValue::Expression(_, ref value) => {
-                                try!(value.to_sql(out));
-                            }
-                            _ => out.push_sql("DEFAULT"),
+                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
+                            value.walk_ast(out.reborrow())?;
+                        } else {
+                            out.push_sql("DEFAULT");
                         }
                     )+
                     out.push_sql(")");
-                    Ok(())
-                }
-
-                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            value.walk_ast(out.reborrow())?;
-                        }
-                    )+
                     Ok(())
                 }
             }
@@ -158,7 +143,7 @@ macro_rules! tuple_impls {
                     $($ST: Expression<SqlType=<$T::SqlType as IntoNullable>::Nullable> + QueryFragment<::sqlite::Sqlite>,)+
             {
                 #[allow(unused_assignments)]
-                fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
+                fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> QueryResult<()> {
                     let mut columns_present = false;
                     $(
                         if let ColumnInsertValue::Expression(..) = self.$idx {
@@ -173,7 +158,7 @@ macro_rules! tuple_impls {
                 }
 
                 #[allow(unused_assignments)]
-                fn values_clause(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> BuildQueryResult {
+                fn walk_ast(&self, mut out: AstPass<::sqlite::Sqlite>) -> QueryResult<()> {
                     out.push_sql("(");
                     let mut columns_present = false;
                     $(
@@ -181,20 +166,11 @@ macro_rules! tuple_impls {
                             if columns_present {
                                 out.push_sql(", ");
                             }
-                            try!(value.to_sql(out));
+                            value.walk_ast(out.reborrow())?;
                             columns_present = true;
                         }
                     )+
                     out.push_sql(")");
-                    Ok(())
-                }
-
-                fn walk_ast(&self, mut out: AstPass<::sqlite::Sqlite>) -> QueryResult<()> {
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            value.walk_ast(out.reborrow())?;
-                        }
-                    )+
                     Ok(())
                 }
             }
@@ -232,7 +208,7 @@ macro_rules! tuple_impls {
                 }
 
                 #[allow(unused_assignments)]
-                fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
                         let noop_element = self.$idx.is_noop();
@@ -240,15 +216,10 @@ macro_rules! tuple_impls {
                             if needs_comma {
                                 out.push_sql(", ");
                             }
-                            try!(self.$idx.to_sql(out));
+                            self.$idx.walk_ast(out.reborrow())?;
                             needs_comma = true;
                         }
                     )+
-                    Ok(())
-                }
-
-                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                    $(self.$idx.walk_ast(out.reborrow())?;)+
                     Ok(())
                 }
             }

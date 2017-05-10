@@ -18,12 +18,8 @@ impl NonAggregate for now {
 }
 
 impl<DB: Backend> QueryFragment<DB> for now {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_TIMESTAMP");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

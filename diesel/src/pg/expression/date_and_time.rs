@@ -1,6 +1,6 @@
 use backend::*;
 use expression::{Expression, NonAggregate};
-use pg::{Pg, PgQueryBuilder};
+use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
 use types::{Timestamp, Timestamptz, Date, VarChar};
@@ -43,15 +43,10 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
     Ts: QueryFragment<Pg>,
     Tz: QueryFragment<Pg>,
 {
-    fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
-        try!(self.timestamp.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        self.timestamp.walk_ast(out.reborrow())?;
         out.push_sql(" AT TIME ZONE ");
-        self.timezone.to_sql(out)
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
-        self.timestamp.walk_ast(pass.reborrow())?;
-        self.timezone.walk_ast(pass.reborrow())?;
+        self.timezone.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -63,15 +58,10 @@ impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
     Ts: QueryFragment<Debug>,
     Tz: QueryFragment<Debug>,
 {
-    fn to_sql(&self, out: &mut <Debug as Backend>::QueryBuilder) -> BuildQueryResult {
-        try!(self.timestamp.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
+        self.timestamp.walk_ast(out.reborrow())?;
         out.push_sql(" AT TIME ZONE ");
-        self.timezone.to_sql(out)
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<Debug>) -> QueryResult<()> {
-        self.timestamp.walk_ast(pass.reborrow())?;
-        self.timezone.walk_ast(pass.reborrow())?;
+        self.timezone.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

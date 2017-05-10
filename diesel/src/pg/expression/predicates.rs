@@ -1,5 +1,4 @@
 use pg::Pg;
-use query_builder::QueryBuilder;
 
 infix_predicate!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", backend: Pg);
 infix_predicate!(OverlapsWith, " && ", backend: Pg);

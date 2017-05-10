@@ -44,15 +44,10 @@ macro_rules! global_infix_predicate_to_sql {
             T: $crate::query_builder::QueryFragment<DB>,
             U: $crate::query_builder::QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
-                try!(self.left.to_sql(out));
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(out.reborrow())?;
                 out.push_sql($operator);
-                self.right.to_sql(out)
-            }
-
-            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass.reborrow())?;
-                self.right.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(out.reborrow())?;
                 Ok(())
             }
         }
@@ -67,18 +62,10 @@ macro_rules! backend_specific_infix_predicate_to_sql {
             T: $crate::query_builder::QueryFragment<$backend>,
             U: $crate::query_builder::QueryFragment<$backend>,
         {
-            fn to_sql(&self, out: &mut <$backend as $crate::backend::Backend>::QueryBuilder)
-                -> $crate::query_builder::BuildQueryResult
-            {
-                use $crate::query_builder::QueryBuilder;
-                try!(self.left.to_sql(out));
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$backend>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(out.reborrow())?;
                 out.push_sql($operator);
-                self.right.to_sql(out)
-            }
-
-            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<$backend>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass.reborrow())?;
-                self.right.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(out.reborrow())?;
                 Ok(())
             }
         }
@@ -88,19 +75,10 @@ macro_rules! backend_specific_infix_predicate_to_sql {
                 T: $crate::query_builder::QueryFragment<$crate::backend::Debug>,
                 U: $crate::query_builder::QueryFragment<$crate::backend::Debug>,
         {
-            fn to_sql(
-                &self,
-                out: &mut <$crate::backend::Debug as $crate::backend::Backend>::QueryBuilder,
-            ) -> $crate::query_builder::BuildQueryResult {
-                use $crate::query_builder::QueryBuilder;
-                try!(self.left.to_sql(out));
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
+                self.left.walk_ast(out.reborrow())?;
                 out.push_sql($operator);
-                self.right.to_sql(out)
-            }
-
-            fn walk_ast(&self, mut pass: $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
-                self.left.walk_ast(pass.reborrow())?;
-                self.right.walk_ast(pass.reborrow())?;
+                self.right.walk_ast(out.reborrow())?;
                 Ok(())
             }
         }
@@ -176,14 +154,9 @@ macro_rules! postfix_predicate_body {
             DB: $crate::backend::Backend,
             T: $crate::query_builder::QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
-                try!(self.expr.to_sql(out));
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                self.expr.walk_ast(out.reborrow())?;
                 out.push_sql($operator);
-                Ok(())
-            }
-
-            fn walk_ast(&self, pass: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                self.expr.walk_ast(pass)?;
                 Ok(())
             }
         }
@@ -246,13 +219,9 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
         false
     }
 
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         try!(out.push_identifier(T::name()));
         out.push_sql(" = ");
-        QueryFragment::to_sql(&self.right, out)
-    }
-
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&self.right, out)
     }
 }

@@ -56,15 +56,10 @@ impl<T, DB> QueryFragment<DB> for Exists<T> where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("EXISTS (");
-        try!(self.0.to_sql(out));
+        self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        self.0.walk_ast(pass)?;
         Ok(())
     }
 }

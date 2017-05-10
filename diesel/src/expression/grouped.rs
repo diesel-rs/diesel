@@ -11,15 +11,10 @@ impl<T: Expression> Expression for Grouped<T> {
 }
 
 impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("(");
-        try!(self.0.to_sql(out));
+        self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        self.0.walk_ast(pass)?;
         Ok(())
     }
 }

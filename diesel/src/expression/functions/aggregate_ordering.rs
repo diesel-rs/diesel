@@ -31,15 +31,10 @@ macro_rules! ord_function {
             T: Expression + QueryFragment<DB>,
             DB: Backend + HasSqlType<T::SqlType>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                 out.push_sql(concat!($operator, "("));
-                try!(self.target.to_sql(out));
+                self.target.walk_ast(out.reborrow())?;
                 out.push_sql(")");
-                Ok(())
-            }
-
-            fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-                self.target.walk_ast(pass)?;
                 Ok(())
             }
         }

@@ -1,4 +1,3 @@
-use backend::Backend;
 use expression::{AppearsOnTable, Expression};
 use pg::Pg;
 use query_builder::*;
@@ -123,12 +122,8 @@ pub fn excluded<T>(excluded: T) -> Excluded<T> {
 pub struct DoNothing;
 
 impl QueryFragment<Pg> for DoNothing {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -153,19 +148,14 @@ pub struct DoUpdate<T> {
 impl<T> QueryFragment<Pg> for DoUpdate<T> where
     T: Changeset<Pg>,
 {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         if self.changeset.is_noop() {
             out.push_sql(" DO NOTHING");
         } else {
             out.push_sql(" DO UPDATE SET ");
-            try!(self.changeset.to_sql(out));
+            self.changeset.walk_ast(out.reborrow())?;
         }
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.changeset.walk_ast(pass)?;
         Ok(())
     }
 }
@@ -177,13 +167,9 @@ pub struct Excluded<T>(T);
 impl<T> QueryFragment<Pg> for Excluded<T> where
     T: Column,
 {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("excluded.");
         try!(out.push_identifier(T::name()));
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }

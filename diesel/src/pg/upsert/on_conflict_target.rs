@@ -1,4 +1,3 @@
-use backend::Backend;
 use expression::SqlLiteral;
 use pg::Pg;
 use query_builder::*;
@@ -60,10 +59,6 @@ pub trait OnConflictTarget<Table>: QueryFragment<Pg> {
 pub struct NoConflictTarget;
 
 impl QueryFragment<Pg> for NoConflictTarget {
-    fn to_sql(&self, _: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
     fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
@@ -77,14 +72,10 @@ impl<Table> OnConflictTarget<Table> for NoConflictTarget {
 pub struct ConflictTarget<T>(pub T);
 
 impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" (");
         try!(out.push_identifier(T::name()));
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -95,14 +86,9 @@ impl<T: Column> OnConflictTarget<T::Table> for ConflictTarget<T> {
 impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
     SqlLiteral<ST>: QueryFragment<Pg>,
 {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" ");
-        try!(self.0.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
-        self.0.walk_ast(pass)?;
+        self.0.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -113,13 +99,9 @@ impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> where
 }
 
 impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" ON CONSTRAINT ");
         try!(out.push_identifier(self.0.constraint_name));
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -133,7 +115,7 @@ macro_rules! on_conflict_tuples {
             T: Column,
             $($col: Column<Table=T::Table>,)+
         {
-            fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+            fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
                 out.push_sql(" (");
                 try!(out.push_identifier(T::name()));
                 $(
@@ -141,10 +123,6 @@ macro_rules! on_conflict_tuples {
                     try!(out.push_identifier($col::name()));
                 )+
                 out.push_sql(")");
-                Ok(())
-            }
-
-            fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
                 Ok(())
             }
         }

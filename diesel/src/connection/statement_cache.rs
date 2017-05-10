@@ -225,10 +225,8 @@ impl<DB> StatementCacheKey<DB> where
     }
 
     fn construct_sql<T: QueryFragment<DB>>(source: &T) -> QueryResult<String> {
-        use result::Error::QueryBuilderError;
-
         let mut query_builder = DB::QueryBuilder::default();
-        try!(source.to_sql(&mut query_builder).map_err(QueryBuilderError));
+        try!(source.to_sql(&mut query_builder));
         Ok(query_builder.finish())
     }
 }

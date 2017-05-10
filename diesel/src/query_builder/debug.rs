@@ -1,5 +1,6 @@
 use backend::Debug;
-use super::{QueryBuilder, BuildQueryResult};
+use query_builder::QueryBuilder;
+use result::QueryResult;
 
 #[doc(hidden)]
 #[derive(Debug, Default)]
@@ -18,7 +19,7 @@ impl QueryBuilder<Debug> for DebugQueryBuilder {
         self.sql.push_str(sql);
     }
 
-    fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult {
+    fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         self.push_sql("`");
         self.push_sql(identifier);
         self.push_sql("`");

@@ -34,16 +34,10 @@ macro_rules! numeric_operation {
             Lhs: QueryFragment<DB>,
             Rhs: QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                try!(self.lhs.to_sql(out));
+            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                self.lhs.walk_ast(out.reborrow())?;
                 out.push_sql($op);
-                self.rhs.to_sql(out)
-            }
-
-
-            fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-                self.lhs.walk_ast(pass.reborrow())?;
-                self.rhs.walk_ast(pass.reborrow())?;
+                self.rhs.walk_ast(out.reborrow())?;
                 Ok(())
             }
         }

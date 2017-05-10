@@ -84,10 +84,6 @@ impl<T> Expression for Arbitrary<T> {
 impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     DB: Backend,
 {
-    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }

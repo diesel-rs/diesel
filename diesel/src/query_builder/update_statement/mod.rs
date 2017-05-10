@@ -9,6 +9,7 @@ use expression::{Expression, SelectableExpression, NonAggregate};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_source::Table;
+use result::Error::QueryBuilderError;
 use result::QueryResult;
 
 /// The type returned by [`update`](/diesel/fn.update.html). The only thing you can do
@@ -54,27 +55,20 @@ impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
     V: changeset::Changeset<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_noop() {
-            return Err("There are no changes to save. This \
-                       query cannot be built".into())
+            return Err(QueryBuilderError(
+                "There are no changes to save. This query cannot be built".into()
+            ));
         }
 
+        out.unsafe_to_cache_prepared();
         out.push_sql("UPDATE ");
-        try!(self.table.from_clause().to_sql(out));
+        self.table.from_clause().walk_ast(out.reborrow())?;
         out.push_sql(" SET ");
-        try!(self.values.to_sql(out));
-        try!(self.where_clause.to_sql(out));
-        try!(self.returning.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.table.from_clause().walk_ast(pass.reborrow())?;
-        self.values.walk_ast(pass.reborrow())?;
-        self.where_clause.walk_ast(pass.reborrow())?;
-        self.returning.walk_ast(pass.reborrow())?;
+        self.values.walk_ast(out.reborrow())?;
+        self.where_clause.walk_ast(out.reborrow())?;
+        self.returning.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

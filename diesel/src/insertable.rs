@@ -3,7 +3,7 @@ use std::iter;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
 use result::QueryResult;
-use query_builder::{QueryBuilder, BuildQueryResult, AstPass};
+use query_builder::AstPass;
 use query_source::{Table, Column};
 use types::IntoNullable;
 
@@ -25,8 +25,7 @@ pub trait Insertable<T: Table, DB: Backend> {
 }
 
 pub trait InsertValues<DB: Backend> {
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
-    fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
+    fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()>;
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()>;
 }
 
@@ -69,24 +68,17 @@ impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
     T::Item: InsertValues<DB>,
     DB: Backend,
 {
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
         self.0.clone()
             .next().expect("Tried to read column names from empty list of rows")
             .column_names(out)
     }
 
-    fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         for (i, values) in self.0.clone().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
             }
-            try!(values.values_clause(out));
-        }
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        for values in self.0.clone() {
             values.walk_ast(out.reborrow())?;
         }
         Ok(())

@@ -77,18 +77,13 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
     DB: Backend,
     Cols: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         out.push_sql("CREATE TABLE ");
         try!(out.push_identifier(self.name));
         out.push_sql(" (");
-        try!(self.columns.to_sql(out));
+        self.columns.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.columns.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -104,15 +99,11 @@ impl<'a, Cols> QueryId for CreateTable<'a, Cols> {
 impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
     DB: Backend,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         try!(out.push_identifier(self.name));
         out.push_sql(" ");
         out.push_sql(self.type_name);
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
         Ok(())
     }
 }
@@ -129,15 +120,10 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
         out.push_sql(" PRIMARY KEY");
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -148,15 +134,10 @@ impl_query_id!(noop: PrimaryKey<Col>);
 impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
     Col: QueryFragment<Sqlite>,
 {
-    fn to_sql(&self, out: &mut <Sqlite as Backend>::QueryBuilder) -> BuildQueryResult {
-        try!(self.0.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTOINCREMENT");
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<Sqlite>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -165,15 +146,10 @@ impl_query_id!(noop: AutoIncrement<Col>);
 
 #[cfg(feature = "postgres")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
-    fn to_sql(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         try!(out.push_identifier((self.0).0.name));
         out.push_sql(" SERIAL PRIMARY KEY");
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -182,15 +158,10 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
         out.push_sql(" NOT NULL");
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -201,16 +172,11 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.column.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.column.walk_ast(out.reborrow())?;
         out.push_sql(" DEFAULT ");
         out.push_sql(self.value);
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.column.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

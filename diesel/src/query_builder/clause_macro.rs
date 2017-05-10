@@ -6,16 +6,12 @@ macro_rules! simple_clause {
     ($no_clause:ident, $clause:ident, $sql:expr, backend_bounds = $($backend_bounds:ident),*) => {
         use backend::Backend;
         use result::QueryResult;
-        use super::{QueryFragment, QueryBuilder, BuildQueryResult, AstPass};
+        use super::{QueryFragment, AstPass};
 
         #[derive(Debug, Clone, Copy)]
         pub struct $no_clause;
 
         impl<DB: Backend> QueryFragment<DB> for $no_clause {
-            fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                Ok(())
-            }
-
             fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
                 Ok(())
             }
@@ -30,13 +26,10 @@ macro_rules! simple_clause {
             DB: Backend $(+ $backend_bounds)*,
             Expr: QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                 out.push_sql($sql);
-                self.0.to_sql(out)
-            }
-
-            fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-                self.0.walk_ast(pass)
+                self.0.walk_ast(out.reborrow())?;
+                Ok(())
             }
         }
 

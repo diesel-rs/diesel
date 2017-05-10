@@ -24,10 +24,6 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.0.to_sql(out)
-    }
-
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }

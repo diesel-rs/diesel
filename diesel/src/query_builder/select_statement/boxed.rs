@@ -58,36 +58,21 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
     QS: QuerySource,
     QS::FromClause: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
-        try!(self.distinct.to_sql(out));
-        try!(self.select.to_sql(out));
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(out.reborrow())?;
         out.push_sql(" FROM ");
-        try!(self.from.from_clause().to_sql(out));
+        self.from.from_clause().walk_ast(out.reborrow())?;
 
         if let Some(ref where_clause) = self.where_clause {
             out.push_sql(" WHERE ");
-            try!(where_clause.to_sql(out));
+            where_clause.walk_ast(out.reborrow())?;
         }
 
-        try!(self.order.to_sql(out));
-        try!(self.limit.to_sql(out));
-        try!(self.offset.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass.reborrow())?;
-        self.select.walk_ast(pass.reborrow())?;
-        self.from.from_clause().walk_ast(pass.reborrow())?;
-
-        if let Some(ref where_clause) = self.where_clause {
-            where_clause.walk_ast(pass.reborrow())?;
-        }
-
-        self.order.walk_ast(pass.reborrow())?;
-        self.limit.walk_ast(pass.reborrow())?;
-        self.offset.walk_ast(pass.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -95,33 +80,19 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
 impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> where
     DB: Backend,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
-        try!(self.distinct.to_sql(out));
-        try!(self.select.to_sql(out));
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(out.reborrow())?;
 
         if let Some(ref where_clause) = self.where_clause {
             out.push_sql(" WHERE ");
-            try!(where_clause.to_sql(out));
+            where_clause.walk_ast(out.reborrow())?;
         }
 
-        try!(self.order.to_sql(out));
-        try!(self.limit.to_sql(out));
-        try!(self.offset.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.distinct.walk_ast(pass.reborrow())?;
-        self.select.walk_ast(pass.reborrow())?;
-
-        if let Some(ref where_clause) = self.where_clause {
-            where_clause.walk_ast(pass.reborrow())?;
-        }
-
-        self.order.walk_ast(pass.reborrow())?;
-        self.limit.walk_ast(pass.reborrow())?;
-        self.offset.walk_ast(pass.reborrow())?;
+        self.order.walk_ast(out.reborrow())?;
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

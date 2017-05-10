@@ -29,11 +29,6 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
     DB: Backend + HasSqlType<T>,
     U: ToSql<T, DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        out.push_bind_param();
-        Ok(())
-    }
-
     fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
         pass.push_bind_param(&self.item)?;
         Ok(())

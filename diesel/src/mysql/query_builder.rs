@@ -1,5 +1,6 @@
 use super::backend::Mysql;
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::QueryBuilder;
+use result::QueryResult;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
@@ -18,7 +19,7 @@ impl QueryBuilder<Mysql> for MysqlQueryBuilder {
         self.sql.push_str(sql);
     }
 
-    fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult {
+    fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         self.push_sql("`");
         self.push_sql(&identifier.replace("`", "``"));
         self.push_sql("`");

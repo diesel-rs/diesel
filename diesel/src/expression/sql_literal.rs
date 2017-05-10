@@ -35,13 +35,9 @@ impl<ST> Expression for SqlLiteral<ST> {
 impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
     DB: Backend + HasSqlType<ST>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         out.push_sql(&self.sql);
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
         Ok(())
     }
 }

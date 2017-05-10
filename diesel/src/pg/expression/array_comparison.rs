@@ -1,8 +1,7 @@
 use backend::*;
 use expression::{AsExpression, Expression, NonAggregate};
-use pg::{Pg, PgQueryBuilder};
+use pg::Pg;
 use query_builder::*;
-use query_builder::debug::DebugQueryBuilder;
 use result::QueryResult;
 use types::Array;
 
@@ -100,15 +99,10 @@ impl<Expr, ST> Expression for Any<Expr> where
 impl<Expr> QueryFragment<Pg> for Any<Expr> where
     Expr: QueryFragment<Pg>,
 {
-    fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("ANY(");
-        try!(self.expr.to_sql(out));
+        self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
-        self.expr.walk_ast(pass)?;
         Ok(())
     }
 }
@@ -116,15 +110,10 @@ impl<Expr> QueryFragment<Pg> for Any<Expr> where
 impl<Expr> QueryFragment<Debug> for Any<Expr> where
     Expr: QueryFragment<Debug>,
 {
-    fn to_sql(&self, out: &mut DebugQueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
         out.push_sql("ANY(");
-        try!(self.expr.to_sql(out));
+        self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<Debug>) -> QueryResult<()> {
-        self.expr.walk_ast(pass)?;
         Ok(())
     }
 }
@@ -160,15 +149,10 @@ impl<Expr, ST> Expression for All<Expr> where
 impl<Expr> QueryFragment<Pg> for All<Expr> where
     Expr: QueryFragment<Pg>,
 {
-    fn to_sql(&self, out: &mut PgQueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("ALL(");
-        try!(self.expr.to_sql(out));
+        self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
-        self.expr.walk_ast(pass)?;
         Ok(())
     }
 }
@@ -176,15 +160,10 @@ impl<Expr> QueryFragment<Pg> for All<Expr> where
 impl<Expr> QueryFragment<Debug> for All<Expr> where
     Expr: QueryFragment<Debug>,
 {
-    fn to_sql(&self, out: &mut DebugQueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
         out.push_sql("ALL(");
-        try!(self.expr.to_sql(out));
+        self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-
-    fn walk_ast(&self, pass: AstPass<Debug>) -> QueryResult<()> {
-        self.expr.walk_ast(pass)?;
         Ok(())
     }
 }

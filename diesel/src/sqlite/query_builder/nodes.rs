@@ -1,4 +1,3 @@
-use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
 use sqlite::Sqlite;
@@ -7,12 +6,8 @@ use sqlite::Sqlite;
 pub struct Replace;
 
 impl QueryFragment<Sqlite> for Replace {
-    fn to_sql(&self, out: &mut <Sqlite as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
         out.push_sql("REPLACE");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<Sqlite>) -> QueryResult<()> {
         Ok(())
     }
 }

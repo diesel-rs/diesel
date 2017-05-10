@@ -14,14 +14,10 @@ macro_rules! __diesel_column {
             DB: $crate::backend::Backend,
             <$($table)::* as QuerySource>::FromClause: QueryFragment<DB>,
         {
-            fn to_sql(&self, out: &mut DB::QueryBuilder) -> $crate::query_builder::BuildQueryResult {
-                try!($($table)::*.from_clause().to_sql(out));
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                $($table)::*.from_clause().walk_ast(out.reborrow())?;
                 out.push_sql(".");
                 out.push_identifier(stringify!($column_name))
-            }
-
-            fn walk_ast(&self, _: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                Ok(())
             }
         }
 
@@ -444,7 +440,7 @@ macro_rules! table_body {
                 use super::table;
                 use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
-                use $crate::query_builder::{QueryBuilder, BuildQueryResult, QueryFragment, AstPass};
+                use $crate::query_builder::{QueryFragment, AstPass};
                 use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
@@ -464,13 +460,9 @@ macro_rules! table_body {
                 impl<DB: Backend> QueryFragment<DB> for star where
                     <table as QuerySource>::FromClause: QueryFragment<DB>,
                 {
-                    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-                        try!(table.from_clause().to_sql(out));
+                    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                        table.from_clause().walk_ast(out.reborrow())?;
                         out.push_sql(".*");
-                        Ok(())
-                    }
-
-                    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
                         Ok(())
                     }
                 }

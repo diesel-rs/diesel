@@ -52,10 +52,6 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
     T: QueryFragment<DB>,
     DB: Backend,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.expr.to_sql(out)
-    }
-
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }

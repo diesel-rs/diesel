@@ -109,17 +109,10 @@ impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
     Right::FromClause: QueryFragment<DB>,
     Kind: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.left.from_clause().to_sql(out)?;
-        self.kind.to_sql(out)?;
-        out.push_sql(" JOIN ");
-        self.right.from_clause().to_sql(out)?;
-        Ok(())
-    }
-
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         self.left.from_clause().walk_ast(out.reborrow())?;
         self.kind.walk_ast(out.reborrow())?;
+        out.push_sql(" JOIN ");
         self.right.from_clause().walk_ast(out.reborrow())?;
         Ok(())
     }
@@ -170,12 +163,8 @@ pub struct Inner;
 impl_query_id!(Inner);
 
 impl<DB: Backend> QueryFragment<DB> for Inner {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" INNER");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -186,12 +175,8 @@ pub struct LeftOuter;
 impl_query_id!(LeftOuter);
 
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

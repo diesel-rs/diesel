@@ -18,10 +18,6 @@ pub struct NoWhereClause;
 impl_query_id!(NoWhereClause);
 
 impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
-    fn to_sql(&self, _out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        Ok(())
-    }
-
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
@@ -50,13 +46,10 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
     DB: Backend,
     Expr: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" WHERE ");
-        self.0.to_sql(out)
-    }
-
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        self.0.walk_ast(pass)
+        self.0.walk_ast(out.reborrow())?;
+        Ok(())
     }
 }
 

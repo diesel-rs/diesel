@@ -104,20 +104,13 @@ impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Targe
     Target: QueryFragment<Pg>,
     Action: QueryFragment<Pg>,
 {
-    fn column_names(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
+    fn column_names(&self, out: &mut <Pg as Backend>::QueryBuilder) -> QueryResult<()> {
         self.values.column_names(out)
-    }
-
-    fn values_clause(&self, out: &mut <Pg as Backend>::QueryBuilder) -> BuildQueryResult {
-        try!(self.values.values_clause(out));
-        out.push_sql(" ON CONFLICT");
-        try!(self.target.to_sql(out));
-        try!(self.action.to_sql(out));
-        Ok(())
     }
 
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
+        out.push_sql(" ON CONFLICT");
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
         Ok(())

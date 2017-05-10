@@ -67,21 +67,15 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_empty() {
             out.push_sql("1=0");
         } else {
-            try!(self.left.to_sql(out));
+            self.left.walk_ast(out.reborrow())?;
             out.push_sql(" IN (");
-            try!(self.values.to_sql(out));
+            self.values.walk_ast(out.reborrow())?;
             out.push_sql(")");
         }
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.left.walk_ast(pass.reborrow())?;
-        self.values.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -91,21 +85,15 @@ impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_empty() {
             out.push_sql("1=1");
         } else {
-            try!(self.left.to_sql(out));
+            self.left.walk_ast(out.reborrow())?;
             out.push_sql(" NOT IN (");
-            try!(self.values.to_sql(out));
+            self.values.walk_ast(out.reborrow())?;
             out.push_sql(")");
         }
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.left.walk_ast(pass.reborrow())?;
-        self.values.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -193,19 +181,16 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.0[0].to_sql(out));
-        for value in self.0[1..].iter() {
-            out.push_sql(", ");
-            try!(value.to_sql(out));
-        }
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        let mut first = true;
         for value in &self.0 {
-            value.walk_ast(pass.reborrow())?;
+            if first {
+                first = false;
+            } else {
+                out.push_sql(", ");
+            }
+            value.walk_ast(out.reborrow())?;
         }
         Ok(())
     }
@@ -245,10 +230,6 @@ impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        self.values.to_sql(out)
-    }
-
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.values.walk_ast(pass)
     }

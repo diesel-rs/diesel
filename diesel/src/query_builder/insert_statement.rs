@@ -103,25 +103,19 @@ impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret> whe
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         let values = self.records.values();
-        try!(self.operator.to_sql(out));
+        out.unsafe_to_cache_prepared();
+        self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
-        try!(self.target.from_clause().to_sql(out));
+        self.target.from_clause().walk_ast(out.reborrow())?;
         out.push_sql(" (");
-        try!(values.column_names(out));
+        if let Some(builder) = out.reborrow().query_builder() {
+            values.column_names(builder)?;
+        }
         out.push_sql(") VALUES ");
-        try!(values.values_clause(out));
-        try!(self.returning.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        pass.unsafe_to_cache_prepared();
-        self.operator.walk_ast(pass.reborrow())?;
-        self.target.from_clause().walk_ast(pass.reborrow())?;
-        self.records.values().walk_ast(pass.reborrow())?;
-        self.returning.walk_ast(pass.reborrow())?;
+        self.records.values().walk_ast(out.reborrow())?;
+        self.returning.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -333,12 +327,8 @@ impl<'a, T, U, Op, Ret, Conn, ST> LoadDsl<Conn>
 pub struct Insert;
 
 impl<DB: Backend> QueryFragment<DB> for Insert {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("INSERT");
-        Ok(())
-    }
-
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }

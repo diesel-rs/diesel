@@ -6,12 +6,8 @@ use result::QueryResult;
 pub struct Identifier<'a>(pub &'a str);
 
 impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(self.0)
-    }
-
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
-        Ok(())
     }
 }
 
@@ -37,16 +33,10 @@ impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
     T: QueryFragment<DB>,
     U: QueryFragment<DB>,
 {
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult {
-        try!(self.lhs.to_sql(out));
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        self.lhs.walk_ast(out.reborrow())?;
         out.push_sql(self.middle);
-        try!(self.rhs.to_sql(out));
-        Ok(())
-    }
-
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        self.lhs.walk_ast(pass.reborrow())?;
-        self.rhs.walk_ast(pass.reborrow())?;
+        self.rhs.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
