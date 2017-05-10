@@ -139,10 +139,10 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     $(
                         if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            try!(value.collect_binds(out));
+                            value.walk_ast(out.reborrow())?;
                         }
                     )+
                     Ok(())
@@ -189,13 +189,10 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn values_bind_params(
-                    &self,
-                    out: &mut <::sqlite::Sqlite as Backend>::BindCollector
-                ) -> QueryResult<()> {
+                fn walk_ast(&self, mut out: AstPass<::sqlite::Sqlite>) -> QueryResult<()> {
                     $(
                         if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            try!(value.collect_binds(out));
+                            value.walk_ast(out.reborrow())?;
                         }
                     )+
                     Ok(())
@@ -250,10 +247,8 @@ macro_rules! tuple_impls {
                     Ok(())
                 }
 
-                fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-                    $(
-                        try!(self.$idx.collect_binds(out));
-                    )+
+                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                    $(self.$idx.walk_ast(out.reborrow())?;)+
                     Ok(())
                 }
             }

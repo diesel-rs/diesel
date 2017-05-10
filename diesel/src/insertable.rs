@@ -3,7 +3,7 @@ use std::iter;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::Expression;
 use result::QueryResult;
-use query_builder::{QueryBuilder, BuildQueryResult};
+use query_builder::{QueryBuilder, BuildQueryResult, AstPass};
 use query_source::{Table, Column};
 use types::IntoNullable;
 
@@ -27,7 +27,7 @@ pub trait Insertable<T: Table, DB: Backend> {
 pub trait InsertValues<DB: Backend> {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
     fn values_clause(&self, out: &mut DB::QueryBuilder) -> BuildQueryResult;
-    fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()>;
+    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()>;
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -85,9 +85,9 @@ impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
         Ok(())
     }
 
-    fn values_bind_params(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         for values in self.0.clone() {
-            try!(values.values_bind_params(out));
+            values.walk_ast(out.reborrow())?;
         }
         Ok(())
     }

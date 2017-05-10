@@ -70,18 +70,11 @@ impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
     }
 
     fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.table.from_clause().walk_ast(pass.reborrow())?;
-            // FIXME: Let's see if we can move `Changeset` into AST passes
-            // on `QueryFragment`
-            if let AstPass::CollectBinds(ref mut out) = pass {
-                self.values.collect_binds(out)?;
-            }
-            self.where_clause.walk_ast(pass.reborrow())?;
-            self.returning.walk_ast(pass.reborrow())?;
-        }
+        pass.unsafe_to_cache_prepared();
+        self.table.from_clause().walk_ast(pass.reborrow())?;
+        self.values.walk_ast(pass.reborrow())?;
+        self.where_clause.walk_ast(pass.reborrow())?;
+        self.returning.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

@@ -6,6 +6,7 @@ mod query_id;
 #[macro_use]
 mod clause_macro;
 
+mod ast_pass;
 pub mod bind_collector;
 mod delete_statement;
 #[doc(hidden)]
@@ -24,6 +25,7 @@ pub mod where_clause;
 pub mod insert_statement;
 pub mod update_statement;
 
+pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::query_id::QueryId;
 #[doc(hidden)]
@@ -73,32 +75,6 @@ impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
 }
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub enum AstPass<'a, DB> where
-    DB: Backend,
-    DB::BindCollector: 'a,
-{
-    CollectBinds(&'a mut DB::BindCollector),
-    IsSafeToCachePrepared(&'a mut bool),
-}
-
-impl<'a, DB> AstPass<'a, DB> where
-    DB: Backend,
-    DB::BindCollector: 'a,
-{
-    /// Effectively copies `self`, with a narrower lifetime. This method
-    /// matches the semantics of the implicit reborrow that occurs when passing
-    /// a reference by value in Rust.
-    pub fn reborrow(&mut self) -> AstPass<DB> {
-        use self::AstPass::*;
-        match *self {
-            CollectBinds(ref mut collector) => CollectBinds(&mut **collector),
-            IsSafeToCachePrepared(ref mut result) => IsSafeToCachePrepared(&mut **result),
-        }
-    }
-}
-
 /// An untyped fragment of SQL. This may be a complete SQL command (such as
 /// an update statement without a `RETURNING` clause), or a subsection (such as
 /// our internal types used to represent a `WHERE` clause). All methods on
@@ -109,12 +85,12 @@ pub trait QueryFragment<DB: Backend> {
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 
     fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.walk_ast(AstPass::CollectBinds(out))
+        self.walk_ast(AstPass::collect_binds(out))
     }
 
     fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::IsSafeToCachePrepared(&mut result))?;
+        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
         Ok(result)
     }
 }

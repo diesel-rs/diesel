@@ -163,11 +163,9 @@ impl<T> QueryFragment<Pg> for DoUpdate<T> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
-        match pass {
-            AstPass::CollectBinds(out) => self.changeset.collect_binds(out)?,
-            AstPass::IsSafeToCachePrepared(result) => *result = false,
-        }
+    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.changeset.walk_ast(pass)?;
         Ok(())
     }
 }

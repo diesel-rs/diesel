@@ -252,8 +252,8 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
         QueryFragment::to_sql(&self.right, out)
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        QueryFragment::collect_binds(&self.right, out)
+    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.right, out)
     }
 }
 

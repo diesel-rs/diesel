@@ -116,10 +116,10 @@ impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Targe
         Ok(())
     }
 
-    fn values_bind_params(&self, out: &mut <Pg as Backend>::BindCollector) -> QueryResult<()> {
-        try!(self.values.values_bind_params(out));
-        try!(self.target.collect_binds(out));
-        try!(self.action.collect_binds(out));
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        self.values.walk_ast(out.reborrow())?;
+        self.target.walk_ast(out.reborrow())?;
+        self.action.walk_ast(out.reborrow())?;
         Ok(())
     }
 }

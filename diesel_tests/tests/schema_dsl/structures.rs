@@ -86,12 +86,9 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.columns.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.columns.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -114,10 +111,8 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        }
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
         Ok(())
     }
 }
@@ -140,12 +135,9 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.0.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -162,12 +154,9 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<Sqlite>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.0.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<Sqlite>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -182,12 +171,9 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<Pg>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.0.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<Pg>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -202,12 +188,9 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.0.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.0.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }
@@ -225,12 +208,9 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
         Ok(())
     }
 
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            self.column.walk_ast(pass)?;
-        }
+    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+        pass.unsafe_to_cache_prepared();
+        self.column.walk_ast(pass.reborrow())?;
         Ok(())
     }
 }

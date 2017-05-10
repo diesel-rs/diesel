@@ -203,12 +203,9 @@ impl<T, DB> QueryFragment<DB> for Many<T> where
     }
 
     fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
-        if let AstPass::IsSafeToCachePrepared(result) = pass {
-            *result = false;
-        } else {
-            for value in &self.0 {
-                value.walk_ast(pass.reborrow())?;
-            }
+        pass.unsafe_to_cache_prepared();
+        for value in &self.0 {
+            value.walk_ast(pass.reborrow())?;
         }
         Ok(())
     }
