@@ -1,3 +1,13 @@
+//! Within this module, types commonly use the following abbreviations:
+//!
+//! F: From Clause
+//! S: Select Clause
+//! D: Distinct Clause
+//! W: Where Clause
+//! O: Order By Clause
+//! L: Limit Clause
+//! Of: Offset Clause
+//! G: Group By Clause
 mod dsl_impls;
 mod boxed;
 
