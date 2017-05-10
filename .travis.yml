@@ -35,21 +35,19 @@ script:
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "$BACKEND")
-  fi &&
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_compile_tests && travis-cargo test)
   fi
 matrix:
   allow_failures:
     - rust: nightly
   include:
   - rust: nightly-2017-04-25
-    env: CLIPPY=YESPLEASE
+    env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
+    - (cd diesel_compile_tests && travis-cargo test)
 env:
   # TODO: why is there no database specified for Postgres?
   matrix:
