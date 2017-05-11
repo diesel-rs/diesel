@@ -8,6 +8,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for the [PostgreSQL network types][pg-network-0.13.0] `CIDR` and `INET`.
+
+[pg-network-0.13.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
+
 * Added support for `ILIKE` in PostgreSQL.
 
 * Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
