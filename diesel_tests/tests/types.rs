@@ -408,6 +408,78 @@ fn pg_uuid_to_sql_uuid() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn pg_v4address_from_sql() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let query = "'192.168.1.0/24'::cidr";
+    let expected_value = ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::from_str("192.168.1.0/24")
+                                                      .unwrap());
+    assert_eq!(expected_value,
+               query_single_value::<Cidr, ipnetwork::IpNetwork>(query));
+    let query = "'192.168.1.0/24'::inet";
+    let expected_value = ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::from_str("192.168.1.0/24")
+                                                      .unwrap());
+    assert_eq!(expected_value,
+               query_single_value::<Inet, ipnetwork::IpNetwork>(query));
+}
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_v6address_from_sql() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let query = "'2001:4f8:3:ba::/64'::cidr";
+    let expected_value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
+    assert_eq!(expected_value,
+               query_single_value::<Cidr, ipnetwork::IpNetwork>(query));
+    let query = "'2001:4f8:3:ba::/64'::inet";
+    let expected_value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
+    assert_eq!(expected_value,
+               query_single_value::<Inet, ipnetwork::IpNetwork>(query));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_v4address_to_sql_v4address() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let expected_value = "'192.168.1'::cidr";
+    let value = ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::from_str("192.168.1.0/24")
+                                             .unwrap());
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(expected_value, value));
+    let expected_value = "'192.168.1.0/24'::inet";
+    let value = ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::from_str("192.168.1.0/24")
+                                             .unwrap());
+    assert!(query_to_sql_equality::<Inet, ipnetwork::IpNetwork>(expected_value, value));
+    let expected_non_equal_value = "'192.168.1.0/23'::inet";
+    assert!(!query_to_sql_equality::<Inet, ipnetwork::IpNetwork>(expected_non_equal_value, value));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_v6address_to_sql_v6address() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let expected_value = "'2001:4f8:3:ba::/64'::cidr";
+    let value = ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64")
+                                             .unwrap());
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(expected_value, value));
+    let expected_value = "'2001:4f8:3:ba::/64'::cidr";
+    let value = ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64")
+                                             .unwrap());
+    assert!(query_to_sql_equality::<Inet, ipnetwork::IpNetwork>(expected_value, value));
+    let expected_non_equal_value = "'2001:4f8:3:ba::/63'::cidr";
+    assert!(!query_to_sql_equality::<Inet, ipnetwork::IpNetwork>(expected_non_equal_value, value));
+}
+
+
+#[test]
+#[cfg(feature = "postgres")]
 fn pg_json_from_sql() {
     extern crate serde_json;
 

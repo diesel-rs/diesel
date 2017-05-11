@@ -1,6 +1,8 @@
 mod array;
 pub mod date_and_time;
 pub mod floats;
+#[cfg(feature = "network-address")]
+mod network_address;
 mod integers;
 mod primitives;
 #[cfg(feature = "uuid")]
@@ -277,4 +279,30 @@ pub mod sql_types {
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Money;
+
+    /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Cidr;
+
+    /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Inet;
 }

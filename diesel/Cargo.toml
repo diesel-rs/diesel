@@ -15,6 +15,7 @@ categories = ["database"]
 byteorder = "1.0"
 chrono = { version = "0.3", optional = true }
 clippy = { optional = true, version = "=0.0.126" }
+libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.8.0, <0.9.0", optional = true, features = ["min_sqlite_version_3_7_16"] }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }
 pq-sys = { version = ">=0.3.0, <0.5.0", optional = true }
@@ -23,6 +24,7 @@ serde_json = { version = ">=0.8.0, <2.0", optional = true }
 time = { version = "0.1", optional = true }
 url = { version = "1.4.0", optional = true }
 uuid = { version = ">=0.2.0, <0.6.0", optional = true, features = ["use_std"] }
+ipnetwork = { version = "0.12.2", optional = true }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
@@ -33,7 +35,7 @@ tempdir = "^0.3.4"
 
 [features]
 default = ["with-deprecated"]
-extras = ["chrono", "serde_json", "uuid", "deprecated-time"]
+extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address"]
 unstable = []
 lint = ["clippy"]
 large-tables = []
@@ -43,6 +45,7 @@ sqlite = ["libsqlite3-sys"]
 mysql = ["mysqlclient-sys", "url"]
 with-deprecated = []
 deprecated-time = ["time"]
+network-address = ["ipnetwork", "libc"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
