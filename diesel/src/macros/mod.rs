@@ -188,7 +188,7 @@ macro_rules! __diesel_column {
 /// ```
 ///
 ///
-/// If you want to add documentation for the generated code you could use the
+/// If you want to add documentation to the generated code you can use the
 /// following syntax:
 ///
 /// ```
@@ -196,11 +196,11 @@ macro_rules! __diesel_column {
 ///
 /// table! {
 ///
-///     /// Table documentation
+///     /// The table containing all blog posts
 ///     posts {
-///         /// Id column documentation
+///         /// The post's unique id
 ///         id -> Integer,
-///         /// Title column documentation
+///         /// The post's title
 ///         title -> Text,
 ///     }
 /// }
@@ -349,7 +349,6 @@ macro_rules! table {
             doc = [$($doc)*];
         }
     };
-
     // Terminal with composite pk (add a trailing comma)
     (
         @parse_body
@@ -364,13 +363,19 @@ macro_rules! table {
         }
     };
     // Terminal with invalid syntax
+    // This is needed to prevent unbounded recursion on for example
+    // table! {
+    //     something strange
+    // }
     (
         @parse_body
         import = [$(use $($import:tt)::+;)*];
         doc = [$($doc:meta,)*];
         $($rest:tt)*
     ) => {
-        const ERROR:i32 = "invalid table! syntax";
+        // Remove this workaround as soon as rust issue 40872 is implemented
+        // https://github.com/rust-lang/rust/issues/40872
+        const ERROR: i32 = env!("invalid table! syntax");
     };
     // Put a parse annotation and empty fields for imports and documentation on top
     // This is the entry point for parsing the table dsl
@@ -387,6 +392,9 @@ macro_rules! table {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! table_body {
+    // Parse a table column definition with documentation
+    // Forward any remaining table column to further instances
+    // of this macro
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
@@ -397,7 +405,7 @@ macro_rules! table_body {
         table_doc = [$($table_doc:meta)*],
         #[$new_doc:meta] $new_column_name:ident -> $new_type:ty,
         $($body:tt)*
-    )=> {
+    ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
@@ -410,6 +418,9 @@ macro_rules! table_body {
             $($body)*
         }
     };
+    // Parse a table column definition without documentation
+    // Forward any remaining table column to further instances
+    // of this macro
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
@@ -420,7 +431,7 @@ macro_rules! table_body {
         table_doc = [$($table_doc:meta)*],
         $new_column_name:ident -> $new_type:ty,
         $($body:tt)*
-    )=> {
+    ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
@@ -433,6 +444,8 @@ macro_rules! table_body {
             $($body)*
         }
     };
+    // Parse the table name  and the primary keys
+    // Forward the table body to further parsing layers
     (
         $schema_name:ident . $name:ident ($pk:ident) {
             $($body:tt)+
@@ -799,6 +812,18 @@ mod tests {
 
         table_with_custom_types {
             id -> Integer,
+            my_type -> MyCustomType,
+        }
+    }
+
+    table! {
+        use types::*;
+        use macros::tests::my_types::*;
+
+        /// Table documentation
+        table_with_custom_type_and_id (a){
+            /// Column documentation
+            a -> Integer,
             my_type -> MyCustomType,
         }
     }
