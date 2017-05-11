@@ -1,6 +1,6 @@
 use expression::Expression;
 use expression::predicates::And;
-use expression::expression_methods::*;
+use expression_methods::*;
 use types::Bool;
 
 /// This method is used by `FindDsl` to work with tuples. Because we cannot
