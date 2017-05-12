@@ -43,7 +43,7 @@ matrix:
   - rust: nightly-2017-04-25
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
-    - (cd diesel && cargo rustc --no-default-features --features "lint unstable chrono serde_json uuid sqlite postgres mysql" -- -Zno-trans)
+    - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)

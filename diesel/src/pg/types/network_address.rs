@@ -18,24 +18,24 @@ const AF_INET: u8 = 1;
 const AF_INET: u8 = libc::AF_INET as u8;
 
 
-const PGSQL_AF_INET: u8 = AF_INET + 0;
+const PGSQL_AF_INET: u8 = AF_INET;
 const PGSQL_AF_INET6: u8 = AF_INET + 1;
 
 primitive_impls!(Cidr -> (IpNetwork, pg: (650, 651)));
 primitive_impls!(Inet -> (IpNetwork, pg: (869, 1041)));
 
 macro_rules! err {
-    () => (return Err("invalid network address format".into()));
-    ($msg: expr) => (return Err(format!("invalid network address format. {}", $msg).into()));
+    () => (Err("invalid network address format".into()));
+    ($msg: expr) => (Err(format!("invalid network address format. {}", $msg).into()));
 }
 
 macro_rules! assert_or_error {
     ($cond: expr) => {
-        if ! $cond { err!() }
+        if ! $cond { return err!() }
     };
 
     ($cond: expr, $msg: expr) => {
-        if ! $cond { err!($msg) }
+        if ! $cond { return err!($msg) }
     };
 }
 
