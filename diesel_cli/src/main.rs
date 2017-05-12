@@ -26,6 +26,8 @@ mod database_error;
 mod database;
 mod cli;
 mod pretty_printing;
+#[cfg(any(feature="postgres", feature="mysql"))]
+mod query_helper;
 
 use chrono::*;
 use clap::{ArgMatches,Shell};
