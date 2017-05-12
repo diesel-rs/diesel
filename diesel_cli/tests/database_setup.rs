@@ -78,3 +78,55 @@ fn database_abbreviated_as_db() {
         "Unexpected stdout {}", result.stdout());
     assert!(db.exists());
 }
+
+#[test]
+fn database_setup_respects_migration_dir_by_arg() {
+    let p = project("database_setup_respects_migration_dir_by_arg")
+        .folder("foo")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory("foo",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users");
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p.command("database")
+        .arg("setup")
+        .arg("--migration-dir=foo")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}", result.stdout());
+    assert!(db.table_exists("users"));
+}
+
+#[test]
+fn database_setup_respects_migration_dir_by_env() {
+    let p = project("database_setup_respects_migration_dir_by_env")
+        .folder("bar")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory("bar",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users");
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p.command("database")
+        .arg("setup")
+        .env("MIGRATION_DIRECTORY", "bar")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}", result.stdout());
+    assert!(db.table_exists("users"));
+}

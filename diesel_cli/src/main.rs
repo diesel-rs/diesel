@@ -172,19 +172,37 @@ fn migrations_dir(matches: &ArgMatches) -> PathBuf {
 }
 
 fn run_setup_command(matches: &ArgMatches) {
-    migrations::find_migrations_directory()
-        .unwrap_or_else(|_| {
-            create_migrations_directory()
-                .unwrap_or_else(handle_error)
+    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
+
+    database::setup_database(matches, &migrations_dir).unwrap_or_else(handle_error);
+}
+
+fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
+    let dir = matches.value_of("MIGRATION_DIRECTORY")
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok()
+        }).unwrap_or_else(|| {
+            find_project_root().unwrap_or_else(handle_error).join("migrations")
         });
 
-    database::setup_database(matches).unwrap_or_else(handle_error);
+    if !dir.exists() {
+        create_migrations_directory(&dir)?;
+    }
+
+    Ok(dir.to_owned())
 }
 
 fn run_database_command(matches: &ArgMatches) {
     match matches.subcommand() {
-        ("setup", Some(args)) => database::setup_database(args).unwrap_or_else(handle_error),
-        ("reset", Some(args)) => database::reset_database(args).unwrap_or_else(handle_error),
+        ("setup", Some(args)) => {
+            let migrations_dir = migrations_dir(args);
+            database::setup_database(args, &migrations_dir).unwrap_or_else(handle_error)
+        },
+        ("reset", Some(args)) => {
+            let migrations_dir = migrations_dir(args);
+            database::reset_database(args, &migrations_dir).unwrap_or_else(handle_error)
+        },
         ("drop", Some(args)) => database::drop_database_command(args).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
@@ -198,14 +216,11 @@ fn generate_bash_completion_command(_: &ArgMatches) {
 /// and creates one in the same directory as the Cargo.toml if it can't find
 /// one. It also sticks a .gitkeep in the directory so git will pick it up.
 /// Returns a `DatabaseError::CargoTomlNotFound` if no Cargo.toml is found.
-fn create_migrations_directory() -> DatabaseResult<PathBuf> {
-    let project_root = try!(find_project_root());
-    println!("Creating migrations/ directory at: {}", project_root
-                                                        .join("migrations")
-                                                        .display());
-    try!(fs::create_dir(project_root.join("migrations")));
-    try!(fs::File::create(project_root.join("migrations/.gitkeep")));
-    Ok(project_root)
+fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
+    println!("Creating migrations directory at: {}", path.display());
+    fs::create_dir(path)?;
+    fs::File::create(path.join(".gitkeep"))?;
+    Ok(path.to_owned())
 }
 
 fn find_project_root() -> DatabaseResult<PathBuf> {

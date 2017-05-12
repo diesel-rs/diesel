@@ -13,6 +13,8 @@ use database_error::{DatabaseError, DatabaseResult};
 
 use std::error::Error;
 use std::env;
+use std::io::stdout;
+use std::path::Path;
 
 enum Backend {
     #[cfg(feature="postgres")]
@@ -103,16 +105,16 @@ macro_rules! call_with_conn {
     };
 }
 
-pub fn reset_database(args: &ArgMatches) -> DatabaseResult<()> {
+pub fn reset_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
     try!(drop_database(&database_url(args)));
-    setup_database(args)
+    setup_database(args, migrations_dir)
 }
 
-pub fn setup_database(args: &ArgMatches) -> DatabaseResult<()> {
+pub fn setup_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
     let database_url = database_url(args);
 
     try!(create_database_if_needed(&database_url));
-    create_schema_table_and_run_migrations_if_needed(&database_url)
+    create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir)
 }
 
 pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
@@ -157,12 +159,12 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
 /// table didn't exist, it also runs any pending migrations. Returns a
 /// `DatabaseError::ConnectionError` if it can't create the table, and exits
 /// with a migration error if it can't run migrations.
-fn create_schema_table_and_run_migrations_if_needed(database_url: &str)
+fn create_schema_table_and_run_migrations_if_needed(database_url: &str, migrations_dir: &Path)
     -> DatabaseResult<()>
 {
     if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
-        try!(call_with_conn!(database_url, migrations::setup_database));
-        call_with_conn!(database_url, migrations::run_pending_migrations).unwrap_or_else(handle_error);
+        try!(call_with_conn!(database_url, migrations::setup_database()));
+        call_with_conn!(database_url, migrations::run_pending_migrations_in_directory(migrations_dir, &mut stdout())).unwrap_or_else(handle_error);
     };
     Ok(())
 }

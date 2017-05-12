@@ -98,3 +98,35 @@ fn setup_doesnt_notify_when_not_creating_a_database() {
     assert!(!result.stdout().contains("Creating database:"),
         "Unexpected stdout {}", result.stdout());
 }
+
+#[test]
+fn setup_works_with_migration_dir_by_arg() {
+    let p = project("setup_works_with_migration_dir_by_arg").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+}
+
+#[test]
+fn setup_works_with_migration_dir_by_env() {
+    let p = project("setup_works_with_migration_dir_by_env").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("bar"));
+
+    let result = p.command("setup")
+        .env("MIGRATION_DIRECTORY", "bar")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("bar"));
+}

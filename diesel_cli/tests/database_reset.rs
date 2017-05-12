@@ -75,3 +75,59 @@ fn reset_handles_postgres_urls_with_username_and_password() {
     assert!(result.stdout().contains("Creating database:"),
         "Unexpected stdout {}", result.stdout());
 }
+
+#[test]
+fn reset_works_with_migration_dir_by_arg() {
+    let p = project("reset_works_with_migration_dir_by_arg")
+        .folder("foo")
+        .build();
+    let db = database(&p.database_url()).create();
+
+    db.execute("CREATE TABLE posts ( id INTEGER )");
+    db.execute("CREATE TABLE users ( id INTEGER )");
+    p.create_migration_in_directory("foo",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users");
+
+    assert!(db.table_exists("posts"));
+    assert!(db.table_exists("users"));
+
+    let result = p.command("database")
+        .arg("reset")
+        .arg("--migration-dir=foo")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!db.table_exists("posts"));
+    assert!(db.table_exists("users"));
+    assert!(db.table_exists("__diesel_schema_migrations"));
+}
+
+#[test]
+fn reset_works_with_migration_dir_by_env() {
+    let p = project("reset_works_with_migration_dir_by_env")
+        .folder("bar")
+        .build();
+    let db = database(&p.database_url()).create();
+
+    db.execute("CREATE TABLE posts ( id INTEGER )");
+    db.execute("CREATE TABLE users ( id INTEGER )");
+    p.create_migration_in_directory("bar",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users");
+
+    assert!(db.table_exists("posts"));
+    assert!(db.table_exists("users"));
+
+    let result = p.command("database")
+        .arg("reset")
+        .env("MIGRATION_DIRECTORY", "bar")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!db.table_exists("posts"));
+    assert!(db.table_exists("users"));
+    assert!(db.table_exists("__diesel_schema_migrations"));
+}

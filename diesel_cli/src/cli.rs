@@ -12,13 +12,8 @@ pub fn build_cli() -> App<'static, 'static> {
         .about("A group of commands for generating, running, and reverting \
                 migrations.")
         .setting(AppSettings::VersionlessSubcommands)
-        .arg(Arg::with_name("MIGRATION_DIRECTORY")
-            .long("migration-dir")
-            .help("The location of your migration directory. By default this \
-                   will look for a directory called `migrations` in the \
-                   current directory and its parents.")
-            .takes_value(true)
-            .global(true)
+        .arg(
+            migration_dir_arg()
         ).subcommand(SubCommand::with_name("run")
             .about("Runs all pending migrations")
         ).subcommand(SubCommand::with_name("revert")
@@ -46,12 +41,16 @@ pub fn build_cli() -> App<'static, 'static> {
         ).setting(AppSettings::SubcommandRequiredElseHelp);
 
     let setup_subcommand = SubCommand::with_name("setup")
-        .about("Creates the migrations directory, creates the database \
+        .arg(
+            migration_dir_arg()
+        ).about("Creates the migrations directory, creates the database \
                 specified in your DATABASE_URL, and runs existing migrations.");
 
     let database_subcommand = SubCommand::with_name("database")
         .alias("db")
-        .about("A group of commands for setting up and resetting your database.")
+        .arg(
+            migration_dir_arg()
+        ).about("A group of commands for setting up and resetting your database.")
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(SubCommand::with_name("setup")
             .about("Creates the database specified in your DATABASE_URL, \
@@ -102,4 +101,14 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(generate_bash_completion_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
+}
+
+fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
+    Arg::with_name("MIGRATION_DIRECTORY")
+        .long("migration-dir")
+        .help("The location of your migration directory. By default this \
+               will look for a directory called `migrations` in the \
+               current directory and its parents.")
+        .takes_value(true)
+        .global(true)
 }
