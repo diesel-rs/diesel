@@ -1,7 +1,7 @@
 use backend::Backend;
 use expression::*;
-use expression::expression_methods::*;
 use expression::predicates::And;
+use expression_methods::*;
 use result::QueryResult;
 use super::*;
 use types::Bool;

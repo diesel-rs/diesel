@@ -38,6 +38,7 @@ pub mod backend;
 pub mod connection;
 #[macro_use]
 pub mod expression;
+pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
 pub mod query_builder;
@@ -115,7 +116,7 @@ pub mod prelude {
     pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
     pub use expression::{Expression, SelectableExpression, AppearsOnTable, BoxableExpression};
-    pub use expression::expression_methods::*;
+    pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
     pub use query_dsl::*;

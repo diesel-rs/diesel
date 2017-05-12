@@ -27,7 +27,6 @@ pub mod coerce;
 pub mod count;
 #[doc(hidden)]
 pub mod exists;
-pub mod expression_methods;
 #[doc(hidden)]
 #[macro_use]
 pub mod functions;

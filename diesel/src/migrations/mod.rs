@@ -71,7 +71,7 @@ pub use self::migration_error::*;
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
-use expression::expression_methods::*;
+use expression_methods::*;
 use query_dsl::*;
 use self::schema::__diesel_schema_migrations::dsl::*;
 use {Connection, QueryResult};
