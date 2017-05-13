@@ -1,7 +1,10 @@
+extern crate chrono;
+
 #[cfg(feature = "sqlite")]
 mod sqlite {
     use diesel::*;
     use schema::*;
+    use super::chrono::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
     #[table_name="infer_all_the_ints"]
@@ -131,5 +134,32 @@ mod sqlite {
             .execute(&conn).unwrap();
 
         assert_eq!(Ok(vec![inferred_floats]), infer_all_the_floats::table.load(&conn));
+    }
+
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="infer_all_the_datetime_types"]
+    struct InferredDatetimeTypes {
+        dt: NaiveDateTime,
+        date: NaiveDate,
+        time: NaiveTime,
+        timestamp: NaiveDateTime,
+    }
+
+    #[test]
+    fn datetime_types_are_correctly_inferred() {
+        let conn = connection();
+
+        let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+        let inferred_datetime_types = InferredDatetimeTypes {
+            dt: dt,
+            date: dt.date(),
+            time: dt.time(),
+            timestamp: dt,
+        };
+
+        insert(&inferred_datetime_types).into(infer_all_the_datetime_types::table)
+            .execute(&conn).unwrap();
+
+        assert_eq!(Ok(vec![inferred_datetime_types]), infer_all_the_datetime_types::table.load(&conn));
     }
 }
