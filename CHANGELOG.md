@@ -26,6 +26,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added the `migration pending` command to the Diesel CLI to run the `any_pending_migrations` function and report the output.
 
+### Fixed
+
+* Diesel CLI: Support the `--migration-dir` argument and the `MIGRATION_DIRECTORY` on every migrations related command.
+
 ## [0.12.1] - 2017-05-07
 
 ### Changed
