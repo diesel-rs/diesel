@@ -85,25 +85,36 @@ pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResu
         .collect())
 }
 
+fn diesel_type(t: &str) -> Vec<String> {
+    vec!["diesel".into(), "types".into(), t.into()]
+}
+
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
-        vec!["diesel".into(), "types".into(), "Bool".into()]
+        diesel_type("Bool")
     } else if is_smallint(&type_name) {
-        vec!["diesel".into(), "types".into(), "SmallInt".into()]
+        diesel_type("SmallInt")
     } else if is_bigint(&type_name) {
-        vec!["diesel".into(), "types".into(), "BigInt".into()]
+        diesel_type("BigInt")
     } else if type_name.contains("int") {
-        vec!["diesel".into(), "types".into(), "Integer".into()]
+        diesel_type("Integer")
     } else if is_text(&type_name) {
-        vec!["diesel".into(), "types".into(), "Text".into()]
+        diesel_type("Text")
     } else if type_name.contains("blob") || type_name.is_empty() {
-        vec!["diesel".into(), "types".into(), "Binary".into()]
+        diesel_type("Binary")
     } else if is_float(&type_name) {
-        vec!["diesel".into(), "types".into(), "Float".into()]
+        diesel_type("Float")
     } else if is_double(&type_name) {
-        vec!["diesel".into(), "types".into(), "Double".into()]
-    } else {
+        diesel_type("Double")
+    } else if type_name == "datetime" || type_name == "timestamp" {
+        diesel_type("Timestamp")
+    } else if type_name == "date" {
+        diesel_type("Date")
+    } else if type_name == "time" {
+        diesel_type("Time")
+    }
+    else {
         return Err(format!("Unsupported type: {}", type_name).into())
     };
 

@@ -1,0 +1,1 @@
+DROP TABLE infer_all_the_datetime_types;
