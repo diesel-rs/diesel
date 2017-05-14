@@ -121,12 +121,6 @@ impl Statement {
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        let drop_result = unsafe { ffi::mysql_stmt_close(self.stmt) };
-        // FIXME: Remove this before we ship this feature. We don't really care
-        // about any of the error cases that can occur, but I suspect we'll need
-        // to stick an `Rc<RawConnection>` on this struct to ensure the right
-        // drop order once prepared statement caching is added. This is mostly
-        // here so I don't forget.
-        assert_eq!(0, drop_result, "@sgrif forgot to delete this assertion. Please open a github issue");
+        unsafe { ffi::mysql_stmt_close(self.stmt) };
     }
 }
