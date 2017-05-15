@@ -17,7 +17,7 @@ impl Database {
     pub fn create(self) -> Self {
         let (database, mysql_url) = self.split_url();
         let conn = MysqlConnection::establish(&mysql_url).unwrap();
-        conn.execute(&format!("CREATE DATABASE {}", database)).unwrap();
+        conn.execute(&format!("CREATE DATABASE `{}`", database)).unwrap();
         self
     }
 
@@ -56,6 +56,6 @@ impl Drop for Database {
     fn drop(&mut self) {
         let (database, mysql_url) = self.split_url();
         let conn = try_drop!(MysqlConnection::establish(&mysql_url), "Couldn't connect to database");
-        try_drop!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)), "Couldn't drop database");
+        try_drop!(conn.execute(&format!("DROP DATABASE IF EXISTS `{}`", database)), "Couldn't drop database");
     }
 }

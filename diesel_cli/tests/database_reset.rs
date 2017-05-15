@@ -131,3 +131,21 @@ fn reset_works_with_migration_dir_by_env() {
     assert!(db.table_exists("users"));
     assert!(db.table_exists("__diesel_schema_migrations"));
 }
+
+#[test]
+fn reset_sanitize_database_name() {
+    let p = project("name-with-dashes")
+        .folder("migrations")
+        .build();
+    let _db = database(&p.database_url()).create();
+
+    let result = p.command("database")
+        .arg("reset")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());
+    assert!(result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}", result.stdout());
+    assert!(result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}", result.stdout());
+}

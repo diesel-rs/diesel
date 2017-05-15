@@ -30,6 +30,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Diesel CLI: Support the `--migration-dir` argument and the `MIGRATION_DIRECTORY` on every migrations related command.
 
+* Diesel CLI: Escape the database name for CREATE/DROP DATABASE operations. This allows you to have hyphens in your database name.
+
 ## [0.12.1] - 2017-05-07
 
 ### Changed

@@ -8,6 +8,9 @@ use diesel::sqlite::SqliteConnection;
 use diesel::mysql::MysqlConnection;
 use diesel::types::Bool;
 use diesel::*;
+#[cfg(any(feature="postgres", feature="mysql"))]
+use super::query_helper;
+
 
 use database_error::{DatabaseError, DatabaseResult};
 
@@ -131,7 +134,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
                 let (database, postgres_url) = change_database_of_url(database_url, "postgres");
                 println!("Creating database: {}", database);
                 let conn = try!(PgConnection::establish(&postgres_url));
-                try!(conn.execute(&format!("CREATE DATABASE {}", database)));
+                query_helper::create_database(&database).execute(&conn)?;
             }
         },
         #[cfg(feature="sqlite")]
@@ -147,7 +150,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
                 let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
                 println!("Creating database: {}", database);
                 let conn = try!(MysqlConnection::establish(&mysql_url));
-                try!(conn.execute(&format!("CREATE DATABASE {}", database)));
+                query_helper::create_database(&database).execute(&conn)?;
             }
         },
     }
@@ -179,7 +182,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
             let conn = try!(PgConnection::establish(&postgres_url));
             if try!(pg_database_exists(&conn, &database)) {
                 println!("Dropping database: {}", database);
-                try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
+                query_helper::drop_database(&database).if_exists().execute(&conn)?;
             }
         },
         #[cfg(feature="sqlite")]
@@ -198,7 +201,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
             let conn = try!(MysqlConnection::establish(&mysql_url));
             if try!(mysql_database_exists(&conn, &database)) {
                 println!("Dropping database: {}", database);
-                try!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)));
+                query_helper::drop_database(&database).if_exists().execute(&conn)?;
             }
         },
     }

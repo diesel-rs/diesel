@@ -17,7 +17,7 @@ impl Database {
     pub fn create(self) -> Self {
         let (database, postgres_url) = self.split_url();
         let conn = PgConnection::establish(&postgres_url).unwrap();
-        conn.execute(&format!("CREATE DATABASE {}", database)).unwrap();
+        conn.execute(&format!(r#"CREATE DATABASE "{}""#, database)).unwrap();
         self
     }
 
@@ -56,7 +56,7 @@ impl Drop for Database {
         let (database, postgres_url) = self.split_url();
         let conn = try_drop!(PgConnection::establish(&postgres_url), "Couldn't connect to database");
         conn.silence_notices(|| {
-            try_drop!(conn.execute(&format!("DROP DATABASE IF EXISTS {}", database)), "Couldn't drop database");
+            try_drop!(conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)), "Couldn't drop database");
         });
     }
 }
