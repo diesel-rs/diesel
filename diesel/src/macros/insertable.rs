@@ -273,17 +273,11 @@ mod tests {
 
     macro_rules! test_struct_definition {
         ($test_name:ident, $($struct_def:tt)*) => {
-            // FIXME: This module is to work around rust-lang/rust#31776
-            // Remove the module and move the struct definition into the test function once
-            // 1.9 is released. The `use` statements can be removed.
-            //
-            // The indentation is intentionally weird to avoid git churn when this is fixed.
-            mod $test_name {
-                use super::{users, connection};
-                use prelude::*;
-                __diesel_parse_as_item!($($struct_def)*);
             #[test]
             fn $test_name() {
+                use prelude::*;
+                __diesel_parse_as_item!($($struct_def)*);
+
                 impl_Insertable! {
                     (users)
                     $($struct_def)*
@@ -297,7 +291,6 @@ mod tests {
                     .load::<(String, Option<String>)>(&conn);
                 let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
                 assert_eq!(Ok(expected), saved);
-            }
             }
         }
     }
@@ -472,16 +465,15 @@ mod tests {
                 conn
             }
 
-            // FIXME: This can be moved into the function once `pub` is allowed
-            table! {
-                posts {
-                    id -> Serial,
-                    tags -> Array<Text>,
-                }
-            }
-
             #[test]
             fn insertable_with_slice_of_borrowed() {
+                table! {
+                    posts {
+                        id -> Serial,
+                        tags -> Array<Text>,
+                    }
+                }
+
                 struct NewPost<'a> { tags: &'a [&'a str], }
                 impl_Insertable! { (posts) struct NewPost<'a> { tags: &'a [&'a str], } }
 
