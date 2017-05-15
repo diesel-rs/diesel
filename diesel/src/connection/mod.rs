@@ -38,6 +38,61 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///
     /// The error returned from the function must implement
     /// `From<diesel::result::Error>`.
+    ///
+    /// # Examples:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("src/doctest_setup.rs");
+    /// # table!(
+    /// #    users(id) {
+    /// #        id -> Integer,
+    /// #        name -> Varchar,
+    /// #    }
+    /// # );
+    /// # #[derive(Queryable, Debug, PartialEq)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// use diesel::result::Error;
+    ///
+    /// fn main() {
+    ///     let conn = establish_connection();
+    ///     let _ = conn.transaction::<_, Error, _>(|| {
+    ///         let new_user = NewUser { name: "Ruby".into() };
+    ///         diesel::insert(&new_user).into(users::table).execute(&conn)?;
+    ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
+    ///             User { id: 1, name: "Sean".into() },
+    ///             User { id: 2, name: "Tess".into() },
+    ///             User { id: 3, name: "Ruby".into() },
+    ///         ]));
+    ///
+    ///         Ok(())
+    ///     });
+    ///
+    ///     let _ = conn.transaction::<(), Error, _>(|| {
+    ///         let new_user = NewUser { name: "Pascal".into() };
+    ///         diesel::insert(&new_user).into(users::table).execute(&conn)?;
+    ///
+    ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
+    ///             User { id: 1, name: "Sean".into() },
+    ///             User { id: 2, name: "Tess".into() },
+    ///             User { id: 3, name: "Ruby".into() },
+    ///             User { id: 4, name: "Pascal".into() },
+    ///         ]));
+    ///
+    ///         Err(Error::RollbackTransaction) // Oh noeees, something bad happened :(
+    ///     });
+    ///
+    ///     assert_eq!(users::table.load::<User>(&conn), Ok(vec![
+    ///         User { id: 1, name: "Sean".into() },
+    ///         User { id: 2, name: "Tess".into() },
+    ///         User { id: 3, name: "Ruby".into() },
+    ///     ]));
+    /// }
+    /// ```
     fn transaction<T, E, F>(&self, f: F) -> Result<T, E> where
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
