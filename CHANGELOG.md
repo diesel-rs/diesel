@@ -10,21 +10,30 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for chrono types with SQLite.
 
-* Added support for the [PostgreSQL network types][pg-network-0.13.0] `CIDR` and `INET`.
+* Bind values can now be supplied to queries constructed using raw SQL. See [the
+  docs][sql-bind-0.13.0] for more details.
+
+[sql-bind-0.13.0]: http://docs.diesel.rs/diesel/expression/sql_literal/struct.SqlLiteral.html#method.bind
+
+* Added support for the [PostgreSQL network types][pg-network-0.13.0] `CIDR` and
+  `INET`.
 
 [pg-network-0.13.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 
 * Added support for `ILIKE` in PostgreSQL.
 
-* Added the `migration list` command to Diesel CLI for listing all available migrations and marking those that have been applied.
+* Added the `migration list` command to Diesel CLI for listing all available
+  migrations and marking those that have been applied.
 
 * Added support for adding two nullable columns.
 
 * Added support for unsigned types in MySQL.
 
-* Added the `any_pending_migrations` function to determine if there are any pending migrations in the migrations directory.
+* Added the `any_pending_migrations` function to determine if there are any
+  pending migrations in the migrations directory.
 
-* Added the `migration pending` command to the Diesel CLI to run the `any_pending_migrations` function and report the output.
+* Added the `migration pending` command to the Diesel CLI to run the
+  `any_pending_migrations` function and report the output.
 
 ### Fixed
 

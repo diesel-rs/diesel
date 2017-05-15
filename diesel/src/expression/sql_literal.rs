@@ -4,6 +4,7 @@ use backend::Backend;
 use expression::*;
 use query_builder::*;
 use result::QueryResult;
+use super::unchecked_bind::UncheckedBind;
 use types::HasSqlType;
 
 #[derive(Debug, Clone)]
@@ -20,11 +21,86 @@ pub struct SqlLiteral<ST> {
 }
 
 impl<ST> SqlLiteral<ST> {
+    #[doc(hidden)]
     pub fn new(sql: String) -> Self {
         SqlLiteral {
             sql: sql,
             _marker: PhantomData,
         }
+    }
+
+    /// Bind a value for use with this SQL query.
+    ///
+    /// # Safety
+    ///
+    /// This function should be used with care, as Diesel cannot validate that
+    /// the value is of the right type nor can it validate that you have passed
+    /// the correct number of parameters.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     use diesel::expression::dsl::sql;
+    /// #     use diesel::types::{Integer, Text};
+    /// #     let connection = establish_connection();
+    /// #[cfg(feature="postgres")]
+    /// let query = sql::<Integer>("SELECT id FROM users WHERE name = $1");
+    /// #[cfg(not(feature="postgres"))]
+    /// let query = sql::<Integer>("SELECT id FROM users WHERE name = ?");
+    /// let seans_id = query.clone().bind::<Text, _>("Sean")
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(1), seans_id);
+    /// let tess_id = query.bind::<Text, _>("Tess")
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(2), tess_id);
+    /// # }
+    /// ```
+    ///
+    /// ### Multiple Bind Params
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     use diesel::expression::dsl::sql;
+    /// #     use diesel::types::{Integer, Text};
+    /// #     let connection = establish_connection();
+    /// #     diesel::insert(&NewUser::new("Jim")).into(users)
+    /// #         .execute(&connection).unwrap();
+    /// #[cfg(not(feature="postgres"))]
+    /// let query = sql::<Text>("SELECT name FROM users WHERE id > ? AND name <> ?");
+    /// #[cfg(feature="postgres")]
+    /// let query = sql("SELECT name FROM users WHERE id > $1 AND name <> $2");
+    /// let query = query
+    ///     .bind::<Integer, _>(1)
+    ///     .bind::<Text, _>("Jim");
+    /// let expected = vec!["Tess".to_string()];
+    /// assert_eq!(Ok(expected), query.load(&connection));
+    /// # }
+    /// ```
+    pub fn bind<BindST, T>(self, bind_value: T) -> UncheckedBind<Self, T, BindST> {
+        UncheckedBind::new(self, bind_value)
     }
 }
 

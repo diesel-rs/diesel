@@ -40,6 +40,7 @@ pub mod nullable;
 #[macro_use]
 pub mod predicates;
 pub mod sql_literal;
+mod unchecked_bind;
 
 /// Reexports various top level functions and core extensions that are too
 /// generic to export by default. This module exists to conveniently glob import

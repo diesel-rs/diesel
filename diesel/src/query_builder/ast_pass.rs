@@ -91,6 +91,16 @@ impl<'a, DB> AstPass<'a, DB> where
             None
         }
     }
+
+    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &U) -> QueryResult<()> where
+        DB: HasSqlType<T>,
+        U: ToSql<T, DB>,
+    {
+        if let AstPassInternals::CollectBinds(..) = self.internals {
+            self.push_bind_param(bind)?;
+        }
+        Ok(())
+    }
 }
 
 #[allow(missing_debug_implementations)]
