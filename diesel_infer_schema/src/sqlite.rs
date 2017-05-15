@@ -122,7 +122,6 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         path: path,
         is_array: false,
         is_nullable: attr.nullable,
-        is_unsigned: false,
     })
 }
 
