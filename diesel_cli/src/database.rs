@@ -1,4 +1,6 @@
 use clap::ArgMatches;
+#[cfg(any(feature="postgres", feature="mysql"))]
+use url::Url;
 use diesel::expression::sql;
 #[cfg(feature="postgres")]
 use diesel::pg::PgConnection;
@@ -290,10 +292,20 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature="postgres", feature="mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    let mut split: Vec<&str> = database_url.split('/').collect();
-    let database = split.pop().unwrap();
-    let new_url = format!("{}/{}", split.join("/"), default_database);
-    (database.to_owned(), new_url)
+    // This method accepts a MySQL or Postgres connection string that conforms to URL BNF grammar
+    // only (and not the database connection string grammars) and returns the name of the database
+    // and a new connection string to the database specified by the default_database argument. If
+    // the database name is not specified in the connection string then we default to an empty
+    // string. NOTE: This function does not validate connection strings (look at the signature, no
+    // Option or Result is there).
+
+    // TODO: handle unix connection strings with percent encoded paths such as:
+    //  postgres://%2Fvar%2Flib/dbname
+    let mut url = Url::parse(database_url).expect("failed to parse connection string");
+    let database: String = url.path().trim_left_matches('/').to_string();
+    url.set_path(default_database);
+
+    (database, url.into_string())
 }
 
 #[cfg_attr(feature="clippy", allow(needless_pass_by_value))]
@@ -308,19 +320,41 @@ mod tests {
 
     #[test]
     fn split_pg_connection_string_returns_postgres_url_and_database() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
+        // format: (original_string, dbname, expected_changed_string)
+        let test_cases: [(&'static str, &'static str, &'static str); 10] = [
+            ("postgresql://", "", "postgresql:///postgres"),
+            ("postgresql://localhost", "" ,"postgresql://localhost/postgres"),
+            ("postgresql://localhost:5433", "", "postgresql://localhost:5433/postgres"),
+            ("postgresql://localhost/mydb", "mydb", "postgresql://localhost/postgres"),
+            ("postgresql://user@localhost", "","postgresql://user@localhost/postgres"),
+            ("postgresql://user:secret@localhost", "", "postgresql://user:secret@localhost/postgres"),
+            ("postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp", "otherdb", "postgresql://other@localhost/postgres?connect_timeout=10&application_name=myapp" ),
+            ("postgresql:///mydb?host=localhost&port=5433", "mydb", "postgresql:///postgres?host=localhost&port=5433"),
+            ("postgresql://[2001:db8::1234]/database", "database", "postgresql://[2001:db8::1234]/postgres"),
+            ("postgresql:///dbname?host=/var/lib/postgresql", "dbname", "postgresql:///postgres?host=/var/lib/postgresql"),
+            // TODO: Support opaque origins
+            //("postgresql://%2Fvar%2Flib%2Fpostgresql/dbname", "dbname", "postgresql://%2Fvar%2Flib%2Fpostgresql/postgres"),
+        ];
+        for &(database_url, database, postgres_url) in &test_cases {
+            assert_eq!((database.to_owned(), postgres_url.to_owned()), change_database_of_url(database_url, "postgres"));
+        }
     }
 
     #[test]
-    fn split_pg_connection_string_handles_user_and_password() {
-        let database = "database".to_owned();
-        let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
-        let postgres_url = format!("{}/{}", base_url, "postgres");
-        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
+    fn split_mysql_connection_string_returns_mysql_url_and_database() {
+        // format: (original_string, dbname, expected_changed_string)
+        let test_cases: [(&'static str, &'static str, &'static str); 8] = [
+            ("mysql://", "", "mysql:///information_schema"),
+            ("mysql://localhost", "" ,"mysql://localhost/information_schema"),
+            ("mysql://localhost:5433", "", "mysql://localhost:5433/information_schema"),
+            ("mysql://localhost/mydb", "mydb", "mysql://localhost/information_schema"),
+            ("mysql://user@localhost", "","mysql://user@localhost/information_schema"),
+            ("mysql://user:secret@localhost", "", "mysql://user:secret@localhost/information_schema"),
+            ("mysql://other@localhost/otherdb", "otherdb", "mysql://other@localhost/information_schema"),
+            ("mysql://other@localhost:1122/otherdb", "otherdb", "mysql://other@localhost:1122/information_schema"),
+        ];
+        for &(database_url, database, mysql_url) in &test_cases {
+            assert_eq!((database.to_owned(), mysql_url.to_owned()), change_database_of_url(database_url, "information_schema"));
+        }
     }
 }
