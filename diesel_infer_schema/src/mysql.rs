@@ -4,17 +4,15 @@ use data_structures::*;
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let tpe = determine_type_name(&attr.type_name)?;
-    let unsigned = determine_unsigned(&attr.type_name);
 
     Ok(ColumnType {
-        path: vec!["diesel".into(), "types".into(), capitalize(tpe.trim())],
+        path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
         is_array: false,
         is_nullable: attr.nullable,
-        is_unsigned: unsigned,
     })
 }
 
-fn determine_type_name(sql_type_name: &str) -> Result<String, Box<Error>> {
+fn determine_type_name(sql_type_name: &str) -> Result<&str, Box<Error>> {
     let result = if sql_type_name == "tinyint(1)" {
         "bool"
     } else if sql_type_name.starts_with("int") {
@@ -26,17 +24,12 @@ fn determine_type_name(sql_type_name: &str) -> Result<String, Box<Error>> {
     };
 
     if result.to_lowercase().contains("unsigned") {
-        let result = result.to_lowercase().replace("unsigned", "").trim().to_owned();
-        Ok(result)
+        Err("unsigned types are not yet supported".into())
     } else if result.contains(' ') {
         Err(format!("unrecognized type {:?}", result).into())
     } else {
-        Ok(result.to_owned())
+        Ok(result)
     }
-}
-
-fn determine_unsigned(sql_type_name: &str) -> bool {
-    sql_type_name.to_lowercase().contains("unsigned")
 }
 
 fn capitalize(name: &str) -> String {
@@ -70,15 +63,10 @@ fn int_is_treated_as_integer() {
 }
 
 #[test]
-fn unsigned_types_are_supported() {
-    assert!(determine_unsigned("float unsigned"));
-    assert!(determine_unsigned("UNSIGNED INT"));
-    assert!(determine_unsigned("unsigned bigint"));
-    assert!(!determine_unsigned("bigint"));
-    assert!(!determine_unsigned("FLOAT"));
-    assert_eq!("float", determine_type_name("float unsigned").unwrap());
-    assert_eq!("int", determine_type_name("UNSIGNED INT").unwrap());
-    assert_eq!("bigint", determine_type_name("unsigned bigint").unwrap());
+fn unsigned_types_are_not_supported() {
+    assert!(determine_type_name("float unsigned").is_err());
+    assert!(determine_type_name("UNSIGNED INT").is_err());
+    assert!(determine_type_name("unsigned bigint").is_err())
 }
 
 #[test]

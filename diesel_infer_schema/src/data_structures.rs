@@ -19,7 +19,6 @@ pub struct ColumnType {
     pub path: Vec<String>,
     pub is_array: bool,
     pub is_nullable: bool,
-    pub is_unsigned: bool,
 }
 
 impl ColumnInformation {

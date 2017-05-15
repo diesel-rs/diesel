@@ -84,9 +84,6 @@ fn column_def_tokens(
     };
     let mut tpe = quote!(#tpe);
 
-    if column_type.is_unsigned {
-        tpe = quote!(Unsigned<#tpe>);
-    }
     if column_type.is_array {
         tpe = quote!(Array<#tpe>);
     }
