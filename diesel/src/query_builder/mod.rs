@@ -40,7 +40,7 @@ pub use self::update_statement::{
     UpdateTarget,
 };
 #[doc(inline)]
-pub use self::insert_statement::IncompleteInsertStatement;
+pub use self::insert_statement::{IncompleteInsertStatement, IncompleteDefaultInsertStatement};
 
 use std::error::Error;
 

@@ -351,3 +351,66 @@ impl<'a, T, Table> UndecoratedInsertRecord<Table> for &'a Vec<T> where
     &'a [T]: UndecoratedInsertRecord<Table>,
 {
 }
+
+/// The structure returned by [`insert_default_values`](/diesel/fn.insert_default_values.html). The
+/// only thing that can be done with it is call `into`.
+#[derive(Debug, Copy, Clone, Default)]
+pub struct IncompleteDefaultInsertStatement {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultInsertStatement<T, Ret=NoReturningClause> {
+    target: T,
+    returning: Ret,
+}
+
+impl IncompleteDefaultInsertStatement {
+    #[doc(hidden)]
+    pub fn new() -> Self {
+        IncompleteDefaultInsertStatement {}
+    }
+
+    /// Specify which table the data passed to `insert` should be added to.
+    pub fn into<S>(self, target: S) -> DefaultInsertStatement<S>
+    {
+        DefaultInsertStatement { target: target, returning: NoReturningClause }
+    }
+}
+
+impl<T> DefaultInsertStatement<T, NoReturningClause> {
+    /// Specify what expression is returned after execution of the `insert_default_values`.
+    /// This method can only be called once.
+    pub fn returning<E>(self, returns: E)
+        -> DefaultInsertStatement<T, ReturningClause<E>> where
+            DefaultInsertStatement<T, ReturningClause<E>>: Query,
+    {
+        DefaultInsertStatement {
+            target: self.target,
+            returning: ReturningClause(returns),
+        }
+    }
+}
+
+impl<T, Ret> Query for DefaultInsertStatement<T, ReturningClause<Ret>> where
+    Ret: Expression + SelectableExpression<T> + NonAggregate,
+{
+    type SqlType = Ret::SqlType;
+}
+
+impl<T, Ret, DB> QueryFragment<DB> for DefaultInsertStatement<T, Ret> where
+    DB: Backend,
+    T: Table,
+    T::FromClause: QueryFragment<DB>,
+    Ret: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+
+        out.push_sql("INSERT INTO ");
+        self.target.from_clause().walk_ast(out.reborrow())?;
+        out.push_sql("DEFAULT VALUES ");
+        self.returning.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+impl_query_id!(noop: DefaultInsertStatement<T, Ret>);

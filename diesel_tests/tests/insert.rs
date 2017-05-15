@@ -214,3 +214,41 @@ fn insert_empty_slice_with_returning() {
     assert_eq!(Ok(None), insert_one.optional());
     assert_eq!(Ok(vec![]), insert_all);
 }
+
+#[test]
+#[cfg(not(feature = "mysql"))]
+fn insert_only_default_values() {
+    use schema::users::table as users;
+    use schema_dsl::*;
+    let connection = connection();
+
+    connection.execute("DROP TABLE users").unwrap();
+    create_table("users", (
+        integer("id").primary_key().auto_increment(),
+        string("name").not_null().default("'Sean'"),
+        string("hair_color").not_null().default("'Green'"),
+    )).execute(&connection).unwrap();
+
+    insert_default_values().into(users).execute(&connection);
+    assert_eq!(users.load::<User>(&connection), Ok(vec![User { id: 1, name: "Sean".into(), hair_color: Some("Green".into()) }]));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn insert_only_default_values_with_returning() {
+    use schema::users::table as users;
+    use schema::users::id;
+    use schema_dsl::*;
+    let connection = connection();
+
+    connection.execute("DROP TABLE users").unwrap();
+    create_table("users", (
+        integer("id").primary_key().auto_increment(),
+        string("name").not_null().default("'Sean'"),
+        string("hair_color").not_null().default("'Green'"),
+    )).execute(&connection).unwrap();
+    let result = LoadDsl::get_result::<i32>(insert_default_values().into(users).returning(id), &connection).unwrap();
+
+    assert_eq!(result, 1);
+    assert_eq!(users.load::<User>(&connection), Ok(vec![User { id: 1, name: "Sean".into(), hair_color: Some("Green".into()) }]));
+}
