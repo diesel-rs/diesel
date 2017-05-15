@@ -19,6 +19,6 @@ members = [
 ]
 
 [replace]
-"diesel:0.12.1" = { path = "diesel" }
-"diesel_codegen:0.12.0" = { path = "diesel_codegen" }
-"diesel_infer_schema:0.12.0" = { path = "diesel_infer_schema" }
+"diesel:0.13.0" = { path = "diesel" }
+"diesel_codegen:0.13.0" = { path = "diesel_codegen" }
+"diesel_infer_schema:0.13.0" = { path = "diesel_infer_schema" }

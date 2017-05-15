@@ -4,7 +4,7 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.13.0] - 2017-05-15
 
 ### Added
 
@@ -820,3 +820,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.11.2]: https://github.com/diesel-rs/diesel/compare/v0.11.1...v0.11.2
 [0.11.4]: https://github.com/diesel-rs/diesel/compare/v0.11.2...v0.11.4
 [0.12.0]: https://github.com/diesel-rs/diesel/compare/v0.11.4...v0.12.0
+[0.12.1]: https://github.com/diesel-rs/diesel/compare/v0.12.0...v0.12.1
+[0.13.0]: https://github.com/diesel-rs/diesel/compare/v0.12.1...v0.13.0
