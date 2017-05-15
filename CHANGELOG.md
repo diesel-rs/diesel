@@ -22,24 +22,23 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `ILIKE` in PostgreSQL.
 
-* Added the `migration list` command to Diesel CLI for listing all available
-  migrations and marking those that have been applied.
+* `diesel migration list` will show all migrations, marking those that have been
+  run.
 
-* Added support for adding two nullable columns.
+* `diesel migration pending` will list any migrations which have not been run.
 
-* Added support for unsigned types in MySQL.
+* Added support for numeric operations with nullable types.
 
-* Added the `any_pending_migrations` function to determine if there are any
-  pending migrations in the migrations directory.
+* Added [`migrations::any_pending_migrations`][pending-migrations-0.13.0].
 
-* Added the `migration pending` command to the Diesel CLI to run the
-  `any_pending_migrations` function and report the output.
+[pending-migrations-0.13.0]: http://docs.diesel.rs/diesel/migrations/fn.any_pending_migrations.html
 
 ### Fixed
 
-* Diesel CLI: Support the `--migration-dir` argument and the `MIGRATION_DIRECTORY` on every migrations related command.
+* Diesel CLI now respects the `--migration-dir` argument or the
+  `MIGRATION_DIRECTORY` environment variable for all commands.
 
-* Diesel CLI: Escape the database name for CREATE/DROP DATABASE operations. This allows you to have hyphens in your database name.
+* Diesel CLI now properly escapes the database name.
 
 ## [0.12.1] - 2017-05-07
 
