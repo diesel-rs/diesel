@@ -40,11 +40,7 @@ fn migration_redo_respects_migration_dir_var() {
     );
 
     // Make sure the project is setup
-    p.command("setup").run();
-
-    // TODO: When setup supports migration_dir, remove this
-    p.command("migration")
-        .arg("run")
+    p.command("setup")
         .arg("--migration-dir=foo")
         .run();
 
@@ -77,12 +73,8 @@ fn migration_redo_respects_migration_dir_env() {
     );
 
     // Make sure the project is setup
-    p.command("setup").run();
-
-    // TODO: When setup supports migration_dir, remove this
-    p.command("migration")
-        .arg("run")
-        .env("MIGRATION_DIRECTORY", "bar")
+    p.command("setup")
+        .arg("--migration-dir=bar")
         .run();
 
     let result = p.command("migration")
