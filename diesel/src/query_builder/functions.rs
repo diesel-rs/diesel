@@ -10,8 +10,6 @@ use super::{IntoUpdateTarget, IncompleteUpdateStatement, IncompleteInsertStateme
 ///
 /// # Examples
 ///
-/// ### Updating a single record:
-///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("src/doctest_setup.rs");
@@ -35,6 +33,41 @@ use super::{IntoUpdateTarget, IncompleteUpdateStatement, IncompleteInsertStateme
 /// // can explicitly return an expression by using the `returning` method before
 /// // getting the result.
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+///
+/// To update multiple columns, give `set` a tuple argument:
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #         surname -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// # use users::dsl::*;
+/// # let connection = establish_connection();
+/// # connection.execute("DROP TABLE users").unwrap();
+/// # connection.execute("CREATE TABLE users (
+/// #     id SERIAL PRIMARY KEY,
+/// #     name VARCHAR,
+/// #     surname VARCHAR)").unwrap();
+/// # connection.execute("INSERT INTO users(name, surname) VALUES('Sean', 'Griffin')").unwrap();
+///
+/// let updated_row = diesel::update(users.filter(id.eq(1)))
+///     .set((name.eq("James"), surname.eq("Bond")))
+///     .get_result(&connection);
+///
+/// assert_eq!(Ok((1, "James".to_string(), "Bond".to_string())), updated_row);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
