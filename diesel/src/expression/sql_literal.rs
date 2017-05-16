@@ -139,6 +139,12 @@ impl<ST> NonAggregate for SqlLiteral<ST> {
 /// DSL. You will need to provide the SQL type of the expression, in addition to
 /// the SQL.
 ///
+/// # Bound parameters
+///
+/// If you need to pass arguments to your query, you should use [`.bind()`].
+///
+/// [`.bind()`]: ../sql_literal/struct.SqlLiteral.html#method.bind
+///
 /// # Safety
 ///
 /// The compiler will be unable to verify the correctness of the annotated type.
