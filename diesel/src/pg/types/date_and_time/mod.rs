@@ -35,7 +35,7 @@ pub struct PgDate(pub i32);
 pub struct PgTime(pub i64);
 
 /// Intervals in Postgres are separated into 3 parts. A 64 bit integer representing time in
-/// microseconds, a 32 bit integer representing number of minutes, and a 32 bit integer
+/// microseconds, a 32 bit integer representing number of days, and a 32 bit integer
 /// representing number of months. This struct is a dumb wrapper type, meant only to indicate the
 /// meaning of these parts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
