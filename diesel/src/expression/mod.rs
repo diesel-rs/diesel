@@ -165,6 +165,47 @@ use query_builder::{QueryFragment, QueryId};
 /// Helper trait used when boxing expressions. This exists to work around the
 /// fact that Rust will not let us use non-core types as bounds on a trait
 /// object (you could not return `Box<Expression+NonAggregate>`)
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel_codegen;
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::types;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+///
+/// # #[derive(PartialEq, Eq, Debug)]
+/// #[derive(Queryable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// fn main() {
+///     let conn = establish_connection();
+///     let where_clause: Box<BoxableExpression<users::table, _, SqlType=types::Bool>>;
+///     let search_by_id = true;
+///
+///     if search_by_id {
+///         where_clause = Box::new(users::id.eq(1))
+///     } else {
+///         where_clause = Box::new(users::name.eq("Tess".to_string()))
+///     }
+///
+///     // BoxableExpression can be chained
+///     let where_clause = where_clause.and(Box::new(users::id.ne(10)));
+///
+///     let result = users::table.filter(where_clause).load::<User>(&conn);
+///     assert_eq!(result, Ok(vec![User { id: 1, name: "Sean".into() }]));
+/// }
+/// ```
 pub trait BoxableExpression<QS, DB> where
     DB: Backend,
     Self: Expression,
