@@ -25,6 +25,7 @@ install:
   - 7z e sqlite3.zip -y
   - set SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
   - set PATH=%PATH%;%APPVEYOR_BUILD_FOLDER%
+  - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\lib.exe" /def:sqlite3.def /OUT:sqlite3.lib /machine:x64'
 
 build: false
 
@@ -60,10 +61,9 @@ environment:
       backend: postgres
       PG_DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_test
       PG_EXAMPLE_DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_example
-    # SQLite doesn't distribute a static lib
-    # - target: x86_64-pc-windows-msvc
-    #   backend: sqlite
-    #   SQLITE_DATABASE_URL: test.db
+    - target: x86_64-pc-windows-msvc
+      backend: sqlite
+      SQLITE_DATABASE_URL: test.db
     - target: x86_64-pc-windows-msvc
       backend: mysql
       MYSQL_DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_test
