@@ -1,3 +1,4 @@
+#[allow(unused)]
 macro_rules! try_drop {
     ($e:expr, $msg:expr) => { match $e {
         Ok(x) => x,
