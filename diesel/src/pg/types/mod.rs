@@ -280,6 +280,72 @@ pub mod sql_types {
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Money;
 
+    #[cfg(feature = "network-address")]
+    /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - `[u8; 6]`
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - `[u8; 6]`
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Serial,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # use diesel::types::MacAddr;
+    ///
+    /// #[derive(Queryable)]
+    /// struct Device {
+    ///     id: i32,
+    ///     macaddr: [u8; 6],
+    /// }
+    ///
+    /// #[derive(Insertable)]
+    /// #[table_name="devices"]
+    /// struct NewDevice {
+    ///     macaddr: [u8;6],
+    /// }
+    ///
+    /// table! {
+    ///     devices {
+    ///         id -> Integer,
+    ///         macaddr -> MacAddr,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use self::diesel::insert;
+    /// #     use self::devices::dsl::*;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE devices (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         macaddr MACADDR NOT NULL
+    /// #     )").unwrap();
+    /// let new_device = NewDevice {
+    ///     macaddr: [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03],
+    /// };
+    /// let inserted_device = insert(&new_device).into(devices)
+    ///     .get_result::<Device>(&connection).unwrap();
+    /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_device.macaddr);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct MacAddr;
+
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls

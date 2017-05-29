@@ -455,6 +455,24 @@ fn pg_uuid_to_sql_uuid() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn pg_macaddress_from_sql() {
+    let query = "'08:00:2b:01:02:03'::macaddr";
+    let expected_value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03];
+    assert_eq!(expected_value,
+               query_single_value::<MacAddr, [u8; 6]>(query));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn pg_macaddress_to_sql_macaddress() {
+    let expected_value = "'08:00:2b:01:02:03'::macaddr";
+    let value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03];
+    assert!(query_to_sql_equality::<MacAddr, [u8; 6]>(expected_value, value));
+}
+
+
+#[test]
+#[cfg(feature = "postgres")]
 fn pg_v4address_from_sql() {
     extern crate ipnetwork;
     use std::str::FromStr;

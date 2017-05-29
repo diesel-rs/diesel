@@ -107,12 +107,18 @@ mod pg_types {
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
     test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
     test_round_trip!(array_of_nullable_roundtrips, Array<Nullable<Text>>, Vec<Option<String>>);
+    test_round_trip!(macaddr_roundtrips, MacAddr, (u8, u8, u8, u8, u8, u8), mk_macaddr);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
         uuid::Uuid::from_fields(data.0, data.1, data.2, &b).unwrap()
     }
+
+    fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
+        [data.0, data.1, data.2, data.3, data.4, data.5]
+    }
+
 }
 
 #[cfg(feature = "mysql")]
