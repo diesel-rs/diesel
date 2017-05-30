@@ -118,7 +118,9 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
     let mut file = try!(File::open(path));
     try!(file.read_to_string(&mut sql));
 
-    if sql.is_empty() {
+    println!("run_sql_from_file got this sql\n\n{:?}\n\nfrom file {:?}", sql, path);
+
+    if sql.trim().is_empty() {
         return Err(RunMigrationsError::EmptyMigration);
     }
 
