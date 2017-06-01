@@ -134,12 +134,6 @@ impl<Left, Right, On, T> SelectableExpression<JoinOn<Join<Left, Right, LeftOuter
 }
 
 // FIXME: We want these blanket impls when overlapping marker traits are stable
-// impl<T, Join, On> AppearsOnTable<JoinOn<Join, On>> for T where
-//     T: AppearsOnTable<Join>,
-// {
-// }
-
-// FIXME: We want these blanket impls when overlapping marker traits are stable
 // impl<T, Join, On> SelectableExpression<JoinOn<Join, On>> for T where
 //     T: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
 // {
@@ -179,4 +173,34 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
         out.push_sql(" LEFT OUTER");
         Ok(())
     }
+}
+
+use super::{Succ, Never, ContainsTable};
+
+impl<T, Left, Right, Kind> ContainsTable<T> for Join<Left, Right, Kind> where
+    Left: ContainsTable<T>,
+    Right: ContainsTable<T>,
+    Left::Count: Plus<Right::Count>,
+{
+    type Count = <Left::Count as Plus<Right::Count>>::Output;
+}
+
+impl<T, Join, On> ContainsTable<T> for JoinOn<Join, On> where
+    Join: ContainsTable<T>,
+{
+    type Count = Join::Count;
+}
+
+pub trait Plus<T> {
+    type Output;
+}
+
+impl<T, U> Plus<T> for Succ<U> where
+    U: Plus<T>,
+{
+    type Output = Succ<U::Output>;
+}
+
+impl<T> Plus<T> for Never {
+    type Output = T;
 }
