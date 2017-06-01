@@ -3,7 +3,7 @@ use expression::SelectableExpression;
 use expression::nullable::Nullable;
 use query_builder::*;
 use result::QueryResult;
-use super::{QuerySource, Table};
+use super::QuerySource;
 
 #[derive(Debug, Clone, Copy)]
 /// A query source representing the join between two tables
@@ -45,38 +45,38 @@ impl_query_id!(Join<Left, Right, Kind>);
 impl_query_id!(JoinOn<Join, On>);
 
 impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
-    Left: Table + JoinTo<Right>,
-    Right: Table,
-    (Left::AllColumns, Right::AllColumns): SelectableExpression<Self>,
+    Left: QuerySource + JoinTo<Right>,
+    Right: QuerySource,
+    (Left::DefaultSelection, Right::DefaultSelection): SelectableExpression<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = (Left::AllColumns, Right::AllColumns);
+    type DefaultSelection = (Left::DefaultSelection, Right::DefaultSelection);
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        (Left::all_columns(), Right::all_columns())
+        (self.left.default_selection(), self.right.default_selection())
     }
 }
 
 impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
-    Left: Table + JoinTo<Right>,
-    Right: Table,
-    (Left::AllColumns, Nullable<Right::AllColumns>): SelectableExpression<Self>,
+    Left: QuerySource + JoinTo<Right>,
+    Right: QuerySource,
+    (Left::DefaultSelection, Nullable<Right::DefaultSelection>): SelectableExpression<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = (Left::AllColumns, Nullable<Right::AllColumns>);
+    type DefaultSelection = (Left::DefaultSelection, Nullable<Right::DefaultSelection>);
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        (Left::all_columns(), Right::all_columns().nullable())
+        (self.left.default_selection(), self.right.default_selection().nullable())
     }
 }
 

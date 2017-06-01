@@ -43,31 +43,16 @@ macro_rules! __diesel_column {
         {
         }
 
-        impl<Right> AppearsOnTable<
-            Join<$($table)::*, Right, Inner>,
+        impl<Right, Kind> AppearsOnTable<
+            Join<$($table)::*, Right, Kind>,
         > for $column_name where
-            Right: Table,
+            Right: QuerySource,
             $($table)::*: $crate::JoinTo<Right>
         {
         }
 
-        impl<Left> AppearsOnTable<
-            Join<Left, $($table)::*, Inner>,
-        > for $column_name where
-            Left: $crate::JoinTo<$($table)::*>
-        {
-        }
-
-        impl<Right> AppearsOnTable<
-            Join<$($table)::*, Right, LeftOuter>,
-        > for $column_name where
-            Right: Table,
-            $($table)::*: $crate::JoinTo<Right>
-        {
-        }
-
-        impl<Left> AppearsOnTable<
-            Join<Left, $($table)::*, LeftOuter>,
+        impl<Left, Kind> AppearsOnTable<
+            Join<Left, $($table)::*, Kind>,
         > for $column_name where
             Left: $crate::JoinTo<$($table)::*>
         {
@@ -438,10 +423,10 @@ macro_rules! table_body {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                use $crate::{Table, Expression, SelectableExpression, AppearsOnTable, QuerySource};
+                use $crate::{Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryFragment, AstPass};
-                use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
+                use $crate::query_source::joins::{Join, JoinOn, Inner};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
