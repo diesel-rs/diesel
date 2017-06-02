@@ -1,5 +1,6 @@
 use prelude::*;
 use expression::SelectableExpression;
+use expression::grouped::Grouped;
 use expression::nullable::Nullable;
 use query_builder::*;
 use result::QueryResult;
@@ -85,15 +86,15 @@ impl<Join, On> QuerySource for JoinOn<Join, On> where
     On: AppearsOnTable<Join::FromClause> + Clone,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
-    type FromClause = nodes::InfixNode<'static, Join::FromClause, On>;
+    type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;
     type DefaultSelection = Join::DefaultSelection;
 
     fn from_clause(&self) -> Self::FromClause {
-        nodes::InfixNode::new(
+        Grouped(nodes::InfixNode::new(
             self.join.from_clause(),
             self.on.clone(),
             " ON ",
-        )
+        ))
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
@@ -118,18 +119,26 @@ impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
     }
 }
 
-impl<Left, Right, T> SelectableExpression<Join<Left, Right, LeftOuter>>
+impl<Left, Right, Kind, T> SelectableExpression<Join<Left, Right, Kind>>
     for Nullable<T> where
         T: SelectableExpression<Join<Left, Right, Inner>>,
-        Nullable<T>: AppearsOnTable<Join<Left, Right, LeftOuter>>,
+        Nullable<T>: AppearsOnTable<Join<Left, Right, Kind>>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<Left, Right, On, T> SelectableExpression<JoinOn<Join<Left, Right, LeftOuter>, On>>
+impl<Join, On, T> SelectableExpression<JoinOn<Join, On>>
     for Nullable<T> where
-        T: SelectableExpression<Join<Left, Right, Inner>>,
-        Nullable<T>: AppearsOnTable<JoinOn<Join<Left, Right, LeftOuter>, On>>,
+        Nullable<T>: SelectableExpression<Join>,
+        Nullable<T>: AppearsOnTable<JoinOn<Join, On>>,
+{
+}
+
+// FIXME: Remove this when overlapping marker traits are stable
+impl<From, T> SelectableExpression<SelectStatement<From>>
+    for Nullable<T> where
+        Nullable<T>: SelectableExpression<From>,
+        Nullable<T>: AppearsOnTable<SelectStatement<From>>,
 {
 }
 
@@ -172,6 +181,36 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
         Ok(())
+    }
+}
+
+impl<T, From> JoinTo<SelectStatement<From>> for T where
+    T: Table + JoinTo<From>,
+{
+    type JoinOnClause = T::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        T::join_on_clause()
+    }
+}
+
+impl<T, Join, On> JoinTo<JoinOn<Join, On>> for T where
+    T: Table + JoinTo<Join>,
+{
+    type JoinOnClause = T::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        T::join_on_clause()
+    }
+}
+
+impl<Left, Mid, Right, Kind> JoinTo<Join<Mid, Right, Kind>> for Left where
+    Left: Table + JoinTo<Mid>,
+{
+    type JoinOnClause = Left::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        Left::join_on_clause()
     }
 }
 

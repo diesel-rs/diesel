@@ -1,5 +1,5 @@
 use query_builder::AsQuery;
-use query_source::{joins, QuerySource, JoinTo};
+use query_source::{joins, Table, JoinTo};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
@@ -10,7 +10,7 @@ pub trait InternalJoinDsl<Rhs, Kind, On> {
 }
 
 impl<T, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for T where
-    T: QuerySource + AsQuery,
+    T: Table + AsQuery,
     T::Query: InternalJoinDsl<Rhs, Kind, On>,
 {
     type Output = <T::Query as InternalJoinDsl<Rhs, Kind, On>>::Output;

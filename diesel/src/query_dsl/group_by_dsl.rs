@@ -1,6 +1,6 @@
 use expression::Expression;
 use query_builder::{Query, AsQuery};
-use query_source::QuerySource;
+use query_source::Table;
 
 pub trait GroupByDsl<Expr: Expression> {
     type Output: Query;
@@ -10,7 +10,7 @@ pub trait GroupByDsl<Expr: Expression> {
 
 impl<T, Expr> GroupByDsl<Expr> for T where
     Expr: Expression,
-    T: QuerySource + AsQuery,
+    T: Table + AsQuery,
     T::Query: GroupByDsl<Expr>,
 {
     type Output = <T::Query as GroupByDsl<Expr>>::Output;

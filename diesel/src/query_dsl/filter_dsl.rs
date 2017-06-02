@@ -38,7 +38,7 @@ pub trait FilterDsl<Predicate>: AsQuery {
 }
 
 impl<T, U, Predicate> FilterDsl<Predicate> for T where
-    T: QuerySource + AsQuery<SqlType=<U as Query>::SqlType, Query=U>,
+    T: Table + AsQuery<SqlType=<U as Query>::SqlType, Query=U>,
     U: Query + FilterDsl<Predicate, SqlType=<U as Query>::SqlType>,
 {
     type Output = Filter<U, Predicate>;

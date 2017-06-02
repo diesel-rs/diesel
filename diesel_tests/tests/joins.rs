@@ -274,3 +274,120 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
     ];
     assert_eq!(Ok(expected_data), titles);
 }
+
+#[test]
+fn selecting_parent_child_grandchild() {
+    let connection = connection_with_fixture_data_for_multitable_joins();
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+    let posts = posts::table.order(posts::id)
+        .load::<Post>(&connection).unwrap();
+    let comments = comments::table.order(comments::id)
+        .load::<Comment>(&connection).unwrap();
+
+    let data = users::table.inner_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), comments[0].clone())),
+        (sean.clone(), (posts[0].clone(), comments[2].clone())),
+        (sean.clone(), (posts[2].clone(), comments[1].clone())),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table.inner_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), Some(comments[0].clone()))),
+        (sean.clone(), (posts[0].clone(), Some(comments[2].clone()))),
+        (sean.clone(), (posts[2].clone(), Some(comments[1].clone()))),
+        (tess.clone(), (posts[1].clone(), None)),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table.left_outer_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), Some((posts[0].clone(), Some(comments[0].clone())))),
+        (sean.clone(), Some((posts[0].clone(), Some(comments[2].clone())))),
+        (sean.clone(), Some((posts[2].clone(), Some(comments[1].clone())))),
+        (tess.clone(), Some((posts[1].clone(), None))),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table.left_outer_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), Some((posts[0].clone(), comments[0].clone()))),
+        (sean.clone(), Some((posts[0].clone(), comments[2].clone()))),
+        (sean.clone(), Some((posts[2].clone(), comments[1].clone()))),
+        (tess.clone(), None),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
+fn selecting_four_tables_deep() {
+    let connection = connection_with_fixture_data_for_multitable_joins();
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+    let posts = posts::table.order(posts::id)
+        .load::<Post>(&connection).unwrap();
+    let comments = comments::table.order(comments::id)
+        .load::<Comment>(&connection).unwrap();
+    let likes = likes::table.order((likes::user_id, likes::comment_id))
+        .load::<Like>(&connection).unwrap();
+
+    let data = users::table.inner_join(
+        posts::table.inner_join(comments::table.inner_join(likes::table)))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), (comments[0].clone(), likes[0].clone()))),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table.inner_join(
+        posts::table.inner_join(comments::table.left_outer_join(likes::table)))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), (comments[0].clone(), Some(likes[0].clone())))),
+        (sean.clone(), (posts[0].clone(), (comments[2].clone(), None))),
+        (sean.clone(), (posts[2].clone(), (comments[1].clone(), None))),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+fn connection_with_fixture_data_for_multitable_joins() -> TestConnection {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+
+    let new_posts = vec![
+        NewPost::new(sean.id, "First Post", None),
+        NewPost::new(tess.id, "Second Post", None),
+        NewPost::new(sean.id, "Third Post", None),
+    ];
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+
+    let posts = posts::table.order(posts::id)
+        .load::<Post>(&connection).unwrap();
+    let new_comments = vec![
+        NewComment(posts[0].id, "First Comment"),
+        NewComment(posts[2].id, "Second Comment"),
+        NewComment(posts[0].id, "Third Comment"),
+    ];
+    insert(&new_comments).into(comments::table).execute(&connection).unwrap();
+
+    let comment_id = comments::table.order(comments::id).select(comments::id)
+        .first(&connection).unwrap();
+    let like = Like { user_id: tess.id, comment_id };
+    insert(&like).into(likes::table).execute(&connection).unwrap();
+
+    connection
+}

@@ -54,6 +54,12 @@ macro_rules! __diesel_column {
         {
         }
 
+        // FIXME: Remove this when overlapping marker traits are stable
+        impl<From> SelectableExpression<SelectStatement<From>> for $column_name where
+            $column_name: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>,
+        {
+        }
+
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {
@@ -414,7 +420,7 @@ macro_rules! table_body {
                 use super::table;
                 use $crate::{Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
-                use $crate::query_builder::{QueryFragment, AstPass};
+                use $crate::query_builder::{QueryFragment, AstPass, SelectStatement};
                 use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
                 use $crate::query_source::{AppearsInFromClause, Once, Never};
                 use $crate::result::QueryResult;
@@ -538,6 +544,26 @@ macro_rules! joinable_inner {
 
                 $foreign_key.nullable().eq($primary_key_expr.nullable())
             }
+        }
+    }
+}
+
+/// Allow two tables which are otherwise unrelated to be used together in a
+/// multi-table join. This macro only needs to be invoked when the two tables
+/// don't have an association between them (e.g. parent to grandchild)
+#[macro_export]
+macro_rules! enable_multi_table_joins {
+    ($left_mod:ident, $right_mod:ident) => {
+        impl $crate::query_source::AppearsInFromClause<$left_mod::table>
+            for $right_mod::table
+        {
+            type Count = $crate::query_source::Never;
+        }
+
+        impl $crate::query_source::AppearsInFromClause<$right_mod::table>
+            for $left_mod::table
+        {
+            type Count = $crate::query_source::Never;
         }
     }
 }

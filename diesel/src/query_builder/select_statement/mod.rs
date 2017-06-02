@@ -183,3 +183,27 @@ impl<F, S, D, W, O, L, Of, G> NonAggregate
         SelectStatement<F, S, D, W, O, L, Of, G>: Expression,
 {
 }
+
+// Allow `SelectStatement<From>` to act as if it were `From` as long as
+// no other query methods have been called on it
+impl<From, T> AppearsInFromClause<T> for SelectStatement<From> where
+    From: AppearsInFromClause<T>,
+{
+    type Count = From::Count;
+}
+
+impl<From> QuerySource for SelectStatement<From> where
+    From: QuerySource,
+    From::DefaultSelection: SelectableExpression<Self>,
+{
+    type FromClause = From::FromClause;
+    type DefaultSelection = From::DefaultSelection;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.from.from_clause()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self.from.default_selection()
+    }
+}
