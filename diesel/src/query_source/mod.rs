@@ -49,7 +49,7 @@ pub trait Table: QuerySource + AsQuery + Sized {
     fn all_columns() -> Self::AllColumns;
 }
 
-pub trait ContainsTable<QS> {
+pub trait AppearsInFromClause<QS> {
     type Count;
 }
 

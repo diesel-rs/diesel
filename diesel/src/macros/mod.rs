@@ -27,7 +27,7 @@ macro_rules! __diesel_column {
         }
 
         impl<QS> AppearsOnTable<QS> for $column_name where
-            QS: ContainsTable<$($table)::*, Count=Once>,
+            QS: AppearsInFromClause<$($table)::*, Count=Once>,
         {
         }
 
@@ -35,8 +35,8 @@ macro_rules! __diesel_column {
             Join<Left, Right, LeftOuter>,
         > for $column_name where
             $column_name: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-            Left: ContainsTable<$($table)::*, Count=Once>,
-            Right: ContainsTable<$($table)::*, Count=Never>,
+            Left: AppearsInFromClause<$($table)::*, Count=Once>,
+            Right: AppearsInFromClause<$($table)::*, Count=Never>,
         {
         }
 
@@ -44,7 +44,7 @@ macro_rules! __diesel_column {
             Join<Left, Right, Inner>,
         > for $column_name where
             $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
-            Join<Left, Right, Inner>: ContainsTable<$($table)::*, Count=Once>,
+            Join<Left, Right, Inner>: AppearsInFromClause<$($table)::*, Count=Once>,
         {
         }
 
@@ -323,7 +323,7 @@ macro_rules! table_body {
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
-            use $crate::query_source::{ContainsTable, Once};
+            use $crate::query_source::{AppearsInFromClause, Once};
             $(use $($import)::+;)+
             pub use self::columns::*;
 
@@ -403,7 +403,7 @@ macro_rules! table_body {
                 }
             }
 
-            impl ContainsTable<table> for table {
+            impl AppearsInFromClause<table> for table {
                 type Count = Once;
             }
 
@@ -416,7 +416,7 @@ macro_rules! table_body {
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryFragment, AstPass};
                 use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
-                use $crate::query_source::{ContainsTable, Once, Never};
+                use $crate::query_source::{AppearsInFromClause, Once, Never};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
@@ -524,7 +524,7 @@ macro_rules! joinable_inner {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
     ) => {
-        impl $crate::query_source::ContainsTable<$right_table_ty> for $left_table_ty {
+        impl $crate::query_source::AppearsInFromClause<$right_table_ty> for $left_table_ty {
             type Count = $crate::query_source::Never;
         }
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {

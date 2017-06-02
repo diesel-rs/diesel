@@ -175,18 +175,18 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     }
 }
 
-use super::{Succ, Never, ContainsTable};
+use super::{Succ, Never, AppearsInFromClause};
 
-impl<T, Left, Right, Kind> ContainsTable<T> for Join<Left, Right, Kind> where
-    Left: ContainsTable<T>,
-    Right: ContainsTable<T>,
+impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind> where
+    Left: AppearsInFromClause<T>,
+    Right: AppearsInFromClause<T>,
     Left::Count: Plus<Right::Count>,
 {
     type Count = <Left::Count as Plus<Right::Count>>::Output;
 }
 
-impl<T, Join, On> ContainsTable<T> for JoinOn<Join, On> where
-    Join: ContainsTable<T>,
+impl<T, Join, On> AppearsInFromClause<T> for JoinOn<Join, On> where
+    Join: AppearsInFromClause<T>,
 {
     type Count = Join::Count;
 }

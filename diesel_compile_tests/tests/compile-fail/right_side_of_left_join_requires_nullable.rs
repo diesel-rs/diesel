@@ -27,13 +27,17 @@ fn main() {
     let join = users::table.left_outer_join(posts::table);
 
     // Invalid, only Nullable<title> is selectable
-    let _ = join.select(posts::title); //~ ERROR E0277
+    let _ = join.select(posts::title);
+    //~^ ERROR E0271
+    //~| ERROR E0271
     // Valid
     let _ = join.select(posts::title.nullable());
     // Valid -- NULL to a function will return null
     let _ = join.select(lower(posts::title).nullable());
     // Invalid, only Nullable<title> is selectable
-    let _ = join.select(lower(posts::title)); //~ ERROR E0277
+    let _ = join.select(lower(posts::title));
+    //~^ ERROR E0271
+    //~| ERROR E0271
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable())); //~ ERROR E0271
 }
