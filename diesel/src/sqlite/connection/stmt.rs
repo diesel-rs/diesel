@@ -123,6 +123,8 @@ impl Statement {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE => None,
             ffi::SQLITE_ROW => Some(SqliteRow::new(self.inner_statement)),
+            // TODO: better error handling
+            ffi::SQLITE_BUSY => None,
             error => panic!("{}", super::error_message(error)),
         }
     }

@@ -13,28 +13,23 @@ pub struct RawConnection {
     pub internal_connection: *mut ffi::sqlite3,
 }
 
+const BUSY_TIMEOUT: i32 = 5000;
+
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
         let database_url = try!(CString::new(database_url));
         let connection_status = unsafe {
-            ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer)
+            match ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) {
+                ffi::SQLITE_OK => ffi::sqlite3_busy_timeout(conn_pointer, BUSY_TIMEOUT),
+                err_code => err_code,
+            }
         };
 
         match connection_status {
-            ffi::SQLITE_OK => {
-                let r = unsafe {
-                    ffi::sqlite3_busy_timeout(conn_pointer, 5000)
-                };
-
-                if r != ffi::SQLITE_OK {
-                    warn!("sqlite3_busy_timeout error: {:?}", r);
-                }
-
-                Ok(RawConnection {
-                    internal_connection: conn_pointer,
-                })
-            },
+            ffi::SQLITE_OK => Ok(RawConnection {
+                internal_connection: conn_pointer,
+            }),
             err_code => {
                 let message = super::error_message(err_code);
                 Err(ConnectionError::BadConnection(message.into()))
