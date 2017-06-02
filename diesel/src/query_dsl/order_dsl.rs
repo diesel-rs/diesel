@@ -1,6 +1,6 @@
 use expression::Expression;
 use query_builder::AsQuery;
-use query_source::QuerySource;
+use query_source::Table;
 
 /// Sets the order clause of a query. If there was already a order clause, it
 /// will be overridden. The expression passed to `order` must actually be valid
@@ -49,7 +49,7 @@ pub trait OrderDsl<Expr: Expression>: AsQuery {
 
 impl<T, Expr, ST> OrderDsl<Expr> for T where
     Expr: Expression,
-    T: QuerySource + AsQuery<SqlType=ST>,
+    T: Table + AsQuery<SqlType=ST>,
     T::Query: OrderDsl<Expr, SqlType=ST>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
