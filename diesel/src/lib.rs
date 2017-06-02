@@ -22,6 +22,8 @@
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
 extern crate byteorder;
+#[macro_use]
+extern crate log;
 
 #[macro_use]
 mod macros;

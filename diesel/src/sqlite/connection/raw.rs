@@ -22,9 +22,19 @@ impl RawConnection {
         };
 
         match connection_status {
-            ffi::SQLITE_OK => Ok(RawConnection {
-                internal_connection: conn_pointer,
-            }),
+            ffi::SQLITE_OK => {
+                let r = unsafe {
+                    ffi::sqlite3_busy_timeout(conn_pointer, 5000)
+                };
+
+                if r != ffi::SQLITE_OK {
+                    warn!("sqlite3_busy_timeout error: {:?}", r);
+                }
+
+                Ok(RawConnection {
+                    internal_connection: conn_pointer,
+                })
+            },
             err_code => {
                 let message = super::error_message(err_code);
                 Err(ConnectionError::BadConnection(message.into()))
