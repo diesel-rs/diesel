@@ -1,10 +1,10 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> $Type:ty, $($doc:meta),*) => {
+    ($($table:ident)::*, $column_name:ident -> $Type:ty, $($doc:expr),*) => {
 
         $(
-            #[$doc]
+            #[doc=$doc]
         )*
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy)]
@@ -256,7 +256,7 @@ macro_rules! table {
     (
         @parse
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         use $($new_import:tt)::+; $($rest:tt)+
     ) => {
         table! {
@@ -270,8 +270,8 @@ macro_rules! table {
     (
         @parse
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:meta,)*];
-        #[$new_doc:meta] $($rest:tt)+
+        doc = [$($doc:expr,)*];
+        #[doc=$new_doc:expr] $($rest:tt)+
     ) => {
         table! {
             @parse
@@ -284,7 +284,7 @@ macro_rules! table {
     (
         @parse
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $($rest:tt)+
     ) => {
         table! {
@@ -298,7 +298,7 @@ macro_rules! table {
     (
         @parse
         import = [];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $($rest:tt)+
     ) => {
         table! {
@@ -312,7 +312,7 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $($table_name:ident).+ {$($body:tt)*}
     ) => {
         table! {
@@ -326,7 +326,7 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $name:ident $(($($pk:ident),+))* {$($body:tt)*}
     ) => {
         table! {
@@ -340,7 +340,7 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
     ) => {
         table_body! {
@@ -353,7 +353,7 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
     ) => {
         table_body! {
@@ -370,7 +370,7 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:meta,)*];
+        doc = [$($doc:expr,)*];
         $($rest:tt)*
     ) => {
         // Remove this workaround as soon as rust issue 40872 is implemented
@@ -400,10 +400,10 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:meta)*],)*],
+        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:meta)*],
-        #[$new_doc:meta] $new_column_name:ident -> $new_type:ty,
+        table_doc = [$($table_doc:expr)*],
+        #[doc=$new_doc:expr] $new_column_name:ident -> $new_type:ty,
         $($body:tt)*
     ) => {
         table_body! {
@@ -426,9 +426,9 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:meta)*],)*],
+        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:meta)*],
+        table_doc = [$($table_doc:expr)*],
         $new_column_name:ident -> $new_type:ty,
         $($body:tt)*
     ) => {
@@ -451,7 +451,7 @@ macro_rules! table_body {
             $($body:tt)+
         }
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($table_doc:meta)*];
+        doc = [$($table_doc:expr)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -469,7 +469,7 @@ macro_rules! table_body {
             $($body:tt)+
         }
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($table_doc:meta)*];
+        doc = [$($table_doc:expr)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -487,12 +487,12 @@ macro_rules! table_body {
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $column_ty:ty; doc = [$($doc:meta)*] ,)+],
+        columns = [$($column_name:ident -> $column_ty:ty; doc = [$($doc:expr)*] ,)+],
         imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:meta)*],
+        table_doc = [$($table_doc:expr)*],
     ) => {
         $(
-            #[$table_doc]
+            #[doc=$table_doc]
         )*
         pub mod $table_name {
             #![allow(dead_code)]
