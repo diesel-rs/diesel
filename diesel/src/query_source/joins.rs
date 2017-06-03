@@ -214,6 +214,27 @@ impl<Left, Mid, Right, Kind> JoinTo<Join<Mid, Right, Kind>> for Left where
     }
 }
 
+impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind> where
+    Left: JoinTo<Right>,
+{
+    type JoinOnClause = Left::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        Left::join_on_clause()
+    }
+}
+
+impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On> where
+    Join: JoinTo<Right>,
+{
+    type JoinOnClause = Join::JoinOnClause;
+
+    fn join_on_clause() -> Self::JoinOnClause {
+        Join::join_on_clause()
+    }
+}
+
+
 use super::{Succ, Never, AppearsInFromClause};
 
 impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind> where
