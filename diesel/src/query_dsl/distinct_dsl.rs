@@ -1,5 +1,5 @@
 use query_builder::AsQuery;
-use query_source::QuerySource;
+use query_source::Table;
 
 /// Adds the `DISTINCT` keyword to a query.
 ///
@@ -37,7 +37,7 @@ pub trait DistinctDsl: AsQuery {
 }
 
 impl<T, ST> DistinctDsl for T where
-    T: AsQuery<SqlType=ST> + QuerySource,
+    T: Table + AsQuery<SqlType=ST>,
     T::Query: DistinctDsl<SqlType=ST>,
 {
     type Output = <T::Query as DistinctDsl>::Output;

@@ -17,17 +17,26 @@ table! {
     }
 }
 
+table! {
+    comments {
+        id -> Integer,
+        post_id -> Integer,
+    }
+}
+
+joinable!(comments -> posts (post_id));
+enable_multi_table_joins!(users, posts);
+enable_multi_table_joins!(users, comments);
+
 fn main() {
     let _ = users::table.inner_join(posts::table);
-    //~^ ERROR JoinTo
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
+    //~^ ERROR users::table: diesel::JoinTo<posts::table>
     let _ = users::table.left_outer_join(posts::table);
-    //~^ ERROR JoinTo
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
+    //~^ ERROR users::table: diesel::JoinTo<posts::table>
+
+    // Sanity check to make sure the error is when users
+    // become involved
+    let join = posts::table.inner_join(comments::table);
+    let _ = users::table.inner_join(join);
+    //~^ ERROR users::table: diesel::JoinTo<posts::table>
 }

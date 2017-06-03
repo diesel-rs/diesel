@@ -1,6 +1,6 @@
 use expression::*;
 use query_builder::{Query, AsQuery};
-use query_source::QuerySource;
+use query_source::Table;
 
 /// Sets the select clause of a query. If there was already a select clause, it
 /// will be overridden. The expression passed to `select` must actually be valid
@@ -14,7 +14,7 @@ pub trait SelectDsl<Selection: Expression> {
 
 impl<T, Selection> SelectDsl<Selection> for T where
     Selection: Expression,
-    T: QuerySource + AsQuery,
+    T: Table + AsQuery,
     T::Query: SelectDsl<Selection>,
 {
     type Output = <T::Query as SelectDsl<Selection>>::Output;

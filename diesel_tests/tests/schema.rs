@@ -12,6 +12,8 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
+#[has_many(followings)]
+#[has_many(likes)]
 #[has_many(posts)]
 #[table_name = "users"]
 pub struct User {
@@ -40,6 +42,7 @@ impl User {
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 #[belongs_to(Post)]
+#[has_many(likes)]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -56,7 +59,9 @@ impl Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations)]
+#[belongs_to(User)]
+#[belongs_to(Post)]
 #[table_name="followings"]
 pub struct Following {
     pub user_id: i32,
@@ -155,6 +160,16 @@ pub struct NullableColumn {
     value: Option<i32>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
+#[table_name="likes"]
+#[primary_key(user_id, comment_id)]
+#[belongs_to(User)]
+#[belongs_to(Comment)]
+pub struct Like {
+    pub user_id: i32,
+    pub comment_id: i32,
+}
+
 #[cfg(feature = "postgres")]
 pub type TestConnection = ::diesel::pg::PgConnection;
 #[cfg(feature = "sqlite")]
@@ -239,3 +254,8 @@ pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
         .first(connection)
         .unwrap()
 }
+
+enable_multi_table_joins!(users, comments);
+enable_multi_table_joins!(posts, likes);
+enable_multi_table_joins!(followings, likes);
+enable_multi_table_joins!(followings, comments);
