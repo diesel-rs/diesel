@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, AppearsOnTable, NonAggregate};
@@ -6,8 +8,8 @@ use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
-use std::error::Error;
 use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
+use util::TupleAppend;
 
 macro_rules! tuple_impls {
     ($(
@@ -236,6 +238,16 @@ macro_rules! tuple_impls {
 
                 fn foreign_key_column() -> Self::ForeignKeyColumn {
                     A::foreign_key_column()
+                }
+            }
+
+            impl<$($T,)+ Next> TupleAppend<Next> for ($($T,)+) {
+                type Output = ($($T,)+ Next);
+
+                #[allow(non_snake_case)]
+                fn tuple_append(self, next: Next) -> Self::Output {
+                    let ($($T,)+) = self;
+                    ($($T,)+ next)
                 }
             }
         )+
