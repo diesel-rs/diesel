@@ -277,13 +277,8 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
 
 #[test]
 fn selecting_parent_child_grandchild() {
-    let connection = connection_with_fixture_data_for_multitable_joins();
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
-    let posts = posts::table.order(posts::id)
-        .load::<Post>(&connection).unwrap();
-    let comments = comments::table.order(comments::id)
-        .load::<Comment>(&connection).unwrap();
+    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let TestData { sean, tess, posts, comments, .. } = test_data;
 
     let data = users::table.inner_join(posts::table.inner_join(comments::table))
         .order((users::id, posts::id, comments::id))
@@ -331,15 +326,8 @@ fn selecting_parent_child_grandchild() {
 
 #[test]
 fn selecting_four_tables_deep() {
-    let connection = connection_with_fixture_data_for_multitable_joins();
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
-    let posts = posts::table.order(posts::id)
-        .load::<Post>(&connection).unwrap();
-    let comments = comments::table.order(comments::id)
-        .load::<Comment>(&connection).unwrap();
-    let likes = likes::table.order((likes::user_id, likes::comment_id))
-        .load::<Like>(&connection).unwrap();
+    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let TestData { sean, posts, comments, likes, .. } = test_data;
 
     let data = users::table.inner_join(
         posts::table.inner_join(comments::table.inner_join(likes::table)))
@@ -362,7 +350,30 @@ fn selecting_four_tables_deep() {
     assert_eq!(Ok(expected), data);
 }
 
-fn connection_with_fixture_data_for_multitable_joins() -> TestConnection {
+#[test]
+fn selecting_parent_child_sibling() {
+    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let TestData { sean, tess, posts, likes, .. } = test_data;
+
+    let data = users::table.inner_join(posts::table).inner_join(likes::table)
+        .load(&connection);
+    let expected = vec![
+        ((tess.clone(), posts[1].clone()), likes[0].clone()),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table.inner_join(posts::table).left_outer_join(likes::table)
+        .order((users::id, posts::id))
+        .load(&connection);
+    let expected = vec![
+        ((sean.clone(), posts[0].clone()), None),
+        ((sean.clone(), posts[2].clone()), None),
+        ((tess.clone(), posts[1].clone()), Some(likes[0].clone())),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &connection);
@@ -384,10 +395,23 @@ fn connection_with_fixture_data_for_multitable_joins() -> TestConnection {
     ];
     insert(&new_comments).into(comments::table).execute(&connection).unwrap();
 
-    let comment_id = comments::table.order(comments::id).select(comments::id)
-        .first(&connection).unwrap();
-    let like = Like { user_id: tess.id, comment_id };
+    let comments = comments::table.order(comments::id)
+        .load::<Comment>(&connection).unwrap();
+    let like = Like { user_id: tess.id, comment_id: *comments[0].id() };
     insert(&like).into(likes::table).execute(&connection).unwrap();
 
-    connection
+    let likes = likes::table.order((likes::user_id, likes::comment_id))
+        .load::<Like>(&connection).unwrap();
+
+    let test_data = TestData { sean, tess, posts, comments, likes };
+
+    (connection, test_data)
+}
+
+struct TestData {
+    sean: User,
+    tess: User,
+    posts: Vec<Post>,
+    comments: Vec<Comment>,
+    likes: Vec<Like>,
 }
