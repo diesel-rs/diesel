@@ -43,6 +43,10 @@ macro_rules! tuple_impls {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
+
+                fn fields_needed() -> usize {
+                    $($T::fields_needed() +)+ 0
+                }
             }
 
             impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
@@ -52,11 +56,16 @@ macro_rules! tuple_impls {
                 DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    if row.next_is_null($Tuple) {
+                    if row.next_is_null(Self::fields_needed()) {
+                        row.advance(Self::fields_needed());
                         Ok(None)
                     } else {
                         Ok(Some(($(try!($T::build_from_row(row)),)+)))
                     }
+                }
+
+                fn fields_needed() -> usize {
+                    $($T::fields_needed() +)+ 0
                 }
             }
 

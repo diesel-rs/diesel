@@ -12,8 +12,9 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
-#[has_many(posts)]
+#[has_many(followings)]
 #[has_many(likes)]
+#[has_many(posts)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -58,7 +59,9 @@ impl Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations)]
+#[belongs_to(User)]
+#[belongs_to(Post)]
 #[table_name="followings"]
 pub struct Following {
     pub user_id: i32,
@@ -254,3 +257,5 @@ pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
 
 enable_multi_table_joins!(users, comments);
 enable_multi_table_joins!(posts, likes);
+enable_multi_table_joins!(followings, likes);
+enable_multi_table_joins!(followings, comments);

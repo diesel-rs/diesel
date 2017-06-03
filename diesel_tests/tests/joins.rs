@@ -373,6 +373,39 @@ fn selecting_parent_child_sibling() {
     assert_eq!(Ok(expected), data);
 }
 
+#[test]
+fn selecting_crazy_nested_joins() {
+    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let TestData { sean, tess, posts, likes, comments, followings, .. } = test_data;
+
+    let data = users::table
+        .inner_join(posts::table
+            .left_join(comments::table.left_join(likes::table))
+            .left_join(followings::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), Some((comments[0].clone(), Some(likes[0].clone()))), None)),
+        (sean.clone(), (posts[0].clone(), Some((comments[2].clone(), None)), None)),
+        (sean.clone(), (posts[2].clone(), Some((comments[1].clone(), None)), None)),
+        (tess.clone(), (posts[1].clone(), None, Some(followings[0].clone()))),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .inner_join(posts::table.left_join(comments::table.left_join(likes::table)))
+        .left_join(followings::table)
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), Some((comments[0].clone(), Some(likes[0].clone())))), Some(followings[0])),
+        (sean.clone(), (posts[0].clone(), Some((comments[2].clone(), None))), Some(followings[0])),
+        (sean.clone(), (posts[2].clone(), Some((comments[1].clone(), None))), Some(followings[0])),
+        (tess.clone(), (posts[1].clone(), None), None),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
 fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
     let connection = connection_with_sean_and_tess_in_users_table();
 
@@ -401,9 +434,18 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     insert(&like).into(likes::table).execute(&connection).unwrap();
 
     let likes = likes::table.order((likes::user_id, likes::comment_id))
-        .load::<Like>(&connection).unwrap();
+        .load(&connection).unwrap();
 
-    let test_data = TestData { sean, tess, posts, comments, likes };
+    let new_following = Following {
+        user_id: sean.id,
+        post_id: posts[1].id,
+        email_notifications: false,
+    };
+    insert(&new_following).into(followings::table).execute(&connection).unwrap();
+    let followings = followings::table.order((followings::user_id, followings::post_id))
+        .load(&connection).unwrap();
+
+    let test_data = TestData { sean, tess, posts, comments, likes, followings };
 
     (connection, test_data)
 }
@@ -414,4 +456,5 @@ struct TestData {
     posts: Vec<Post>,
     comments: Vec<Comment>,
     likes: Vec<Like>,
+    followings: Vec<Following>,
 }
