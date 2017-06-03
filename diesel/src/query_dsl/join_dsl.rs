@@ -52,6 +52,13 @@ pub trait JoinDsl: Sized {
     {
         self.join_with_implicit_on_clause(rhs, joins::LeftOuter)
     }
+
+    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output where
+        Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
+    {
+        self.left_outer_join(rhs)
+    }
+
 }
 
 impl<T: AsQuery> JoinDsl for T {
