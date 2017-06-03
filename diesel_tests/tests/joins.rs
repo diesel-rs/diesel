@@ -358,7 +358,7 @@ fn selecting_parent_child_sibling() {
     let data = users::table.inner_join(posts::table).inner_join(likes::table)
         .load(&connection);
     let expected = vec![
-        ((tess.clone(), posts[1].clone()), likes[0].clone()),
+        (tess.clone(), posts[1].clone(), likes[0].clone()),
     ];
     assert_eq!(Ok(expected), data);
 
@@ -366,9 +366,9 @@ fn selecting_parent_child_sibling() {
         .order((users::id, posts::id))
         .load(&connection);
     let expected = vec![
-        ((sean.clone(), posts[0].clone()), None),
-        ((sean.clone(), posts[2].clone()), None),
-        ((tess.clone(), posts[1].clone()), Some(likes[0].clone())),
+        (sean.clone(), posts[0].clone(), None),
+        (sean.clone(), posts[2].clone(), None),
+        (tess.clone(), posts[1].clone(), Some(likes[0].clone())),
     ];
     assert_eq!(Ok(expected), data);
 }

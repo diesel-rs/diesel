@@ -40,7 +40,7 @@ pub struct SelectStatement<
     GroupBy = NoGroupByClause,
 > {
     select: Select,
-    from: From,
+    pub(crate) from: From,
     distinct: Distinct,
     where_clause: Where,
     order: Order,

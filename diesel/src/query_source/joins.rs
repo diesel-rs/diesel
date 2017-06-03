@@ -1,10 +1,11 @@
-use prelude::*;
 use expression::SelectableExpression;
 use expression::grouped::Grouped;
 use expression::nullable::Nullable;
+use prelude::*;
 use query_builder::*;
 use result::QueryResult;
 use super::QuerySource;
+use util::TupleAppend;
 
 #[derive(Debug, Clone, Copy)]
 /// A query source representing the join between two tables
@@ -46,38 +47,38 @@ impl_query_id!(Join<Left, Right, Kind>);
 impl_query_id!(JoinOn<Join, On>);
 
 impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
-    Left: QuerySource + JoinTo<Right>,
+    Left: QuerySource + JoinTo<Right> + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
-    (Left::DefaultSelection, Right::DefaultSelection): SelectableExpression<Self>,
+    Left::Output: SelectableExpression<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = (Left::DefaultSelection, Right::DefaultSelection);
+    type DefaultSelection = Left::Output;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        (self.left.default_selection(), self.right.default_selection())
+        self.left.append_selection(self.right.default_selection())
     }
 }
 
 impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
-    Left: QuerySource + JoinTo<Right>,
+    Left: QuerySource + JoinTo<Right> + AppendSelection<Nullable<Right::DefaultSelection>>,
     Right: QuerySource,
-    (Left::DefaultSelection, Nullable<Right::DefaultSelection>): SelectableExpression<Self>,
+    Left::Output: SelectableExpression<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = (Left::DefaultSelection, Nullable<Right::DefaultSelection>);
+    type DefaultSelection = Left::Output;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        (self.left.default_selection(), self.right.default_selection().nullable())
+        self.left.append_selection(self.right.default_selection().nullable())
     }
 }
 
@@ -156,6 +157,56 @@ pub trait JoinTo<T> {
     type JoinOnClause;
     #[doc(hidden)]
     fn join_on_clause() -> Self::JoinOnClause;
+}
+
+#[doc(hidden)]
+/// Used to ensure the sql type of `left.join(mid).join(right)` is
+/// `(Left, Mid, Right)` and not `((Left, Mid), Right)`. This needs
+/// to be separate from `TupleAppend` because we still want to keep
+/// the column lists (which are tuples) separate.
+pub trait AppendSelection<Selection> {
+    type Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output;
+}
+
+impl<T: Table, Selection> AppendSelection<Selection> for T {
+    type Output = (T::AllColumns, Selection);
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        (T::all_columns(), selection)
+    }
+}
+
+impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, Kind> where
+    Self: QuerySource,
+    <Self as QuerySource>::DefaultSelection: TupleAppend<Selection>,
+{
+    type Output = <<Self as QuerySource>::DefaultSelection as TupleAppend<Selection>>::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.default_selection().tuple_append(selection)
+    }
+}
+
+impl<Join, On, Selection> AppendSelection<Selection> for JoinOn<Join, On> where
+    Join: AppendSelection<Selection>,
+{
+    type Output = Join::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.join.append_selection(selection)
+    }
+}
+
+impl<From, Selection> AppendSelection<Selection> for SelectStatement<From> where
+    From: AppendSelection<Selection>,
+{
+    type Output = From::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.from.append_selection(selection)
+    }
 }
 
 use backend::Backend;
