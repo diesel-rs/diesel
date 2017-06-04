@@ -21,6 +21,11 @@ pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
     let lifetimes = model.generics.lifetimes;
     let fields = model.attrs.as_slice();
 
+    if fields.is_empty() {
+        panic!("Failed to derive `Insertable` for `{}`: `Insertable` \
+           cannot be used on structs with empty fields", struct_name);
+    }
+
     quote!(impl_Insertable! {
         (
             struct_name = #struct_name,
