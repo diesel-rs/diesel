@@ -1,8 +1,5 @@
 version: 1.0.{build}
 
-# MySQL fails to link on 2015
-image: Visual Studio 2013
-
 branches:
   only:
     - master
@@ -72,6 +69,7 @@ environment:
       # Neither mysql_config or pkg-config work for this on Windows
       MYSQLCLIENT_LIB_DIR: C:\Program Files\MySQL\MySQL Server 5.7\lib
       RUST_TEST_THREADS: 1
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     - target: x86_64-pc-windows-gnu
       backend: postgres
       PG_DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_test
