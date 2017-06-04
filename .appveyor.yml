@@ -116,3 +116,4 @@ environment:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static
       VCPKG_PKGS: libmysql
       RUSTFLAGS: -Ctarget-feature=+crt-static
+
