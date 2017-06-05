@@ -551,6 +551,12 @@ macro_rules! joinable_inner {
 /// Allow two tables which are otherwise unrelated to be used together in a
 /// multi-table join. This macro only needs to be invoked when the two tables
 /// don't have an association between them (e.g. parent to grandchild)
+///
+/// # Example
+///
+/// ```ignore
+/// enable_multi_table_joins!(users, comments);
+/// ```
 #[macro_export]
 macro_rules! enable_multi_table_joins {
     ($left_mod:ident, $right_mod:ident) => {

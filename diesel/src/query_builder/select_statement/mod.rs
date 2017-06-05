@@ -185,8 +185,8 @@ impl<F, S, D, W, O, L, Of, G> NonAggregate
 {
 }
 
-// Allow `SelectStatement<From>` to act as if it were `From` as long as
-// no other query methods have been called on it
+/// Allow `SelectStatement<From>` to act as if it were `From` as long as
+/// no other query methods have been called on it
 impl<From, T> AppearsInFromClause<T> for SelectStatement<From> where
     From: AppearsInFromClause<T>,
 {
