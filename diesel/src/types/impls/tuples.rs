@@ -56,8 +56,9 @@ macro_rules! tuple_impls {
                 DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    if row.next_is_null(Self::fields_needed()) {
-                        row.advance(Self::fields_needed());
+                    let fields_needed = <Self as FromSqlRow<Nullable<($($ST,)+)>, DB>>::fields_needed();
+                    if row.next_is_null(fields_needed) {
+                        row.advance(fields_needed);
                         Ok(None)
                     } else {
                         Ok(Some(($(try!($T::build_from_row(row)),)+)))
