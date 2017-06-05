@@ -75,6 +75,7 @@ environment:
     - target: x86_64-pc-windows-gnu
       backend: postgres
       PG_DATABASE_URL: postgres://postgres:Password12!@localhost/diesel_test
+      RUST_TEST_THREADS: 1
     - target: x86_64-pc-windows-gnu
       backend: sqlite
       SQLITE_DATABASE_URL: test.db
