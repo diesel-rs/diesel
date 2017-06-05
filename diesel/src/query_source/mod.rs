@@ -48,3 +48,13 @@ pub trait Table: QuerySource + AsQuery + Sized {
     fn primary_key(&self) -> Self::PrimaryKey;
     fn all_columns() -> Self::AllColumns;
 }
+
+pub trait AppearsInFromClause<QS> {
+    type Count;
+}
+
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+pub struct Never;
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+pub struct Succ<T>(T);
+pub type Once = Succ<Never>;

@@ -26,47 +26,31 @@ macro_rules! __diesel_column {
         impl SelectableExpression<$($table)::*> for $column_name {
         }
 
-        impl AppearsOnTable<$($table)::*> for $column_name {
-        }
-
-        impl<Right, Kind> SelectableExpression<
-            Join<$($table)::*, Right, Kind>,
-        > for $column_name where
-            $column_name: AppearsOnTable<Join<$($table)::*, Right, Kind>>,
+        impl<QS> AppearsOnTable<QS> for $column_name where
+            QS: AppearsInFromClause<$($table)::*, Count=Once>,
         {
         }
 
-        impl<Left> SelectableExpression<
-            Join<Left, $($table)::*, Inner>,
+        impl<Left, Right> SelectableExpression<
+            Join<Left, Right, LeftOuter>,
         > for $column_name where
-            Left: $crate::JoinTo<$($table)::*>
+            $column_name: AppearsOnTable<Join<Left, Right, LeftOuter>>,
+            Left: AppearsInFromClause<$($table)::*, Count=Once>,
+            Right: AppearsInFromClause<$($table)::*, Count=Never>,
         {
         }
 
-        impl<Right, Kind> AppearsOnTable<
-            Join<$($table)::*, Right, Kind>,
+        impl<Left, Right> SelectableExpression<
+            Join<Left, Right, Inner>,
         > for $column_name where
-            Right: QuerySource,
-            $($table)::*: $crate::JoinTo<Right>
-        {
-        }
-
-        impl<Left, Kind> AppearsOnTable<
-            Join<Left, $($table)::*, Kind>,
-        > for $column_name where
-            Left: $crate::JoinTo<$($table)::*>
-        {
-        }
-
-        // FIXME: Remove this when overlapping marker traits are stable
-        impl<Join, On> AppearsOnTable<JoinOn<Join, On>> for $column_name where
-            $column_name: AppearsOnTable<Join>,
+            $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
+            Join<Left, Right, Inner>: AppearsInFromClause<$($table)::*, Count=Once>,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
         impl<Join, On> SelectableExpression<JoinOn<Join, On>> for $column_name where
-            $column_name: SelectableExpression<Join>,
+            $column_name: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
         {
         }
 
@@ -339,6 +323,7 @@ macro_rules! table_body {
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
+            use $crate::query_source::{AppearsInFromClause, Once};
             $(use $($import)::+;)+
             pub use self::columns::*;
 
@@ -418,6 +403,10 @@ macro_rules! table_body {
                 }
             }
 
+            impl AppearsInFromClause<table> for table {
+                type Count = Once;
+            }
+
             impl_query_id!(table);
 
             /// Contains all of the columns of this table
@@ -426,7 +415,8 @@ macro_rules! table_body {
                 use $crate::{Expression, SelectableExpression, AppearsOnTable, QuerySource};
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryFragment, AstPass};
-                use $crate::query_source::joins::{Join, JoinOn, Inner};
+                use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
+                use $crate::query_source::{AppearsInFromClause, Once, Never};
                 use $crate::result::QueryResult;
                 $(use $($import)::+;)+
 
@@ -534,6 +524,9 @@ macro_rules! joinable_inner {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
     ) => {
+        impl $crate::query_source::AppearsInFromClause<$right_table_ty> for $left_table_ty {
+            type Count = $crate::query_source::Never;
+        }
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type JoinOnClause = $crate::expression::helper_types::Eq<
                 $crate::expression::nullable::Nullable<$foreign_key>,
