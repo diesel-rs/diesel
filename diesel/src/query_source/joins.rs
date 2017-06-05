@@ -199,16 +199,6 @@ impl<Join, On, Selection> AppendSelection<Selection> for JoinOn<Join, On> where
     }
 }
 
-impl<From, Selection> AppendSelection<Selection> for SelectStatement<From> where
-    From: AppendSelection<Selection>,
-{
-    type Output = From::Output;
-
-    fn append_selection(&self, selection: Selection) -> Self::Output {
-        self.from.append_selection(selection)
-    }
-}
-
 use backend::Backend;
 
 #[doc(hidden)]

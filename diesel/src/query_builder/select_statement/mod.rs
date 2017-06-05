@@ -16,6 +16,7 @@ pub use self::boxed::BoxedSelectStatement;
 use backend::Backend;
 use expression::*;
 use query_source::*;
+use query_source::joins::AppendSelection;
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
@@ -40,7 +41,7 @@ pub struct SelectStatement<
     GroupBy = NoGroupByClause,
 > {
     select: Select,
-    pub(crate) from: From,
+    from: From,
     distinct: Distinct,
     where_clause: Where,
     order: Order,
@@ -205,5 +206,15 @@ impl<From> QuerySource for SelectStatement<From> where
 
     fn default_selection(&self) -> Self::DefaultSelection {
         self.from.default_selection()
+    }
+}
+
+impl<From, Selection> AppendSelection<Selection> for SelectStatement<From> where
+    From: AppendSelection<Selection>,
+{
+    type Output = From::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.from.append_selection(selection)
     }
 }
