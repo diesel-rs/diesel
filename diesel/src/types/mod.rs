@@ -292,6 +292,12 @@ pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
 /// implemented for tuples of various sizes.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
+
+    /// The number of fields that this type will consume. Should be equal to
+    /// the number of times you would call `row.take()` in `build_from_row`
+    fn fields_needed() -> usize {
+        1
+    }
 }
 
 #[cfg(feature = "unstable")]

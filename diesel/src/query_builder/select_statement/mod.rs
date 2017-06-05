@@ -16,6 +16,7 @@ pub use self::boxed::BoxedSelectStatement;
 use backend::Backend;
 use expression::*;
 use query_source::*;
+use query_source::joins::AppendSelection;
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::NoGroupByClause;
@@ -182,4 +183,38 @@ impl<F, S, D, W, O, L, Of, G> NonAggregate
     for SelectStatement<F, S, D, W, O, L, Of, G> where
         SelectStatement<F, S, D, W, O, L, Of, G>: Expression,
 {
+}
+
+/// Allow `SelectStatement<From>` to act as if it were `From` as long as
+/// no other query methods have been called on it
+impl<From, T> AppearsInFromClause<T> for SelectStatement<From> where
+    From: AppearsInFromClause<T>,
+{
+    type Count = From::Count;
+}
+
+impl<From> QuerySource for SelectStatement<From> where
+    From: QuerySource,
+    From::DefaultSelection: SelectableExpression<Self>,
+{
+    type FromClause = From::FromClause;
+    type DefaultSelection = From::DefaultSelection;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.from.from_clause()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self.from.default_selection()
+    }
+}
+
+impl<From, Selection> AppendSelection<Selection> for SelectStatement<From> where
+    From: AppendSelection<Selection>,
+{
+    type Output = From::Output;
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        self.from.append_selection(selection)
+    }
 }

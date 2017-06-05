@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{Expression, SelectableExpression, AppearsOnTable, NonAggregate};
@@ -6,8 +8,8 @@ use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
-use std::error::Error;
 use types::{HasSqlType, FromSqlRow, Nullable, IntoNullable, NotNull};
+use util::TupleAppend;
 
 macro_rules! tuple_impls {
     ($(
@@ -41,6 +43,10 @@ macro_rules! tuple_impls {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
+
+                fn fields_needed() -> usize {
+                    $($T::fields_needed() +)+ 0
+                }
             }
 
             impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
@@ -50,11 +56,17 @@ macro_rules! tuple_impls {
                 DB: HasSqlType<($($ST,)+)>,
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    if row.next_is_null($Tuple) {
+                    let fields_needed = <Self as FromSqlRow<Nullable<($($ST,)+)>, DB>>::fields_needed();
+                    if row.next_is_null(fields_needed) {
+                        row.advance(fields_needed);
                         Ok(None)
                     } else {
                         Ok(Some(($(try!($T::build_from_row(row)),)+)))
                     }
+                }
+
+                fn fields_needed() -> usize {
+                    $($T::fields_needed() +)+ 0
                 }
             }
 
@@ -236,6 +248,16 @@ macro_rules! tuple_impls {
 
                 fn foreign_key_column() -> Self::ForeignKeyColumn {
                     A::foreign_key_column()
+                }
+            }
+
+            impl<$($T,)+ Next> TupleAppend<Next> for ($($T,)+) {
+                type Output = ($($T,)+ Next);
+
+                #[allow(non_snake_case)]
+                fn tuple_append(self, next: Next) -> Self::Output {
+                    let ($($T,)+) = self;
+                    ($($T,)+ next)
                 }
             }
         )+

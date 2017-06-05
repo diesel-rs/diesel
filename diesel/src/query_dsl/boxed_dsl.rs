@@ -1,6 +1,6 @@
 use backend::Backend;
 use query_builder::AsQuery;
-use query_source::QuerySource;
+use query_source::Table;
 
 pub trait InternalBoxedDsl<'a, DB: Backend> {
     type Output;
@@ -10,7 +10,7 @@ pub trait InternalBoxedDsl<'a, DB: Backend> {
 
 impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
     DB: Backend,
-    T: QuerySource + AsQuery,
+    T: Table + AsQuery,
     T::Query: InternalBoxedDsl<'a, DB>,
 {
     type Output = <T::Query as InternalBoxedDsl<'a, DB>>::Output;
