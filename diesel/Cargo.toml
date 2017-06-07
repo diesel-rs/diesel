@@ -50,3 +50,7 @@ network-address = ["ipnetwork", "libc"]
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
 appveyor = { repository = "diesel-rs/diesel" }
+
+[package.metadata.docs.rs]
+features = ["postgres", "mysql", "sqlite", "extras"]
+no-default-features = true
