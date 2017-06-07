@@ -40,3 +40,6 @@ mod sqlite;
 pub use codegen::*;
 pub use inference::load_table_names;
 pub use table_data::TableData;
+
+#[cfg(feature="postgres")]
+pub use pg::load_enums;

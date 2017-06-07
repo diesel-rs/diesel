@@ -88,6 +88,12 @@ pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
     expand_derive(input, schema_inference::derive_infer_table_from_schema)
 }
 
+#[proc_macro_derive(InferEnum, attributes(infer_enum_options))]
+#[cfg(all(feature = "diesel_infer_schema", feature = "postgres"))]
+pub fn derive_infer_enum(input: TokenStream) -> TokenStream {
+    expand_derive(input, schema_inference::derive_infer_enum)
+}
+
 #[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
