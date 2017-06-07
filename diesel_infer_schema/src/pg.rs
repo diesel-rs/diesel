@@ -1,6 +1,80 @@
 use std::error::Error;
 
 use data_structures::*;
+use diesel::*;
+use diesel::pg::PgConnection;
+use diesel::pg::types::sql_types::Array;
+use diesel::types;
+
+sql_function!(array_agg, array_agg_t, (a: types::Text) -> Array<types::Text>);
+
+table! {
+    pg_type(oid) {
+        typname -> Text,
+        oid -> Oid,
+        typarray -> Oid,
+        typnamespace -> Oid,
+    }
+}
+
+table! {
+    pg_enum(enumtypid) {
+        enumlabel -> Text,
+        enumtypid -> Oid,
+    }
+}
+
+table! {
+    pg_catalog.pg_namespace(oid) {
+        oid -> Oid,
+        nspname -> Text,
+    }
+}
+
+pub fn load_enums(database_url: &str, schema_name: Option<&str>)
+                  -> Result<Vec<EnumInformation>, Box<Error>> {
+    use super::inference::InferConnection;
+    let conn = super::inference::establish_connection(database_url)?;
+    match conn {
+        InferConnection::Pg(pg) => load_enums_intern(&pg, schema_name),
+        #[cfg(any(feature = "sqlite", feature = "mysql"))]
+        _ => unimplemented!()
+    }
+}
+
+pub fn load_enums_intern(connection: &PgConnection, schema_name: Option<&str>)
+                         -> Result<Vec<EnumInformation>, Box<Error>> {
+    use self::pg_type::dsl::{pg_type, typname, oid as pg_type_oid, typnamespace, typarray};
+    use self::pg_enum::dsl::{pg_enum, enumlabel, enumtypid};
+    use self::pg_namespace::dsl::{pg_namespace, oid as pg_namespace_oid, nspname};
+    let enums: Vec<(u32, String, u32)> = try!(
+        pg_type.filter(
+            typnamespace.eq_any(pg_namespace
+                                .filter(nspname.eq(schema_name.unwrap_or("public")))
+                                .select(pg_namespace_oid))
+                .and(pg_type_oid.eq_any(pg_enum.select(enumtypid))))
+            .select((pg_type_oid, typname, typarray))
+            .load(connection));
+
+    let enum_ids  = enums.iter().map(|&(ref id, ..)| *id).collect::<Vec<_>>();
+    let enum_labels: Vec<Vec<String>> = try!(pg_enum
+                                             .filter(enumtypid
+                                                     .eq_any(enum_ids))
+                                             .group_by(enumtypid)
+                                             .select(array_agg(enumlabel))
+                                             .load(connection));
+    assert_eq!(enums.len(), enum_labels.len());
+    Ok(enums.into_iter()
+       .zip(enum_labels.into_iter())
+       .map(|((oid, enum_name, array_oid), field_names)|{
+           EnumInformation{
+               type_name: enum_name,
+               fields: field_names,
+               oid: oid,
+               array_oid: array_oid,
+           }
+       }).collect())
+}
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with('_');
