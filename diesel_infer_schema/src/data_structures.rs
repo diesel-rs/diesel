@@ -9,6 +9,14 @@ use diesel::types::{HasSqlType, FromSqlRow};
 use super::information_schema::UsesInformationSchema;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnumInformation {
+    pub type_name: String,
+    pub fields: Vec<String>,
+    pub oid: u32,
+    pub array_oid: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
     pub column_name: String,
     pub type_name: String,

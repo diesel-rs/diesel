@@ -122,3 +122,24 @@ macro_rules! embed_migrations {
         }
     }
 }
+
+#[macro_export]
+macro_rules! infer_enum {
+    ($database_url: expr) => {
+        mod __diesel_infer_enum {
+            #[derive(InferEnum)]
+            #[infer_enum_options(database_url=$database_url)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_enum::*;
+    };
+
+    ($database_url: expr, $schema_name: expr) => {
+        mod __diesel_infer_enum {
+            #[derive(InferEnum)]
+            #[infer_enum_options(database_url=$database_url, schema_name=$schema_name)]
+            struct _Dummy;
+        }
+        pub use self::__diesel_infer_enum::*;
+    };
+}

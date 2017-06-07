@@ -90,7 +90,16 @@ pub fn build_cli() -> App<'static, 'static> {
              .help("Use table list as blacklist")
              .conflicts_with("whitelist"));
 
-    App::new("diesel")
+    let infer_enums = SubCommand::with_name("print-enums")
+        .setting(AppSettings::VersionlessSubcommands)
+        .about("Print enum definitions for database enum.")
+        .arg(Arg::with_name("schema")
+             .long("schema")
+             .short("s")
+             .takes_value(true)
+             .help("The name of the schema."));
+
+    let mut diesel = App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
         .after_help("You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")
@@ -100,7 +109,11 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(database_subcommand)
         .subcommand(generate_bash_completion_subcommand)
         .subcommand(infer_schema_subcommand)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
+    if cfg!(feature="postgres"){
+        diesel = diesel.subcommand(infer_enums);
+    }
+    diesel
 }
 
 fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {

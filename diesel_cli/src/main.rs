@@ -56,6 +56,7 @@ fn main() {
         ("database", Some(matches)) => run_database_command(matches),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
         ("print-schema", Some(matches)) => run_infer_schema(matches),
+        ("print-enums", Some(matches)) if cfg!(feature = "postgres") => run_infer_enums(matches),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -340,6 +341,22 @@ fn run_infer_schema(matches: &ArgMatches) {
         .expect("Could not write to stdout");
 
     println!("{}", pretty);
+}
+
+#[cfg(feature="postgres")]
+fn run_infer_enums(matches: &ArgMatches) {
+    use diesel_infer_schema::ExpandEnumMode::PrettyPrint;
+    let database_url = database::database_url(matches);
+    let schema_name = matches.value_of("schema");
+    let enums = diesel_infer_schema::load_enums(&database_url, schema_name)
+        .expect("Could not load enums from database");
+
+    for e in enums {
+        let e = diesel_infer_schema::expand_enum(e, PrettyPrint);
+//        let e = pretty_printing::format_schema(e.as_str())
+//            .expect("Could not format enum");
+        println!("{}", e);
+    }
 }
 
 #[cfg(test)]

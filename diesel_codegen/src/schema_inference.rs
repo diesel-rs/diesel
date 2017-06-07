@@ -6,6 +6,28 @@ use diesel_infer_schema::*;
 
 use util::{get_options_from_input, get_option, get_optional_option};
 
+#[cfg(feature = "postgres")]
+pub fn derive_infer_enum(input: syn::MacroInput) -> quote::Tokens {
+    fn bug() -> ! {
+        panic!("This is a bug. Please open a Github issue \
+               with your invocation of `infer_schema`!");
+    }
+    let options = get_options_from_input("infer_enum_options", &input.attrs, bug)
+        .unwrap_or_else(|| bug());
+    let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
+    let schema_name = get_optional_option(&options, "schema_name");
+    let schema_name = schema_name.as_ref().map(|s| &**s);
+
+    let enums = load_enums(&database_url, schema_name)
+        .expect(&format!("Could not load enums from database {}", database_url))
+        .into_iter()
+        .map(|e| expand_enum(e, ExpandEnumMode::Codegen));
+    quote!{
+        #(#enums)*
+    }
+
+}
+
 pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
