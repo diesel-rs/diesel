@@ -3,6 +3,6 @@
 table! {
      some wrong syntax
 }
-//~^ ERROR environment variable `invalid table! syntax` not defined
+// error-pattern: invalid table! syntax
 
 fn main() {}
