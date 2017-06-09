@@ -16,7 +16,7 @@ quote = "0.3.1"
 clippy = { optional = true, version = "=0.0.126" }
 
 [dev-dependencies]
-dotenv = ">=0.8, <0.10"
+dotenv = ">=0.8, <0.11"
 
 [features]
 default = []
