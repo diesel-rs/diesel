@@ -31,6 +31,7 @@ impl Backend for Pg {
     type BindCollector = RawBytesBindCollector<Pg>;
     type RawValue = [u8];
     type ByteOrder = NetworkEndian;
+    type MetadataLookup = super::connection::PgConnection;
 }
 
 impl TypeMetadata for Pg {

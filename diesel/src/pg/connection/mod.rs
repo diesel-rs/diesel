@@ -17,6 +17,7 @@ use query_dsl::filter_dsl::FilterDsl;
 use query_dsl::load_dsl::LoadDsl;
 use connection::*;
 use pg::{Pg, PgTypeMetadata, IsArray};
+use backend::MetadataLookup;
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -137,7 +138,7 @@ impl PgConnection {
         -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        try!(source.collect_binds(&mut bind_collector, &self));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
@@ -163,8 +164,12 @@ impl PgConnection {
         let query = try!(Statement::prepare(self, query, None, &[]));
         query.execute(&self.raw_connection, &Vec::new())
     }
+}
 
-    pub fn lookup(&self, t: &PgTypeMetadata) -> QueryResult<u32> {
+impl MetadataLookup<PgTypeMetadata> for PgConnection {
+    type MetadataIdentifier = u32;
+
+    fn lookup(&self, t: &PgTypeMetadata) -> QueryResult<u32> {
         use self::pg_type::dsl::{pg_type, typname, typtype, typnamespace,
                                  oid as pg_type_oid, typarray};
         use self::pg_namespace::dsl::{pg_namespace, oid as pg_namespace_oid, nspname};
