@@ -82,7 +82,7 @@ use types::HasSqlType;
 
 impl HasSqlType<types::Date> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1082,
             array_oid: 1182,
         }
@@ -91,7 +91,7 @@ impl HasSqlType<types::Date> for Pg {
 
 impl HasSqlType<types::Time> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1083,
             array_oid: 1183,
         }
@@ -100,7 +100,7 @@ impl HasSqlType<types::Time> for Pg {
 
 impl HasSqlType<types::Timestamp> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1114,
             array_oid: 1115,
         }
