@@ -3,8 +3,8 @@ use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
-use backend::Debug;
-use pg::{Pg, PgTypeMetadata, IsArray};
+use backend::{Debug, MetadataLookup};
+use pg::{Pg, PgTypeMetadata, IsArray, PgConnection};
 use query_source::Queryable;
 use types::*;
 
@@ -134,12 +134,8 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        let oid = if let PgTypeMetadata::Static { oid, .. } = Pg::metadata() {
-            oid
-        } else {
-            unimplemented!()
-        };
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+        let oid = try!(lookup.lookup(&Pg::metadata()));
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
@@ -151,7 +147,7 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
 
         let mut buffer = Vec::new();
         for elem in self.iter() {
-            let is_null = try!(elem.to_sql(&mut buffer));
+            let is_null = try!(elem.to_sql(&mut buffer, lookup));
             if let IsNull::No = is_null {
                 try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
                 try!(out.write_all(&buffer));
@@ -170,8 +166,8 @@ impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
     &'a [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out, lookup)
     }
 }
 
@@ -180,8 +176,8 @@ impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (self as &[T]).to_sql(out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+        (self as &[T]).to_sql(out, lookup)
     }
 }
 
@@ -189,7 +185,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out, lookup)
     }
 }

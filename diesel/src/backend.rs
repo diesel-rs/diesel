@@ -4,9 +4,11 @@ use query_builder::QueryBuilder;
 use query_builder::bind_collector::{BindCollector, RawBytesBindCollector};
 use query_builder::debug::DebugQueryBuilder;
 use types::{self, HasSqlType};
+use result::QueryResult;
 
 pub trait Backend where
     Self: Sized,
+    Self: TypeMetadata,
     Self: HasSqlType<types::SmallInt>,
     Self: HasSqlType<types::Integer>,
     Self: HasSqlType<types::BigInt>,
@@ -23,10 +25,16 @@ pub trait Backend where
     type BindCollector: BindCollector<Self>;
     type RawValue: ?Sized;
     type ByteOrder: ByteOrder;
+    type MetadataLookup: MetadataLookup<Self::TypeMetadata>;
 }
 
 pub trait TypeMetadata {
     type TypeMetadata;
+}
+
+pub trait MetadataLookup<T> {
+    type MetadataIdentifier;
+    fn lookup(&self, t: &T) ->  QueryResult<Self::MetadataIdentifier>;
 }
 
 pub trait SupportsReturningClause {}
@@ -41,10 +49,18 @@ impl Backend for Debug {
     type BindCollector = RawBytesBindCollector<Self>;
     type RawValue = ();
     type ByteOrder = NativeEndian;
+    type MetadataLookup = ();
 }
 
 impl TypeMetadata for Debug {
     type TypeMetadata = ();
+}
+
+impl MetadataLookup<()> for () {
+    type MetadataIdentifier = ();
+    fn lookup(&self, _: &()) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 impl SupportsReturningClause for Debug {}

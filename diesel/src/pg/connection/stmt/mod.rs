@@ -5,6 +5,7 @@ use std::os::raw as libc;
 use std::ptr;
 
 use pg::PgTypeMetadata;
+use backend::MetadataLookup;
 use super::result::PgResult;
 use super::PgConnection;
 use result::QueryResult;

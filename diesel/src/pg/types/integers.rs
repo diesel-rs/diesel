@@ -2,7 +2,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
 use std::io::prelude::*;
 
-use pg::Pg;
+use pg::{Pg, PgConnection};
 use types::{self, ToSql, IsNull, FromSql};
 
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));
@@ -15,7 +15,7 @@ impl FromSql<types::Oid, Pg> for u32 {
 }
 
 impl ToSql<types::Oid, Pg> for u32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, _: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())

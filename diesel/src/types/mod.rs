@@ -321,14 +321,14 @@ pub enum IsNull {
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &DB::MetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
     DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (*self).to_sql(out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &DB::MetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        (*self).to_sql(out, lookup)
     }
 }

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pg::Pg;
+use pg::{Pg, PgConnection};
 use types::{self, ToSql, FromSql, IsNull};
 
 expression_impls! {
@@ -19,7 +19,7 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -29,7 +29,7 @@ impl ToSql<types::Timestamp, Pg> for SystemTime {
         } else {
             duration_to_usecs(duration) as i64
         };
-        ToSql::<types::BigInt, Pg>::to_sql(&time_since_epoch, out)
+        ToSql::<types::BigInt, Pg>::to_sql(&time_since_epoch, out, lookup)
     }
 }
 
