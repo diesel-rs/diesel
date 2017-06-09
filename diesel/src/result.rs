@@ -180,3 +180,7 @@ fn error_impls_send() {
     let err: Error = unimplemented!();
     let x: &Send = &err;
 }
+
+pub(crate) fn first_or_not_found<T>(records: QueryResult<Vec<T>>) -> QueryResult<T> {
+    records?.into_iter().next().ok_or(Error::NotFound)
+}

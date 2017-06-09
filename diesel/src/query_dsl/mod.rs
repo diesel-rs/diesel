@@ -26,7 +26,7 @@ pub use self::filter_dsl::{FilterDsl, FindDsl};
 pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinDsl};
 pub use self::limit_dsl::LimitDsl;
-pub use self::load_dsl::{LoadDsl, ExecuteDsl};
+pub use self::load_dsl::{LoadDsl, ExecuteDsl, FirstDsl, LoadQuery};
 pub use self::offset_dsl::OffsetDsl;
 pub use self::order_dsl::OrderDsl;
 pub use self::save_changes_dsl::SaveChangesDsl;

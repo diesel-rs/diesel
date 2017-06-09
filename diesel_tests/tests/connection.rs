@@ -27,15 +27,13 @@ fn managing_updated_at_for_table() {
     connection.execute("SELECT diesel_manage_updated_at('auto_time');").unwrap();
 
     connection.execute("INSERT INTO auto_time (n) VALUES (2), (1), (5);").unwrap();
-    let result = connection.query_one::<_, i64>(
-        select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
-    );
+    let result = select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
+        .get_result::<i64>(&connection);
     assert_eq!(Ok(3), result);
 
     connection.execute("UPDATE auto_time SET n = n + 1 WHERE true;").unwrap();
-    let result = connection.query_one::<_, i64>(
-        select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
-    );
+    let result = select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
+        .get_result::<i64>(&connection);
     assert_eq!(Ok(0), result);
 
     let query = auto_time.find(2).select(updated_at);

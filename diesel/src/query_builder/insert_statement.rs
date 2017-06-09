@@ -3,11 +3,10 @@ use connection::Connection;
 use expression::{Expression, SelectableExpression, NonAggregate};
 use insertable::{Insertable, InsertValues};
 use query_builder::*;
-use query_dsl::{ExecuteDsl, LoadDsl};
-use query_source::{Queryable, Table};
+use query_dsl::{ExecuteDsl, LoadDsl, LoadQuery};
+use query_source::Table;
 use result::QueryResult;
 use super::returning_clause::*;
-use types::HasSqlType;
 
 /// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
 /// is call `into`.
@@ -294,33 +293,22 @@ impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
     }
 }
 
-impl<'a, T, U, Op, Ret, Conn, ST> LoadDsl<Conn>
+impl<'a, T, U, V, Op, Ret, Conn> LoadQuery<Conn, V>
     for BatchInsertStatement<T, &'a [U], Op, Ret> where
-        Conn: Connection,
-        Conn::Backend: HasSqlType<ST>,
-        InsertStatement<T, &'a [U], Op, Ret>: LoadDsl<Conn, SqlType=ST>,
+        InsertStatement<T, &'a [U], Op, Ret>: LoadQuery<Conn, V>,
 {
-    type SqlType = ST;
-
-    fn load<V>(self, conn: &Conn) -> QueryResult<Vec<V>> where
-        V: Queryable<Self::SqlType, Conn::Backend>,
-    {
+    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<V>> {
         if self.records.is_empty() {
             Ok(Vec::new())
         } else {
-            self.into_insert_statement().load(conn)
+            self.into_insert_statement().internal_load(conn)
         }
     }
+}
 
-    fn get_result<V>(self, conn: &Conn) -> QueryResult<V> where
-        V: Queryable<Self::SqlType, Conn::Backend>,
-    {
-        if self.records.is_empty() {
-            Err(::result::Error::NotFound)
-        } else {
-            self.into_insert_statement().get_result(conn)
-        }
-    }
+impl<'a, T, U, Op, Ret, Conn> LoadDsl<Conn>
+    for BatchInsertStatement<T, &'a [U], Op, Ret>
+{
 }
 
 #[derive(Debug, Copy, Clone)]

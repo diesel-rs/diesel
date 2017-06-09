@@ -63,7 +63,7 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Pg> + QueryId,
         Pg: HasSqlType<T::SqlType>,

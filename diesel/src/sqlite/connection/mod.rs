@@ -61,7 +61,7 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn query_all<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,

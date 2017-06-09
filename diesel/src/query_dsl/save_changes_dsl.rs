@@ -1,72 +1,66 @@
 use associations::HasTable;
-use backend::SupportsReturningClause;
-use connection::Connection;
 use helper_types::*;
 use query_builder::{AsChangeset, IntoUpdateTarget};
 use query_dsl::*;
-use query_source::Queryable;
 use result::QueryResult;
-use types::HasSqlType;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use associations::Identifiable;
 
-pub trait SaveChangesDsl<Conn, ST> where
-    Conn: Connection,
-    Conn::Backend: HasSqlType<ST>,
-{
-    fn save_changes<T>(self, connection: &Conn) -> QueryResult<T> where
-        T: Queryable<ST, Conn::Backend>;
+pub trait InternalSaveChangesDsl<Conn, T>: Sized {
+    fn internal_save_changes(self, connection: &Conn) -> QueryResult<T>;
 }
 
-impl<T, ST, Conn> SaveChangesDsl<Conn, ST> for T where
-    Conn: Connection,
-    Conn::Backend: HasSqlType<ST> + SupportsReturningClause,
+impl<T, U, Conn> InternalSaveChangesDsl<Conn, U> for T where
     T: Copy + AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
-    Update<T, T>: LoadDsl<Conn, SqlType=ST>,
+    Update<T, T>: LoadDsl<Conn> + LoadQuery<Conn, U>,
 {
-    fn save_changes<U>(self, conn: &Conn) -> QueryResult<U> where
-        U: Queryable<ST, Conn::Backend>,
-    {
+    fn internal_save_changes(self, conn: &Conn) -> QueryResult<U> {
         ::update(self).set(self).get_result(conn)
     }
 }
 
 #[cfg(feature = "sqlite")]
-use sqlite::{SqliteConnection, Sqlite};
+use sqlite::SqliteConnection;
 
 #[cfg(feature = "sqlite")]
-impl<T, ST> SaveChangesDsl<SqliteConnection, ST> for T where
-    Sqlite: HasSqlType<ST>,
+impl<T, U> InternalSaveChangesDsl<SqliteConnection, U> for T where
     T: Copy + Identifiable,
     T: AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
-    T::Table: FindDsl<T::Id, SqlType=ST>,
+    T::Table: FindDsl<T::Id>,
     Update<T, T>: ExecuteDsl<SqliteConnection>,
-    Find<T::Table, T::Id>: LoadDsl<SqliteConnection, SqlType=ST>,
+    Find<T::Table, T::Id>: LoadQuery<SqliteConnection, U>,
 {
-    fn save_changes<U>(self, conn: &SqliteConnection) -> QueryResult<U> where
-        U: Queryable<ST, Sqlite>,
-    {
+    fn internal_save_changes(self, conn: &SqliteConnection) -> QueryResult<U> {
         try!(::update(self).set(self).execute(conn));
         T::table().find(self.id()).get_result(conn)
     }
 }
 
 #[cfg(feature = "mysql")]
-use mysql::{MysqlConnection, Mysql};
+use mysql::MysqlConnection;
 
 #[cfg(feature = "mysql")]
-impl<T, ST> SaveChangesDsl<MysqlConnection, ST> for T where
-    Mysql: HasSqlType<ST>,
+impl<T, U> InternalSaveChangesDsl<MysqlConnection, U> for T where
     T: Copy + Identifiable,
     T: AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
-    T::Table: FindDsl<T::Id, SqlType=ST>,
+    T::Table: FindDsl<T::Id>,
     Update<T, T>: ExecuteDsl<MysqlConnection>,
-    Find<T::Table, T::Id>: LoadDsl<MysqlConnection, SqlType=ST>,
+    Find<T::Table, T::Id>: LoadQuery<MysqlConnection, U>,
 {
-    fn save_changes<U>(self, conn: &MysqlConnection) -> QueryResult<U> where
-        U: Queryable<ST, Mysql>,
-    {
+    fn internal_save_changes(self, conn: &MysqlConnection) -> QueryResult<U> {
         try!(::update(self).set(self).execute(conn));
         T::table().find(self.id()).get_result(conn)
     }
 }
+
+pub trait SaveChangesDsl<Conn> {
+    fn save_changes<T>(self, connection: &Conn) -> QueryResult<T> where
+        Self: InternalSaveChangesDsl<Conn, T>,
+    {
+        self.internal_save_changes(connection)
+    }
+}
+
+impl<T, Conn> SaveChangesDsl<Conn> for T where
+    T: Copy + AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+{}
