@@ -6,6 +6,7 @@ use std::ptr;
 
 use pg::PgTypeMetadata;
 use super::result::PgResult;
+use super::PgConnection;
 use result::QueryResult;
 
 pub use super::raw::RawConnection;
@@ -48,17 +49,19 @@ impl Statement {
 
     #[cfg_attr(feature = "clippy", allow(ptr_arg))]
     pub fn prepare(
-        conn: &RawConnection,
+        conn: &PgConnection,
         sql: &str,
         name: Option<&str>,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
         let name = try!(CString::new(name.unwrap_or("")));
         let sql = try!(CString::new(sql));
-        let param_types_vec = param_types.iter().map(|x| x.oid).collect();
+        let param_types_vec = try!(param_types.iter()
+            .map(|x| conn.lookup(x))
+            .collect());
 
         let internal_result = unsafe {
-            conn.prepare(
+            conn.raw_connection.prepare(
                 name.as_ptr(),
                 sql.as_ptr(),
                 param_types.len() as libc::c_int,

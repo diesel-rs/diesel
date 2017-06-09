@@ -8,9 +8,22 @@ use super::query_builder::PgQueryBuilder;
 pub struct Pg;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub struct PgTypeMetadata {
-    pub oid: u32,
-    pub array_oid: u32,
+pub enum IsArray {
+    Yes,
+    No,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum PgTypeMetadata {
+    Static {
+        oid: u32,
+        array_oid: u32,
+    },
+    Dynamic {
+        schema: &'static str,
+        typename: &'static str,
+        as_array: IsArray,
+    },
 }
 
 impl Backend for Pg {

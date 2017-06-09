@@ -44,16 +44,18 @@ pub fn load_enums(database_url: &str, schema_name: Option<&str>)
 
 pub fn load_enums_intern(connection: &PgConnection, schema_name: Option<&str>)
                          -> Result<Vec<EnumInformation>, Box<Error>> {
-    use self::pg_type::dsl::{pg_type, typname, oid as pg_type_oid, typnamespace, typarray};
+    use self::pg_type::dsl::{pg_type, typname, oid as pg_type_oid, typnamespace};
     use self::pg_enum::dsl::{pg_enum, enumlabel, enumtypid};
     use self::pg_namespace::dsl::{pg_namespace, oid as pg_namespace_oid, nspname};
-    let enums: Vec<(u32, String, u32)> = try!(
+
+    let schema = schema_name.unwrap_or("public");
+    let enums: Vec<(u32, String)> = try!(
         pg_type.filter(
             typnamespace.eq_any(pg_namespace
-                                .filter(nspname.eq(schema_name.unwrap_or("public")))
+                                .filter(nspname.eq(schema))
                                 .select(pg_namespace_oid))
                 .and(pg_type_oid.eq_any(pg_enum.select(enumtypid))))
-            .select((pg_type_oid, typname, typarray))
+            .select((pg_type_oid, typname))
             .load(connection));
 
     let enum_ids  = enums.iter().map(|&(ref id, ..)| *id).collect::<Vec<_>>();
@@ -66,12 +68,11 @@ pub fn load_enums_intern(connection: &PgConnection, schema_name: Option<&str>)
     assert_eq!(enums.len(), enum_labels.len());
     Ok(enums.into_iter()
        .zip(enum_labels.into_iter())
-       .map(|((oid, enum_name, array_oid), field_names)|{
+       .map(|((_, enum_name), field_names)|{
            EnumInformation{
                type_name: enum_name,
+               schema: schema.to_owned(),
                fields: field_names,
-               oid: oid,
-               array_oid: array_oid,
            }
        }).collect())
 }

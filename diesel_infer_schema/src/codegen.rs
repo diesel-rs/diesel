@@ -10,7 +10,6 @@ use inference::{establish_connection, get_table_data, determine_column_type, get
 
 pub fn wrap_item_in_const(const_name: syn::Ident, item: quote::Tokens) -> quote::Tokens {
     quote! {
-        #[allow(dead_code)]
         const #const_name: () = {
             extern crate diesel;
             #item
@@ -43,9 +42,10 @@ pub enum ExpandEnumMode {
 }
 
 pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::Tokens {
-    let EnumInformation{type_name, fields, oid, array_oid} = enum_info;
+    let EnumInformation{type_name, fields, schema} = enum_info;
     let sql_mod = syn::Ident::new(format!("sql_{}", type_name));
     let sql_type_name = syn::Ident::new(to_uppercase(format!("{}Sql", type_name)));
+    let type_name_string = type_name.clone();
     let type_name = syn::Ident::new(to_uppercase(type_name));
 
     let field_mapping = fields.clone().into_iter().map(|field| {
@@ -102,9 +102,10 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
 
         impl HasSqlType<#sql_type_name> for Pg {
             fn metadata() -> PgTypeMetadata {
-                PgTypeMetadata {
-                    oid: #oid,
-                    array_oid: #array_oid,
+                PgTypeMetadata::Dynamic {
+                    schema: #schema,
+                    typename: #type_name_string,
+                    as_array: IsArray::No,
                 }
             }
         }
@@ -177,7 +178,15 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
                 <String as FromSql<Text, Pg>>::from_sql(bytes).map(Into::into)
             }
         }
+    };
+    let from_sql = quote! {
+        #from_sql
         impl FromSqlRow<#sql_type_name, Pg> for #type_name {
+            fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
+                FromSql::<#sql_type_name, Pg>::from_sql(row.take())
+            }
+        }
+        impl FromSqlRow<(#sql_type_name,), Pg> for #type_name {
             fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
                 FromSql::<#sql_type_name, Pg>::from_sql(row.take())
             }
@@ -186,6 +195,14 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
 
     let queryable = quote!{
         impl Queryable<#sql_type_name, Pg> for #type_name {
+            type Row = Self;
+
+            fn build(row: Self::Row) -> Self {
+                row
+            }
+        }
+
+        impl Queryable<(#sql_type_name,),  Pg> for #type_name {
             type Row = Self;
 
             fn build(row: Self::Row) -> Self {
@@ -201,7 +218,7 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
         #map_names
     };
     let diesel_imports = quote!{
-        use diesel::pg::{PgTypeMetadata, Pg};
+        use diesel::pg::{PgTypeMetadata, Pg, IsArray};
         use diesel::types::{HasSqlType, NotNull, IsNull};
         use diesel::types::{FromSql, FromSqlRow, ToSql};
         use diesel::types::{Nullable, Text};
@@ -237,7 +254,7 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
         }
     } else {
         let name = syn::Ident::new(
-            format!("IMPL_ENUM_FOR_{}",
+            format!("_IMPL_ENUM_FOR_{}",
                     type_name.as_ref().to_uppercase()));
         let sql_mod_inner = wrap_item_in_const(name, quote!{
             #sql_mod_inner
