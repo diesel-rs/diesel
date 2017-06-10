@@ -7,6 +7,10 @@ use result::QueryResult;
 /// adapter. You should use [`Connection::transaction`][transaction],
 /// [`Connection::test_transaction`][test_transaction], or
 /// [`Connection::begin_test_transaction`][begin_test_transaction] instead.
+///
+/// [transaction]: trait.Connection.html#method.transaction
+/// [test_transaction]: trait.Connection.html#method.test_transaction
+/// [begin_test_transaction]: trait.Connection.html#method.begin_test_transaction
 pub trait TransactionManager<Conn: Connection> {
     /// Begin a new transaction. If the transaction depth is greater than 0,
     /// this should create a savepoint instead. This function is expected to
