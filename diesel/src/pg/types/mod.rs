@@ -343,22 +343,9 @@ pub mod sql_types {
     /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_device.macaddr);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)]
-    pub struct MacAddr;
+    #[derive(Debug, Clone, Copy, Default)] pub struct MacAddr;
 
-    /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
-    ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
-    ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
-    ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
-    ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
-    ///
-    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Cidr;
-
+    #[cfg(feature = "network-address")]
     /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
@@ -370,5 +357,132 @@ pub mod sql_types {
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
     /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Inet;
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Serial,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// extern crate ipnetwork;
+    /// # use diesel::types::Inet;
+    /// use ipnetwork::IpNetwork;
+    ///
+    /// #[derive(Queryable)]
+    /// struct Client {
+    ///     id: i32,
+    ///     ip: IpNetwork,
+    /// }
+    ///
+    /// #[derive(Insertable)]
+    /// #[table_name="clients"]
+    /// struct NewClient {
+    ///     ip: IpNetwork,
+    /// }
+    ///
+    /// table! {
+    ///     clients {
+    ///         id -> Integer,
+    ///         ip -> Inet,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use self::diesel::insert;
+    /// #     use self::clients::dsl::*;
+    /// #     use std::str::FromStr;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE clients (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         ip INET NOT NULL
+    /// #     )").unwrap();
+    /// let new_client = NewClient {
+    ///     ip: "10.1.9.32/32".parse().unwrap(),
+    /// };
+    /// let inserted_client = insert(&new_client).into(clients)
+    ///     .get_result::<Client>(&connection).unwrap();
+    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Inet;
+
+    #[cfg(feature = "network-address")]
+    /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    ///
+    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Serial,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// extern crate ipnetwork;
+    /// # use diesel::types::Cidr;
+    /// use ipnetwork::IpNetwork;
+    ///
+    /// #[derive(Queryable)]
+    /// struct Client {
+    ///     id: i32,
+    ///     ip: IpNetwork,
+    /// }
+    ///
+    /// #[derive(Insertable)]
+    /// #[table_name="clients"]
+    /// struct NewClient {
+    ///     ip: IpNetwork,
+    /// }
+    ///
+    /// table! {
+    ///     clients {
+    ///         id -> Integer,
+    ///         ip -> Cidr,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use self::diesel::insert;
+    /// #     use self::clients::dsl::*;
+    /// #     use std::str::FromStr;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE clients (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         ip CIDR NOT NULL
+    /// #     )").unwrap();
+    /// let new_client = NewClient {
+    ///     ip: "10.1.9.32/32".parse().unwrap(),
+    /// };
+    /// let inserted_client = insert(&new_client).into(clients)
+    ///     .get_result::<Client>(&connection).unwrap();
+    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default)] pub struct Cidr;
 }
