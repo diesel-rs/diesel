@@ -46,7 +46,7 @@
 //! # }
 //! ```
 //!
-//! Note that in addition to the `#[has_many]` annotation, we also need to
+//! Note that in addition to the `#[belongs_to]` annotation, we also need to
 //! `#[derive(Associations)]`
 //!
 //! `#[belongs_to]` is given the name of the struct that represents the parent. Both types
@@ -57,7 +57,7 @@
 //! [Identifiable]: trait.Identifiable.html
 //!
 //! If the name of your foreign key doesn't follow the convention `tablename_id`, you can specify a
-//! custom one `#[belongs_to]` by adding a `foreign_key` argument to the
+//! custom one to `#[belongs_to]` by adding a `foreign_key` argument to the
 //! attribute like so `#[belongs_to(Foo, foreign_key="mykey")]`.
 //!
 //! Once the associations are defined, you can join between the two tables using the
