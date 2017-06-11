@@ -127,7 +127,7 @@ pub mod prelude {
 
 pub use prelude::*;
 #[doc(inline)]
-pub use query_builder::functions::{insert, update, delete, select};
+pub use query_builder::functions::{insert, update, delete, select, insert_default_values};
 #[cfg(feature = "sqlite")]
 pub use sqlite::query_builder::functions::*;
 pub use result::Error::NotFound;

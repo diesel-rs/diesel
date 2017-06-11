@@ -8,13 +8,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-* Added support for the [PostgreSQL network types][pg-network-0.13.1] `MACADDR`.
+* Added support for the [PostgreSQL network types][pg-network-0.14.0] `MACADDR`.
 
 * Added a function which maps to SQL `NOT`. See [the docs][not-0.14.0] for more
   details.
 
-[pg-network-0.13.1]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
+* Added the [`insert_default_values`][insert-default-0.14.0] function.
+
+[pg-network-0.14.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
+[insert-default-0.14.0]: http://docs.diesel.rs/disel/fn.insert_default_values.html
 
 * Added `diesel_prefix_operator!` which behaves identically to
   `diesel_postfix_operator!` (previously `postfix_predicate!`), but for
