@@ -416,7 +416,7 @@ macro_rules! table_body {
             }
 
             impl<T> AppearsInFromClause<T> for table where
-                T: Table + JoinTo<table> + AppearsInFromClause<PleaseGenerateInverseJoinImpls<table>, Count=Never>,
+                T: Table + JoinTo<table>,
             {
                 type Count = Never;
             }
@@ -548,9 +548,6 @@ macro_rules! joinable_inner {
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
     ) => {
-        impl $crate::query_source::AppearsInFromClause<$right_table_ty> for $left_table_ty {
-            type Count = $crate::query_source::Never;
-        }
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type JoinOnClause = $crate::expression::helper_types::Eq<
                 $crate::expression::nullable::Nullable<$foreign_key>,

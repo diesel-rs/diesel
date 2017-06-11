@@ -29,4 +29,8 @@ fn main() {
     //~^ ERROR type mismatch
     let _ = users::table.filter(name.eq(bar(title)));
     //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0271
 }

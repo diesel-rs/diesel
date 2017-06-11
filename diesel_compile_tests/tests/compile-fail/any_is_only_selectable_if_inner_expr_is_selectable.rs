@@ -22,4 +22,8 @@ fn main() {
 
     stuff.filter(name.eq(any(more_stuff::names)));
     //~^ ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0271
 }

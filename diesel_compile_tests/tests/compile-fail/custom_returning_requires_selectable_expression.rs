@@ -37,4 +37,8 @@ fn main() {
     let stmt = insert(&new_user).into(users).returning((name, bad::age));
     //~^ ERROR SelectableExpression
     //~| ERROR AppearsInFromClause
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
 }

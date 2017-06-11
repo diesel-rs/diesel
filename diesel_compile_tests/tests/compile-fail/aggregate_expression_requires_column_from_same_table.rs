@@ -20,13 +20,29 @@ fn main() {
     let source = users::table.select(sum(posts::id));
     //~^ ERROR E0277
     //~| ERROR AppearsInFromClause
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     let source = users::table.select(avg(posts::id));
     //~^ ERROR E0277
     //~| ERROR AppearsInFromClause
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     let source = users::table.select(max(posts::id));
     //~^ ERROR E0277
     //~| ERROR AppearsInFromClause
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
     let source = users::table.select(min(posts::id));
     //~^ ERROR E0277
     //~| ERROR AppearsInFromClause
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
+    //~| ERROR E0277
 }
