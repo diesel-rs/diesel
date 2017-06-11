@@ -268,6 +268,33 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
     assert_eq!(Ok(0), count);
 }
 
+#[test]
+fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
+    use schema::users::dsl::*;
+    use diesel::expression::dsl::not;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let count = users.filter(not(name.eq("Tess")))
+        .filter(id.eq(1))
+        .count()
+        .get_result(&connection);
+
+    assert_eq!(Ok(1), count);
+}
+
+#[test]
+fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
+    use schema::users::dsl::*;
+    use diesel::expression::dsl::not;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let count = users.filter(not(name.eq("Tess").and(id.eq(1))))
+        .count()
+        .get_result(&connection);
+
+    assert_eq!(Ok(2), count);
+}
+
 use diesel::types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 

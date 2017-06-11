@@ -34,6 +34,7 @@ pub mod functions;
 pub mod grouped;
 #[macro_use]
 pub mod helper_types;
+mod not;
 #[doc(hidden)]
 pub mod nullable;
 #[doc(hidden)]
@@ -47,11 +48,12 @@ mod unchecked_bind;
 /// in functions where you need them.
 pub mod dsl {
     #[doc(inline)] pub use super::count::{count, count_star};
-    #[doc(inline)] pub use super::functions::date_and_time::*;
-    #[doc(inline)] pub use super::functions::aggregate_ordering::*;
-    #[doc(inline)] pub use super::functions::aggregate_folding::*;
-    #[doc(inline)] pub use super::sql_literal::sql;
     #[doc(inline)] pub use super::exists::exists;
+    #[doc(inline)] pub use super::functions::aggregate_folding::*;
+    #[doc(inline)] pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)] pub use super::functions::date_and_time::*;
+    #[doc(inline)] pub use super::not::not;
+    #[doc(inline)] pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres")]
     pub use pg::expression::dsl::*;

@@ -4,6 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* Added a function which maps to SQL `NOT`. See [the docs][not-0.14.0] for more
+  details.
+
+[not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
+
 ## [0.13.0] - 2017-05-15
 
 ### Added

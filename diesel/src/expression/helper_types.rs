@@ -35,6 +35,8 @@ pub type Between<Lhs, Rhs> = super::predicates::Between<Lhs,
     super::predicates::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
 pub type NotBetween<Lhs, Rhs> = super::predicates::NotBetween<Lhs,
     super::predicates::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
+/// The return type of `not(expr)`
+pub type Not<Expr> = super::not::Not<AsExprOf<Expr, types::Bool>>;
 
 #[doc(inline)]
 pub use super::predicates::{IsNull, IsNotNull, Asc, Desc};
