@@ -12,9 +12,6 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
-#[has_many(followings)]
-#[has_many(likes)]
-#[has_many(posts)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -42,7 +39,6 @@ impl User {
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 #[belongs_to(Post)]
-#[has_many(likes)]
 pub struct Comment {
     id: i32,
     post_id: i32,

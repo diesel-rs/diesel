@@ -235,6 +235,14 @@ macro_rules! BelongsTo {
                 primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
                 primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
             );
+            joinable_inner!(
+                left_table_ty = $child_table_name::table,
+                right_table_ty = $crate::query_source::joins::PleaseGenerateInverseJoinImpls<<$parent_struct as $crate::associations::HasTable>::Table>,
+                right_table_expr = <$parent_struct as $crate::associations::HasTable>::table(),
+                foreign_key = $child_table_name::$foreign_key_name,
+                primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
+                primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
+            );
         });
     };
 

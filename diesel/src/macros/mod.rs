@@ -325,11 +325,13 @@ macro_rules! table_body {
             use $crate::{
                 QuerySource,
                 Table,
+                JoinTo,
             };
             use $crate::associations::HasTable;
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
-            use $crate::query_source::{AppearsInFromClause, Once};
+            use $crate::query_source::{AppearsInFromClause, Once, Never};
+            use $crate::query_source::joins::PleaseGenerateInverseJoinImpls;
             $(use $($import)::+;)+
             pub use self::columns::*;
 
@@ -411,6 +413,22 @@ macro_rules! table_body {
 
             impl AppearsInFromClause<table> for table {
                 type Count = Once;
+            }
+
+            impl<T> AppearsInFromClause<T> for table where
+                T: Table + JoinTo<table> + AppearsInFromClause<PleaseGenerateInverseJoinImpls<table>, Count=Never>,
+            {
+                type Count = Never;
+            }
+
+            impl<T> JoinTo<T> for table where
+                T: JoinTo<table> + JoinTo<PleaseGenerateInverseJoinImpls<table>>,
+            {
+                type JoinOnClause = <T as JoinTo<table>>::JoinOnClause;
+
+                fn join_on_clause() -> Self::JoinOnClause {
+                    <T as JoinTo<table>>::join_on_clause()
+                }
             }
 
             impl_query_id!(table);

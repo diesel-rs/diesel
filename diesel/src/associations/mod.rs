@@ -12,7 +12,7 @@
 //! `#[macro_use] extern crate diesel_codegen;` at the root of your crate.
 //!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
-//! relationship. You can declare an association between two records with `#[has_many]` and
+//! relationship. You can declare an association between two records with
 //! `#[belongs_to]`.
 //!
 //! ```rust
@@ -23,8 +23,7 @@
 //! # include!("src/doctest_setup.rs");
 //! use schema::{posts, users};
 //!
-//! #[derive(Identifiable, Queryable, Associations)]
-//! #[has_many(posts)]
+//! #[derive(Identifiable, Queryable)]
 //! pub struct User {
 //!     id: i32,
 //!     name: String,
@@ -47,11 +46,10 @@
 //! # }
 //! ```
 //!
-//! Note that in addition to the `#[has_many]` and `#[belongs_to]` annotations, we also need to
+//! Note that in addition to the `#[has_many]` annotation, we also need to
 //! `#[derive(Associations)]`
 //!
-//! `#[has_many]` should be passed the name of the table that the children will be loaded from,
-//! while `#[belongs_to]` is given the name of the struct that represents the parent. Both types
+//! `#[belongs_to]` is given the name of the struct that represents the parent. Both types
 //! must implement the [`Identifiable`][identifiable] trait. The struct or table referenced in your
 //! association has to be in scope, so you'll need `use schema::posts` or similar to bring the
 //! table into scope, and `use some_module::User` if `User` were in a different module.
@@ -59,12 +57,8 @@
 //! [Identifiable]: trait.Identifiable.html
 //!
 //! If the name of your foreign key doesn't follow the convention `tablename_id`, you can specify a
-//! custom one to `#[has_many]` and `#[belongs_to]` by adding a `foreign_key` argument to the
-//! attribute like so `#[has_many, foreign_key="mykey"]`.
-//!
-//! `#[has_many]` actually has no behavior on its own. It only enables joining between the two
-//! tables. If you are only writing `children.inner_join(parents)` or
-//! `Child::belonging_to(&parents)`, you only need to define the `#[belongs_to]` side.
+//! custom one `#[belongs_to]` by adding a `foreign_key` argument to the
+//! attribute like so `#[belongs_to(Foo, foreign_key="mykey")]`.
 //!
 //! Once the associations are defined, you can join between the two tables using the
 //! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].

@@ -28,7 +28,7 @@ ipnetwork = { version = "0.12.2", optional = true }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-diesel_codegen = "0.12.0"
+diesel_codegen = "0.13.0"
 dotenv = ">=0.8, <0.11"
 quickcheck = "0.3.1"
 tempdir = "^0.3.4"

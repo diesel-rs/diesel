@@ -9,11 +9,6 @@ pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
     let model = t!(Model::from_item(&input, "Associations"));
 
     for attr in input.attrs.as_slice() {
-        if attr.name() == "has_many" {
-            let options = t!(build_association_options(attr, "has_many"));
-            derived_associations.push(expand_has_many(&model, options))
-        }
-
         if attr.name() == "belongs_to" {
             let options = t!(build_association_options(attr, "belongs_to"));
             derived_associations.push(expand_belongs_to(&model, options))
@@ -38,23 +33,6 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
             parent_struct = #parent_struct,
             foreign_key_name = #foreign_key_name,
             child_table_name = #child_table_name,
-        ),
-        fields = [#(#fields)*],
-    })
-}
-
-fn expand_has_many(model: &Model, options: AssociationOptions) -> quote::Tokens {
-    let parent_table_name = model.table_name();
-    let child_table_name = options.name;
-    let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
-        to_foreign_key(model.name.as_ref()));
-    let fields = model.attrs.as_slice();
-
-    quote!(HasMany! {
-        (
-            parent_table_name = #parent_table_name,
-            child_table = #child_table_name::table,
-            foreign_key = #child_table_name::#foreign_key_name,
         ),
         fields = [#(#fields)*],
     })

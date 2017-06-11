@@ -71,7 +71,7 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }
 
-#[proc_macro_derive(Associations, attributes(table_name, has_many, belongs_to))]
+#[proc_macro_derive(Associations, attributes(table_name, belongs_to))]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
 }

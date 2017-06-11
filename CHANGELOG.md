@@ -13,6 +13,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
 
+### Removed
+
+* `#[has_many]` has been removed. Its functionality is now provided by
+  `#[belongs_to]` on the child struct. If there is no child struct to
+  put `#[belongs_to]` on, you can invoke `joinable!` directly instead.
+
 ## [0.13.0] - 2017-05-15
 
 ### Added
