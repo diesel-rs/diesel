@@ -21,6 +21,8 @@ const AF_INET: u8 = libc::AF_INET as u8;
 const PGSQL_AF_INET: u8 = AF_INET;
 const PGSQL_AF_INET6: u8 = AF_INET + 1;
 
+// https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L435-L443
+primitive_impls!(MacAddr -> ([u8; 6], pg: (829, 1040)));
 primitive_impls!(Cidr -> (IpNetwork, pg: (650, 651)));
 primitive_impls!(Inet -> (IpNetwork, pg: (869, 1041)));
 
@@ -39,6 +41,23 @@ macro_rules! assert_or_error {
     };
 }
 
+impl FromSql<types::MacAddr, Pg> for [u8; 6] {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+        let bytes = not_none!(bytes);
+        assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
+        Ok([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]])
+    }
+
+}
+
+impl ToSql<types::MacAddr, Pg> for [u8; 6] {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
+        out.write_all(&self[..])
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+
+   }
+}
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
         impl FromSql<$ty, Pg> for IpNetwork {
@@ -114,6 +133,15 @@ macro_rules! impl_Sql {
 impl_Sql!(types::Inet, 0);
 impl_Sql!(types::Cidr, 1);
 
+
+#[test]
+fn macaddr_roundtrip() {
+    let mut bytes = vec![];
+    let input_address = [0x52, 0x54,0x00, 0xfb, 0xc6, 0x16];
+    ToSql::<types::MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+    let output_address:[u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
+    assert_eq!(input_address, output_address);
+}
 
 #[test]
 fn v4address_to_sql() {

@@ -8,9 +8,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for the [PostgreSQL network types][pg-network-0.13.1] `MACADDR`.
+
 * Added a function which maps to SQL `NOT`. See [the docs][not-0.14.0] for more
   details.
 
+[pg-network-0.13.1]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
 
 ## [0.13.0] - 2017-05-15
