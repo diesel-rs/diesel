@@ -39,7 +39,7 @@ mod not;
 pub mod nullable;
 #[doc(hidden)]
 #[macro_use]
-pub mod predicates;
+pub mod operators;
 pub mod sql_literal;
 mod unchecked_bind;
 
@@ -64,11 +64,12 @@ pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;
 
-/// Represents a typed fragment of SQL. Apps should not need to implement this
-/// type directly, but it may be common to use this as type boundaries.
-/// Libraries should consider using
-/// [`infix_predicate!`](../macro.infix_predicate.html) or
-/// [`postfix_predicate!`](../macro.postfix_predicate.html) instead of
+/// Represents a typed fragment of SQL.
+///
+/// Apps should not need to implement this type directly, but it may be common
+/// to use this in where clauses. Libraries should consider using
+/// [`diesel_infix_operator!`](../macro.diesel_infix_operator.html) or
+/// [`diesel_postfix_operator!`](../macro.diesel_postfix_operator.html) instead of
 /// implementing this directly.
 pub trait Expression {
     type SqlType;

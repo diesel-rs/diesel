@@ -1,5 +1,5 @@
 use expression::Expression;
-use expression::predicates::And;
+use expression::operators::And;
 use expression_methods::*;
 use types::Bool;
 

@@ -1,6 +1,6 @@
 use expression::{Expression, AsExpression, nullable};
 use expression::array_comparison::{In, NotIn, AsInExpression};
-use expression::predicates::*;
+use expression::operators::*;
 
 pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `=` expression.

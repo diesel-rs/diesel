@@ -1,5 +1,5 @@
 use expression::grouped::Grouped;
-use expression::predicates::{And, Or};
+use expression::operators::{And, Or};
 use expression::{Expression, AsExpression};
 use types::Bool;
 

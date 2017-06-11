@@ -1,5 +1,5 @@
 use expression::{Expression, AsExpression};
-use super::predicates::*;
+use super::operators::*;
 use types::{Array, Text};
 
 pub trait PgExpressionMethods: Expression + Sized {
@@ -220,7 +220,7 @@ impl<T, ST> ArrayExpressionMethods<ST> for T where
 {
 }
 
-use expression::predicates::{Asc, Desc};
+use expression::operators::{Asc, Desc};
 
 pub trait SortExpressionMethods : Sized {
     /// Specify that nulls should come before other values in this ordering.
