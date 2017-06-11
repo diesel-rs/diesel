@@ -130,7 +130,7 @@ macro_rules! __diesel_operator_debug_query_fragment_if_needed {
 }
 
 /// Useful for libraries adding support for new SQL types. Apps should never
-/// need to call this
+/// need to call this.
 ///
 /// This will create a new type with the given name. It will implement all
 /// methods needed to be used as an expression in Diesel, placing the given
@@ -147,9 +147,9 @@ macro_rules! __diesel_operator_debug_query_fragment_if_needed {
 ///
 /// Typically you would not expose the type that this generates directly. You'd
 /// expose a function (or trait) used to construct the expression, and a helper
-/// type which represents the return type of that function. See the
+/// type which represents the return type of that function. See the source of
 /// `diesel::expression::expression_methods` and
-/// `diesel::expression::helper_types` modules for real world examples of this.
+/// `diesel::expression::helper_types` for real world examples of this.
 ///
 /// # Examples
 ///
@@ -246,7 +246,7 @@ macro_rules! diesel_infix_operator {
 }
 
 /// Useful for libraries adding support for new SQL types. Apps should never
-/// need to call this
+/// need to call this.
 ///
 /// Similar to [`diesel_infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed after
@@ -291,7 +291,7 @@ macro_rules! diesel_postfix_operator {
 }
 
 /// Useful for libraries adding support for new SQL types. Apps should never
-/// need to call this
+/// need to call this.
 ///
 /// Similar to [`diesel_infix_operator!`], but the generated type will only take
 /// a single argument rather than two. The operator SQL will be placed before
