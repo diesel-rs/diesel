@@ -499,12 +499,42 @@ macro_rules! __diesel_table_query_source_impl {
     };
 }
 
+/// Allow two tables to be referenced in a join query.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::prelude::*;
+/// mod schema {
+///    table! {
+///         users(id) {
+///             id -> Integer,
+///         }
+///     }
+///     table! {
+///         posts(id) {
+///             id -> Integer,
+///             user_id -> Integer,
+///         }
+///     }
+///
+/// }
+///
+/// joinable!(schema::posts -> schema::users(user_id));
+///
+/// # fn main() {
+/// use schema::*;
+///
+/// // Without the joinable! call, this wouldn't compile
+/// let query = users::table.inner_join(posts::table);
+/// # }
+/// ```
 #[macro_export]
-#[doc(hidden)]
 macro_rules! joinable {
-    ($child:ident -> $parent:ident ($source:ident)) => {
-        joinable_inner!($child::table => $parent::table : ($child::$source = $parent::table));
-        joinable_inner!($parent::table => $child::table : ($child::$source = $parent::table));
+    ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
+        joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
 }
 
