@@ -122,7 +122,6 @@ macro_rules! __diesel_operator_debug_query_fragment_if_needed {
                 Ok(())
             }
         }
-
     };
 
     // At least one backend_ty_param was given. We generated a generic impl
