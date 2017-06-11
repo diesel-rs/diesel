@@ -1,5 +1,5 @@
 use expression::{Expression, AsExpression};
-use expression::predicates::{Concat, Like, NotLike};
+use expression::operators::{Concat, Like, NotLike};
 use types::Text;
 
 pub trait TextExpressionMethods: Expression<SqlType=Text> + Sized {

@@ -16,6 +16,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [pg-network-0.13.1]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
 
+* Added `diesel_prefix_operator!` which behaves identically to
+  `diesel_postfix_operator!` (previously `postfix_predicate!`), but for
+  operators like `NOT` which use prefix notation.
+
+### Changed
+
+* `infix_predicate!` and `infix_expression!` have been renamed to
+  `diesel_infix_operator!`.
+
+* `postfix_predicate!` and `postfix_expression!` have been renamed to
+  `diesel_postfix_operator!`.
+
 ## [0.13.0] - 2017-05-15
 
 ### Added

@@ -1,6 +1,6 @@
 use backend::Backend;
 use expression::*;
-use expression::predicates::And;
+use expression::operators::And;
 use expression_methods::*;
 use result::QueryResult;
 use super::*;

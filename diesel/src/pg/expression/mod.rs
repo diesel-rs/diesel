@@ -3,7 +3,7 @@ pub mod array_comparison;
 pub mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
-pub mod predicates;
+pub mod operators;
 #[doc(hidden)]
 pub mod helper_types;
 

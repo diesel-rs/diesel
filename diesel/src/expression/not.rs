@@ -1,6 +1,6 @@
-use expression::*;
-use query_builder::*;
-use result::QueryResult;
+use expression::AsExpression;
+use expression::helper_types::Not;
+use expression::grouped::Grouped;
 use types::Bool;
 
 /// Creates a SQL `NOT` expression
@@ -31,42 +31,6 @@ use types::Bool;
 /// assert_eq!(Ok(2), users_not_with_name.first(&connection));
 /// # }
 /// ```
-pub fn not<T: AsExpression<Bool>>(expr: T) -> Not<T::Expression> {
-    Not(expr.as_expression())
+pub fn not<T: AsExpression<Bool>>(expr: T) -> Not<T> {
+    super::operators::Not::new(Grouped(expr.as_expression()))
 }
-
-#[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
-pub struct Not<T>(T);
-
-impl<T: Expression<SqlType=Bool>> Expression for Not<T> {
-    type SqlType = Bool;
-}
-
-impl<T, QS> AppearsOnTable<QS> for Not<T> where
-    T: AppearsOnTable<QS>,
-    Not<T>: Expression,
-{
-}
-
-impl<T, QS> SelectableExpression<QS> for Not<T> where
-    T: SelectableExpression<QS>,
-    Not<T>: AppearsOnTable<QS>,
-{
-}
-
-impl<T: NonAggregate> NonAggregate for Not<T> {}
-
-impl<T, DB> QueryFragment<DB> for Not<T> where
-    DB: Backend,
-    T: QueryFragment<DB>,
-{
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("NOT (");
-        self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
-
-impl_query_id!(Not<T>);

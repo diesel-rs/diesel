@@ -1,6 +1,6 @@
 use expression::AsExpression;
 use expression::helper_types::AsExprOf;
-use expression::predicates::{Escape, Like, NotLike};
+use expression::operators::{Escape, Like, NotLike};
 use types::VarChar;
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify
 /// the escape character for the pattern.

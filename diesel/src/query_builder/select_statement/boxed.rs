@@ -134,7 +134,7 @@ impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate>
     type Output = Self;
 
     fn filter(mut self, predicate: Predicate) -> Self::Output {
-        use expression::predicates::And;
+        use expression::operators::And;
         self.where_clause = Some(match self.where_clause {
             Some(where_clause) => Box::new(And::new(where_clause, predicate)),
             None => Box::new(predicate),

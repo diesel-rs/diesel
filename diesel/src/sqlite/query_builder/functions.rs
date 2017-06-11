@@ -1,4 +1,4 @@
-use expression::predicates::Or;
+use expression::operators::Or;
 use query_builder::insert_statement::{IncompleteInsertStatement, Insert};
 use super::nodes::Replace;
 /// Creates a SQLite `INSERT OR REPLACE` statement. If a constraint violation
