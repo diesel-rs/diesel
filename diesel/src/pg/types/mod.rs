@@ -413,8 +413,7 @@ pub mod sql_types {
     /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)]
-    pub struct Inet;
+    #[derive(Debug, Clone, Copy, Default)] pub struct Inet;
 
     #[cfg(feature = "network-address")]
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
