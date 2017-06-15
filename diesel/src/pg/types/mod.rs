@@ -380,19 +380,19 @@ pub mod sql_types {
     /// #[derive(Queryable)]
     /// struct Client {
     ///     id: i32,
-    ///     ip: IpNetwork,
+    ///     ip_address: IpNetwork,
     /// }
     ///
     /// #[derive(Insertable)]
     /// #[table_name="clients"]
     /// struct NewClient {
-    ///     ip: IpNetwork,
+    ///     ip_address: IpNetwork,
     /// }
     ///
     /// table! {
     ///     clients {
     ///         id -> Integer,
-    ///         ip -> Inet,
+    ///         ip_address -> Inet,
     ///     }
     /// }
     ///
@@ -403,14 +403,14 @@ pub mod sql_types {
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
-    /// #         ip INET NOT NULL
+    /// #         ip_address INET NOT NULL
     /// #     )").unwrap();
     /// let new_client = NewClient {
-    ///     ip: "10.1.9.32/32".parse().unwrap(),
+    ///     ip_address: "10.1.9.32/32".parse().unwrap(),
     /// };
     /// let inserted_client = insert(&new_client).into(clients)
     ///     .get_result::<Client>(&connection).unwrap();
-    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip);
+    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]
@@ -451,19 +451,19 @@ pub mod sql_types {
     /// #[derive(Queryable)]
     /// struct Client {
     ///     id: i32,
-    ///     ip: IpNetwork,
+    ///     ip_address: IpNetwork,
     /// }
     ///
     /// #[derive(Insertable)]
     /// #[table_name="clients"]
     /// struct NewClient {
-    ///     ip: IpNetwork,
+    ///     ip_address: IpNetwork,
     /// }
     ///
     /// table! {
     ///     clients {
     ///         id -> Integer,
-    ///         ip -> Cidr,
+    ///         ip_address -> Cidr,
     ///     }
     /// }
     ///
@@ -474,14 +474,14 @@ pub mod sql_types {
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
-    /// #         ip CIDR NOT NULL
+    /// #         ip_address CIDR NOT NULL
     /// #     )").unwrap();
     /// let new_client = NewClient {
-    ///     ip: "10.1.9.32/32".parse().unwrap(),
+    ///     ip_address: "10.1.9.32/32".parse().unwrap(),
     /// };
     /// let inserted_client = insert(&new_client).into(clients)
     ///     .get_result::<Client>(&connection).unwrap();
-    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip);
+    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Cidr;
