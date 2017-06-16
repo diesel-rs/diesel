@@ -89,6 +89,7 @@ mod sqlite_types {
 #[cfg(feature = "postgres")]
 mod pg_types {
     extern crate uuid;
+    extern crate ipnetwork;
     use super::*;
 
     test_round_trip!(date_roundtrips, Date, PgDate);
@@ -108,6 +109,10 @@ mod pg_types {
     test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
     test_round_trip!(array_of_nullable_roundtrips, Array<Nullable<Text>>, Vec<Option<String>>);
     test_round_trip!(macaddr_roundtrips, MacAddr, (u8, u8, u8, u8, u8, u8), mk_macaddr);
+    test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
+    test_round_trip!(cidr_v6_roundtrips, Cidr, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
+    test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
+    test_round_trip!(inet_v6_roundtrips, Inet, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
@@ -119,6 +124,17 @@ mod pg_types {
         [data.0, data.1, data.2, data.3, data.4, data.5]
     }
 
+    fn mk_ipv4(data: (u8,u8, u8, u8)) -> ipnetwork::IpNetwork {
+        use std::net::Ipv4Addr;
+        let ip = Ipv4Addr::new(data.0, data.1, data.2, data.3);
+        ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::new(ip, 32).unwrap())
+    }
+
+    fn mk_ipv6(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnetwork::IpNetwork {
+        use std::net::Ipv6Addr;
+        let ip = Ipv6Addr::new(data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7);
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
+    }
 }
 
 #[cfg(feature = "mysql")]

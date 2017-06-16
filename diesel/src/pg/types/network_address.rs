@@ -23,8 +23,8 @@ const PGSQL_AF_INET6: u8 = AF_INET + 1;
 
 // https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L435-L443
 primitive_impls!(MacAddr -> ([u8; 6], pg: (829, 1040)));
-primitive_impls!(Cidr -> (IpNetwork, pg: (650, 651)));
 primitive_impls!(Inet -> (IpNetwork, pg: (869, 1041)));
+primitive_impls!(Cidr -> (IpNetwork, pg: (650, 651)));
 
 macro_rules! err {
     () => (Err("invalid network address format".into()));
@@ -55,7 +55,6 @@ impl ToSql<types::MacAddr, Pg> for [u8; 6] {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
-
    }
 }
 macro_rules! impl_Sql {
