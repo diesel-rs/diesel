@@ -68,7 +68,7 @@ Thank you! We'll try to get back to you as soon as possible.
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
 
-   See [.env.example](.env.example) for an example that should work with a trivial
+   See [.env.sample](.env.sample) for an example that should work with a trivial
    local setup.
 
    *Note:* If you didn't specify the MySQL user to be one with elevated
