@@ -8,7 +8,7 @@
 ///
 /// # Options
 ///
-/// ## foreign_key
+/// ## `foreign_key`
 ///
 /// Required. The name of the foreign key column for this association.
 ///
