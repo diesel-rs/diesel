@@ -34,6 +34,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Trait bounds along the lines of `T: LoadDsl<Conn>, U: Queryable<T::SqlType,
   Conn::Backend>` should be changed to `T: LoadQuery<Conn, U>`.
 
+### Removed
+
+* `#[has_many]` has been removed. Its functionality is now provided by
+  `#[belongs_to]` on the child struct. If there is no child struct to
+  put `#[belongs_to]` on, you can invoke `joinable!` directly instead.
+
 ## [0.13.0] - 2017-05-15
 
 ### Added

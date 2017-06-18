@@ -30,7 +30,6 @@ use schema::*;
 #[cfg(not(any(feature="sqlite", feature="mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[has_many(special_comments)]
     #[belongs_to(User)]
     pub struct SpecialPost {
         id: i32,
@@ -108,7 +107,6 @@ mod associations_can_have_nullable_foreign_keys {
         }
     }
     // This test has no assertions, as it is for compilation purposes only.
-    #[has_many(bars)]
     #[derive(Identifiable, Associations)]
     pub struct Foo {
         id: i32,

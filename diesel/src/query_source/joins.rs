@@ -225,36 +225,6 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     }
 }
 
-impl<T, From> JoinTo<SelectStatement<From>> for T where
-    T: Table + JoinTo<From>,
-{
-    type JoinOnClause = T::JoinOnClause;
-
-    fn join_on_clause() -> Self::JoinOnClause {
-        T::join_on_clause()
-    }
-}
-
-impl<T, Join, On> JoinTo<JoinOn<Join, On>> for T where
-    T: Table + JoinTo<Join>,
-{
-    type JoinOnClause = T::JoinOnClause;
-
-    fn join_on_clause() -> Self::JoinOnClause {
-        T::join_on_clause()
-    }
-}
-
-impl<Left, Mid, Right, Kind> JoinTo<Join<Mid, Right, Kind>> for Left where
-    Left: Table + JoinTo<Mid>,
-{
-    type JoinOnClause = Left::JoinOnClause;
-
-    fn join_on_clause() -> Self::JoinOnClause {
-        Left::join_on_clause()
-    }
-}
-
 impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind> where
     Left: JoinTo<Right>,
 {
@@ -275,7 +245,6 @@ impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On> where
     }
 }
 
-
 use super::{Succ, Never, AppearsInFromClause};
 
 impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind> where
@@ -291,6 +260,22 @@ impl<T, Join, On> AppearsInFromClause<T> for JoinOn<Join, On> where
 {
     type Count = Join::Count;
 }
+
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+#[doc(hidden)]
+/// A hack to allow bidirectional joins to be generated from `#[belongs_to]`
+///
+/// This type needs to exist because it is illegal in Rust today to write
+/// `impl JoinTo<posts> for <User as HasTable>::Table`, even though the type
+/// is fully monomorphic and projects to a local type. If this restriction
+/// were ever lifted in the future, this type could be removed.
+///
+/// Instead, after generating `impl JoinTo<<User as HasTable>::Table> for
+/// posts`, we *also* generate `impl JoinTo<PleaseGenerateInverseJoinImpls<<User
+/// as HasTable>::table> for posts`, and rely on the fact that `users::table`
+/// will have a blanket impl on itself for anything that joins to
+/// `PleaseGenerateInverseJoinImpls`.
+pub struct PleaseGenerateInverseJoinImpls<T>(T);
 
 pub trait Plus<T> {
     type Output;
