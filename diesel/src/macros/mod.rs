@@ -2,7 +2,6 @@
 #[doc(hidden)]
 macro_rules! __diesel_column {
     ($($table:ident)::*, $column_name:ident -> $Type:ty, $($doc:expr),*) => {
-
         $(
             #[doc=$doc]
         )*
@@ -256,83 +255,93 @@ macro_rules! table {
     (
         @parse
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:expr,)*];
+        table_doc = [];
         use $($new_import:tt)::+; $($rest:tt)+
     ) => {
         table! {
             @parse
             import = [$(use $($import)::+;)* use $($new_import)::+;];
-            doc = [$($doc,)*];
+            table_doc = [];
             $($rest)+
         }
     };
+
     // Put doc annotation into the doc field
     (
         @parse
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         #[doc=$new_doc:expr] $($rest:tt)+
     ) => {
         table! {
             @parse
             import = [$(use $($import)::+;)*];
-            doc = [$($doc,)*$new_doc,];
+            table_doc = [$($doc,)*$new_doc,];
             $($rest)+
         }
     };
-    // Forward to next parsing step
+
+    // We are finished parsing the import list and the table documentation
+    // Now we forward the remaining tokens to parse the body of the table
+    // definition
     (
         @parse
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $($rest:tt)+
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)*];
-            doc = [$($doc,)*];
+            table_doc = [$($doc,)*];
             $($rest)+
         }
     };
-    // Forward to next parsing step and add default import (diesel::types::*)
+
+    // We are finished parsing the import list and the table documentation
+    // Because the import list is empty we add a default import (diesel::types::*)
+    // After that we forward the remaining tokens to parse the body of the table
+    // definition
     (
         @parse
         import = [];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $($rest:tt)+
     ) => {
         table! {
             @parse_body
             import = [use $crate::types::*;];
-            doc = [$($doc,)*];
+            table_doc = [$($doc,)*];
             $($rest)+
         }
     };
+
     // Add the primary key if it's not present
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $($table_name:ident).+ {$($body:tt)*}
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)+];
-            doc = [$($doc,)*];
+            table_doc = [$($doc,)*];
             $($table_name).+ (id) {$($body)*}
         }
     };
+
     // Add the schema name if it's not present
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $name:ident $(($($pk:ident),+))* {$($body:tt)*}
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)+];
-            doc = [$($doc,)*];
+            table_doc = [$($doc,)*];
             public . $name $(($($pk),+))* {$($body)*}
         }
     };
@@ -340,28 +349,30 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
     ) => {
         table_body! {
             $schema_name . $name ($pk) $body
             import = [$(use $($import)::+;)+];
-            doc = [$($doc)*];
+            table_doc = [$($doc)*];
         }
     };
+
     // Terminal with composite pk (add a trailing comma)
     (
         @parse_body
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
     ) => {
         table_body! {
             $schema_name . $name ($pk, $($composite_pk,)+) $body
             import = [$(use $($import)::+;)+];
-            doc = [$($doc)*];
+            table_doc = [$($doc)*];
         }
     };
+
     // Terminal with invalid syntax
     // This is needed to prevent unbounded recursion on for example
     // table! {
@@ -370,20 +381,21 @@ macro_rules! table {
     (
         @parse_body
         import = [$(use $($import:tt)::+;)*];
-        doc = [$($doc:expr,)*];
+        table_doc = [$($doc:expr,)*];
         $($rest:tt)*
     ) => {
         // Remove this workaround as soon as rust issue 40872 is implemented
         // https://github.com/rust-lang/rust/issues/40872
         const ERROR: i32 = env!("invalid table! syntax");
     };
+
     // Put a parse annotation and empty fields for imports and documentation on top
     // This is the entry point for parsing the table dsl
     ($($rest:tt)+) => {
         table! {
             @parse
             import = [];
-            doc = [];
+            table_doc = [];
             $($rest)+
         }
     }
