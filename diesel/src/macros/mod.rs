@@ -404,9 +404,8 @@ macro_rules! table {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! table_body {
-    // Parse a table column definition with documentation
-    // Forward any remaining table column to further instances
-    // of this macro
+    // Parse the documentation of a table column and store it in current_column_doc
+    // Forward the remaining table body to further instances of this macro
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
@@ -415,7 +414,8 @@ macro_rules! table_body {
         columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
-        #[doc=$new_doc:expr] $new_column_name:ident -> $new_type:ty,
+        current_column_doc = [$($column_doc:expr)*],
+        #[doc=$new_doc:expr]
         $($body:tt)*
     ) => {
         table_body! {
@@ -423,14 +423,15 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
-                       $new_column_name -> $new_type; doc = [$new_doc],],
+            columns = [$($column_name -> $Type; doc = [$($doc)*],)*],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
+            current_column_doc = [$($column_doc)*$new_doc],
             $($body)*
         }
     };
-    // Parse a table column definition without documentation
+
+    // Parse a table column definition
     // Forward any remaining table column to further instances
     // of this macro
     (
@@ -441,6 +442,7 @@ macro_rules! table_body {
         columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
         $new_column_name:ident -> $new_type:ty,
         $($body:tt)*
     ) => {
@@ -450,20 +452,23 @@ macro_rules! table_body {
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*],)*
-                       $new_column_name -> $new_type; doc = [],],
+                       $new_column_name -> $new_type; doc = [$($column_doc)*],],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
+            current_column_doc = [],
             $($body)*
         }
     };
+
     // Parse the table name  and the primary keys
-    // Forward the table body to further parsing layers
+    // Forward the table body to further parsing layers that parses
+    // the column definitions
     (
         $schema_name:ident . $name:ident ($pk:ident) {
             $($body:tt)+
         }
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($table_doc:expr)*];
+        table_doc = [$($table_doc:expr)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -473,15 +478,17 @@ macro_rules! table_body {
             columns = [],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
+            current_column_doc = [],
             $($body)+
         }
     };
+
     (
         $schema_name:ident . $name:ident ($($pk:ident,)+) {
             $($body:tt)+
         }
         import = [$(use $($import:tt)::+;)+];
-        doc = [$($table_doc:expr)*];
+        table_doc = [$($table_doc:expr)*];
     ) => {
         table_body! {
             schema_name = $schema_name,
@@ -491,9 +498,13 @@ macro_rules! table_body {
             columns = [],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
+            current_column_doc = [],
             $($body)+
         }
     };
+
+    // Finish parsing the table dsl. Now expand the parsed informations into
+    // the corresponding rust code
     (
         schema_name = $schema_name:ident,
         table_name = $table_name:ident,
@@ -502,6 +513,7 @@ macro_rules! table_body {
         columns = [$($column_name:ident -> $column_ty:ty; doc = [$($doc:expr)*] ,)+],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
+        current_column_doc = [],
     ) => {
         $(
             #[doc=$table_doc]
@@ -833,8 +845,12 @@ mod tests {
         use macros::tests::my_types::*;
 
         /// Table documentation
-        table_with_custom_type_and_id (a){
+        ///
+        /// some in detail documentation
+        table_with_custom_type_and_id (a) {
             /// Column documentation
+            ///
+            /// some more details
             a -> Integer,
             my_type -> MyCustomType,
         }
