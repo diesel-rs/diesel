@@ -229,13 +229,13 @@ pub type VarChar = Text;
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"` (PG and MySQL only)
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"` (PG and MySQL only)
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
