@@ -4,8 +4,8 @@ extern crate chrono;
 
 use std::error::Error;
 use std::io::Write;
-use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime, DateTime, TimeZone, UTC, FixedOffset, Local};
-use self::chrono::naive::date;
+use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime, DateTime, TimeZone, Utc, FixedOffset, Local};
+use self::chrono::naive::MAX_DATE;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
@@ -13,14 +13,14 @@ use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
 
 expression_impls! {
     Timestamptz -> NaiveDateTime,
-    Timestamptz -> DateTime<UTC>,
+    Timestamptz -> DateTime<Utc>,
     Timestamptz -> DateTime<FixedOffset>,
     Timestamptz -> DateTime<Local>,
 }
 
 queryable_impls! {
     Timestamptz -> NaiveDateTime,
-    Timestamptz -> DateTime<UTC>,
+    Timestamptz -> DateTime<Utc>,
 }
 
 // Postgres timestamps start from January 1st 2000.
@@ -66,10 +66,10 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
     }
 }
 
-impl FromSql<Timestamptz, Pg> for DateTime<UTC> {
+impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let naive_date_time = try!(<NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes));
-        Ok(DateTime::from_utc(naive_date_time, UTC))
+        Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }
 
@@ -119,7 +119,7 @@ impl FromSql<Date, Pg> for NaiveDate {
             Some(date) => Ok(date),
             None => {
                 let error_message = format!("Chrono can only represent dates up to {:?}",
-                                            date::MAX);
+                                            MAX_DATE);
                 Err(Box::<Error + Send + Sync>::from(error_message))
             }
         }
@@ -131,8 +131,8 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, UTC, TimeZone, FixedOffset};
-    use self::chrono::naive::date;
+    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc, TimeZone, FixedOffset};
+    use self::chrono::naive::MAX_DATE;
     use self::dotenv::dotenv;
 
     use ::select;
@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = connection();
-        let time = UTC.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz").eq(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = connection();
-        let time = UTC.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz"))
             .get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
@@ -195,11 +195,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = connection();
-        let time = UTC::now().naive_utc() + Duration::seconds(60);
+        let time = Utc::now().naive_utc() + Duration::seconds(60);
         let query = select(now.at_time_zone("utc").lt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let time = UTC::now().naive_utc() - Duration::seconds(60);
+        let time = Utc::now().naive_utc() - Duration::seconds(60);
         let query = select(now.at_time_zone("utc").gt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -262,7 +262,7 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date").eq(julian_epoch));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let max_date = date::MAX;
+        let max_date = MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'::date").eq(max_date));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
@@ -290,7 +290,7 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date"));
         assert_eq!(Ok(julian_epoch), query.get_result::<NaiveDate>(&connection));
 
-        let max_date = date::MAX;
+        let max_date = MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'::date"));
         assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(&connection));
 
