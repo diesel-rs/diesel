@@ -136,7 +136,7 @@ fn test_min() {
     assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
-sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);
+sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar, ) -> types::VarChar);
 
 #[test]
 fn function_with_multiple_arguments() {
