@@ -10,6 +10,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the [PostgreSQL network types][pg-network-0.14.0] `MACADDR`.
 
+* Added support for the Numeric datatypes, using the [BigDecimal crate][bigdecimal-0.14.0].
+
 * Added a function which maps to SQL `NOT`. See [the docs][not-0.14.0] for more
   details.
 
@@ -18,6 +20,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [pg-network-0.14.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
 [insert-default-0.14.0]: http://docs.diesel.rs/disel/fn.insert_default_values.html
+[bigdecimal-0.14-0]: https://crates.io/crates/bigdecimal
 
 * Added `diesel_prefix_operator!` which behaves identically to
   `diesel_postfix_operator!` (previously `postfix_predicate!`), but for
