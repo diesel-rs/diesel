@@ -129,8 +129,7 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, UTC, TimeZone, FixedOffset};
-    use self::chrono::naive::date;
+    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc, TimeZone, FixedOffset};
     use self::dotenv::dotenv;
 
     use expression::dsl::{sql, now};
@@ -169,11 +168,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = connection();
-        let time = UTC::now().naive_utc() + Duration::days(1);
+        let time = Utc::now().naive_utc() + Duration::days(1);
         let query = select(now.lt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let time = UTC::now().naive_utc() - Duration::days(1);
+        let time = Utc::now().naive_utc() - Duration::days(1);
         let query = select(now.gt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }

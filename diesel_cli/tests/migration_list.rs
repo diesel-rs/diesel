@@ -1,5 +1,5 @@
 
-use chrono::UTC;
+use chrono::Utc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -60,7 +60,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
 
     p.command("setup").run();
 
-    let tag1 = format!("{}_initial", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag1 = format!("{}_initial", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag1, "", "");
 
     let result = p.command("migration")
@@ -71,7 +71,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
 
     sleep(Duration::from_millis(1100));
 
-    let tag2 = format!("{}_alter", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag2 = format!("{}_alter", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag2, "", "");
 
     let result = p.command("migration")
@@ -90,7 +90,7 @@ fn migration_list_orders_unknown_timestamps_last() {
 
     p.command("setup").run();
 
-    let tag1 = format!("{}_migration1", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag1 = format!("{}_migration1", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag1, "", "");
 
     let tag4 = "abc_migration4";
@@ -101,12 +101,12 @@ fn migration_list_orders_unknown_timestamps_last() {
 
     sleep(Duration::from_millis(1100));
 
-    let tag2 = format!("{}_migration2", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag2 = format!("{}_migration2", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag2, "", "");
 
     sleep(Duration::from_millis(1100));
 
-    let tag3 = format!("{}_migration3", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag3 = format!("{}_migration3", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag3, "", "");
 
     let result = p.command("migration")
@@ -140,7 +140,7 @@ fn migration_list_orders_nontimestamp_versions_lexicographically() {
     let tag3 = "7letters";
     p.create_migration(&tag3, "", "");
 
-    let tag1 = format!("{}_stamped_migration", UTC::now().format(TIMESTAMP_FORMAT));
+    let tag1 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag1, "", "");
 
     let result = p.command("migration")
