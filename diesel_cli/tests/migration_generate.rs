@@ -26,7 +26,7 @@ Creating migrations.\\d*_hello.down.sql\
     let captured_timestamps = Regex::new(r"(?P<stamp>\d*)_hello").unwrap();
     let mut stamps_found = 0;
     for caps in captured_timestamps.captures_iter(result.stdout()) {
-        let timestamp = UTC.datetime_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
+        let timestamp = Utc.datetime_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
         assert!(timestamp.is_ok(), "Found invalid timestamp format: {:?}", &caps["stamp"]);
         stamps_found += 1;
     }
