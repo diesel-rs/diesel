@@ -102,9 +102,9 @@ fn run_migration_command(matches: &ArgMatches) {
             // sort migrations by version timestamp, push non-conforming timestamped versions to the bottom
             sorted.sort_by(|a, b| {
                 let version_a = a.0.split('_').nth(0).expect(&format!("Unexpected version format {:?}", a.0));
-                let ver_date_a = UTC.datetime_from_str(version_a, TIMESTAMP_FORMAT);
+                let ver_date_a = Utc.datetime_from_str(version_a, TIMESTAMP_FORMAT);
                 let version_b = b.0.split('_').nth(0).expect(&format!("Unexpected version format {:?}", b.0));
-                let ver_date_b = UTC.datetime_from_str(version_b, TIMESTAMP_FORMAT);
+                let ver_date_b = Utc.datetime_from_str(version_b, TIMESTAMP_FORMAT);
                 match (ver_date_a.is_ok(), ver_date_b.is_ok()) {
                     (false, false) => version_a.to_lowercase().cmp(&version_b.to_lowercase()),
                     (true, false) => Ordering::Less,
@@ -159,7 +159,7 @@ fn run_migration_command(matches: &ArgMatches) {
 use std::fmt::Display;
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
     matches.value_of("MIGRATION_VERSION").map(|s| Box::new(s) as Box<Display>)
-        .unwrap_or_else(|| Box::new(UTC::now().format(TIMESTAMP_FORMAT)))
+        .unwrap_or_else(|| Box::new(Utc::now().format(TIMESTAMP_FORMAT)))
 }
 
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {

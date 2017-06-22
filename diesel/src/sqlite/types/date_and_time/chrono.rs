@@ -91,8 +91,7 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, NaiveDateTime, UTC, Timelike};
-    use self::chrono::naive::date;
+    use self::chrono::{Duration, naive, NaiveDate, NaiveTime, NaiveDateTime, Utc, Timelike};
     use self::dotenv::dotenv;
 
     use ::select;
@@ -131,11 +130,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = connection();
-        let time = UTC::now().naive_utc() + Duration::seconds(60);
+        let time = Utc::now().naive_utc() + Duration::seconds(60);
         let query = select(now.lt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let time = UTC::now().naive_utc() - Duration::seconds(600);
+        let time = Utc::now().naive_utc() - Duration::seconds(600);
         let query = select(now.gt(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -184,7 +183,7 @@ mod tests {
         let query = select(sql::<Date>("'-398-04-11'").eq(distant_past));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let max_date = date::MAX;
+        let max_date = naive::MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'").eq(max_date));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
@@ -208,7 +207,7 @@ mod tests {
         let query = select(sql::<Date>("'-399-04-11'"));
         assert_eq!(Ok(distant_past), query.get_result::<NaiveDate>(&connection));
 
-        let max_date = date::MAX;
+        let max_date = naive::MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'"));
         assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(&connection));
 
