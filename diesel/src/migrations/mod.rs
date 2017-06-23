@@ -15,6 +15,10 @@
 //! folder itself should have the structure `{version}_{migration_name}`. It is recommended that
 //! you use the timestamp of creation for the version.
 //!
+//! Migrations can either be run with the CLI or embedded into the compiled application
+//! and executed with code, for example right after establishing a database connection.
+//! For more information, consult the [`embed_migrations!`](../macro.embed_migrations.html) macro.
+//!
 //! ## Example
 //!
 //! ```text
