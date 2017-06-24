@@ -18,10 +18,58 @@ mod bigdecimal {
     use pg::data_types::PgNumeric;
     use types::{self, FromSql, ToSql, IsNull};
 
+    type Digits = Vec<i16>;
+
+    fn bigdec_add_integer_part(digits: &mut Digits, absolute: &BigDecimal) -> i16 {
+        let mut weight = 0;
+        let ten_k = BigInt::from(10000);
+
+        let mut integer_part = absolute.to_bigint().expect("Can always take integer part of BigDecimal");
+
+        while ten_k < integer_part {
+            weight += 1;
+            // digit is integer_part REM 10_000
+            let (div, digit) = integer_part.div_rem(&ten_k);
+            digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
+            integer_part = div;
+        }
+        digits.push(integer_part.to_string().parse::<i16>().expect("digit < 10000, but cannot fit in i16"));
+
+        digits.reverse();
+
+        weight
+    }
+
+    fn bigdec_add_decimal_part(digits: &mut Digits, absolute: &BigDecimal) -> u16 {
+        use std::str::FromStr;
+
+        let ten_k = BigDecimal::from_str("10000").expect("Could not parse into BigDecimal");
+
+        let decimal_part = absolute;
+        let mut decimal_part = decimal_part - absolute.with_scale(0);
+        // scale is the amount of digits to print. to_string() includes a "0.",
+        // that's why the -2 is there.
+        let scale = if decimal_part == Zero::zero() {
+            0
+        } else {
+            decimal_part.to_string().len() as u16 - 2
+        };
+
+        while decimal_part != BigDecimal::zero() {
+            decimal_part *= &ten_k;
+            let digit = decimal_part.to_bigint().expect("Can always take integer part of BigDecimal");
+
+            // This can be simplified when github.com/akubera/bigdecimal-rs/issues/13 gets
+            // solved; decimal_part -= &digit; should suffice by then.
+            decimal_part -= BigDecimal::new(digit.clone(), 0);
+            digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
+        }
+
+        scale
+    }
+
     impl ToSql<types::Numeric, Pg> for BigDecimal {
         fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
-            use std::str::FromStr;
-
             // The encoding of the BigDecimal type for PostgreSQL is a bit complicated:
             // PostgreSQL expects the data in base-10000 (so two bytes per 10k),
             // and the decimal point should lie on a boundary (as per definition of "base-10000").
@@ -33,43 +81,13 @@ mod bigdecimal {
             // the sign, the (integer) part before the decimal, and the part after the decimal.
 
             let absolute = self.abs();
-
             let mut digits = vec![];
-            let ten_k = BigInt::from(10000);
-            let mut integer_part = absolute.to_bigint().expect("Can always take integer part of BigDecimal");
-            let decimal_part = &absolute;
-            let mut decimal_part = decimal_part - absolute.with_scale(0);
-            // scale is the amount of digits to print. to_string() includes a "0.",
-            // that's why the -2 is there.
-            let scale = if decimal_part == Zero::zero() {
-                0
-            } else {
-                decimal_part.to_string().len() as u16 - 2
-            };
-            let mut weight = 0;
 
             // Encode the integer part
-            while ten_k < integer_part {
-                weight += 1;
-                // digit is integer_part REM 10_000
-                let (div, digit) = integer_part.div_rem(&ten_k);
-                digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
-                integer_part = div;
-            }
-            digits.push(integer_part.to_string().parse::<i16>().expect("digit < 10000, but cannot fit in i16"));
-
-            digits.reverse();
+            let weight = bigdec_add_integer_part(&mut digits, &absolute);
 
             // Encode the decimal part
-            let ten_k = BigDecimal::from_str("10000").expect("Could not parse into BigDecimal");
-            while decimal_part != BigDecimal::zero() {
-                decimal_part *= &ten_k;
-                let digit = decimal_part.to_bigint().expect("Can always take integer part of BigDecimal");
-                // This can be simplified when github.com/akubera/bigdecimal-rs/issues/13 gets
-                // solved; decimal_part -= &digit; should suffice by then.
-                decimal_part -= BigDecimal::new(digit.clone(), 0);
-                digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
-            }
+            let scale = bigdec_add_decimal_part(&mut digits, &absolute);
 
             let numeric = match self.sign() {
                 Sign::Plus => PgNumeric::Positive {
