@@ -4,6 +4,7 @@ pub mod floats;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod integers;
+mod numeric;
 mod primitives;
 #[cfg(feature = "uuid")]
 mod uuid;
