@@ -26,12 +26,31 @@ pub enum PgTypeMetadata {
     },
 }
 
+#[allow(missing_debug_implementations)]
+pub struct PgMetadataLookup {
+    c: super::connection::PgConnection,
+}
+
+impl PgMetadataLookup {
+    pub(super) fn new(conn: &super::connection::PgConnection) -> &Self {
+        unsafe{ ::std::mem::transmute(conn) }
+    }
+}
+
+impl MetadataLookup<PgTypeMetadata> for PgMetadataLookup {
+    type MetadataIdentifier = u32;
+
+    fn lookup(&self, t: &PgTypeMetadata) -> ::result::QueryResult<u32> {
+        self.c.lookup(t)
+    }
+}
+
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
     type RawValue = [u8];
     type ByteOrder = NetworkEndian;
-    type MetadataLookup = super::connection::PgConnection;
+    type MetadataLookup = PgMetadataLookup;
 }
 
 impl TypeMetadata for Pg {

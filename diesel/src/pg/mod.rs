@@ -6,7 +6,7 @@ mod connection;
 pub mod types;
 pub mod upsert;
 
-pub use self::backend::{Pg, PgTypeMetadata, IsArray};
+pub use self::backend::{Pg, PgTypeMetadata, IsArray, PgMetadataLookup};
 pub use self::connection::PgConnection;
 pub use self::query_builder::PgQueryBuilder;
 
