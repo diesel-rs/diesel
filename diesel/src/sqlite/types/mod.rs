@@ -58,12 +58,12 @@ impl FromSql<types::Double, Sqlite> for f64 {
 }
 
 impl ToSql<types::Bool, Sqlite> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
         let int_value = if *self {
             1
         } else {
             0
         };
-        <i32 as ToSql<types::Integer, Sqlite>>::to_sql(&int_value, out)
+        <i32 as ToSql<types::Integer, Sqlite>>::to_sql(&int_value, out, lookup)
     }
 }

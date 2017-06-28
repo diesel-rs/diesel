@@ -7,13 +7,13 @@ use std::io::Write;
 use types::{ToSql, IsNull, FromSql, HasSqlType};
 
 impl ToSql<::types::Bool, Mysql> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<StdError+Send+Sync>> {
         let int_value = if *self {
             1
         } else {
             0
         };
-        <i32 as ToSql<::types::Integer, Mysql>>::to_sql(&int_value, out)
+        <i32 as ToSql<::types::Integer, Mysql>>::to_sql(&int_value, out, lookup)
     }
 }
 
