@@ -9,7 +9,6 @@ If you want to report a bug, we added some points below you can fill out. If you
 - **Rust:**
 - **Diesel:**
 - **Database:**
-- **Feature Crates:**
 - **Operating System**
 
 ### Feature Flags
