@@ -25,6 +25,15 @@ impl Backend for Sqlite {
     type BindCollector = RawBytesBindCollector<Sqlite>;
     type RawValue = SqliteValue;
     type ByteOrder = NativeEndian;
+    type MetadataLookup = ();
+}
+
+impl MetadataLookup<SqliteType> for () {
+    type MetadataIdentifier = ();
+
+    fn lookup(&self, _t: &SqliteType) -> ::result::QueryResult<()> {
+        Ok(())
+    }
 }
 
 impl TypeMetadata for Sqlite {
