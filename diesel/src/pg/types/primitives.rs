@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::error::Error;
 
-use pg::{Pg, PgConnection};
+use pg::{Pg, PgMetadataLookup};
 use pg::data_types::PgNumeric;
 use types::{self, ToSql, IsNull, FromSql};
 
@@ -17,7 +17,7 @@ impl FromSql<types::Bool, Pg> for bool {
 }
 
 impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W, _: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, _: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
         let write_result = if *self {
             out.write_all(&[1])
         } else {

@@ -2,7 +2,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 use std::error::Error;
 use std::io::prelude::*;
 
-use pg::{Pg, PgConnection};
+use pg::{Pg, PgMetadataLookup};
 use types::{self, IsNull, FromSql, ToSql};
 
 #[cfg(feature = "quickcheck")]
@@ -68,7 +68,7 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut W, _: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, _: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,

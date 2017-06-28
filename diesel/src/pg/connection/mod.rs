@@ -16,8 +16,7 @@ use query_dsl::select_dsl::SelectDsl;
 use query_dsl::filter_dsl::FilterDsl;
 use query_dsl::load_dsl::LoadDsl;
 use connection::*;
-use pg::{Pg, PgTypeMetadata, IsArray};
-use backend::MetadataLookup;
+use pg::{Pg, PgTypeMetadata, IsArray, PgMetadataLookup};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -137,8 +136,10 @@ impl PgConnection {
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
         -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
+
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector, &self));
+        let lookup = PgMetadataLookup::new(&self);
+        try!(source.collect_binds(&mut bind_collector, lookup));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
@@ -164,12 +165,9 @@ impl PgConnection {
         let query = try!(Statement::prepare(self, query, None, &[]));
         query.execute(&self.raw_connection, &Vec::new())
     }
-}
 
-impl MetadataLookup<PgTypeMetadata> for PgConnection {
-    type MetadataIdentifier = u32;
 
-    fn lookup(&self, t: &PgTypeMetadata) -> QueryResult<u32> {
+    pub(super) fn lookup(&self, t: &PgTypeMetadata) -> QueryResult<u32> {
         use self::pg_type::dsl::{pg_type, typname, typtype, typnamespace,
                                  oid as pg_type_oid, typarray};
         use self::pg_namespace::dsl::{pg_namespace, oid as pg_namespace_oid, nspname};

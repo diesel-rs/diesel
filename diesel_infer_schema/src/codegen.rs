@@ -160,7 +160,7 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
 
     let to_sql = quote!{
         impl ToSql<Nullable<#sql_type_name>, Pg> for #type_name {
-            fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error+Send+Sync>> {
+            fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
                 ToSql::<MoodSql, Pg>::to_sql(self, out, lookup)
             }
         }
@@ -169,7 +169,7 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
         #to_sql
 
         impl ToSql<#sql_type_name, Pg> for #type_name {
-            fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgConnection) -> Result<IsNull, Box<Error + Send + Sync>> {
+            fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error + Send + Sync>> {
                 ToSql::<Text, Pg>::to_sql(&String::from(self), out, lookup)
             }
 }
@@ -221,7 +221,7 @@ pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::T
         #map_names
     };
     let diesel_imports = quote!{
-        use diesel::pg::{PgTypeMetadata, Pg, IsArray, PgConnection};
+        use diesel::pg::{PgTypeMetadata, Pg, IsArray, PgMetadataLookup};
         use diesel::types::{HasSqlType, NotNull, IsNull};
         use diesel::types::{FromSql, FromSqlRow, ToSql};
         use diesel::types::{Nullable, Text};
