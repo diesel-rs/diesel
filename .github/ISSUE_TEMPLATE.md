@@ -34,7 +34,7 @@ If you want to report a bug, we added some points below you can fill out. If you
 ### Steps to reproduce
 
 <!--
-Please include as much as your codebase as needed to reproduce the error.  If the relevant files are large, please consider linking to a public repository or a [Gist](https://gist.github.com/).
+Please include as much of your codebase as needed to reproduce the error.  If the relevant files are large, please consider linking to a public repository or a [Gist](https://gist.github.com/).
 
 Please post as much of your database schema as necessary.
 -->
