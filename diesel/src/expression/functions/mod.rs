@@ -101,16 +101,16 @@ macro_rules! sql_function_body {
 /// // SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)
 /// # }
 macro_rules! sql_function {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),* $(,)* ) -> $return_type:ty) => {
         sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, "");
     };
 
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),* $(,)*) -> $return_type:ty,
     $docs: expr) => {
         sql_function_body!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, $docs);
     };
 
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),* $(,)*)) => {
         sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
     };
 }
