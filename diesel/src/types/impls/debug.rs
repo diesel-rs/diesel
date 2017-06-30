@@ -30,6 +30,15 @@ mod pg_impls {
     debug_to_sql!(Interval, PgInterval);
 }
 
+#[cfg(feature = "deprecated-time")]
+mod deprecated_time_impls {
+    extern crate time;
+    use super::*;
+    use self::time::Timespec;
+
+    debug_to_sql!(Timestamp, Timespec);
+}
+
 #[cfg(feature = "chrono")]
 mod chrono_impls {
     extern crate chrono;
