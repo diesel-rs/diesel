@@ -8,7 +8,11 @@ set +a
 
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
-  ../../../bin/diesel database reset
+
+  if [ -d "migrations" ]; then
+    ../../../bin/diesel database reset
+  fi
+
   cargo build
   cd ..
 done
