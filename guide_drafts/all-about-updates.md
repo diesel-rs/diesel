@@ -1,11 +1,11 @@
 All About Updates
 =================
 
-Most applications fall into a category called "CRUD" apps. CRUD stands for Create Read Update Delete. Diesel provides support for all four pieces, but in this guide we're going to look at all the different ways to go about updating records with Diesel.
+Most applications fall into a category called "CRUD" apps. CRUD stands for "Create, Read, Update, Delete". Diesel provides support for all four pieces, but in this guide we're going to look at all the different ways to go about updating records.
 
-An update statement is constructed by calling `diesel::update(target).set(changes)`. The resulting statement is then run be calling either `execute`, `get_result`, or `get_results`.
+An update statement is constructed by calling `diesel::update(target).set(changes)`. The resulting statement is then run by calling either `execute`, `get_result`, or `get_results`.
 
-If you look at the documentation for [`update`](http://docs.diesel.rs/diesel/fn.update.html), you'll notice that the type of the argument is any type `T` which implements `IntoUpdateTarget`. You don't need to worry about what this trait does, but it is important to know which types implement it. There are 3 kinds which implement this trait. The first is tables.
+If you look at the documentation for [`update`](http://docs.diesel.rs/diesel/fn.update.html), you'll notice that the type of the argument is any type `T` which implements `IntoUpdateTarget`. You don't need to worry about what this trait does, but it is important to know which types implement it. There are three kinds which implement this trait. The first is tables.
 
 If we have a table that looks like this:
 
@@ -38,7 +38,7 @@ We can look use the [`print_sql!`] macro to inspect the generated SQL. The macro
 UPDATE `posts` SET `draft` = ?
 ```
 
-This is pretty much one-to-one with the Rust code. It's quite rare to want to update an entire table, though. So let's look at how we can scope that down. The second kind that you can pass to `update` is any query which has only had `.filter` called on it. We could scope our update to only touch posts where `publish_at` is in the past like so:
+This is pretty much one-to-one with the Rust code (the `?` denotes a bound parameter in SQL, which will be substituted with `false` here). It's quite rare to want to update an entire table, though. So let's look at how we can scope that down. The second kind that you can pass to `update` is any query which has only had `.filter` called on it. We could scope our update to only touch posts where `publish_at` is in the past like so:
 
 ```rust
 use posts::dsl::*;
@@ -99,7 +99,7 @@ That would generate this SQL:
 UPDATE `posts` SET `visit_count` = `posts`.`visit_count` + 1
 ```
 
-Note that to use the Rust `+` operator on our column, we'll need to have written `numeric_expr!(posts::visit_count)` somewhere after we declared it. Diesel may do this automatically for you in the future. Assigning values directly is great for small, simple changes. If we wanted to update multiple columns this way, we can pass a tuple.
+Note that to use the Rust `+` operator on our column, we'll need to have written `numeric_expr!(posts::visit_count)` somewhere after we declared it. (Diesel may do this automatically for you in the future.) Assigning values directly is great for small, simple changes. If we wanted to update multiple columns this way, we can pass a tuple.
 
 ```rust
 use posts::dsl::*;
@@ -164,5 +164,5 @@ UPDATE `posts` SET `body` = ?
 
 If you wanted to assign `NULL` instead, you can either specify `#[changeset_options(treat_none_as_null="true")]` on the struct, or you can have the field be of type `Option<Option<T>>`. Diesel doesn't currently provide a way to explicitly assign a field to its default value, though it may be provided in the future.
 
-TODO: Cover `execute` vs `get_result` vs `get_results` vs `save_changes`
-TODO: Briefly mention upsert exists, point to docs
+<!-- TODO: Cover `execute` vs `get_result` vs `get_results` vs `save_changes` -->
+<!-- TODO: Briefly mention upsert exists, point to docs -->
