@@ -18,6 +18,7 @@ cache:
 install:
   - curl -fsS --retry 3 --retry-connrefused -o rustup-init.exe https://win.rustup.rs/
   - rustup-init -yv --default-toolchain stable --default-host %target%
+  - del rust-toolchain
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
