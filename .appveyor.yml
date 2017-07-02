@@ -17,7 +17,8 @@ cache:
 
 install:
   - curl -fsS --retry 3 --retry-connrefused -o rustup-init.exe https://win.rustup.rs/
-  - rustup-init -yv --default-toolchain stable --default-host %target%
+  - if exist rust-toolchain set /p RUST_TOOLCHAIN= <rust-toolchain
+  - rustup-init -yv --default-toolchain %RUST_TOOLCHAIN% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
@@ -55,6 +56,7 @@ environment:
     PGUSER: postgres
     PGPASSWORD: Password12!
     MYSQL_PWD: Password12!
+    RUST_TOOLCHAIN: stable
 
   matrix:
     - target: x86_64-pc-windows-msvc
