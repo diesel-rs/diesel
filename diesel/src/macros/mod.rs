@@ -788,6 +788,9 @@ macro_rules! joinable_inner {
 /// # Example
 ///
 /// ```ignore
+/// // This would be required to do `users.inner_join(posts.inner_join(comments))`
+/// // if there were an association between users and posts, and an association
+/// // between posts and comments, but no association between users and comments
 /// enable_multi_table_joins!(users, comments);
 /// ```
 #[macro_export]

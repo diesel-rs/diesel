@@ -8,6 +8,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for joining between more than two tables. The query builder can
+  now be used to join between any number of tables in a single query. See the
+  documentation for [`JoinDsl`][join-dsl-0.14.0] for details
+
+[join-dsl-0.14.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinDsl.html
+
 * Added support for the [PostgreSQL network types][pg-network-0.14.0] `MACADDR`.
 
 * Added support for the Numeric datatypes, using the [BigDecimal crate][bigdecimal-0.14.0].
