@@ -106,8 +106,14 @@ impl Project {
             .into_string().unwrap()
     }
 
-    pub fn has_file(&self, path: &str) -> bool {
+    pub fn has_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.directory.path().join(path).exists()
+    }
+
+    #[cfg(feature="postgres")]
+    pub fn delete_file<P: AsRef<Path>>(&self, path: P) {
+        let file = self.directory.path().join(path);
+        fs::remove_dir_all(file).unwrap();
     }
 
     pub fn create_migration(&self, name: &str, up: &str, down: &str) {

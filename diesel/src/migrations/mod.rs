@@ -203,7 +203,6 @@ fn migration_with_version(migrations_dir: &Path, ver: &str) -> Result<Box<Migrat
 
 #[doc(hidden)]
 pub fn setup_database<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
-    conn.setup_helper_functions();
     create_schema_migrations_table_if_needed(conn)
 }
 

@@ -43,6 +43,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Trait bounds along the lines of `T: LoadDsl<Conn>, U: Queryable<T::SqlType,
   Conn::Backend>` should be changed to `T: LoadQuery<Conn, U>`.
 
+* Diesel now uses a migration to set up its timestamp helpers. To generate this
+  migration for your project, run `diesel database setup`.
+
 ### Removed
 
 * `#[has_many]` has been removed. Its functionality is now provided by

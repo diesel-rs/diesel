@@ -148,5 +148,4 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
     #[doc(hidden)] fn transaction_manager(&self) -> &Self::TransactionManager;
-    #[doc(hidden)] fn setup_helper_functions(&self);
 }
