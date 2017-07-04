@@ -26,7 +26,7 @@ It also provides the macros [`infer_schema!`][infer-schema],
 First, add this crate to Cargo.toml as so:
 
 ```toml
-diesel_codegen = { version = "0.13.0", features = ["postgres"] }
+diesel_codegen = { version = "0.14.0", features = ["postgres"] }
 ```
 
 If you are using SQLite, be sure to specify `sqlite` instead of `postgres` in
