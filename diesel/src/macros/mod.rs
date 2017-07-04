@@ -1,7 +1,7 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> $Type:ty, $($doc:expr),*) => {
+    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*), $($doc:expr),*) => {
         $(
             #[doc=$doc]
         )*
@@ -10,7 +10,7 @@ macro_rules! __diesel_column {
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
-            type SqlType = $Type;
+            type SqlType = $($Type)*;
         }
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
@@ -74,7 +74,7 @@ macro_rules! __diesel_column {
         }
 
         impl<T> $crate::EqAll<T> for $column_name where
-            T: $crate::expression::AsExpression<$Type>,
+            T: $crate::expression::AsExpression<$($Type)*>,
             $crate::expression::helper_types::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::types::Bool>,
         {
             type Output = $crate::expression::helper_types::Eq<Self, T>;
@@ -83,6 +83,8 @@ macro_rules! __diesel_column {
                 $crate::ExpressionMethods::eq(self, rhs)
             }
         }
+
+        __diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
     }
 }
 
@@ -401,7 +403,7 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
@@ -424,16 +426,20 @@ macro_rules! table_body {
     // Parse a table column definition
     // Forward any remaining table column to further instances
     // of this macro
+    //
+    // This case will attempt to keep the type destructured so we can match
+    // on it to determine if the column is numeric, later. The next branch
+    // will catch any types which don't match this structure
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:ty; doc = [$($doc:expr)*],)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
-        $new_column_name:ident -> $new_type:ty,
+        $new_column_name:ident -> $($ty_path:tt)::* $(<$($ty_params:tt)::*>)*,
         $($body:tt)*
     ) => {
         table_body! {
@@ -442,7 +448,37 @@ macro_rules! table_body {
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*],)*
-                       $new_column_name -> $new_type; doc = [$($column_doc)*],],
+                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*],],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            current_column_doc = [],
+            $($body)*
+        }
+    };
+
+    // Parse a table column definition with a complex type
+    //
+    // This is identical to the previous branch, but we are capturing the whole
+    // thing as a `ty` token.
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
+        $new_column_name:ident -> $new_column_ty:ty,
+        $($body:tt)*
+    ) => {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
+                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*],],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
@@ -500,7 +536,7 @@ macro_rules! table_body {
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $column_ty:ty; doc = [$($doc:expr)*] ,)+],
+        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*] ,)+],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [],
@@ -554,7 +590,7 @@ macro_rules! table_body {
             }
 
             /// The SQL type of all of the columns on this table
-            pub type SqlType = ($($column_ty,)+);
+            pub type SqlType = ($($($column_ty)*,)+);
 
             /// Helper type for reperesenting a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
@@ -660,7 +696,7 @@ macro_rules! table_body {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column!(table, $column_name -> $column_ty, $($doc),*);)+
+                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $($doc),*);)+
             }
         }
     }
@@ -882,6 +918,7 @@ macro_rules! print_sql {
 #[macro_use] mod query_id;
 #[macro_use] mod static_cond;
 #[macro_use] mod macros_from_codegen;
+#[macro_use] mod ops;
 
 #[macro_use] mod as_changeset;
 #[macro_use] mod associations;
@@ -933,5 +970,20 @@ mod tests {
     fn table_with_custom_schema() {
         let expected_sql = "SELECT `foo`.`bars`.`baz` FROM `foo`.`bars`";
         assert_eq!(expected_sql, debug_sql!(bars::table.select(bars::baz)));
+    }
+
+    table! {
+        use types;
+        use types::*;
+
+        table_with_arbitrarily_complex_types {
+            id -> types::Integer,
+            qualified_nullable -> types::Nullable<types::Integer>,
+            deeply_nested_type -> Option<Nullable<Integer>>,
+            // This actually should work, but there appears to be a rustc bug
+            // on the `AsExpression` bound for `EqAll` when the ty param is a projection
+            // projected_type -> <Nullable<Integer> as types::IntoNullable>::Nullable,
+            random_tuple -> (Integer, Integer),
+        }
     }
 }

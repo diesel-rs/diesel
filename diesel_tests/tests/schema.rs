@@ -89,8 +89,6 @@ mod backend_specifics;
 
 pub use self::backend_specifics::*;
 
-numeric_expr!(users::id);
-
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[table_name = "users"]
 pub struct NewUser {
@@ -146,8 +144,6 @@ impl FkTest {
         FkTest{ id: id, fk_id: fk_id }
     }
 }
-
-numeric_expr!(nullable_table::value);
 
 #[derive(Queryable, Insertable)]
 #[table_name="nullable_table"]
