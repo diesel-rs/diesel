@@ -275,10 +275,10 @@ pub type VarChar = Text;
 pub use pg::types::sql_types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
-    fn metadata() -> Self::TypeMetadata;
+    fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
-    fn row_metadata(out: &mut Vec<Self::TypeMetadata>) {
-        out.push(Self::metadata())
+    fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
+        out.push(Self::metadata(lookup))
     }
 }
 
@@ -345,26 +345,27 @@ pub struct ToSqlOutput<'a, T, DB> where
     DB::MetadataLookup: 'a,
 {
     out: T,
-    marker: ::std::marker::PhantomData<&'a DB::MetadataLookup>,
+    metadata_lookup: &'a DB::MetadataLookup,
 }
 
 impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
-    pub fn new(out: T) -> Self {
-        ToSqlOutput {
-            out,
-            marker: ::std::marker::PhantomData,
-        }
+    pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
+        ToSqlOutput { out, metadata_lookup }
     }
 
     pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
         ToSqlOutput {
             out: new_out,
-            marker: self.marker,
+            metadata_lookup: self.metadata_lookup,
         }
     }
 
     pub fn into_inner(self) -> T {
         self.out
+    }
+
+    pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
+        self.metadata_lookup
     }
 }
 

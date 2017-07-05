@@ -9,19 +9,19 @@ use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, HasSqlType};
 mod chrono;
 
 impl HasSqlType<types::Date> for Sqlite {
-    fn metadata() -> SqliteType {
+    fn metadata(_: &()) -> SqliteType {
         SqliteType::Text
     }
 }
 
 impl HasSqlType<types::Time> for Sqlite {
-    fn metadata() -> SqliteType {
+    fn metadata(_: &()) -> SqliteType {
         SqliteType::Text
     }
 }
 
 impl HasSqlType<types::Timestamp> for Sqlite {
-    fn metadata() -> SqliteType {
+    fn metadata(_: &()) -> SqliteType {
         SqliteType::Text
     }
 }

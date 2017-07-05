@@ -110,7 +110,7 @@ impl PgConnection {
         -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        try!(source.collect_binds(&mut bind_collector, &()));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 

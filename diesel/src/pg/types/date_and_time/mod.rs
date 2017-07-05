@@ -81,7 +81,7 @@ primitive_impls!(Interval -> (PgInterval, pg: (1186, 1187)));
 use types::HasSqlType;
 
 impl HasSqlType<types::Date> for Pg {
-    fn metadata() -> PgTypeMetadata {
+    fn metadata(_: &()) -> PgTypeMetadata {
         PgTypeMetadata {
             oid: 1082,
             array_oid: 1182,
@@ -90,7 +90,7 @@ impl HasSqlType<types::Date> for Pg {
 }
 
 impl HasSqlType<types::Time> for Pg {
-    fn metadata() -> PgTypeMetadata {
+    fn metadata(_: &()) -> PgTypeMetadata {
         PgTypeMetadata {
             oid: 1083,
             array_oid: 1183,
@@ -99,7 +99,7 @@ impl HasSqlType<types::Time> for Pg {
 }
 
 impl HasSqlType<types::Timestamp> for Pg {
-    fn metadata() -> PgTypeMetadata {
+    fn metadata(_: &()) -> PgTypeMetadata {
         PgTypeMetadata {
             oid: 1114,
             array_oid: 1115,
