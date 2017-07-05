@@ -48,14 +48,14 @@ impl FromSql<types::Date, Sqlite> for String {
 }
 
 impl<'a> ToSql<types::Date, Sqlite> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::Text, Sqlite>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Text, Sqlite>::to_sql(self, out, lookup)
     }
 }
 
 impl ToSql<types::Date, Sqlite> for String {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        <&str as ToSql<types::Date, Sqlite>>::to_sql(&&**self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        <&str as ToSql<types::Date, Sqlite>>::to_sql(&&**self, out, lookup)
     }
 }
 
@@ -66,14 +66,14 @@ impl FromSql<types::Time, Sqlite> for String {
 }
 
 impl<'a> ToSql<types::Time, Sqlite> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::Text, Sqlite>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Text, Sqlite>::to_sql(self, out, lookup)
     }
 }
 
 impl ToSql<types::Time, Sqlite> for String {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        <&str as ToSql<types::Time, Sqlite>>::to_sql(&&**self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        <&str as ToSql<types::Time, Sqlite>>::to_sql(&&**self, out, lookup)
     }
 }
 
@@ -84,13 +84,13 @@ impl FromSql<types::Timestamp, Sqlite> for String {
 }
 
 impl<'a> ToSql<types::Timestamp, Sqlite> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::Text, Sqlite>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Text, Sqlite>::to_sql(self, out, lookup)
     }
 }
 
 impl ToSql<types::Timestamp, Sqlite> for String {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        <&str as ToSql<types::Timestamp, Sqlite>>::to_sql(&&**self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &()) -> Result<IsNull, Box<Error+Send+Sync>> {
+        <&str as ToSql<types::Timestamp, Sqlite>>::to_sql(&&**self, out, lookup)
     }
 }

@@ -1,3 +1,4 @@
+extern crate chashmap;
 mod cursor;
 pub mod raw;
 mod row;
@@ -7,9 +8,15 @@ mod stmt;
 
 use std::ffi::{CString, CStr};
 use std::os::raw as libc;
+use std::ops::Deref;
 
+use expression_methods::global_expression_methods::ExpressionMethods;
+use expression_methods::bool_expression_methods::BoolExpressionMethods;
+use query_dsl::select_dsl::SelectDsl;
+use query_dsl::filter_dsl::FilterDsl;
+use query_dsl::load_dsl::LoadDsl;
 use connection::*;
-use pg::Pg;
+use pg::{Pg, PgTypeMetadata, IsArray, PgMetadataLookup};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -19,6 +26,24 @@ use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
 use types::HasSqlType;
+use self::chashmap::CHashMap;
+
+table! {
+    pg_type(oid) {
+        typname -> Text,
+        oid -> Oid,
+        typarray -> Oid,
+        typnamespace -> Oid,
+        typtype -> Text,
+    }
+}
+
+table! {
+    pg_catalog.pg_namespace(oid) {
+        oid -> Oid,
+        nspname -> Text,
+    }
+}
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -28,6 +53,7 @@ pub struct PgConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
+    type_cache: CHashMap<(&'static str, &'static str, IsArray), u32>,
 }
 
 unsafe impl Send for PgConnection {}
@@ -53,6 +79,7 @@ impl Connection for PgConnection {
                 raw_connection: raw_conn,
                 transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
+                type_cache: Default::default(),
             }
         })
     }
@@ -109,8 +136,10 @@ impl PgConnection {
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
         -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
+
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        let lookup = PgMetadataLookup::new(&self);
+        try!(source.collect_binds(&mut bind_collector, lookup));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
@@ -122,7 +151,7 @@ impl PgConnection {
                 None
             };
             Statement::prepare(
-                &self.raw_connection,
+                self,
                 sql,
                 query_name.as_ref().map(|s| &**s),
                 &metadata,
@@ -133,8 +162,51 @@ impl PgConnection {
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
-        let query = try!(Statement::prepare(&self.raw_connection, query, None, &[]));
+        let query = try!(Statement::prepare(self, query, None, &[]));
         query.execute(&self.raw_connection, &Vec::new())
+    }
+
+
+    pub(super) fn lookup(&self, t: &PgTypeMetadata) -> QueryResult<u32> {
+        use self::pg_type::dsl::{pg_type, typname, typtype, typnamespace,
+                                 oid as pg_type_oid, typarray};
+        use self::pg_namespace::dsl::{pg_namespace, oid as pg_namespace_oid, nspname};
+        match *t {
+            PgTypeMetadata::Static { oid, .. } => return Ok(oid),
+            PgTypeMetadata::Dynamic { schema, typename, as_array } => {
+                if let Some(ref oid) =
+                    self.type_cache.get(&(schema, typename, as_array)) {
+                    return Ok(*(oid.deref()));
+                    }
+                let q: Option<u32> = if IsArray::No == as_array {
+                    pg_type.filter(typtype.eq("e")
+                                   .and(typname.eq(typename))
+                                   .and(typnamespace.eq_any(
+                                       pg_namespace.select(pg_namespace_oid)
+                                           .filter(nspname.eq(schema))
+                                   )))
+                        .select(pg_type_oid)
+                        .first(self)
+                        .optional()?
+                } else {
+                    pg_type.filter(typtype.eq("e")
+                                   .and(typname.eq(typename))
+                                   .and(typnamespace.eq_any(
+                                       pg_namespace.select(pg_namespace_oid)
+                                           .filter(nspname.eq(schema))
+                                   )))
+                        .select(typarray)
+                        .first(self)
+                        .optional()?
+                };
+                if let Some(res) = q{
+                    self.type_cache.insert((schema, typename, as_array),
+                                           res);
+                    return Ok(res);
+                }
+                panic!()
+            }
+        }
     }
 }
 

@@ -35,6 +35,15 @@ impl Backend for Mysql {
     type BindCollector = RawBytesBindCollector<Mysql>;
     type RawValue = [u8];
     type ByteOrder = NativeEndian;
+    type MetadataLookup = ();
+}
+
+impl MetadataLookup<MysqlType> for () {
+    type MetadataIdentifier = ();
+
+    fn lookup(&self, _t: &MysqlType) -> ::result::QueryResult<()> {
+        Ok(())
+    }
 }
 
 impl TypeMetadata for Mysql {

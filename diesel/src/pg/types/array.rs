@@ -3,8 +3,8 @@ use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
-use backend::Debug;
-use pg::{Pg, PgTypeMetadata};
+use backend::{Debug, MetadataLookup};
+use pg::{Pg, PgTypeMetadata, IsArray, PgMetadataLookup};
 use query_source::Queryable;
 use types::*;
 
@@ -12,10 +12,22 @@ impl<T> HasSqlType<Array<T>> for Pg where
     Pg: HasSqlType<T>,
 {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: <Pg as HasSqlType<T>>::metadata().array_oid,
-            array_oid: 0,
+        match <Pg as HasSqlType<T>>::metadata() {
+            PgTypeMetadata::Static{ array_oid, .. } => {
+                PgTypeMetadata::Static {
+                    oid: array_oid,
+                    array_oid: 0,
+                }
+            }
+            PgTypeMetadata::Dynamic{ schema, typename, .. } => {
+                PgTypeMetadata::Dynamic {
+                    schema: schema,
+                    typename: typename,
+                    as_array: IsArray::Yes,
+                }
+            }
         }
+
     }
 }
 
@@ -122,19 +134,20 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        let oid = try!(lookup.lookup(&Pg::metadata()));
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
         try!(out.write_i32::<NetworkEndian>(flags));
-        try!(out.write_u32::<NetworkEndian>(Pg::metadata().oid));
+        try!(out.write_u32::<NetworkEndian>(oid));
         try!(out.write_i32::<NetworkEndian>(self.len() as i32));
         let lower_bound = 1;
         try!(out.write_i32::<NetworkEndian>(lower_bound));
 
         let mut buffer = Vec::new();
         for elem in self.iter() {
-            let is_null = try!(elem.to_sql(&mut buffer));
+            let is_null = try!(elem.to_sql(&mut buffer, lookup));
             if let IsNull::No = is_null {
                 try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
                 try!(out.write_all(&buffer));
@@ -153,8 +166,8 @@ impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
     Pg: HasSqlType<ST>,
     &'a [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out, lookup)
     }
 }
 
@@ -163,8 +176,8 @@ impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        (self as &[T]).to_sql(out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        (self as &[T]).to_sql(out, lookup)
     }
 }
 
@@ -172,7 +185,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T> where
     Pg: HasSqlType<ST>,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<Array<ST>, Pg>::to_sql(self, out, lookup)
     }
 }

@@ -61,9 +61,9 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &DB::MetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
         if let Some(ref value) = *self {
-            value.to_sql(out)
+            value.to_sql(out, lookup)
         } else {
             Ok(IsNull::Yes)
         }

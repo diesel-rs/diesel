@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io::Write;
 use std::ops::Add;
 
-use pg::{Pg, PgTypeMetadata};
+use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
 use types::{self, FromSql, ToSql, IsNull};
 
 primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
@@ -82,7 +82,7 @@ use types::HasSqlType;
 
 impl HasSqlType<types::Date> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1082,
             array_oid: 1182,
         }
@@ -91,7 +91,7 @@ impl HasSqlType<types::Date> for Pg {
 
 impl HasSqlType<types::Time> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1083,
             array_oid: 1183,
         }
@@ -100,7 +100,7 @@ impl HasSqlType<types::Time> for Pg {
 
 impl HasSqlType<types::Timestamp> for Pg {
     fn metadata() -> PgTypeMetadata {
-        PgTypeMetadata {
+        PgTypeMetadata::Static {
             oid: 1114,
             array_oid: 1115,
         }
@@ -108,8 +108,8 @@ impl HasSqlType<types::Timestamp> for Pg {
 }
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out, lookup)
     }
 }
 
@@ -121,8 +121,8 @@ impl FromSql<types::Timestamp, Pg> for PgTimestamp {
 }
 
 impl ToSql<types::Timestamptz, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::Timestamp, Pg>::to_sql(self, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Timestamp, Pg>::to_sql(self, out, lookup)
     }
 }
 
@@ -133,8 +133,8 @@ impl FromSql<types::Timestamptz, Pg> for PgTimestamp {
 }
 
 impl ToSql<types::Date, Pg> for PgDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::Integer, Pg>::to_sql(&self.0, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::Integer, Pg>::to_sql(&self.0, out, lookup)
     }
 }
 
@@ -146,8 +146,8 @@ impl FromSql<types::Date, Pg> for PgDate {
 }
 
 impl ToSql<types::Time, Pg> for PgTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out, lookup)
     }
 }
 
@@ -159,10 +159,10 @@ impl FromSql<types::Time, Pg> for PgTime {
 }
 
 impl ToSql<types::Interval, Pg> for PgInterval {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
-        try!(ToSql::<types::BigInt, Pg>::to_sql(&self.microseconds, out));
-        try!(ToSql::<types::Integer, Pg>::to_sql(&self.days, out));
-        try!(ToSql::<types::Integer, Pg>::to_sql(&self.months, out));
+    fn to_sql<W: Write>(&self, out: &mut W, lookup: &PgMetadataLookup) -> Result<IsNull, Box<Error+Send+Sync>> {
+        try!(ToSql::<types::BigInt, Pg>::to_sql(&self.microseconds, out, lookup));
+        try!(ToSql::<types::Integer, Pg>::to_sql(&self.days, out, lookup));
+        try!(ToSql::<types::Integer, Pg>::to_sql(&self.months, out, lookup));
         Ok(IsNull::No)
     }
 }
