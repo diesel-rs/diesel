@@ -8,12 +8,12 @@ use std::os::raw as libc;
 use std::{ptr, mem, slice};
 
 use mysql::Mysql;
-use types::{ToSql, FromSql, IsNull, Timestamp, Time, Date};
+use types::{ToSql, ToSqlOutput, FromSql, IsNull, Timestamp, Time, Date};
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
         impl ToSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
                 let bytes = unsafe {
                     let bytes_ptr = self as *const ffi::MYSQL_TIME as *const u8;
                     slice::from_raw_parts(bytes_ptr, mem::size_of::<ffi::MYSQL_TIME>())
@@ -46,7 +46,7 @@ mysql_time_impls!(Time);
 mysql_time_impls!(Date);
 
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;
@@ -78,7 +78,7 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl ToSql<Time, Mysql> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.hour = self.hour() as libc::c_uint;
@@ -101,7 +101,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
 }
 
 impl ToSql<Date, Mysql> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;

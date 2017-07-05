@@ -4,10 +4,10 @@ mod date_and_time;
 use mysql::{Mysql, MysqlType};
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{ToSql, IsNull, FromSql, HasSqlType};
+use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType};
 
 impl ToSql<::types::Bool, Mysql> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<StdError+Send+Sync>> {
         let int_value = if *self {
             1
         } else {

@@ -6,7 +6,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 
 // The OIDs used to identify `json` and `jsonb` are not documented anywhere
 // obvious, but they are discussed on various PostgreSQL mailing lists,
@@ -26,7 +26,7 @@ impl FromSql<types::Json, Pg> for serde_json::Value {
 }
 
 impl ToSql<types::Json, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
@@ -45,7 +45,7 @@ impl FromSql<types::Jsonb, Pg> for serde_json::Value {
 }
 
 impl ToSql<types::Jsonb, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         try!(out.write_all(&[1]));
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)

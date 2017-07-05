@@ -9,7 +9,7 @@ use self::chrono::naive::MAX_DATE;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
-use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql};
+use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
 
 expression_impls! {
     Timestamptz -> NaiveDateTime,
@@ -42,7 +42,7 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let time = match (self.signed_duration_since(pg_epoch())).num_microseconds() {
             Some(time) => time,
             None => {
@@ -61,7 +61,7 @@ impl FromSql<Timestamptz, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamptz, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<Timestamp, Pg>::to_sql(self, out)
     }
 }
@@ -74,7 +74,7 @@ impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
 }
 
 impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
     }
 }
@@ -84,7 +84,7 @@ fn midnight() -> NaiveTime {
 }
 
 impl ToSql<Time, Pg> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let duration = self.signed_duration_since(midnight());
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
@@ -106,7 +106,7 @@ fn pg_epoch_date() -> NaiveDate {
 }
 
 impl ToSql<Date, Pg> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
         ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }

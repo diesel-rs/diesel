@@ -6,7 +6,7 @@ use std::io::Write;
 use self::time::{Timespec, Duration};
 
 use pg::Pg;
-use types::{self, ToSql, FromSql, IsNull};
+use types::{self, ToSql, ToSqlOutput, FromSql, IsNull};
 
 expression_impls! {
     Timestamp -> Timespec,
@@ -19,7 +19,7 @@ queryable_impls! {
 const TIME_SEC_CONV: i64 = 946684800;
 
 impl ToSql<types::Timestamp, Pg> for Timespec {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = *self - pg_epoch;
         let t = try!(duration.num_microseconds().ok_or("Overflow error"));

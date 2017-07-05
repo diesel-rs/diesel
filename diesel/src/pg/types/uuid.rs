@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 
 primitive_impls!(Uuid -> (uuid::Uuid, pg: (2950, 2951)));
 
@@ -16,7 +16,7 @@ impl FromSql<types::Uuid, Pg> for uuid::Uuid {
 }
 
 impl ToSql<types::Uuid, Pg> for uuid::Uuid {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)

@@ -6,7 +6,7 @@ use self::chrono::{NaiveDateTime, NaiveDate, NaiveTime, Datelike};
 
 use sqlite::Sqlite;
 use sqlite::connection::SqliteValue;
-use types::{Date, FromSql, IsNull, Time, Timestamp, ToSql, Text};
+use types::{Date, FromSql, IsNull, Time, Timestamp, ToSql, ToSqlOutput, Text};
 
 const SQLITE_TIME_FMT: &'static str = "%0H:%0M:%0S%.6f";
 
@@ -40,7 +40,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 }
 
 impl ToSql<Date, Sqlite> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let s = dump_sqlite_date(self);
         ToSql::<Text, Sqlite>::to_sql(&s, out)
     }
@@ -55,7 +55,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 }
 
 impl ToSql<Time, Sqlite> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let s = format!("{}", self.format(SQLITE_TIME_FMT));
         ToSql::<Text, Sqlite>::to_sql(&s, out)
     }
@@ -78,7 +78,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> Result<IsNull, Box<Error+Send+Sync>> {
         ToSql::<Date, Sqlite>::to_sql(&self.date(), out)?;
         write!(out, " ")?;
         ToSql::<Time, Sqlite>::to_sql(&self.time(), out)

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io::Write;
 
 use backend::Backend;
-use types::{self, HasSqlType, FromSql, ToSql, IsNull, NotNull};
+use types::{self, HasSqlType, FromSql, ToSql, ToSqlOutput, IsNull, NotNull};
 
 primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)));
 
@@ -37,7 +37,7 @@ impl<DB: Backend<RawValue=[u8]>> FromSql<types::Text, DB> for String {
 }
 
 impl<'a, DB: Backend> ToSql<types::Text, DB> for &'a str {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
@@ -48,7 +48,7 @@ impl<DB> ToSql<types::Text, DB> for String where
     DB: Backend,
     for<'a> &'a str: ToSql<types::Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         (self as &str).to_sql(out)
     }
 }
@@ -63,13 +63,13 @@ impl<DB> ToSql<types::Binary, DB> for Vec<u8> where
     DB: Backend,
     for<'a> &'a [u8]: ToSql<types::Binary, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         (self as &[u8]).to_sql(out)
     }
 }
 
 impl<'a, DB: Backend> ToSql<types::Binary, DB> for &'a [u8] {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_all(self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
@@ -82,7 +82,7 @@ impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T> where
     DB: Backend + HasSqlType<ST>,
     T::Owned: ToSql<ST, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         match *self {
             Cow::Borrowed(t) => t.to_sql(out),
             Cow::Owned(ref t) => t.to_sql(out),

@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, IsNull, FromSql, ToSql};
+use types::{self, IsNull, FromSql, ToSql, ToSqlOutput};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -68,7 +68,7 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,

@@ -22,6 +22,7 @@ impl Backend for Pg {
 
 impl TypeMetadata for Pg {
     type TypeMetadata = PgTypeMetadata;
+    type MetadataLookup = ();
 }
 
 impl SupportsReturningClause for Pg {}

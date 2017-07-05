@@ -20,6 +20,7 @@ pub mod impls;
 mod fold;
 
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 
 #[doc(hidden)]
 pub mod structs {
@@ -43,7 +44,7 @@ pub use self::fold::Foldable;
 use backend::{Backend, TypeMetadata};
 use row::Row;
 use std::error::Error;
-use std::io::Write;
+use std::io::{self, Write};
 
 /// The boolean SQL type. On SQLite this is emulated with an integer.
 ///
@@ -337,18 +338,80 @@ pub enum IsNull {
     No,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
+pub struct ToSqlOutput<'a, T, DB> where
+    DB: TypeMetadata,
+    DB::MetadataLookup: 'a,
+{
+    out: T,
+    marker: ::std::marker::PhantomData<&'a DB::MetadataLookup>,
+}
+
+impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
+    pub fn new(out: T) -> Self {
+        ToSqlOutput {
+            out,
+            marker: ::std::marker::PhantomData,
+        }
+    }
+
+    pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
+        ToSqlOutput {
+            out: new_out,
+            marker: self.marker,
+        }
+    }
+
+    pub fn into_inner(self) -> T {
+        self.out
+    }
+}
+
+impl<'a, T: Write, DB: TypeMetadata> Write for ToSqlOutput<'a, T, DB> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.out.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.out.flush()
+    }
+
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.out.write_all(buf)
+    }
+
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> io::Result<()> {
+        self.out.write_fmt(fmt)
+    }
+}
+
+impl<'a, T, DB: TypeMetadata> Deref for ToSqlOutput<'a, T, DB> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.out
+    }
+}
+
+impl<'a, T, DB: TypeMetadata> DerefMut for ToSqlOutput<'a, T, DB> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.out
+    }
+}
+
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
     DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         (*self).to_sql(out)
     }
 }

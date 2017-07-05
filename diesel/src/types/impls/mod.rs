@@ -50,7 +50,7 @@ macro_rules! expression_impls {
                 DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
                 $Target: $crate::types::ToSql<$crate::types::$Source, DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut $crate::types::ToSqlOutput<W, DB>) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
                     $crate::types::ToSql::<$crate::types::$Source, DB>::to_sql(self, out)
                 }
             }

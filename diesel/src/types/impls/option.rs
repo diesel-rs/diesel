@@ -7,7 +7,7 @@ use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
+use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, ToSqlOutput, IsNull, NotNull};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB where
     DB: Backend + HasSqlType<T>, T: NotNull,
@@ -61,7 +61,7 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {

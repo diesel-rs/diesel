@@ -6,7 +6,7 @@ use std::error::Error;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use pg::Pg;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 use self::ipnetwork::{IpNetwork,Ipv4Network,Ipv6Network};
 
 #[cfg(windows)]
@@ -51,7 +51,7 @@ impl FromSql<types::MacAddr, Pg> for [u8; 6] {
 }
 
 impl ToSql<types::MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
@@ -93,7 +93,7 @@ macro_rules! impl_Sql {
         }
 
         impl ToSql<$ty, Pg> for IpNetwork {
-            fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
+            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
                 match *self {

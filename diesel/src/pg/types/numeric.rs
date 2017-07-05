@@ -16,7 +16,7 @@ mod bigdecimal {
     use self::bigdecimal::BigDecimal;
 
     use pg::data_types::PgNumeric;
-    use types::{self, FromSql, ToSql, IsNull};
+    use types::{self, FromSql, ToSql, ToSqlOutput, IsNull};
 
     type Digits = Vec<i16>;
 
@@ -69,7 +69,7 @@ mod bigdecimal {
     }
 
     impl ToSql<types::Numeric, Pg> for BigDecimal {
-        fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
+        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
             // The encoding of the BigDecimal type for PostgreSQL is a bit complicated:
             // PostgreSQL expects the data in base-10000 (so two bytes per 10k),
             // and the decimal point should lie on a boundary (as per definition of "base-10000").

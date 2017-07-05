@@ -39,6 +39,7 @@ impl Backend for Mysql {
 
 impl TypeMetadata for Mysql {
     type TypeMetadata = MysqlType;
+    type MetadataLookup = ();
 }
 
 impl SupportsDefaultKeyword for Mysql {}
