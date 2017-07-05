@@ -639,7 +639,7 @@ fn third_party_crates_can_add_new_types() {
 
     impl HasSqlType<MyInt> for Pg {
         fn metadata(_: &()) -> Self::TypeMetadata {
-            <Pg as HasSqlType<Integer>>::metadata()
+            <Pg as HasSqlType<Integer>>::metadata(&())
         }
     }
 

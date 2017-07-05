@@ -369,6 +369,16 @@ impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
     }
 }
 
+#[cfg(test)]
+impl<DB: TypeMetadata> ToSqlOutput<'static, Vec<u8>, DB> {
+    /// Returns a `ToSqlOutput` suitable for testing `ToSql` implementations.
+    /// Unsafe to use for testing types which perform dynamic metadata lookup.
+    pub fn test() -> Self {
+        use std::mem;
+        Self::new(Vec::new(), unsafe { mem::uninitialized() })
+    }
+}
+
 impl<'a, T: Write, DB: TypeMetadata> Write for ToSqlOutput<'a, T, DB> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.out.write(buf)
@@ -398,6 +408,15 @@ impl<'a, T, DB: TypeMetadata> Deref for ToSqlOutput<'a, T, DB> {
 impl<'a, T, DB: TypeMetadata> DerefMut for ToSqlOutput<'a, T, DB> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.out
+    }
+}
+
+impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB> where
+    DB: TypeMetadata,
+    T: PartialEq<U>,
+{
+    fn eq(&self, rhs: &U) -> bool {
+        self.out == *rhs
     }
 }
 

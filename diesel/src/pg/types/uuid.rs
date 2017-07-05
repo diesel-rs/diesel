@@ -25,7 +25,7 @@ impl ToSql<types::Uuid, Pg> for uuid::Uuid {
 
 #[test]
 fn uuid_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     let test_uuid = uuid::Uuid::from_fields(4_294_967_295, 65_535, 65_535, b"abcdef12").unwrap();
     ToSql::<types::Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
     assert_eq!(bytes, test_uuid.as_bytes());

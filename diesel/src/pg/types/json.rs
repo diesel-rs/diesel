@@ -55,7 +55,7 @@ impl ToSql<types::Jsonb, Pg> for serde_json::Value {
 
 #[test]
 fn json_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     let test_json = serde_json::Value::Bool(true);
     ToSql::<types::Json, Pg>::to_sql(&test_json, &mut bytes).unwrap();
     assert_eq!(bytes, b"true");
@@ -85,7 +85,7 @@ fn no_json_from_sql() {
 
 #[test]
 fn jsonb_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     let test_json = serde_json::Value::Bool(true);
     ToSql::<types::Jsonb, Pg>::to_sql(&test_json, &mut bytes).unwrap();
     assert_eq!(bytes, b"\x01true");

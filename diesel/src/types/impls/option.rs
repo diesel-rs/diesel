@@ -116,7 +116,7 @@ use pg::Pg;
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
-    let mut bytes = Vec::<u8>::new();
+    let mut bytes = ToSqlOutput::test();
 
     let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
     assert_eq!(IsNull::Yes, is_null);
@@ -129,5 +129,5 @@ fn option_to_sql() {
     let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
     let expectd_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
-    assert_eq!(expectd_bytes, bytes);
+    assert_eq!(bytes, expectd_bytes);
 }

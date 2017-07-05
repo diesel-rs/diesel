@@ -135,7 +135,7 @@ impl_Sql!(types::Cidr, 1);
 
 #[test]
 fn macaddr_roundtrip() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     let input_address = [0x52, 0x54,0x00, 0xfb, 0xc6, 0x16];
     ToSql::<types::MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
     let output_address:[u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
@@ -146,7 +146,7 @@ fn macaddr_roundtrip() {
 fn v4address_to_sql() {
     macro_rules! test_to_sql {
         ($ty: ty, $net_type: expr) => {
-            let mut bytes = vec![];
+            let mut bytes = ToSqlOutput::test();
             let test_address = IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
             ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             assert_eq!(bytes, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
@@ -162,7 +162,7 @@ fn some_v4address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty: ty) => {
             let input_address = IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-            let mut bytes = vec![];
+            let mut bytes = ToSqlOutput::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
             assert_eq!(input_address, output_address);
@@ -177,7 +177,7 @@ fn some_v4address_from_sql() {
 fn v6address_to_sql() {
     macro_rules! test_to_sql {
         ($ty: ty, $net_type: expr) => {
-            let mut bytes = vec![];
+            let mut bytes = ToSqlOutput::test();
             let test_address = IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             assert_eq!(bytes, vec![PGSQL_AF_INET6, 64, $net_type, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
@@ -193,7 +193,7 @@ fn some_v6address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty: ty) => {
             let input_address = IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
-            let mut bytes = vec![];
+            let mut bytes = ToSqlOutput::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
             assert_eq!(input_address, output_address);

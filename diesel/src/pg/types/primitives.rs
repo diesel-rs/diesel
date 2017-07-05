@@ -31,7 +31,7 @@ impl ToSql<types::Bool, Pg> for bool {
 
 #[test]
 fn bool_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     ToSql::<types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
     ToSql::<types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(bytes, vec![1u8, 0u8]);
