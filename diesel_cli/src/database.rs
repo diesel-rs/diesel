@@ -173,6 +173,7 @@ fn create_default_migration_if_needed(database_url: &str, migrations_dir: &Path)
     }
 
     #[allow(unreachable_patterns)]
+    #[cfg_attr(feature="clippy", allow(single_match))]
     match Backend::for_url(database_url) {
         #[cfg(feature="postgres")]
         Backend::Pg => {
