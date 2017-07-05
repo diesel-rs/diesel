@@ -54,6 +54,10 @@ impl<T, U> InternalSaveChangesDsl<MysqlConnection, U> for T where
 }
 
 pub trait SaveChangesDsl<Conn> {
+    /// Sugar for types which implement both `AsChangeset` and `Identifiable`
+    ///
+    /// `foo.save_changes(&conn)` is equivalent to
+    /// `update(foo::table().find(foo.id())).set(&foo).get_result(&conn)`
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T> where
         Self: InternalSaveChangesDsl<Conn, T>,
     {
