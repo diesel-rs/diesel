@@ -1,4 +1,5 @@
 #[macro_export]
+#[doc(hidden)]
 macro_rules! impl_query_id {
     ($name: ident) => {
         impl $crate::query_builder::QueryId for $name {
