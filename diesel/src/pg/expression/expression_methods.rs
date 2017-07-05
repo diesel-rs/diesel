@@ -23,14 +23,50 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let data = users.select(id).filter(name.is_not_distinct_from("Sean"));
-    /// assert_eq!(Ok(1), data.first(&connection));
+    /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
+    /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
+    /// assert_eq!(Ok(2), distinct.first(&connection));
+    /// assert_eq!(Ok(1), not_distinct.first(&connection));
     /// # }
+    /// ```
     fn is_not_distinct_from<T>(self, other: T)
         -> IsNotDistinctFrom<Self, T::Expression> where
             T: AsExpression<Self::SqlType>,
     {
         IsNotDistinctFrom::new(self, other.as_expression())
+    }
+
+    /// Creates a PostgreSQL `IS DISTINCT FROM` expression. This behaves
+    /// identically to the `!=` operator, except that `NULL` is treated as a
+    /// normal value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
+    /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
+    /// assert_eq!(Ok(2), distinct.first(&connection));
+    /// assert_eq!(Ok(1), not_distinct.first(&connection));
+    /// # }
+    /// ```
+    fn is_distinct_from<T>(self, other: T)
+        -> IsDistinctFrom<Self, T::Expression> where
+            T: AsExpression<Self::SqlType>,
+    {
+        IsDistinctFrom::new(self, other.as_expression())
     }
 }
 

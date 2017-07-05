@@ -1,5 +1,6 @@
 use pg::Pg;
 
+diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", backend: Pg);
 diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", backend: Pg);
 diesel_infix_operator!(OverlapsWith, " && ", backend: Pg);
 diesel_infix_operator!(Contains, " @> ", backend: Pg);

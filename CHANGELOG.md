@@ -6,6 +6,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for the PG `IS DISTINCT FROM` operator
+
 ### Changed
 
 * Diesel will now automatically invoke `numeric_expr!` for your columns in the
