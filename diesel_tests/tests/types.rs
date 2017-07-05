@@ -638,8 +638,8 @@ fn third_party_crates_can_add_new_types() {
     struct MyInt;
 
     impl HasSqlType<MyInt> for Pg {
-        fn metadata(_: &()) -> Self::TypeMetadata {
-            <Pg as HasSqlType<Integer>>::metadata(&())
+        fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
+            <Pg as HasSqlType<Integer>>::metadata(lookup)
         }
     }
 

@@ -4,14 +4,14 @@ use std::fmt;
 use std::io::Write;
 
 use backend::Debug;
-use pg::{Pg, PgTypeMetadata};
+use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
 use query_source::Queryable;
 use types::*;
 
 impl<T> HasSqlType<Array<T>> for Pg where
     Pg: HasSqlType<T>,
 {
-    fn metadata(lookup: &()) -> PgTypeMetadata {
+    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata {
             oid: <Pg as HasSqlType<T>>::metadata(lookup).array_oid,
             array_oid: 0,

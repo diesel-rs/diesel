@@ -115,7 +115,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (pg: ($oid:expr, $array_oid:expr) $($rest:tt)*)) => {
         #[cfg(feature = "postgres")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::pg::Pg {
-            fn metadata(_: &()) -> $crate::pg::PgTypeMetadata {
+            fn metadata(_: &$crate::pg::PgMetadataLookup) -> $crate::pg::PgTypeMetadata {
                 $crate::pg::PgTypeMetadata {
                     oid: $oid,
                     array_oid: $array_oid,

@@ -11,6 +11,8 @@ mod boxed_queries;
 mod connection;
 #[cfg(feature = "postgres")]
 mod custom_schemas;
+#[cfg(feature = "postgres")]
+mod custom_types;
 mod debug;
 mod delete;
 mod deserialization;

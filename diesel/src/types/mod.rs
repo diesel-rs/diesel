@@ -338,7 +338,7 @@ pub enum IsNull {
     No,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[doc(hidden)]
 pub struct ToSqlOutput<'a, T, DB> where
     DB: TypeMetadata,
@@ -417,6 +417,15 @@ impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB> where
 {
     fn eq(&self, rhs: &U) -> bool {
         self.out == *rhs
+    }
+}
+
+impl<'a, T, DB> fmt::Debug for ToSqlOutput<'a, T, DB> where
+    T: fmt::Debug,
+    DB: TypeMetadata,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.out.fmt(f)
     }
 }
 
