@@ -16,6 +16,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   common cases. You will likely need to delete any manual invocations of this
   macro.
 
+* `Insertable` no longer treats all fields as nullable for type checking. What
+  this means for you is that if you had an impl like `impl
+  AsExpression<Nullable<SqlType>, DB> for CustomType` in your code base, you can
+  remove the `Nullable` portion (Unless you are using it with fields that are
+  actually nullable)
+
 ## [0.14.0] - 2017-07-04
 
 ### Added

@@ -117,8 +117,9 @@ macro_rules! impl_Insertable {
         ),
         fields = [$({
             column_name: $column_name:ident,
-            field_ty: $field_ty:ty,
+            field_ty: $ignore:ty,
             field_kind: $field_kind:ident,
+            inner_field_ty: $field_ty:ty,
             $($rest:tt)*
         })+],
     ) => {
@@ -138,8 +139,9 @@ macro_rules! impl_Insertable {
         fields = [$({
             field_name: $field_name:ident,
             column_name: $column_name:ident,
-            field_ty: $field_ty:ty,
+            field_ty: $ignore:ty,
             field_kind: $field_kind:ident,
+            inner_field_ty: $field_ty:ty,
             $($rest:tt)*
         })+],
     ) => {
@@ -163,7 +165,7 @@ macro_rules! impl_Insertable {
                 ($(
                     $crate::insertable::ColumnInsertValue<
                         $table_name::$column_name,
-                        $crate::expression::helper_types::AsNullableExpr<
+                        $crate::expression::helper_types::AsExpr<
                             &'insert $field_ty,
                             $table_name::$column_name,
                         >,
@@ -173,7 +175,7 @@ macro_rules! impl_Insertable {
             type Values = ($(
                 $crate::insertable::ColumnInsertValue<
                     $table_name::$column_name,
-                    $crate::expression::helper_types::AsNullableExpr<
+                    $crate::expression::helper_types::AsExpr<
                         &'insert $field_ty,
                         $table_name::$column_name,
                     >,
@@ -184,7 +186,6 @@ macro_rules! impl_Insertable {
             fn values(self) -> Self::Values {
                 use $crate::expression::{AsExpression, Expression};
                 use $crate::insertable::ColumnInsertValue;
-                use $crate::types::IntoNullable;
                 let $self_to_columns = *self;
                 ($(
                     Insertable_column_expr!($table_name::$column_name, $column_name, $field_kind)
@@ -218,16 +219,16 @@ macro_rules! impl_Insertable {
 #[macro_export]
 macro_rules! Insertable_column_expr {
     ($column:path, $field_access:expr, option) => {
-        match $field_access {
-            value @ &Some(_) => Insertable_column_expr!($column, value, regular),
-            &None => ColumnInsertValue::Default($column),
+        match *$field_access {
+            Some(ref value) => Insertable_column_expr!($column, value, regular),
+            None => ColumnInsertValue::Default($column),
         }
     };
 
     ($column:path, $field_access:expr, regular) => {
         ColumnInsertValue::Expression(
             $column,
-            AsExpression::<<<$column as Expression>::SqlType as IntoNullable>::Nullable>
+            AsExpression::<<$column as Expression>::SqlType>
                 ::as_expression($field_access),
         )
     };

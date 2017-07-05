@@ -1,11 +1,9 @@
 use std::iter;
 
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::Expression;
 use result::QueryResult;
 use query_builder::AstPass;
-use query_source::{Table, Column};
-use types::IntoNullable;
+use query_source::Table;
 
 /// Represents that a structure can be used to to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
@@ -30,11 +28,7 @@ pub trait InsertValues<DB: Backend> {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum ColumnInsertValue<Col, Expr> where
-    Col: Column,
-    Col::SqlType: IntoNullable,
-    Expr: Expression<SqlType=<Col::SqlType as IntoNullable>::Nullable>,
-{
+pub enum ColumnInsertValue<Col, Expr> {
     Expression(Col, Expr),
     Default(Col),
 }

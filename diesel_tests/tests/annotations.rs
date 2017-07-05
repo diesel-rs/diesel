@@ -251,3 +251,25 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
     assert!(jim.is_some());
     assert_eq!(Some(&User::new(123, "Bob")), bob);
 }
+
+#[test]
+#[cfg(feature="postgres")]
+fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
+    use diesel::types::{Text, Serial};
+    sql_function!(nextval, nextval_t, (a: Text) -> Serial);
+    #[derive(Insertable)]
+    #[table_name="users"]
+    struct NewUser {
+        id: nextval<&'static str>,
+        name: &'static str,
+    }
+
+    let conn = connection();
+    let data = NewUser { id: nextval("users_id_seq"), name: "Jim" };
+    assert_eq!(Ok(1), insert(&data).into(users::table).execute(&conn));
+
+    let users = users::table.load::<User>(&conn).unwrap();
+    let jim = users.iter().find(|u| u.name == "Jim");
+
+    assert!(jim.is_some());
+}
