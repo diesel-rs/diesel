@@ -102,6 +102,24 @@ impl<ST, F, S, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
     }
 }
 
+use expression_methods::EqAll;
+use helper_types::Filter;
+use query_source::Table;
+
+impl<F, S, D, W, O, L, Of, G, PK> FindDsl<PK>
+    for SelectStatement<F, S, D, W, O, L, Of, G> where
+        F: Table,
+        F::PrimaryKey: EqAll<PK>,
+        Self: FilterDsl<<F::PrimaryKey as EqAll<PK>>::Output>
+{
+    type Output = Filter<Self, <F::PrimaryKey as EqAll<PK>>::Output>;
+
+    fn find(self, id: PK) -> Self::Output {
+        let primary_key = self.from.primary_key();
+        self.filter(primary_key.eq_all(id))
+    }
+}
+
 impl<ST, F, S, D, W, O, L, Of, G, Expr> OrderDsl<Expr>
     for SelectStatement<F, S, D, W, O, L, Of, G> where
         Expr: AppearsOnTable<F>,

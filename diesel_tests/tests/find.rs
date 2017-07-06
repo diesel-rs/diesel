@@ -53,3 +53,15 @@ fn find_with_composite_pk() {
     assert_eq!(Ok(third_following), followings.find((2, 1)).first(&connection));
     assert_eq!(Ok(None::<Following>), followings.find((2, 2)).first(&connection).optional());
 }
+
+#[test]
+fn select_then_find() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = users.select(name).find(1).first(&connection);
+    let tess = users.select(name).find(2).first(&connection);
+
+    assert_eq!(Ok(String::from("Sean")), sean);
+    assert_eq!(Ok(String::from("Tess")), tess);
+}
