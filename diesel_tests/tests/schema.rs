@@ -211,10 +211,14 @@ sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let connection = connection();
+    insert_sean_and_tess_into_users_table(&connection);
+    connection
+}
+
+pub fn insert_sean_and_tess_into_users_table(connection: &TestConnection) {
     connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     ensure_primary_key_seq_greater_than(2, &connection);
-    connection
 }
 
 pub fn connection_with_nullable_table_data() -> TestConnection {
