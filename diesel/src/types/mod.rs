@@ -275,10 +275,10 @@ pub type VarChar = Text;
 pub use pg::types::sql_types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
-    fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
+    fn metadata() -> Self::TypeMetadata;
 
-    fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
-        out.push(Self::metadata(lookup))
+    fn row_metadata(out: &mut Vec<Self::TypeMetadata>) {
+        out.push(Self::metadata())
     }
 }
 

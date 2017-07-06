@@ -24,19 +24,19 @@ impl FromSql<::types::Bool, Mysql> for bool {
 }
 
 impl HasSqlType<::types::Date> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
+    fn metadata() -> MysqlType {
         MysqlType::Date
     }
 }
 
 impl HasSqlType<::types::Time> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
+    fn metadata() -> MysqlType {
         MysqlType::Time
     }
 }
 
 impl HasSqlType<::types::Timestamp> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
+    fn metadata() -> MysqlType {
         MysqlType::Timestamp
     }
 }

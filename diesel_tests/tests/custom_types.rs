@@ -22,7 +22,7 @@ pub enum MyEnum {
 mod impls_for_insert_and_query {
     use diesel::expression::AsExpression;
     use diesel::expression::bound::Bound;
-    use diesel::pg::Pg;
+    use diesel::pg::{Pg, PgTypeMetadata};
     use diesel::row::Row;
     use diesel::types::*;
     use std::error::Error;
@@ -31,8 +31,8 @@ mod impls_for_insert_and_query {
     use super::{MyType, MyEnum};
 
     impl HasSqlType<MyType> for Pg {
-        fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
-            lookup.lookup_type("my_type")
+        fn metadata() -> PgTypeMetadata {
+            PgTypeMetadata::Lookup("my_type")
         }
     }
 

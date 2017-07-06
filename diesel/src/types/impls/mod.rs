@@ -104,7 +104,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (sqlite: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "sqlite")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::sqlite::Sqlite {
-            fn metadata(_: &()) -> $crate::sqlite::SqliteType {
+            fn metadata() -> $crate::sqlite::SqliteType {
                 $crate::sqlite::SqliteType::$tpe
             }
         }
@@ -115,8 +115,8 @@ macro_rules! primitive_impls {
     ($Source:ident -> (pg: ($oid:expr, $array_oid:expr) $($rest:tt)*)) => {
         #[cfg(feature = "postgres")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::pg::Pg {
-            fn metadata(_: &$crate::pg::PgMetadataLookup) -> $crate::pg::PgTypeMetadata {
-                $crate::pg::PgTypeMetadata {
+            fn metadata() -> $crate::pg::PgTypeMetadata {
+                $crate::pg::PgTypeMetadata::Stable {
                     oid: $oid,
                     array_oid: $array_oid,
                 }
@@ -129,7 +129,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (mysql: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "mysql")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::mysql::Mysql {
-            fn metadata(_: &()) -> $crate::mysql::MysqlType {
+            fn metadata() -> $crate::mysql::MysqlType {
                 $crate::mysql::MysqlType::$tpe
             }
         }
@@ -154,7 +154,7 @@ macro_rules! primitive_impls {
 
     ($Source:ident) => {
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::backend::Debug {
-            fn metadata(_: &()) {}
+            fn metadata() {}
         }
 
         impl $crate::query_builder::QueryId for $crate::types::$Source {

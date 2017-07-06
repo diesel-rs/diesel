@@ -4,7 +4,6 @@ use std::ffi::CString;
 use std::os::raw as libc;
 use std::ptr;
 
-use pg::PgTypeMetadata;
 use super::result::PgResult;
 use result::QueryResult;
 
@@ -51,18 +50,17 @@ impl Statement {
         conn: &RawConnection,
         sql: &str,
         name: Option<&str>,
-        param_types: &[PgTypeMetadata],
+        param_types: &[u32],
     ) -> QueryResult<Self> {
         let name = try!(CString::new(name.unwrap_or("")));
         let sql = try!(CString::new(sql));
-        let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
         let internal_result = unsafe {
             conn.prepare(
                 name.as_ptr(),
                 sql.as_ptr(),
                 param_types.len() as libc::c_int,
-                param_types_to_ptr(Some(&param_types_vec)),
+                param_types_to_ptr(Some(param_types)),
             )
         };
         try!(PgResult::new(internal_result?));
@@ -74,7 +72,7 @@ impl Statement {
     }
 }
 
-fn param_types_to_ptr(param_types: Option<&Vec<u32>>) -> *const pq_sys::Oid {
+fn param_types_to_ptr(param_types: Option<&[u32]>) -> *const pq_sys::Oid {
     param_types
         .map(|types| types.as_ptr())
         .unwrap_or(ptr::null())

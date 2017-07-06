@@ -13,13 +13,25 @@ impl PgMetadataLookup {
         unsafe { mem::transmute(conn) }
     }
 
-    pub fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
+    pub fn lookup_oid(&self, metadata: &PgTypeMetadata) -> u32 {
         use self::pg_type::dsl::*;
+        use self::PgTypeMetadata::*;
 
-        pg_type.select((oid, typarray))
-            .filter(typname.eq(type_name))
-            .first(&self.conn)
-            .unwrap_or_default()
+        match *metadata {
+            Stable { oid: x, .. } => x,
+            Lookup(type_name) => {
+                pg_type.select(oid)
+                    .filter(typname.eq(type_name))
+                    .first(&self.conn)
+                    .unwrap_or_default()
+            }
+            ArrayLookup(type_name) => {
+                pg_type.select(typarray)
+                    .filter(typname.eq(type_name))
+                    .first(&self.conn)
+                    .unwrap_or_default()
+            }
+        }
     }
 }
 

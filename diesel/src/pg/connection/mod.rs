@@ -113,6 +113,9 @@ impl PgConnection {
         try!(source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self)));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
+        let oids = metadata.iter()
+            .map(|x| PgMetadataLookup::new(self).lookup_oid(x))
+            .collect::<Vec<_>>();
 
         let cache_len = self.statement_cache.len();
         let query = self.statement_cache.cached_statement(source, &metadata, |sql| {
@@ -125,7 +128,7 @@ impl PgConnection {
                 &self.raw_connection,
                 sql,
                 query_name.as_ref().map(|s| &**s),
-                &metadata,
+                &oids,
             )
         });
 

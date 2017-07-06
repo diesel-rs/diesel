@@ -4,17 +4,22 @@ use std::fmt;
 use std::io::Write;
 
 use backend::Debug;
-use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
+use pg::{Pg, PgTypeMetadata};
 use query_source::Queryable;
 use types::*;
 
 impl<T> HasSqlType<Array<T>> for Pg where
     Pg: HasSqlType<T>,
 {
-    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: <Pg as HasSqlType<T>>::metadata(lookup).array_oid,
-            array_oid: 0,
+    fn metadata() -> PgTypeMetadata {
+        use self::PgTypeMetadata::*;
+
+        match <Pg as HasSqlType<T>>::metadata() {
+            Stable { array_oid, .. } => Stable {
+                oid: array_oid,
+                array_oid: 0,
+            },
+            Lookup(type_name) | ArrayLookup(type_name) => ArrayLookup(type_name),
         }
     }
 }
@@ -22,7 +27,7 @@ impl<T> HasSqlType<Array<T>> for Pg where
 impl<T> HasSqlType<Array<T>> for Debug where
     Debug: HasSqlType<T>,
 {
-    fn metadata(_: &()) {}
+    fn metadata() {}
 }
 
 impl_query_id!(Array<T>);
@@ -127,7 +132,7 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
         try!(out.write_i32::<NetworkEndian>(flags));
-        let element_oid = Pg::metadata(out.metadata_lookup()).oid;
+        let element_oid = out.metadata_lookup().lookup_oid(&Pg::metadata());
         try!(out.write_u32::<NetworkEndian>(element_oid));
         try!(out.write_i32::<NetworkEndian>(self.len() as i32));
         let lower_bound = 1;

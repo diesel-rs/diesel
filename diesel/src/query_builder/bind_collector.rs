@@ -42,7 +42,7 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
             IsNull::No => self.binds.push(Some(to_sql_output.into_inner())),
             IsNull::Yes => self.binds.push(None),
         }
-        self.metadata.push(<DB as HasSqlType<T>>::metadata(metadata_lookup));
+        self.metadata.push(<DB as HasSqlType<T>>::metadata());
         Ok(())
     }
 }
