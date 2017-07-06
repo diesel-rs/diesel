@@ -31,6 +31,9 @@ pub mod structs {
         //! backend.
         #[cfg(feature = "postgres")]
         pub use pg::data_types::*;
+
+        #[cfg(feature = "mysql")]
+        pub use mysql::data_types::*;
     }
 }
 
@@ -275,6 +278,9 @@ pub type VarChar = Text;
 
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
+
+#[cfg(feature = "mysql")]
+pub use mysql::types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata() -> Self::TypeMetadata;
