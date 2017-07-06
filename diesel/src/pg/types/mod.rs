@@ -347,6 +347,11 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default)] pub struct MacAddr;
 
     #[cfg(feature = "network-address")]
+    #[doc(hidden)]
+    /// Alias for `MacAddr` to be able to use it with `infer_schema`.
+    pub type Macaddr = MacAddr;
+
+    #[cfg(feature = "network-address")]
     /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
