@@ -47,6 +47,7 @@ impl<'a, Parent, Child> BelongingToDsl<&'a Parent> for Child where
     Child: HasTable + BelongsTo<Parent>,
     Id<&'a Parent>: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     <Child as HasTable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
+    Child::ForeignKeyColumn: ExpressionMethods,
 {
     type Output = FindBy<
         Child::Table,
@@ -64,6 +65,7 @@ impl<'a, Parent, Child> BelongingToDsl<&'a [Parent]> for Child where
     Child: HasTable + BelongsTo<Parent>,
     Vec<Id<&'a Parent>>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>,
+    Child::ForeignKeyColumn: ExpressionMethods,
 {
     type Output = Filter<
         Child::Table,

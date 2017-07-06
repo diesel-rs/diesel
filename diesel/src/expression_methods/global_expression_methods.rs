@@ -1,6 +1,7 @@
 use expression::{Expression, AsExpression, nullable};
 use expression::array_comparison::{In, NotIn, AsInExpression};
 use expression::operators::*;
+use types::SingleValue;
 
 pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `=` expression.
@@ -297,7 +298,16 @@ pub trait ExpressionMethods: Expression + Sized {
     fn asc(self) -> Asc<Self> {
         Asc::new(self)
     }
+}
 
+impl<T> ExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
+
+pub trait NullableExpressionMethods: Expression + Sized {
     /// Converts this potentially non-null expression into one which is treated
     /// as nullable. This method has no impact on the generated SQL, and is only
     /// used to allow certain comparisons that would otherwise fail to compile.
@@ -353,4 +363,4 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 }
 
-impl<T: Expression> ExpressionMethods for T {}
+impl<T: Expression> NullableExpressionMethods for T {}

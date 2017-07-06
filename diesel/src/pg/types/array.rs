@@ -30,6 +30,9 @@ impl_query_id!(Array<T>);
 impl<T> NotNull for Array<T> {
 }
 
+impl<T> SingleValue for Array<T> {
+}
+
 impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
     T: FromSql<ST, Pg>,
     Pg: HasSqlType<ST>,

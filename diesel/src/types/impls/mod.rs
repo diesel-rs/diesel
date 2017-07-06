@@ -167,6 +167,9 @@ macro_rules! primitive_impls {
 
         impl $crate::types::NotNull for $crate::types::$Source {
         }
+
+        impl $crate::types::SingleValue for $crate::types::$Source {
+        }
     }
 }
 

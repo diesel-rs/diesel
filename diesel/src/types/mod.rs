@@ -153,6 +153,9 @@ use std::io::Write;
 #[cfg(not(feature="postgres"))]
 impl NotNull for Numeric {}
 
+#[cfg(not(feature="postgres"))]
+impl SingleValue for Numeric {}
+
 /// The text SQL type.
 ///
 /// On all backends strings must be valid UTF-8.
@@ -294,6 +297,12 @@ impl<T: NotNull> IntoNullable for T {
 
 impl<T: NotNull> IntoNullable for Nullable<T> {
     type Nullable = Nullable<T>;
+}
+
+pub trait SingleValue {
+}
+
+impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {
 }
 
 /// How to deserialize a single field of a given type. The input will always be

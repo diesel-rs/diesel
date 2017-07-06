@@ -80,7 +80,7 @@ macro_rules! __diesel_column {
             type Output = $crate::expression::helper_types::Eq<Self, T>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
-                $crate::ExpressionMethods::eq(self, rhs)
+                $crate::expression::operators::Eq::new(self, rhs.as_expression())
             }
         }
 
@@ -809,7 +809,7 @@ macro_rules! joinable_inner {
             >;
 
             fn join_on_clause() -> Self::JoinOnClause {
-                use $crate::ExpressionMethods;
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
 
                 $foreign_key.nullable().eq($primary_key_expr.nullable())
             }

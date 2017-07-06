@@ -637,6 +637,8 @@ fn third_party_crates_can_add_new_types() {
 
     struct MyInt;
 
+    impl SingleValue for MyInt {}
+
     impl HasSqlType<MyInt> for Pg {
         fn metadata() -> Self::TypeMetadata {
             <Pg as HasSqlType<Integer>>::metadata()
@@ -672,7 +674,7 @@ fn third_party_crates_can_add_new_types() {
 
 fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U where
     TestBackend: HasSqlType<T>,
-    T: QueryId,
+    T: QueryId + SingleValue,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();
@@ -688,7 +690,7 @@ fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool where
     U: AsExpression<T> + Debug + Clone,
     U::Expression: SelectableExpression<(), SqlType=T>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
-    T: QueryId,
+    T: QueryId + SingleValue,
 {
     use diesel::expression::dsl::sql;
     let connection = connection();
