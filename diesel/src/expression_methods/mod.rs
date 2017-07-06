@@ -16,7 +16,7 @@ pub use self::bool_expression_methods::BoolExpressionMethods;
 #[doc(inline)]
 pub use self::escape_expression_methods::EscapeExpressionMethods;
 #[doc(inline)]
-pub use self::global_expression_methods::ExpressionMethods;
+pub use self::global_expression_methods::{ExpressionMethods, NullableExpressionMethods};
 #[doc(inline)]
 pub use self::text_expression_methods::TextExpressionMethods;
 #[doc(hidden)]
