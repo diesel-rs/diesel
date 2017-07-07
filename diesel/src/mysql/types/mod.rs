@@ -1,26 +1,15 @@
-use byteorder::WriteBytesExt;
 #[cfg(feature = "chrono")]
 mod date_and_time;
 
+use byteorder::WriteBytesExt;
 use mysql::{Mysql, MysqlType};
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{self, ToSql, IsNull, FromSql, HasSqlType};
+use types::{ToSql, IsNull, FromSql, HasSqlType};
 
-/// The tinyint SQL type. This is only available on MySQL.
-///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
-///
-/// - [`i8`][i8]
-///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
-///
-/// - [`i8`][i8]
-///
-/// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Tinyint;
+primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
 
-impl ToSql<Tinyint, Mysql> for i8 {
+impl ToSql<::types::Tinyint, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
         out.write_i8(*self)
             .map(|_| IsNull::No)
@@ -28,14 +17,12 @@ impl ToSql<Tinyint, Mysql> for i8 {
     }
 }
 
-impl FromSql<types::Tinyint, Mysql> for i8 {
+impl FromSql<::types::Tinyint, Mysql> for i8 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError+Send+Sync>> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
     }
 }
-
-primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
 
 impl ToSql<::types::Bool, Mysql> for bool {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
