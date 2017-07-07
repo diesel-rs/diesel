@@ -7,7 +7,17 @@ use std::error::Error as StdError;
 use std::io::Write;
 use types::{self, ToSql, IsNull, FromSql, HasSqlType};
 
-
+/// The tinyint SQL type. This is only available on MySQL.
+///
+/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+///
+/// - [`i8`][i8]
+///
+/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+///
+/// - [`i8`][i8]
+///
+/// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Tinyint;
 
 impl ToSql<Tinyint, Mysql> for i8 {
