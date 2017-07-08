@@ -7,19 +7,17 @@ pub trait Foldable {
 
 impl<T> Foldable for types::Nullable<T> where
     T: Foldable + NotNull,
-    T::Sum: NotNull,
-    T::Avg: NotNull,
 {
-    type Sum = types::Nullable<T::Sum>;
-    type Avg = types::Nullable<T::Avg>;
+    type Sum = T::Sum;
+    type Avg = T::Avg;
 }
 
 macro_rules! foldable_impls {
     ($($Source:ty => ($SumType:ty, $AvgType:ty)),+,) => {
         $(
             impl Foldable for $Source {
-                type Sum = $SumType;
-                type Avg = $AvgType;
+                type Sum = types::Nullable<$SumType>;
+                type Avg = types::Nullable<$AvgType>;
             }
         )+
     }

@@ -221,6 +221,9 @@ pub type VarChar = Text;
 /// [interval dsls]: /diesel/pg/expression/extensions/index.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Interval;
 
+#[cfg(not(feature = "postgres"))]
+impl NotNull for Interval {} // FIXME: Interval should not be in this file
+
 /// The time SQL type.
 ///
 /// This type is currently only implemented for PostgreSQL and SQLite.
