@@ -92,11 +92,6 @@ impl Connection for SqliteConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
-
-    #[doc(hidden)]
-    fn setup_helper_functions(&self) {
-        // this will be implemented at least when timestamps are supported in SQLite
-    }
 }
 
 impl SqliteConnection {

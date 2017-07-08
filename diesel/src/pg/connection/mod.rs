@@ -95,13 +95,6 @@ impl Connection for PgConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
-
-    #[doc(hidden)]
-    fn setup_helper_functions(&self) {
-        self.batch_execute(
-            include_str!("setup/timestamp_helpers.sql")
-        ).expect("Error creating timestamp helper functions for Pg");
-    }
 }
 
 impl PgConnection {

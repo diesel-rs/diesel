@@ -97,11 +97,6 @@ impl Connection for MysqlConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
-
-    #[doc(hidden)]
-    fn setup_helper_functions(&self) {
-        // FIXME: We can implement this pretty easily
-    }
 }
 
 impl MysqlConnection {

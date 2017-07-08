@@ -18,6 +18,10 @@ use std::error::Error;
 use std::env;
 use std::io::stdout;
 use std::path::Path;
+#[cfg(feature="postgres")]
+use std::fs::{self, File};
+#[cfg(feature="postgres")]
+use std::io::Write;
 
 enum Backend {
     #[cfg(feature="postgres")]
@@ -116,8 +120,10 @@ pub fn reset_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResul
 pub fn setup_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
     let database_url = database_url(args);
 
-    try!(create_database_if_needed(&database_url));
-    create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir)
+    create_database_if_needed(&database_url)?;
+    create_default_migration_if_needed(&database_url, migrations_dir)?;
+    create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir)?;
+    Ok(())
 }
 
 pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
@@ -153,6 +159,31 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
                 query_helper::create_database(&database).execute(&conn)?;
             }
         },
+    }
+
+    Ok(())
+}
+
+fn create_default_migration_if_needed(database_url: &str, migrations_dir: &Path)
+    -> DatabaseResult<()>
+{
+    let initial_migration_path = migrations_dir.join("00000000000000_diesel_initial_setup");
+    if initial_migration_path.exists() {
+        return Ok(())
+    }
+
+    #[allow(unreachable_patterns)]
+    #[cfg_attr(feature="clippy", allow(single_match))]
+    match Backend::for_url(database_url) {
+        #[cfg(feature="postgres")]
+        Backend::Pg => {
+            fs::create_dir_all(&initial_migration_path)?;
+            let mut up_sql = File::create(initial_migration_path.join("up.sql"))?;
+            up_sql.write_all(include_bytes!("setup_sql/postgres/initial_setup/up.sql"))?;
+            let mut down_sql = File::create(initial_migration_path.join("down.sql"))?;
+            down_sql.write_all(include_bytes!("setup_sql/postgres/initial_setup/down.sql"))?;
+        }
+        _ => {} // No default migration for this backend
     }
 
     Ok(())
