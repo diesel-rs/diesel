@@ -162,9 +162,11 @@ fn test_sum() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
     let source = numbers.select(sum(n));
 
-    assert_eq!(Ok(8), source.first(&connection));
+    assert_eq!(Ok(Some(8)), source.first(&connection));
     connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
-    assert_eq!(Ok(6), source.first(&connection));
+    assert_eq!(Ok(Some(6)), source.first(&connection));
+    connection.execute("DELETE FROM numbers").unwrap();
+    assert_eq!(Ok(None::<i64>), source.first(&connection));
 }
 
 table! {
@@ -182,9 +184,11 @@ fn test_sum_for_double() {
     connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)").unwrap();
     let source = numbers.select(sum(n));
 
-    assert_eq!(Ok(8.5f64), source.first(&connection));
+    assert_eq!(Ok(Some(8.5f64)), source.first(&connection));
     connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
-    assert_eq!(Ok(6.5f64), source.first(&connection));
+    assert_eq!(Ok(Some(6.5f64)), source.first(&connection));
+    connection.execute("DELETE FROM precision_numbers").unwrap();
+    assert_eq!(Ok(None::<f64>), source.first(&connection));
 }
 
 table! {
@@ -217,11 +221,12 @@ fn test_avg() {
     connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)").unwrap();
     let source = numbers.select(avg(n));
 
-    assert_eq!(Ok(3f64), source.first(&connection));
+    assert_eq!(Ok(Some(3f64)), source.first(&connection));
     connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
-    assert_eq!(Ok(3.5f64), source.first(&connection));
+    assert_eq!(Ok(Some(3.5f64)), source.first(&connection));
+    connection.execute("DELETE FROM precision_numbers").unwrap();
+    assert_eq!(Ok(None::<f64>), source.first(&connection));
 }
-
 
 #[test]
 fn test_avg_for_nullable() {
@@ -247,22 +252,22 @@ fn test_avg_for_integer() {
     connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (6)").unwrap();
     let source = numbers.select(avg(n));
 
-    let result = source.first::<data_types::PgNumeric>(&connection);
+    let result = source.first(&connection);
     let expected_result = data_types::PgNumeric::Positive {
         digits: vec![3],
         weight: 0,
         scale: 16,
     };
-    assert_eq!(Ok(expected_result), result);
+    assert_eq!(Ok(Some(expected_result)), result);
 
     connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
-    let result = source.first::<data_types::PgNumeric>(&connection);
+    let result = source.first(&connection);
     let expected_result = data_types::PgNumeric::Positive {
         digits: vec![3, 5000],
         weight: 0,
         scale: 16,
     };
-    assert_eq!(Ok(expected_result), result);
+    assert_eq!(Ok(Some(expected_result)), result);
 }
 
 table! {
@@ -282,11 +287,11 @@ fn test_avg_for_numeric() {
     connection.execute("INSERT INTO numeric (n) VALUES (2), (1), (6)").unwrap();
     let source = numeric.select(avg(n));
 
-    let result = source.first::<data_types::PgNumeric>(&connection);
+    let result = source.first(&connection);
     let expected_result = data_types::PgNumeric::Positive {
         digits: vec![3],
         weight: 0,
         scale: 16,
     };
-    assert_eq!(Ok(expected_result), result);
+    assert_eq!(Ok(Some(expected_result)), result);
 }
