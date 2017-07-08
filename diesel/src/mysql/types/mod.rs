@@ -1,10 +1,28 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 
+use byteorder::WriteBytesExt;
 use mysql::{Mysql, MysqlType};
 use std::error::Error as StdError;
 use std::io::Write;
 use types::{ToSql, IsNull, FromSql, HasSqlType};
+
+primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
+
+impl ToSql<::types::Tinyint, Mysql> for i8 {
+    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+        out.write_i8(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<StdError+Send+Sync>)
+    }
+}
+
+impl FromSql<::types::Tinyint, Mysql> for i8 {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError+Send+Sync>> {
+        let bytes = not_none!(bytes);
+        Ok(bytes[0] as i8)
+    }
+}
 
 impl ToSql<::types::Bool, Mysql> for bool {
     fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {

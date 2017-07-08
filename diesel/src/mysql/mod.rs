@@ -1,8 +1,8 @@
 mod backend;
 mod connection;
-mod types;
 
 pub mod query_builder;
+pub mod types;
 
 pub use self::backend::{Mysql, MysqlType};
 pub use self::connection::MysqlConnection;

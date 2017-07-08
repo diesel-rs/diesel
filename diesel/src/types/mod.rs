@@ -58,6 +58,19 @@ use std::io::Write;
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Bool;
 
+/// The tinyint SQL type. This is only available on MySQL.
+///
+/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+///
+/// - [`i8`][i8]
+///
+/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+///
+/// - [`i8`][i8]
+///
+/// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
+#[derive(Debug, Clone, Copy, Default)] pub struct Tinyint;
+
 /// The small integer SQL type.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
@@ -275,6 +288,9 @@ pub type VarChar = Text;
 
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
+
+#[cfg(feature = "mysql")]
+pub use mysql::types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata() -> Self::TypeMetadata;
