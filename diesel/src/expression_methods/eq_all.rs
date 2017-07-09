@@ -55,3 +55,22 @@ impl<L1, L2, L3, L4, R1, R2, R3, R4> EqAll<(R1, R2, R3, R4)> for (L1, L2, L3, L4
             )))
     }
 }
+
+impl<L1, L2, L3, L4, L5, R1, R2, R3, R4, R5> EqAll<(R1, R2, R3, R4, R5)> for (L1, L2, L3, L4, L5) where
+    L1: EqAll<R1>,
+    L2: EqAll<R2>,
+    L3: EqAll<R3>,
+    L4: EqAll<R4>,
+    L5: EqAll<R5>,
+{
+    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, And<<L4 as EqAll<R4>>::Output, <L5 as EqAll<R5>>::Output>>>>;
+
+    fn eq_all(self, rhs: (R1, R2, R3, R4, R5)) -> Self::Output {
+        self.0.eq_all(rhs.0).and(
+            self.1.eq_all(rhs.1).and(
+            self.2.eq_all(rhs.2).and(
+            self.3.eq_all(rhs.3).and(
+            self.4.eq_all(rhs.4)
+            ))))
+    }
+}
