@@ -190,10 +190,10 @@ impl SingleValue for Numeric {}
 #[derive(Debug, Clone, Copy, Default)] pub struct Text;
 pub type VarChar = Text;
 #[doc(hidden)] pub type Varchar = VarChar;
-#[doc(hidden)] pub type Char       = Text;
-#[doc(hidden)] pub type Tinytext   = Text;
+#[doc(hidden)] pub type Char = Text;
+#[doc(hidden)] pub type Tinytext = Text;
 #[doc(hidden)] pub type Mediumtext = Text;
-#[doc(hidden)] pub type Longtext   = Text;
+#[doc(hidden)] pub type Longtext = Text;
 
 /// The binary SQL type.
 ///
@@ -212,11 +212,11 @@ pub type VarChar = Text;
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Binary;
 
-#[doc(hidden)] pub type Tinyblob   = Binary;
+#[doc(hidden)] pub type Tinyblob = Binary;
 #[doc(hidden)] pub type Mediumblob = Binary;
-#[doc(hidden)] pub type Longblob   = Binary;
-#[doc(hidden)] pub type Varbinary  = Binary;
-#[doc(hidden)] pub type Bit        = Binary;
+#[doc(hidden)] pub type Longblob = Binary;
+#[doc(hidden)] pub type Varbinary = Binary;
+#[doc(hidden)] pub type Bit = Binary;
 
 /// The date SQL type.
 ///
