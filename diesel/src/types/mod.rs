@@ -174,7 +174,7 @@ impl SingleValue for Numeric {}
 /// On all backends strings must be valid UTF-8.
 /// On PostgreSQL strings must not include nul bytes.
 ///
-/// On Mysql, it is also aliased by Tinytext, Mediumtext, Longtext, Char and Varchar.
+/// On MySQL, it is also aliased by `Tinytext`, `Mediumtext`, `Longtext`, `Char` and `Varchar`.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -197,7 +197,7 @@ pub type VarChar = Text;
 
 /// The binary SQL type.
 ///
-/// On Mysql, it is also aliased by Tinyblob, Mediumblob, Longblob, Bit and Varbinary.
+/// On MySQL, it is also aliased by `Tinyblob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
