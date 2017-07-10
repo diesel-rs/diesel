@@ -22,6 +22,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   remove the `Nullable` portion (Unless you are using it with fields that are
   actually nullable)
 
+* The return type of `sum` and `avg` is now always considered to be `Nullable`,
+  as these functions return `NULL` when against on an empty table.
+
 ## [0.14.0] - 2017-07-04
 
 ### Added

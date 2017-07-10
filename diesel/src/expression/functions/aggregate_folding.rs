@@ -66,7 +66,7 @@ Foldable.
 # fn main() {
 #     use self::animals::dsl::*;
 #     let connection = establish_connection();
-assert_eq!(Ok(12i64), animals.select(sum(legs)).first(&connection));
+assert_eq!(Ok(Some(12i64)), animals.select(sum(legs)).first(&connection));
 # }
 ");
 
@@ -91,7 +91,7 @@ Foldable.
 # fn main() {
 #     use self::animals::dsl::*;
 #     let connection = establish_connection();
-// assert_eq!(Ok(6f64), animals.select(avg(legs)).first(&connection));
+// assert_eq!(Ok(Some(6f64)), animals.select(avg(legs)).first(&connection));
 // TODO: There doesn't currently seem to be a way to use avg with integers, since
 // they return a `Numeric` which doesn't have a corresponding Rust type.
 # }
