@@ -22,6 +22,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   remove the `Nullable` portion (Unless you are using it with fields that are
   actually nullable)
 
+## [0.14.1] - 2017-07-10
+
+### Changed
+
 * The return type of `sum` and `avg` is now always considered to be `Nullable`,
   as these functions return `NULL` when against on an empty table.
 
@@ -892,3 +896,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.12.1]: https://github.com/diesel-rs/diesel/compare/v0.12.0...v0.12.1
 [0.13.0]: https://github.com/diesel-rs/diesel/compare/v0.12.1...v0.13.0
 [0.14.0]: https://github.com/diesel-rs/diesel/compare/v0.13.0...v0.14.0
+[0.14.1]: https://github.com/diesel-rs/diesel/compare/v0.14.0...v0.14.1
