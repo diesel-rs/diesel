@@ -76,10 +76,10 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
             where_clause.walk_ast(out.reborrow())?;
         }
 
+        self.group_by.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
-        self.group_by.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -97,10 +97,10 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
             where_clause.walk_ast(out.reborrow())?;
         }
 
+        self.group_by.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
-        self.group_by.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
