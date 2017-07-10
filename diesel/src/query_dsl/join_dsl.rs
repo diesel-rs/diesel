@@ -102,7 +102,6 @@ pub trait JoinDsl: Sized {
     {
         self.left_outer_join(rhs)
     }
-
 }
 
 impl<T: AsQuery> JoinDsl for T {

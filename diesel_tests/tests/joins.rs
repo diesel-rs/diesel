@@ -68,6 +68,29 @@ fn select_multiple_from_join() {
 }
 
 #[test]
+fn join_boxed_query() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    connection.execute("INSERT INTO posts (id, user_id, title) VALUES
+        (1, 1, 'Hello'),
+        (2, 2, 'World')
+    ").unwrap();
+
+    let source = posts::table
+        .into_boxed()
+        .inner_join(users::table)
+        .select((users::name, posts::title));
+
+    let expected_data = vec![
+        ("Sean".to_string(), "Hello".to_string()),
+        ("Tess".to_string(), "World".to_string()),
+    ];
+    let actual_data: Vec<_> = source.load(&connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[test]
 fn select_only_one_side_of_join() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
