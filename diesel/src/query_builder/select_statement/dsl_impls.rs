@@ -206,6 +206,7 @@ impl<'a, F, S, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
         O: QueryFragment<DB> + 'a,
         L: QueryFragment<DB> + 'a,
         Of: QueryFragment<DB> + 'a,
+        G: QueryFragment<DB> + 'a,
 {
     type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
 
@@ -218,6 +219,7 @@ impl<'a, F, S, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
             Box::new(self.order),
             Box::new(self.limit),
             Box::new(self.offset),
+            Box::new(self.group_by),
         )
     }
 }
@@ -232,6 +234,7 @@ impl<'a, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
         O: QueryFragment<DB> + 'a,
         L: QueryFragment<DB> + 'a,
         Of: QueryFragment<DB> + 'a,
+        G: QueryFragment<DB> + 'a,
 {
     type Output = BoxedSelectStatement<
         'a,
@@ -249,6 +252,7 @@ impl<'a, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
             Box::new(self.order),
             Box::new(self.limit),
             Box::new(self.offset),
+            Box::new(self.group_by),
         )
     }
 }
