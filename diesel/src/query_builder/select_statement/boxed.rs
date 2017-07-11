@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::*;
 use query_builder::*;
+use query_builder::group_by_clause::GroupByClause;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
@@ -20,10 +21,12 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     order: Box<QueryFragment<DB> + 'a>,
     limit: Box<QueryFragment<DB> + 'a>,
     offset: Box<QueryFragment<DB> + 'a>,
+    group_by: Box<QueryFragment<DB> + 'a>,
     _marker: PhantomData<ST>,
 }
 
 impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
+    #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
     pub fn new(
         select: Box<QueryFragment<DB> + 'a>,
         from: QS,
@@ -32,6 +35,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         order: Box<QueryFragment<DB> + 'a>,
         limit: Box<QueryFragment<DB> + 'a>,
         offset: Box<QueryFragment<DB> + 'a>,
+        group_by: Box<QueryFragment<DB> + 'a>,
     ) -> Self {
         BoxedSelectStatement {
             select: select,
@@ -41,6 +45,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
             order: order,
             limit: limit,
             offset: offset,
+            group_by: group_by,
             _marker: PhantomData,
         }
     }
@@ -73,6 +78,7 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
+        self.group_by.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -93,6 +99,7 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
+        self.group_by.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -121,6 +128,7 @@ impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
             self.order,
             self.limit,
             self.offset,
+            self.group_by,
         )
     }
 }
@@ -179,6 +187,20 @@ impl<'a, ST, QS, DB, Order> OrderDsl<Order>
 
     fn order(mut self, order: Order) -> Self::Output {
         self.order = Box::new(OrderClause(order));
+        self
+    }
+}
+
+impl<'a, ST, QS, DB, Expr> GroupByDsl<Expr>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        DB: Backend,
+        Expr: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
+        Self: Query,
+{
+    type Output = Self;
+
+    fn group_by(mut self, group_by: Expr) -> Self::Output {
+        self.group_by = Box::new(GroupByClause(group_by));
         self
     }
 }
