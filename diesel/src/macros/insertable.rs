@@ -11,14 +11,14 @@
 /// # table! { users { id -> Integer, name -> VarChar, hair_color -> Nullable<VarChar>, } }
 /// struct NewUser<'a> {
 ///     name: &'a str,
-///     hair_color: &'a str,
+///     hair_color: Option<&'a str>,
 /// }
 ///
 /// impl_Insertable! {
 ///     (users)
 ///     struct NewUser<'a> {
 ///         name: &'a str,
-///         hair_color: &'a str,
+///         hair_color: Option<&'a str>,
 ///     }
 /// }
 /// # fn main() {}
@@ -34,7 +34,7 @@
 ///     #[derive(Insertable(users))]
 ///     struct NewUser<'a> {
 ///         name: &'a str,
-///         hair_color: &'a str,
+///         hair_color: Option<&'a str>,
 ///     }
 /// }
 /// ```
