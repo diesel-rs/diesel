@@ -18,6 +18,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `diesel::sqlite::SqliteConnection` are now exported from `diesel::prelude`.
   You should no longer need to import these types explicitly.
 
+* Added support for the Decimal datatype on MySQL, using the [BigDecimal crate][bigdecimal-0.16.0].
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate
@@ -31,6 +33,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `print_sql!` has been deprecated without replacement.
 
 * `diesel::backend::Debug` has been removed.
+
+[bigdecimal-0.14.0]: https://crates.io/crates/bigdecimal
 
 ## [0.15.2] - 2017-07-28
 
