@@ -50,7 +50,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [pg-network-0.14.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
 [not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
-[insert-default-0.14.0]: http://docs.diesel.rs/disel/fn.insert_default_values.html
+[insert-default-0.14.0]: http://docs.diesel.rs/diesel/fn.insert_default_values.html
 [bigdecimal-0.14.0]: https://crates.io/crates/bigdecimal
 
 * Added `diesel_prefix_operator!` which behaves identically to
