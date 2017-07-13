@@ -786,3 +786,38 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
     let connection = connection();
     users::table.select(sql::<Integer>("COUNT(*)")).get_result::<i32>(&connection).unwrap();
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn test_range_from_sql(){
+    use std::collections::Bound;
+    use diesel::expression::sql;
+
+    let connection = connection();
+
+    let query = "'[1,)'::int4range";
+    let expected_value = (Bound::Included(1), Bound::Unbounded);
+    assert_eq!(expected_value, query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query));
+
+    let query = "'(1,2]'::int4range";
+    let expected_value = (Bound::Included(2), Bound::Excluded(3));
+    assert_eq!(expected_value, query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query));
+
+    let query = "SELECT '(1,1]'::int4range";
+    assert!(sql::<Range<Int4>>(query).load::<(Bound<i32>, Bound<i32>)>(&connection).is_err());
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn test_range_to_sql(){
+    use std::collections::Bound;
+    use diesel::expression::sql;
+
+    let expected_value = "'[1,2]'::int4range";
+    let value = (Bound::Included(1), Bound::Excluded(3));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'(1,2]'::int4range";
+    let value = (Bound::Included(2), Bound::Excluded(3));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+}

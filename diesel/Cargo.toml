@@ -29,6 +29,7 @@ num-bigint = { version = "0.1.37", optional = true }
 num-traits = { version = "0.1.35", optional = true }
 num-integer = { version = "0.1.32", optional = true }
 bigdecimal = { version = "0.0.7", optional = true }
+bitflags = { version = "0.9", optional = true }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
@@ -44,7 +45,7 @@ unstable = []
 lint = ["clippy"]
 large-tables = []
 huge-tables = ["large-tables"]
-postgres = ["pq-sys"]
+postgres = ["pq-sys", "bitflags"]
 sqlite = ["libsqlite3-sys"]
 mysql = ["mysqlclient-sys", "url"]
 with-deprecated = []

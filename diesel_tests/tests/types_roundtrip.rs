@@ -14,6 +14,7 @@ pub use diesel::types::{HasSqlType, ToSql};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
+use std::collections::Bound;
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool where
     ST: QueryId,
@@ -94,6 +95,7 @@ mod pg_types {
     extern crate ipnetwork;
 
     use super::*;
+    use self::bigdecimal::BigDecimal;
 
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
@@ -117,6 +119,12 @@ mod pg_types {
     test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(inet_v6_roundtrips, Inet, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
+    test_round_trip!(int4range_roundtrips, Range<Int4>, (i32, i32), mk_bounds);
+    test_round_trip!(int8range_roundtrips, Range<Int8>, (i64, i64), mk_bounds);
+    test_round_trip!(daterange_roundtrips, Range<Date>, (u32, u32), mk_date_bounds);
+    test_round_trip!(numrange_roundtrips, Range<Numeric>, (i64, u64, i64, u64), mk_num_bounds);
+    test_round_trip!(tsrange_roundtrips, Range<Timestamp>, (i64, u32, i64, u32), mk_ts_bounds);
+    test_round_trip!(tstzrange_roundtrips, Range<Timestamptz>, (i64, u32, i64, u32), mk_tstz_bounds);
 
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
@@ -139,6 +147,43 @@ mod pg_types {
         use std::net::Ipv6Addr;
         let ip = Ipv6Addr::new(data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7);
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
+    }
+
+    fn mk_bounds<T: Ord + PartialEq>(data: (T, T)) -> (Bound<T>, Bound<T>) {
+        if data.0 == data.1 { // This is invalid but we don't have a way to say that to quickcheck
+            return (Bound::Included(data.0), Bound::Unbounded)
+        }
+
+        if data.0 < data.1 {
+            (Bound::Included(data.0), Bound::Excluded(data.1))
+        }
+        else {
+            (Bound::Included(data.1), Bound::Excluded(data.0))
+        }
+    }
+
+    fn mk_date_bounds(data: (u32, u32)) -> (Bound<NaiveDate>, Bound<NaiveDate>) {
+        let d1 = mk_naive_date(data.0);
+        let d2 = mk_naive_date(data.1);
+        mk_bounds((d1, d2))
+    }
+
+    fn mk_num_bounds(data: (i64, u64, i64, u64)) -> (Bound<BigDecimal>, Bound<BigDecimal>) {
+        let b1 = mk_bigdecimal((data.0, data.1));
+        let b2 = mk_bigdecimal((data.2, data.3));
+        mk_bounds((b1, b2))
+    }
+
+    fn mk_ts_bounds(data: (i64, u32, i64, u32)) -> (Bound<NaiveDateTime>, Bound<NaiveDateTime>) {
+        let ts1 = mk_naive_datetime((data.0, data.1));
+        let ts2 = mk_naive_datetime((data.2, data.3));
+        mk_bounds((ts1, ts2))
+    }
+
+    fn mk_tstz_bounds(data: (i64, u32, i64, u32)) -> (Bound<DateTime<Utc>>, Bound<DateTime<Utc>>) {
+        let tstz1 = mk_datetime((data.0, data.1));
+        let tstz2 = mk_datetime((data.2, data.3));
+        mk_bounds((tstz1, tstz2))
     }
 }
 
