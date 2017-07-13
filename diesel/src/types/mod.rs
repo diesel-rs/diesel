@@ -174,6 +174,8 @@ impl SingleValue for Numeric {}
 /// On all backends strings must be valid UTF-8.
 /// On PostgreSQL strings must not include nul bytes.
 ///
+/// On MySQL, it is also aliased by `Tinytext`, `Mediumtext`, `Longtext`, `Char` and `Varchar`.
+///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
 /// - [`String`][String]
@@ -188,8 +190,14 @@ impl SingleValue for Numeric {}
 #[derive(Debug, Clone, Copy, Default)] pub struct Text;
 pub type VarChar = Text;
 #[doc(hidden)] pub type Varchar = VarChar;
+#[doc(hidden)] pub type Char = Text;
+#[doc(hidden)] pub type Tinytext = Text;
+#[doc(hidden)] pub type Mediumtext = Text;
+#[doc(hidden)] pub type Longtext = Text;
 
 /// The binary SQL type.
+///
+/// On MySQL, it is also aliased by `Tinyblob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -203,6 +211,12 @@ pub type VarChar = Text;
 /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Binary;
+
+#[doc(hidden)] pub type Tinyblob = Binary;
+#[doc(hidden)] pub type Mediumblob = Binary;
+#[doc(hidden)] pub type Longblob = Binary;
+#[doc(hidden)] pub type Varbinary = Binary;
+#[doc(hidden)] pub type Bit = Binary;
 
 /// The date SQL type.
 ///
