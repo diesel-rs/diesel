@@ -154,9 +154,11 @@ impl<From, T> SelectableExpression<SelectStatement<From>>
 /// the [association annotations](../associations/index.html) from codegen.
 pub trait JoinTo<T> {
     #[doc(hidden)]
-    type JoinOnClause;
+    type FromClause;
     #[doc(hidden)]
-    fn join_on_clause() -> Self::JoinOnClause;
+    type OnClause;
+    #[doc(hidden)]
+    fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause);
 }
 
 #[doc(hidden)]
@@ -228,20 +230,22 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
 impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind> where
     Left: JoinTo<Right>,
 {
-    type JoinOnClause = Left::JoinOnClause;
+    type FromClause = Left::FromClause;
+    type OnClause = Left::OnClause;
 
-    fn join_on_clause() -> Self::JoinOnClause {
-        Left::join_on_clause()
+    fn join_target(rhs: Right) -> (Self::FromClause, Self::OnClause) {
+        Left::join_target(rhs)
     }
 }
 
 impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On> where
     Join: JoinTo<Right>,
 {
-    type JoinOnClause = Join::JoinOnClause;
+    type FromClause = Join::FromClause;
+    type OnClause = Join::OnClause;
 
-    fn join_on_clause() -> Self::JoinOnClause {
-        Join::join_on_clause()
+    fn join_target(rhs: Right) -> (Self::FromClause, Self::OnClause) {
+        Join::join_target(rhs)
     }
 }
 

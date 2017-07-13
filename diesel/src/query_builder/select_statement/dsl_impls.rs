@@ -306,9 +306,10 @@ impl<F, S, D, W, O, L, Of, G, Rhs> JoinTo<Rhs>
     for SelectStatement<F, S, D, W, O, L, Of, G> where
         F: JoinTo<Rhs>,
 {
-    type JoinOnClause = F::JoinOnClause;
+    type FromClause = F::FromClause;
+    type OnClause = F::OnClause;
 
-    fn join_on_clause() -> Self::JoinOnClause {
-        F::join_on_clause()
+    fn join_target(rhs: Rhs) -> (Self::FromClause, Self::OnClause) {
+        F::join_target(rhs)
     }
 }
