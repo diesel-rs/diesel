@@ -22,6 +22,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   remove the `Nullable` portion (Unless you are using it with fields that are
   actually nullable)
 
+* Connections will now explicitly set the session time zone to UTC when the
+  connection is established
+
 ## [0.14.1] - 2017-07-10
 
 ### Changed
