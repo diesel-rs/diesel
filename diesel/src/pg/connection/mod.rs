@@ -14,6 +14,7 @@ use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
 use result::*;
+use result::ConnectionError::CouldntSetupConfiguration;
 use self::cursor::Cursor;
 use self::raw::RawConnection;
 use self::result::PgResult;
@@ -48,12 +49,14 @@ impl Connection for PgConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
-        RawConnection::establish(database_url).map(|raw_conn| {
-            PgConnection {
+        RawConnection::establish(database_url).and_then(|raw_conn| {
+            let conn = PgConnection {
                 raw_connection: raw_conn,
                 transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
-            }
+            };
+            conn.set_config_options().map_err(CouldntSetupConfiguration)?;
+            Ok(conn)
         })
     }
 
@@ -128,6 +131,12 @@ impl PgConnection {
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
         let query = try!(Statement::prepare(&self.raw_connection, query, None, &[]));
         query.execute(&self.raw_connection, &Vec::new())
+    }
+
+    fn set_config_options(&self) -> QueryResult<()> {
+        self.execute("SET TIME ZONE 'UTC'")?;
+        self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
+        Ok(())
     }
 }
 

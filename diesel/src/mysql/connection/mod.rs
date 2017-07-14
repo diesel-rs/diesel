@@ -115,7 +115,11 @@ impl MysqlConnection {
     }
 
     fn set_config_options(&self) -> QueryResult<()> {
-        try!(self.execute("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))"));
+        self.execute("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")?;
+        self.execute("SET time_zone = '+00:00';")?;
+        self.execute("SET character_set_client = 'utf8mb4'")?;
+        self.execute("SET character_set_connection = 'utf8mb4'")?;
+        self.execute("SET character_set_results = 'utf8mb4'")?;
         Ok(())
     }
 }
