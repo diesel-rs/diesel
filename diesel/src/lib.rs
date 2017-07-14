@@ -4,7 +4,7 @@
 #![cfg_attr(feature = "unstable", feature(specialization))]
 
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+#![warn(missing_debug_implementations, missing_copy_implementations)]
 
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
