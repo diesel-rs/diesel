@@ -8,7 +8,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 diesel = { version = "0.14.0", features = ["extras", "sqlite", "postgres", "mysql"] }
 diesel_codegen = { version = "0.14.0" }
-compiletest_rs = "=0.2.5"
+compiletest_rs = "=0.2.7"
 
 [replace]
 "diesel:0.14.1" = { path = "../diesel" }

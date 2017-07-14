@@ -648,10 +648,12 @@ macro_rules! table_body {
             impl<T> JoinTo<T> for table where
                 T: JoinTo<table> + JoinTo<PleaseGenerateInverseJoinImpls<table>>,
             {
-                type JoinOnClause = <T as JoinTo<table>>::JoinOnClause;
+                type FromClause = T;
+                type OnClause = <T as JoinTo<table>>::OnClause;
 
-                fn join_on_clause() -> Self::JoinOnClause {
-                    <T as JoinTo<table>>::join_on_clause()
+                fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = T::join_target(table);
+                    (rhs, on_clause)
                 }
             }
 
@@ -803,15 +805,16 @@ macro_rules! joinable_inner {
         primary_key_expr = $primary_key_expr:expr,
     ) => {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
-            type JoinOnClause = $crate::expression::helper_types::Eq<
+            type FromClause = $right_table_ty;
+            type OnClause = $crate::expression::helper_types::Eq<
                 $crate::expression::nullable::Nullable<$foreign_key>,
                 $crate::expression::nullable::Nullable<$primary_key_ty>,
             >;
 
-            fn join_on_clause() -> Self::JoinOnClause {
+            fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {
                 use $crate::{ExpressionMethods, NullableExpressionMethods};
 
-                $foreign_key.nullable().eq($primary_key_expr.nullable())
+                (rhs, $foreign_key.nullable().eq($primary_key_expr.nullable()))
             }
         }
     }

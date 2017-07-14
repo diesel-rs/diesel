@@ -19,7 +19,7 @@ clap = "2.20.3"
 diesel = { version = "0.14.0", default-features = false }
 dotenv = ">=0.8, <0.11"
 diesel_infer_schema = "0.14.0"
-clippy = { optional = true, version = "=0.0.126" }
+clippy = { optional = true, version = "=0.0.138" }
 
 [dev-dependencies]
 tempdir = "0.3.4"

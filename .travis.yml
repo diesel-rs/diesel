@@ -40,7 +40,7 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2017-04-25
+  - rust: nightly-2017-06-06
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
