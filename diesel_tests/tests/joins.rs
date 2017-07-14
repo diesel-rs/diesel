@@ -276,6 +276,31 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
 }
 
 #[test]
+fn join_with_explicit_on_clause() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let new_posts = vec![
+        NewPost::new(1, "Post One", None),
+        NewPost::new(1, "Post Two", None),
+    ];
+    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+    let post_one = posts::table.filter(posts::title.eq("Post One"))
+        .first::<Post>(&connection)
+        .unwrap();
+    let expected_data = vec![
+        (sean, post_one.clone()),
+        (tess, post_one),
+    ];
+
+    let data = users::table.inner_join(posts::table.on(posts::title.eq("Post One")))
+        .load(&connection);
+
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
 fn selecting_parent_child_grandchild() {
     let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData { sean, tess, posts, comments, .. } = test_data;

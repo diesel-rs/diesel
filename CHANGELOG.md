@@ -10,6 +10,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the PG `IS DISTINCT FROM` operator
 
+* The `ON` clause of a join can now be manually specified. See [the
+  docs][join-on-dsl-1.0.0] for details.
+
+[join-on-dsl-1.0.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html#method.on
+
 ### Changed
 
 * Diesel will now automatically invoke `numeric_expr!` for your columns in the
