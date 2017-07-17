@@ -87,8 +87,12 @@ pub trait QueryFragment<DB: Backend> {
         self.walk_ast(AstPass::to_sql(out))
     }
 
-    fn collect_binds(&self, out: &mut DB::BindCollector) -> QueryResult<()> {
-        self.walk_ast(AstPass::collect_binds(out))
+    fn collect_binds(
+        &self,
+        out: &mut DB::BindCollector,
+        metadata_lookup: &DB::MetadataLookup,
+    ) -> QueryResult<()> {
+        self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
     }
 
     fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {

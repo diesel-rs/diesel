@@ -99,7 +99,7 @@ impl SqliteConnection {
         let mut statement = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        try!(source.collect_binds(&mut bind_collector, &()));
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         for (tpe, value) in metadata.into_iter().zip(binds) {

@@ -3,7 +3,7 @@ use std::error::Error;
 
 use pg::Pg;
 use pg::data_types::PgNumeric;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));
 
@@ -17,7 +17,7 @@ impl FromSql<types::Bool, Pg> for bool {
 }
 
 impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let write_result = if *self {
             out.write_all(&[1])
         } else {
@@ -31,7 +31,7 @@ impl ToSql<types::Bool, Pg> for bool {
 
 #[test]
 fn bool_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     ToSql::<types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
     ToSql::<types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(bytes, vec![1u8, 0u8]);

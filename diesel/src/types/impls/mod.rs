@@ -50,7 +50,7 @@ macro_rules! expression_impls {
                 DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
                 $Target: $crate::types::ToSql<$crate::types::$Source, DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut W) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut $crate::types::ToSqlOutput<W, DB>) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
                     $crate::types::ToSql::<$crate::types::$Source, DB>::to_sql(self, out)
                 }
             }
@@ -104,7 +104,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (sqlite: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "sqlite")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::sqlite::Sqlite {
-            fn metadata() -> $crate::sqlite::SqliteType {
+            fn metadata(_: &()) -> $crate::sqlite::SqliteType {
                 $crate::sqlite::SqliteType::$tpe
             }
         }
@@ -115,7 +115,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (pg: ($oid:expr, $array_oid:expr) $($rest:tt)*)) => {
         #[cfg(feature = "postgres")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::pg::Pg {
-            fn metadata() -> $crate::pg::PgTypeMetadata {
+            fn metadata(_: &$crate::pg::PgMetadataLookup) -> $crate::pg::PgTypeMetadata {
                 $crate::pg::PgTypeMetadata {
                     oid: $oid,
                     array_oid: $array_oid,
@@ -129,7 +129,7 @@ macro_rules! primitive_impls {
     ($Source:ident -> (mysql: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "mysql")]
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::mysql::Mysql {
-            fn metadata() -> $crate::mysql::MysqlType {
+            fn metadata(_: &()) -> $crate::mysql::MysqlType {
                 $crate::mysql::MysqlType::$tpe
             }
         }
@@ -154,7 +154,7 @@ macro_rules! primitive_impls {
 
     ($Source:ident) => {
         impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::backend::Debug {
-            fn metadata() {}
+            fn metadata(_: &()) {}
         }
 
         impl $crate::query_builder::QueryId for $crate::types::$Source {

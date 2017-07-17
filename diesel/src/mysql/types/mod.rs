@@ -5,7 +5,7 @@ use byteorder::WriteBytesExt;
 use mysql::{Mysql, MysqlType};
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{ToSql, IsNull, FromSql, HasSqlType};
+use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType};
 
 primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
 
@@ -25,7 +25,7 @@ impl FromSql<::types::Tinyint, Mysql> for i8 {
 }
 
 impl ToSql<::types::Bool, Mysql> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<StdError+Send+Sync>> {
         let int_value = if *self {
             1
         } else {
@@ -42,19 +42,19 @@ impl FromSql<::types::Bool, Mysql> for bool {
 }
 
 impl HasSqlType<::types::Date> for Mysql {
-    fn metadata() -> MysqlType {
+    fn metadata(_: &()) -> MysqlType {
         MysqlType::Date
     }
 }
 
 impl HasSqlType<::types::Time> for Mysql {
-    fn metadata() -> MysqlType {
+    fn metadata(_: &()) -> MysqlType {
         MysqlType::Time
     }
 }
 
 impl HasSqlType<::types::Timestamp> for Mysql {
-    fn metadata() -> MysqlType {
+    fn metadata(_: &()) -> MysqlType {
         MysqlType::Timestamp
     }
 }

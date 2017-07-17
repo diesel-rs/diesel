@@ -70,7 +70,7 @@ impl Connection for MysqlConnection {
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
         let mut metadata = Vec::new();
-        Mysql::row_metadata(&mut metadata);
+        Mysql::row_metadata(&mut metadata, &());
         let results = unsafe { stmt.results(metadata)? };
         results.map(|mut row| {
             U::Row::build_from_row(&mut row)
@@ -107,7 +107,7 @@ impl MysqlConnection {
             self.raw_connection.prepare(sql)
         })?;
         let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        try!(source.collect_binds(&mut bind_collector, &()));
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         try!(stmt.bind(metadata.into_iter().zip(binds)));

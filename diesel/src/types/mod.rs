@@ -20,6 +20,7 @@ pub mod impls;
 mod fold;
 
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 
 #[doc(hidden)]
 pub mod structs {
@@ -43,7 +44,7 @@ pub use self::fold::Foldable;
 use backend::{Backend, TypeMetadata};
 use row::Row;
 use std::error::Error;
-use std::io::Write;
+use std::io::{self, Write};
 
 /// The boolean SQL type. On SQLite this is emulated with an integer.
 ///
@@ -310,10 +311,10 @@ pub use pg::types::sql_types::*;
 pub use mysql::types::*;
 
 pub trait HasSqlType<ST>: TypeMetadata {
-    fn metadata() -> Self::TypeMetadata;
+    fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
-    fn row_metadata(out: &mut Vec<Self::TypeMetadata>) {
-        out.push(Self::metadata())
+    fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
+        out.push(Self::metadata(lookup))
     }
 }
 
@@ -379,18 +380,109 @@ pub enum IsNull {
     No,
 }
 
+#[derive(Clone, Copy)]
+#[doc(hidden)]
+pub struct ToSqlOutput<'a, T, DB> where
+    DB: TypeMetadata,
+    DB::MetadataLookup: 'a,
+{
+    out: T,
+    metadata_lookup: &'a DB::MetadataLookup,
+}
+
+impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
+    pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
+        ToSqlOutput { out, metadata_lookup }
+    }
+
+    pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
+        ToSqlOutput {
+            out: new_out,
+            metadata_lookup: self.metadata_lookup,
+        }
+    }
+
+    pub fn into_inner(self) -> T {
+        self.out
+    }
+
+    pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
+        self.metadata_lookup
+    }
+}
+
+#[cfg(test)]
+impl<DB: TypeMetadata> ToSqlOutput<'static, Vec<u8>, DB> {
+    /// Returns a `ToSqlOutput` suitable for testing `ToSql` implementations.
+    /// Unsafe to use for testing types which perform dynamic metadata lookup.
+    pub fn test() -> Self {
+        use std::mem;
+        Self::new(Vec::new(), unsafe { mem::uninitialized() })
+    }
+}
+
+impl<'a, T: Write, DB: TypeMetadata> Write for ToSqlOutput<'a, T, DB> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.out.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.out.flush()
+    }
+
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.out.write_all(buf)
+    }
+
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> io::Result<()> {
+        self.out.write_fmt(fmt)
+    }
+}
+
+impl<'a, T, DB: TypeMetadata> Deref for ToSqlOutput<'a, T, DB> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.out
+    }
+}
+
+impl<'a, T, DB: TypeMetadata> DerefMut for ToSqlOutput<'a, T, DB> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.out
+    }
+}
+
+impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB> where
+    DB: TypeMetadata,
+    T: PartialEq<U>,
+{
+    fn eq(&self, rhs: &U) -> bool {
+        self.out == *rhs
+    }
+}
+
+impl<'a, T, DB> fmt::Debug for ToSqlOutput<'a, T, DB> where
+    T: fmt::Debug,
+    DB: TypeMetadata,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.out.fmt(f)
+    }
+}
+
 /// Serializes a single value to be sent to the database. The output will be
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>>;
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>>;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
     DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         (*self).to_sql(out)
     }
 }

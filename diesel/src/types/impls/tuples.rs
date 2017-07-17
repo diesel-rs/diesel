@@ -22,12 +22,12 @@ macro_rules! tuple_impls {
                 $(DB: HasSqlType<$T>),+,
                 DB: Backend,
             {
-                fn metadata() -> DB::TypeMetadata {
+                fn metadata(_: &DB::MetadataLookup) -> DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
 
-                fn row_metadata(out: &mut Vec<DB::TypeMetadata>) {
-                    $(<DB as HasSqlType<$T>>::row_metadata(out);)+
+                fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
+                    $(<DB as HasSqlType<$T>>::row_metadata(out, lookup);)+
                 }
             }
 

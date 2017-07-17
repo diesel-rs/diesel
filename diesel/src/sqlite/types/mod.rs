@@ -5,7 +5,7 @@ use std::error::Error;
 
 use super::Sqlite;
 use super::connection::SqliteValue;
-use types::{self, FromSql, ToSql, IsNull};
+use types::{self, FromSql, ToSql, ToSqlOutput, IsNull};
 
 impl FromSql<types::VarChar, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error+Send+Sync>> {
@@ -58,7 +58,7 @@ impl FromSql<types::Double, Sqlite> for f64 {
 }
 
 impl ToSql<types::Bool, Sqlite> for bool {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> Result<IsNull, Box<Error+Send+Sync>> {
         let int_value = if *self {
             1
         } else {

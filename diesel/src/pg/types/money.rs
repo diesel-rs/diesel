@@ -20,7 +20,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 pub struct PgMoney(pub i64);
 
 use pg::Pg;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 
 // https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L429-L432
 primitive_impls!(Money -> (PgMoney, pg: (790, 791)));
@@ -33,7 +33,7 @@ impl FromSql<types::Money, Pg> for PgMoney {
 }
 
 impl ToSql<types::Money, Pg> for PgMoney {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
         out.write_i64::<NetworkEndian>(self.0)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())

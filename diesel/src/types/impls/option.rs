@@ -7,17 +7,17 @@ use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, IsNull, NotNull};
+use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, ToSqlOutput, IsNull, NotNull};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB where
     DB: Backend + HasSqlType<T>, T: NotNull,
 {
-    fn metadata() -> DB::TypeMetadata {
-        <DB as HasSqlType<T>>::metadata()
+    fn metadata(lookup: &DB::MetadataLookup) -> DB::TypeMetadata {
+        <DB as HasSqlType<T>>::metadata(lookup)
     }
 
-    fn row_metadata(out: &mut Vec<DB::TypeMetadata>) {
-        <DB as HasSqlType<T>>::row_metadata(out)
+    fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
+        <DB as HasSqlType<T>>::row_metadata(out, lookup)
     }
 }
 
@@ -61,7 +61,7 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
@@ -116,7 +116,7 @@ use pg::Pg;
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
     type Type = types::Nullable<types::VarChar>;
-    let mut bytes = Vec::<u8>::new();
+    let mut bytes = ToSqlOutput::test();
 
     let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
     assert_eq!(IsNull::Yes, is_null);
@@ -129,5 +129,5 @@ fn option_to_sql() {
     let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
     let expectd_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
-    assert_eq!(expectd_bytes, bytes);
+    assert_eq!(bytes, expectd_bytes);
 }

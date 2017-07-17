@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, ToSql, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
 
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 
@@ -15,7 +15,7 @@ impl FromSql<types::Oid, Pg> for u32 {
 }
 
 impl ToSql<types::Oid, Pg> for u32 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())
@@ -24,7 +24,7 @@ impl ToSql<types::Oid, Pg> for u32 {
 
 #[test]
 fn i16_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     ToSql::<types::SmallInt, Pg>::to_sql(&1i16, &mut bytes).unwrap();
     ToSql::<types::SmallInt, Pg>::to_sql(&0i16, &mut bytes).unwrap();
     ToSql::<types::SmallInt, Pg>::to_sql(&-1i16, &mut bytes).unwrap();
@@ -33,7 +33,7 @@ fn i16_to_sql() {
 
 #[test]
 fn i32_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     ToSql::<types::Integer, Pg>::to_sql(&1i32, &mut bytes).unwrap();
     ToSql::<types::Integer, Pg>::to_sql(&0i32, &mut bytes).unwrap();
     ToSql::<types::Integer, Pg>::to_sql(&-1i32, &mut bytes).unwrap();
@@ -42,7 +42,7 @@ fn i32_to_sql() {
 
 #[test]
 fn i64_to_sql() {
-    let mut bytes = vec![];
+    let mut bytes = ToSqlOutput::test();
     ToSql::<types::BigInt, Pg>::to_sql(&1i64, &mut bytes).unwrap();
     ToSql::<types::BigInt, Pg>::to_sql(&0i64, &mut bytes).unwrap();
     ToSql::<types::BigInt, Pg>::to_sql(&-1i64, &mut bytes).unwrap();

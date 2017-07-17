@@ -27,6 +27,7 @@ pub trait Backend where
 
 pub trait TypeMetadata {
     type TypeMetadata;
+    type MetadataLookup;
 }
 
 pub trait SupportsReturningClause {}
@@ -45,6 +46,7 @@ impl Backend for Debug {
 
 impl TypeMetadata for Debug {
     type TypeMetadata = ();
+    type MetadataLookup = ();
 }
 
 impl SupportsReturningClause for Debug {}

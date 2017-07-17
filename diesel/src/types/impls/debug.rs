@@ -8,7 +8,7 @@ use types::*;
 macro_rules! debug_to_sql {
     ($sql_type:ty, $ty:ty) => {
         impl ToSql<$sql_type, Debug> for $ty {
-            fn to_sql<W: Write>(&self, _: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+            fn to_sql<W: Write>(&self, _: &mut ToSqlOutput<W, Debug>) -> Result<IsNull, Box<Error+Send+Sync>> {
                 Ok(IsNull::No)
             }
         }
@@ -53,7 +53,7 @@ mod chrono_impls {
 
     #[cfg(feature = "postgres")]
     impl<TZ: TimeZone> ToSql<Timestamptz, Debug> for DateTime<TZ> {
-        fn to_sql<W: Write>(&self, _: &mut W) -> Result<IsNull, Box<Error+Send+Sync>> {
+        fn to_sql<W: Write>(&self, _: &mut ToSqlOutput<W, Debug>) -> Result<IsNull, Box<Error+Send+Sync>> {
             Ok(IsNull::No)
         }
     }

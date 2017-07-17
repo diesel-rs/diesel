@@ -9,7 +9,7 @@ use std::ffi::{CString, CStr};
 use std::os::raw as libc;
 
 use connection::*;
-use pg::Pg;
+use pg::{Pg, PgMetadataLookup};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::Queryable;
@@ -106,7 +106,7 @@ impl PgConnection {
         -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
     {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector));
+        try!(source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self)));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 

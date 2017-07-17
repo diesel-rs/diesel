@@ -9,14 +9,13 @@ pub struct AstPass<'a, DB> where
     DB: Backend,
     DB::QueryBuilder: 'a,
     DB::BindCollector: 'a,
+    DB::MetadataLookup: 'a,
 {
     internals: AstPassInternals<'a, DB>,
 }
 
 impl<'a, DB> AstPass<'a, DB> where
     DB: Backend,
-    DB::QueryBuilder: 'a,
-    DB::BindCollector: 'a,
 {
     #[cfg_attr(feature="clippy", allow(wrong_self_convention))]
     pub fn to_sql(query_builder: &'a mut DB::QueryBuilder) -> Self {
@@ -25,9 +24,12 @@ impl<'a, DB> AstPass<'a, DB> where
         }
     }
 
-    pub fn collect_binds(collector: &'a mut DB::BindCollector) -> Self {
+    pub fn collect_binds(
+        collector: &'a mut DB::BindCollector,
+        metadata_lookup: &'a DB::MetadataLookup,
+    ) -> Self {
         AstPass {
-            internals: AstPassInternals::CollectBinds(collector),
+            internals: AstPassInternals::CollectBinds { collector, metadata_lookup },
         }
     }
 
@@ -44,7 +46,12 @@ impl<'a, DB> AstPass<'a, DB> where
         use self::AstPassInternals::*;
         let internals = match self.internals {
             ToSql(ref mut builder) => ToSql(&mut **builder),
-            CollectBinds(ref mut collector) => CollectBinds(&mut **collector),
+            CollectBinds { ref mut collector, metadata_lookup } => {
+                CollectBinds {
+                    collector: &mut **collector,
+                    metadata_lookup: &*metadata_lookup,
+                }
+            }
             IsSafeToCachePrepared(ref mut result) => IsSafeToCachePrepared(&mut **result),
         };
         AstPass { internals }
@@ -76,7 +83,8 @@ impl<'a, DB> AstPass<'a, DB> where
         use self::AstPassInternals::*;
         match self.internals {
             ToSql(ref mut out) => out.push_bind_param(),
-            CollectBinds(ref mut out) => out.push_bound_value(bind)?,
+            CollectBinds { ref mut collector, metadata_lookup } =>
+                collector.push_bound_value(bind, metadata_lookup)?,
             _ => {}, // noop
         }
         Ok(())
@@ -96,7 +104,7 @@ impl<'a, DB> AstPass<'a, DB> where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        if let AstPassInternals::CollectBinds(..) = self.internals {
+        if let AstPassInternals::CollectBinds { .. } = self.internals {
             self.push_bind_param(bind)?;
         }
         Ok(())
@@ -112,9 +120,12 @@ enum AstPassInternals<'a, DB> where
     DB: Backend,
     DB::QueryBuilder: 'a,
     DB::BindCollector: 'a,
+    DB::MetadataLookup: 'a,
 {
     ToSql(&'a mut DB::QueryBuilder),
-    CollectBinds(&'a mut DB::BindCollector),
+    CollectBinds {
+        collector: &'a mut DB::BindCollector,
+        metadata_lookup: &'a DB::MetadataLookup,
+    },
     IsSafeToCachePrepared(&'a mut bool),
 }
-
