@@ -10,7 +10,7 @@ use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType};
 primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
 
 impl ToSql<::types::Tinyint, Mysql> for i8 {
-    fn to_sql<W: Write>(&self, out: &mut W) -> Result<IsNull, Box<StdError+Send+Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<StdError+Send+Sync>> {
         out.write_i8(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<StdError+Send+Sync>)
