@@ -9,6 +9,7 @@ use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
 use query_dsl::*;
 use query_source::QuerySource;
+use query_source::joins::*;
 use result::QueryResult;
 use types::{HasSqlType, Bool, BigInt};
 
@@ -112,6 +113,26 @@ impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
+impl<'a, ST, QS, DB, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        BoxedSelectStatement<'a, ST, JoinOn<Join<QS, Rhs, Kind>, On>, DB>: AsQuery,
+{
+    type Output = BoxedSelectStatement<'a, ST, JoinOn<Join<QS, Rhs, Kind>, On>, DB>;
+
+    fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
+        BoxedSelectStatement::new(
+            self.select,
+            Join::new(self.from, rhs, kind).on(on),
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+        )
+    }
+}
+
 impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
     for BoxedSelectStatement<'a, ST, QS, DB> where
         DB: Backend + HasSqlType<Selection::SqlType>,
@@ -202,5 +223,20 @@ impl<'a, ST, QS, DB, Expr> GroupByDsl<Expr>
     fn group_by(mut self, group_by: Expr) -> Self::Output {
         self.group_by = Box::new(GroupByClause(group_by));
         self
+    }
+}
+
+// FIXME: Should we disable joining when `.group_by` has been called? Are there
+// any other query methods where a join no longer has the same semantics as
+// joining on just the table?
+impl<'a, ST, QS, DB, Rhs> JoinTo<Rhs>
+    for BoxedSelectStatement<'a, ST, QS, DB> where
+        QS: JoinTo<Rhs>,
+{
+    type FromClause = QS::FromClause;
+    type OnClause = QS::OnClause;
+
+    fn join_target(rhs: Rhs) -> (Self::FromClause, Self::OnClause) {
+        QS::join_target(rhs)
     }
 }
