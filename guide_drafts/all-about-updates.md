@@ -30,7 +30,7 @@ use posts::dsl:::*;
 diesel::update(posts).set(draft.eq(false))
 ```
 
-We can look use the [`print_sql!`] macro to inspect the generated SQL. The macro's output will differ slightly from what actually gets sent to the database. It shows backend agnostic SQL, so the syntax used for bind parameters and quoting table/column names will be slightly different. If we look at the SQL from the above query, we'll see the following.
+We can use the [`print_sql!`] macro to inspect the generated SQL. The macro's output will differ slightly from what actually gets sent to the database. It shows backend agnostic SQL, so the syntax used for bind parameters and quoting table/column names will be slightly different. If we look at the SQL from the above query, we'll see the following.
 
 [`print_sql!`]: http://docs.diesel.rs/diesel/macro.print_sql.html
 
