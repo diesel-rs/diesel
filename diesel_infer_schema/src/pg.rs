@@ -11,12 +11,15 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         &attr.type_name
     };
 
-    let tpe_is_varchar = tpe.to_lowercase() == "varchar";
+    let diesel_alias_without_postgres_coercion = match &*tpe.to_lowercase() {
+        "varchar" | "citext" => Some(tpe),
+        _ => None,
+    };
 
     // Postgres doesn't coerce varchar[] to text[] so print out a message to inform
     // the user.
-    if tpe_is_varchar && is_array {
-        writeln!(&mut stderr(), "The column `{}` is of type `varchar[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.", attr.column_name)?;
+    if let (true, Some(tpe)) = (is_array, diesel_alias_without_postgres_coercion) {
+        writeln!(&mut stderr(), "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.", attr.column_name, tpe)?;
     }
 
     Ok(ColumnType {
