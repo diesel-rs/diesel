@@ -4,16 +4,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.15.0] = 2017-07-23
 
 ### Added
 
 * Added support for the PG `IS DISTINCT FROM` operator
 
 * The `ON` clause of a join can now be manually specified. See [the
-  docs][join-on-dsl-1.0.0] for details.
+  docs][join-on-dsl-0.15.0] for details.
 
-[join-on-dsl-1.0.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html#method.on
+[join-on-dsl-0.15.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html#method.on
 
 ### Changed
 
