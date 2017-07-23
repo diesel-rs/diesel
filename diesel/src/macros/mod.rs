@@ -243,6 +243,14 @@ macro_rules! __diesel_column {
 /// ```
 #[macro_export]
 macro_rules! table {
+    ($($tokens:tt)*) => {
+        __diesel_table_impl!($($tokens)*);
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_table_impl {
     // Put imports into the import field
     (
         @parse
