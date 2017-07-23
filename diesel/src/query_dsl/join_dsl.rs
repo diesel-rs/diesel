@@ -1,5 +1,6 @@
 use query_builder::AsQuery;
-use query_source::{joins, Table, JoinTo};
+use query_source::{Table, JoinTo, QuerySource};
+use query_source::joins::{self, OnClauseWrapper};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
@@ -106,3 +107,52 @@ pub trait JoinDsl: Sized {
 
 impl<T: AsQuery> JoinDsl for T {
 }
+
+pub trait JoinOnDsl: Sized {
+    /// Specify the `ON` clause for a join statement. This will override
+    /// any implicit `ON` clause that would come from `#[belongs_to]`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("src/doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         user_id -> Integer,
+    /// #         title -> Text,
+    /// #     }
+    /// # }
+    /// #
+    /// # enable_multi_table_joins!(users, posts);
+    /// #
+    /// # fn main() {
+    /// #     let connection = establish_connection();
+    /// let data = users::table
+    ///     .left_join(posts::table.on(
+    ///         users::id.eq(posts::user_id).and(
+    ///             posts::title.eq("My first post"))
+    ///     ))
+    ///     .select((users::name, posts::title.nullable()))
+    ///     .load(&connection);
+    /// let expected = vec![
+    ///     ("Sean".to_string(), Some("My first post".to_string())),
+    ///     ("Tess".to_string(), None),
+    /// ];
+    /// assert_eq!(Ok(expected), data);
+    /// # }
+    fn on<On>(self, on: On) -> OnClauseWrapper<Self, On> {
+        OnClauseWrapper::new(self, on)
+    }
+}
+
+impl<T: QuerySource> JoinOnDsl for T {}

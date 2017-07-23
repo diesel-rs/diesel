@@ -5,6 +5,7 @@ use prelude::*;
 use query_builder::*;
 use result::QueryResult;
 use super::QuerySource;
+use types::Bool;
 use util::TupleAppend;
 
 #[derive(Debug, Clone, Copy)]
@@ -47,7 +48,7 @@ impl_query_id!(Join<Left, Right, Kind>);
 impl_query_id!(JoinOn<Join, On>);
 
 impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
-    Left: QuerySource + JoinTo<Right> + AppendSelection<Right::DefaultSelection>,
+    Left: QuerySource + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
     Left::Output: SelectableExpression<Self>,
     Self: Clone,
@@ -65,7 +66,7 @@ impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
 }
 
 impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
-    Left: QuerySource + JoinTo<Right> + AppendSelection<Nullable<Right::DefaultSelection>>,
+    Left: QuerySource + AppendSelection<Nullable<Right::DefaultSelection>>,
     Right: QuerySource,
     Left::Output: SelectableExpression<Self>,
     Self: Clone,
@@ -84,7 +85,7 @@ impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
 
 impl<Join, On> QuerySource for JoinOn<Join, On> where
     Join: QuerySource,
-    On: AppearsOnTable<Join::FromClause> + Clone,
+    On: AppearsOnTable<Join::FromClause, SqlType=Bool> + Clone,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
     type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;
@@ -293,4 +294,28 @@ impl<T, U> Plus<T> for Succ<U> where
 
 impl<T> Plus<T> for Never {
     type Output = T;
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
+pub struct OnClauseWrapper<Source, On> {
+    source: Source,
+    on: On,
+}
+
+impl<Source, On> OnClauseWrapper<Source, On> {
+    pub fn new(source: Source, on: On) -> Self {
+        OnClauseWrapper { source, on }
+    }
+}
+
+impl<Lhs, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Lhs where
+    Lhs: Table,
+{
+    type FromClause = Rhs;
+    type OnClause = On;
+
+    fn join_target(rhs: OnClauseWrapper<Rhs, On>) -> (Self::FromClause, Self::OnClause) {
+        (rhs.source, rhs.on)
+    }
 }
