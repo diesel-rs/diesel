@@ -24,7 +24,7 @@ pub use self::distinct_dsl::DistinctDsl;
 pub use self::filter_dsl::{FilterDsl, FindDsl};
 #[doc(hidden)]
 pub use self::group_by_dsl::GroupByDsl;
-pub use self::join_dsl::{InternalJoinDsl, JoinDsl, JoinOnDsl};
+pub use self::join_dsl::{InternalJoinDsl, JoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::limit_dsl::LimitDsl;
 pub use self::load_dsl::{LoadDsl, ExecuteDsl, FirstDsl, LoadQuery};
 pub use self::offset_dsl::OffsetDsl;
