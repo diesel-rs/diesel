@@ -75,6 +75,7 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_dsl::*;
+    use super::query_source::joins;
     use super::expression::helper_types::Eq;
 
     /// Represents the return type of `.select(selection)`
@@ -101,6 +102,12 @@ pub mod helper_types {
 
     /// Represents the return type of `.offset()`
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
+
+    /// Represents the return type of `.inner_join(rhs)`
+    pub type InnerJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<Rhs, joins::Inner>>::Output;
+
+    /// Represents the return type of `.left_join(rhs)`
+    pub type LeftJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
 
     use super::associations::HasTable;
     use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};
