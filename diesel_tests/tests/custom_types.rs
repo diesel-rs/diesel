@@ -94,3 +94,43 @@ fn custom_types_round_trip() {
         .get_results(&connection).unwrap();
     assert_eq!(data, inserted);
 }
+
+
+table! {
+    use diesel::types::*;
+    use schema::sql_rainbow::RainbowSql;
+    native_enum {
+        id -> Integer,
+        color -> RainbowSql,
+    }
+}
+
+#[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
+#[table_name="native_enum"]
+struct NativeEnum {
+    id: i32,
+    color: Rainbow,
+}
+
+#[test]
+fn insert_load_enum() {
+    let data = vec![
+        NativeEnum { id: 1, color: Rainbow::Red },
+        NativeEnum { id: 2, color: Rainbow::Orange },
+        NativeEnum { id: 3, color: Rainbow::Yellow },
+        NativeEnum { id: 4, color: Rainbow::Green },
+        NativeEnum { id: 5, color: Rainbow::Blue },
+        NativeEnum { id: 6, color: Rainbow::Purple },
+    ];
+    let connection = connection();
+        connection.batch_execute(r#"
+        CREATE TABLE native_enum (
+            id SERIAL PRIMARY KEY,
+            color RAINBOW NOT NULL
+        );
+    "#).unwrap();
+    let inserted = insert(&data)
+        .into(self::native_enum::table)
+        .get_results(&connection).unwrap();
+    assert_eq!(data, inserted);
+}

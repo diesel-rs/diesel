@@ -4,12 +4,16 @@ use std::env;
 
 #[cfg(all(feature="postgres", feature="backend_specific_database_url"))]
 infer_schema!("dotenv:PG_DATABASE_URL");
+#[cfg(all(feature="postgres", feature="backend_specific_database_url"))]
+infer_enum!("dotenv:PG_DATABASE_URL");
 #[cfg(all(feature="sqlite", feature="backend_specific_database_url"))]
 infer_schema!("dotenv:SQLITE_DATABASE_URL");
 #[cfg(all(feature="mysql", feature="backend_specific_database_url"))]
 infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature="backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
+#[cfg(all(feature="postgres", not(feature="backend_specific_database_url")))]
+infer_enum!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[table_name = "users"]

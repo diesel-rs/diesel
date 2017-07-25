@@ -4,9 +4,251 @@ use quote;
 use syn;
 
 use table_data::TableData;
-use data_structures::ColumnInformation;
+use data_structures::{ColumnInformation, EnumInformation};
 use inference::{establish_connection, get_table_data, determine_column_type, get_primary_keys,
                 InferConnection};
+
+pub fn wrap_item_in_const(const_name: syn::Ident, item: quote::Tokens) -> quote::Tokens {
+    quote! {
+        #[allow(dead_code)]
+        const #const_name: () = {
+            extern crate diesel;
+            #item
+        };
+    }
+}
+
+fn to_uppercase(ty: String) -> String {
+    let mut ret = String::with_capacity(ty.len());
+    let mut next_uppercase = true;
+    for c in ty.chars() {
+        if c == '_' {
+            next_uppercase = true;
+            continue;
+        }
+        if next_uppercase {
+            ret += &c.to_uppercase().to_string();
+        } else {
+            ret.push(c);
+        }
+        next_uppercase = false;
+    }
+    ret
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum ExpandEnumMode {
+    PrettyPrint,
+    Codegen,
+}
+
+pub fn expand_enum(enum_info: EnumInformation, mode: ExpandEnumMode) -> quote::Tokens {
+    let EnumInformation{type_name, fields} = enum_info;
+    let sql_mod = syn::Ident::new(format!("sql_{}", type_name));
+    let sql_type_name = syn::Ident::new(to_uppercase(format!("{}Sql", type_name)));
+    let type_name_string = type_name.clone();
+    let type_name = syn::Ident::new(to_uppercase(type_name));
+
+    let field_mapping = fields.clone().into_iter().map(|field| {
+        let ident = syn::Ident::new(to_uppercase(field.clone()));
+        quote!(#field => #type_name::#ident)
+    }).collect::<Vec<_>>();
+    let reverse_mapping = fields.clone().into_iter().map(|field| {
+        let ident = syn::Ident::new(to_uppercase(field.clone()));
+        quote!(#type_name::#ident => #field)
+    }).collect::<Vec<_>>();
+
+    let fields = fields.into_iter().map(|field|{
+        syn::Ident::new(to_uppercase(field))
+    });
+
+        let map_names = {
+        let from_1 = {
+            let field_mapping = field_mapping.clone();
+            quote! {
+                impl<'a> From<&'a str> for #type_name {
+                    fn from(s: &'a str) -> Self {
+                        match s {
+                            #(#field_mapping,)*
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
+        };
+        quote!{
+            #from_1
+            impl From<String> for #type_name {
+                fn from(s: String) -> Self {
+                    match s.as_str() {
+                        #(#field_mapping,)*
+                        _ => unreachable!(),
+                    }
+                }
+            }
+            impl<'a> From<&'a #type_name> for String {
+                fn from(t: &'a #type_name) -> Self {
+                    match *t {
+                        #(#reverse_mapping,)*
+                    }.into()
+                }
+            }
+        }
+    };
+
+    let metadata = quote!{
+        impl HasSqlType<#sql_type_name> for Debug {
+            fn metadata(_: &()) {}
+        }
+
+        impl HasSqlType<#sql_type_name> for Pg {
+            fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
+                lookup.lookup_type(#type_name_string)
+            }
+        }
+        impl NotNull for #sql_type_name {}
+
+        impl QueryId for #sql_type_name {
+            type QueryId = Self;
+
+            fn has_static_query_id() -> bool {
+                true
+            }
+        }
+    };
+
+    let expressions = quote!{
+        impl<'a> AsExpression<#sql_type_name> for #type_name {
+            type Expression = Bound<#sql_type_name, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                Bound::new(self)
+            }
+        }
+
+        impl<'a, 'expr> AsExpression<#sql_type_name> for &'expr #type_name {
+            type Expression = Bound<#sql_type_name, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                Bound::new(self)
+            }
+        }
+    };
+
+    let expressions = quote!{
+        #expressions
+
+        impl<'a> AsExpression<Nullable<#sql_type_name>> for #type_name {
+            type Expression = Bound<Nullable<#sql_type_name>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                Bound::new(self)
+            }
+        }
+
+        impl<'a, 'expr> AsExpression<Nullable<#sql_type_name>> for &'expr #type_name {
+            type Expression = Bound<Nullable<#sql_type_name>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                Bound::new(self)
+            }
+        }
+    };
+
+    let to_sql = quote!{
+        impl ToSql<Nullable<#sql_type_name>, Pg> for #type_name {
+            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+                ToSql::<#sql_type_name, Pg>::to_sql(self, out)
+            }
+        }
+
+        impl ToSql<#sql_type_name, Pg> for #type_name {
+            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+                ToSql::<Text, Pg>::to_sql(&String::from(self), out)
+            }
+}
+    };
+    let from_sql = quote! {
+        impl FromSql<#sql_type_name, Pg> for #type_name {
+            fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>>{
+                <String as FromSql<Text, Pg>>::from_sql(bytes).map(Into::into)
+            }
+        }
+
+        impl FromSqlRow<#sql_type_name, Pg> for #type_name {
+            fn build_from_row<R: Row<Pg>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
+                FromSql::<#sql_type_name, Pg>::from_sql(row.take())
+            }
+        }
+    };
+
+    let queryable = quote!{
+        impl Queryable<#sql_type_name, Pg> for #type_name {
+            type Row = Self;
+
+            fn build(row: Self::Row) -> Self {
+                row
+            }
+        }
+    };
+    let enum_def = quote! {
+        #[derive(Debug, Clone, Copy, PartialEq, Hash, Eq, PartialOrd, Ord)]
+        pub enum #type_name {
+            #(#fields,)*
+        }
+        #map_names
+    };
+    let diesel_imports = quote! {
+        use diesel::pg::{PgTypeMetadata, Pg, PgMetadataLookup};
+        use diesel::types::{HasSqlType, NotNull, IsNull};
+        use diesel::types::{FromSql, FromSqlRow, ToSql};
+        use diesel::types::{Nullable, Text, ToSqlOutput};
+        use diesel::expression::AsExpression;
+    };
+    let diesel_imports = quote! {
+        #diesel_imports
+        use diesel::row::Row;
+        use diesel::query_builder::QueryId;
+        use diesel::expression::bound::Bound;
+        use diesel::Queryable;
+        use diesel::backend::Debug;
+    };
+    let sql_mod_inner = quote! (
+        #diesel_imports
+        use super::#type_name;
+        use std::error::Error;
+        use std::io::Write;
+        #metadata
+        #expressions
+        #to_sql
+        #from_sql
+        #queryable
+    );
+
+    if mode == ExpandEnumMode::PrettyPrint {
+        quote! {
+            #enum_def
+            pub mod #sql_mod {
+                pub struct #sql_type_name;
+                #sql_mod_inner
+            }
+        }
+    } else {
+        let name = syn::Ident::new(
+            format!("IMPL_ENUM_FOR_{}",
+                    type_name.as_ref().to_uppercase()));
+        let sql_mod_inner = wrap_item_in_const(name, quote! {
+            #sql_mod_inner
+        });
+        quote! {
+            #enum_def
+            pub mod #sql_mod {
+                pub struct #sql_type_name;
+                #sql_mod_inner
+            }
+        }
+    }
+}
 
 pub fn expand_infer_table_from_schema(database_url: &str, table: &TableData)
     -> Result<quote::Tokens, Box<Error>>

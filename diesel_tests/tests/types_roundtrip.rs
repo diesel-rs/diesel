@@ -93,6 +93,9 @@ mod pg_types {
     extern crate bigdecimal;
 
     use super::*;
+    use schema::sql_rainbow::RainbowSql;
+    use schema::Rainbow;
+    use quickcheck::{Arbitrary, Gen};
 
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
@@ -118,6 +121,15 @@ mod pg_types {
 
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
 
+    #[test]
+    fn enum_roundtrips() {
+        fn round_trip(val: Rainbow) -> bool {
+            test_type_round_trips::<RainbowSql, _>(id(val))
+        }
+
+        quickcheck(round_trip as fn(Rainbow) -> bool);
+    }
+
     fn mk_bigdecimal(data: (i64, u64)) -> self::bigdecimal::BigDecimal {
         format!("{}.{}", data.0, data.1).parse().expect("Could not interpret as bigdecimal")
     }
@@ -142,6 +154,15 @@ mod pg_types {
         use std::net::Ipv6Addr;
         let ip = Ipv6Addr::new(data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7);
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
+    }
+
+    impl Arbitrary for Rainbow {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self{
+            use schema::Rainbow::*;
+            g.choose(&[Red, Orange, Yellow, Green, Blue, Purple])
+                .unwrap()
+                .clone()
+        }
     }
 }
 
