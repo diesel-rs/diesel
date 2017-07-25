@@ -54,8 +54,11 @@ Thank you! We'll try to get back to you as soon as possible.
 
 1. Install Rust using [rustup], which allows you to easily switch between Rust
    versions.
+
+   Diesel currently supports Rust Stable, Nightly, Rust Beta.
+
 2. Install the system libraries needed to interface with the database systems
-   you which to use.
+   you wish to use.
 
    These are the same as when compiling diesel. In general, it is a good idea
    to have _all_ drivers installed so you can run all tests locally.
