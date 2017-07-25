@@ -269,7 +269,9 @@ fn run_migration<Conn>(conn: &Conn, migration: &Migration, output: &mut Write)
         Conn: MigrationConnection,
 {
     conn.transaction(|| {
-        try!(writeln!(output, "Running migration {}", migration.version()));
+        if migration.version() != "00000000000000" {
+            try!(writeln!(output, "Running migration {}", migration.version()));
+        }
         try!(migration.run(conn));
         try!(conn.insert_new_migration(migration.version()));
         Ok(())
