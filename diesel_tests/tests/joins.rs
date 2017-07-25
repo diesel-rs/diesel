@@ -455,6 +455,11 @@ fn selecting_crazy_nested_joins() {
 }
 
 fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
+    use schema::comments::dsl::comments;
+    use schema::followings::dsl::followings;
+    use schema::likes::dsl::likes;
+    use schema::posts::dsl::posts;
+
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &connection);
@@ -465,35 +470,42 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         NewPost::new(tess.id, "Second Post", None),
         NewPost::new(sean.id, "Third Post", None),
     ];
-    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+    insert(&new_posts).into(posts).execute(&connection).unwrap();
 
-    let posts = posts::table.order(posts::id)
+    let posts_data = posts.order(posts.id)
         .load::<Post>(&connection).unwrap();
     let new_comments = vec![
-        NewComment(posts[0].id, "First Comment"),
-        NewComment(posts[2].id, "Second Comment"),
-        NewComment(posts[0].id, "Third Comment"),
+        NewComment(posts_data[0].id, "First Comment"),
+        NewComment(posts_data[2].id, "Second Comment"),
+        NewComment(posts_data[0].id, "Third Comment"),
     ];
-    insert(&new_comments).into(comments::table).execute(&connection).unwrap();
+    insert(&new_comments).into(comments).execute(&connection).unwrap();
 
-    let comments = comments::table.order(comments::id)
+    let comments_data = comments.order(comments.id)
         .load::<Comment>(&connection).unwrap();
-    let like = Like { user_id: tess.id, comment_id: *comments[0].id() };
-    insert(&like).into(likes::table).execute(&connection).unwrap();
+    let like = Like { user_id: tess.id, comment_id: *comments_data[0].id() };
+    insert(&like).into(likes).execute(&connection).unwrap();
 
-    let likes = likes::table.order((likes::user_id, likes::comment_id))
+    let likes_data = likes.order((likes.user_id, likes.comment_id))
         .load(&connection).unwrap();
 
     let new_following = Following {
         user_id: sean.id,
-        post_id: posts[1].id,
+        post_id: posts_data[1].id,
         email_notifications: false,
     };
-    insert(&new_following).into(followings::table).execute(&connection).unwrap();
-    let followings = followings::table.order((followings::user_id, followings::post_id))
+    insert(&new_following).into(followings).execute(&connection).unwrap();
+    let followings_data = followings.order((followings.user_id, followings.post_id))
         .load(&connection).unwrap();
 
-    let test_data = TestData { sean, tess, posts, comments, likes, followings };
+    let test_data = TestData {
+        sean,
+        tess,
+        posts: posts_data,
+        comments: comments_data,
+        likes: likes_data,
+        followings: followings_data,
+    };
 
     (connection, test_data)
 }

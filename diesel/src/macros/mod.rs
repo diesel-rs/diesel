@@ -585,7 +585,14 @@ macro_rules! table_body {
             ///
             /// This is the type which provides the base methods of the query
             /// builder, such as `.select` and `.filter`.
-            pub struct table;
+            pub struct table {
+                $(pub $column_name: $column_name,)+
+            }
+
+            #[allow(non_upper_case_globals)]
+            pub const table: table = table {
+                $($column_name: $column_name,)+
+            };
 
             impl table {
                 #[allow(dead_code)]
