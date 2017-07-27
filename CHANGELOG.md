@@ -4,9 +4,18 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
 ### Added
 
 * Added helper types for inner join and left outer join
+
+### Fixed
+
+* `BigDecimal` now properly encodes numbers starting with `10000` on postgres.
+  See [issue #1044][] for details.
+
+[issue #1044]: https://github.com/diesel-rs/diesel/issues/1044
 
 ## [0.15.1] - 2017-07-24
 
