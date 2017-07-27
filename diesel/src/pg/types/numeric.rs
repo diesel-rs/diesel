@@ -26,7 +26,7 @@ mod bigdecimal {
 
         let mut integer_part = absolute.to_bigint().expect("Can always take integer part of BigDecimal");
 
-        while ten_k < integer_part {
+        while ten_k <= integer_part {
             weight += 1;
             // digit is integer_part REM 10_000
             let (div, digit) = integer_part.div_rem(&ten_k);

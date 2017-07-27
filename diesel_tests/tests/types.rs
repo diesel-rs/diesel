@@ -441,6 +441,25 @@ fn pg_numeric_bigdecimal_to_sql() {
     }
 
     quickcheck(correct_rep as fn(u64, u64) -> bool);
+
+    let test_values = vec![
+        "1.0",
+        "141.0",
+        "-1.0",
+        // Larger than u64
+        "18446744073709551616",
+        // Powers of 10k (numeric is represented in base 10k)
+        "10000",
+        "100000000",
+        "1.100001",
+        "10000.100001",
+    ];
+
+    for value in test_values {
+        let expected = format!("'{}'::numeric", value);
+        let value = value.parse::<BigDecimal>().unwrap();
+        query_to_sql_equality::<Numeric, _>(&expected, value);
+    }
 }
 
 #[test]
@@ -448,18 +467,24 @@ fn pg_numeric_bigdecimal_to_sql() {
 fn pg_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
 
-    let query = "1.0::numeric";
-    let expected_value: BigDecimal = "1.0".parse().expect("Could not parse to a BigDecimal");
-    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+    let values = vec![
+        "1.0",
+        "141.0",
+        "-1.0",
+        // Larger than u64
+        "18446744073709551616",
+        // Powers of 10k (numeric is represented in base 10k)
+        "10000",
+        "100000000",
+        "1.100001",
+        "10000.100001",
+    ];
 
-    let query = "141.00::numeric";
-    let expected_value: BigDecimal = "141.00".parse().expect("Could not parse to a BigDecimal");
-    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
-
-    // Some non standard values:
-    let query = "18446744073709551616::numeric"; // 2^64; doesn't fit in u64
-    let expected_value: BigDecimal = "18446744073709551616.00".parse().expect("Could not parse to a BigDecimal");
-    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+    for value in values {
+        let query = format!("'{}'::numeric", value);
+        let expected = value.parse::<BigDecimal>().unwrap();
+        assert_eq!(expected, query_single_value::<Numeric, BigDecimal>(&query));
+    }
 }
 
 #[test]
