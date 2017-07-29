@@ -4,6 +4,15 @@ Diesel CLI
 Diesel CLI is a tool that aids in managing your database schema. Migrations are
 bi-directional changes to your database that get applied sequentially.
 
+Installation
+---------------
+
+The diesel cli requires `mysql` to be installed on your system. If you have
+homebrew installed, you can run `which mysql || brew install mysql` to install
+`mysql` if necessary.
+
+Finally, you can install the diesel CLI by running `cargo install diesel_cli`.
+
 Getting Started
 ---------------
 
@@ -86,6 +95,9 @@ Runs the `down.sql` for the most recent migration.
 
 #### `migration redo`
 Runs the `down.sql` and then the `up.sql` for the most recent migration.
+
+## `diesel print-schema`
+Prints table definitions for database schema.
 
 [pending-migrations]: http://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
 [rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
