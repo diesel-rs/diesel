@@ -8,8 +8,8 @@ Installation
 ---------------
 
 The diesel cli, by default, requires [`libpq`][postgres], [`sqlite`][sqlite]
-and [`mysql`][mysql], some of which already be included on your system. See which
-dependencies are already present with:
+and [`mysql`][mysql], some of which may already be included on your system. See
+which dependencies are already present with:
 
 ```sh
 which psql
