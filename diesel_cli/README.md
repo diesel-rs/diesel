@@ -23,7 +23,7 @@ To install the cli without these dependencies, omit the unneeded dependencies fr
 the following command:
 
 ```
-cargo install diesel_cli --no-default-features --features postgres,sqlite,mysql
+cargo install diesel_cli --no-default-features --features "postgres sqlite mysql"
 ```
 
 The argument passed to `--features` must include no spaces, and be comma-separated.
