@@ -4,6 +4,24 @@ Diesel CLI
 Diesel CLI is a tool that aids in managing your database schema. Migrations are
 bi-directional changes to your database that get applied sequentially.
 
+Installation
+---------------
+
+The diesel cli, by default, requires [`libpq`][postgres], [`sqlite`][sqlite]
+and [`mysql`][mysql]. Once these dependencies are installed, you can run
+`cargo install diesel_cli`.
+
+To install the cli without these dependencies, omit the unneeded dependencies from
+the following command:
+
+```
+cargo install diesel_cli --no-default-features --features "postgres sqlite mysql"
+```
+
+[postgres]: https://www.postgresql.org/download/
+[sqlite]: http://www.sqlitetutorial.net/download-install-sqlite/
+[mysql]: https://dev.mysql.com/doc/refman/5.7/en/installing.html
+
 Getting Started
 ---------------
 
@@ -86,6 +104,9 @@ Runs the `down.sql` for the most recent migration.
 
 #### `migration redo`
 Runs the `down.sql` and then the `up.sql` for the most recent migration.
+
+## `diesel print-schema`
+Prints table definitions for database schema.
 
 [pending-migrations]: http://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
 [rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
