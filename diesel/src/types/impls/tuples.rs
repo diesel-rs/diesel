@@ -8,7 +8,7 @@ use query_builder::*;
 use query_source::{QuerySource, Queryable, Table, Column};
 use result::QueryResult;
 use row::Row;
-use types::{HasSqlType, FromSqlRow, Nullable, NotNull};
+use types::{HasSqlType, FromSqlRow, NotNull};
 use util::TupleAppend;
 
 macro_rules! tuple_impls {
@@ -42,27 +42,6 @@ macro_rules! tuple_impls {
             {
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
-                }
-
-                fn fields_needed() -> usize {
-                    $($T::fields_needed() +)+ 0
-                }
-            }
-
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<Nullable<($($ST,)+)>, DB> for Option<($($T,)+)> where
-                DB: Backend,
-                $($T: FromSqlRow<$ST, DB>),+,
-                $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
-            {
-                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    let fields_needed = <Self as FromSqlRow<Nullable<($($ST,)+)>, DB>>::fields_needed();
-                    if row.next_is_null(fields_needed) {
-                        row.advance(fields_needed);
-                        Ok(None)
-                    } else {
-                        Ok(Some(($(try!($T::build_from_row(row)),)+)))
-                    }
                 }
 
                 fn fields_needed() -> usize {

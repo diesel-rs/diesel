@@ -75,16 +75,6 @@ impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
     }
 }
 
-#[cfg(not(feature="unstable"))]
-impl<T, ST> FromSqlRow<Nullable<Array<ST>>, Pg> for Option<Vec<T>> where
-    Pg: HasSqlType<ST>,
-    Option<Vec<T>>: FromSql<Nullable<Array<ST>>, Pg>,
-{
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
-        FromSql::<Nullable<Array<ST>>, Pg>::from_sql(row.take())
-    }
-}
-
 impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
     T: FromSql<ST, Pg> + Queryable<ST, Pg>,
     Pg: HasSqlType<ST>,
