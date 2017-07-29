@@ -7,11 +7,30 @@ bi-directional changes to your database that get applied sequentially.
 Installation
 ---------------
 
-The diesel cli requires `mysql` to be installed on your system. If you have
-homebrew installed, you can run `which mysql || brew install mysql` to install
-`mysql` if necessary.
+The diesel cli, by default, requires [`libpq`][postgres], [`sqlite`][sqlite]
+and [`mysql`][mysql], some of which already be included on your system. See which
+dependencies are already present with:
 
-Finally, you can install the diesel CLI by running `cargo install diesel_cli`.
+```sh
+which psql
+which sqlite3
+which mysql
+```
+
+Once these dependencies are installed, you can run `cargo install diesel_cli`.
+
+To install the cli without these dependencies, omit the unneeded dependencies from
+the following command:
+
+```
+cargo install diesel_cli --no-default-features --features postgres,sqlite,mysql
+```
+
+The argument passed to `--features` must include no spaces, and be comma-separated.
+
+[postgres]: https://www.postgresql.org/download/
+[sqlite]: http://www.sqlitetutorial.net/download-install-sqlite/
+[mysql]: https://dev.mysql.com/doc/refman/5.7/en/installing.html
 
 Getting Started
 ---------------
