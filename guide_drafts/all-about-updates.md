@@ -99,7 +99,7 @@ That would generate this SQL:
 UPDATE `posts` SET `visit_count` = `posts`.`visit_count` + 1
 ```
 
-Note that to use the Rust `+` operator on our column, we'll need to have written `numeric_expr!(posts::visit_count)` somewhere after we declared it. (Diesel may do this automatically for you in the future.) Assigning values directly is great for small, simple changes. If we wanted to update multiple columns this way, we can pass a tuple.
+Assigning values directly is great for small, simple changes. If we wanted to update multiple columns this way, we can pass a tuple.
 
 ```rust
 use posts::dsl::*;
@@ -116,6 +116,9 @@ This will generate exactly the SQL you'd expect
 ```sql
 UPDATE `posts` SET `title` = ?, `body` = ?
 ```
+
+AsChangeset
+-----------
 
 While it's nice to have the ability to update columns directly like this, it can quickly get cumbersome when dealing with forms that have more than a handful of fields. If we look at the signature of [`.set`], you'll notice that the constraint is for a trait called [`AsChangeset`]. This is another trait that `diesel_codegen` can derive for us. We can add `#[derive(AsChangeset)]` to our `Post` struct, which will let us pass a `&Post` to `set`.
 
@@ -164,5 +167,32 @@ UPDATE `posts` SET `body` = ?
 
 If you wanted to assign `NULL` instead, you can either specify `#[changeset_options(treat_none_as_null="true")]` on the struct, or you can have the field be of type `Option<Option<T>>`. Diesel doesn't currently provide a way to explicitly assign a field to its default value, though it may be provided in the future.
 
-<!-- TODO: Cover `execute` vs `get_result` vs `get_results` vs `save_changes` -->
-<!-- TODO: Briefly mention upsert exists, point to docs -->
+If you are using PostgreSQL, all of these options will work with `INSERT ON CONFLICT DO UPDATE` as well. See the [upsert docs][] for more details.
+
+[upsert docs]: http://docs.diesel.rs/diesel/pg/upsert/fn.do_update.html
+
+Executing your query
+--------------------
+
+Once you've constructed your query, we need to actually execute it. There are several different methods to do this, depending on what type you'd like back.
+
+The simplest method for running your query is [`execute`][]. This method will run your query, and return the number of rows that were affected. This is the method you should use if you simply want to ensure that the query executed successfully, and don't care about getting anything back from the database.
+
+[`execute`]: http://docs.diesel.rs/diesel/prelude/trait.ExecuteDsl.html#tymethod.execute
+
+For queries where you do want to get data back from the database, we need to use [`get_result`][] or [`get_results`][]. If you haven't explicitly called [`returning`][], these methods will return all of the columns on the table. Similar to [`load`][] on a select statement, you will need to specify the type you'd like to deserialize to (either a tuple or a struct with `#[derive(Queryable)]`). You should use [`get_results`][] when you are expecting more than one record back. If you are only expecting a single record, you can call [`get_result`][] instead.
+
+It should be noted that receiving 0 rows from [`get_result`][] is considered an error condition by default. If you want to get back 0 or 1 row (e.g. have a return type of `QueryResult<Option<T>>`), then you will need to call `.get_result(...).optional()`.
+
+[`get_result`]: http://docs.diesel.rs/diesel/prelude/trait.LoadDsl.html#method.get_result
+[`get_results`]: http://docs.diesel.rs/diesel/prelude/trait.LoadDsl.html#method.get_results
+[`returning`]: http://docs.diesel.rs/diesel/query_builder/update_statement/struct.UpdateStatement.html#method.returning
+[`load`]: http://docs.diesel.rs/diesel/prelude/trait.LoadDsl.html#method.load
+
+Finally, if your struct has both `#[derive(AsChangeset)]` and `#[derive(Identifiable)]`, you will be able to use the [`save_changes`][] method. Unlike the other methods mentioned in this guide, you do not explicitly build a query when using [`save_changes`][]. Doing `foo.save_changes(&conn)` is equivalent to doing `diesel::update(&foo).set(&foo).get_result(&conn)`. Like [`get_result`][] and [`get_results`][], you will need to specify the type you'd like to get back.
+
+[`save_changes`]: http://docs.diesel.rs/diesel/prelude/trait.SaveChangesDsl.html#method.save_changes
+
+All of the code for this guide can be found in executable form in [this Diesel example].
+
+[this Diesel example]: https://github.com/diesel-rs/diesel/blob/master/examples/postgres/all_about_updates/src/lib.rs

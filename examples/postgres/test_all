@@ -13,6 +13,6 @@ for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
     ../../../bin/diesel database reset
   fi
 
-  cargo build
+  cargo test
   cd ..
 done

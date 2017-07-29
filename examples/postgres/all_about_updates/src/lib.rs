@@ -17,8 +17,6 @@ table! {
     }
 }
 
-numeric_expr!(posts::visit_count);
-
 #[derive(Queryable, Identifiable, AsChangeset)]
 pub struct Post {
     pub id: i64,
