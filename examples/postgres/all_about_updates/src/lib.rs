@@ -39,7 +39,7 @@ fn examine_sql_from_publish_all_posts() {
     use posts::dsl::*;
 
     assert_eq!(
-        "UPDATE `posts` SET `draft` = ?".to_string(),
+        "UPDATE \"posts\" SET \"draft\" = $1".to_string(),
         debug_sql!(diesel::update(posts).set(draft.eq(false)))
     );
 }
@@ -60,8 +60,8 @@ fn examine_sql_from_publish_pending_posts() {
 
     let target = posts.filter(publish_at.lt(now));
     assert_eq!(
-        "UPDATE `posts` SET `draft` = ? \
-        WHERE `posts`.`publish_at` < CURRENT_TIMESTAMP".to_string(),
+        "UPDATE \"posts\" SET \"draft\" = $1 \
+        WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP".to_string(),
         debug_sql!(diesel::update(target).set(draft.eq(false)))
     );
 }
@@ -82,7 +82,7 @@ fn examine_sql_from_publish_post() {
         visit_count: 0,
     };
     assert_eq!(
-        "UPDATE `posts` SET `draft` = ? WHERE `posts`.`id` = ?".to_string(),
+        "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2".to_string(),
         debug_sql!(diesel::update(&post).set(posts::draft.eq(false)))
     );
 }
@@ -99,7 +99,7 @@ fn examine_sql_from_increment_visit_counts() {
     use posts::dsl::*;
 
     assert_eq!(
-        "UPDATE `posts` SET `visit_count` = `posts`.`visit_count` + ?".to_string(),
+        "UPDATE \"posts\" SET \"visit_count\" = \"posts\".\"visit_count\" + $1".to_string(),
         debug_sql!(diesel::update(posts).set(visit_count.eq(visit_count + 1)))
     );
 }
@@ -124,7 +124,7 @@ fn examine_sql_from_hide_everything() {
         body.eq("This post has been classified"),
     ));
     assert_eq!(
-        "UPDATE `posts` SET `title` = ?, `body` = ?".to_string(),
+        "UPDATE \"posts\" SET \"title\" = $1, \"body\" = $2".to_string(),
         debug_sql!(query)
     );
 }
@@ -145,12 +145,12 @@ fn examine_sql_from_update_post_fields() {
         visit_count: 0,
     };
     assert_eq!(
-        "UPDATE `posts` SET \
-            `title` = ?, \
-            `body` = ?, \
-            `draft` = ?, \
-            `publish_at` = ?, \
-            `visit_count` = ?".to_string(),
+        "UPDATE \"posts\" SET \
+            \"title\" = $1, \
+            \"body\" = $2, \
+            \"draft\" = $3, \
+            \"publish_at\" = $4, \
+            \"visit_count\" = $5".to_string(),
         debug_sql!(diesel::update(posts::table).set(&post))
     );
 }
@@ -187,7 +187,7 @@ fn examine_sql_from_update_with_option() {
     let query = diesel::update(posts::table)
         .set(&post_form);
     assert_eq!(
-        "UPDATE `posts` SET `body` = ?".to_string(),
+        "UPDATE \"posts\" SET \"body\" = $1".to_string(),
         debug_sql!(query)
     );
 }
