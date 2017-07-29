@@ -878,18 +878,20 @@ macro_rules! enable_multi_table_joins {
 /// #
 /// # fn main() {
 /// let sql = debug_sql!(users.count());
-/// assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
+/// if cfg!(feature = "postgres") {
+///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users""#);
+/// } else {
+///     assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
+/// }
 /// # }
 /// ```
+#[cfg(feature = "with-deprecated")]
 #[macro_export]
+#[deprecated(since = "0.16.0", note = "use `diesel::debug_sql` instead")]
 macro_rules! debug_sql {
-    ($query:expr) => {{
-        use $crate::query_builder::{QueryFragment, QueryBuilder};
-        use $crate::query_builder::debug::DebugQueryBuilder;
-        let mut query_builder = DebugQueryBuilder::new();
-        QueryFragment::<$crate::backend::Debug>::to_sql(&$query, &mut query_builder).unwrap();
-        query_builder.finish()
-    }};
+    ($query:expr) => {
+        $crate::query_builder::deprecated_debug_sql(&$query)
+    };
 }
 
 /// Takes takes a query `QueryFragment` expression as an argument and prints out
@@ -916,9 +918,11 @@ macro_rules! debug_sql {
 /// # }
 /// ```
 #[macro_export]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "0.16.0", note = "use `println!(\"{}\", diesel::debug_sql(...))` instead")]
 macro_rules! print_sql {
     ($query:expr) => {
-        println!("{}", &debug_sql!($query));
+        println!("{}", debug_sql!($query));
     };
 }
 
@@ -978,9 +982,11 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "postgres")]
     fn table_with_custom_schema() {
-        let expected_sql = "SELECT `foo`.`bars`.`baz` FROM `foo`.`bars`";
-        assert_eq!(expected_sql, debug_sql!(bars::table.select(bars::baz)));
+        use pg::Pg;
+        let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars""#;
+        assert_eq!(expected_sql, ::debug_sql::<Pg, _>(&bars::table.select(bars::baz)));
     }
 
     table! {

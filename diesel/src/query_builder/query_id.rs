@@ -51,7 +51,6 @@ impl<DB> QueryId for QueryFragment<DB> {
 mod tests {
     use std::any::TypeId;
 
-    use backend::Debug;
     use prelude::*;
     use super::QueryId;
 
@@ -91,7 +90,9 @@ mod tests {
     }
 
     #[test]
+    #[cfg(features="postgres")]
     fn boxed_queries_do_not_have_static_query_id() {
-        assert!(query_id(users::table.into_boxed::<Debug>()).is_none());
+        use pg::Pg;
+        assert!(query_id(users::table.into_boxed::<Pg>()).is_none());
     }
 }

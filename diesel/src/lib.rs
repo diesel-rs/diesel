@@ -134,6 +134,8 @@ pub mod prelude {
 
 pub use prelude::*;
 #[doc(inline)]
+pub use query_builder::debug_sql;
+#[doc(inline)]
 pub use query_builder::functions::{insert, update, delete, select, insert_default_values};
 #[cfg(feature = "sqlite")]
 pub use sqlite::query_builder::functions::*;

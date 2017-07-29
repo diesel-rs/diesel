@@ -10,6 +10,24 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added helper types for inner join and left outer join
 
+* `diesel::debug_sql` has been added as a replacement for `debug_sql!`. This
+  function differs from the macro by allowing you to specify the backend, and
+  will generate the actual query which will be run.
+
+### Changed
+
+* The deprecated `debug_sql!` and `print_sql!` functions will now generate
+  backend specific SQL. (The specific backend they will generate for will be
+  arbitrarily chosen based on the backends enabled).
+
+### Removed
+
+* `debug_sql!` has been deprecated in favor of `diesel::debug_sql`.
+
+* `print_sql!` has been deprecated without replacement.
+
+* `diesel::backend::Debug` has been removed.
+
 ## [0.15.2] - 2017-07-28
 
 ### Fixed

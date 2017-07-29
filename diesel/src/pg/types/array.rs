@@ -3,7 +3,6 @@ use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
-use backend::Debug;
 use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
 use query_source::Queryable;
 use types::*;
@@ -17,12 +16,6 @@ impl<T> HasSqlType<Array<T>> for Pg where
             array_oid: 0,
         }
     }
-}
-
-impl<T> HasSqlType<Array<T>> for Debug where
-    Debug: HasSqlType<T>,
-{
-    fn metadata(_: &()) {}
 }
 
 impl_query_id!(Array<T>);

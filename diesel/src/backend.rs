@@ -1,8 +1,7 @@
-use byteorder::{ByteOrder, NativeEndian};
+use byteorder::ByteOrder;
 
 use query_builder::QueryBuilder;
-use query_builder::bind_collector::{BindCollector, RawBytesBindCollector};
-use query_builder::debug::DebugQueryBuilder;
+use query_builder::bind_collector::BindCollector;
 use types::{self, HasSqlType};
 
 pub trait Backend where
@@ -33,22 +32,3 @@ pub trait TypeMetadata {
 pub trait SupportsReturningClause {}
 pub trait SupportsDefaultKeyword {}
 pub trait UsesAnsiSavepointSyntax {}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Debug;
-
-impl Backend for Debug {
-    type QueryBuilder = DebugQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Self>;
-    type RawValue = ();
-    type ByteOrder = NativeEndian;
-}
-
-impl TypeMetadata for Debug {
-    type TypeMetadata = ();
-    type MetadataLookup = ();
-}
-
-impl SupportsReturningClause for Debug {}
-impl SupportsDefaultKeyword for Debug {}
-impl UsesAnsiSavepointSyntax for Debug {}
