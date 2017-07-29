@@ -26,8 +26,6 @@ the following command:
 cargo install diesel_cli --no-default-features --features "postgres sqlite mysql"
 ```
 
-The argument passed to `--features` must include no spaces, and be comma-separated.
-
 [postgres]: https://www.postgresql.org/download/
 [sqlite]: http://www.sqlitetutorial.net/download-install-sqlite/
 [mysql]: https://dev.mysql.com/doc/refman/5.7/en/installing.html
