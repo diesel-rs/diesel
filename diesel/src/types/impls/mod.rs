@@ -71,16 +71,6 @@ macro_rules! queryable_impls {
             }
         }
 
-        #[cfg(not(feature = "unstable"))]
-        impl<DB> $crate::types::FromSqlRow<$crate::types::Nullable<$crate::types::$Source>, DB> for Option<$Target> where
-            DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
-            Option<$Target>: $crate::types::FromSql<$crate::types::Nullable<$crate::types::$Source>, DB>,
-        {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error+Send+Sync>> {
-                $crate::types::FromSql::<$crate::types::Nullable<$crate::types::$Source>, DB>::from_sql(row.take())
-            }
-        }
-
         impl<DB> $crate::query_source::Queryable<$crate::types::$Source, DB> for $Target where
             DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
             $Target: $crate::types::FromSqlRow<$crate::types::$Source, DB>,
