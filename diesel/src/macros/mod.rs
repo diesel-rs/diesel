@@ -999,15 +999,23 @@ macro_rules! enable_multi_table_joins {
 /// # fn main() {
 /// let sql = debug_sql!(users.count());
 /// if cfg!(feature = "postgres") {
-///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users""#);
+///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
 /// } else {
-///     assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
+///     assert_eq!(sql, "SELECT COUNT(*) FROM `users` -- binds: []");
+/// }
+///
+/// let sql = debug_sql!(users.filter(n.eq(1)));
+/// if cfg!(feature = "postgres") {
+///     assert_eq!(sql, r#"SELECT "users"."id", "users"."n" FROM "users" WHERE "users"."n" = $1 -- binds: [1]"#);
+/// } else {
+///     assert_eq!(sql, "SELECT `users`.`id`, `users`.`n` FROM `users` WHERE \
+///         `users`.`n` = ? -- binds: [1]");
 /// }
 /// # }
 /// ```
 #[cfg(feature = "with-deprecated")]
 #[macro_export]
-#[deprecated(since = "0.16.0", note = "use `diesel::debug_sql` instead")]
+#[deprecated(since = "0.16.0", note = "use `diesel::debug_query(...).to_string()` instead")]
 macro_rules! debug_sql {
     ($query:expr) => {
         $crate::query_builder::deprecated_debug_sql(&$query)
@@ -1039,7 +1047,7 @@ macro_rules! debug_sql {
 /// ```
 #[macro_export]
 #[cfg(feature = "with-deprecated")]
-#[deprecated(since = "0.16.0", note = "use `println!(\"{}\", diesel::debug_sql(...))` instead")]
+#[deprecated(since = "0.16.0", note = "use `println!(\"{}\", diesel::debug_query(...))` instead")]
 macro_rules! print_sql {
     ($query:expr) => {
         println!("{}", debug_sql!($query));
@@ -1105,8 +1113,8 @@ mod tests {
     #[cfg(feature = "postgres")]
     fn table_with_custom_schema() {
         use pg::Pg;
-        let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars""#;
-        assert_eq!(expected_sql, ::debug_sql::<Pg, _>(&bars::table.select(bars::baz)));
+        let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars" -- binds: []"#;
+        assert_eq!(expected_sql, &::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string());
     }
 
     table! {

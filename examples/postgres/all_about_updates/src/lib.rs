@@ -4,6 +4,10 @@
 use std::time::SystemTime;
 
 use diesel::prelude::*;
+#[cfg(test)]
+use diesel::debug_query;
+#[cfg(test)]
+use diesel::pg::Pg;
 
 table! {
     posts {
@@ -38,8 +42,8 @@ fn examine_sql_from_publish_all_posts() {
     use posts::dsl::*;
 
     assert_eq!(
-        "UPDATE \"posts\" SET \"draft\" = $1".to_string(),
-        debug_sql!(diesel::update(posts).set(draft.eq(false)))
+        "UPDATE \"posts\" SET \"draft\" = $1 -- binds: [false]",
+        debug_query(&diesel::update(posts).set(draft.eq(false))).to_string()
     );
 }
 
@@ -60,8 +64,9 @@ fn examine_sql_from_publish_pending_posts() {
     let target = posts.filter(publish_at.lt(now));
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 \
-        WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP".to_string(),
-        debug_sql!(diesel::update(target).set(draft.eq(false)))
+        WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
+        -- binds: [false]",
+        debug_query(&diesel::update(target).set(draft.eq(false))).to_string()
     );
 }
 
@@ -81,8 +86,9 @@ fn examine_sql_from_publish_post() {
         visit_count: 0,
     };
     assert_eq!(
-        "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2".to_string(),
-        debug_sql!(diesel::update(&post).set(posts::draft.eq(false)))
+        "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2 \
+        -- binds: [false, 1]",
+        debug_query(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
     );
 }
 
@@ -98,8 +104,9 @@ fn examine_sql_from_increment_visit_counts() {
     use posts::dsl::*;
 
     assert_eq!(
-        "UPDATE \"posts\" SET \"visit_count\" = \"posts\".\"visit_count\" + $1".to_string(),
-        debug_sql!(diesel::update(posts).set(visit_count.eq(visit_count + 1)))
+        "UPDATE \"posts\" SET \"visit_count\" = \"posts\".\"visit_count\" + $1 \
+        -- binds: [1]",
+        debug_query::<Pg, _>(&diesel::update(posts).set(visit_count.eq(visit_count + 1))).to_string()
     );
 }
 
@@ -123,8 +130,9 @@ fn examine_sql_from_hide_everything() {
         body.eq("This post has been classified"),
     ));
     assert_eq!(
-        "UPDATE \"posts\" SET \"title\" = $1, \"body\" = $2".to_string(),
-        debug_sql!(query)
+        "UPDATE \"posts\" SET \"title\" = $1, \"body\" = $2 \
+        -- binds: [\"[REDACTED]\", \"This post has been classified\"]",
+        debug_query::<Pg, _>(&query).to_string()
     );
 }
 
@@ -135,22 +143,32 @@ pub fn update_from_post_fields(post: Post, conn: &PgConnection) -> QueryResult<u
 
 #[test]
 fn examine_sql_from_update_post_fields() {
+    let now = SystemTime::now();
     let post = Post {
         id: 1,
         title: "".into(),
         body: "".into(),
         draft: false,
-        publish_at: SystemTime::now(),
+        publish_at: now,
         visit_count: 0,
     };
-    assert_eq!(
+    let sql = format!(
         "UPDATE \"posts\" SET \
             \"title\" = $1, \
             \"body\" = $2, \
             \"draft\" = $3, \
             \"publish_at\" = $4, \
-            \"visit_count\" = $5".to_string(),
-        debug_sql!(diesel::update(posts::table).set(&post))
+            \"visit_count\" = $5 \
+            -- binds: [\
+                \"\", \
+                \"\", \
+                false, \
+                {:?}, \
+                0\
+            ]", now);
+    assert_eq!(
+        sql,
+        debug_query(&diesel::update(posts::table).set(&post)).to_string()
     );
 }
 
@@ -186,7 +204,8 @@ fn examine_sql_from_update_with_option() {
     let query = diesel::update(posts::table)
         .set(&post_form);
     assert_eq!(
-        "UPDATE \"posts\" SET \"body\" = $1".to_string(),
-        debug_sql!(query)
+        "UPDATE \"posts\" SET \"body\" = $1 \
+        -- binds: [\"My new post\"]",
+        debug_query::<Pg, _>(&query).to_string()
     );
 }

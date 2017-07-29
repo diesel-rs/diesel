@@ -28,7 +28,7 @@ fn test_count_star() {
     assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
-    assert!(debug_sql::<TestBackend, _>(&source).starts_with("SELECT COUNT(*) FROM"));
+    assert!(debug_query::<TestBackend, _>(&source).to_string().starts_with("SELECT COUNT(*) FROM"));
 }
 
 table! {

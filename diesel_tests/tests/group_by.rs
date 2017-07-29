@@ -9,12 +9,13 @@ fn group_by_generates_group_by_sql() {
     let source = users::table.group_by(users::name).select(users::id).filter(users::hair_color.is_null());
     let mut expected_sql = "SELECT `users`.`id` FROM `users` \
         WHERE `users`.`hair_color` IS NULL \
-        GROUP BY `users`.`name`".to_string();
+        GROUP BY `users`.`name` \
+        -- binds: []".to_string();
     if cfg!(feature = "postgres") {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_sql::<TestBackend, _>(&source));
+    assert_eq!(expected_sql, debug_query::<TestBackend, _>(&source).to_string());
 }
 
 #[test]
@@ -28,10 +29,11 @@ fn boxed_queries_have_group_by_method() {
         .filter(users::hair_color.is_null());
     let mut expected_sql = "SELECT `users`.`id` FROM `users` \
         WHERE `users`.`hair_color` IS NULL \
-        GROUP BY `users`.`name`".to_string();
+        GROUP BY `users`.`name` \
+        -- binds: []".to_string();
     if cfg!(feature = "postgres") {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_sql(&source));
+    assert_eq!(expected_sql, debug_query(&source).to_string());
 }

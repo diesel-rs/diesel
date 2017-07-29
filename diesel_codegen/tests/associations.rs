@@ -59,8 +59,8 @@ fn simple_belongs_to() {
     let filter = posts::table.filter(posts::user_id.eq(42));
 
     assert_eq!(
-        debug_sql::<Backend, _>(&belong_to),
-        debug_sql::<Backend, _>(&filter)
+        debug_query::<Backend, _>(&belong_to).to_string(),
+        debug_query::<Backend, _>(&filter).to_string()
     );
 }
 
@@ -118,8 +118,8 @@ fn custom_foreign_key() {
     let filter = posts::table.filter(posts::belongs_to_user.eq(42));
 
     assert_eq!(
-        debug_sql::<Backend, _>(&belong_to),
-        debug_sql::<Backend, _>(&filter)
+        debug_query::<Backend, _>(&belong_to).to_string(),
+        debug_query::<Backend, _>(&filter).to_string()
     );
 }
 
@@ -146,7 +146,7 @@ fn self_referential() {
     let belong_to = Tree::belonging_to(&t);
     let filter = trees::table.filter(trees::parent_id.eq(42));
     assert_eq!(
-        debug_sql::<Backend, _>(&belong_to),
-        debug_sql::<Backend, _>(&filter)
+        debug_query::<Backend, _>(&belong_to).to_string(),
+        debug_query::<Backend, _>(&filter).to_string()
     );
 }

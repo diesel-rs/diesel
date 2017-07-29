@@ -11,6 +11,7 @@ mod clause_macro;
 
 mod ast_pass;
 pub mod bind_collector;
+mod debug_query;
 mod delete_statement;
 #[doc(hidden)]
 pub mod functions;
@@ -30,6 +31,7 @@ pub mod update_statement;
 
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
+pub use self::debug_query::DebugQuery;
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
@@ -148,8 +150,13 @@ impl<T: Query> AsQuery for T {
     }
 }
 
-/// Takes a query `QueryFragment` expression as an argument and returns a string
-/// of SQL with placeholders for the dynamic values.
+/// Takes a query `QueryFragment` expression as an argument and returns a type
+/// that implements `fmt::Display` and `fmt::Debug` to show the query.
+///
+/// The `Display` implementation will show the exact query being sent to the
+/// server, with a comment showing the values of the bind parameters. The
+/// `Debug` implementation will include the same information in a more
+/// structured form, and respects pretty printing.
 ///
 /// # Example
 ///
@@ -164,23 +171,36 @@ impl<T: Query> AsQuery for T {
 /// #
 /// # fn main() {
 /// #   use schema::users::dsl::*;
-/// let sql = debug_sql::<DB, _>(&users.count());
-/// if cfg!(feature = "postgres") {
-///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users""#);
-/// } else {
-///     assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
-/// }
+/// let sql = debug_query::<DB, _>(&users.count()).to_string();
+/// # if cfg!(feature = "postgres") {
+/// #     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
+/// # } else {
+/// assert_eq!(sql, "SELECT COUNT(*) FROM `users` -- binds: []");
+/// # }
+///
+/// let query = users.find(1);
+/// let debug = debug_query::<DB, _>(&query);
+/// # if cfg!(feature = "postgres") {
+/// #     assert_eq!(debug.to_string(), "SELECT \"users\".\"id\", \"users\".\"name\" \
+/// #         FROM \"users\" WHERE \"users\".\"id\" = $1 -- binds: [1]");
+/// # } else {
+/// assert_eq!(debug.to_string(), "SELECT `users`.`id`, `users`.`name` FROM `users` \
+///     WHERE `users`.`id` = ? -- binds: [1]");
+/// # }
+///
+/// let debug = format!("{:?}", debug);
+/// # if !cfg!(feature = "postgres") { // Escaping that string is a pain
+/// let expected = "Query { \
+///     sql: \"SELECT `users`.`id`, `users`.`name` FROM `users` WHERE \
+///         `users`.`id` = ?\", \
+///     binds: [1] \
+/// }";
+/// assert_eq!(debug, expected);
+/// # }
 /// # }
 /// ```
-pub fn debug_sql<DB, T>(query: &T) -> String where
-    DB: Backend,
-    DB::QueryBuilder: Default,
-    T: QueryFragment<DB>,
-{
-    let mut query_builder = DB::QueryBuilder::default();
-    QueryFragment::<DB>::to_sql(query, &mut query_builder)
-        .expect("Failed to construct query");
-    query_builder.finish()
+pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
+    DebugQuery::new(query)
 }
 
 #[doc(hidden)]
@@ -188,7 +208,7 @@ pub fn debug_sql<DB, T>(query: &T) -> String where
 pub fn deprecated_debug_sql<T>(query: &T) -> String where
     T: QueryFragment<::pg::Pg>,
 {
-    debug_sql(query)
+    debug_query(query).to_string()
 }
 
 #[doc(hidden)]
@@ -196,7 +216,7 @@ pub fn deprecated_debug_sql<T>(query: &T) -> String where
 pub fn deprecated_debug_sql<T>(query: &T) -> String where
     T: QueryFragment<::mysql::Mysql>,
 {
-    debug_sql(query)
+    debug_query(query).to_string()
 }
 
 #[doc(hidden)]
@@ -204,7 +224,7 @@ pub fn deprecated_debug_sql<T>(query: &T) -> String where
 pub fn deprecated_debug_sql<T>(query: &T) -> String where
     T: QueryFragment<::sqlite::Sqlite>,
 {
-    debug_sql(query)
+    debug_query(query).to_string()
 }
 
 #[doc(hidden)]
