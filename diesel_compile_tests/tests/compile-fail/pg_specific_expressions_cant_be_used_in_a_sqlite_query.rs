@@ -30,10 +30,10 @@ fn main() {
     //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     users.select(id).filter(name.is_not_distinct_from("Sean"))
         .load::<i32>(&connection);
-    //~^ ERROR E0277
+    //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     users.select(id).filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&connection);
-    //~^ ERROR E0277
+    //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     insert(&NewUser("Sean").on_conflict_do_nothing()).into(users)
         .execute(&connection);
     //~^ ERROR type mismatch resolving `<diesel::sqlite::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`

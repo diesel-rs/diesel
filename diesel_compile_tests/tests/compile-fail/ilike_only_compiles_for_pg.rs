@@ -24,9 +24,9 @@ struct User {
 fn main() {
     let connection = SqliteConnection::establish("").unwrap();
     users::table.filter(users::name.ilike("%hey%")).execute(&connection);
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 
     let connection = MysqlConnection::establish("").unwrap();
     users::table.filter(users::name.ilike("%hey%")).execute(&connection);
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
