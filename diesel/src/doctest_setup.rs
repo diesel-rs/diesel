@@ -9,9 +9,9 @@ cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
 
-        fn connection_no_data() -> diesel::pg::PgConnection {
+        fn connection_no_data() -> PgConnection {
             let connection_url = database_url_from_env("PG_DATABASE_URL");
-            let connection = diesel::pg::PgConnection::establish(&connection_url).unwrap();
+            let connection = PgConnection::establish(&connection_url).unwrap();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals").unwrap();
@@ -21,7 +21,7 @@ cfg_if! {
         }
 
         #[allow(dead_code)]
-        fn establish_connection() -> diesel::pg::PgConnection {
+        fn establish_connection() -> PgConnection {
             let connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
@@ -56,12 +56,12 @@ cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::sqlite::Sqlite;
 
-        fn connection_no_data() -> diesel::sqlite::SqliteConnection {
-            diesel::sqlite::SqliteConnection::establish(":memory:").unwrap()
+        fn connection_no_data() -> SqliteConnection {
+            SqliteConnection::establish(":memory:").unwrap()
         }
 
         #[allow(dead_code)]
-        fn establish_connection() -> diesel::sqlite::SqliteConnection {
+        fn establish_connection() -> SqliteConnection {
             let connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
@@ -96,9 +96,9 @@ cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::mysql::Mysql;
 
-        fn connection_no_data() -> diesel::mysql::MysqlConnection {
+        fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
-            let connection = diesel::mysql::MysqlConnection::establish(&connection_url).unwrap();
+            let connection = MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("DROP TABLE IF EXISTS users").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts").unwrap();
@@ -107,7 +107,7 @@ cfg_if! {
         }
 
         #[allow(dead_code)]
-        fn establish_connection() -> diesel::mysql::MysqlConnection {
+        fn establish_connection() -> MysqlConnection {
             let connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (

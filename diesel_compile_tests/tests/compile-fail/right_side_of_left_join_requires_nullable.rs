@@ -1,7 +1,6 @@
 #[macro_use] extern crate diesel;
 
 use diesel::*;
-use diesel::pg::PgConnection;
 use diesel::types::Text;
 
 table! {

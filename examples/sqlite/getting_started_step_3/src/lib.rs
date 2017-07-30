@@ -9,7 +9,6 @@ pub mod schema;
 pub mod models;
 
 use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
 use dotenv::dotenv;
 use std::env;
 

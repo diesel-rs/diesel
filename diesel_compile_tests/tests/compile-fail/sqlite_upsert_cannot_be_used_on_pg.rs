@@ -4,7 +4,6 @@ extern crate diesel;
 extern crate diesel_codegen;
 
 use diesel::*;
-use diesel::pg::PgConnection;
 
 table! {
     users {
@@ -21,5 +20,5 @@ struct User {
 fn main() {
     let connection = PgConnection::establish("").unwrap();
     insert_or_replace(&User { id: 1 }).into(users::table).execute(&connection).unwrap();
-    //~^ ERROR type mismatch resolving `<diesel::pg::PgConnection as diesel::Connection>::Backend == diesel::sqlite::Sqlite`
+    //~^ ERROR type mismatch resolving `<diesel::PgConnection as diesel::Connection>::Backend == diesel::sqlite::Sqlite`
 }

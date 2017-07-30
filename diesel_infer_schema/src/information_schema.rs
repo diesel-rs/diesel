@@ -169,7 +169,6 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
 mod tests {
     extern crate dotenv;
 
-    use diesel::pg::PgConnection;
     use self::dotenv::dotenv;
     use std::env;
     use super::*;

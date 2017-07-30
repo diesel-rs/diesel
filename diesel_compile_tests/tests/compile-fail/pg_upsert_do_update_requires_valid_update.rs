@@ -2,7 +2,6 @@
 #[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
-use diesel::pg::PgConnection;
 use diesel::pg::upsert::*;
 
 table! {

@@ -4,7 +4,6 @@
 use std::time::SystemTime;
 
 use diesel::prelude::*;
-use diesel::pg::PgConnection;
 
 table! {
     posts {

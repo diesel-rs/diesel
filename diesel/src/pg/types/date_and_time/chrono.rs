@@ -137,7 +137,6 @@ mod tests {
 
     use ::select;
     use expression::dsl::{sql, now};
-    use pg::PgConnection;
     use prelude::*;
     use types::{Date, Time, Timestamp, Timestamptz};
 

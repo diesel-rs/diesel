@@ -97,7 +97,6 @@ mod tests {
 
     use ::select;
     use expression::dsl::{sql, now};
-    use sqlite::SqliteConnection;
     use prelude::*;
     use types::{Date, Time, Timestamp};
 

@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::pg::PgConnection;
 
 table! {
     int_primary_key {

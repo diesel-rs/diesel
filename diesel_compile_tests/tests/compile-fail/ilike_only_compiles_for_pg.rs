@@ -4,8 +4,6 @@ extern crate diesel;
 extern crate diesel_codegen;
 
 use diesel::*;
-use diesel::sqlite::SqliteConnection;
-use diesel::mysql::MysqlConnection;
 
 table! {
     users {

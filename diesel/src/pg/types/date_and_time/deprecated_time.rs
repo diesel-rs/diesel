@@ -47,7 +47,6 @@ mod tests {
 
     use ::select;
     use expression::dsl::{sql, now};
-    use pg::PgConnection;
     use prelude::*;
     use types::Timestamp;
 

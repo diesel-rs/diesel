@@ -2,8 +2,6 @@ use diesel::prelude::*;
 
 cfg_if! {
     if #[cfg(feature = "sqlite")] {
-        use diesel::sqlite::SqliteConnection;
-
         pub type TestConnection = SqliteConnection;
 
         pub fn connection() -> TestConnection {
@@ -14,8 +12,6 @@ cfg_if! {
 
         use self::dotenv::dotenv;
         use std::env;
-
-        use diesel::pg::PgConnection;
 
         pub type TestConnection = PgConnection;
 
@@ -33,8 +29,6 @@ cfg_if! {
 
         use self::dotenv::dotenv;
         use std::env;
-
-        use diesel::mysql::MysqlConnection;
 
         pub type TestConnection = MysqlConnection;
 
