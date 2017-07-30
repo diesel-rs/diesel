@@ -1,4 +1,3 @@
-use backend::*;
 use expression::{Expression, NonAggregate};
 use pg::Pg;
 use query_builder::*;
@@ -53,15 +52,3 @@ impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
 
 impl_query_id!(AtTimeZone<Ts, Tz>);
 impl_selectable_expression!(AtTimeZone<Ts, Tz>);
-
-impl<Ts, Tz> QueryFragment<Debug> for AtTimeZone<Ts, Tz> where
-    Ts: QueryFragment<Debug>,
-    Tz: QueryFragment<Debug>,
-{
-    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
-        self.timestamp.walk_ast(out.reborrow())?;
-        out.push_sql(" AT TIME ZONE ");
-        self.timezone.walk_ast(out.reborrow())?;
-        Ok(())
-    }
-}

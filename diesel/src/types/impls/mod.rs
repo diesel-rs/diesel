@@ -143,10 +143,6 @@ macro_rules! primitive_impls {
     };
 
     ($Source:ident) => {
-        impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::backend::Debug {
-            fn metadata(_: &()) {}
-        }
-
         impl $crate::query_builder::QueryId for $crate::types::$Source {
             type QueryId = Self;
 
@@ -164,7 +160,6 @@ macro_rules! primitive_impls {
 }
 
 mod date_and_time;
-mod debug;
 pub mod floats;
 mod integers;
 pub mod option;

@@ -1,6 +1,4 @@
 //! Contains traits responsible for the actual construction of SQL statements
-pub mod debug;
-
 #[macro_use]
 mod query_id;
 #[macro_use]
@@ -143,4 +141,69 @@ impl<T: Query> AsQuery for T {
     fn as_query(self) -> Self::Query {
         self
     }
+}
+
+/// Takes a query `QueryFragment` expression as an argument and returns a string
+/// of SQL with placeholders for the dynamic values.
+///
+/// # Example
+///
+/// ### Returning SQL from a count statment:
+///
+/// ```rust
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::*;
+/// # use schema::*;
+/// #
+/// # fn main() {
+/// #   use schema::users::dsl::*;
+/// let sql = debug_sql::<DB, _>(&users.count());
+/// if cfg!(feature = "postgres") {
+///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users""#);
+/// } else {
+///     assert_eq!(sql, "SELECT COUNT(*) FROM `users`");
+/// }
+/// # }
+/// ```
+pub fn debug_sql<DB, T>(query: &T) -> String where
+    DB: Backend,
+    DB::QueryBuilder: Default,
+    T: QueryFragment<DB>,
+{
+    let mut query_builder = DB::QueryBuilder::default();
+    QueryFragment::<DB>::to_sql(query, &mut query_builder)
+        .expect("Failed to construct query");
+    query_builder.finish()
+}
+
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", feature = "postgres"))]
+pub fn deprecated_debug_sql<T>(query: &T) -> String where
+    T: QueryFragment<::pg::Pg>,
+{
+    debug_sql(query)
+}
+
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", feature = "mysql", not(feature = "postgres")))]
+pub fn deprecated_debug_sql<T>(query: &T) -> String where
+    T: QueryFragment<::mysql::Mysql>,
+{
+    debug_sql(query)
+}
+
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
+pub fn deprecated_debug_sql<T>(query: &T) -> String where
+    T: QueryFragment<::sqlite::Sqlite>,
+{
+    debug_sql(query)
+}
+
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(any(feature = "postgres", feature = "mysql", feature = "sqlite"))))]
+pub fn deprecated_debug_sql<T>(query: &T) -> String {
+    String::from("At least one backend must be enabled to generated debug SQL")
 }

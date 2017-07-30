@@ -50,16 +50,6 @@ macro_rules! __diesel_operator_body {
                 Ok(())
             }
         }
-
-        __diesel_operator_debug_query_fragment_if_needed!(
-            backend_ty_params = ($($backend_ty_param,)*),
-            notation = $notation,
-            struct_name = $name,
-            operator = $operator,
-            return_ty = $return_ty,
-            ty_params = ($($ty_param,)+),
-            field_names = ($($field_name,)+),
-        );
     }
 }
 
@@ -93,40 +83,6 @@ macro_rules! __diesel_operator_to_sql {
         $op;
         $expr;
     };
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __diesel_operator_debug_query_fragment_if_needed {
-    // backend_ty_params is empty. This means that we generated `QueryFragment`
-    // for a specific backend. We need to generate it for `Debug` as well.
-    (
-        backend_ty_params = (),
-        notation = $notation:ident,
-        struct_name = $name:ident,
-        operator = $operator:expr,
-        return_ty = $return_ty:ty,
-        ty_params = ($($ty_param:ident,)+),
-        field_names = ($($field_name:ident,)+),
-    ) => {
-        impl<$($ty_param,)+> $crate::query_builder::QueryFragment<$crate::backend::Debug>
-            for $name<$($ty_param,)+> where
-                $($ty_param: $crate::query_builder::QueryFragment<$crate::backend::Debug>,)+
-        {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$crate::backend::Debug>) -> $crate::result::QueryResult<()> {
-                __diesel_operator_to_sql!(
-                    notation = $notation,
-                    operator_expr = out.push_sql($operator),
-                    field_exprs = ($(self.$field_name.walk_ast(out.reborrow())?),+),
-                );
-                Ok(())
-            }
-        }
-    };
-
-    // At least one backend_ty_param was given. We generated a generic impl
-    // which will cover `Debug`.
-    (backend_ty_params = ($($backend_ty_params:ident,)+), $($rest:tt)*) => {};
 }
 
 /// Useful for libraries adding support for new SQL types. Apps should never

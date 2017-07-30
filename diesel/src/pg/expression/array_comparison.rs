@@ -1,4 +1,3 @@
-use backend::*;
 use expression::{AsExpression, Expression, NonAggregate};
 use pg::Pg;
 use query_builder::*;
@@ -107,17 +106,6 @@ impl<Expr> QueryFragment<Pg> for Any<Expr> where
     }
 }
 
-impl<Expr> QueryFragment<Debug> for Any<Expr> where
-    Expr: QueryFragment<Debug>,
-{
-    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
-        out.push_sql("ANY(");
-        self.expr.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
-
 impl_query_id!(Any<Expr>);
 impl_selectable_expression!(Any<Expr>);
 
@@ -150,17 +138,6 @@ impl<Expr> QueryFragment<Pg> for All<Expr> where
     Expr: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        out.push_sql("ALL(");
-        self.expr.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
-
-impl<Expr> QueryFragment<Debug> for All<Expr> where
-    Expr: QueryFragment<Debug>,
-{
-    fn walk_ast(&self, mut out: AstPass<Debug>) -> QueryResult<()> {
         out.push_sql("ALL(");
         self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
