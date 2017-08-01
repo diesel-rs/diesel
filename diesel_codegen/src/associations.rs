@@ -36,31 +36,42 @@ fn expand_belongs_to(model: &Model, options: &AssociationOptions) -> quote::Toke
     let child_table_name = model.table_name();
     let fields = model.attrs.as_slice();
 
-
-    let belongs_to_dsl = {
-        let foreign_key_name = &foreign_key_name;
-        let child_table_name = &child_table_name;
-        let foreign_key_attr = fields.iter()
-            .find(|attr| attr.column_name.as_ref() == Some(foreign_key_name)).unwrap();
-        let foreign_key_ty = &foreign_key_attr.ty;
-        quote! {
-            impl diesel::associations::BelongsTo<#parent_struct> for #struct_name
-            {
-                type ForeignKey = #foreign_key_ty;
-                type ForeignKeyColumn = #child_table_name::#foreign_key_name;
-
-                fn foreign_key(&self) -> Option<&#foreign_key_ty> {
-                    Some(&self.#foreign_key_name)
+    let foreign_key_name = &foreign_key_name;
+    let child_table_name = &child_table_name;
+    let foreign_key_attr = fields.iter()
+        .find(|attr| attr.column_name.as_ref() == Some(foreign_key_name)).unwrap();
+    let foreign_key_ty = &foreign_key_attr.ty;
+    // we need to special case foreign keys on with an Option type
+    // to allow self referencing joins
+    let (foreign_key, foreign_key_ty) = match *foreign_key_ty {
+        syn::Ty::Path(None, ref p) if p.segments[0].ident == "Option" => {
+            let segment = &p.segments[0];
+            let t = match segment.parameters {
+                syn::PathParameters::AngleBracketed(ref p) => {
+                    p.types[0].clone()
                 }
-
-                fn foreign_key_column() -> #child_table_name::#foreign_key_name {
-                    #child_table_name::#foreign_key_name
-                }
-            }
+                syn::PathParameters::Parenthesized(_) => unreachable!()
+            };
+            (quote!(self.#foreign_key_name.as_ref()), t)
         }
+        ref t => (quote!(Some(&self.#foreign_key_name)), t.clone())
     };
 
-    belongs_to_dsl
+    quote! {
+        impl diesel::associations::BelongsTo<#parent_struct> for #struct_name
+        {
+            type ForeignKey = #foreign_key_ty;
+            type ForeignKeyColumn = #child_table_name::#foreign_key_name;
+
+            fn foreign_key(&self) -> Option<&#foreign_key_ty> {
+                #foreign_key
+            }
+
+            fn foreign_key_column() -> #child_table_name::#foreign_key_name {
+                #child_table_name::#foreign_key_name
+            }
+        }
+    }
 }
 
 struct AssociationOptions {
