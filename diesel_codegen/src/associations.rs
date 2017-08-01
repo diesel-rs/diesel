@@ -2,40 +2,65 @@ use syn;
 use quote;
 
 use model::{Model, infer_association_name};
-use util::str_value_of_meta_item;
+use util::{str_value_of_meta_item, wrap_item_in_const};
 
 pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
-    let mut derived_associations = Vec::new();
     let model = t!(Model::from_item(&input, "Associations"));
 
-    for attr in input.attrs.as_slice() {
-        if attr.name() == "belongs_to" {
-            let options = t!(build_association_options(attr, "belongs_to"));
-            derived_associations.push(expand_belongs_to(&model, options))
-        }
-    }
+    let derived_associations = input.attrs.as_slice()
+        .iter()
+        .filter_map(|attr| {
+            if attr.name() == "belongs_to" {
+                Some(t!(build_association_options(attr, "belongs_to")))
+            } else {
+                None
+            }
+        }).map(|option|{
+            expand_belongs_to(&model, &option)
+        }).collect::<Vec<_>>();
 
-    quote!(#(#derived_associations)*)
+    let derived_associations = quote!(#(#derived_associations)*);
+
+    let model_name_uppercase = model.name.as_ref().to_uppercase();
+    let dummy_const = format!("_IMPL_ASSOCIATIONS_FOR_{}", model_name_uppercase).into();
+    wrap_item_in_const(dummy_const, derived_associations)
 }
 
-fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Tokens {
-    let parent_struct = options.name;
+fn expand_belongs_to(model: &Model, options: &AssociationOptions) -> quote::Tokens
+{
+    let parent_struct = &options.name;
     let struct_name = &model.name;
 
-    let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
-        to_foreign_key(parent_struct.as_ref()));
+    let foreign_key_name = options.foreign_key_name.clone()
+        .unwrap_or_else(|| to_foreign_key(parent_struct.as_ref()));
     let child_table_name = model.table_name();
     let fields = model.attrs.as_slice();
 
-    quote!(BelongsTo! {
-        (
-            struct_name = #struct_name,
-            parent_struct = #parent_struct,
-            foreign_key_name = #foreign_key_name,
-            child_table_name = #child_table_name,
-        ),
-        fields = [#(#fields)*],
-    })
+
+    let belongs_to_dsl = {
+        let foreign_key_name = &foreign_key_name;
+        let child_table_name = &child_table_name;
+        let foreign_key_attr = fields.iter()
+            .find(|attr| attr.column_name.as_ref() == Some(foreign_key_name)).unwrap();
+        let foreign_key_ty = &foreign_key_attr.ty;
+        quote! {
+            impl diesel::associations::BelongsTo<#parent_struct> for #struct_name
+            {
+                type ForeignKey = #foreign_key_ty;
+                type ForeignKeyColumn = #child_table_name::#foreign_key_name;
+
+                fn foreign_key(&self) -> Option<&#foreign_key_ty> {
+                    Some(&self.#foreign_key_name)
+                }
+
+                fn foreign_key_column() -> #child_table_name::#foreign_key_name {
+                    #child_table_name::#foreign_key_name
+                }
+            }
+        }
+    };
+
+    belongs_to_dsl
 }
 
 struct AssociationOptions {
