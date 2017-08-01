@@ -1,5 +1,4 @@
 use diesel::expression::sql;
-use diesel::mysql::MysqlConnection;
 use diesel::types::Bool;
 use diesel::*;
 

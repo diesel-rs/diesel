@@ -1,13 +1,7 @@
 use std::error::Error;
 
-use diesel::Connection;
+use diesel::prelude::*;
 use diesel::result::Error::NotFound;
-#[cfg(feature = "postgres")]
-use diesel::pg::PgConnection;
-#[cfg(feature = "sqlite")]
-use diesel::sqlite::SqliteConnection;
-#[cfg(feature = "mysql")]
-use diesel::mysql::MysqlConnection;
 
 use table_data::TableData;
 use data_structures::{ColumnInformation, ColumnType};

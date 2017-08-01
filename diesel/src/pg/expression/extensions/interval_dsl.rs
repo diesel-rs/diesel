@@ -250,7 +250,6 @@ mod tests {
     use ::{types, select};
     use data_types::PgInterval;
     use expression::dsl::sql;
-    use pg::PgConnection;
     use prelude::*;
     use super::*;
 

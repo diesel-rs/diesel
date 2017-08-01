@@ -124,7 +124,6 @@ impl FromSql<Date, Mysql> for NaiveDate {
 }
 
 #[cfg(test)]
-#[allow(unused_imports)]
 mod tests {
     extern crate dotenv;
     extern crate chrono;
@@ -133,7 +132,6 @@ mod tests {
     use self::dotenv::dotenv;
 
     use expression::dsl::{sql, now};
-    use mysql::MysqlConnection;
     use prelude::*;
     use select;
     use types::{Date, Time, Timestamp};

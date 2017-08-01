@@ -5,23 +5,17 @@ use self::dotenv::dotenv;
 use std::{io, env};
 
 #[cfg(feature = "postgres")]
-use self::diesel::pg::PgConnection;
-#[cfg(feature = "postgres")]
 fn connection() -> PgConnection {
     let database_url = database_url_from_env("PG_DATABASE_URL");
     PgConnection::establish(&database_url).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
-use self::diesel::sqlite::SqliteConnection;
-#[cfg(feature = "sqlite")]
 fn connection() -> SqliteConnection {
     let database_url = database_url_from_env("SQLITE_DATABASE_URL");
     SqliteConnection::establish(&database_url).unwrap()
 }
 
-#[cfg(feature = "mysql")]
-use self::diesel::mysql::MysqlConnection;
 #[cfg(feature = "mysql")]
 fn connection() -> MysqlConnection {
     let database_url = database_url_from_env("MYSQL_DATABASE_URL");

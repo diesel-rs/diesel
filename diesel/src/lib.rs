@@ -130,6 +130,13 @@ pub mod prelude {
     pub use query_dsl::*;
     pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
     pub use result::{QueryResult, ConnectionError, ConnectionResult, OptionalExtension};
+
+    #[cfg(feature = "postgres")]
+    pub use pg::PgConnection;
+    #[cfg(feature = "sqlite")]
+    pub use sqlite::SqliteConnection;
+    #[cfg(feature = "mysql")]
+    pub use mysql::MysqlConnection;
 }
 
 pub use prelude::*;

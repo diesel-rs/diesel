@@ -1,11 +1,5 @@
 use clap::ArgMatches;
 use diesel::expression::sql;
-#[cfg(feature="postgres")]
-use diesel::pg::PgConnection;
-#[cfg(feature="sqlite")]
-use diesel::sqlite::SqliteConnection;
-#[cfg(feature="mysql")]
-use diesel::mysql::MysqlConnection;
 use diesel::types::Bool;
 use diesel::*;
 #[cfg(any(feature="postgres", feature="mysql"))]

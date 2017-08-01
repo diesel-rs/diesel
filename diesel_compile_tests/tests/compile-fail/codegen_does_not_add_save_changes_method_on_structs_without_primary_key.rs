@@ -4,7 +4,6 @@ extern crate diesel;
 extern crate diesel_codegen;
 
 use diesel::*;
-use diesel::pg::PgConnection;
 
 table! {
     users {

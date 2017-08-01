@@ -163,11 +163,11 @@ pub struct Like {
 }
 
 #[cfg(feature = "postgres")]
-pub type TestConnection = ::diesel::pg::PgConnection;
+pub type TestConnection = PgConnection;
 #[cfg(feature = "sqlite")]
-pub type TestConnection = ::diesel::sqlite::SqliteConnection;
+pub type TestConnection = SqliteConnection;
 #[cfg(feature = "mysql")]
-pub type TestConnection = ::diesel::mysql::MysqlConnection;
+pub type TestConnection = MysqlConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -185,7 +185,7 @@ pub fn connection_without_transaction() -> TestConnection {
     let connection_url = env::var("PG_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    ::diesel::pg::PgConnection::establish(&connection_url).unwrap()
+    PgConnection::establish(&connection_url).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
@@ -193,7 +193,7 @@ embed_migrations!("../migrations/sqlite");
 
 #[cfg(feature = "sqlite")]
 pub fn connection_without_transaction() -> TestConnection {
-    let connection = ::diesel::sqlite::SqliteConnection::establish(":memory:").unwrap();
+    let connection = SqliteConnection::establish(":memory:").unwrap();
     embedded_migrations::run(&connection).unwrap();
     connection
 }
@@ -204,7 +204,7 @@ pub fn connection_without_transaction() -> TestConnection {
     let connection_url = env::var("MYSQL_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    ::diesel::mysql::MysqlConnection::establish(&connection_url).unwrap()
+    MysqlConnection::establish(&connection_url).unwrap()
 }
 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);

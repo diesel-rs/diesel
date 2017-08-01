@@ -3,7 +3,6 @@ extern crate diesel;
 
 use diesel::*;
 use diesel::pg::Pg;
-use diesel::sqlite::SqliteConnection;
 
 table! {
     users {
