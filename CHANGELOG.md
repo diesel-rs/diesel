@@ -14,6 +14,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   function differs from the macro by allowing you to specify the backend, and
   will generate the actual query which will be run.
 
+* `diesel::pg::PgConnection`, `diesel::mysql::MysqlConnection`, and
+  `diesel::sqlite::SqliteConnection` are now exported from `diesel::prelude`.
+  You should no longer need to import these types explicitly.
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate
