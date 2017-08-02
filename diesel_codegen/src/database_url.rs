@@ -29,8 +29,8 @@ fn load_dotenv_file() -> Result<(), String> {
 
 #[cfg(not(feature = "dotenv"))]
 fn load_dotenv_file() -> Result<(), String> {
-    Err(String::from("The dotenv feature is required to use strings starting \
-        with `dotenv:`"))
+    Err(String::from("diesel_codegen must be compiled with the \"dotenv\" \
+        feature to correctly interpret strings starting with `dotenv:`"))
 }
 
 #[test]
