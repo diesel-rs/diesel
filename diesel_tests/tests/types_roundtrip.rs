@@ -1,4 +1,6 @@
 extern crate chrono;
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+extern crate bigdecimal;
 
 pub use quickcheck::quickcheck;
 use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, DateTime, Utc};
@@ -90,7 +92,6 @@ mod sqlite_types {
 mod pg_types {
     extern crate uuid;
     extern crate ipnetwork;
-    extern crate bigdecimal;
 
     use super::*;
 
@@ -115,12 +116,8 @@ mod pg_types {
     test_round_trip!(cidr_v6_roundtrips, Cidr, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
     test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(inet_v6_roundtrips, Inet, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
-
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
 
-    fn mk_bigdecimal(data: (i64, u64)) -> self::bigdecimal::BigDecimal {
-        format!("{}.{}", data.0, data.1).parse().expect("Could not interpret as bigdecimal")
-    }
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
@@ -153,6 +150,7 @@ mod mysql_types {
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
 }
 
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
@@ -165,6 +163,11 @@ pub fn mk_naive_time(data: (u32, u32)) -> NaiveTime {
 
 pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
     DateTime::from_utc(mk_naive_datetime(data), Utc)
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
+    format!("{}.{}", data.0, data.1).parse().expect("Could not interpret as bigdecimal")
 }
 
 #[cfg(feature = "postgres")]

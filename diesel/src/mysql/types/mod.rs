@@ -1,8 +1,11 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
+mod numeric;
 
 use byteorder::WriteBytesExt;
 use mysql::{Mysql, MysqlType};
+#[cfg(not(feature="postgres"))]
+use query_builder::QueryId;
 use std::error::Error as StdError;
 use std::io::Write;
 use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType};
@@ -56,5 +59,20 @@ impl HasSqlType<::types::Time> for Mysql {
 impl HasSqlType<::types::Timestamp> for Mysql {
     fn metadata(_: &()) -> MysqlType {
         MysqlType::Timestamp
+    }
+}
+
+impl HasSqlType<::types::Numeric> for Mysql {
+    fn metadata(_: &()) -> MysqlType {
+        MysqlType::String
+    }
+}
+
+#[cfg(not(feature="postgres"))]
+impl QueryId for ::types::Numeric {
+    type QueryId = Self;
+
+    fn has_static_query_id() -> bool {
+        true
     }
 }

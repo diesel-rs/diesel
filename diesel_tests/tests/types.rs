@@ -1,6 +1,6 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 extern crate chrono;
-#[cfg(feature="postgres")]
+#[cfg(any(feature="postgres", feature="mysql"))]
 extern crate bigdecimal;
 
 use schema::*;
@@ -430,7 +430,7 @@ fn pg_numeric_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(feature="postgres")]
 fn pg_numeric_bigdecimal_to_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -463,6 +463,36 @@ fn pg_numeric_bigdecimal_to_sql() {
 }
 
 #[test]
+#[cfg(feature="mysql")]
+fn mysql_numeric_bigdecimal_to_sql() {
+    use self::bigdecimal::BigDecimal;
+
+    fn correct_rep(integer: u64, decimal: u64) -> bool {
+        let expected = format!("{}.{}", integer, decimal);
+        let value: BigDecimal = expected.parse().expect("Could not parse to a BigDecimal");
+        query_to_sql_equality::<Numeric, BigDecimal>(&expected, value)
+    }
+
+    quickcheck(correct_rep as fn(u64, u64) -> bool);
+
+    let test_values = vec![
+        "1.0",
+        "141.0",
+        "-1.0",
+        "10000",
+        "100000000",
+        "1.100001",
+        "10000.100001",
+    ];
+
+    for value in test_values {
+        let expected = format!("cast('{}' as decimal(20, 10))", value);
+        let value = value.parse::<BigDecimal>().unwrap();
+        query_to_sql_equality::<Numeric, _>(&expected, value);
+    }
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn pg_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
@@ -485,6 +515,26 @@ fn pg_numeric_bigdecimal_from_sql() {
         let expected = value.parse::<BigDecimal>().unwrap();
         assert_eq!(expected, query_single_value::<Numeric, BigDecimal>(&query));
     }
+}
+
+#[test]
+#[cfg(feature="mysql")]
+fn mysql_numeric_bigdecimal_from_sql() {
+    use self::bigdecimal::BigDecimal;
+
+    let query = "cast(1.0 as decimal)";
+    let expected_value: BigDecimal = "1.0".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+
+    let query = "cast(141.00 as decimal)";
+    let expected_value: BigDecimal = "141.00".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
+
+    // Some non standard values:
+    let query = "cast(18446744073709551616 as decimal)"; // 2^64; doesn't fit in u64
+    // It is mysql, it will trim it even in strict mode
+    let expected_value: BigDecimal = "9999999999.00".parse().expect("Could not parse to a BigDecimal");
+    assert_eq!(expected_value, query_single_value::<Numeric, BigDecimal>(query));
 }
 
 #[test]

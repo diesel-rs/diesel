@@ -148,13 +148,13 @@ use std::io::{self, Write};
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][bigdecimal] (currenty PostgreSQL only, requires the `numeric`
+/// - [`bigdecimal::BigDecimal`][bigdecimal] (currenty PostgreSQL and MySQL only, requires the `numeric`
 /// feature, which depends on the
 /// [`bigdecimal`][bigdecimal] crate)
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][BigDecimal] (currenty PostgreSQL only, requires the `numeric`
+/// - [`bigdecimal::BigDecimal`][BigDecimal] (currenty PostgreSQL and MySQL only, requires the `numeric`
 /// feature, which depends on the
 /// [`bigdecimal`][bigdecimal] crate)
 ///
@@ -163,6 +163,7 @@ use std::io::{self, Write};
 /// [BigDecimal]: /bigdecimal/struct.BigDecimal.html
 /// [bigdecimal]: /bigdecimal/index.html
 #[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
+pub type Decimal = Numeric;
 
 #[cfg(not(feature="postgres"))]
 impl NotNull for Numeric {}
