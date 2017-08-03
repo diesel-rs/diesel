@@ -1,9 +1,8 @@
 # Diesel Codegen
 
-This crate implements Diesel's procedural macros using the Macros 1.1 system. It
-requires nightly Rust from October 10, 2016 to February 02, 2017 (i.e. Diesel < 0.10.0). For usage on stable
-Rust and Diesel < 0.10.0, see
-[`diesel_codegen_syntex`](https://github.com/diesel-rs/diesel/tree/v0.9.1/diesel_codegen_syntex). Otherwise, in Diesel >= 0.10.0 this crate will function on stable Rust.
+This crate implements Diesel's procedural macros using the Macros 1.1 system.
+It depends on features introduced in Rust 1.15.
+Make sure to always use the latest stable release for optimal performance and feature support.
 
 Diesel Codegen provides custom derive implementations for
 [`Queryable`][queryable], [`Identifiable`][identifiable],
