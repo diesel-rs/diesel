@@ -1,5 +1,6 @@
 use types::{self, NotNull};
 
+/// Marker trait for types which can be compared for ordering.
 pub trait SqlOrd {}
 
 impl SqlOrd for types::SmallInt {}

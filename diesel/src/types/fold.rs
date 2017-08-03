@@ -1,5 +1,6 @@
 use types::{self, NotNull};
 
+/// Marker trait for types which can be folded for a sum.
 pub trait Foldable {
     type Sum;
     type Avg;
