@@ -942,6 +942,7 @@ macro_rules! print_sql {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature="postgres")]
     use prelude::*;
 
     table! {
