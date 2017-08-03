@@ -1,5 +1,5 @@
 // Built-in Lints
-#![warn(missing_debug_implementations, missing_copy_implementations)]
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]

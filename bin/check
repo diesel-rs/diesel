@@ -4,7 +4,7 @@ set -e
 BACKENDS="sqlite postgres mysql"
 
 check() {
-    cargo rustc --quiet --features "lint $BACKENDS $1" -- -Zno-trans --deny warnings
+    cargo rustc --quiet --features "lint $BACKENDS $1" -- -Zno-trans
 }
 
 (cd diesel &&
