@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Oid};
 
 primitive_impls!(Oid -> (u32, pg: (26, 1018)));
 

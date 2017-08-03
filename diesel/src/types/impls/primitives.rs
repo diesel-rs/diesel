@@ -2,7 +2,8 @@ use std::error::Error;
 use std::io::Write;
 
 use backend::Backend;
-use types::{self, HasSqlType, FromSql, ToSql, ToSqlOutput, IsNull, NotNull};
+use types::{self, HasSqlType, FromSql, ToSql, ToSqlOutput, IsNull, NotNull, Binary, BigInt,
+Bool, Date, Double, Float, Integer, SmallInt, Text, Time, Timestamp};
 
 primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)));
 

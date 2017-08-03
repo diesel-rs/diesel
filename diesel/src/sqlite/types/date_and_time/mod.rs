@@ -3,7 +3,7 @@ use std::io::Write;
 
 use sqlite::{Sqlite, SqliteType};
 use sqlite::connection::SqliteValue;
-use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, HasSqlType};
+use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, HasSqlType, Date, Time, Timestamp};
 
 #[cfg(feature = "chrono")]
 mod chrono;

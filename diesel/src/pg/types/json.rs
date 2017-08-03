@@ -6,7 +6,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Json, Jsonb};
 
 // The OIDs used to identify `json` and `jsonb` are not documented anywhere
 // obvious, but they are discussed on various PostgreSQL mailing lists,

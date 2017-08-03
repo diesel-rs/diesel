@@ -3,7 +3,7 @@ use std::error::Error;
 
 use pg::Pg;
 use pg::data_types::PgNumeric;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Numeric};
 
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));
 

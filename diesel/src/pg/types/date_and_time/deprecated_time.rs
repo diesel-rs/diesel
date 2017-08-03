@@ -6,7 +6,7 @@ use std::io::Write;
 use self::time::{Timespec, Duration};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, FromSql, IsNull};
+use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
 
 expression_impls! {
     Timestamp -> Timespec,

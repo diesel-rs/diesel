@@ -14,44 +14,44 @@ macro_rules! not_none {
 macro_rules! expression_impls {
     ($($Source:ident -> $Target:ty),+,) => {
         $(
-            impl<'a> $crate::expression::AsExpression<$crate::types::$Source> for $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::$Source, Self>;
+            impl<'a> $crate::expression::AsExpression<$Source> for $Target {
+                type Expression = $crate::expression::bound::Bound<$Source, Self>;
 
                 fn as_expression(self) -> Self::Expression {
                     $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::$Source> for &'expr $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::$Source, Self>;
+            impl<'a, 'expr> $crate::expression::AsExpression<$Source> for &'expr $Target {
+                type Expression = $crate::expression::bound::Bound<$Source, Self>;
 
                 fn as_expression(self) -> Self::Expression {
                     $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a> $crate::expression::AsExpression<$crate::types::Nullable<$crate::types::$Source>> for $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$crate::types::$Source>, Self>;
+            impl<'a> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for $Target {
+                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
                     $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<$crate::types::$Source>> for &'expr $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$crate::types::$Source>, Self>;
+            impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for &'expr $Target {
+                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
                     $crate::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'a, DB> $crate::types::ToSql<$crate::types::Nullable<$crate::types::$Source>, DB> for $Target where
-                DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
-                $Target: $crate::types::ToSql<$crate::types::$Source, DB>,
+            impl<'a, DB> $crate::types::ToSql<$crate::types::Nullable<$Source>, DB> for $Target where
+                DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
+                $Target: $crate::types::ToSql<$Source, DB>,
             {
                 fn to_sql<W: ::std::io::Write>(&self, out: &mut $crate::types::ToSqlOutput<W, DB>) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
-                    $crate::types::ToSql::<$crate::types::$Source, DB>::to_sql(self, out)
+                    $crate::types::ToSql::<$Source, DB>::to_sql(self, out)
                 }
             }
         )+
@@ -62,18 +62,18 @@ macro_rules! expression_impls {
 #[macro_export]
 macro_rules! queryable_impls {
     ($($Source:ident -> $Target:ty),+,) => {$(
-        impl<DB> $crate::types::FromSqlRow<$crate::types::$Source, DB> for $Target where
-            DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
-            $Target: $crate::types::FromSql<$crate::types::$Source, DB>,
+        impl<DB> $crate::types::FromSqlRow<$Source, DB> for $Target where
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
+            $Target: $crate::types::FromSql<$Source, DB>,
         {
             fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> Result<Self, Box<::std::error::Error+Send+Sync>> {
-                $crate::types::FromSql::<$crate::types::$Source, DB>::from_sql(row.take())
+                $crate::types::FromSql::<$Source, DB>::from_sql(row.take())
             }
         }
 
-        impl<DB> $crate::query_source::Queryable<$crate::types::$Source, DB> for $Target where
-            DB: $crate::backend::Backend + $crate::types::HasSqlType<$crate::types::$Source>,
-            $Target: $crate::types::FromSqlRow<$crate::types::$Source, DB>,
+        impl<DB> $crate::query_source::Queryable<$Source, DB> for $Target where
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
+            $Target: $crate::types::FromSqlRow<$Source, DB>,
         {
             type Row = Self;
 
@@ -93,7 +93,7 @@ macro_rules! primitive_impls {
 
     ($Source:ident -> (sqlite: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "sqlite")]
-        impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::sqlite::Sqlite {
+        impl $crate::types::HasSqlType<$Source> for $crate::sqlite::Sqlite {
             fn metadata(_: &()) -> $crate::sqlite::SqliteType {
                 $crate::sqlite::SqliteType::$tpe
             }
@@ -104,7 +104,7 @@ macro_rules! primitive_impls {
 
     ($Source:ident -> (pg: ($oid:expr, $array_oid:expr) $($rest:tt)*)) => {
         #[cfg(feature = "postgres")]
-        impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::pg::Pg {
+        impl $crate::types::HasSqlType<$Source> for $crate::pg::Pg {
             fn metadata(_: &$crate::pg::PgMetadataLookup) -> $crate::pg::PgTypeMetadata {
                 $crate::pg::PgTypeMetadata {
                     oid: $oid,
@@ -118,7 +118,7 @@ macro_rules! primitive_impls {
 
     ($Source:ident -> (mysql: ($tpe:ident) $($rest:tt)*)) => {
         #[cfg(feature = "mysql")]
-        impl $crate::types::HasSqlType<$crate::types::$Source> for $crate::mysql::Mysql {
+        impl $crate::types::HasSqlType<$Source> for $crate::mysql::Mysql {
             fn metadata(_: &()) -> $crate::mysql::MysqlType {
                 $crate::mysql::MysqlType::$tpe
             }
@@ -143,7 +143,7 @@ macro_rules! primitive_impls {
     };
 
     ($Source:ident) => {
-        impl $crate::query_builder::QueryId for $crate::types::$Source {
+        impl $crate::query_builder::QueryId for $Source {
             type QueryId = Self;
 
             fn has_static_query_id() -> bool {
@@ -151,10 +151,10 @@ macro_rules! primitive_impls {
             }
         }
 
-        impl $crate::types::NotNull for $crate::types::$Source {
+        impl $crate::types::NotNull for $Source {
         }
 
-        impl $crate::types::SingleValue for $crate::types::$Source {
+        impl $crate::types::SingleValue for $Source {
         }
     }
 }

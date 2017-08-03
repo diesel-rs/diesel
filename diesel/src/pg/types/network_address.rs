@@ -6,8 +6,8 @@ use std::error::Error;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
-use self::ipnetwork::{IpNetwork,Ipv4Network,Ipv6Network};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Cidr, Inet, MacAddr};
+use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
 
 #[cfg(windows)]
 const AF_INET: u8 = 2;

@@ -3,7 +3,7 @@ use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, FromSql, IsNull};
+use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
 
 expression_impls! {
     Timestamp -> SystemTime,

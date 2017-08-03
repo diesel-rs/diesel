@@ -2,6 +2,7 @@
 mod chrono {
     extern crate chrono;
     use self::chrono::*;
+    use types::{Date, Time, Timestamp};
 
     expression_impls! {
         Date -> NaiveDate,

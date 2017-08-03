@@ -20,7 +20,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 pub struct PgMoney(pub i64);
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Money};
 
 // https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L429-L432
 primitive_impls!(Money -> (PgMoney, pg: (790, 791)));
