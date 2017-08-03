@@ -1,5 +1,12 @@
 #![allow(dead_code, unused_must_use)]
 
+#[cfg(feature = "sqlite")]
+type Backend = ::diesel::sqlite::Sqlite;
+#[cfg(feature = "mysql")]
+type Backend = ::diesel::mysql::Mysql;
+#[cfg(feature = "postgres")]
+type Backend = ::diesel::pg::Pg;
+
 #[test]
 fn simple_belongs_to() {
     use diesel::*;
@@ -25,7 +32,7 @@ fn simple_belongs_to() {
         name: String
     }
 
-    #[derive(Associations)]
+    #[derive(Associations, Identifiable)]
     #[belongs_to(User)]
     pub struct Post {
         id: i32,
@@ -43,7 +50,17 @@ fn simple_belongs_to() {
     users::table.inner_join(posts::table)
         .select((posts::id, posts::user_id, posts::title))
         .filter(users::id.eq(1)
-            .and(users::name.eq("Sean")));
+                .and(users::name.eq("Sean")));
+
+    let t = User { id: 42, name: "Sean".into() };
+
+    let belong_to = Post::belonging_to(&t);
+    let filter = posts::table.filter(posts::user_id.eq(42));
+
+    assert_eq!(
+        debug_sql::<Backend, _>(&belong_to),
+        debug_sql::<Backend, _>(&filter)
+    )
 }
 
 
@@ -72,7 +89,7 @@ fn custom_foreign_key() {
         name: String
     }
 
-    #[derive(Associations)]
+    #[derive(Associations, Identifiable)]
     #[belongs_to(User, foreign_key = "belongs_to_user")]
     pub struct Post {
         id: i32,
@@ -90,7 +107,17 @@ fn custom_foreign_key() {
     users::table.inner_join(posts::table)
         .select((posts::id, posts::belongs_to_user, posts::title))
         .filter(users::id.eq(1)
-            .and(users::name.eq("Sean")));
+                .and(users::name.eq("Sean")));
+
+    let t = User { id: 42, name: "Sean".into() };
+
+    let belong_to = Post::belonging_to(&t);
+    let filter = posts::table.filter(posts::belongs_to_user.eq(42));
+
+    assert_eq!(
+        debug_sql::<Backend, _>(&belong_to),
+        debug_sql::<Backend, _>(&filter)
+    )
 }
 
 #[test]
@@ -111,6 +138,12 @@ fn self_referential() {
         id: i32,
         parent_id: Option<i32>,
     }
+    let t = Tree{ id: 42, parent_id: None };
 
-    Tree::belonging_to(&Tree{ id: 42, parent_id: None });
+    let belong_to = Tree::belonging_to(&t);
+    let filter = trees::table.filter(trees::parent_id.eq(42));
+    assert_eq!(
+        debug_sql::<Backend, _>(&belong_to),
+        debug_sql::<Backend, _>(&filter)
+    );
 }
