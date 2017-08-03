@@ -79,7 +79,17 @@ pub enum ConnectionError {
     __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
+/// A specialized result type for queries.
+///
+/// This type is exported by `diesel::prelude`, and is generally used by any
+/// code which is interacting with Diesel. This type exists to avoid writing out
+/// `diesel::result::Error`, and is otherwise a direct mapping to `Result`.
 pub type QueryResult<T> = Result<T, Error>;
+
+/// A specialized result type for establishing connections.
+///
+/// This type exists to avoid writing out `diesel::result::ConnectionError`, and
+/// is otherwise a direct mapping to `Result`.
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
 pub trait OptionalExtension<T> {
