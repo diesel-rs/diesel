@@ -128,7 +128,7 @@ mod tests {
     extern crate dotenv;
     extern crate chrono;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc, TimeZone, FixedOffset};
+    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
     use self::dotenv::dotenv;
 
     use expression::dsl::{sql, now};
