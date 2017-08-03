@@ -3,7 +3,7 @@ use std::io::Write;
 use std::ops::Add;
 
 use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
-use types::{self, FromSql, ToSql, ToSqlOutput, IsNull};
+use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, Date, Interval, Time, Timestamp, Timestamptz};
 
 primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
 primitive_impls!(Timestamptz);

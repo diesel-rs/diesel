@@ -8,7 +8,7 @@ use mysql::{Mysql, MysqlType};
 use query_builder::QueryId;
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType};
+use types::{ToSql, ToSqlOutput, IsNull, FromSql, HasSqlType, Tinyint};
 
 primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
 

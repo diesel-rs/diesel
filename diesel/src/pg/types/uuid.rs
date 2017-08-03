@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql};
+use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Uuid};
 
 primitive_impls!(Uuid -> (uuid::Uuid, pg: (2950, 2951)));
 
