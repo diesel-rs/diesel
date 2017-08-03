@@ -82,7 +82,29 @@ pub enum ConnectionError {
 pub type QueryResult<T> = Result<T, Error>;
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
+/// See the [method documentation](#tymethod.optional).
 pub trait OptionalExtension<T> {
+    /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
+    ///
+    /// By default, Diesel treats 0 rows being returned from a query that is expected to return 1
+    /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
+    /// handle that error, and give you back an `Option<T>` instead.
+    ///
+    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
+    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::result::{QueryResult, Error};
+    /// use diesel::OptionalExtension;
+    ///
+    /// let result: QueryResult<i32> = Ok(1);
+    /// assert_eq!(Ok(Some(1)), result.optional());
+    ///
+    /// let result: QueryResult<i32> = Err(Error::NotFound);
+    /// assert_eq!(Ok(None), result.optional());
+    /// ```
     fn optional(self) -> Result<Option<T>, Error>;
 }
 
