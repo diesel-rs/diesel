@@ -11,6 +11,9 @@ pub trait Row<DB: Backend> {
     fn take(&mut self) -> Option<&DB::RawValue>;
 
     /// Returns whether the next `count` columns are all `NULL`.
+    ///
+    /// If this method returns `true`, then the next `count` calls to `take`
+    /// would all return `None`.
     fn next_is_null(&self, count: usize) -> bool;
 
     /// Skips the next `count` columns. This method must be called if you are
