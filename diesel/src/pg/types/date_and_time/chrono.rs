@@ -11,17 +11,13 @@ use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
 use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
 
-expression_impls! {
-    Timestamptz -> NaiveDateTime,
-    Timestamptz -> DateTime<Utc>,
-    Timestamptz -> DateTime<FixedOffset>,
-    Timestamptz -> DateTime<Local>,
-}
+expression_impls!(Timestamptz -> NaiveDateTime);
+expression_impls!(Timestamptz -> DateTime<Utc>);
+expression_impls!(Timestamptz -> DateTime<FixedOffset>);
+expression_impls!(Timestamptz -> DateTime<Local>);
 
-queryable_impls! {
-    Timestamptz -> NaiveDateTime,
-    Timestamptz -> DateTime<Utc>,
-}
+queryable_impls!(Timestamptz -> NaiveDateTime);
+queryable_impls!(Timestamptz -> DateTime<Utc>);
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {

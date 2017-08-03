@@ -26,20 +26,16 @@ impl HasSqlType<types::Timestamp> for Sqlite {
     }
 }
 
-queryable_impls! {
-    Date -> String,
-    Time -> String,
-    Timestamp -> String,
-}
+queryable_impls!(Date -> String);
+queryable_impls!(Time -> String);
+queryable_impls!(Timestamp -> String);
 
-expression_impls! {
-    Date -> String,
-    Date -> &'a str,
-    Time -> String,
-    Time -> &'a str,
-    Timestamp -> String,
-    Timestamp -> &'a str,
-}
+expression_impls!(Date -> String);
+expression_impls!(Date -> &'a str);
+expression_impls!(Time -> String);
+expression_impls!(Time -> &'a str);
+expression_impls!(Timestamp -> String);
+expression_impls!(Timestamp -> &'a str);
 
 impl FromSql<types::Date, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error+Send+Sync>> {

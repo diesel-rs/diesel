@@ -5,13 +5,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use pg::Pg;
 use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
 
-expression_impls! {
-    Timestamp -> SystemTime,
-}
-
-queryable_impls! {
-    Timestamp -> SystemTime,
-}
+expression_impls!(Timestamp -> SystemTime);
+queryable_impls!(Timestamp -> SystemTime);
 
 fn pg_epoch() -> SystemTime {
     let thirty_years = Duration::from_secs(946684800);

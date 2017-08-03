@@ -22,11 +22,8 @@ primitive_impls!(Date);
 primitive_impls!(Time);
 primitive_impls!(Timestamp);
 
-expression_impls! {
-    Text -> &'a str,
-
-    Binary -> &'a [u8],
-}
+expression_impls!(Text -> &'a str);
+expression_impls!(Binary -> &'a [u8]);
 
 impl NotNull for () {}
 

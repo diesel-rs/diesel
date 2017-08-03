@@ -8,13 +8,8 @@ use self::time::{Timespec, Duration};
 use pg::Pg;
 use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
 
-expression_impls! {
-    Timestamp -> Timespec,
-}
-
-queryable_impls! {
-    Timestamp -> Timespec,
-}
+expression_impls!(Timestamp -> Timespec);
+queryable_impls!(Timestamp -> Timespec);
 
 const TIME_SEC_CONV: i64 = 946684800;
 
