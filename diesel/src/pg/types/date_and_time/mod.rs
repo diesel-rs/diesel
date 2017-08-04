@@ -67,14 +67,14 @@ impl PgInterval {
     }
 }
 
-queryable_impls!(Date -> PgDate,);
-queryable_impls!(Time -> PgTime,);
-queryable_impls!(Timestamp -> PgTimestamp,);
-queryable_impls!(Timestamptz -> PgTimestamp,);
-expression_impls!(Date -> PgDate,);
-expression_impls!(Time -> PgTime,);
-expression_impls!(Timestamp -> PgTimestamp,);
-expression_impls!(Timestamptz -> PgTimestamp,);
+queryable_impls!(Date -> PgDate);
+queryable_impls!(Time -> PgTime);
+queryable_impls!(Timestamp -> PgTimestamp);
+queryable_impls!(Timestamptz -> PgTimestamp);
+expression_impls!(Date -> PgDate);
+expression_impls!(Time -> PgTime);
+expression_impls!(Timestamp -> PgTimestamp);
+expression_impls!(Timestamptz -> PgTimestamp);
 
 primitive_impls!(Interval -> (PgInterval, pg: (1186, 1187)));
 

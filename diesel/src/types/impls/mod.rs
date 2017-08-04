@@ -12,56 +12,54 @@ macro_rules! not_none {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! expression_impls {
-    ($($Source:ident -> $Target:ty),+,) => {
-        $(
-            impl<'a> $crate::expression::AsExpression<$Source> for $Target {
-                type Expression = $crate::expression::bound::Bound<$Source, Self>;
+    ($Source:ident -> $Target:ty) => {
+        impl<'a> $crate::expression::AsExpression<$Source> for $Target {
+            type Expression = $crate::expression::bound::Bound<$Source, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    $crate::expression::bound::Bound::new(self)
-                }
+            fn as_expression(self) -> Self::Expression {
+                $crate::expression::bound::Bound::new(self)
             }
+        }
 
-            impl<'a, 'expr> $crate::expression::AsExpression<$Source> for &'expr $Target {
-                type Expression = $crate::expression::bound::Bound<$Source, Self>;
+        impl<'a, 'expr> $crate::expression::AsExpression<$Source> for &'expr $Target {
+            type Expression = $crate::expression::bound::Bound<$Source, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    $crate::expression::bound::Bound::new(self)
-                }
+            fn as_expression(self) -> Self::Expression {
+                $crate::expression::bound::Bound::new(self)
             }
+        }
 
-            impl<'a> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
+        impl<'a> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for $Target {
+            type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    $crate::expression::bound::Bound::new(self)
-                }
+            fn as_expression(self) -> Self::Expression {
+                $crate::expression::bound::Bound::new(self)
             }
+        }
 
-            impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for &'expr $Target {
-                type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
+        impl<'a, 'expr> $crate::expression::AsExpression<$crate::types::Nullable<$Source>> for &'expr $Target {
+            type Expression = $crate::expression::bound::Bound<$crate::types::Nullable<$Source>, Self>;
 
-                fn as_expression(self) -> Self::Expression {
-                    $crate::expression::bound::Bound::new(self)
-                }
+            fn as_expression(self) -> Self::Expression {
+                $crate::expression::bound::Bound::new(self)
             }
+        }
 
-            impl<'a, DB> $crate::types::ToSql<$crate::types::Nullable<$Source>, DB> for $Target where
-                DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
-                $Target: $crate::types::ToSql<$Source, DB>,
-            {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut $crate::types::ToSqlOutput<W, DB>) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
-                    $crate::types::ToSql::<$Source, DB>::to_sql(self, out)
-                }
+        impl<'a, DB> $crate::types::ToSql<$crate::types::Nullable<$Source>, DB> for $Target where
+            DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
+            $Target: $crate::types::ToSql<$Source, DB>,
+        {
+            fn to_sql<W: ::std::io::Write>(&self, out: &mut $crate::types::ToSqlOutput<W, DB>) -> Result<$crate::types::IsNull, Box<::std::error::Error+Send+Sync>> {
+                $crate::types::ToSql::<$Source, DB>::to_sql(self, out)
             }
-        )+
+        }
     }
 }
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! queryable_impls {
-    ($($Source:ident -> $Target:ty),+,) => {$(
+    ($Source:ident -> $Target:ty) => {
         impl<DB> $crate::types::FromSqlRow<$Source, DB> for $Target where
             DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
             $Target: $crate::types::FromSql<$Source, DB>,
@@ -81,7 +79,7 @@ macro_rules! queryable_impls {
                 row
             }
         }
-    )+}
+    }
 }
 
 #[doc(hidden)]
@@ -138,8 +136,8 @@ macro_rules! primitive_impls {
 
     ($Source:ident -> $Target:ty) => {
         primitive_impls!($Source);
-        queryable_impls!($Source -> $Target,);
-        expression_impls!($Source -> $Target,);
+        queryable_impls!($Source -> $Target);
+        expression_impls!($Source -> $Target);
     };
 
     ($Source:ident) => {
