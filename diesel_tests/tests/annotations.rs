@@ -14,8 +14,9 @@ fn association_where_struct_name_doesnt_match_table_name() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &connection);
-    let post: Post = insert(&sean.new_post("Hello", None)).into(posts::table)
-        .get_result(&connection).unwrap();
+    insert(&sean.new_post("Hello", None)).into(posts::table)
+        .execute(&connection).unwrap();
+    let post = posts::table.first::<Post>(&connection).unwrap();
     insert(&NewComment(post.id, "comment")).into(comments::table)
         .execute(&connection).unwrap();
 
