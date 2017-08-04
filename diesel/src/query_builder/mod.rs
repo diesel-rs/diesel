@@ -204,6 +204,6 @@ pub fn deprecated_debug_sql<T>(query: &T) -> String where
 
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(any(feature = "postgres", feature = "mysql", feature = "sqlite"))))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String {
+pub fn deprecated_debug_sql<T>(_query: &T) -> String {
     String::from("At least one backend must be enabled to generated debug SQL")
 }
