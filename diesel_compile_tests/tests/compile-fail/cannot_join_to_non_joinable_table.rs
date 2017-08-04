@@ -30,13 +30,13 @@ enable_multi_table_joins!(users, comments);
 
 fn main() {
     let _ = users::table.inner_join(posts::table);
-    //~^ ERROR 0275
+    //~^ ERROR 0277
     let _ = users::table.left_outer_join(posts::table);
-    // We would get an error here but 0275 halts everything
+    //~^ ERROR 0277
 
     // Sanity check to make sure the error is when users
     // become involved
     let join = posts::table.inner_join(comments::table);
     let _ = users::table.inner_join(join);
-    // We would get an error here but 0275 halts everything
+    //~^ ERROR 0277
 }

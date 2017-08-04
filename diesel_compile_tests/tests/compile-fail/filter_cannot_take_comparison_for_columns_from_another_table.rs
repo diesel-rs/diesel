@@ -21,13 +21,7 @@ fn main() {
     let _ = users::table.filter(posts::id.eq(1));
     //~^ ERROR AppearsInFromClause
     //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
     let _ = users::table.filter(users::name.eq(posts::title));
     //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
     //~| ERROR E0277
 }

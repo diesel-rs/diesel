@@ -38,7 +38,4 @@ fn main() {
     //~^ ERROR SelectableExpression
     //~| ERROR AppearsInFromClause
     //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
 }
