@@ -11,6 +11,13 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature="backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
+joinable!(posts -> users (user_id));
+joinable!(comments -> posts (post_id));
+joinable!(followings -> users (user_id));
+joinable!(followings -> posts (post_id));
+joinable!(likes -> comments (comment_id));
+joinable!(likes -> users (user_id));
+
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[table_name = "users"]
 pub struct User {

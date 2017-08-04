@@ -266,22 +266,6 @@ impl<T, Join, On> AppearsInFromClause<T> for JoinOn<Join, On> where
     type Count = Join::Count;
 }
 
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-#[doc(hidden)]
-/// A hack to allow bidirectional joins to be generated from `#[belongs_to]`
-///
-/// This type needs to exist because it is illegal in Rust today to write
-/// `impl JoinTo<posts> for <User as HasTable>::Table`, even though the type
-/// is fully monomorphic and projects to a local type. If this restriction
-/// were ever lifted in the future, this type could be removed.
-///
-/// Instead, after generating `impl JoinTo<<User as HasTable>::Table> for
-/// posts`, we *also* generate `impl JoinTo<PleaseGenerateInverseJoinImpls<<User
-/// as HasTable>::table> for posts`, and rely on the fact that `users::table`
-/// will have a blanket impl on itself for anything that joins to
-/// `PleaseGenerateInverseJoinImpls`.
-pub struct PleaseGenerateInverseJoinImpls<T>(T);
-
 pub trait Plus<T> {
     type Output;
 }

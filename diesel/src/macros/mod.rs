@@ -563,7 +563,7 @@ macro_rules! table_body {
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
             use $crate::query_source::{AppearsInFromClause, Once, Never};
-            use $crate::query_source::joins::PleaseGenerateInverseJoinImpls;
+            use $crate::query_source::joins::{Join, JoinOn};
             $(use $($import)::+;)+
             pub use self::columns::*;
 
@@ -653,14 +653,49 @@ macro_rules! table_body {
                 type Count = Never;
             }
 
-            impl<T> JoinTo<T> for table where
-                T: JoinTo<table> + JoinTo<PleaseGenerateInverseJoinImpls<table>>,
+            impl<Left, Right, Kind> JoinTo<Join<Left, Right, Kind>> for table where
+                Join<Left, Right, Kind>: JoinTo<table>,
             {
-                type FromClause = T;
-                type OnClause = <T as JoinTo<table>>::OnClause;
+                type FromClause = Join<Left, Right, Kind>;
+                type OnClause = <Join<Left, Right, Kind> as JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = T::join_target(table);
+                fn join_target(rhs: Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = Join::join_target(table);
+                    (rhs, on_clause)
+                }
+            }
+
+            impl<Join, On> JoinTo<JoinOn<Join, On>> for table where
+                JoinOn<Join, On>: JoinTo<table>,
+            {
+                type FromClause = JoinOn<Join, On>;
+                type OnClause = <JoinOn<Join, On> as JoinTo<table>>::OnClause;
+
+                fn join_target(rhs: JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = JoinOn::join_target(table);
+                    (rhs, on_clause)
+                }
+            }
+
+            impl<F, S, D, W, O, L, Of, G> JoinTo<SelectStatement<F, S, D, W, O, L, Of, G>> for table where
+                SelectStatement<F, S, D, W, O, L, Of, G>: JoinTo<table>,
+            {
+                type FromClause = SelectStatement<F, S, D, W, O, L, Of, G>;
+                type OnClause = <SelectStatement<F, S, D, W, O, L, Of, G> as JoinTo<table>>::OnClause;
+
+                fn join_target(rhs: SelectStatement<F, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = SelectStatement::join_target(table);
+                    (rhs, on_clause)
+                }
+            }
+
+            impl<'a, QS, ST, DB> JoinTo<BoxedSelectStatement<'a, QS, ST, DB>> for table where
+                BoxedSelectStatement<'a, QS, ST, DB>: JoinTo<table>,
+            {
+                type FromClause = BoxedSelectStatement<'a, QS, ST, DB>;
+                type OnClause = <BoxedSelectStatement<'a, QS, ST, DB> as JoinTo<table>>::OnClause;
+                fn join_target(rhs: BoxedSelectStatement<'a, QS, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }

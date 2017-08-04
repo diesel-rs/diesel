@@ -26,6 +26,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   backend specific SQL. (The specific backend they will generate for will be
   arbitrarily chosen based on the backends enabled).
 
+* `#[belongs_to]` will no longer generate the code required to join between two
+  tables. You will need to explicitly invoke `joinable!` instead.
+
 ### Removed
 
 * `debug_sql!` has been deprecated in favor of `diesel::debug_sql`.
@@ -33,6 +36,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `print_sql!` has been deprecated without replacement.
 
 * `diesel::backend::Debug` has been removed.
+
+### Fixed
+
+* Diesel now properly supports joins in the form:
+  `grandchild.join(child.join(parent))`. Previously only
+  `parent.join(child.join(grandchild))` would compile.
 
 [bigdecimal-0.14.0]: https://crates.io/crates/bigdecimal
 

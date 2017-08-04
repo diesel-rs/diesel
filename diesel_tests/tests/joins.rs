@@ -373,6 +373,22 @@ fn selecting_parent_child_grandchild() {
 }
 
 #[test]
+fn selecting_grandchild_child_parent() {
+    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let TestData { sean, posts, comments, .. } = test_data;
+
+    let data = comments::table.inner_join(posts::table.inner_join(users::table))
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (comments[0].clone(), (posts[0].clone(), sean.clone())),
+        (comments[2].clone(), (posts[0].clone(), sean.clone())),
+        (comments[1].clone(), (posts[2].clone(), sean.clone())),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
 fn selecting_four_tables_deep() {
     let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData { sean, posts, comments, likes, .. } = test_data;

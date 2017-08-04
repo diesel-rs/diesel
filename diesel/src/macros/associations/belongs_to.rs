@@ -159,17 +159,6 @@ macro_rules! BelongsTo {
                 $child_table_name::$foreign_key_name
             }
         }
-
-        BelongsTo! {
-            @generate_joins,
-            (
-                struct_name = $struct_name,
-                parent_struct = $parent_struct,
-                foreign_key_name = $foreign_key_name,
-                child_table_name = $child_table_name,
-            ),
-            $($rest)*
-        }
     };
 
     // Generate code when FK is optional
@@ -196,54 +185,6 @@ macro_rules! BelongsTo {
                 $child_table_name::$foreign_key_name
             }
         }
-
-        BelongsTo! {
-            @generate_joins,
-            (
-                struct_name = $struct_name,
-                parent_struct = $parent_struct,
-                foreign_key_name = $foreign_key_name,
-                child_table_name = $child_table_name,
-            ),
-            $($rest)*
-        }
-    };
-
-    // Generate code that does not differ based on the fk being optional
-    (
-        @generate_joins,
-        (
-            struct_name = $struct_name:ident,
-            parent_struct = $parent_struct:ident,
-            foreign_key_name = $foreign_key_name:ident,
-            child_table_name = $child_table_name:ident,
-        ),
-        fields = [$({
-            field_name: $field_name:ident,
-            column_name: $column_name:ident,
-            field_ty: $field_ty:ty,
-            field_kind: $field_kind:ident,
-            $($rest:tt)*
-        })+],
-    ) => {
-        static_cond!(if $struct_name != $parent_struct {
-            joinable_inner!(
-                left_table_ty = $child_table_name::table,
-                right_table_ty = <$parent_struct as $crate::associations::HasTable>::Table,
-                right_table_expr = <$parent_struct as $crate::associations::HasTable>::table(),
-                foreign_key = $child_table_name::$foreign_key_name,
-                primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
-                primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
-            );
-            joinable_inner!(
-                left_table_ty = $child_table_name::table,
-                right_table_ty = $crate::query_source::joins::PleaseGenerateInverseJoinImpls<<$parent_struct as $crate::associations::HasTable>::Table>,
-                right_table_expr = <$parent_struct as $crate::associations::HasTable>::table(),
-                foreign_key = $child_table_name::$foreign_key_name,
-                primary_key_ty = <<$parent_struct as $crate::associations::HasTable>::Table as $crate::Table>::PrimaryKey,
-                primary_key_expr = $crate::Table::primary_key(&<$parent_struct as $crate::associations::HasTable>::table()),
-            );
-        });
     };
 
     // Handle struct with no generics
