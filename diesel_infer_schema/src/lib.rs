@@ -38,5 +38,5 @@ mod pg;
 mod sqlite;
 
 pub use codegen::*;
-pub use inference::load_table_names;
+pub use inference::{load_table_names, load_foreign_key_constraints};
 pub use table_data::TableData;

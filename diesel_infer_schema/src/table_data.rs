@@ -4,7 +4,7 @@ use diesel::types::{FromSqlRow, HasSqlType};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableData {
     pub name: String,
     pub schema: Option<String>,

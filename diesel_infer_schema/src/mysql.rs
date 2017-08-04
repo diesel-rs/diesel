@@ -1,6 +1,68 @@
+use diesel::*;
+use diesel::mysql::Mysql;
 use std::error::Error;
 
+use information_schema::UsesInformationSchema;
 use data_structures::*;
+
+mod information_schema {
+    table! {
+        information_schema.table_constraints (constraint_schema, constraint_name) {
+            table_schema -> VarChar,
+            constraint_schema -> VarChar,
+            constraint_name -> VarChar,
+            constraint_type -> VarChar,
+        }
+    }
+
+    table! {
+        information_schema.key_column_usage (constraint_schema, constraint_name) {
+            constraint_schema -> VarChar,
+            constraint_name -> VarChar,
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            column_name -> VarChar,
+            referenced_table_schema -> VarChar,
+            referenced_table_name -> VarChar,
+        }
+    }
+
+    enable_multi_table_joins!(table_constraints, key_column_usage);
+}
+
+/// Even though this is using `information_schema`, MySQL needs non-ANSI columns
+/// in order to do this.
+pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: Option<&str>)
+    -> QueryResult<Vec<ForeignKeyConstraint>>
+{
+    use self::information_schema::table_constraints as tc;
+    use self::information_schema::key_column_usage as kcu;
+
+    let schema_name = match schema_name {
+        Some(name) => name.into(),
+        None => Mysql::default_schema(connection)?,
+    };
+
+    let constraints = tc::table
+        .filter(tc::constraint_type.eq("FOREIGN KEY"))
+        .filter(tc::table_schema.eq(schema_name))
+        .inner_join(kcu::table.on(
+            tc::constraint_schema.eq(kcu::constraint_schema).and(
+                tc::constraint_name.eq(kcu::constraint_name))
+        ))
+        .select((
+            (kcu::table_name, kcu::table_schema),
+            (kcu::referenced_table_name, kcu::referenced_table_schema),
+            kcu::column_name,
+        ))
+        .load(connection)?
+        .into_iter()
+        .map(|(child_table, parent_table, foreign_key)| {
+            ForeignKeyConstraint { child_table, parent_table, foreign_key }
+        })
+        .collect();
+    Ok(constraints)
+}
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let tpe = determine_type_name(&attr.type_name)?;

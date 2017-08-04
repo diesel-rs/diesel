@@ -43,6 +43,7 @@ fn find_with_composite_pk() {
     let third_following = Following { user_id: 2, post_id: 1, email_notifications: false };
 
     let connection = connection();
+    disable_foreign_keys(&connection);
     insert(&vec![first_following, second_following, third_following])
         .into(followings)
         .execute(&connection)

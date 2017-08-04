@@ -37,7 +37,7 @@ fn eager_loading_associations_for_multiple_records() {
 mod eager_loading_with_string_keys {
     use diesel::*;
     use diesel::connection::SimpleConnection;
-    use schema::connection;
+    use schema::{connection, drop_table_cascade};
 
     table! { users { id -> Text, } }
     table! { posts { id -> Text, user_id -> Text, } }
@@ -58,9 +58,9 @@ mod eager_loading_with_string_keys {
     #[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
     fn eager_loading_associations_for_multiple_records() {
         let connection = connection();
+        drop_table_cascade(&connection, "users");
+        drop_table_cascade(&connection, "posts");
         connection.batch_execute(r#"
-            DROP TABLE users;
-            DROP TABLE posts;
             CREATE TABLE users (id TEXT PRIMARY KEY NOT NULL);
             CREATE TABLE posts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);
             INSERT INTO users (id) VALUES ('Sean'), ('Tess');

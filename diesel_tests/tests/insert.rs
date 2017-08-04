@@ -70,7 +70,7 @@ fn batch_insert_with_defaults() {
     use schema_dsl::*;
 
     let connection = connection();
-    connection.execute("DROP TABLE users").unwrap();
+    drop_table_cascade(&connection, "users");
     create_table("users", (
         integer("id").primary_key().auto_increment(),
         string("name").not_null(),
@@ -99,7 +99,7 @@ fn insert_with_defaults() {
     use schema_dsl::*;
 
     let connection = connection();
-    connection.execute("DROP TABLE users").unwrap();
+    drop_table_cascade(&connection, "users");
     create_table("users", (
         integer("id").primary_key().auto_increment(),
         string("name").not_null(),
@@ -120,7 +120,7 @@ fn insert_with_defaults() {
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use schema::users::table as users;
     let connection = connection();
-    connection.execute("DROP TABLE users").unwrap();
+    drop_table_cascade(&connection, "users");
     connection.execute("CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
@@ -222,7 +222,7 @@ fn insert_only_default_values() {
     use schema_dsl::*;
     let connection = connection();
 
-    connection.execute("DROP TABLE users").unwrap();
+    drop_table_cascade(&connection, "users");
     create_table("users", (
         integer("id").primary_key().auto_increment(),
         string("name").not_null().default("'Sean'"),
@@ -241,7 +241,7 @@ fn insert_only_default_values_with_returning() {
     use schema_dsl::*;
     let connection = connection();
 
-    connection.execute("DROP TABLE users").unwrap();
+    drop_table_cascade(&connection, "users");
     create_table("users", (
         integer("id").primary_key().auto_increment(),
         string("name").not_null().default("'Sean'"),

@@ -7,6 +7,7 @@ use diesel::types::{HasSqlType, FromSqlRow};
 
 #[cfg(feature="uses_information_schema")]
 use super::information_schema::UsesInformationSchema;
+use super::table_data::TableData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -19,6 +20,13 @@ pub struct ColumnType {
     pub path: Vec<String>,
     pub is_array: bool,
     pub is_nullable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForeignKeyConstraint {
+    pub child_table: TableData,
+    pub parent_table: TableData,
+    pub foreign_key: String,
 }
 
 impl ColumnInformation {
