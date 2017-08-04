@@ -41,9 +41,6 @@ fn main() {
     insert(&NewUser("Sean").on_conflict(id, do_update().set(name.eq(posts::title)))).into(users).execute(&connection);
     //~^ ERROR E0277
     //~| ERROR no method named `execute`
-    //~| ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR E0277
     //~| ERROR E0271
 
     // Update column with excluded value that is not selectable

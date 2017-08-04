@@ -1,30 +1,29 @@
 use diesel::*;
 use schema::*;
 
-// FIXME: Bring this test back once we can figure out how to allow multiple structs
-// on the same table to use `#[belongs_to]` without overlapping the `JoinTo` impls
-// #[test]
-// fn association_where_struct_name_doesnt_match_table_name() {
-//     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-//     #[belongs_to(Post)]
-//     #[table_name="comments"]
-//     struct OtherComment {
-//         id: i32,
-//         post_id: i32
-//     }
+#[test]
+fn association_where_struct_name_doesnt_match_table_name() {
+    #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
+    #[belongs_to(Post)]
+    #[table_name="comments"]
+    struct OtherComment {
+        id: i32,
+        post_id: i32
+    }
 
-//     let connection = connection_with_sean_and_tess_in_users_table();
+    let connection = connection_with_sean_and_tess_in_users_table();
 
-//     let sean = find_user_by_name("Sean", &connection);
-//     let post: Post = insert(&sean.new_post("Hello", None)).into(posts::table)
-//         .get_result(&connection).unwrap();
-//     insert(&NewComment(post.id, "comment")).into(comments::table)
-//         .execute(&connection).unwrap();
+    let sean = find_user_by_name("Sean", &connection);
+    insert(&sean.new_post("Hello", None)).into(posts::table)
+        .execute(&connection).unwrap();
+    let post = posts::table.first::<Post>(&connection).unwrap();
+    insert(&NewComment(post.id, "comment")).into(comments::table)
+        .execute(&connection).unwrap();
 
-//     let comment_text = OtherComment::belonging_to(&post).select(comments::text)
-//         .first::<String>(&connection);
-//     assert_eq!(Ok("comment".into()), comment_text);
-// }
+    let comment_text = OtherComment::belonging_to(&post).select(comments::text)
+        .first::<String>(&connection);
+    assert_eq!(Ok("comment".into()), comment_text);
+}
 
 #[test]
 #[cfg(not(any(feature="sqlite", feature="mysql")))]
