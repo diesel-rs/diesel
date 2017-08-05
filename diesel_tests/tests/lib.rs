@@ -1,3 +1,5 @@
+#![recursion_limit="1024"]
+
 extern crate quickcheck;
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate diesel;
