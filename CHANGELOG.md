@@ -22,6 +22,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the [Range][range-0.16.0] type on postgreSQL.
 
+* `infer_schema!` will now automatically detect which tables can be joined based
+  on the presence of foreign key constraints.
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate
@@ -29,7 +32,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   arbitrarily chosen based on the backends enabled).
 
 * `#[belongs_to]` will no longer generate the code required to join between two
-  tables. You will need to explicitly invoke `joinable!` instead.
+  tables. You will need to explicitly invoke `joinable!` instead, unless you are
+  using `infer_schema!`
 
 ### Removed
 
