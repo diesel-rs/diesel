@@ -11,13 +11,6 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature="backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
-joinable!(posts -> users (user_id));
-joinable!(comments -> posts (post_id));
-joinable!(followings -> users (user_id));
-joinable!(followings -> posts (post_id));
-joinable!(likes -> comments (comment_id));
-joinable!(likes -> users (user_id));
-
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
 #[table_name = "users"]
 pub struct User {
@@ -212,6 +205,31 @@ pub fn connection_without_transaction() -> TestConnection {
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     MysqlConnection::establish(&connection_url).unwrap()
+}
+
+#[cfg(feature = "postgres")]
+pub fn disable_foreign_keys(connection: &TestConnection) {
+    connection.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
+}
+
+#[cfg(feature = "mysql")]
+pub fn disable_foreign_keys(connection: &TestConnection) {
+    connection.execute("SET FOREIGN_KEY_CHECKS = 0").unwrap();
+}
+
+#[cfg(feature = "sqlite")]
+pub fn disable_foreign_keys(connection: &TestConnection) {
+    connection.execute("PRAGMA defer_foreign_keys = ON").unwrap();
+}
+
+#[cfg(feature = "sqlite")]
+pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
+    connection.execute(&format!("DROP TABLE {}", table)).unwrap();
+}
+
+#[cfg(not(feature = "sqlite"))]
+pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
+    connection.execute(&format!("DROP TABLE {} CASCADE", table)).unwrap();
 }
 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);

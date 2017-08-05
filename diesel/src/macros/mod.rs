@@ -835,7 +835,7 @@ macro_rules! joinable_inner {
             right_table_expr = $right_table,
             foreign_key = $foreign_key,
             primary_key_ty = <$parent_table as $crate::query_source::Table>::PrimaryKey,
-            primary_key_expr = $parent_table.primary_key(),
+            primary_key_expr = <$parent_table as $crate::query_source::Table>::primary_key(&$parent_table),
         );
     };
 

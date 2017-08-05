@@ -13,7 +13,7 @@ table! {
     }
 }
 
-table!{
+table! {
     pragma_table_info (cid) {
         cid ->Integer,
         name -> VarChar,
@@ -21,6 +21,19 @@ table!{
         notnull -> Bool,
         dflt_value -> Nullable<VarChar>,
         pk -> Bool,
+    }
+}
+
+table! {
+    pragma_foreign_key_list {
+        id -> Integer,
+        seq -> Integer,
+        _table -> VarChar,
+        from -> VarChar,
+        to -> VarChar,
+        on_update -> VarChar,
+        on_delete -> VarChar,
+        _match -> VarChar,
     }
 }
 
@@ -43,6 +56,28 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
         .into_iter()
         .map(TableData::from_name)
         .collect())
+}
+
+pub fn load_foreign_key_constraints(connection: &SqliteConnection, schema_name: Option<&str>)
+    -> Result<Vec<ForeignKeyConstraint>, Box<Error>>
+{
+    let tables = load_table_names(connection, schema_name)?;
+    let rows = tables.into_iter()
+        .map(|child_table| {
+            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.name);
+            Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
+                .load::<ForeignKeyListRow>(connection)?
+                .into_iter()
+                .map(|row| {
+                    let parent_table = TableData::from_name(row.parent_table);
+                    ForeignKeyConstraint {
+                        child_table: child_table.clone(),
+                        parent_table,
+                        foreign_key: row.foreign_key,
+                    }
+                }).collect())
+        }).collect::<QueryResult<Vec<Vec<_>>>>()?;
+    Ok(rows.into_iter().flat_map(|x| x).collect())
 }
 
 pub fn get_table_data(conn: &SqliteConnection, table: &TableData)
@@ -72,6 +107,34 @@ impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
             _not_null: row.3,
             _dflt_value: row.4,
             primary_key: row.5,
+        }
+    }
+}
+
+struct ForeignKeyListRow {
+    _id: i32,
+    _seq: i32,
+    parent_table: String,
+    foreign_key: String,
+    _to: String,
+    _on_update: String,
+    _on_delete: String,
+    _match: String,
+}
+
+impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
+    type Row = (i32, i32, String, String, String, String, String, String);
+
+    fn build(row: Self::Row) -> Self {
+        ForeignKeyListRow {
+            _id: row.0,
+            _seq: row.1,
+            parent_table: row.2,
+            foreign_key: row.3,
+            _to: row.4,
+            _on_update: row.5,
+            _on_delete: row.6,
+            _match: row.7,
         }
     }
 }
@@ -225,4 +288,29 @@ fn load_table_names_output_is_ordered() {
         .map(|table| table.to_string())
         .collect::<Vec<_>>();
     assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
+}
+
+#[test]
+fn load_foreign_key_constraints_loads_foreign_keys() {
+    let connection = SqliteConnection::establish(":memory:").unwrap();
+
+    connection.execute("CREATE TABLE table_1 (id)").unwrap();
+    connection.execute("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))").unwrap();
+    connection.execute("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))").unwrap();
+
+    let table_1 = TableData::from_name("table_1");
+    let table_2 = TableData::from_name("table_2");
+    let table_3 = TableData::from_name("table_3");
+    let fk_one = ForeignKeyConstraint {
+        child_table: table_2.clone(),
+        parent_table: table_1.clone(),
+        foreign_key: "fk_one".into(),
+    };
+    let fk_two = ForeignKeyConstraint {
+        child_table: table_3.clone(),
+        parent_table: table_2.clone(),
+        foreign_key: "fk_two".into(),
+    };
+    let fks = load_foreign_key_constraints(&connection, None).unwrap();
+    assert_eq!(vec![fk_one, fk_two], fks);
 }

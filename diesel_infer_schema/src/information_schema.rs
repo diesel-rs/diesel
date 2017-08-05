@@ -82,6 +82,7 @@ mod information_schema {
             table_schema -> VarChar,
             table_name -> VarChar,
             column_name -> VarChar,
+            constraint_schema -> VarChar,
             constraint_name -> VarChar,
             ordinal_position -> BigInt,
         }
@@ -91,10 +92,22 @@ mod information_schema {
         information_schema.table_constraints (table_schema, table_name, constraint_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
+            constraint_schema -> VarChar,
             constraint_name -> VarChar,
             constraint_type -> VarChar,
         }
     }
+
+    table! {
+        information_schema.referential_constraints (constraint_schema, constraint_name) {
+            constraint_schema -> VarChar,
+            constraint_name -> VarChar,
+            unique_constraint_schema -> VarChar,
+            unique_constraint_name -> VarChar,
+        }
+    }
+
+    enable_multi_table_joins!(table_constraints, referential_constraints);
 }
 
 pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
@@ -163,6 +176,54 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
         .order(table_name)
         .load(connection)
         .map_err(Into::into)
+}
+
+#[cfg_attr(feature = "clippy", allow(similar_names))]
+#[cfg(feature = "postgres")]
+pub fn load_foreign_key_constraints<Conn>(connection: &Conn, schema_name: Option<&str>)
+    -> QueryResult<Vec<ForeignKeyConstraint>> where
+        Conn: Connection,
+        Conn::Backend: UsesInformationSchema,
+        String: FromSql<types::Text, Conn::Backend>,
+{
+    use self::information_schema::table_constraints as tc;
+    use self::information_schema::referential_constraints as rc;
+    use self::information_schema::key_column_usage as kcu;
+
+    let schema_name = match schema_name {
+        Some(name) => name.into(),
+        None => Conn::Backend::default_schema(connection)?,
+    };
+
+    let constraint_names = tc::table
+        .filter(tc::constraint_type.eq("FOREIGN KEY"))
+        .filter(tc::table_schema.eq(schema_name))
+        .inner_join(rc::table.on(
+            tc::constraint_schema.eq(rc::constraint_schema).and(
+                tc::constraint_name.eq(rc::constraint_name))
+        ))
+        .select((rc::constraint_schema, rc::constraint_name, rc::unique_constraint_schema, rc::unique_constraint_name))
+        .load::<(String, String, String, String)>(connection)?;
+
+    constraint_names.into_iter()
+        .map(|(fk_schema, fk_name, pk_schema, pk_name)| {
+            let (fk_table, fk_column) = kcu::table
+                .filter(kcu::constraint_schema.eq(&fk_schema))
+                .filter(kcu::constraint_name.eq(&fk_name))
+                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
+                .first(connection)?;
+            let pk_table = kcu::table
+                .filter(kcu::constraint_schema.eq(pk_schema))
+                .filter(kcu::constraint_name.eq(pk_name))
+                .select((kcu::table_name, kcu::table_schema))
+                .first(connection)?;
+
+            Ok(ForeignKeyConstraint {
+                child_table: fk_table,
+                parent_table: pk_table,
+                foreign_key: fk_column,
+            })
+        }).collect()
 }
 
 #[cfg(all(test, feature="postgres"))]
@@ -287,5 +348,30 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(Ok(vec![id, text_col, not_null]), get_table_data(&connection, &table_1));
         assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2));
+    }
+
+    #[test]
+    fn get_foreign_keys_loads_foreign_keys() {
+        let connection = connection();
+
+        connection.execute("CREATE SCHEMA test_schema").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)").unwrap();
+        connection.execute("CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)").unwrap();
+
+        let table_1 = TableData::new("table_1", "test_schema");
+        let table_2 = TableData::new("table_2", "test_schema");
+        let table_3 = TableData::new("table_3", "test_schema");
+        let fk_one = ForeignKeyConstraint {
+            child_table: table_2.clone(),
+            parent_table: table_1.clone(),
+            foreign_key: "fk_one".into(),
+        };
+        let fk_two = ForeignKeyConstraint {
+            child_table: table_3.clone(),
+            parent_table: table_2.clone(),
+            foreign_key: "fk_two".into(),
+        };
+        assert_eq!(Ok(vec![fk_one, fk_two]), load_foreign_key_constraints(&connection, Some("test_schema")));
     }
 }

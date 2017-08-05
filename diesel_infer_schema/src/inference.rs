@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use diesel::result::Error::NotFound;
 
 use table_data::TableData;
-use data_structures::{ColumnInformation, ColumnType};
+use data_structures::{ColumnInformation, ColumnType, ForeignKeyConstraint};
 
 pub enum InferConnection {
     #[cfg(feature = "sqlite")]
@@ -128,5 +128,20 @@ pub fn get_primary_keys(
                      limit.", table.to_string(), primary_keys.len()).into())
     } else {
         Ok(primary_keys)
+    }
+}
+
+pub fn load_foreign_key_constraints(database_url: &str, schema_name: Option<&str>)
+    -> Result<Vec<ForeignKeyConstraint>, Box<Error>>
+{
+    let connection = try!(establish_connection(database_url));
+
+    match connection {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(c) => ::sqlite::load_foreign_key_constraints(&c, schema_name),
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(c) => ::information_schema::load_foreign_key_constraints(&c, schema_name).map_err(Into::into),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(c) => ::mysql::load_foreign_key_constraints(&c, schema_name).map_err(Into::into),
     }
 }

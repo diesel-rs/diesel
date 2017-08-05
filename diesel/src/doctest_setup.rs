@@ -13,9 +13,9 @@ cfg_if! {
             let connection_url = database_url_from_env("PG_DATABASE_URL");
             let connection = PgConnection::establish(&connection_url).unwrap();
             connection.begin_test_transaction().unwrap();
-            connection.execute("DROP TABLE IF EXISTS users").unwrap();
-            connection.execute("DROP TABLE IF EXISTS animals").unwrap();
-            connection.execute("DROP TABLE IF EXISTS posts").unwrap();
+            connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
 
             connection
         }
@@ -99,9 +99,9 @@ cfg_if! {
         fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
             let connection = MysqlConnection::establish(&connection_url).unwrap();
-            connection.execute("DROP TABLE IF EXISTS users").unwrap();
-            connection.execute("DROP TABLE IF EXISTS animals").unwrap();
-            connection.execute("DROP TABLE IF EXISTS posts").unwrap();
+            connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
 
             connection
         }
