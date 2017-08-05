@@ -123,3 +123,42 @@ impl MysqlConnection {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    extern crate dotenv;
+
+    use super::*;
+    use std::env;
+
+    fn connection() -> MysqlConnection {
+        let _ = dotenv::dotenv();
+        let database_url = env::var("MYSQL_UNIT_TEST_DATABASE_URL")
+            .or_else(|_| env::var("MYSQL_DATABASE_URL"))
+            .or_else(|_| env::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run unit tests");
+        MysqlConnection::establish(&database_url).unwrap()
+    }
+
+    #[test]
+    fn batch_execute_handles_single_queries_with_results() {
+        let connection = connection();
+        assert!(connection.batch_execute("SELECT 1").is_ok());
+        assert!(connection.batch_execute("SELECT 1").is_ok());
+    }
+
+    #[test]
+    fn batch_execute_handles_multi_queries_with_results() {
+        let connection = connection();
+        let query = "SELECT 1; SELECT 2; SELECT 3;";
+        assert!(connection.batch_execute(query).is_ok());
+        assert!(connection.batch_execute(query).is_ok());
+    }
+
+    #[test]
+    fn execute_handles_queries_which_return_results() {
+        let connection = connection();
+        assert!(connection.execute("SELECT 1").is_ok());
+        assert!(connection.execute("SELECT 1").is_ok());
+    }
+}

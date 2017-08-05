@@ -79,7 +79,9 @@ impl RawConnection {
                 query.len() as libc::c_ulong,
             );
         }
-        self.did_an_error_occur()
+        self.did_an_error_occur()?;
+        self.flush_pending_results()?;
+        Ok(())
     }
 
     pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T> where
@@ -94,12 +96,6 @@ impl RawConnection {
         self.did_an_error_occur()?;
 
         let result = f();
-
-        unsafe {
-            while ffi::mysql_next_result(self.0) != -1 {
-                self.did_an_error_occur()?;
-            }
-        }
 
         unsafe {
             ffi::mysql_set_server_option(
@@ -141,6 +137,36 @@ impl RawConnection {
                 Box::new(error_message),
             ))
         }
+    }
+
+    fn flush_pending_results(&self) -> QueryResult<()> {
+        // We may have a result to process before advancing
+        self.consume_current_result()?;
+        while self.next_result()? {
+            self.consume_current_result()?;
+        }
+        // next_result returns whether we've advanced to the *last* one, not
+        // whether we're completely done.
+        self.consume_current_result()?;
+        Ok(())
+    }
+
+    fn consume_current_result(&self) -> QueryResult<()> {
+        unsafe {
+            let res = ffi::mysql_store_result(self.0);
+            if !res.is_null() {
+                ffi::mysql_free_result(res);
+            }
+        }
+        self.did_an_error_occur()
+    }
+
+    /// Calls `mysql_next_result` and returns whether there are more results
+    /// after this one.
+    fn next_result(&self) -> QueryResult<bool> {
+        let more_results = unsafe { ffi::mysql_next_result(self.0) == 0 };
+        self.did_an_error_occur()?;
+        Ok(more_results)
     }
 }
 
