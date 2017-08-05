@@ -2,6 +2,7 @@ use schema::{connection, TestConnection};
 use diesel::*;
 use diesel::data_types::*;
 use diesel::expression::dsl::*;
+use diesel::types::Nullable;
 
 table! {
     has_timestamps {
@@ -53,6 +54,25 @@ fn now_can_be_used_as_timestamptz() {
                         (NOW() - '1 day'::interval)").unwrap();
 
     let created_at_tz = sql::<Timestamptz>("created_at");
+    let before_now = has_timestamps.select(id)
+        .filter(created_at_tz.lt(now))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_now);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+// FIXME: Replace this with an actual timestamptz expression
+fn now_can_be_used_as_nullable_timestamptz() {
+    use self::has_timestamps::dsl::*;
+    use diesel::types::Timestamptz;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection.execute("INSERT INTO has_timestamps (created_at) VALUES \
+                        (NOW() - '1 day'::interval)").unwrap();
+
+    let created_at_tz = sql::<Nullable<Timestamptz>>("created_at");
     let before_now = has_timestamps.select(id)
         .filter(created_at_tz.lt(now))
         .load::<i32>(&connection);

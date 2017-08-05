@@ -69,3 +69,12 @@ impl AsExpression<Timestamptz> for now {
         Coerce::new(self)
     }
 }
+
+#[cfg(feature="postgres")]
+impl AsExpression<Nullable<Timestamptz>> for now {
+    type Expression = Coerce<now, Nullable<Timestamptz>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
