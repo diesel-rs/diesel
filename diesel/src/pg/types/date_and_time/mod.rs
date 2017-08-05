@@ -2,9 +2,12 @@ use std::error::Error;
 use std::io::Write;
 use std::ops::Add;
 
-use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
+use pg::Pg;
 use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, Date, Interval, Time, Timestamp, Timestamptz};
 
+primitive_impls!(Date -> (pg: (1082, 1182)));
+primitive_impls!(Time -> (pg: (1083, 1183)));
+primitive_impls!(Timestamp -> (pg: (1114, 1115)));
 primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
 primitive_impls!(Timestamptz);
 
@@ -77,35 +80,6 @@ expression_impls!(Timestamp -> PgTimestamp);
 expression_impls!(Timestamptz -> PgTimestamp);
 
 primitive_impls!(Interval -> (PgInterval, pg: (1186, 1187)));
-
-use types::HasSqlType;
-
-impl HasSqlType<types::Date> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 1082,
-            array_oid: 1182,
-        }
-    }
-}
-
-impl HasSqlType<types::Time> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 1083,
-            array_oid: 1183,
-        }
-    }
-}
-
-impl HasSqlType<types::Timestamp> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 1114,
-            array_oid: 1115,
-        }
-    }
-}
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
     fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
