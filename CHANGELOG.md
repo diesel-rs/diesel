@@ -20,6 +20,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the Decimal datatype on MySQL, using the [BigDecimal crate][bigdecimal-0.16.0].
 
+* Added support for the [Range][range-0.16.0] type on postgreSQL.
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate
@@ -43,7 +45,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `grandchild.join(child.join(parent))`. Previously only
   `parent.join(child.join(grandchild))` would compile.
 
-[bigdecimal-0.14.0]: https://crates.io/crates/bigdecimal
+[bigdecimal-0.16.0]: https://crates.io/crates/bigdecimal
+[range-0.16.0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Range.html
 
 ## [0.15.2] - 2017-07-28
 
