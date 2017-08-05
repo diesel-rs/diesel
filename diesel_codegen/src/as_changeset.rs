@@ -19,6 +19,12 @@ pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
         })
         .collect::<Vec<_>>();
 
+    if attrs.is_empty() {
+        panic!("Deriving `AsChangeset` on a structure that only contains the primary key isn't \
+            supported. If you want to change the primary key of a row, you should do so with \
+            `.set(table::id.eq(new_id))`. `AsChangeset` never changes the primary key of a row.");
+    }
+
     if lifetimes.is_empty() {
         lifetimes.push(syn::LifetimeDef::new("'a"));
     }
