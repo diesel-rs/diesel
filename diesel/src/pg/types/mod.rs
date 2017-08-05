@@ -1,4 +1,5 @@
 mod array;
+mod ranges;
 pub mod date_and_time;
 pub mod floats;
 #[cfg(feature = "network-address")]
@@ -65,6 +66,27 @@ pub mod sql_types {
     /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default)] pub struct Array<ST>(ST);
+
+    /// The `Range` SQL type. This wraps another type to represent a SQL range of
+    /// that type.
+    ///
+    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    ///
+    /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
+    ///
+    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    ///
+    /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
+    ///
+    /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
+    #[derive(Debug, Clone, Copy, Default)] pub struct Range<ST>(ST);
+
+    #[doc(hidden)] pub type Int4range = Range<::types::Int4>;
+    #[doc(hidden)] pub type Int8range = Range<::types::Int8>;
+    #[doc(hidden)] pub type Daterange = Range<::types::Date>;
+    #[doc(hidden)] pub type Numrange = Range<::types::Numeric>;
+    #[doc(hidden)] pub type Tsrange = Range<::types::Timestamp>;
+    #[doc(hidden)] pub type Tstzrange = Range<::types::Timestamptz>;
 
     /// Alias for `SmallInt`
     pub type SmallSerial = ::types::SmallInt;

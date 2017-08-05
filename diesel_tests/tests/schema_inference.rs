@@ -163,3 +163,48 @@ mod sqlite {
         assert_eq!(Ok(vec![inferred_datetime_types]), infer_all_the_datetime_types::table.load(&conn));
     }
 }
+
+#[cfg(feature = "postgres")]
+mod postgres {
+    use diesel::*;
+    use diesel::data_types::PgNumeric;
+    use schema::*;
+    use super::chrono::*;
+    use std::collections::Bound;
+
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name="all_the_ranges"]
+    struct InferredRanges {
+        int4: (Bound<i32>, Bound<i32>),
+        int8: (Bound<i64>, Bound<i64>),
+        num: (Bound<PgNumeric>, Bound<PgNumeric>),
+        ts: (Bound<NaiveDateTime>, Bound<NaiveDateTime>),
+        tstz: (Bound<DateTime<Utc>>, Bound<DateTime<Utc>>),
+        date: (Bound<NaiveDate>, Bound<NaiveDate>),
+    }
+
+    #[test]
+    fn ranges_are_correctly_inferred() {
+        let conn = connection();
+        let numeric = PgNumeric::Positive{
+            weight: 1,
+            scale: 1,
+            digits: vec![1],
+        };
+        let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+
+        let inferred_ranges = InferredRanges {
+            int4: (Bound::Included(5), Bound::Excluded(12)),
+            int8: (Bound::Included(5), Bound::Excluded(13)),
+            num: (Bound::Included(numeric), Bound::Unbounded),
+            ts: (Bound::Included(dt), Bound::Unbounded),
+            tstz: (Bound::Unbounded, Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc))),
+            date: (Bound::Included(dt.date()), Bound::Unbounded),
+        };
+
+        insert(&inferred_ranges).into(all_the_ranges::table)
+            .execute(&conn).unwrap();
+
+        assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(&conn));
+    }
+}

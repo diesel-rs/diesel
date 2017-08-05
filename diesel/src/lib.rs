@@ -22,6 +22,9 @@
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
 extern crate byteorder;
+#[cfg(feature = "postgres")]
+#[macro_use]
+extern crate bitflags;
 
 #[macro_use]
 mod macros;
