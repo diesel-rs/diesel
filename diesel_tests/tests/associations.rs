@@ -60,6 +60,7 @@ mod eager_loading_with_string_keys {
         let connection = connection();
         drop_table_cascade(&connection, "users");
         drop_table_cascade(&connection, "posts");
+        drop_table_cascade(&connection, "fk_doesnt_reference_pk");
         connection.batch_execute(r#"
             CREATE TABLE users (id TEXT PRIMARY KEY NOT NULL);
             CREATE TABLE posts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);

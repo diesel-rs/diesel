@@ -74,6 +74,7 @@ pub fn load_foreign_key_constraints(connection: &SqliteConnection, schema_name: 
                         child_table: child_table.clone(),
                         parent_table,
                         foreign_key: row.foreign_key,
+                        primary_key: row.primary_key,
                     }
                 }).collect())
         }).collect::<QueryResult<Vec<Vec<_>>>>()?;
@@ -116,7 +117,7 @@ struct ForeignKeyListRow {
     _seq: i32,
     parent_table: String,
     foreign_key: String,
-    _to: String,
+    primary_key: String,
     _on_update: String,
     _on_delete: String,
     _match: String,
@@ -131,7 +132,7 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
             _seq: row.1,
             parent_table: row.2,
             foreign_key: row.3,
-            _to: row.4,
+            primary_key: row.4,
             _on_update: row.5,
             _on_delete: row.6,
             _match: row.7,
@@ -301,11 +302,13 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         child_table: table_2.clone(),
         parent_table: table_1.clone(),
         foreign_key: "fk_one".into(),
+        primary_key: "id".into(),
     };
     let fk_two = ForeignKeyConstraint {
         child_table: table_3.clone(),
         parent_table: table_2.clone(),
         foreign_key: "fk_two".into(),
+        primary_key: "id".into(),
     };
     let fks = load_foreign_key_constraints(&connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);

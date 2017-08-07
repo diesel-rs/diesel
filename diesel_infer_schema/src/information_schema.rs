@@ -212,16 +212,17 @@ pub fn load_foreign_key_constraints<Conn>(connection: &Conn, schema_name: Option
                 .filter(kcu::constraint_name.eq(&fk_name))
                 .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                 .first(connection)?;
-            let pk_table = kcu::table
+            let (pk_table, pk_column) = kcu::table
                 .filter(kcu::constraint_schema.eq(pk_schema))
                 .filter(kcu::constraint_name.eq(pk_name))
-                .select((kcu::table_name, kcu::table_schema))
+                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                 .first(connection)?;
 
             Ok(ForeignKeyConstraint {
                 child_table: fk_table,
                 parent_table: pk_table,
                 foreign_key: fk_column,
+                primary_key: pk_column,
             })
         }).collect()
 }
@@ -366,11 +367,13 @@ mod tests {
             child_table: table_2.clone(),
             parent_table: table_1.clone(),
             foreign_key: "fk_one".into(),
+            primary_key: "id".into(),
         };
         let fk_two = ForeignKeyConstraint {
             child_table: table_3.clone(),
             parent_table: table_2.clone(),
             foreign_key: "fk_two".into(),
+            primary_key: "id".into(),
         };
         assert_eq!(Ok(vec![fk_one, fk_two]), load_foreign_key_constraints(&connection, Some("test_schema")));
     }
