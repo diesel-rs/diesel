@@ -58,7 +58,7 @@ mod bigdecimal {
                 .take_while(|i| i.is_zero())
                 .count();
             let relevant_digits = digits.len() - unneccessary_zeroes;
-            digits.truncate(relevent_digits);
+            digits.truncate(relevant_digits);
 
             match decimal.sign() {
                 Sign::Plus => PgNumeric::Positive {
