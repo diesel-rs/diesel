@@ -164,18 +164,24 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
 {
     use self::information_schema::tables::dsl::*;
 
+    let default_schema = Conn::Backend::default_schema(connection)?;
     let schema_name = match schema_name {
-        Some(name) => name.into(),
-        None => Conn::Backend::default_schema(connection)?,
+        Some(name) => name,
+        None => &default_schema,
     };
 
-    tables.select((table_name, table_schema))
+    let mut table_names = tables.select((table_name, table_schema))
         .filter(table_schema.eq(schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
         .order(table_name)
-        .load(connection)
-        .map_err(Into::into)
+        .load::<TableData>(connection)?;
+    if schema_name == default_schema {
+        for table in &mut table_names {
+            table.schema = None;
+        }
+    }
+    Ok(table_names)
 }
 
 #[cfg_attr(feature = "clippy", allow(similar_names))]
@@ -255,8 +261,8 @@ mod tests {
 
         let table_names = load_table_names(&connection, None).unwrap();
 
-        assert!(table_names.contains(&TableData::new("a_regular_table", "public")));
-        assert!(!table_names.contains(&TableData::new("a_view", "public")));
+        assert!(table_names.contains(&TableData::from_name("a_regular_table")));
+        assert!(!table_names.contains(&TableData::from_name("a_view")));
     }
 
     #[test]
@@ -267,9 +273,12 @@ mod tests {
             .unwrap();
 
         let table_names = load_table_names(&connection, None).unwrap();
-        for TableData { schema, .. } in table_names {
-            assert_eq!(Some("public".into()), schema);
+        for &TableData { ref schema, .. } in &table_names {
+            assert_eq!(None, *schema);
         }
+        assert!(table_names.contains(&TableData::from_name(
+            "load_table_names_loads_from_public_schema_if_none_given",
+        )));
     }
 
     #[test]
