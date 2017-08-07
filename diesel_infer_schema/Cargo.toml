@@ -11,8 +11,6 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [dependencies]
 diesel = { version = "0.15.0", default-features = false }
-syn = "0.11.4"
-quote = "0.3.1"
 clippy = { optional = true, version = "=0.0.138" }
 
 [dev-dependencies]

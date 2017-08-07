@@ -3,10 +3,10 @@ use std::error::Error;
 use diesel::prelude::*;
 use diesel::result::Error::NotFound;
 
-use table_data::TableData;
-use data_structures::{ColumnInformation, ColumnType, ForeignKeyConstraint};
+use table_data::*;
+use data_structures::*;
 
-pub enum InferConnection {
+pub(crate) enum InferConnection {
     #[cfg(feature = "sqlite")]
     Sqlite(SqliteConnection),
     #[cfg(feature = "postgres")]
@@ -16,7 +16,7 @@ pub enum InferConnection {
 }
 
 pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
-    -> Result<Vec<TableData>, Box<Error>>
+    -> Result<Vec<TableName>, Box<Error>>
 {
     let connection = try!(establish_connection(database_url));
 
@@ -30,7 +30,7 @@ pub fn load_table_names(database_url: &str, schema_name: Option<&str>)
     }
 }
 
-pub fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
+pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
     match database_url {
         #[cfg(feature = "postgres")]
         _ if database_url.starts_with("postgres://") || database_url.starts_with("postgresql://") => {
@@ -73,7 +73,7 @@ fn establish_real_connection<Conn>(database_url: &str) -> Result<Conn, Box<Error
     })
 }
 
-pub fn get_table_data(conn: &InferConnection, table: &TableData)
+fn get_column_information(conn: &InferConnection, table: &TableName)
     -> Result<Vec<ColumnInformation>, Box<Error>>
 {
     let column_info = match *conn {
@@ -91,7 +91,7 @@ pub fn get_table_data(conn: &InferConnection, table: &TableData)
     }
 }
 
-pub fn determine_column_type(
+fn determine_column_type(
     attr: &ColumnInformation,
     conn: &InferConnection,
 ) -> Result<ColumnType, Box<Error>> {
@@ -105,9 +105,9 @@ pub fn determine_column_type(
     }
 }
 
-pub fn get_primary_keys(
+pub(crate) fn get_primary_keys(
     conn: &InferConnection,
-    table: &TableData,
+    table: &TableName,
 ) -> Result<Vec<String>, Box<Error>> {
     let primary_keys: Vec<String> = try!(match *conn {
         #[cfg(feature = "sqlite")]
@@ -144,4 +144,22 @@ pub fn load_foreign_key_constraints(database_url: &str, schema_name: Option<&str
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => ::mysql::load_foreign_key_constraints(&c, schema_name).map_err(Into::into),
     }
+}
+
+pub fn load_table_data(database_url: &str, name: TableName)
+    -> Result<TableData, Box<Error>>
+{
+    let connection = establish_connection(database_url)?;
+    let primary_key = get_primary_keys(&connection, &name)?;
+    let column_data = get_column_information(&connection, &name)?
+        .into_iter()
+        .map(|c| {
+            let ty = determine_column_type(&c, &connection)?;
+            Ok(ColumnDefinition {
+                name: c.column_name,
+                ty,
+            })
+        })
+        .collect::<Result<_, Box<Error>>>()?;
+    Ok(TableData { name, primary_key, column_data })
 }

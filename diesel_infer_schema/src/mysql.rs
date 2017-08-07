@@ -4,6 +4,7 @@ use std::error::Error;
 
 use information_schema::UsesInformationSchema;
 use data_structures::*;
+use table_data::TableName;
 
 mod information_schema {
     table! {
@@ -39,9 +40,10 @@ pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: O
     use self::information_schema::table_constraints as tc;
     use self::information_schema::key_column_usage as kcu;
 
+    let default_schema = Mysql::default_schema(connection)?;
     let schema_name = match schema_name {
-        Some(name) => name.into(),
-        None => Mysql::default_schema(connection)?,
+        Some(name) => name,
+        None => &default_schema,
     };
 
     let constraints = tc::table
@@ -57,9 +59,11 @@ pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: O
             kcu::column_name,
             kcu::referenced_column_name,
         ))
-        .load(connection)?
+        .load::<(TableName, TableName, _, _)>(connection)?
         .into_iter()
-        .map(|(child_table, parent_table, foreign_key, primary_key)| {
+        .map(|(mut child_table, mut parent_table, foreign_key, primary_key)| {
+            child_table.strip_schema_if_matches(&default_schema);
+            parent_table.strip_schema_if_matches(&default_schema);
             ForeignKeyConstraint {
                 child_table,
                 parent_table,

@@ -17,13 +17,8 @@
 #![cfg_attr(all(test, feature = "clippy"), allow(result_unwrap_used))]
 
 #[macro_use]
-extern crate quote;
-extern crate syn;
-
-#[macro_use]
 extern crate diesel;
 
-mod codegen;
 mod data_structures;
 mod foreign_keys;
 mod inference;
@@ -38,7 +33,7 @@ mod pg;
 #[cfg(feature="sqlite")]
 mod sqlite;
 
-pub use codegen::*;
-pub use foreign_keys::remove_unsafe_foreign_keys_for_codegen;
-pub use inference::{load_table_names, load_foreign_key_constraints};
-pub use table_data::TableData;
+pub use data_structures::*;
+pub use foreign_keys::*;
+pub use inference::*;
+pub use table_data::*;

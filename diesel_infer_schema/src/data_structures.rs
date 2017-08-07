@@ -7,7 +7,7 @@ use diesel::types::{HasSqlType, FromSqlRow};
 
 #[cfg(feature="uses_information_schema")]
 use super::information_schema::UsesInformationSchema;
-use super::table_data::TableData;
+use super::table_data::TableName;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -16,10 +16,17 @@ pub struct ColumnInformation {
     pub nullable: bool,
 }
 
+#[derive(Debug)]
 pub struct ColumnType {
     pub rust_name: String,
     pub is_array: bool,
     pub is_nullable: bool,
+}
+
+#[derive(Debug)]
+pub struct ColumnDefinition {
+    pub name: String,
+    pub ty: ColumnType,
 }
 
 impl ColumnInformation {
@@ -61,14 +68,14 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ForeignKeyConstraint {
-    pub child_table: TableData,
-    pub parent_table: TableData,
+    pub child_table: TableName,
+    pub parent_table: TableName,
     pub foreign_key: String,
     pub primary_key: String,
 }
 
 impl ForeignKeyConstraint {
-    pub fn ordered_tables(&self) -> (&TableData, &TableData) {
+    pub fn ordered_tables(&self) -> (&TableName, &TableName) {
         use std::cmp::{min, max};
         (
             min(&self.parent_table, &self.child_table),

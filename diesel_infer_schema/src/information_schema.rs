@@ -10,7 +10,7 @@ use diesel::pg::Pg;
 #[cfg(feature="mysql")]
 use diesel::mysql::Mysql;
 
-use table_data::TableData;
+use table_data::TableName;
 use super::data_structures::*;
 
 pub trait UsesInformationSchema: Backend {
@@ -110,7 +110,7 @@ mod information_schema {
     enable_multi_table_joins!(table_constraints, referential_constraints);
 }
 
-pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
+pub fn get_table_data<Conn>(conn: &Conn, table: &TableName)
     -> QueryResult<Vec<ColumnInformation>> where
         Conn: Connection,
         Conn::Backend: UsesInformationSchema,
@@ -131,7 +131,7 @@ pub fn get_table_data<Conn>(conn: &Conn, table: &TableData)
         .load(conn)
 }
 
-pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableData)
+pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableName)
     -> QueryResult<Vec<String>> where
         Conn: Connection,
         Conn::Backend: UsesInformationSchema,
@@ -157,7 +157,7 @@ pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableData)
 }
 
 pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
-    -> Result<Vec<TableData>, Box<Error>> where
+    -> Result<Vec<TableName>, Box<Error>> where
         Conn: Connection,
         Conn::Backend: UsesInformationSchema,
         String: FromSql<types::Text, Conn::Backend>,
@@ -175,11 +175,9 @@ pub fn load_table_names<Conn>(connection: &Conn, schema_name: Option<&str>)
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
         .order(table_name)
-        .load::<TableData>(connection)?;
-    if schema_name == default_schema {
-        for table in &mut table_names {
-            table.schema = None;
-        }
+        .load::<TableName>(connection)?;
+    for table in &mut table_names {
+        table.strip_schema_if_matches(&default_schema);
     }
     Ok(table_names)
 }
@@ -196,9 +194,10 @@ pub fn load_foreign_key_constraints<Conn>(connection: &Conn, schema_name: Option
     use self::information_schema::referential_constraints as rc;
     use self::information_schema::key_column_usage as kcu;
 
+    let default_schema = Conn::Backend::default_schema(connection)?;
     let schema_name = match schema_name {
-        Some(name) => name.into(),
-        None => Conn::Backend::default_schema(connection)?,
+        Some(name) => name,
+        None => &default_schema,
     };
 
     let constraint_names = tc::table
@@ -213,16 +212,19 @@ pub fn load_foreign_key_constraints<Conn>(connection: &Conn, schema_name: Option
 
     constraint_names.into_iter()
         .map(|(fk_schema, fk_name, pk_schema, pk_name)| {
-            let (fk_table, fk_column) = kcu::table
+            let (mut fk_table, fk_column) = kcu::table
                 .filter(kcu::constraint_schema.eq(&fk_schema))
                 .filter(kcu::constraint_name.eq(&fk_name))
                 .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first(connection)?;
-            let (pk_table, pk_column) = kcu::table
+                .first::<(TableName, _)>(connection)?;
+            let (mut pk_table, pk_column) = kcu::table
                 .filter(kcu::constraint_schema.eq(pk_schema))
                 .filter(kcu::constraint_name.eq(pk_name))
                 .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first(connection)?;
+                .first::<(TableName, _)>(connection)?;
+
+            fk_table.strip_schema_if_matches(&default_schema);
+            pk_table.strip_schema_if_matches(&default_schema);
 
             Ok(ForeignKeyConstraint {
                 child_table: fk_table,
@@ -261,8 +263,8 @@ mod tests {
 
         let table_names = load_table_names(&connection, None).unwrap();
 
-        assert!(table_names.contains(&TableData::from_name("a_regular_table")));
-        assert!(!table_names.contains(&TableData::from_name("a_view")));
+        assert!(table_names.contains(&TableName::from_name("a_regular_table")));
+        assert!(!table_names.contains(&TableName::from_name("a_view")));
     }
 
     #[test]
@@ -273,10 +275,10 @@ mod tests {
             .unwrap();
 
         let table_names = load_table_names(&connection, None).unwrap();
-        for &TableData { ref schema, .. } in &table_names {
+        for &TableName { ref schema, .. } in &table_names {
             assert_eq!(None, *schema);
         }
-        assert!(table_names.contains(&TableData::from_name(
+        assert!(table_names.contains(&TableName::from_name(
             "load_table_names_loads_from_public_schema_if_none_given",
         )));
     }
@@ -289,14 +291,14 @@ mod tests {
         connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)").unwrap();
 
         let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
-        assert_eq!(vec![TableData::new("table_1", "test_schema")], table_names);
+        assert_eq!(vec![TableName::new("table_1", "test_schema")], table_names);
 
         connection.execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)").unwrap();
 
         let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
         let expected = vec![
-            TableData::new("table_1", "test_schema"),
-            TableData::new("table_2", "test_schema"),
+            TableName::new("table_1", "test_schema"),
+            TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
 
@@ -305,12 +307,12 @@ mod tests {
 
         let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
         let expected = vec![
-            TableData::new("table_1", "test_schema"),
-            TableData::new("table_2", "test_schema"),
+            TableName::new("table_1", "test_schema"),
+            TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
         let table_names = load_table_names(&connection, Some("other_test_schema")).unwrap();
-        assert_eq!(vec![TableData::new("table_1", "other_test_schema")], table_names);
+        assert_eq!(vec![TableName::new("table_1", "other_test_schema")], table_names);
     }
 
     #[test]
@@ -336,8 +338,8 @@ mod tests {
         connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)").unwrap();
         connection.execute("CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))").unwrap();
 
-        let table_1 = TableData::new("table_1", "test_schema");
-        let table_2 = TableData::new("table_2", "test_schema");
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
         assert_eq!(vec!["id".to_string()], get_primary_keys(&connection, &table_1).unwrap());
         assert_eq!(vec!["id".to_string(), "id2".to_string()], get_primary_keys(&connection, &table_2).unwrap());
     }
@@ -350,8 +352,8 @@ mod tests {
         connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)").unwrap();
         connection.execute("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)").unwrap();
 
-        let table_1 = TableData::new("table_1", "test_schema");
-        let table_2 = TableData::new("table_2", "test_schema");
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
         let id = ColumnInformation::new("id", "int4", false);
         let text_col = ColumnInformation::new("text_col", "varchar", true);
         let not_null = ColumnInformation::new("not_null", "text", false);
@@ -369,9 +371,9 @@ mod tests {
         connection.execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)").unwrap();
         connection.execute("CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)").unwrap();
 
-        let table_1 = TableData::new("table_1", "test_schema");
-        let table_2 = TableData::new("table_2", "test_schema");
-        let table_3 = TableData::new("table_3", "test_schema");
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+        let table_3 = TableName::new("table_3", "test_schema");
         let fk_one = ForeignKeyConstraint {
             child_table: table_2.clone(),
             parent_table: table_1.clone(),
