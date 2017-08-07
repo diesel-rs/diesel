@@ -49,6 +49,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `grandchild.join(child.join(parent))`. Previously only
   `parent.join(child.join(grandchild))` would compile.
 
+* When encoding a `BigDecimal` on PG, `1.0` is no longer encoded as if it were
+  `1`.
+
 [bigdecimal-0.16.0]: https://crates.io/crates/bigdecimal
 [range-0.16.0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Range.html
 

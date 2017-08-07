@@ -443,6 +443,7 @@ fn pg_numeric_bigdecimal_to_sql() {
     quickcheck(correct_rep as fn(u64, u64) -> bool);
 
     let test_values = vec![
+        "0.1",
         "1.0",
         "141.0",
         "-1.0",
@@ -498,6 +499,7 @@ fn pg_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
 
     let values = vec![
+        "0.1",
         "1.0",
         "141.0",
         "-1.0",

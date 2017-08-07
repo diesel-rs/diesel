@@ -5,91 +5,62 @@ mod bigdecimal {
     extern crate num_integer;
     extern crate bigdecimal;
 
+    use self::bigdecimal::BigDecimal;
+    use self::num_bigint::{Sign, BigInt, BigUint};
+    use self::num_integer::Integer;
+    use self::num_traits::{Signed, Zero, ToPrimitive};
     use std::error::Error;
     use std::io::prelude::*;
 
     use pg::Pg;
-
-    use self::num_traits::{Signed, Zero, ToPrimitive};
-    use self::num_bigint::{Sign, BigInt, BigUint, ToBigInt};
-    use self::num_integer::Integer;
-    use self::bigdecimal::BigDecimal;
-
     use pg::data_types::PgNumeric;
     use types::{self, FromSql, ToSql, ToSqlOutput, IsNull};
 
-    type Digits = Vec<i16>;
+    /// Iterator over the digits of a big uint in base 10k.
+    /// The digits will be returned in little endian order.
+    struct ToBase10000(Option<BigUint>);
 
-    fn bigdec_add_integer_part(digits: &mut Digits, absolute: &BigDecimal) -> i16 {
-        let mut weight = 0;
-        let ten_k = BigInt::from(10000);
+    impl Iterator for ToBase10000 {
+        type Item = i16;
 
-        let mut integer_part = absolute.to_bigint().expect("Can always take integer part of BigDecimal");
-
-        while ten_k <= integer_part {
-            weight += 1;
-            // digit is integer_part REM 10_000
-            let (div, digit) = integer_part.div_rem(&ten_k);
-            digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
-            integer_part = div;
+        fn next(&mut self) -> Option<Self::Item> {
+            self.0.take().map(|v| {
+                let (div, rem) = v.div_rem(&BigUint::from(10000u16));
+                if !div.is_zero() {
+                    self.0 = Some(div);
+                }
+                rem.to_i16().expect("10000 always fits in an i16")
+            })
         }
-        digits.push(integer_part.to_string().parse::<i16>().expect("digit < 10000, but cannot fit in i16"));
-
-        digits.reverse();
-
-        weight
     }
 
-    fn bigdec_add_decimal_part(digits: &mut Digits, absolute: &BigDecimal) -> u16 {
-        use std::str::FromStr;
+    impl<'a> From<&'a BigDecimal> for PgNumeric {
+        fn from(decimal: &'a BigDecimal) -> Self {
+            let (mut integer, scale) = decimal.as_bigint_and_exponent();
+            let scale = scale as u16;
+            integer = integer.abs();
 
-        let ten_k = BigDecimal::from_str("10000").expect("Could not parse into BigDecimal");
+            // Ensure that the decimal will always lie on a digit boundary
+            for _ in 0..(4 - scale % 4) {
+                integer = integer * 10;
+            }
+            let integer = integer.to_biguint().expect("integer is always positive");
 
-        let decimal_part = absolute;
-        let mut decimal_part = decimal_part - absolute.with_scale(0);
-        // scale is the amount of digits to print. to_string() includes a "0.",
-        // that's why the -2 is there.
-        let scale = if decimal_part == Zero::zero() {
-            0
-        } else {
-            decimal_part.to_string().len() as u16 - 2
-        };
+            let mut digits = ToBase10000(Some(integer)).collect::<Vec<_>>();
+            digits.reverse();
+            let digits_after_decimal = scale as u16 / 4 + 1;
+            let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
+            let index_of_decimal = (weight + 1) as usize;
 
-        while decimal_part != BigDecimal::zero() {
-            decimal_part *= &ten_k;
-            let digit = decimal_part.to_bigint().expect("Can always take integer part of BigDecimal");
+            let unneccessary_zeroes = digits[index_of_decimal..]
+                .iter()
+                .rev()
+                .take_while(|i| i.is_zero())
+                .count();
+            let relevant_digits = digits.len() - unneccessary_zeroes;
+            digits.truncate(relevent_digits);
 
-            // This can be simplified when github.com/akubera/bigdecimal-rs/issues/13 gets
-            // solved; decimal_part -= &digit; should suffice by then.
-            decimal_part -= BigDecimal::new(digit.clone(), 0);
-            digits.push(digit.to_u16().expect("digit < 10000, but cannot fit in i16") as i16);
-        }
-
-        scale
-    }
-
-    impl ToSql<types::Numeric, Pg> for BigDecimal {
-        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
-            // The encoding of the BigDecimal type for PostgreSQL is a bit complicated:
-            // PostgreSQL expects the data in base-10000 (so two bytes per 10k),
-            // and the decimal point should lie on a boundary (as per definition of "base-10000").
-
-            // BigDecimal, internally, holds an int vector (base-256, one byte per byte),
-            // and a base (u64, base-10) shift.
-
-            // Therefore, we split up the encoding in three parts:
-            // the sign, the (integer) part before the decimal, and the part after the decimal.
-
-            let absolute = self.abs();
-            let mut digits = vec![];
-
-            // Encode the integer part
-            let weight = bigdec_add_integer_part(&mut digits, &absolute);
-
-            // Encode the decimal part
-            let scale = bigdec_add_decimal_part(&mut digits, &absolute);
-
-            let numeric = match self.sign() {
+            match decimal.sign() {
                 Sign::Plus => PgNumeric::Positive {
                     digits, scale, weight
                 },
@@ -101,7 +72,19 @@ mod bigdecimal {
                     scale: 0,
                     weight: 0,
                 },
-            };
+            }
+        }
+    }
+
+    impl From<BigDecimal> for PgNumeric {
+        fn from(bigdecimal: BigDecimal) -> Self {
+            (&bigdecimal).into()
+        }
+    }
+
+    impl ToSql<types::Numeric, Pg> for BigDecimal {
+        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+            let numeric = PgNumeric::from(self);
             ToSql::<types::Numeric, Pg>::to_sql(&numeric, out)
         }
     }
@@ -125,6 +108,85 @@ mod bigdecimal {
             // This means that e.g. PostgreSQL 0.01 will be interpreted as 0.0100
             let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp);
             Ok(result)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use std::str::FromStr;
+
+        #[test]
+        fn bigdecimal_to_pgnumeric_converts_digits_to_base_10000() {
+            let decimal = BigDecimal::from_str("1").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![1] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("10").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![10] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("10000").unwrap();
+            let expected = PgNumeric::Positive { weight: 1, scale: 0, digits: vec![1, 0] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("10001").unwrap();
+            let expected = PgNumeric::Positive { weight: 1, scale: 0, digits: vec![1, 1] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("100000000").unwrap();
+            let expected = PgNumeric::Positive { weight: 2, scale: 0, digits: vec![1, 0, 0] };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        fn bigdecimal_to_pg_numeric_properly_adjusts_scale() {
+            let decimal = BigDecimal::from_str("1").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![1] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("1.0").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 1, digits: vec![1] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("1.1").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 1, digits: vec![1, 1000] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("1.10").unwrap();
+            let expected = PgNumeric::Positive { weight: 0, scale: 2, digits: vec![1, 1000] };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("100000000.0001").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: 2,
+                scale: 4,
+                digits: vec![1, 0, 0, 1],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("0.1").unwrap();
+            let expected = PgNumeric::Positive { weight: -1, scale: 1, digits: vec![1000] };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        fn bigdecimal_to_pg_numeric_retains_sign() {
+            let decimal = BigDecimal::from_str("123.456").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 3,
+                digits: vec![123, 4560],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("-123.456").unwrap();
+            let expected = PgNumeric::Negative {
+                weight: 0,
+                scale: 3,
+                digits: vec![123, 4560],
+            };
+            assert_eq!(expected, decimal.into());
         }
     }
 }
