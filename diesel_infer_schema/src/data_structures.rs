@@ -17,7 +17,7 @@ pub struct ColumnInformation {
 }
 
 pub struct ColumnType {
-    pub path: Vec<String>,
+    pub rust_name: String,
     pub is_array: bool,
     pub is_nullable: bool,
 }

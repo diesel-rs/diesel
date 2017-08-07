@@ -23,7 +23,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     }
 
     Ok(ColumnType {
-        path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
+        rust_name: capitalize(tpe),
         is_array: is_array,
         is_nullable: attr.nullable,
     })

@@ -68,19 +68,9 @@ fn column_def_tokens(
             e,
         ).into()),
     };
-    let tpe = if column_type.path[0] == "diesel" && column_type.path[1] == "types" {
-        let path_segments = column_type.path
-            .into_iter()
-            .skip(2)
-            .map(syn::PathSegment::from)
-            .collect();
-        syn::Path { global: false, segments: path_segments }
-    } else {
-        let path_segments = column_type.path
-            .into_iter()
-            .map(syn::PathSegment::from)
-            .collect();
-        syn::Path { global: true, segments: path_segments }
+    let tpe = syn::Path {
+        global: false,
+        segments: vec![syn::PathSegment::from(column_type.rust_name)],
     };
     let mut tpe = quote!(#tpe);
 

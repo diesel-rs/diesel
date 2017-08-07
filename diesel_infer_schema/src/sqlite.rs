@@ -148,41 +148,37 @@ pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResu
         .collect())
 }
 
-fn diesel_type(t: &str) -> Vec<String> {
-    vec!["diesel".into(), "types".into(), t.into()]
-}
-
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
-        diesel_type("Bool")
+        String::from("Bool")
     } else if is_smallint(&type_name) {
-        diesel_type("SmallInt")
+        String::from("SmallInt")
     } else if is_bigint(&type_name) {
-        diesel_type("BigInt")
+        String::from("BigInt")
     } else if type_name.contains("int") {
-        diesel_type("Integer")
+        String::from("Integer")
     } else if is_text(&type_name) {
-        diesel_type("Text")
+        String::from("Text")
     } else if type_name.contains("blob") || type_name.is_empty() {
-        diesel_type("Binary")
+        String::from("Binary")
     } else if is_float(&type_name) {
-        diesel_type("Float")
+        String::from("Float")
     } else if is_double(&type_name) {
-        diesel_type("Double")
+        String::from("Double")
     } else if type_name == "datetime" || type_name == "timestamp" {
-        diesel_type("Timestamp")
+        String::from("Timestamp")
     } else if type_name == "date" {
-        diesel_type("Date")
+        String::from("Date")
     } else if type_name == "time" {
-        diesel_type("Time")
+        String::from("Time")
     }
     else {
         return Err(format!("Unsupported type: {}", type_name).into())
     };
 
     Ok(ColumnType {
-        path: path,
+        rust_name: path,
         is_array: false,
         is_nullable: attr.nullable,
     })
