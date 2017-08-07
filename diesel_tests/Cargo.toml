@@ -19,7 +19,7 @@ quickcheck = { version = "0.3.1", features = ["unstable"] }
 uuid = { version = ">=0.2.0, <0.6.0" }
 serde_json = { version=">=0.9, <2.0" }
 ipnetwork = "0.12.2"
-bigdecimal = "0.0.7"
+bigdecimal = "0.0.10"
 
 [features]
 default = []
