@@ -22,6 +22,11 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
         .expect(&error_message("table names", &database_url, schema_name));
     let foreign_keys = load_foreign_key_constraints(&database_url, schema_name)
         .expect(&error_message("foreign keys", &database_url, schema_name));
+    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
+        &database_url,
+        foreign_keys,
+        &table_names,
+    );
 
     let tables = table_names.iter()
         .map(|table| {

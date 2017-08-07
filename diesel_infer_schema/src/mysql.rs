@@ -24,6 +24,7 @@ mod information_schema {
             column_name -> VarChar,
             referenced_table_schema -> VarChar,
             referenced_table_name -> VarChar,
+            referenced_column_name -> VarChar,
         }
     }
 
@@ -54,11 +55,17 @@ pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: O
             (kcu::table_name, kcu::table_schema),
             (kcu::referenced_table_name, kcu::referenced_table_schema),
             kcu::column_name,
+            kcu::referenced_column_name,
         ))
         .load(connection)?
         .into_iter()
-        .map(|(child_table, parent_table, foreign_key)| {
-            ForeignKeyConstraint { child_table, parent_table, foreign_key }
+        .map(|(child_table, parent_table, foreign_key, primary_key)| {
+            ForeignKeyConstraint {
+                child_table,
+                parent_table,
+                foreign_key,
+                primary_key,
+            }
         })
         .collect();
     Ok(constraints)

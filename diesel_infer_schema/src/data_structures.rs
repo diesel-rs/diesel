@@ -22,13 +22,6 @@ pub struct ColumnType {
     pub is_nullable: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ForeignKeyConstraint {
-    pub child_table: TableData,
-    pub parent_table: TableData,
-    pub foreign_key: String,
-}
-
 impl ColumnInformation {
     pub fn new<T, U>(column_name: T, type_name: U, nullable: bool) -> Self where
         T: Into<String>,
@@ -63,5 +56,23 @@ impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
 
     fn build(row: Self::Row) -> Self {
         ColumnInformation::new(row.1, row.2, !row.3)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForeignKeyConstraint {
+    pub child_table: TableData,
+    pub parent_table: TableData,
+    pub foreign_key: String,
+    pub primary_key: String,
+}
+
+impl ForeignKeyConstraint {
+    pub fn ordered_tables(&self) -> (&TableData, &TableData) {
+        use std::cmp::{min, max};
+        (
+            min(&self.parent_table, &self.child_table),
+            max(&self.parent_table, &self.child_table),
+        )
     }
 }
