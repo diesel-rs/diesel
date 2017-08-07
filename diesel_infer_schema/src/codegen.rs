@@ -23,22 +23,21 @@ pub fn expand_infer_table_from_schema(database_url: &str, table: &TableData)
     for a in data {
         tokens.push(column_def_tokens(table, &a, &connection)?);
     }
-    let default_schema = default_schema(&connection);
-    if table.schema != default_schema {
-        if let Some(ref schema) = table.schema {
-            let schema_name = syn::Ident::new(&schema[..]);
-            return Ok(quote!(table! {
-                #schema_name.#table_name (#(#primary_keys),*) {
-                    #(#tokens),*,
-                }
-            }));
-        }
+
+    if let Some(ref schema) = table.schema {
+        let schema_name = syn::Ident::new(&**schema);
+        Ok(quote!(table! {
+            #schema_name.#table_name (#(#primary_keys),*) {
+                #(#tokens),*,
+            }
+        }))
+    } else {
+        Ok(quote!(table! {
+            #table_name (#(#primary_keys),*) {
+                #(#tokens),*,
+            }
+        }))
     }
-    Ok(quote!(table! {
-        #table_name (#(#primary_keys),*) {
-            #(#tokens),*,
-        }
-    }))
 }
 
 pub fn handle_schema<I>(tables: I, schema_name: Option<&str>) -> quote::Tokens
@@ -81,20 +80,4 @@ fn column_def_tokens(
         tpe = quote!(Nullable<#tpe>);
     }
     Ok(quote!(#column_name -> #tpe))
-}
-
-fn default_schema(conn: &InferConnection) -> Option<String> {
-    #[cfg(feature="mysql")]
-    use information_schema::UsesInformationSchema;
-    #[cfg(feature="mysql")]
-    use diesel::mysql::Mysql;
-
-    match *conn {
-        #[cfg(feature="sqlite")]
-        InferConnection::Sqlite(_) => None,
-        #[cfg(feature="postgres")]
-        InferConnection::Pg(_) => Some("public".into()),
-        #[cfg(feature="mysql")]
-        InferConnection::Mysql(ref c) => Mysql::default_schema(c).ok(),
-    }
 }
