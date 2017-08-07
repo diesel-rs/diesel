@@ -4,7 +4,7 @@ use table_data::TableData;
 
 pub fn remove_unsafe_foreign_keys_for_codegen(
     database_url: &str,
-    foreign_keys: Vec<ForeignKeyConstraint>,
+    foreign_keys: &[ForeignKeyConstraint],
     safe_tables: &[TableData],
 ) -> Vec<ForeignKeyConstraint> {
     let conn = establish_connection(database_url)
