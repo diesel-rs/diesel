@@ -40,14 +40,13 @@ fn simple_belongs_to() {
         title: String,
     }
 
-
-    posts::table.inner_join(users::table)
+    let _can_join_tables = posts::table.inner_join(users::table)
         .select((users::id, users::name))
         .filter(posts::id.eq(1)
-            .and(posts::user_id.eq(2))
+                .and(posts::user_id.eq(2))
                 .and(posts::title.eq("Bar")));
 
-    users::table.inner_join(posts::table)
+    let _can_reverse_join_tables = users::table.inner_join(posts::table)
         .select((posts::id, posts::user_id, posts::title))
         .filter(users::id.eq(1)
                 .and(users::name.eq("Sean")));
@@ -60,7 +59,7 @@ fn simple_belongs_to() {
     assert_eq!(
         debug_sql::<Backend, _>(&belong_to),
         debug_sql::<Backend, _>(&filter)
-    )
+    );
 }
 
 
@@ -98,13 +97,13 @@ fn custom_foreign_key() {
     }
 
 
-    posts::table.inner_join(users::table)
+    let _can_join_tables = posts::table.inner_join(users::table)
         .select((users::id, users::name))
         .filter(posts::id.eq(1)
             .and(posts::belongs_to_user.eq(2))
                 .and(posts::title.eq("Bar")));
 
-    users::table.inner_join(posts::table)
+    let _can_reverse_join_tables = users::table.inner_join(posts::table)
         .select((posts::id, posts::belongs_to_user, posts::title))
         .filter(users::id.eq(1)
                 .and(users::name.eq("Sean")));
@@ -117,7 +116,7 @@ fn custom_foreign_key() {
     assert_eq!(
         debug_sql::<Backend, _>(&belong_to),
         debug_sql::<Backend, _>(&filter)
-    )
+    );
 }
 
 #[test]
@@ -138,7 +137,7 @@ fn self_referential() {
         id: i32,
         parent_id: Option<i32>,
     }
-    let t = Tree{ id: 42, parent_id: None };
+    let t = Tree { id: 42, parent_id: None };
 
     let belong_to = Tree::belonging_to(&t);
     let filter = trees::table.filter(trees::parent_id.eq(42));

@@ -195,21 +195,7 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 fn custom_foreign_key() {
     use diesel::*;
     use diesel::connection::SimpleConnection;
-    let connection = connection();
-    connection.batch_execute(r#"
-            DROP TABLE posts;
-            DROP TABLE users;
-            CREATE TABLE users (id SERIAL PRIMARY KEY,
-                                name TEXT NOT NULL);
-            CREATE TABLE posts (id SERIAL PRIMARY KEY,
-                                belongs_to_user INTEGER NOT NULL,
-                                title TEXT NOT NULL);
-            INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess');
-            INSERT INTO posts (id, belongs_to_user, title) VALUES
-                   (1, 1, 'Hello'),
-                   (2, 2, 'World'),
-                   (3, 1, 'Hello 2');
-        "#).unwrap();
+
     table! {
         users {
             id -> Integer,
@@ -225,24 +211,41 @@ fn custom_foreign_key() {
         }
     }
 
-    #[derive(Debug, Queryable, Identifiable, PartialEq, Clone)]
+    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
     pub struct User {
         id: i32,
         name: String
     }
-    #[derive(Debug, Queryable, Associations, Identifiable, Clone, PartialEq)]
+
+    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
     #[belongs_to(User, foreign_key="belongs_to_user")]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
         title: String,
     }
+
+    let connection = connection();
+    connection.batch_execute(r#"
+            DROP TABLE posts;
+            DROP TABLE users;
+            CREATE TABLE users (id SERIAL PRIMARY KEY,
+                                name TEXT NOT NULL);
+            CREATE TABLE posts (id SERIAL PRIMARY KEY,
+                                belongs_to_user INTEGER NOT NULL,
+                                title TEXT NOT NULL);
+            INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess');
+            INSERT INTO posts (id, belongs_to_user, title) VALUES
+                   (1, 1, 'Hello'),
+                   (2, 2, 'World'),
+                   (3, 1, 'Hello 2');
+        "#).unwrap();
+
     let sean = User { id: 1, name: "Sean".into() };
     let tess = User { id: 2, name: "Tess".into() };
     let post1 = Post { id: 1, belongs_to_user: 1, title: "Hello".into() };
     let post2 = Post { id: 2, belongs_to_user: 2, title: "World".into() };
     let post3 = Post { id: 3, belongs_to_user: 1, title: "Hello 2".into() };
-
 
     assert_eq!(
         Post::belonging_to(&sean).load(&connection),
