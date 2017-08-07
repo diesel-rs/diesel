@@ -68,7 +68,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     let tpe = determine_type_name(&attr.type_name)?;
 
     Ok(ColumnType {
-        path: vec!["diesel".into(), "types".into(), capitalize(tpe)],
+        rust_name: capitalize(tpe),
         is_array: false,
         is_nullable: attr.nullable,
     })
