@@ -41,7 +41,7 @@ fn simple_belongs_to() {
     }
 
     let _can_join_tables = posts::table.inner_join(users::table)
-        .select((users::id, users::name))
+        .select((users::id, users::name, posts::id))
         .filter(posts::id.eq(1)
                 .and(posts::user_id.eq(2))
                 .and(posts::title.eq("Bar")));
