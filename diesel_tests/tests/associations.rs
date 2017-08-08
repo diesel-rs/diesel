@@ -197,14 +197,14 @@ fn custom_foreign_key() {
     use diesel::connection::SimpleConnection;
 
     table! {
-        users {
+        users1 {
             id -> Integer,
             name -> Text,
         }
     }
 
     table! {
-        posts {
+        posts1 {
             id -> Integer,
             belongs_to_user -> Integer,
             title -> Text,
@@ -212,6 +212,7 @@ fn custom_foreign_key() {
     }
 
     #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
+    #[table_name = "users1"]
     pub struct User {
         id: i32,
         name: String
@@ -219,23 +220,23 @@ fn custom_foreign_key() {
 
     #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
     #[belongs_to(User, foreign_key="belongs_to_user")]
+    #[table_name = "posts1"]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
         title: String,
     }
 
+    joinable!(posts1 -> users1(belongs_to_user));
     let connection = connection();
     connection.batch_execute(r#"
-            DROP TABLE posts;
-            DROP TABLE users;
-            CREATE TABLE users (id SERIAL PRIMARY KEY,
+            CREATE TABLE users1 (id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL);
-            CREATE TABLE posts (id SERIAL PRIMARY KEY,
+            CREATE TABLE posts1 (id SERIAL PRIMARY KEY,
                                 belongs_to_user INTEGER NOT NULL,
                                 title TEXT NOT NULL);
-            INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess');
-            INSERT INTO posts (id, belongs_to_user, title) VALUES
+            INSERT INTO users1 (id, name) VALUES (1, 'Sean'), (2, 'Tess');
+            INSERT INTO posts1 (id, belongs_to_user, title) VALUES
                    (1, 1, 'Hello'),
                    (2, 2, 'World'),
                    (3, 1, 'Hello 2');
@@ -253,7 +254,7 @@ fn custom_foreign_key() {
     );
 
     assert_eq!(
-        users::table.inner_join(posts::table).load(&connection),
+        users1::table.inner_join(posts1::table).load(&connection),
         Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
     );
 

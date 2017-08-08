@@ -40,6 +40,8 @@ fn simple_belongs_to() {
         title: String,
     }
 
+    joinable!(posts -> users(user_id));
+
     let _can_join_tables = posts::table.inner_join(users::table)
         .select((users::id, users::name, posts::id))
         .filter(posts::id.eq(1)
@@ -95,6 +97,8 @@ fn custom_foreign_key() {
         belongs_to_user: i32,
         title: String,
     }
+
+    joinable!(posts -> users(belongs_to_user));
 
 
     let _can_join_tables = posts::table.inner_join(users::table)
