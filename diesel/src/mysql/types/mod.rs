@@ -62,6 +62,12 @@ impl HasSqlType<::types::Timestamp> for Mysql {
     }
 }
 
+impl HasSqlType<Datetime> for Mysql {
+    fn metadata(_: &()) -> MysqlType {
+        MysqlType::DateTime
+    }
+}
+
 impl HasSqlType<::types::Numeric> for Mysql {
     fn metadata(_: &()) -> MysqlType {
         MysqlType::String
@@ -76,3 +82,15 @@ impl QueryId for ::types::Numeric {
         true
     }
 }
+
+/// Represents the MySQL datetime type.
+/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+///
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+///
+/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+///
+/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+///
+/// [NaiveDateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/naive/datetime/struct.NaiveDateTime.html
+#[derive(Debug, Clone, Copy, Default)] pub struct Datetime;

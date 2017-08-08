@@ -8,7 +8,7 @@ use std::os::raw as libc;
 use std::{ptr, mem, slice};
 
 use mysql::Mysql;
-use types::{ToSql, ToSqlOutput, FromSql, IsNull, Timestamp, Time, Date};
+use types::{ToSql, ToSqlOutput, FromSql, IsNull, Timestamp, Time, Date, Datetime};
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
@@ -41,9 +41,23 @@ macro_rules! mysql_time_impls {
     }
 }
 
+mysql_time_impls!(Datetime);
+primitive_impls!(Datetime -> NaiveDateTime);
 mysql_time_impls!(Timestamp);
 mysql_time_impls!(Time);
 mysql_time_impls!(Date);
+
+impl ToSql<Datetime, Mysql> for NaiveDateTime {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+        <NaiveDateTime as ToSql<Timestamp, Mysql>>::to_sql(self, out)
+    }
+}
+
+impl FromSql<Datetime, Mysql> for NaiveDateTime {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        <NaiveDateTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)
+    }
+}
 
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
     fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
@@ -134,7 +148,7 @@ mod tests {
     use expression::dsl::{sql, now};
     use prelude::*;
     use select;
-    use types::{Date, Time, Timestamp};
+    use types::{Date, Time, Timestamp, Datetime};
 
     fn connection() -> MysqlConnection {
         dotenv().ok();
@@ -152,6 +166,8 @@ mod tests {
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)").eq(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
+        let query = select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)").eq(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
     #[test]
@@ -159,6 +175,9 @@ mod tests {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql = select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)"))
+            .get_result(&connection);
+        assert_eq!(Ok(time), epoch_from_sql);
+        let epoch_from_sql = select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)"))
             .get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }

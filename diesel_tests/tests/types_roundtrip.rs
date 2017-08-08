@@ -193,6 +193,7 @@ mod mysql_types {
 
     test_round_trip!(i8_roundtrips, Tinyint, i8);
     test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
+    test_round_trip!(naive_datetime_roundtrips_to_datetime, Datetime, (i64, u32), mk_naive_datetime);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
