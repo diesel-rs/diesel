@@ -22,6 +22,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the [Range][range-0.16.0] type on postgreSQL.
 
+* Added support for the Datetime type on MySQL.
+
 * `infer_schema!` will now automatically detect which tables can be joined based
   on the presence of foreign key constraints.
 
