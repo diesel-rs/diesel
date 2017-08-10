@@ -6,7 +6,7 @@ use std::ffi::NulError;
 #[derive(Debug)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
 /// The generic "things can fail in a myriad of ways" enum. This type is not
-/// indended to be exhaustively matched, and new variants may be added in the
+/// intended to be exhaustively matched, and new variants may be added in the
 /// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),

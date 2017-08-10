@@ -17,12 +17,12 @@ pub trait TransactionManager<Conn: Connection> {
     /// increment the transaction depth by 1.
     fn begin_transaction(&self, conn: &Conn) -> QueryResult<()>;
 
-    /// Rollback the inner-most transcation. If the transaction depth is greater
+    /// Rollback the inner-most transaction. If the transaction depth is greater
     /// than 1, this should rollback to the most recent savepoint. This function
     /// is expected to decrement the transaction depth by 1.
     fn rollback_transaction(&self, conn: &Conn) -> QueryResult<()>;
 
-    /// Commit the inner-most transcation. If the transaction depth is greater
+    /// Commit the inner-most transaction. If the transaction depth is greater
     /// than 1, this should release the most recent savepoint. This function is
     /// expected to decrement the transaction depth by 1.
     fn commit_transaction(&self, conn: &Conn) -> QueryResult<()>;

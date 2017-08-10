@@ -600,7 +600,7 @@ macro_rules! table_body {
             /// The SQL type of all of the columns on this table
             pub type SqlType = ($($($column_ty)*,)+);
 
-            /// Helper type for reperesenting a boxed query from this table
+            /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
             __diesel_table_query_source_impl!(table, $schema_name, $table_name);
@@ -897,7 +897,7 @@ macro_rules! enable_multi_table_joins {
 ///
 /// # Example
 ///
-/// ### Returning SQL from a count statment:
+/// ### Returning SQL from a count statement:
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -934,7 +934,7 @@ macro_rules! debug_sql {
 ///
 /// # Example
 ///
-/// ### Printing SQL from a count statment:
+/// ### Printing SQL from a count statement:
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;

@@ -125,7 +125,7 @@ pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
 }
 
 /// Creates the database specified in the connection url. It returns an error
-/// it it was unable to create the database.
+/// it was unable to create the database.
 fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
     match Backend::for_url(database_url) {
         #[cfg(feature="postgres")]

@@ -145,13 +145,13 @@ use std::io::{self, Write};
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][bigdecimal] (currenty PostgreSQL and MySQL only, requires the `numeric`
+/// - [`bigdecimal::BigDecimal`][bigdecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
 /// feature, which depends on the
 /// [`bigdecimal`][bigdecimal] crate)
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][BigDecimal] (currenty PostgreSQL and MySQL only, requires the `numeric`
+/// - [`bigdecimal::BigDecimal`][BigDecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
 /// feature, which depends on the
 /// [`bigdecimal`][bigdecimal] crate)
 ///
