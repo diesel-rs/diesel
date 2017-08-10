@@ -135,7 +135,7 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
 pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
     /// Returns a PgInterval representing `self` in days
     fn days(self) -> PgInterval;
-    /// Returns a PgInterval representing `self` in monhts
+    /// Returns a PgInterval representing `self` in months
     fn months(self) -> PgInterval;
     #[doc(hidden)]
     fn times(self, x: i32) -> Self;

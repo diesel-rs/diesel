@@ -148,7 +148,7 @@ impl<T: Query> AsQuery for T {
 ///
 /// # Example
 ///
-/// ### Returning SQL from a count statment:
+/// ### Returning SQL from a count statement:
 ///
 /// ```rust
 /// # include!("src/doctest_setup.rs");

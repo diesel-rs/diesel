@@ -4,7 +4,7 @@ use query_builder::*;
 use query_source::*;
 use result::QueryResult;
 
-/// Used in conjuction with
+/// Used in conjunction with
 /// [`on_conflict`](trait.OnConflictExtension.html#method.on_conflict) to write
 /// a query in the form `ON CONFLICT (name) DO NOTHING`. If you want to do
 /// nothing when *any* constraint conflicts, use

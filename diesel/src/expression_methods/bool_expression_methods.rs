@@ -11,7 +11,7 @@ pub trait BoolExpressionMethods: Expression<SqlType=Bool> + Sized {
 
     /// Creates a SQL `OR` expression
     ///
-    /// The result will be wrapped in parenthesis, so that precidence matches
+    /// The result will be wrapped in parenthesis, so that precedence matches
     /// that of your function calls. For example, `false.and(true.or(false))`
     /// will return `false`
     fn or<T: AsExpression<Bool>>(self, other: T) -> Grouped<Or<Self, T::Expression>> {

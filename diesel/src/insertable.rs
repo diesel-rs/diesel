@@ -5,7 +5,7 @@ use result::QueryResult;
 use query_builder::AstPass;
 use query_source::Table;
 
-/// Represents that a structure can be used to to insert a new row into the
+/// Represents that a structure can be used to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
 /// inserting more than one record.
 ///
