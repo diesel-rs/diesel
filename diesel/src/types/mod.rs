@@ -196,7 +196,7 @@ pub type VarChar = Text;
 
 /// The binary SQL type.
 ///
-/// On MySQL, it is also aliased by `Tinyblob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
+/// On MySQL, it is also aliased by `Tinyblob`, `Blob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -212,6 +212,7 @@ pub type VarChar = Text;
 #[derive(Debug, Clone, Copy, Default)] pub struct Binary;
 
 #[doc(hidden)] pub type Tinyblob = Binary;
+#[doc(hidden)] pub type Blob = Binary;
 #[doc(hidden)] pub type Mediumblob = Binary;
 #[doc(hidden)] pub type Longblob = Binary;
 #[doc(hidden)] pub type Varbinary = Binary;
