@@ -208,3 +208,51 @@ mod postgres {
         assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(&conn));
     }
 }
+
+#[cfg(feature = "mysql")]
+mod mysql {
+    use diesel::*;
+    use schema::*;
+
+    #[derive(Insertable)]
+    #[table_name="all_the_blobs"]
+    struct InferredBlobs<'a> {
+        id: i32,
+        tiny: &'a [u8],
+        normal: &'a [u8],
+        medium: &'a [u8],
+        big: &'a [u8],
+    }
+
+    #[derive(Queryable, Debug, PartialEq)]
+    struct Blobs {
+        id: i32,
+        tiny: Vec<u8>,
+        normal: Vec<u8>,
+        medium: Vec<u8>,
+        big: Vec<u8>,
+    }
+
+    #[test]
+    fn blobs_are_correctly_inferred() {
+        let conn = connection();
+        let inferred_blobs = InferredBlobs {
+            id: 0,
+            tiny: &[0x01],
+            normal: &[0x02],
+            medium: &[0x03],
+            big: &[0x04],
+        };
+
+        let blobs = Blobs {
+            id: 0,
+            tiny: vec![0x01],
+            normal: vec![0x02],
+            medium: vec![0x03],
+            big: vec![0x04],
+        };
+
+        insert(&inferred_blobs).into(all_the_blobs::table).execute(&conn).unwrap();
+        assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(&conn));
+    }
+}
