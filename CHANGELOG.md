@@ -24,6 +24,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the Datetime type on MySQL.
 
+* Added support for the Blob type on MySQL.
+
 * `infer_schema!` will now automatically detect which tables can be joined based
   on the presence of foreign key constraints.
 
