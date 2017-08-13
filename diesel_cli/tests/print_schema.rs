@@ -216,3 +216,31 @@ r"table! {
 ");
     }
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_specifying_schema_name() {
+    let p = project("print_schema_specifying_schema_name").build();
+    let db = database(&p.database_url());
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    db.execute("CREATE SCHEMA custom_schema");
+    db.execute("CREATE TABLE in_public (id SERIAL PRIMARY KEY)");
+    db.execute("CREATE TABLE custom_schema.in_schema (id SERIAL PRIMARY KEY)");
+
+    let result = p.command("print-schema").arg("--schema").arg("custom_schema").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert_eq!(result.stdout(),
+r"pub mod custom_schema {
+    table! {
+        custom_schema.in_schema (id) {
+            id -> Int4,
+        }
+    }
+}
+");
+}

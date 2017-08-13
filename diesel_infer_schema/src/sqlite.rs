@@ -4,7 +4,7 @@ use diesel::*;
 use diesel::expression::dsl::sql;
 use diesel::sqlite::{Sqlite, SqliteConnection};
 
-use table_data::TableData;
+use table_data::TableName;
 use super::data_structures::*;
 
 table! {
@@ -38,7 +38,7 @@ table! {
 }
 
 pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>)
-    -> Result<Vec<TableData>, Box<Error>>
+    -> Result<Vec<TableName>, Box<Error>>
 {
     use self::sqlite_master::dsl::*;
 
@@ -54,7 +54,7 @@ pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(TableData::from_name)
+        .map(TableName::from_name)
         .collect())
 }
 
@@ -69,7 +69,7 @@ pub fn load_foreign_key_constraints(connection: &SqliteConnection, schema_name: 
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
                 .map(|row| {
-                    let parent_table = TableData::from_name(row.parent_table);
+                    let parent_table = TableName::from_name(row.parent_table);
                     ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
@@ -81,7 +81,7 @@ pub fn load_foreign_key_constraints(connection: &SqliteConnection, schema_name: 
     Ok(rows.into_iter().flat_map(|x| x).collect())
 }
 
-pub fn get_table_data(conn: &SqliteConnection, table: &TableData)
+pub fn get_table_data(conn: &SqliteConnection, table: &TableName)
     -> QueryResult<Vec<ColumnInformation>>
 {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
@@ -140,7 +140,7 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
     }
 }
 
-pub fn get_primary_keys(conn: &SqliteConnection, table: &TableData) -> QueryResult<Vec<String>> {
+pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
     let results = try!(sql::<pragma_table_info::SqlType>(&query)
         .load::<FullTableInfo>(conn));
@@ -223,7 +223,7 @@ fn is_double(type_name: &str) -> bool {
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    assert_eq!(Vec::<TableData>::new(), load_table_names(&conn, None).unwrap());
+    assert_eq!(Vec::<TableName>::new(), load_table_names(&conn, None).unwrap());
 }
 
 #[test]
@@ -231,7 +231,7 @@ fn load_table_names_includes_tables_that_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(table_names.contains(&TableData::from_name("users")));
+    assert!(table_names.contains(&TableName::from_name("users")));
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(!table_names.contains(&TableData::from_name("__diesel_metadata")));
+    assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
 }
 
 #[test]
@@ -248,7 +248,7 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![TableData::from_name("users")], table_names.unwrap());
+    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
 
 #[test]
@@ -257,7 +257,7 @@ fn load_table_names_excludes_views() {
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
     let table_names = load_table_names(&conn, None);
-    assert_eq!(vec![TableData::from_name("users")], table_names.unwrap());
+    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
 
 #[test]
@@ -295,9 +295,9 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     connection.execute("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))").unwrap();
     connection.execute("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))").unwrap();
 
-    let table_1 = TableData::from_name("table_1");
-    let table_2 = TableData::from_name("table_2");
-    let table_3 = TableData::from_name("table_3");
+    let table_1 = TableName::from_name("table_1");
+    let table_2 = TableName::from_name("table_2");
+    let table_3 = TableName::from_name("table_3");
     let fk_one = ForeignKeyConstraint {
         child_table: table_2.clone(),
         parent_table: table_1.clone(),
