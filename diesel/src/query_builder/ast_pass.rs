@@ -4,13 +4,13 @@ use result::QueryResult;
 use types::{ToSql, HasSqlType};
 
 #[allow(missing_debug_implementations)]
-/// The primary type used when walking a Diesel AST during query execution
+/// The primary type used when walking a Diesel AST during query execution.
 ///
 /// Executing a query is generally done in multiple passes. This list includes,
 /// but is not limited to:
 ///
 /// - Generating the SQL
-/// - Collecting and serializing the values sent separately from the SQL
+/// - Collecting and serializing bound values (sent separately from the SQL)
 /// - Determining if a query is safe to store in the prepared statement cache
 ///
 /// When adding a new type that is used in a Diesel AST, you don't need to care
@@ -89,7 +89,7 @@ impl<'a, DB> AstPass<'a, DB> where
     /// statements *must* call this method. Examples of AST nodes which do this
     /// are:
     ///
-    /// - `SqlLiteral`. We have no way of knowing if the sql string was
+    /// - `SqlLiteral`. We have no way of knowing if the SQL string was
     ///   constructed dynamically or not, so we must assume it was dynamic.
     /// - `EqAny` when passed a Rust `Vec`. The `IN` operator requires one bind
     ///   parameter per element, meaning that the query could generate up to
@@ -109,7 +109,7 @@ impl<'a, DB> AstPass<'a, DB> where
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```rust,ignore
     /// impl<DB> QueryFragment<DB> for And<Left, Right>
     /// where
     ///     DB: Backend,
