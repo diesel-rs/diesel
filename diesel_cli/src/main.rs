@@ -320,7 +320,7 @@ fn run_infer_schema(matches: &ArgMatches) {
 
     let _ = run_print_schema(
         &database_url,
-        schema_name.as_ref().map(|s| &**s),
+        schema_name,
         &filter,
     ).map_err(handle_error::<_, ()>);
 }
