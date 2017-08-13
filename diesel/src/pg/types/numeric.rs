@@ -53,11 +53,11 @@ mod bigdecimal {
 
             let unnecessary_zeroes = if weight >= 0 {
                 let index_of_decimal = (weight + 1) as usize;
-                digits[index_of_decimal..]
-                .iter()
-                .rev()
-                .take_while(|i| i.is_zero())
-                .count()
+                digits.get(index_of_decimal..).expect("enough digits exist")
+                    .iter()
+                    .rev()
+                    .take_while(|i| i.is_zero())
+                    .count()
             }
             else {
                 0
