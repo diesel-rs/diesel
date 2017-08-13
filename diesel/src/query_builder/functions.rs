@@ -144,9 +144,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// Creates an insert statement. Will add the given data to a table. This
 /// function is not exported by default. As with other commands, the resulting
 /// query can return the inserted rows if you choose.
-/// # Examples
 ///
-/// ### Inserting many records:
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -163,16 +162,57 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
+/// // Insert one record at a time
+///
+/// let new_user = NewUser { name: "Ruby Rhod".to_string() };
+///
+/// diesel::insert(&new_user)
+///     .into(users)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// // Insert many records
+///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo".to_string(), },
+///     NewUser { name: "Leeloo Multipass".to_string(), },
 ///     NewUser { name: "Korben Dallas".to_string(), },
+/// ];
+///
+/// let inserted_names = diesel::insert(&new_users)
+///     .into(users)
+///     .execute(&connection)
+///     .unwrap();
+/// # }
+/// ```
+///
+/// ### With return value
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("src/doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = establish_connection();
+/// // postgres only
+/// let new_users = vec![
+///     NewUser { name: "Diva Plavalaguna".to_string(), },
+///     NewUser { name: "Father Vito Cornelius".to_string(), },
 /// ];
 ///
 /// let inserted_names = diesel::insert(&new_users)
 ///     .into(users)
 ///     .returning(name)
 ///     .get_results(&connection);
-/// assert_eq!(Ok(vec!["Leeloo".to_string(), "Korben Dallas".to_string()]), inserted_names);
+/// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
