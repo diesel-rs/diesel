@@ -50,14 +50,20 @@ mod bigdecimal {
             digits.reverse();
             let digits_after_decimal = scale as u16 / 4 + 1;
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
-            let index_of_decimal = (weight + 1) as usize;
 
-            let unneccessary_zeroes = digits[index_of_decimal..]
-                .iter()
-                .rev()
-                .take_while(|i| i.is_zero())
-                .count();
-            let relevant_digits = digits.len() - unneccessary_zeroes;
+            let unnecessary_zeroes = if weight >= 0 {
+                let index_of_decimal = (weight + 1) as usize;
+                digits.get(index_of_decimal..).expect("enough digits exist")
+                    .iter()
+                    .rev()
+                    .take_while(|i| i.is_zero())
+                    .count()
+            }
+            else {
+                0
+            };
+
+            let relevant_digits = digits.len() - unnecessary_zeroes;
             digits.truncate(relevant_digits);
 
             match decimal.sign() {

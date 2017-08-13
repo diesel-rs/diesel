@@ -188,3 +188,74 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 
     (connection, sean, tess, jim)
 }
+
+
+#[test]
+#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+fn custom_foreign_key() {
+    use diesel::*;
+    use diesel::connection::SimpleConnection;
+
+    table! {
+        users1 {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    table! {
+        posts1 {
+            id -> Integer,
+            belongs_to_user -> Integer,
+            title -> Text,
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
+    #[table_name = "users1"]
+    pub struct User {
+        id: i32,
+        name: String
+    }
+
+    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
+    #[belongs_to(User, foreign_key="belongs_to_user")]
+    #[table_name = "posts1"]
+    pub struct Post {
+        id: i32,
+        belongs_to_user: i32,
+        title: String,
+    }
+
+    joinable!(posts1 -> users1(belongs_to_user));
+    let connection = connection();
+    connection.batch_execute(r#"
+            CREATE TABLE users1 (id SERIAL PRIMARY KEY,
+                                name TEXT NOT NULL);
+            CREATE TABLE posts1 (id SERIAL PRIMARY KEY,
+                                belongs_to_user INTEGER NOT NULL,
+                                title TEXT NOT NULL);
+            INSERT INTO users1 (id, name) VALUES (1, 'Sean'), (2, 'Tess');
+            INSERT INTO posts1 (id, belongs_to_user, title) VALUES
+                   (1, 1, 'Hello'),
+                   (2, 2, 'World'),
+                   (3, 1, 'Hello 2');
+        "#).unwrap();
+
+    let sean = User { id: 1, name: "Sean".into() };
+    let tess = User { id: 2, name: "Tess".into() };
+    let post1 = Post { id: 1, belongs_to_user: 1, title: "Hello".into() };
+    let post2 = Post { id: 2, belongs_to_user: 2, title: "World".into() };
+    let post3 = Post { id: 3, belongs_to_user: 1, title: "Hello 2".into() };
+
+    assert_eq!(
+        Post::belonging_to(&sean).load(&connection),
+        Ok(vec![post1.clone(), post3.clone()])
+    );
+
+    assert_eq!(
+        users1::table.inner_join(posts1::table).load(&connection),
+        Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
+    );
+
+}

@@ -4,15 +4,17 @@ use diesel::types::{FromSqlRow, HasSqlType};
 use std::fmt;
 use std::str::FromStr;
 
+use data_structures::ColumnDefinition;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TableData {
+pub struct TableName {
     pub name: String,
     pub schema: Option<String>,
 }
 
-impl TableData {
+impl TableName {
     pub fn from_name<T: Into<String>>(name: T) -> Self {
-        TableData {
+        TableName {
             name: name.into(),
             schema: None,
         }
@@ -22,25 +24,31 @@ impl TableData {
         T: Into<String>,
         U: Into<String>,
     {
-        TableData {
+        TableName {
             name: name.into(),
             schema: Some(schema.into()),
         }
     }
+
+    pub fn strip_schema_if_matches(&mut self, schema: &str) {
+        if self.schema.as_ref().map(|s| &**s) == Some(schema) {
+            self.schema = None;
+        }
+    }
 }
 
-impl<ST, DB> Queryable<ST, DB> for TableData where
+impl<ST, DB> Queryable<ST, DB> for TableName where
     DB: Backend + HasSqlType<ST>,
     (String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String);
 
     fn build((name, schema): Self::Row) -> Self {
-        TableData::new(name, schema)
+        TableName::new(name, schema)
     }
 }
 
-impl fmt::Display for TableData {
+impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
@@ -53,14 +61,21 @@ impl fmt::Display for TableData {
 #[allow(missing_copy_implementations)]
 pub enum Never {}
 
-impl FromStr for TableData {
+impl FromStr for TableName {
     type Err = Never;
 
     fn from_str(table_name: &str) -> Result<Self, Self::Err> {
         let mut parts = table_name.split('.');
         match (parts.next(), parts.next()) {
-            (Some(schema), Some(name)) => Ok(TableData::new(name, schema)),
-            _ => Ok(TableData::from_name(table_name)),
+            (Some(schema), Some(name)) => Ok(TableName::new(name, schema)),
+            _ => Ok(TableName::from_name(table_name)),
         }
     }
+}
+
+#[derive(Debug)]
+pub struct TableData {
+    pub name: TableName,
+    pub primary_key: Vec<String>,
+    pub column_data: Vec<ColumnDefinition>,
 }

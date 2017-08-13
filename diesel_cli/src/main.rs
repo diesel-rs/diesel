@@ -25,7 +25,7 @@ mod database_error;
 #[macro_use]
 mod database;
 mod cli;
-mod pretty_printing;
+mod print_schema;
 #[cfg(any(feature="postgres", feature="mysql"))]
 mod query_helper;
 
@@ -35,14 +35,12 @@ use diesel::migrations::schema::*;
 use diesel::types::{FromSql, VarChar};
 use diesel::{migrations, Connection, Insertable};
 use std::any::Any;
-use std::error::Error;
 use std::io::stdout;
 use std::path::{PathBuf, Path};
 use std::{env, fs};
 
 use self::database_error::{DatabaseError, DatabaseResult};
 use diesel::migrations::TIMESTAMP_FORMAT;
-
 
 fn main() {
     use self::dotenv::dotenv;
@@ -271,7 +269,7 @@ fn should_redo_migration_in_transaction(_t: &Any) -> bool {
 }
 
 #[cfg_attr(feature="clippy", allow(needless_pass_by_value))]
-fn handle_error<E: Error, T>(error: E) -> T {
+fn handle_error<E: Display, T>(error: E) -> T {
     println!("{}", error);
     ::std::process::exit(1);
 }
@@ -295,51 +293,36 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 }
 
 fn run_infer_schema(matches: &ArgMatches) {
+    use diesel_infer_schema::TableName;
+    use print_schema::*;
+
     let database_url = database::database_url(matches);
     let schema_name = matches.value_of("schema");
 
-    let filtering_tables = matches.values_of("table-name").map(|values| {
-        values.map(|table_name| {
-            if cfg!(not(feature = "postgres")) || table_name.contains('.') {
-                String::from(table_name)
+    let filter = matches.values_of("table-name")
+        .unwrap_or_default()
+        .map(|table_name| {
+            if let Some(schema) = schema_name {
+                TableName::new(table_name, schema)
             } else {
-                format!("{}.{}", schema_name.unwrap_or("public"), table_name)
+                table_name.parse().unwrap()
             }
-        }).collect()
-    }).unwrap_or_else(::std::collections::HashSet::new);
+        })
+        .collect();
 
-    let is_whitelist = matches.is_present("whitelist");
-    let is_blacklist = matches.is_present("blacklist");
+    let filter = if matches.is_present("whitelist") {
+        Filtering::Whitelist(filter)
+    } else if matches.is_present("blacklist") {
+        Filtering::Blacklist(filter)
+    } else {
+        Filtering::None
+    };
 
-    let table_names = diesel_infer_schema::load_table_names(&database_url, schema_name)
-        .expect(&format!("Could not load table names from database `{}`{}",
-            database_url,
-            if let Some(name) = schema_name {
-                format!(" with schema `{}`", name)
-            } else {
-                "".into()
-            }
-        ));
-
-    let tables = table_names.iter()
-        .filter_map(|table| {
-            let table_name = table.to_string();
-            if is_whitelist && !filtering_tables.contains(&table_name[..]) {
-                return None;
-            }
-            if is_blacklist && filtering_tables.contains(&table_name[..]) {
-                return None;
-            }
-            Some(diesel_infer_schema::expand_infer_table_from_schema(&database_url, table)
-                .expect(&format!("Could not load table `{}`", table.to_string())))
-        });
-
-    let schema = diesel_infer_schema::handle_schema(tables, schema_name);
-
-    let pretty = pretty_printing::format_schema(schema.as_str())
-        .expect("Could not write to stdout");
-
-    println!("{}", pretty);
+    let _ = run_print_schema(
+        &database_url,
+        schema_name,
+        &filter,
+    ).map_err(handle_error::<_, ()>);
 }
 
 #[cfg(test)]

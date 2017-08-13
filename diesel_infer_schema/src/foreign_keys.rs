@@ -1,11 +1,11 @@
 use data_structures::ForeignKeyConstraint;
 use inference::{establish_connection, get_primary_keys};
-use table_data::TableData;
+use table_data::TableName;
 
 pub fn remove_unsafe_foreign_keys_for_codegen(
     database_url: &str,
     foreign_keys: &[ForeignKeyConstraint],
-    safe_tables: &[TableData],
+    safe_tables: &[TableName],
 ) -> Vec<ForeignKeyConstraint> {
     let conn = establish_connection(database_url)
         .expect(&format!("Could not connect to `{}`", database_url));

@@ -66,9 +66,10 @@ pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
         .unwrap_or_else(|| bug());
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let table_name = get_option(&options, "table_name", bug);
+    let table_data = load_table_data(&database_url, table_name.parse().unwrap())
+        .expect(&error_message(table_name, &database_url, None));
 
-    expand_infer_table_from_schema(&database_url, &table_name.parse().unwrap())
-        .expect(&format!("Could not infer table {}", table_name))
+    table_data_to_tokens(table_data)
 }
 
 fn error_message(attempted_to_load: &str, database_url: &str, schema_name: Option<&str>) -> String {
@@ -77,4 +78,45 @@ fn error_message(attempted_to_load: &str, database_url: &str, schema_name: Optio
         message += &format!(" with schema `{}`", name);
     }
     message
+}
+
+fn table_data_to_tokens(table_data: TableData) -> quote::Tokens {
+    let table_name = table_name_to_tokens(table_data.name);
+    let primary_key = table_data.primary_key.into_iter().map(syn::Ident::new);
+    let column_definitions = table_data.column_data.into_iter().map(column_data_to_tokens);
+    quote! {
+        table! {
+            #table_name (#(#primary_key),*) {
+                #(#column_definitions),*,
+            }
+        }
+    }
+}
+
+fn table_name_to_tokens(table_name: TableName) -> quote::Tokens {
+    let name = syn::Ident::new(table_name.name);
+    if let Some(schema) = table_name.schema {
+        let schema = syn::Ident::new(schema);
+        quote!(#schema.#name)
+    } else {
+        quote!(#name)
+    }
+}
+
+fn column_data_to_tokens(column_data: ColumnDefinition) -> quote::Tokens {
+    let name = syn::Ident::new(column_data.name);
+    let ty = column_ty_to_tokens(column_data.ty);
+    quote!(#name -> #ty)
+}
+
+fn column_ty_to_tokens(column_ty: ColumnType) -> quote::Tokens {
+    let name = syn::Ident::new(column_ty.rust_name);
+    let mut tokens = quote!(#name);
+    if column_ty.is_array {
+        tokens = quote!(Array<#tokens>);
+    }
+    if column_ty.is_nullable {
+        tokens = quote!(Nullable<#tokens>);
+    }
+    tokens
 }
