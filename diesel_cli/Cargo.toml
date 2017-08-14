@@ -12,6 +12,7 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [[bin]]
 name = "diesel"
+path = "src/main.rs"
 
 [dependencies]
 chrono = "0.4"
