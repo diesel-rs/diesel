@@ -4,7 +4,7 @@ use quote;
 use model::Model;
 use util::attr_with_name;
 
-pub fn derive_as_changeset(item: syn::MacroInput) -> quote::Tokens {
+pub fn derive_as_changeset(item: syn::DeriveInput) -> quote::Tokens {
     let treat_none_as_null = format!("{}", treat_none_as_null(&item.attrs));
     let model = t!(Model::from_item(&item, "AsChangeset"));
 

@@ -49,7 +49,7 @@ mod util;
 mod migrations;
 
 use proc_macro::TokenStream;
-use syn::parse_macro_input;
+use syn::parse_derive_input;
 
 #[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
@@ -93,7 +93,7 @@ pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     expand_derive(input, embed_migrations::derive_embed_migrations)
 }
 
-fn expand_derive(input: TokenStream, f: fn(syn::MacroInput) -> quote::Tokens) -> TokenStream {
-    let item = parse_macro_input(&input.to_string()).unwrap();
+fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
+    let item = parse_derive_input(&input.to_string()).unwrap();
     f(item).to_string().parse().unwrap()
 }

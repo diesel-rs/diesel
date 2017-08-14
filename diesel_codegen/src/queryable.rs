@@ -5,7 +5,7 @@ use attr::Attr;
 use model::Model;
 use util::wrap_item_in_const;
 
-pub fn derive_queryable(item: syn::MacroInput) -> Tokens {
+pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
     let model = t!(Model::from_item(&item, "Queryable"));
 
     let generics = syn::aster::from_generics(model.generics.clone())

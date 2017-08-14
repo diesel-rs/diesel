@@ -3,7 +3,7 @@ use quote;
 
 use model::Model;
 
-pub fn derive_insertable(item: syn::MacroInput) -> quote::Tokens {
+pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
     let model = t!(Model::from_item(&item, "Insertable"));
 
     if !model.has_table_name_annotation() {

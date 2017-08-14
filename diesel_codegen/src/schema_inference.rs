@@ -6,7 +6,7 @@ use diesel_infer_schema::*;
 
 use util::{get_options_from_input, get_option, get_optional_option};
 
-pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
+pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
                with your invocation of `infer_schema`!");
@@ -56,7 +56,7 @@ pub fn derive_infer_schema(input: syn::MacroInput) -> quote::Tokens {
     }
 }
 
-pub fn derive_infer_table_from_schema(input: syn::MacroInput) -> quote::Tokens {
+pub fn derive_infer_table_from_schema(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
                with your invocation of `infer_table_from_schema`!");
