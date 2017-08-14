@@ -158,7 +158,6 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #     }
 /// # }
 /// #
-/// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
