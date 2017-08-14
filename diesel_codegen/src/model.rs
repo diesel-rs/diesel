@@ -13,7 +13,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn from_item(item: &syn::MacroInput, derived_from: &str) -> Result<Self, String> {
+    pub fn from_item(item: &syn::DeriveInput, derived_from: &str) -> Result<Self, String> {
         let attrs = match item.body {
             syn::Body::Enum(..) => return Err(format!(
                 "#[derive({})] cannot be used with enums", derived_from)),

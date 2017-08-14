@@ -3,7 +3,7 @@ use syn;
 
 use model::Model;
 
-pub fn derive_identifiable(item: syn::MacroInput) -> Tokens {
+pub fn derive_identifiable(item: syn::DeriveInput) -> Tokens {
     let model = t!(Model::from_item(&item, "Identifiable"));
     let table_name = model.table_name();
     let struct_ty = &model.ty;

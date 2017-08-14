@@ -8,7 +8,7 @@ use std::path::Path;
 
 use util::{get_options_from_input, get_option};
 
-pub fn derive_embed_migrations(input: syn::MacroInput) -> quote::Tokens {
+pub fn derive_embed_migrations(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
         panic!("This is a bug. Please open a Github issue \
                with your invocation of `embed_migrations!");

@@ -4,7 +4,7 @@ use quote;
 use model::{Model, infer_association_name};
 use util::str_value_of_meta_item;
 
-pub fn derive_associations(input: syn::MacroInput) -> quote::Tokens {
+pub fn derive_associations(input: syn::DeriveInput) -> quote::Tokens {
     let mut derived_associations = Vec::new();
     let model = t!(Model::from_item(&input, "Associations"));
 
