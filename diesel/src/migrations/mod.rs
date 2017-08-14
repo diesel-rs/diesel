@@ -84,7 +84,7 @@ use std::env;
 use std::path::{PathBuf, Path};
 
 
-pub static TIMESTAMP_FORMAT: &'static str ="%Y%m%d%H%M%S";
+pub static TIMESTAMP_FORMAT: &'static str ="%Y-%m-%d-%H%M%S";
 
 /// Runs all migrations that have not yet been run. This function will print all progress to
 /// stdout. This function will return an `Err` if some error occurs reading the migrations, or if

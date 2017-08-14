@@ -84,7 +84,7 @@ pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .to_string_lossy()
         .split('_')
         .nth(0)
-        .map(|s| Ok(s.into()))
+        .map(|s| Ok(s.replace('-', "")))
         .unwrap_or_else(|| {
             Err(MigrationError::UnknownMigrationFormat(path.to_path_buf()))
         })
