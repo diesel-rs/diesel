@@ -11,7 +11,6 @@ table! {
         updated_at -> Timestamp,
     }
 }
-operator_allowed!(has_timestamps::created_at, Add, add);
 
 table! {
     has_time {
