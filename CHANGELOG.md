@@ -25,6 +25,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `infer_schema!` will now automatically detect which tables can be joined based
   on the presence of foreign key constraints.
 
+* Added a way to rename columns in the table macro with `#[sql_name="the_column_name"]`
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate

@@ -1,7 +1,7 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*), $($doc:expr),*) => {
+    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*),  $sql_name:expr, $($doc:expr),*) => {
         $(
             #[doc=$doc]
         )*
@@ -20,7 +20,7 @@ macro_rules! __diesel_column {
             fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 $($table)::*.from_clause().walk_ast(out.reborrow())?;
                 out.push_sql(".");
-                out.push_identifier(stringify!($column_name))
+                out.push_identifier($sql_name)
             }
         }
 
@@ -69,7 +69,7 @@ macro_rules! __diesel_column {
             type Table = $($table)::*;
 
             fn name() -> &'static str {
-                stringify!($column_name)
+                $sql_name
             }
         }
 
@@ -193,6 +193,23 @@ macro_rules! __diesel_column {
 ///         id -> Integer,
 ///         /// The post's title
 ///         title -> Text,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// #[macro_use] extern crate diesel;
+///
+/// table! {
+///     posts {
+///         id -> Integer,
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
 ///     }
 /// }
 /// # fn main() {}
@@ -345,6 +362,7 @@ macro_rules! __diesel_table_impl {
             public . $name $(($($pk),+))* {$($body)*}
         }
     };
+
     // Terminal with single-column pk
     (
         @parse_body
@@ -411,10 +429,11 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [$($current_column_sql_name:expr)*],
         #[doc=$new_doc:expr]
         $($body:tt)*
     ) => {
@@ -423,10 +442,40 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*],)*],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [$($column_doc)*$new_doc],
+            current_column_sql_name = [$($current_column_sql_name)*],
+            $($body)*
+        }
+    };
+
+    // Parse the sql_name attribute and forward the remaining table body to further instances of
+    // this macro
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [],
+        #[sql_name=$new_sql_name:expr]
+        $($body:tt)*
+    ) => {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            current_column_doc = [$($column_doc)*],
+            current_column_sql_name = [$new_sql_name],
             $($body)*
         }
     };
@@ -443,10 +492,11 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [$new_sql_name:expr],
         $new_column_name:ident -> $($ty_path:tt)::* $(<$($ty_params:tt)::*>)*,
         $($body:tt)*
     ) => {
@@ -455,11 +505,12 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
-                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*],],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
+                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
+            current_column_sql_name = [],
             $($body)*
         }
     };
@@ -473,10 +524,11 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*],)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [$new_sql_name:expr],
         $new_column_name:ident -> $new_column_ty:ty,
         $($body:tt)*
     ) => {
@@ -485,11 +537,12 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*],)*
-                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*],],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
+                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
+            current_column_sql_name = [],
             $($body)*
         }
     };
@@ -513,7 +566,36 @@ macro_rules! table_body {
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
+            current_column_sql_name = [],
             $($body)+
+        }
+    };
+
+    // Add a sql_name arg if we find a column definition without any sql_name attribute before
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [],
+        $new_column_name:ident ->
+        $($body:tt)*
+    ) => {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            current_column_doc = [$($column_doc)*],
+            current_column_sql_name = [stringify!($new_column_name)],
+            $new_column_name -> $($body)*
         }
     };
 
@@ -533,6 +615,7 @@ macro_rules! table_body {
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
+            current_column_sql_name = [],
             $($body)+
         }
     };
@@ -544,10 +627,11 @@ macro_rules! table_body {
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*] ,)+],
+        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)+],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [],
+        current_column_sql_name = [],
     ) => {
         $(
             #[doc=$table_doc]
@@ -741,7 +825,7 @@ macro_rules! table_body {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $($doc),*);)+
+                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $sql_name, $($doc),*);)+
             }
         }
     }
@@ -977,7 +1061,6 @@ macro_rules! print_sql {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature="postgres")]
     use prelude::*;
 
     table! {
@@ -1038,5 +1121,44 @@ mod tests {
             // projected_type -> <Nullable<Integer> as types::IntoNullable>::Nullable,
             random_tuple -> (Integer, Integer),
         }
+    }
+
+    table!(
+        foo {
+            /// Column doc
+            id -> Integer,
+
+            #[sql_name = "type"]
+            /// Also important to document this column
+            mytype -> Integer,
+
+            /// And this one
+            #[sql_name = "bleh"]
+            hey -> Integer,
+        }
+    );
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn table_with_column_renaming() {
+        use pg::Pg;
+        let expected_sql = r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1"#;
+        assert_eq!(expected_sql, ::debug_sql::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))));
+    }
+
+    #[test]
+    #[cfg(feature = "mysql")]
+    fn table_with_column_renaming() {
+        use mysql::Mysql;
+        let expected_sql = r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ?"#;
+        assert_eq!(expected_sql, ::debug_sql::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))));
+    }
+
+    #[test]
+    #[cfg(feature = "sqlite")]
+    fn table_with_column_renaming() {
+        use sqlite::Sqlite;
+        let expected_sql = r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ?"#;
+        assert_eq!(expected_sql, ::debug_sql::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))));
     }
 }
