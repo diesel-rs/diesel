@@ -155,7 +155,12 @@ impl<'a> Display for ColumnDefinitions<'a> {
                         writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
                     }
                 }
-                writeln!(out, "{} -> {},", column.name, column.ty)?;
+                if let Some(ref rust_name) = column.rust_name {
+                    writeln!(out, r#"#[sql_name = {}]"#, column.sql_name)?;
+                    writeln!(out, "{} -> {},", rust_name, column.ty)?;
+                } else {
+                    writeln!(out, "{} -> {},", column.sql_name, column.ty)?;
+                }
             }
         }
         writeln!(f, "}}")?;

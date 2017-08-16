@@ -29,7 +29,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `infer_schema!` will now automatically detect which tables can be joined based
   on the presence of foreign key constraints.
-  
+
 * Added support for `Add` and `Sub` to timestamp types.
 
 * Added a way to rename columns in the table macro with `#[sql_name="the_column_name"]`
@@ -38,6 +38,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   columns. For `infer_schema!`, this is enabled by default. If you are using
   Diesel's CLI tool, pass the new `--with-docs` parameter:
   `diesel print-schema --with-docs`.
+
+* infer_schema! now automatically renames columns that conflict with
+  a Rust keyword by placing a _ at the end of the name. For example,
+  a column called type will be referenced as type_ in Rust.
+
 
 ### Changed
 

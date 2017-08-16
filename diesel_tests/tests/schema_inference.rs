@@ -256,3 +256,27 @@ mod mysql {
         assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(&conn));
     }
 }
+
+#[test]
+fn columns_named_as_reserved_keywords_are_renamed() {
+    use diesel::*;
+    use schema::*;
+
+    #[derive(Queryable, Insertable, Debug, PartialEq)]
+    #[table_name = "with_keywords"]
+    struct WithKeywords {
+        fn_: i32,
+        let_: i32,
+        extern_: i32,
+    }
+
+    let value = WithKeywords {
+        fn_: 1,
+        let_: 42,
+        extern_: 51,
+    };
+
+    let conn = connection();
+    insert(&value).into(with_keywords::table).execute(&conn).unwrap();
+    assert_eq!(Ok(vec![value]), with_keywords::table.load(&conn));
+}
