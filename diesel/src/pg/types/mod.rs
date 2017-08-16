@@ -124,7 +124,7 @@ pub mod sql_types {
     /// The JSON SQL type.  This type can only be used with `feature =
     /// "serde_json"`
     ///
-    /// Normally you should prefer [`Jsonb`](/diesel/pg/types/sql_types/struct.Jsonb.html) instead, for the reasons
+    /// Normally you should prefer [`Jsonb`](struct.Jsonb.html) instead, for the reasons
     /// discussed there.
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
