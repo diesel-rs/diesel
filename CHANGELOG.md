@@ -28,6 +28,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `infer_schema!` will now automatically detect which tables can be joined based
   on the presence of foreign key constraints.
+  
+* Added support for `Add` and `Sub` to timestamp types.
 
 ### Changed
 

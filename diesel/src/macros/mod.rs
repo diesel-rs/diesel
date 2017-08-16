@@ -85,6 +85,7 @@ macro_rules! __diesel_column {
         }
 
         __diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
+        __diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
     }
 }
 
