@@ -70,9 +70,6 @@
 //! let data: Vec<(User, Post)> = users::table.inner_join(posts::table).load(&connection);
 //! ```
 //!
-//! Note: Due to language limitations, only two tables can be joined per query. This will change in
-//! the future.
-//!
 //! Typically however, queries are loaded in multiple queries. For most datasets, the reduced
 //! amount of duplicated information sent over the wire saves more time than the extra round trip
 //! costs us. You can load the children for a single parent using the
