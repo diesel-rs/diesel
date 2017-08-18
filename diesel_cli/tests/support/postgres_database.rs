@@ -44,7 +44,16 @@ impl Database {
 
     fn split_url(&self) -> (String, String) {
         let mut split: Vec<&str> = self.url.split("/").collect();
-        let database = split.pop().unwrap();
+        let database_name_with_arguments: Vec<&str> = split.pop().unwrap().split('?').collect();
+        let database = database_name_with_arguments[0];
+        let new_url;
+        match database_name_with_arguments.len() {
+            2 => {
+                let args : &str = database_name_with_arguments[1];
+                new_url = format!("{}/{}?{}", split.join("/"), default_database, args);
+            },
+            _ => new_url = format!("{}/{}", split.join("/"), default_database)
+        }
         let postgres_url = format!("{}/{}", split.join("/"), "postgres");
         (database.into(), postgres_url)
     }

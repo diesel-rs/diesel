@@ -316,8 +316,16 @@ pub fn database_url(matches: &ArgMatches) -> String {
 #[cfg(any(feature="postgres", feature="mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
     let mut split: Vec<&str> = database_url.split('/').collect();
-    let database = split.pop().unwrap();
-    let new_url = format!("{}/{}", split.join("/"), default_database);
+    let database_name_with_arguments: Vec<&str> = split.pop().unwrap().split('?').collect();
+    let database = database_name_with_arguments[0];
+    let new_url;
+    match database_name_with_arguments.len() {
+        2 => {
+            let args: &str = database_name_with_arguments[1];
+            new_url = format!("{}/{}?{}", split.join("/"), default_database, args);
+        },
+        _ => new_url = format!("{}/{}", split.join("/"), default_database)
+    }
     (database.to_owned(), new_url)
 }
 
@@ -346,6 +354,16 @@ mod tests {
         let base_url = "postgresql://user:password@localhost:5432".to_owned();
         let database_url = format!("{}/{}", base_url, database);
         let postgres_url = format!("{}/{}", base_url, "postgres");
+        assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
+    }
+
+    #[test]
+    fn split_pg_connection_string_handles_arguments() {
+        let database = "database".to_owned();
+        let arguments = "arg1=val1&arg2=val2".to_owned();
+        let base_url = "postgresql://user:password@localhost:5432".to_owned();
+        let database_url = format!("{}/{}?{}", base_url, database, arguments);
+        let postgres_url = format!("{}/{}?{}", base_url, "postgres", arguments);
         assert_eq!((database, postgres_url), change_database_of_url(&database_url, "postgres"));
     }
 }
