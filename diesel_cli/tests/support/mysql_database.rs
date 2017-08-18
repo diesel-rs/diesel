@@ -45,17 +45,17 @@ impl Database {
 
     fn split_url(&self) -> (String, String) {
         let mut split: Vec<&str> = self.url.split("/").collect();
+        let default_database = "information_schema";
         let database_name_with_arguments: Vec<&str> = split.pop().unwrap().split('?').collect();
         let database = database_name_with_arguments[0];
-        let new_url;
+        let mysql_url;
         match database_name_with_arguments.len() {
             2 => {
                 let args : &str = database_name_with_arguments[1];
-                new_url = format!("{}/{}?{}", split.join("/"), default_database, args);
+                mysql_url = format!("{}/{}?{}", split.join("/"), default_database, args);
             },
-            _ => new_url = format!("{}/{}", split.join("/"), default_database)
+            _ => mysql_url = format!("{}/{}", split.join("/"), default_database)
         }
-        let mysql_url = format!("{}/{}", split.join("/"), "information_schema");
         (database.into(), mysql_url)
     }
 }
