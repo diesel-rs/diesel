@@ -78,13 +78,20 @@ impl<'a> Display for TableDefinition<'a> {
         write!(f, "table! {{")?;
         {
             let mut out = PadAdapter::new(f);
-            write!(out, "\n{} (", self.0.name)?;
+            write!(out, "\n")?;
+
+            for d in self.0.docs.lines() {
+                writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+            }
+
+            write!(out, "{} (", self.0.name)?;
             for (i, pk) in self.0.primary_key.iter().enumerate() {
                 if i != 0 {
                     write!(out, ", ")?;
                 }
                 write!(out, "{}", pk)?;
             }
+
             write!(out, ") {}", ColumnDefinitions(&self.0.column_data))?;
         }
         write!(f, "}}")?;
@@ -100,7 +107,10 @@ impl<'a> Display for ColumnDefinitions<'a> {
             let mut out = PadAdapter::new(f);
             writeln!(out, "{{")?;
             for column in self.0 {
-                write!(out, "{} -> {},", column.name, column.ty)?;
+                for d in column.docs.lines() {
+                    writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+                }
+                writeln!(out, "{} -> {},", column.name, column.ty)?;
             }
         }
         writeln!(f, "}}")?;

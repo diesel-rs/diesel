@@ -1,3 +1,5 @@
+#![recursion_limit="1024"]
+
 use diesel::*;
 use dotenv::dotenv;
 use std::env;
