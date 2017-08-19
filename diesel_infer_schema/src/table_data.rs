@@ -78,4 +78,5 @@ pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,
     pub column_data: Vec<ColumnDefinition>,
+    pub docs: String,
 }

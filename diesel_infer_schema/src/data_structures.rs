@@ -48,6 +48,7 @@ impl fmt::Display for ColumnType {
 pub struct ColumnDefinition {
     pub name: String,
     pub ty: ColumnType,
+    pub docs: String,
 }
 
 impl ColumnInformation {
