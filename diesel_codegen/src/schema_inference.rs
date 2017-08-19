@@ -81,11 +81,13 @@ fn error_message(attempted_to_load: &str, database_url: &str, schema_name: Optio
 }
 
 fn table_data_to_tokens(table_data: TableData) -> quote::Tokens {
+    let table_docs = to_doc_comment_tokens(&table_data.docs);
     let table_name = table_name_to_tokens(table_data.name);
     let primary_key = table_data.primary_key.into_iter().map(syn::Ident::new);
     let column_definitions = table_data.column_data.into_iter().map(column_data_to_tokens);
     quote! {
         table! {
+            #(#table_docs)*
             #table_name (#(#primary_key),*) {
                 #(#column_definitions),*,
             }
@@ -104,9 +106,13 @@ fn table_name_to_tokens(table_name: TableName) -> quote::Tokens {
 }
 
 fn column_data_to_tokens(column_data: ColumnDefinition) -> quote::Tokens {
+    let docs = to_doc_comment_tokens(&column_data.docs);
     let name = syn::Ident::new(column_data.name);
     let ty = column_ty_to_tokens(column_data.ty);
-    quote!(#name -> #ty)
+    quote! {
+        #(#docs)*
+        #name -> #ty
+    }
 }
 
 fn column_ty_to_tokens(column_ty: ColumnType) -> quote::Tokens {
@@ -119,4 +125,13 @@ fn column_ty_to_tokens(column_ty: ColumnType) -> quote::Tokens {
         tokens = quote!(Nullable<#tokens>);
     }
     tokens
+}
+
+fn to_doc_comment_tokens(docs: &str) -> Vec<syn::Token> {
+    docs.lines()
+        .map(|l| format!(
+            "///{}{}", if l.is_empty() { "" } else { " " }, l
+        ))
+        .map(|l| syn::Token::DocComment(l.into()))
+        .collect()
 }
