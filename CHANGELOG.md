@@ -34,6 +34,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added a way to rename columns in the table macro with `#[sql_name="the_column_name"]`
 
+* `infer_schema!` and the `diesel print-schema` CLI command now include
+  documentation comments for tables and columns.
+
 ### Changed
 
 * The deprecated `debug_sql!` and `print_sql!` functions will now generate
