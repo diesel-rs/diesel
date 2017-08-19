@@ -100,21 +100,7 @@ impl<'a> Display for ColumnDefinitions<'a> {
             let mut out = PadAdapter::new(f);
             writeln!(out, "{{")?;
             for column in self.0 {
-                write!(out, "{} -> ", column.name)?;
-                if column.ty.is_nullable {
-                    write!(out, "Nullable<")?;
-                }
-                if column.ty.is_array {
-                    write!(out, "Array<")?;
-                }
-                write!(out, "{}", column.ty.rust_name)?;
-                if column.ty.is_array {
-                    write!(out, ">")?;
-                }
-                if column.ty.is_nullable {
-                    write!(out, ">")?;
-                }
-                writeln!(out, ",")?;
+                write!(out, "{} -> {},", column.name, column.ty)?;
             }
         }
         writeln!(f, "}}")?;

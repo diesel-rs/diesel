@@ -23,6 +23,27 @@ pub struct ColumnType {
     pub is_nullable: bool,
 }
 
+use std::fmt;
+
+impl fmt::Display for ColumnType {
+    fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        if self.is_nullable {
+            write!(out, "Nullable<")?;
+        }
+        if self.is_array {
+            write!(out, "Array<")?;
+        }
+        write!(out, "{}", self.rust_name)?;
+        if self.is_array {
+            write!(out, ">")?;
+        }
+        if self.is_nullable {
+            write!(out, ">")?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub struct ColumnDefinition {
     pub name: String,
