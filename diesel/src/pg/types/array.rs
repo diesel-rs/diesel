@@ -43,8 +43,12 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
         let num_elements = try!(bytes.read_i32::<NetworkEndian>());
         let lower_bound = try!(bytes.read_i32::<NetworkEndian>());
 
-        assert_eq!(num_dimensions, 1, "multi-dimensional arrays are not supported");
-        assert_eq!(lower_bound, 1, "lower bound must be 1");
+        if num_dimensions != 1 {
+            return Err("multi-dimensional arrays are not supported".into());
+        }
+        if lower_bound != 1 {
+            return Err("lower bound must be 1".into())
+        }
 
         (0..num_elements).map(|_| {
             let elem_size = try!(bytes.read_i32::<NetworkEndian>());
