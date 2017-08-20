@@ -19,6 +19,15 @@ table! {
     }
 }
 
+table! {
+    nullable_date_and_time {
+        id -> Integer,
+        timestamp -> Nullable<Timestamp>,
+        time -> Nullable<Time>,
+        date -> Nullable<Date>,
+    }
+}
+
 #[test]
 #[cfg(feature = "postgres")]
 fn now_executes_sql_function_now() {
@@ -177,6 +186,36 @@ fn adding_interval_to_timestamp() {
     assert_eq!(expected_data, actual_data);
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn adding_interval_to_nullable_things() {
+    use self::nullable_date_and_time::dsl::*;
+    use diesel::expression::dsl::sql;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection.execute("INSERT INTO nullable_date_and_time (timestamp, date, time) VALUES
+                       ('2017-08-20 18:13:37', '2017-08-20', '18:13:37')").unwrap();
+
+    let expected_data = select(sql::<Nullable<types::Timestamp>>("'2017-08-21 18:13:37'::timestamp"))
+        .get_result::<Option<PgTimestamp>>(&connection);
+    let actual_data = nullable_date_and_time.select(timestamp + 1.day())
+        .first::<Option<PgTimestamp>>(&connection);
+    assert_eq!(expected_data, actual_data);
+
+    let expected_data = select(sql::<Nullable<types::Timestamp>>("'2017-08-21'::timestamp"))
+        .get_result::<Option<PgTimestamp>>(&connection);
+    let actual_data = nullable_date_and_time.select(date + 1.day())
+        .first::<Option<PgTimestamp>>(&connection);
+    assert_eq!(expected_data, actual_data);
+
+    let expected_data = select(sql::<Nullable<types::Time>>("'19:13:37'::time"))
+        .get_result::<Option<PgTime>>(&connection);
+    let actual_data = nullable_date_and_time.select(time + 1.hour())
+        .first::<Option<PgTime>>(&connection);
+    assert_eq!(expected_data, actual_data);
+}
+
 #[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
@@ -190,5 +229,12 @@ fn setup_test_table(conn: &TestConnection) {
     create_table("has_time", (
         integer("id").primary_key().auto_increment(),
         time("time").not_null(),
+    )).execute(conn).unwrap();
+
+    create_table("nullable_date_and_time", (
+        integer("id").primary_key().auto_increment(),
+        timestamp("timestamp"),
+        time("time"),
+        date("date"),
     )).execute(conn).unwrap();
 }
