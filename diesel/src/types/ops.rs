@@ -107,30 +107,42 @@ macro_rules! numeric_type {
 
 numeric_type!(SmallInt, Integer, BigInt, Float, Double, Numeric);
 
-macro_rules! interval_type {
-    ($($tpe: ident),*) => {
-        $(
-        impl Add for super::$tpe {
-            type Rhs = super::Interval;
-            type Output = super::$tpe;
-        }
-
-        impl Add for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::Interval>;
-            type Output = super::Nullable<super::$tpe>;
-        }
-
-        impl Sub for super::$tpe {
-            type Rhs = super::Interval;
-            type Output = super::$tpe;
-        }
-
-        impl Sub for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::Interval>;
-            type Output = super::Nullable<super::$tpe>;
-        }
-        )*
-    }
+impl Add for super::Date {
+    type Rhs = super::Interval;
+    type Output = super::Timestamp;
 }
 
-interval_type!(Date, Timestamp);
+impl Add for super::Nullable<super::Date> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Timestamp>;
+}
+
+impl Sub for super::Date {
+    type Rhs = super::Interval;
+    type Output = super::Timestamp;
+}
+
+impl Sub for super::Nullable<super::Date> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Timestamp>;
+}
+
+impl Add for super::Timestamp {
+    type Rhs = super::Interval;
+    type Output = super::Timestamp;
+}
+
+impl Add for super::Nullable<super::Timestamp> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Timestamp>;
+}
+
+impl Sub for super::Timestamp {
+    type Rhs = super::Interval;
+    type Output = super::Timestamp;
+}
+
+impl Sub for super::Nullable<super::Timestamp> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Timestamp>;
+}
