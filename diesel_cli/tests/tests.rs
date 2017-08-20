@@ -1,9 +1,11 @@
 #![deny(warnings)]
 
+extern crate chrono;
 extern crate diesel;
+#[macro_use]
+extern crate difference;
 extern crate regex;
 extern crate tempdir;
-extern crate chrono;
 
 mod setup;
 mod support;
