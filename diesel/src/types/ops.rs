@@ -107,6 +107,26 @@ macro_rules! numeric_type {
 
 numeric_type!(SmallInt, Integer, BigInt, Float, Double, Numeric);
 
+impl Add for super::Time {
+    type Rhs = super::Interval;
+    type Output = super::Time;
+}
+
+impl Add for super::Nullable<super::Time> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Time>;
+}
+
+impl Sub for super::Time {
+    type Rhs = super::Interval;
+    type Output = super::Time;
+}
+
+impl Sub for super::Nullable<super::Time> {
+    type Rhs = super::Nullable<super::Interval>;
+    type Output = super::Nullable<super::Time>;
+}
+
 impl Add for super::Date {
     type Rhs = super::Interval;
     type Output = super::Timestamp;
