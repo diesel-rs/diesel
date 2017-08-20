@@ -5,50 +5,40 @@ use std::path::Path;
 use support::{database, project};
 
 #[test]
-fn run_infer_schema_without_docs() {
-    test_print_schema("print_schema_simple_without_docs", vec![]);
-}
-
-#[test]
 fn run_infer_schema() {
-    test_print_schema("print_schema_simple", vec!["--with-docs"]);
+    test_print_schema("print_schema_simple", vec![]);
 }
 
 #[test]
 fn run_infer_schema_whitelist() {
-    test_print_schema("print_schema_whitelist", vec!["--with-docs", "-w", "users1"]);
+    test_print_schema("print_schema_whitelist", vec!["-w", "users1"]);
 }
 
 #[test]
 fn run_infer_schema_blacklist() {
-    test_print_schema("print_schema_blacklist", vec!["--with-docs", "-b", "users1"]);
+    test_print_schema("print_schema_blacklist", vec!["-b", "users1"]);
 }
 
 #[test]
 fn run_infer_schema_order() {
-    test_print_schema("print_schema_order", vec!["--with-docs"]);
+    test_print_schema("print_schema_order", vec![]);
 }
 
 #[test]
 fn run_infer_schema_compound_primary_key() {
-    test_print_schema("print_schema_compound_primary_key", vec!["--with-docs"]);
+    test_print_schema("print_schema_compound_primary_key", vec![]);
 }
 
 #[test]
 #[cfg(feature = "postgres")]
 fn print_schema_specifying_schema_name() {
-    test_print_schema("print_schema_specifying_schema_name", vec!["--with-docs", "--schema", "custom_schema"])
+    test_print_schema("print_schema_specifying_schema_name", vec!["--schema", "custom_schema"])
 }
 
 #[test]
 #[cfg(feature = "postgres")]
 fn print_schema_with_foreign_keys() {
-    test_print_schema("print_schema_with_foreign_keys", vec!["--with-docs"]);
-}
-
-#[test]
-fn print_schema_column_renaming() {
-    test_print_schema("print_schema_column_renaming", vec!["--with-docs"]);
+    test_print_schema("print_schema_with_foreign_keys", vec![]);
 }
 
 #[cfg(feature = "sqlite")]
