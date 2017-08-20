@@ -25,12 +25,20 @@ pub fn run_print_schema(
     schema_name: Option<&str>,
     filtering: &Filtering
 ) -> Result<(), Box<Error>> {
-    let table_data = load_table_names(database_url, schema_name)?
+    let table_names = load_table_names(database_url, schema_name)?
         .into_iter()
         .filter(|t| !filtering.should_ignore_table(t))
+        .collect::<Vec<_>>();
+    let foreign_keys = load_foreign_key_constraints(database_url, schema_name)?;
+    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
+        database_url,
+        &foreign_keys,
+        &table_names,
+    );
+    let table_data = table_names.into_iter()
         .map(|t| load_table_data(database_url, t))
         .collect::<Result<_, Box<Error>>>()?;
-    let definitions = TableDefinitions(table_data);
+    let definitions = TableDefinitions(table_data, foreign_keys);
 
     if let Some(schema_name) = schema_name {
         print!("{}", ModuleDefinition(schema_name, definitions));
@@ -54,7 +62,7 @@ impl<'a> Display for ModuleDefinition<'a> {
     }
 }
 
-struct TableDefinitions(Vec<TableData>);
+struct TableDefinitions(Vec<TableData>, Vec<ForeignKeyConstraint>);
 
 impl Display for TableDefinitions {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -66,6 +74,14 @@ impl Display for TableDefinitions {
                 write!(f, "\n")?;
             }
             writeln!(f, "{}", TableDefinition(table))?;
+        }
+
+        if !self.1.is_empty() {
+            write!(f, "\n")?;
+        }
+
+        for foreign_key in &self.1 {
+            writeln!(f, "{}", Joinable(foreign_key))?;
         }
         Ok(())
     }
@@ -115,6 +131,20 @@ impl<'a> Display for ColumnDefinitions<'a> {
         }
         writeln!(f, "}}")?;
         Ok(())
+    }
+}
+
+struct Joinable<'a>(&'a ForeignKeyConstraint);
+
+impl<'a> Display for Joinable<'a> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "joinable!({} -> {} ({}));",
+            self.0.child_table,
+            self.0.parent_table,
+            self.0.foreign_key,
+        )
     }
 }
 
