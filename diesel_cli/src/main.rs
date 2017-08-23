@@ -322,6 +322,7 @@ fn run_infer_schema(matches: &ArgMatches) {
         &database_url,
         schema_name,
         &filter,
+        matches.is_present("with-docs"),
     ).map_err(handle_error::<_, ()>);
 }
 

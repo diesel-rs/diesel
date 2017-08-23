@@ -88,7 +88,10 @@ pub fn build_cli() -> App<'static, 'static> {
              .short("b")
              .long("blacklist")
              .help("Use table list as blacklist")
-             .conflicts_with("whitelist"));
+             .conflicts_with("whitelist"))
+        .arg(Arg::with_name("with-docs")
+            .long("with-docs")
+            .help("Render documentation comments for tables and columns"));
 
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
