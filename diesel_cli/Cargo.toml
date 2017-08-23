@@ -23,6 +23,7 @@ diesel_infer_schema = "0.15.0"
 clippy = { optional = true, version = "=0.0.138" }
 
 [dev-dependencies]
+difference = "1.0"
 tempdir = "0.3.4"
 regex = "0.1.48"
 url = { version = "1.4.0" }

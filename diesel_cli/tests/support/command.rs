@@ -23,6 +23,14 @@ impl TestCommand {
         self
     }
 
+    pub fn args<I>(self, values: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        values.into_iter().fold(self, |c, value| c.arg(value))
+    }
+
     pub fn env(mut self, key: &str, value: &str) -> Self {
         self.env_vars.push((key.into(), value.into()));
         self

@@ -1,3 +1,4 @@
+use diesel::connection::SimpleConnection;
 use diesel::expression::sql;
 use diesel::sqlite::SqliteConnection;
 use diesel::types::Bool;
@@ -42,7 +43,7 @@ impl Database {
     }
 
     pub fn execute(&self, command: &str) {
-        self.conn().execute(command)
+        self.conn().batch_execute(command)
             .expect(&format!("Error executing command {}", command));
     }
 }
