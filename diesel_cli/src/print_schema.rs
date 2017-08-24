@@ -23,7 +23,8 @@ impl Filtering {
 pub fn run_print_schema(
     database_url: &str,
     schema_name: Option<&str>,
-    filtering: &Filtering
+    filtering: &Filtering,
+    include_docs: bool,
 ) -> Result<(), Box<Error>> {
     let table_names = load_table_names(database_url, schema_name)?
         .into_iter()
@@ -38,7 +39,11 @@ pub fn run_print_schema(
     let table_data = table_names.into_iter()
         .map(|t| load_table_data(database_url, t))
         .collect::<Result<_, Box<Error>>>()?;
-    let definitions = TableDefinitions(table_data, foreign_keys);
+    let definitions = TableDefinitions {
+        tables: table_data,
+        fk_constraints: foreign_keys,
+        include_docs,
+    };
 
     if let Some(schema_name) = schema_name {
         print!("{}", ModuleDefinition(schema_name, definitions));
@@ -62,32 +67,44 @@ impl<'a> Display for ModuleDefinition<'a> {
     }
 }
 
-struct TableDefinitions(Vec<TableData>, Vec<ForeignKeyConstraint>);
+struct TableDefinitions {
+    tables: Vec<TableData>,
+    fk_constraints: Vec<ForeignKeyConstraint>,
+    include_docs: bool,
+}
 
 impl Display for TableDefinitions {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut is_first = true;
-        for table in &self.0 {
+        for table in &self.tables {
             if is_first {
                 is_first = false;
             } else {
                 write!(f, "\n")?;
             }
-            writeln!(f, "{}", TableDefinition(table))?;
+            writeln!(f, "{}",
+                TableDefinition {
+                    table,
+                    include_docs: self.include_docs,
+                }
+            )?;
         }
 
-        if !self.1.is_empty() {
+        if !self.fk_constraints.is_empty() {
             write!(f, "\n")?;
         }
 
-        for foreign_key in &self.1 {
+        for foreign_key in &self.fk_constraints {
             writeln!(f, "{}", Joinable(foreign_key))?;
         }
         Ok(())
     }
 }
 
-struct TableDefinition<'a>(&'a TableData);
+struct TableDefinition<'a> {
+    table: &'a TableData,
+    include_docs: bool,
+}
 
 impl<'a> Display for TableDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -96,35 +113,47 @@ impl<'a> Display for TableDefinition<'a> {
             let mut out = PadAdapter::new(f);
             write!(out, "\n")?;
 
-            for d in self.0.docs.lines() {
-                writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+            if self.include_docs {
+                for d in self.table.docs.lines() {
+                    writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+                }
             }
 
-            write!(out, "{} (", self.0.name)?;
-            for (i, pk) in self.0.primary_key.iter().enumerate() {
+            write!(out, "{} (", self.table.name)?;
+            for (i, pk) in self.table.primary_key.iter().enumerate() {
                 if i != 0 {
                     write!(out, ", ")?;
                 }
                 write!(out, "{}", pk)?;
             }
 
-            write!(out, ") {}", ColumnDefinitions(&self.0.column_data))?;
+            write!(out, ") {}",
+                ColumnDefinitions {
+                    columns: &self.table.column_data,
+                    include_docs: self.include_docs,
+                }
+            )?;
         }
         write!(f, "}}")?;
         Ok(())
     }
 }
 
-struct ColumnDefinitions<'a>(&'a [ColumnDefinition]);
+struct ColumnDefinitions<'a> {
+    columns: &'a [ColumnDefinition],
+    include_docs: bool,
+}
 
 impl<'a> Display for ColumnDefinitions<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         {
             let mut out = PadAdapter::new(f);
             writeln!(out, "{{")?;
-            for column in self.0 {
-                for d in column.docs.lines() {
-                    writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+            for column in self.columns {
+                if self.include_docs {
+                    for d in column.docs.lines() {
+                        writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
+                    }
                 }
                 writeln!(out, "{} -> {},", column.name, column.ty)?;
             }
