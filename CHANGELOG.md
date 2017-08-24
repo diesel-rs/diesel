@@ -39,10 +39,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   Diesel's CLI tool, pass the new `--with-docs` parameter:
   `diesel print-schema --with-docs`.
 
-* infer_schema! now automatically renames columns that conflict with
+* `infer_schema!` now automatically renames columns that conflict with
   a Rust keyword by placing a _ at the end of the name. For example,
-  a column called type will be referenced as type_ in Rust.
-
+  a column called `type` will be referenced as `type_` in Rust.
 
 ### Changed
 
