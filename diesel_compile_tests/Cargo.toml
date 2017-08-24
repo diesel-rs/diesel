@@ -6,11 +6,11 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [workspace]
 
 [dependencies]
-diesel = { version = "0.15.0", features = ["extras", "sqlite", "postgres", "mysql"] }
-diesel_codegen = { version = "0.15.0" }
+diesel = { version = "0.16.0", features = ["extras", "sqlite", "postgres", "mysql"] }
+diesel_codegen = { version = "0.16.0" }
 compiletest_rs = "=0.2.7"
 
 [replace]
-"diesel:0.15.2" = { path = "../diesel" }
-"diesel_codegen:0.15.0" = { path = "../diesel_codegen" }
-"diesel_infer_schema:0.15.0" = { path = "../diesel_infer_schema" }
+"diesel:0.16.0" = { path = "../diesel" }
+"diesel_codegen:0.16.0" = { path = "../diesel_codegen" }
+"diesel_infer_schema:0.16.0" = { path = "../diesel_infer_schema" }
