@@ -9,8 +9,12 @@
 /// limitations of the Macros 1.1 system, but you can pass a string in the form
 /// `"env:SOME_ENV_VAR"` or `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
 ///
-/// This macro can only be used in combination with the `diesel_codegen` or
-/// `diesel_codegen_syntex` crates. It will not work on its own.
+/// This macro can only be used in combination with the `diesel_codegen` crate.
+/// It will not work on its own.
+///
+/// If any column name would collide with a rust keyword, a `_` will
+/// automatically be placed at the end of the name. For example, a column called
+/// `type` will be referenced as `type_` in the generated module.
 macro_rules! infer_schema {
     ($database_url: expr) => {
         mod __diesel_infer_schema {

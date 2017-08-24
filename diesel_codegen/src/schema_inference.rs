@@ -107,11 +107,23 @@ fn table_name_to_tokens(table_name: TableName) -> quote::Tokens {
 
 fn column_data_to_tokens(column_data: ColumnDefinition) -> quote::Tokens {
     let docs = to_doc_comment_tokens(&column_data.docs);
-    let name = syn::Ident::new(column_data.name);
     let ty = column_ty_to_tokens(column_data.ty);
-    quote! {
-        #(#docs)*
-        #name -> #ty
+    if let Some(rust_name) = column_data.rust_name {
+        let rust_name = syn::Ident::new(rust_name);
+        let sql_name = column_data.sql_name;
+
+        quote!(
+            #(#docs)*
+            #[sql_name = #sql_name]
+            #rust_name -> #ty
+        )
+    } else {
+        let name = syn::Ident::new(column_data.sql_name);
+
+        quote!(
+            #(#docs)*
+            #name -> #ty
+        )
     }
 }
 

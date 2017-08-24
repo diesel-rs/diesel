@@ -46,6 +46,11 @@ fn print_schema_with_foreign_keys() {
     test_print_schema("print_schema_with_foreign_keys", vec!["--with-docs"]);
 }
 
+#[test]
+fn print_schema_column_renaming() {
+    test_print_schema("print_schema_column_renaming", vec!["--with-docs"]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
