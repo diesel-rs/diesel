@@ -77,6 +77,7 @@ macro_rules! date_time_expr {
 #[doc(hidden)]
 macro_rules! __diesel_generate_ops_impls_if_date_time {
     ($column_name:ident, Nullable<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_date_time!($column_name, $($inner)::*); };
+    ($column_name:ident, Time) => { date_time_expr!($column_name); };
     ($column_name:ident, Date) => { date_time_expr!($column_name); };
     ($column_name:ident, Timestamp) => { date_time_expr!($column_name); };
     ($column_name:ident, $non_date_time_type:ty) => {};

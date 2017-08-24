@@ -23,3 +23,7 @@ pub fn timestamp<'a>(name: &'a str) -> Column<'a, types::VarChar> {
 pub fn time<'a>(name: &'a str) -> Column<'a, types::VarChar> {
     Column::new(name, "TIME")
 }
+
+pub fn date<'a>(name: &'a str) -> Column<'a, types::VarChar> {
+    Column::new(name, "DATE")
+}
