@@ -111,7 +111,7 @@ impl ToSql<Date, Pg> for NaiveDate {
 impl FromSql<Date, Pg> for NaiveDate {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
-        match pg_epoch_date().checked_add_signed(Duration::days(offset as i64)) {
+        match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {
                 let error_message = format!("Chrono can only represent dates up to {:?}",

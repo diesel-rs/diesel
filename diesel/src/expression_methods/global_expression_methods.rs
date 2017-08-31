@@ -10,7 +10,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -36,7 +36,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -65,7 +65,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -102,7 +102,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -149,7 +149,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -175,7 +175,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -201,7 +201,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -227,7 +227,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -275,7 +275,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -316,7 +316,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// ```no_run
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// # use self::diesel::types::*;
     /// #
     /// table! {

@@ -20,7 +20,7 @@
 //! // derive Identifiable.
 //! # #[macro_use] extern crate diesel;
 //! # #[macro_use] extern crate diesel_codegen;
-//! # include!("src/doctest_setup.rs");
+//! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!
 //! #[derive(Identifiable, Queryable)]

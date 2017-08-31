@@ -163,7 +163,7 @@ impl<T: Query> AsQuery for T {
 /// ### Returning SQL from a count statement:
 ///
 /// ```rust
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::*;

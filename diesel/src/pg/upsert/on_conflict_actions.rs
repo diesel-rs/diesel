@@ -30,7 +30,7 @@ pub fn do_nothing() -> DoNothing {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_codegen;
-/// # include!("src/pg/upsert/on_conflict_docs_setup.rs");
+/// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
@@ -58,7 +58,7 @@ pub fn do_nothing() -> DoNothing {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_codegen;
-/// # include!("src/pg/upsert/on_conflict_docs_setup.rs");
+/// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
@@ -86,7 +86,7 @@ pub fn do_nothing() -> DoNothing {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_codegen;
-/// # include!("src/pg/upsert/on_conflict_docs_setup.rs");
+/// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;

@@ -41,7 +41,7 @@ impl<ST> SqlLiteral<ST> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -72,7 +72,7 @@ impl<ST> SqlLiteral<ST> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -158,7 +158,7 @@ impl<ST> NonAggregate for SqlLiteral<ST> {
 /// # #[macro_use] extern crate diesel_codegen;
 /// use diesel::expression::sql;
 /// use diesel::types::{Bool, Integer, Text};
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// # table! {
 /// #   users {
 /// #       id -> Integer,

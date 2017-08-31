@@ -14,7 +14,7 @@ use types::Bool;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {

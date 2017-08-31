@@ -50,7 +50,7 @@ impl RawConnection {
                 user.as_ptr(),
                 password.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
                 database.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
-                port.unwrap_or(0) as u32,
+                u32::from(port.unwrap_or(0)),
                 ptr::null_mut(),
                 0,
             )

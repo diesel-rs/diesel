@@ -11,7 +11,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -44,7 +44,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -98,7 +98,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     posts {
@@ -154,7 +154,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     posts {
@@ -206,7 +206,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     posts {
@@ -268,7 +268,7 @@ pub trait SortExpressionMethods : Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -311,7 +311,7 @@ pub trait SortExpressionMethods : Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
