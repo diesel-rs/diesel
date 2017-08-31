@@ -2,7 +2,7 @@
 
 table! {
     12
-    //~^ ERROR expected ident
 }
+// error-pattern: invalid table! syntax
 
 fn main() {}

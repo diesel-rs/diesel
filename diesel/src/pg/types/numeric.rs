@@ -25,7 +25,7 @@ mod bigdecimal {
 
         fn next(&mut self) -> Option<Self::Item> {
             self.0.take().map(|v| {
-                let (div, rem) = v.div_rem(&BigUint::from(10000u16));
+                let (div, rem) = v.div_rem(&BigUint::from(10_000u16));
                 if !div.is_zero() {
                     self.0 = Some(div);
                 }
@@ -109,7 +109,7 @@ mod bigdecimal {
                 result = result + BigUint::from(digit as u64);
             }
             // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
-            let correction_exp = 4 * ( (weight as i64) - count + 1);
+            let correction_exp = 4 * (i64::from(weight) - count + 1);
             // FIXME: `scale` allows to drop some insignificant figures, which is currently unimplemented.
             // This means that e.g. PostgreSQL 0.01 will be interpreted as 0.0100
             let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp);

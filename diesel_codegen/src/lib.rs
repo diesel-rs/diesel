@@ -22,7 +22,7 @@ macro_rules! t {
     };
 }
 
-#[cfg(feature = "dotenv")]
+#[cfg(all(feature = "dotenv", feature = "diesel_infer_schema"))]
 extern crate dotenv;
 #[cfg(feature = "diesel_infer_schema")]
 extern crate diesel_infer_schema;

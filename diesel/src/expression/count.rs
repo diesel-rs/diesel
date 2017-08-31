@@ -14,7 +14,7 @@ use types::BigInt;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
@@ -50,7 +50,7 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
