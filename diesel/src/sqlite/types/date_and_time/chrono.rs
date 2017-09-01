@@ -24,7 +24,7 @@ fn parse_sqlite_date(date: &str) -> Result<NaiveDate, Box<Error+Send+Sync>> {
 
     match NaiveDate::from_ymd_opt(ymd[0] as i32, ymd[1], ymd[2]) {
         Some(d) => Ok(d),
-        None => Err("Invalid date.".into()),
+        None => Err(format! ("Cannot parse this date: {:?}", ymd).into()),
     }
 }
 
