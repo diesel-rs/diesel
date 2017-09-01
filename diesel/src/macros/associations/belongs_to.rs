@@ -1,7 +1,7 @@
 /// Defines a one-to-one association for the child table. This macro should be
 /// called with the name of the parent struct, followed by any options, followed
 /// by the entire struct body. The struct *must* be annotated with
-/// `#[table_name(name_of_table)]`. Both the parent and child structs must
+/// `#[table_name = "something"]`. Both the parent and child structs must
 /// implement [`Identifiable`][identifiable].
 ///
 /// [identifiable]: associations/trait.Identifiable.html
