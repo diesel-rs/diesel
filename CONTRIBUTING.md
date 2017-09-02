@@ -53,9 +53,14 @@ Thank you! We'll try to get back to you as soon as possible.
 ### Setting up Diesel locally
 
 1. Install Rust using [rustup], which allows you to easily switch between Rust
-   versions.
+   versions. Diesel currently supports Rust Stable, Nightly, Rust Beta.
 
-   Diesel currently supports Rust Stable, Nightly, Rust Beta.
+   If you want to run Diesel's test suite with _all_ supported features (extra
+   lints and compiletest), you should use the same nightly version as Diesel's
+   continuous integration. You can find it by looking for a line like
+   `rust: nightly-2017-06-06` in the `.travis.yml` file. You can install and
+   set a custom nightly version for a project using
+   `rustup override add nightly-2017-06-06`.
 
 2. Install the system libraries needed to interface with the database systems
    you wish to use.
