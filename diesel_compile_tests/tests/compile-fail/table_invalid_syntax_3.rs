@@ -2,10 +2,10 @@
 
 table! {
      #[foobar]
-     //~^ ERROR expected ident, found #
      posts {
          id -> Integer,
      }
 }
+// error-pattern: invalid table! syntax
 
 fn main() {}

@@ -14,7 +14,7 @@ use types::Array;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
@@ -50,7 +50,7 @@ pub fn any<ST, T>(vals: T) -> Any<T::Expression> where
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {

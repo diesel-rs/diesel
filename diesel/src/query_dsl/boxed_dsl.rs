@@ -33,7 +33,7 @@ impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -70,7 +70,7 @@ impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {

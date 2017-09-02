@@ -38,7 +38,7 @@ expression, and the return value will be an expression of type Date.
 ```ignore
 # #[macro_use] extern crate diesel;
 # extern crate chrono;
-# include!(\"src/doctest_setup.rs\");
+# include!(\"../../doctest_setup.rs\");
 # use diesel::expression::dsl::*;
 #
 # table! {

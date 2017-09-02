@@ -9,7 +9,7 @@ expression_impls!(Timestamp -> SystemTime);
 queryable_impls!(Timestamp -> SystemTime);
 
 fn pg_epoch() -> SystemTime {
-    let thirty_years = Duration::from_secs(946684800);
+    let thirty_years = Duration::from_secs(946_684_800);
     UNIX_EPOCH + thirty_years
 }
 
@@ -56,7 +56,7 @@ fn usecs_to_duration(usecs_passed: u64) -> Duration {
 fn duration_to_usecs(duration: Duration) -> u64 {
     let seconds = duration.as_secs() * USEC_PER_SEC;
     let subseconds = duration.subsec_nanos() / NANO_PER_USEC;
-    seconds + subseconds as u64
+    seconds + u64::from(subseconds)
 }
 
 #[cfg(test)]

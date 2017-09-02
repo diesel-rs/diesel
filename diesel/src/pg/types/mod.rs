@@ -177,7 +177,7 @@ pub mod sql_types {
     /// extern crate serde_json;
     /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -252,7 +252,7 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -323,7 +323,7 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -395,7 +395,7 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -465,7 +465,7 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {

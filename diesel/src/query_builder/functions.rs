@@ -12,7 +12,7 @@ use super::{IntoUpdateTarget, IncompleteUpdateStatement, IncompleteInsertStateme
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -42,7 +42,7 @@ use super::{IntoUpdateTarget, IncompleteUpdateStatement, IncompleteInsertStateme
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -86,7 +86,7 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> IncompleteUpdateStatement<T::Ta
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -114,7 +114,7 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> IncompleteUpdateStatement<T::Ta
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -149,7 +149,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {
@@ -188,7 +188,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {

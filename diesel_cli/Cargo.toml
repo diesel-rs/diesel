@@ -20,7 +20,7 @@ clap = "2.20.3"
 diesel = { version = "0.16.0", default-features = false }
 dotenv = ">=0.8, <0.11"
 diesel_infer_schema = "0.16.0"
-clippy = { optional = true, version = "=0.0.138" }
+clippy = { optional = true, version = "=0.0.155" }
 
 [dev-dependencies]
 difference = "1.0"

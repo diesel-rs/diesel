@@ -1,4 +1,6 @@
+#[cfg(not(feature = "sqlite"))]
 extern crate url;
+#[cfg(not(feature = "sqlite"))]
 extern crate dotenv;
 
 use std::fs::{self, File};

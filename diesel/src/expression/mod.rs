@@ -175,7 +175,7 @@ use query_builder::{QueryFragment, QueryId};
 /// # #[macro_use] extern crate diesel_codegen;
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::types;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {

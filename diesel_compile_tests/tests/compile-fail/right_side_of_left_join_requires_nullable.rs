@@ -38,5 +38,7 @@ fn main() {
     //~^ ERROR E0271
     //~| ERROR E0271
     // Invalid, Nullable<title> is selectable, but lower expects not-null
-    let _ = join.select(lower(posts::title.nullable())); //~ ERROR E0271
+    let _ = join.select(lower(posts::title.nullable()));
+    //~^ ERROR E0271
+    //~| ERROR E0271
 }

@@ -82,7 +82,7 @@ macro_rules! infer_table_from_schema {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_codegen;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// # table! {
 /// #   users {
 /// #       id -> Integer,
