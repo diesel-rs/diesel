@@ -99,7 +99,7 @@ macro_rules! tuple_impls {
                         if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        try!(out.push_identifier($T::name()));
+                        try!(out.push_identifier($T::NAME));
                     )+
                     Ok(())
                 }
@@ -136,7 +136,7 @@ macro_rules! tuple_impls {
                             if columns_present {
                                 out.push_sql(", ");
                             }
-                            try!(out.push_identifier($T::name()));
+                            try!(out.push_identifier($T::NAME));
                             columns_present = true;
                         }
                     )+

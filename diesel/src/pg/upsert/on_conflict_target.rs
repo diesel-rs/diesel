@@ -74,7 +74,7 @@ pub struct ConflictTarget<T>(pub T);
 impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" (");
-        try!(out.push_identifier(T::name()));
+        try!(out.push_identifier(T::NAME));
         out.push_sql(")");
         Ok(())
     }
@@ -117,10 +117,10 @@ macro_rules! on_conflict_tuples {
         {
             fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
                 out.push_sql(" (");
-                try!(out.push_identifier(T::name()));
+                try!(out.push_identifier(T::NAME));
                 $(
                     out.push_sql(", ");
-                    try!(out.push_identifier($col::name()));
+                    try!(out.push_identifier($col::NAME));
                 )+
                 out.push_sql(")");
                 Ok(())

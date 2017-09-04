@@ -169,7 +169,7 @@ impl<T> QueryFragment<Pg> for Excluded<T> where
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("excluded.");
-        try!(out.push_identifier(T::name()));
+        try!(out.push_identifier(T::NAME));
         Ok(())
     }
 }
