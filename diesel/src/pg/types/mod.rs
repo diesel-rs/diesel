@@ -297,11 +297,11 @@ pub mod sql_types {
     /// #     )").unwrap();
     /// let new_item = NewItem {
     ///     name: "Shiny Thing".into(),
-    ///     price: Cents(123456),
+    ///     price: Cents(123_456),
     /// };
     /// let inserted_item = insert(&new_item).into(items)
     ///     .get_result::<Item>(&connection).unwrap();
-    /// assert_eq!(Cents(123456), inserted_item.price);
+    /// assert_eq!(Cents(123_456), inserted_item.price);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)] pub struct Money;

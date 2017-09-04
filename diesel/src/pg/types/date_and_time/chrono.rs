@@ -265,7 +265,7 @@ mod tests {
         let query = select(sql::<Date>("'2018-1-1'::date").eq(january_first_2018));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8);
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date").eq(distant_future));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -293,7 +293,7 @@ mod tests {
         let query = select(sql::<Date>("'2018-1-1'::date"));
         assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8);
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date"));
         assert_eq!(Ok(distant_future), query.get_result::<NaiveDate>(&connection));
     }
