@@ -77,6 +77,7 @@ impl HasSqlType<::types::Numeric> for Mysql {
 #[cfg(not(feature="postgres"))]
 impl QueryId for ::types::Numeric {
     type QueryId = Self;
+
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 

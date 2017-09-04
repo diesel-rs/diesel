@@ -90,6 +90,7 @@ impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
 
 impl<'a, Cols> QueryId for CreateTable<'a, Cols> {
     type QueryId = ();
+
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
@@ -107,6 +108,7 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
 
 impl<'a, Cols> QueryId for Column<'a, Cols> {
     type QueryId = ();
+
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
@@ -177,5 +179,6 @@ impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
 
 impl<'a, Col> QueryId for Default<'a, Col> {
     type QueryId = ();
+
     const HAS_STATIC_QUERY_ID: bool = false;
 }

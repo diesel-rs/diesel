@@ -107,6 +107,7 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
 
 impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     type QueryId = ();
+
     const HAS_STATIC_QUERY_ID: bool = false; 
 }
 

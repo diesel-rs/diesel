@@ -37,6 +37,7 @@ impl<T, U, DB> QueryFragment<DB> for Bound<T, U> where
 
 impl<T: QueryId, U> QueryId for Bound<T, U> {
     type QueryId = Bound<T::QueryId, ()>;
+
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
 }
 

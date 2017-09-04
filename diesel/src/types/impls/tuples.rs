@@ -40,11 +40,11 @@ macro_rules! tuple_impls {
                 $(DB: HasSqlType<$ST>),+,
                 DB: HasSqlType<($($ST,)+)>,
             {
+                const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
+
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
-
-                const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
             }
 
             impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
@@ -78,6 +78,7 @@ macro_rules! tuple_impls {
 
             impl<$($T: QueryId),+> QueryId for ($($T,)+) {
                 type QueryId = ($($T::QueryId,)+);
+
                 const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 

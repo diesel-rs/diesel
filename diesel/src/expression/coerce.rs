@@ -59,6 +59,7 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
 
 impl<T: QueryId, ST: 'static> QueryId for Coerce<T, ST> {
     type QueryId = Coerce<T::QueryId, ST>;
+
     const HAS_STATIC_QUERY_ID: bool = true; 
 }
 

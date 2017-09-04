@@ -39,6 +39,7 @@ impl<T, QS> AppearsOnTable<QS> for Nullable<T> where
 
 impl<T: QueryId> QueryId for Nullable<T> {
     type QueryId = T::QueryId;
+
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
