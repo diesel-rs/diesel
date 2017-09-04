@@ -3,7 +3,8 @@ use super::QueryFragment;
 
 pub trait QueryId {
     type QueryId: Any;
-    const HAS_STATIC_QUERY_ID: bool = true; 
+
+    const HAS_STATIC_QUERY_ID: bool = true;
 
     fn query_id() -> Option<TypeId> {
         if Self::HAS_STATIC_QUERY_ID {
