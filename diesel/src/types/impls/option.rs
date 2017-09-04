@@ -59,7 +59,7 @@ impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
     ST: NotNull,
 {
     fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
-        let fields_needed = Self::fields_needed();
+        let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
             Ok(None)
@@ -68,9 +68,7 @@ impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
         }
     }
 
-    fn fields_needed() -> usize {
-        T::fields_needed()
-    }
+    const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 }
 
 impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where

@@ -44,9 +44,7 @@ macro_rules! tuple_impls {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
 
-                fn fields_needed() -> usize {
-                    $($T::fields_needed() +)+ 0
-                }
+                const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
             }
 
             impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where

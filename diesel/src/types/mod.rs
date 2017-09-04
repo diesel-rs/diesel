@@ -351,11 +351,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
 
     /// The number of fields that this type will consume. Should be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
-    // TODO: use associated const
-    fn fields_needed() -> usize {
-        1
-    }
-    // const FIELDS_NEEDED: usize = 1; 
+    const FIELDS_NEEDED: usize = 1;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
