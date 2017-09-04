@@ -191,7 +191,7 @@ mod tests {
         let query = select(sql::<Date>("'2018-01-01'").eq(january_first_2018));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8);
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-01-08'").eq(distant_future));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
@@ -215,7 +215,7 @@ mod tests {
         let query = select(sql::<Date>("'2018-01-01'"));
         assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8);
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-01-08'"));
         assert_eq!(Ok(distant_future), query.get_result::<NaiveDate>(&connection));
     }
@@ -235,7 +235,7 @@ mod tests {
         let query = select(sql::<Date>("'2018-01-01'"));
         assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8).and_hms(23, 59, 59).with_nanosecond(100000).unwrap();
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8).and_hms(23, 59, 59).with_nanosecond(100_000).unwrap();
         let query = select(sql::<Timestamp>("'72400-01-08 23:59:59.000100'"));
         assert_eq!(Ok(distant_future), query.get_result::<NaiveDateTime>(&connection));
    }
@@ -251,11 +251,11 @@ mod tests {
         let query = select(sql::<Timestamp>("'-398-04-11 20:00:20.000000'").eq(distant_past));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1).and_hms(12, 00, 00).with_nanosecond(500000).unwrap();
+        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1).and_hms(12, 00, 00).with_nanosecond(500_000).unwrap();
         let query = select(sql::<Timestamp>("'2018-01-01 12:00:00.000500'").eq(january_first_2018));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
-        let distant_future = NaiveDate::from_ymd(72400, 1, 8).and_hms(0, 0, 0);
+        let distant_future = NaiveDate::from_ymd(72_400, 1, 8).and_hms(0, 0, 0);
         let query = select(sql::<Timestamp>("'72400-01-08 00:00:00.000000'").eq(distant_future));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }

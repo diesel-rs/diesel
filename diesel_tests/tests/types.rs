@@ -156,16 +156,16 @@ fn i16_to_sql_smallint() {
 fn i32_from_sql() {
     assert_eq!(0, query_single_value::<Integer, i32>("0"));
     assert_eq!(-1, query_single_value::<Integer, i32>("-1"));
-    assert_eq!(70000, query_single_value::<Integer, i32>("70000"));
+    assert_eq!(70_000, query_single_value::<Integer, i32>("70000"));
 }
 
 #[test]
 fn i32_to_sql_integer() {
     assert!(query_to_sql_equality::<Integer, i32>("0", 0));
     assert!(query_to_sql_equality::<Integer, i32>("-1", -1));
-    assert!(query_to_sql_equality::<Integer, i32>("70000", 70000));
+    assert!(query_to_sql_equality::<Integer, i32>("70000", 70_000));
     assert!(!query_to_sql_equality::<Integer, i32>("0", 1));
-    assert!(!query_to_sql_equality::<Integer, i32>("70000", 69999));
+    assert!(!query_to_sql_equality::<Integer, i32>("70000", 69_999));
 }
 
 #[test]
@@ -173,7 +173,7 @@ fn i32_to_sql_integer() {
 fn i64_from_sql() {
     assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));
     assert_eq!(-1, query_single_value::<BigInt, i64>("-1::int8"));
-    assert_eq!(283745982374,
+    assert_eq!(283_745_982_374,
                query_single_value::<BigInt, i64>("283745982374::int8"));
 }
 
@@ -182,9 +182,9 @@ fn i64_from_sql() {
 fn i64_to_sql_bigint() {
     assert!(query_to_sql_equality::<BigInt, i64>("0::int8", 0));
     assert!(query_to_sql_equality::<BigInt, i64>("-1::int8", -1));
-    assert!(query_to_sql_equality::<BigInt, i64>("283745982374::int8", 283745982374));
+    assert!(query_to_sql_equality::<BigInt, i64>("283745982374::int8", 283_745_982_374));
     assert!(!query_to_sql_equality::<BigInt, i64>("0::int8", 1));
-    assert!(!query_to_sql_equality::<BigInt, i64>("283745982374::int8", 283745982373));
+    assert!(!query_to_sql_equality::<BigInt, i64>("283745982374::int8", 283_745_982_373));
 }
 
 use std::{f32, f64};
@@ -383,10 +383,10 @@ fn timestamp_from_sql() {
     use diesel::data_types::PgTimestamp;
 
     let query = "'2015-11-13 13:26:48.041057-07'::timestamp";
-    let expected_value = PgTimestamp(500736408041057);
+    let expected_value = PgTimestamp(500_736_408_041_057);
     assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
     let query = "'2015-11-13 13:26:49.041057-07'::timestamp";
-    let expected_value = PgTimestamp(500736409041057);
+    let expected_value = PgTimestamp(500_736_409_041_057);
     assert_eq!(expected_value, query_single_value::<Timestamp, PgTimestamp>(query));
 }
 
@@ -396,10 +396,10 @@ fn pg_timestamp_to_sql_timestamp() {
     use diesel::data_types::PgTimestamp;
 
     let expected_value = "'2015-11-13 13:26:48.041057-07'::timestamp";
-    let value = PgTimestamp(500736408041057);
+    let value = PgTimestamp(500_736_408_041_057);
     assert!(query_to_sql_equality::<Timestamp, PgTimestamp>(expected_value, value));
     let expected_value = "'2015-11-13 13:26:49.041057-07'::timestamp";
-    let value = PgTimestamp(500736409041057);
+    let value = PgTimestamp(500_736_409_041_057);
     assert!(query_to_sql_equality::<Timestamp, PgTimestamp>(expected_value, value));
     let expected_non_equal_value = "'2015-11-13 13:26:48.041057-07'::timestamp";
     assert!(!query_to_sql_equality::<Timestamp, PgTimestamp>(expected_non_equal_value, value));
@@ -755,7 +755,7 @@ fn third_party_crates_can_add_new_types() {
 
     assert_eq!(0, query_single_value::<MyInt, i32>("0"));
     assert_eq!(-1, query_single_value::<MyInt, i32>("-1"));
-    assert_eq!(70000, query_single_value::<MyInt, i32>("70000"));
+    assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));
 }
 
 fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U where
