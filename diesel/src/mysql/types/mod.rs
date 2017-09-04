@@ -77,10 +77,7 @@ impl HasSqlType<::types::Numeric> for Mysql {
 #[cfg(not(feature="postgres"))]
 impl QueryId for ::types::Numeric {
     type QueryId = Self;
-
-    fn has_static_query_id() -> bool {
-        true
-    }
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 /// Represents the MySQL datetime type.

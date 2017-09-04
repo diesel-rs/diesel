@@ -25,7 +25,6 @@ impl<T> QueryId for Nullable<T> where
     T: QueryId + NotNull,
 {
     type QueryId = T::QueryId;
-
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
 }
 

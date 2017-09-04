@@ -80,7 +80,6 @@ macro_rules! tuple_impls {
 
             impl<$($T: QueryId),+> QueryId for ($($T,)+) {
                 type QueryId = ($($T::QueryId,)+);
-
                 const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 
