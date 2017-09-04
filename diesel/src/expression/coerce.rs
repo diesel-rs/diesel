@@ -60,9 +60,7 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
 impl<T: QueryId, ST: 'static> QueryId for Coerce<T, ST> {
     type QueryId = Coerce<T::QueryId, ST>;
 
-    fn has_static_query_id() -> bool {
-        true
-    }
+    const HAS_STATIC_QUERY_ID: bool = true; 
 }
 
 impl<T, ST> NonAggregate for Coerce<T, ST> where

@@ -144,9 +144,7 @@ macro_rules! primitive_impls {
         impl $crate::query_builder::QueryId for $Source {
             type QueryId = Self;
 
-            fn has_static_query_id() -> bool {
-                true
-            }
+            const HAS_STATIC_QUERY_ID: bool = true; 
         }
 
         impl $crate::types::NotNull for $Source {

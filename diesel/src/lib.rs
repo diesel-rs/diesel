@@ -20,6 +20,7 @@
     enum_glob_use, if_not_else, items_after_statements, used_underscore_binding,
 ))]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![feature(associated_consts)]
 
 extern crate byteorder;
 #[cfg(feature = "postgres")]

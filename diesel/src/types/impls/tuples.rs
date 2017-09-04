@@ -81,9 +81,7 @@ macro_rules! tuple_impls {
             impl<$($T: QueryId),+> QueryId for ($($T,)+) {
                 type QueryId = ($($T::QueryId,)+);
 
-                fn has_static_query_id() -> bool {
-                    $($T::has_static_query_id() &&)+ true
-                }
+                const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {

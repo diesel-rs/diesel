@@ -26,9 +26,7 @@ impl<T> QueryId for Nullable<T> where
 {
     type QueryId = T::QueryId;
 
-    fn has_static_query_id() -> bool {
-        T::has_static_query_id()
-    }
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
 }
 
 impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
