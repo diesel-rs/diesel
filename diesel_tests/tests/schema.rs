@@ -90,7 +90,7 @@ impl<'a> ::diesel::associations::Identifiable for &'a Following {
 }
 
 #[cfg_attr(feature = "postgres", path = "postgres_specific_schema.rs")]
-#[cfg_attr(not(feature = "postgres"), path = "backend_specific_schema.rs")]
+#[cfg_attr(not(feature = "postgres"), path = "backend_specifics.rs")]
 mod backend_specifics;
 
 pub use self::backend_specifics::*;
