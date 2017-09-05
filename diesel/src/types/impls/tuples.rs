@@ -40,12 +40,10 @@ macro_rules! tuple_impls {
                 $(DB: HasSqlType<$ST>),+,
                 DB: HasSqlType<($($ST,)+)>,
             {
+                const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
+
                 fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
-                }
-
-                fn fields_needed() -> usize {
-                    $($T::fields_needed() +)+ 0
                 }
             }
 
@@ -81,9 +79,7 @@ macro_rules! tuple_impls {
             impl<$($T: QueryId),+> QueryId for ($($T,)+) {
                 type QueryId = ($($T::QueryId,)+);
 
-                fn has_static_query_id() -> bool {
-                    $($T::has_static_query_id() &&)+ true
-                }
+                const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
@@ -102,7 +98,7 @@ macro_rules! tuple_impls {
                         if $idx != 0 {
                             out.push_sql(", ");
                         }
-                        try!(out.push_identifier($T::name()));
+                        try!(out.push_identifier($T::NAME));
                     )+
                     Ok(())
                 }
@@ -139,7 +135,7 @@ macro_rules! tuple_impls {
                             if columns_present {
                                 out.push_sql(", ");
                             }
-                            try!(out.push_identifier($T::name()));
+                            try!(out.push_identifier($T::NAME));
                             columns_present = true;
                         }
                     )+

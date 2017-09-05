@@ -26,9 +26,7 @@ impl<T> QueryId for Nullable<T> where
 {
     type QueryId = T::QueryId;
 
-    fn has_static_query_id() -> bool {
-        T::has_static_query_id()
-    }
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
 }
 
 impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
@@ -61,18 +59,16 @@ impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
+    const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
+
     fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
-        let fields_needed = Self::fields_needed();
+        let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
             Ok(None)
         } else {
             T::build_from_row(row).map(Some)
         }
-    }
-
-    fn fields_needed() -> usize {
-        T::fields_needed()
     }
 }
 

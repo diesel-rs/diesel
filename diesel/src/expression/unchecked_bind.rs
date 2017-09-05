@@ -33,9 +33,7 @@ impl<Query, Value, ST> QueryId for UncheckedBind<Query, Value, ST> where
 {
     type QueryId = UncheckedBind<Query::QueryId, (), ST::QueryId>;
 
-    fn has_static_query_id() -> bool {
-        Query::has_static_query_id() && ST::has_static_query_id()
-    }
+    const HAS_STATIC_QUERY_ID: bool = Query::HAS_STATIC_QUERY_ID && ST::HAS_STATIC_QUERY_ID; 
 }
 
 impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST> where

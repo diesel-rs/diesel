@@ -347,13 +347,11 @@ pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
 /// How to deserialize multiple fields, with a known type. This type is
 /// implemented for tuples of various sizes.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
-
     /// The number of fields that this type will consume. Should be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
-    fn fields_needed() -> usize {
-        1
-    }
+    const FIELDS_NEEDED: usize = 1;
+
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

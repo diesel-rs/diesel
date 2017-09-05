@@ -36,7 +36,7 @@ pub trait QuerySource {
 pub trait Column: Expression {
     type Table: Table;
 
-    fn name() -> &'static str;
+    const NAME: &'static str;
 }
 
 /// A SQL database table. Types which implement this trait should have been

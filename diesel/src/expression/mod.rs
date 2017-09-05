@@ -229,7 +229,5 @@ impl<QS, T, DB> BoxableExpression<QS, DB> for T where
 impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST> {
     type QueryId = ();
 
-    fn has_static_query_id() -> bool {
-        false
-    }
+    const HAS_STATIC_QUERY_ID: bool = false; 
 }

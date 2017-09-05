@@ -3,10 +3,11 @@ use super::QueryFragment;
 
 pub trait QueryId {
     type QueryId: Any;
-    fn has_static_query_id() -> bool;
+
+    const HAS_STATIC_QUERY_ID: bool = true;
 
     fn query_id() -> Option<TypeId> {
-        if Self::has_static_query_id() {
+        if Self::HAS_STATIC_QUERY_ID {
             Some(TypeId::of::<Self::QueryId>())
         } else {
             None
@@ -17,34 +18,26 @@ pub trait QueryId {
 impl QueryId for () {
     type QueryId = ();
 
-    fn has_static_query_id() -> bool {
-        true
-    }
+    const HAS_STATIC_QUERY_ID: bool = true; 
 }
 
 impl<T: QueryId + ?Sized> QueryId for Box<T> {
     type QueryId = T::QueryId;
 
-    fn has_static_query_id() -> bool {
-        T::has_static_query_id()
-    }
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;     
 }
 
 
 impl<'a, T: QueryId + ?Sized> QueryId for &'a T {
     type QueryId = T::QueryId;
 
-    fn has_static_query_id() -> bool {
-        T::has_static_query_id()
-    }
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
 }
 
 impl<DB> QueryId for QueryFragment<DB> {
     type QueryId = ();
 
-    fn has_static_query_id() -> bool {
-        false
-    }
+    const HAS_STATIC_QUERY_ID: bool = false; 
 }
 
 #[cfg(test)]

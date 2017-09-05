@@ -108,9 +108,7 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
 impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     type QueryId = ();
 
-    fn has_static_query_id() -> bool {
-        false
-    }
+    const HAS_STATIC_QUERY_ID: bool = false; 
 }
 
 impl<'a, ST, QS, DB, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>

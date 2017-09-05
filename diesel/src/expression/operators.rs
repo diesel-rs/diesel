@@ -329,7 +329,7 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
     }
 
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        try!(out.push_identifier(T::name()));
+        try!(out.push_identifier(T::NAME));
         out.push_sql(" = ");
         QueryFragment::walk_ast(&self.right, out)
     }
