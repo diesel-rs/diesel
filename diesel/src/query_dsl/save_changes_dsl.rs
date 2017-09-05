@@ -1,5 +1,5 @@
 use associations::HasTable;
-use helper_types::*;
+use dsl::*;
 use query_builder::{AsChangeset, IntoUpdateTarget};
 use query_dsl::*;
 use result::QueryResult;

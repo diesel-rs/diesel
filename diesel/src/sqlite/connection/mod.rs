@@ -133,7 +133,7 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 #[cfg(test)]
 mod tests {
     use expression::AsExpression;
-    use expression::dsl::sql;
+    use dsl::sql;
     use prelude::*;
     use super::*;
     use types::Integer;

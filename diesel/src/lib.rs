@@ -63,6 +63,17 @@ pub mod result;
 pub mod row;
 mod util;
 
+pub mod dsl {
+    //! Includes various helper types and bare functions which are named too
+    //! generically to be included in prelude, but are often used when using Diesel.
+
+    #[doc(inline)]
+    pub use helper_types::*;
+
+    #[doc(inline)]
+    pub use expression::dsl::*;
+}
+
 pub mod helper_types {
     //! Provide helper types for concisely writing the return type of functions.
     //! As with iterators, it is unfortunately difficult to return a partially
@@ -76,7 +87,9 @@ pub mod helper_types {
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_dsl::*;
     use super::query_source::joins;
-    use super::expression::helper_types::Eq;
+
+    #[doc(inline)]
+    pub use expression::helper_types::*;
 
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;

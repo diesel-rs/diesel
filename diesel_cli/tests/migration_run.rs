@@ -1,6 +1,6 @@
 use support::{database, project};
 use diesel::{select, LoadDsl};
-use diesel::expression::sql;
+use diesel::dsl::sql;
 use diesel::types::Bool;
 
 #[test]

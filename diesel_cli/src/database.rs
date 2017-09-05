@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use diesel::expression::sql;
+use diesel::dsl::sql;
 use diesel::types::Bool;
 use diesel::*;
 #[cfg(any(feature = "postgres", feature = "mysql"))]

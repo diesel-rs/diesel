@@ -322,7 +322,7 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
 #[test]
 fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
     use schema::users::dsl::*;
-    use diesel::expression::dsl::not;
+    use diesel::dsl::not;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users
@@ -337,7 +337,7 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
 #[test]
 fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     use schema::users::dsl::*;
-    use diesel::expression::dsl::not;
+    use diesel::dsl::not;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users

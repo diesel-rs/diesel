@@ -1,7 +1,7 @@
 use schema::{connection, TestConnection};
 use diesel::*;
 use diesel::data_types::*;
-use diesel::expression::dsl::*;
+use diesel::dsl::*;
 use diesel::types::Nullable;
 
 table! {
@@ -180,7 +180,7 @@ fn time_is_deserialized_properly() {
 #[test]
 #[cfg(feature = "postgres")]
 fn interval_is_deserialized_properly() {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
     let connection = connection();
 
     let data = select(sql::<
@@ -207,7 +207,7 @@ fn interval_is_deserialized_properly() {
 #[cfg(feature = "postgres")]
 fn adding_interval_to_timestamp() {
     use self::has_timestamps::dsl::*;
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
 
     let connection = connection();
     setup_test_table(&connection);
@@ -230,7 +230,7 @@ fn adding_interval_to_timestamp() {
 #[cfg(feature = "postgres")]
 fn adding_interval_to_nullable_things() {
     use self::nullable_date_and_time::dsl::*;
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
 
     let connection = connection();
     setup_test_table(&connection);

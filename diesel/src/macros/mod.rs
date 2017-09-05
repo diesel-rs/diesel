@@ -73,9 +73,9 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::expression::helper_types::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::types::Bool>,
+            $crate::dsl::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::types::Bool>,
         {
-            type Output = $crate::expression::helper_types::Eq<Self, T>;
+            type Output = $crate::dsl::Eq<Self, T>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
                 $crate::expression::operators::Eq::new(self, rhs.as_expression())
@@ -932,7 +932,7 @@ macro_rules! joinable_inner {
     ) => {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type FromClause = $right_table_ty;
-            type OnClause = $crate::expression::helper_types::Eq<
+            type OnClause = $crate::dsl::Eq<
                 $crate::expression::nullable::Nullable<$foreign_key>,
                 $crate::expression::nullable::Nullable<$primary_key_ty>,
             >;

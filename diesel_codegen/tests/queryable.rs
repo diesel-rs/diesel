@@ -1,4 +1,4 @@
-use diesel::expression::dsl::sql;
+use diesel::dsl::sql;
 use diesel::*;
 use diesel::types::Integer;
 

@@ -8,14 +8,14 @@ use types::BigInt;
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically as `diesel::expression::count`, or glob import
-/// `diesel::expression::dsl::*`
+/// `diesel::dsl::*`
 ///
 /// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {
@@ -42,14 +42,14 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically as `diesel::expression::count_star`, or glob import
-/// `diesel::expression::dsl::*`
+/// `diesel::dsl::*`
 ///
 /// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {

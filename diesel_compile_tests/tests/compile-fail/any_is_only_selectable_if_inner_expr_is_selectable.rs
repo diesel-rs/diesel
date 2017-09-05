@@ -2,7 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::expression::dsl::*;
+use diesel::dsl::*;
 
 table! {
     stuff {

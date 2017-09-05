@@ -209,7 +209,7 @@ fn filter_by_ilike() {
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
     use schema::users::dsl::*;
-    use diesel::expression::dsl::any;
+    use diesel::dsl::any;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");

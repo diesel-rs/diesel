@@ -8,14 +8,14 @@ use types::Array;
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically from `diesel::expression::any`, or glob import
-/// `diesel::expression::dsl::*`
+/// `diesel::dsl::*`
 ///
 /// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {
@@ -44,15 +44,14 @@ where
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically from `diesel::expression::all`, or glob import
-/// `diesel::expression::dsl::*`
+/// it specifically as `diesel::dsl::all`.
 ///
 /// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {

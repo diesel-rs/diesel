@@ -1,6 +1,6 @@
 use backend::Backend;
 use connection::Connection;
-use helper_types::Limit;
+use dsl::Limit;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::Queryable;
 use result::{first_or_not_found, QueryResult};

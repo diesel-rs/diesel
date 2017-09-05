@@ -13,7 +13,7 @@ use data_types::PgInterval;
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../../../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {
@@ -104,7 +104,7 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output = Self> {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../../../doctest_setup.rs");
-/// # use diesel::expression::dsl::*;
+/// # use diesel::dsl::*;
 /// #
 /// # table! {
 /// #     users {
@@ -156,7 +156,7 @@ pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
     /// months.
     ///
     /// ```rust
-    /// # use diesel::expression::dsl::*;
+    /// # use diesel::dsl::*;
     /// assert_eq!(1.08.years(), 1.year());
     /// assert_eq!(1.09.years(), 1.year() + 1.month());
     /// ```
@@ -249,7 +249,7 @@ mod tests {
 
     use {select, types};
     use data_types::PgInterval;
-    use expression::dsl::sql;
+    use dsl::sql;
     use prelude::*;
     use super::*;
 

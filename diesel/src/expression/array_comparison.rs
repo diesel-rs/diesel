@@ -1,6 +1,6 @@
 use backend::Backend;
+use dsl::SqlTypeOf;
 use expression::*;
-use expression::helper_types::SqlTypeOf;
 use query_builder::*;
 use result::QueryResult;
 use types::Bool;

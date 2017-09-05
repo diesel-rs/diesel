@@ -1026,7 +1026,7 @@ where
     TestBackend: HasSqlType<T>,
     T: QueryId + SingleValue,
 {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
     let connection = connection();
     select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
@@ -1043,7 +1043,7 @@ where
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue,
 {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
     let connection = connection();
     let query = select(
         sql::<T>(sql_str)
@@ -1060,7 +1060,7 @@ where
 #[test]
 #[should_panic(expected = "Received more than 4 bytes decoding i32")]
 fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
     use diesel::types::Integer;
 
     let connection = connection();
@@ -1074,7 +1074,7 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
 #[test]
 fn test_range_from_sql() {
     use std::collections::Bound;
-    use diesel::expression::sql;
+    use diesel::dsl::sql;
 
     let connection = connection();
 
@@ -1104,7 +1104,6 @@ fn test_range_from_sql() {
 #[test]
 fn test_range_to_sql() {
     use std::collections::Bound;
-    use diesel::expression::sql;
 
     let expected_value = "'[1,2]'::int4range";
     let value = (Bound::Included(1), Bound::Excluded(3));

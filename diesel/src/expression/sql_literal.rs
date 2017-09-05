@@ -52,7 +52,7 @@ impl<ST> SqlLiteral<ST> {
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
-    /// #     use diesel::expression::dsl::sql;
+    /// #     use diesel::dsl::sql;
     /// #     use diesel::types::{Integer, Text};
     /// #     let connection = establish_connection();
     /// #[cfg(feature="postgres")]
@@ -83,7 +83,7 @@ impl<ST> SqlLiteral<ST> {
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
-    /// #     use diesel::expression::dsl::sql;
+    /// #     use diesel::dsl::sql;
     /// #     use diesel::types::{Integer, Text};
     /// #     let connection = establish_connection();
     /// #     diesel::insert(&NewUser::new("Jim")).into(users)
@@ -154,7 +154,7 @@ impl<ST> NonAggregate for SqlLiteral<ST> {}
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_codegen;
-/// use diesel::expression::sql;
+/// use diesel::dsl::sql;
 /// use diesel::types::{Bool, Integer, Text};
 /// # include!("../doctest_setup.rs");
 /// # table! {

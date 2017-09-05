@@ -105,8 +105,8 @@ where
     }
 }
 
+use dsl::Filter;
 use expression_methods::EqAll;
-use helper_types::Filter;
 use query_source::Table;
 
 impl<F, S, D, W, O, L, Of, G, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, L, Of, G>

@@ -4,7 +4,7 @@ extern crate diesel;
 extern crate diesel_codegen;
 
 use diesel::*;
-use diesel::expression::count;
+use diesel::dsl::count;
 
 table! {
     users {

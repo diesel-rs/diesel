@@ -1,5 +1,5 @@
+use dsl::Select;
 use expression::Expression;
-use helper_types::Select;
 use query_dsl::SelectDsl;
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::Insert;

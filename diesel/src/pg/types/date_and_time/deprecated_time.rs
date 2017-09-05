@@ -44,7 +44,7 @@ mod tests {
     use self::time::{Duration, Timespec};
 
     use select;
-    use expression::dsl::{now, sql};
+    use dsl::{now, sql};
     use prelude::*;
     use types::Timestamp;
 

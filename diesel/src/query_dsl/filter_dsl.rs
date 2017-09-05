@@ -1,5 +1,5 @@
+use dsl::Filter;
 use expression_methods::*;
-use helper_types::Filter;
 use query_builder::{AsQuery, Query};
 use query_source::*;
 

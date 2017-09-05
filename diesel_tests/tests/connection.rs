@@ -1,6 +1,6 @@
 use schema::connection_without_transaction;
 use diesel::*;
-use diesel::expression::dsl::sql;
+use diesel::dsl::sql;
 
 table! {
     auto_time {
