@@ -121,11 +121,13 @@ impl ToSql<Time, Mysql> for NaiveTime {
 impl FromSql<Time, Mysql> for NaiveTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
-        Ok(NaiveTime::from_hms(
+        NaiveTime::from_hms_opt(
             mysql_time.hour as u32,
             mysql_time.minute as u32,
             mysql_time.second as u32,
-        ))
+        ).ok_or_else(|| {
+            format!("Unable to convert {:?} to chrono", mysql_time).into()
+        })
     }
 }
 
@@ -147,11 +149,13 @@ impl ToSql<Date, Mysql> for NaiveDate {
 impl FromSql<Date, Mysql> for NaiveDate {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
-        Ok(NaiveDate::from_ymd(
+        NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ))
+        ).ok_or_else(|| {
+            format!("Unable to convert {:?} to chrono", mysql_time).into()
+        })
     }
 }
 
@@ -283,7 +287,12 @@ mod tests {
             query.get_result::<NaiveDate>(&connection)
         );
 
-        let query = select(sql::<Date>("CAST('0000-0-0' AS DATE)"));
+        connection
+            .execute(
+                "SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))",
+            )
+            .unwrap();
+        let query = select(sql::<Date>("CAST('0000-00-00' AS DATE)"));
         assert!(query.get_result::<NaiveDate>(&connection).is_err());
     }
 }
