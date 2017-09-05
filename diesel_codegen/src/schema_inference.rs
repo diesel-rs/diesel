@@ -4,16 +4,18 @@ use quote;
 use database_url::extract_database_url;
 use diesel_infer_schema::*;
 
-use util::{get_options_from_input, get_option, get_optional_option};
+use util::{get_option, get_optional_option, get_options_from_input};
 
 pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
-        panic!("This is a bug. Please open a Github issue \
-               with your invocation of `infer_schema`!");
+        panic!(
+            "This is a bug. Please open a Github issue \
+             with your invocation of `infer_schema`!"
+        );
     }
 
-    let options = get_options_from_input("infer_schema_options", &input.attrs, bug)
-        .unwrap_or_else(|| bug());
+    let options =
+        get_options_from_input("infer_schema_options", &input.attrs, bug).unwrap_or_else(|| bug());
     let database_url = extract_database_url(get_option(&options, "database_url", bug)).unwrap();
     let schema_name = get_optional_option(&options, "schema_name");
     let schema_name = schema_name.as_ref().map(|s| &**s);
@@ -22,30 +24,25 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
         .expect(&error_message("table names", &database_url, schema_name));
     let foreign_keys = load_foreign_key_constraints(&database_url, schema_name)
         .expect(&error_message("foreign keys", &database_url, schema_name));
-    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
-        &database_url,
-        &foreign_keys,
-        &table_names,
-    );
+    let foreign_keys =
+        remove_unsafe_foreign_keys_for_codegen(&database_url, &foreign_keys, &table_names);
 
-    let tables = table_names.iter()
-        .map(|table| {
-            let mod_ident = syn::Ident::new(format!("infer_{}", table.name));
-            let table_name = table.to_string();
-            quote! {
-                mod #mod_ident {
-                    infer_table_from_schema!(#database_url, #table_name);
-                }
-                pub use self::#mod_ident::*;
+    let tables = table_names.iter().map(|table| {
+        let mod_ident = syn::Ident::new(format!("infer_{}", table.name));
+        let table_name = table.to_string();
+        quote! {
+            mod #mod_ident {
+                infer_table_from_schema!(#database_url, #table_name);
             }
-        });
-    let joinables = foreign_keys.into_iter()
-        .map(|fk| {
-            let child_table = syn::Ident::new(fk.child_table.name);
-            let parent_table = syn::Ident::new(fk.parent_table.name);
-            let foreign_key = syn::Ident::new(fk.foreign_key);
-            quote!(joinable!(#child_table -> #parent_table (#foreign_key));)
-        });
+            pub use self::#mod_ident::*;
+        }
+    });
+    let joinables = foreign_keys.into_iter().map(|fk| {
+        let child_table = syn::Ident::new(fk.child_table.name);
+        let parent_table = syn::Ident::new(fk.parent_table.name);
+        let foreign_key = syn::Ident::new(fk.foreign_key);
+        quote!(joinable!(#child_table -> #parent_table (#foreign_key));)
+    });
 
     let tokens = quote!(#(#tables)* #(#joinables)*);
     if let Some(schema_name) = schema_name {
@@ -58,8 +55,10 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
 
 pub fn derive_infer_table_from_schema(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
-        panic!("This is a bug. Please open a Github issue \
-               with your invocation of `infer_table_from_schema`!");
+        panic!(
+            "This is a bug. Please open a Github issue \
+             with your invocation of `infer_table_from_schema`!"
+        );
     }
 
     let options = get_options_from_input("infer_table_from_schema_options", &input.attrs, bug)
@@ -73,7 +72,11 @@ pub fn derive_infer_table_from_schema(input: syn::DeriveInput) -> quote::Tokens 
 }
 
 fn error_message(attempted_to_load: &str, database_url: &str, schema_name: Option<&str>) -> String {
-    let mut message = format!("Could not load {} from database `{}`", attempted_to_load, database_url);
+    let mut message = format!(
+        "Could not load {} from database `{}`",
+        attempted_to_load,
+        database_url
+    );
     if let Some(name) = schema_name {
         message += &format!(" with schema `{}`", name);
     }
@@ -84,7 +87,10 @@ fn table_data_to_tokens(table_data: TableData) -> quote::Tokens {
     let table_docs = to_doc_comment_tokens(&table_data.docs);
     let table_name = table_name_to_tokens(table_data.name);
     let primary_key = table_data.primary_key.into_iter().map(syn::Ident::new);
-    let column_definitions = table_data.column_data.into_iter().map(column_data_to_tokens);
+    let column_definitions = table_data
+        .column_data
+        .into_iter()
+        .map(column_data_to_tokens);
     quote! {
         table! {
             #(#table_docs)*
@@ -141,9 +147,9 @@ fn column_ty_to_tokens(column_ty: ColumnType) -> quote::Tokens {
 
 fn to_doc_comment_tokens(docs: &str) -> Vec<syn::Token> {
     docs.lines()
-        .map(|l| format!(
-            "///{}{}", if l.is_empty() { "" } else { " " }, l
-        ))
+        .map(|l| {
+            format!("///{}{}", if l.is_empty() { "" } else { " " }, l)
+        })
         .map(|l| syn::Token::DocComment(l.into()))
         .collect()
 }

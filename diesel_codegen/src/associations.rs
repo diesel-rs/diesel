@@ -1,7 +1,7 @@
 use syn;
 use quote;
 
-use model::{Model, infer_association_name};
+use model::{infer_association_name, Model};
 use util::str_value_of_meta_item;
 
 pub fn derive_associations(input: syn::DeriveInput) -> quote::Tokens {
@@ -22,8 +22,9 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
     let parent_struct = options.name;
     let struct_name = &model.name;
 
-    let foreign_key_name = options.foreign_key_name.unwrap_or_else(||
-        to_foreign_key(parent_struct.as_ref()));
+    let foreign_key_name = options
+        .foreign_key_name
+        .unwrap_or_else(|| to_foreign_key(parent_struct.as_ref()));
     let child_table_name = model.table_name();
     let fields = model.attrs.as_slice();
 
@@ -48,18 +49,21 @@ fn build_association_options(
     association_kind: &str,
 ) -> Result<AssociationOptions, String> {
     let usage_error = Err(format!(
-            "`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
-            association_kind, association_kind));
+        "`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
+        association_kind,
+        association_kind
+    ));
     match attr.value {
         syn::MetaItem::List(_, ref options) if options.len() >= 1 => {
             let association_name = match options[0] {
                 syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref name)) => name.clone(),
                 _ => return usage_error,
             };
-            let foreign_key_name = options.iter()
+            let foreign_key_name = options
+                .iter()
                 .filter_map(|o| match *o {
                     syn::NestedMetaItem::MetaItem(ref mi) => Some(mi),
-                    _ => None
+                    _ => None,
                 })
                 .find(|a| a.name() == "foreign_key")
                 .map(|a| str_value_of_meta_item(a, "foreign_key"))

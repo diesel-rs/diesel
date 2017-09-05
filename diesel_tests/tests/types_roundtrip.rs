@@ -1,10 +1,10 @@
-extern crate chrono;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 extern crate bigdecimal;
+extern crate chrono;
 
 pub use quickcheck::quickcheck;
-use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, DateTime, Utc};
-use self::chrono::naive::{MIN_DATE, MAX_DATE};
+use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use self::chrono::naive::{MAX_DATE, MIN_DATE};
 
 pub use schema::{connection, TestConnection};
 pub use diesel::*;
@@ -16,31 +16,39 @@ use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::collections::Bound;
 
-pub fn test_type_round_trips<ST, T>(value: T) -> bool where
+pub fn test_type_round_trips<ST, T>(value: T) -> bool
+where
     ST: QueryId,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
-    T: AsExpression<ST> + Queryable<ST, <TestConnection as Connection>::Backend> + PartialEq + Clone + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType=ST> + QueryFragment<<TestConnection as Connection>::Backend> + QueryId,
+    T: AsExpression<ST>
+        + Queryable<ST, <TestConnection as Connection>::Backend>
+        + PartialEq
+        + Clone
+        + ::std::fmt::Debug,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
+        + QueryFragment<<TestConnection as Connection>::Backend>
+        + QueryId,
 {
     let connection = connection();
     let query = select(AsExpression::<ST>::as_expression(value.clone()));
     let result = query.get_result::<T>(&connection);
     match result {
-        Ok(res) => {
-            if value != res {
-                println!("{:?}, {:?}", value, res);
-                false
-            } else {
-                true
-            }
+        Ok(res) => if value != res {
+            println!("{:?}, {:?}", value, res);
+            false
+        } else {
+            true
+        },
+        Err(Error::DatabaseError(_, ref e)) if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" => {
+            true
         }
-        Err(Error::DatabaseError(_, ref e))
-            if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" => true,
         Err(e) => panic!("Query failed: {:?}", e),
     }
 }
 
-pub fn id<A>(a: A) -> A { a }
+pub fn id<A>(a: A) -> A {
+    a
+}
 
 macro_rules! test_round_trip {
     ($test_name:ident, $sql_type:ty, $tpe:ty) => {
@@ -91,8 +99,8 @@ mod sqlite_types {
 
 #[cfg(feature = "postgres")]
 mod pg_types {
-    extern crate uuid;
     extern crate ipnetwork;
+    extern crate uuid;
 
     use super::*;
     use self::bigdecimal::BigDecimal;
@@ -137,7 +145,7 @@ mod pg_types {
         [data.0, data.1, data.2, data.3, data.4, data.5]
     }
 
-    fn mk_ipv4(data: (u8,u8, u8, u8)) -> ipnetwork::IpNetwork {
+    fn mk_ipv4(data: (u8, u8, u8, u8)) -> ipnetwork::IpNetwork {
         use std::net::Ipv4Addr;
         let ip = Ipv4Addr::new(data.0, data.1, data.2, data.3);
         ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::new(ip, 32).unwrap())
@@ -145,19 +153,28 @@ mod pg_types {
 
     fn mk_ipv6(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnetwork::IpNetwork {
         use std::net::Ipv6Addr;
-        let ip = Ipv6Addr::new(data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7);
+        let ip = Ipv6Addr::new(
+            data.0,
+            data.1,
+            data.2,
+            data.3,
+            data.4,
+            data.5,
+            data.6,
+            data.7,
+        );
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
     }
 
     fn mk_bounds<T: Ord + PartialEq>(data: (T, T)) -> (Bound<T>, Bound<T>) {
-        if data.0 == data.1 { // This is invalid but we don't have a way to say that to quickcheck
-            return (Bound::Included(data.0), Bound::Unbounded)
+        if data.0 == data.1 {
+            // This is invalid but we don't have a way to say that to quickcheck
+            return (Bound::Included(data.0), Bound::Unbounded);
         }
 
         if data.0 < data.1 {
             (Bound::Included(data.0), Bound::Excluded(data.1))
-        }
-        else {
+        } else {
             (Bound::Included(data.1), Bound::Excluded(data.0))
         }
     }
@@ -213,14 +230,18 @@ pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
-    format!("{}.{}", data.0, data.1).parse().expect("Could not interpret as bigdecimal")
+    format!("{}.{}", data.0, data.1)
+        .parse()
+        .expect("Could not interpret as bigdecimal")
 }
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
     let latest_chrono_date = MAX_DATE;
-    let num_days_representable = latest_chrono_date.signed_duration_since(earliest_pg_date).num_days();
+    let num_days_representable = latest_chrono_date
+        .signed_duration_since(earliest_pg_date)
+        .num_days();
     earliest_pg_date + Duration::days(days as i64 % num_days_representable)
 }
 
@@ -228,7 +249,9 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_mysql_date = NaiveDate::from_ymd(1000, 01, 01);
     let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
-    let num_days_representable = latest_mysql_date.signed_duration_since(earliest_mysql_date).num_days();
+    let num_days_representable = latest_mysql_date
+        .signed_duration_since(earliest_mysql_date)
+        .num_days();
     earliest_mysql_date + Duration::days(days as i64 % num_days_representable)
 }
 
@@ -236,7 +259,9 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_sqlite_date = MIN_DATE;
     let latest_sqlite_date = MAX_DATE;
-    let num_days_representable = latest_sqlite_date.signed_duration_since(earliest_sqlite_date).num_days();
+    let num_days_representable = latest_sqlite_date
+        .signed_duration_since(earliest_sqlite_date)
+        .num_days();
     earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
 }
 

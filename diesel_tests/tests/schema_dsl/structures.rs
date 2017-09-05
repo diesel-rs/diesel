@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 pub struct CreateTable<'a, Cols> {
     name: &'a str,
-    columns: Cols
+    columns: Cols,
 }
 
 impl<'a, Cols> CreateTable<'a, Cols> {
@@ -73,7 +73,8 @@ use diesel::pg::Pg;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
-impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols> where
+impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols>
+where
     DB: Backend,
     Cols: QueryFragment<DB>,
 {
@@ -94,7 +95,8 @@ impl<'a, Cols> QueryId for CreateTable<'a, Cols> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a, DB, T> QueryFragment<DB> for Column<'a, T> where
+impl<'a, DB, T> QueryFragment<DB> for Column<'a, T>
+where
     DB: Backend,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -112,7 +114,8 @@ impl<'a, Cols> QueryId for Column<'a, Cols> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
+impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col>
+where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
@@ -127,7 +130,8 @@ impl<DB, Col> QueryFragment<DB> for PrimaryKey<Col> where
 impl_query_id!(noop: PrimaryKey<Col>);
 
 #[cfg(feature = "sqlite")]
-impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col> where
+impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col>
+where
     Col: QueryFragment<Sqlite>,
 {
     fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
@@ -150,7 +154,8 @@ impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     }
 }
 
-impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
+impl<DB, Col> QueryFragment<DB> for NotNull<Col>
+where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
@@ -164,7 +169,8 @@ impl<DB, Col> QueryFragment<DB> for NotNull<Col> where
 
 impl_query_id!(noop: NotNull<Col>);
 
-impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col> where
+impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col>
+where
     DB: Backend,
     Col: QueryFragment<DB>,
 {

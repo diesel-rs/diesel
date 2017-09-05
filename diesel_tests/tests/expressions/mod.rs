@@ -14,7 +14,10 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(id));
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Sean", None))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 }
 
@@ -24,11 +27,18 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Sean", None))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
     assert_eq!(Ok(1), source.first(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
-    assert!(debug_query::<TestBackend, _>(&source).to_string().starts_with("SELECT COUNT(*) FROM"));
+    assert!(
+        debug_query::<TestBackend, _>(&source)
+            .to_string()
+            .starts_with("SELECT COUNT(*) FROM")
+    );
 }
 
 table! {
@@ -43,11 +53,15 @@ fn test_count_max() {
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .unwrap();
     let source = numbers.select(max(n));
 
     assert_eq!(Ok(Some(5)), source.first(&connection));
-    connection.execute("DELETE FROM numbers WHERE n = 5").unwrap();
+    connection
+        .execute("DELETE FROM numbers WHERE n = 5")
+        .unwrap();
     assert_eq!(Ok(Some(2)), source.first(&connection));
     connection.execute("DELETE FROM numbers").unwrap();
     assert_eq!(Ok(None::<i32>), source.first(&connection));
@@ -65,7 +79,9 @@ fn max_returns_same_type_as_expression_being_maximized() {
     ];
     insert(data).into(users).execute(&connection).unwrap();
     assert_eq!(Ok(Some("C".to_string())), source.first(&connection));
-    connection.execute("DELETE FROM users WHERE name = 'C'").unwrap();
+    connection
+        .execute("DELETE FROM users WHERE name = 'C'")
+        .unwrap();
     assert_eq!(Ok(Some("B".to_string())), source.first(&connection));
     connection.execute("DELETE FROM users").unwrap();
     assert_eq!(Ok(None::<String>), source.first(&connection));
@@ -81,7 +97,8 @@ impl<T> Expression for Arbitrary<T> {
     type SqlType = T;
 }
 
-impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
+impl<T, DB> QueryFragment<DB> for Arbitrary<T>
+where
     DB: Backend,
 {
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
@@ -89,14 +106,14 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T> where
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {
-}
+impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}
 
-impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {
-}
+impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {}
 
 fn arbitrary<T>() -> Arbitrary<T> {
-    Arbitrary { _marker: PhantomData }
+    Arbitrary {
+        _marker: PhantomData,
+    }
 }
 
 #[test]
@@ -126,11 +143,15 @@ fn test_min() {
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .unwrap();
     let source = numbers.select(min(n));
 
     assert_eq!(Ok(Some(1)), source.first(&connection));
-    connection.execute("DELETE FROM numbers WHERE n = 1").unwrap();
+    connection
+        .execute("DELETE FROM numbers WHERE n = 1")
+        .unwrap();
     assert_eq!(Ok(Some(2)), source.first(&connection));
     connection.execute("DELETE FROM numbers").unwrap();
     assert_eq!(Ok(None::<i32>), source.first(&connection));
@@ -143,11 +164,15 @@ fn function_with_multiple_arguments() {
     use schema::users::dsl::*;
 
     let connection = connection();
-    let new_users = vec![NewUser::new("Sean", Some("black")), NewUser::new("Tess", None)];
+    let new_users = vec![
+        NewUser::new("Sean", Some("black")),
+        NewUser::new("Tess", None),
+    ];
     insert(&new_users).into(users).execute(&connection).unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
-    let data = users.select(coalesce(hair_color, name))
+    let data = users
+        .select(coalesce(hair_color, name))
         .load::<String>(&connection);
 
     assert_eq!(Ok(expected_data), data);
@@ -159,11 +184,15 @@ fn test_sum() {
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (5)").unwrap();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(8)), source.first(&connection));
-    connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
+    connection
+        .execute("DELETE FROM numbers WHERE n = 2")
+        .unwrap();
     assert_eq!(Ok(Some(6)), source.first(&connection));
     connection.execute("DELETE FROM numbers").unwrap();
     assert_eq!(Ok(None::<i64>), source.first(&connection));
@@ -181,11 +210,15 @@ fn test_sum_for_double() {
     use self::precision_numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)").unwrap();
+    connection
+        .execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)")
+        .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(8.5f64)), source.first(&connection));
-    connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
+    connection
+        .execute("DELETE FROM precision_numbers WHERE n = 2")
+        .unwrap();
     assert_eq!(Ok(Some(6.5f64)), source.first(&connection));
     connection.execute("DELETE FROM precision_numbers").unwrap();
     assert_eq!(Ok(None::<f64>), source.first(&connection));
@@ -204,11 +237,17 @@ fn test_sum_for_nullable() {
     use self::nullable_doubles::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)").unwrap();
+    connection
+        .execute(
+            "INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)",
+        )
+        .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(5.5f64)), source.first(&connection));
-    connection.execute("DELETE FROM nullable_doubles WHERE n = 5.5").unwrap();
+    connection
+        .execute("DELETE FROM nullable_doubles WHERE n = 5.5")
+        .unwrap();
     assert_eq!(Ok(None), source.first::<Option<f64>>(&connection));
 }
 
@@ -218,11 +257,15 @@ fn test_avg() {
     use self::precision_numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)").unwrap();
+    connection
+        .execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)")
+        .unwrap();
     let source = numbers.select(avg(n));
 
     assert_eq!(Ok(Some(3f64)), source.first(&connection));
-    connection.execute("DELETE FROM precision_numbers WHERE n = 2").unwrap();
+    connection
+        .execute("DELETE FROM precision_numbers WHERE n = 2")
+        .unwrap();
     assert_eq!(Ok(Some(3.5f64)), source.first(&connection));
     connection.execute("DELETE FROM precision_numbers").unwrap();
     assert_eq!(Ok(None::<f64>), source.first(&connection));
@@ -234,11 +277,17 @@ fn test_avg_for_nullable() {
     use self::nullable_doubles::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)").unwrap();
+    connection
+        .execute(
+            "INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)",
+        )
+        .unwrap();
     let source = numbers.select(avg(n));
 
     assert_eq!(Ok(Some(6f64)), source.first(&connection));
-    connection.execute("DELETE FROM nullable_doubles WHERE n = 6").unwrap();
+    connection
+        .execute("DELETE FROM nullable_doubles WHERE n = 6")
+        .unwrap();
     assert_eq!(Ok(None), source.first::<Option<f64>>(&connection));
 }
 
@@ -249,7 +298,9 @@ fn test_avg_for_integer() {
     use self::numbers::table as numbers;
 
     let connection = connection();
-    connection.execute("INSERT INTO numbers (n) VALUES (2), (1), (6)").unwrap();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (2), (1), (6)")
+        .unwrap();
     let source = numbers.select(avg(n));
 
     let result = source.first(&connection);
@@ -260,7 +311,9 @@ fn test_avg_for_integer() {
     };
     assert_eq!(Ok(Some(expected_result)), result);
 
-    connection.execute("DELETE FROM numbers WHERE n = 2").unwrap();
+    connection
+        .execute("DELETE FROM numbers WHERE n = 2")
+        .unwrap();
     let result = source.first(&connection);
     let expected_result = data_types::PgNumeric::Positive {
         digits: vec![3, 5000],
@@ -283,8 +336,12 @@ fn test_avg_for_numeric() {
     use self::numeric::table as numeric;
 
     let connection = connection();
-    connection.execute("CREATE TABLE numeric (n NUMERIC(8,2))").unwrap();
-    connection.execute("INSERT INTO numeric (n) VALUES (2), (1), (6)").unwrap();
+    connection
+        .execute("CREATE TABLE numeric (n NUMERIC(8,2))")
+        .unwrap();
+    connection
+        .execute("INSERT INTO numeric (n) VALUES (2), (1), (6)")
+        .unwrap();
     let source = numeric.select(avg(n));
 
     let result = source.first(&connection);

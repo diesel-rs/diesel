@@ -34,9 +34,10 @@ mod information_schema {
 
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
 /// in order to do this.
-pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: Option<&str>)
-    -> QueryResult<Vec<ForeignKeyConstraint>>
-{
+pub fn load_foreign_key_constraints(
+    connection: &MysqlConnection,
+    schema_name: Option<&str>,
+) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::table_constraints as tc;
     use self::information_schema::key_column_usage as kcu;
 
@@ -49,10 +50,13 @@ pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: O
     let constraints = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
-        .inner_join(kcu::table.on(
-            tc::constraint_schema.eq(kcu::constraint_schema).and(
-                tc::constraint_name.eq(kcu::constraint_name))
-        ))
+        .inner_join(
+            kcu::table.on(
+                tc::constraint_schema
+                    .eq(kcu::constraint_schema)
+                    .and(tc::constraint_name.eq(kcu::constraint_name)),
+            ),
+        )
         .select((
             (kcu::table_name, kcu::table_schema),
             (kcu::referenced_table_name, kcu::referenced_table_schema),
@@ -61,16 +65,18 @@ pub fn load_foreign_key_constraints(connection: &MysqlConnection, schema_name: O
         ))
         .load::<(TableName, TableName, _, _)>(connection)?
         .into_iter()
-        .map(|(mut child_table, mut parent_table, foreign_key, primary_key)| {
-            child_table.strip_schema_if_matches(&default_schema);
-            parent_table.strip_schema_if_matches(&default_schema);
-            ForeignKeyConstraint {
-                child_table,
-                parent_table,
-                foreign_key,
-                primary_key,
-            }
-        })
+        .map(
+            |(mut child_table, mut parent_table, foreign_key, primary_key)| {
+                child_table.strip_schema_if_matches(&default_schema);
+                parent_table.strip_schema_if_matches(&default_schema);
+                ForeignKeyConstraint {
+                    child_table,
+                    parent_table,
+                    foreign_key,
+                    primary_key,
+                }
+            },
+        )
         .collect();
     Ok(constraints)
 }

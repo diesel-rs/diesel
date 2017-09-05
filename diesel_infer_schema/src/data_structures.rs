@@ -1,11 +1,11 @@
 use diesel::*;
-#[cfg(feature="uses_information_schema")]
+#[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
-use diesel::types::{HasSqlType, FromSqlRow};
+use diesel::types::{FromSqlRow, HasSqlType};
 
-#[cfg(feature="uses_information_schema")]
+#[cfg(feature = "uses_information_schema")]
 use super::information_schema::UsesInformationSchema;
 use super::table_data::TableName;
 
@@ -53,7 +53,8 @@ pub struct ColumnDefinition {
 }
 
 impl ColumnInformation {
-    pub fn new<T, U>(column_name: T, type_name: U, nullable: bool) -> Self where
+    pub fn new<T, U>(column_name: T, type_name: U, nullable: bool) -> Self
+    where
         T: Into<String>,
         U: Into<String>,
     {
@@ -65,8 +66,9 @@ impl ColumnInformation {
     }
 }
 
-#[cfg(feature="uses_information_schema")]
-impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
+#[cfg(feature = "uses_information_schema")]
+impl<ST, DB> Queryable<ST, DB> for ColumnInformation
+where
     DB: Backend + UsesInformationSchema + HasSqlType<ST>,
     (String, String, String): FromSqlRow<ST, DB>,
 {
@@ -78,7 +80,8 @@ impl<ST, DB> Queryable<ST, DB> for ColumnInformation where
 }
 
 #[cfg(feature = "sqlite")]
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation where
+impl<ST> Queryable<ST, Sqlite> for ColumnInformation
+where
     Sqlite: HasSqlType<ST>,
     (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
 {
@@ -99,7 +102,7 @@ pub struct ForeignKeyConstraint {
 
 impl ForeignKeyConstraint {
     pub fn ordered_tables(&self) -> (&TableName, &TableName) {
-        use std::cmp::{min, max};
+        use std::cmp::{max, min};
         (
             min(&self.parent_table, &self.child_table),
             max(&self.parent_table, &self.child_table),

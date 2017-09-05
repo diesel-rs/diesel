@@ -37,53 +37,67 @@ table! {
     }
 }
 
-pub fn load_table_names(connection: &SqliteConnection, schema_name: Option<&str>)
-    -> Result<Vec<TableName>, Box<Error>>
-{
+pub fn load_table_names(
+    connection: &SqliteConnection,
+    schema_name: Option<&str>,
+) -> Result<Vec<TableName>, Box<Error>> {
     use self::sqlite_master::dsl::*;
 
     if !schema_name.is_none() {
-        return Err("sqlite cannot infer schema for databases other than the \
-                    main database".into());
+        return Err(
+            "sqlite cannot infer schema for databases other than the \
+             main database"
+                .into(),
+        );
     }
 
-    Ok(sqlite_master.select(name)
-        .filter(name.not_like("\\_\\_%").escape('\\'))
-        .filter(name.not_like("sqlite%"))
-        .filter(sql("type='table'"))
-        .order(name)
-        .load::<String>(connection)?
-        .into_iter()
-        .map(TableName::from_name)
-        .collect())
+    Ok(
+        sqlite_master
+            .select(name)
+            .filter(name.not_like("\\_\\_%").escape('\\'))
+            .filter(name.not_like("sqlite%"))
+            .filter(sql("type='table'"))
+            .order(name)
+            .load::<String>(connection)?
+            .into_iter()
+            .map(TableName::from_name)
+            .collect(),
+    )
 }
 
-pub fn load_foreign_key_constraints(connection: &SqliteConnection, schema_name: Option<&str>)
-    -> Result<Vec<ForeignKeyConstraint>, Box<Error>>
-{
+pub fn load_foreign_key_constraints(
+    connection: &SqliteConnection,
+    schema_name: Option<&str>,
+) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
     let tables = load_table_names(connection, schema_name)?;
-    let rows = tables.into_iter()
+    let rows = tables
+        .into_iter()
         .map(|child_table| {
             let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.name);
-            Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
-                .load::<ForeignKeyListRow>(connection)?
-                .into_iter()
-                .map(|row| {
-                    let parent_table = TableName::from_name(row.parent_table);
-                    ForeignKeyConstraint {
-                        child_table: child_table.clone(),
-                        parent_table,
-                        foreign_key: row.foreign_key,
-                        primary_key: row.primary_key,
-                    }
-                }).collect())
-        }).collect::<QueryResult<Vec<Vec<_>>>>()?;
+            Ok(
+                sql::<pragma_foreign_key_list::SqlType>(&query)
+                    .load::<ForeignKeyListRow>(connection)?
+                    .into_iter()
+                    .map(|row| {
+                        let parent_table = TableName::from_name(row.parent_table);
+                        ForeignKeyConstraint {
+                            child_table: child_table.clone(),
+                            parent_table,
+                            foreign_key: row.foreign_key,
+                            primary_key: row.primary_key,
+                        }
+                    })
+                    .collect(),
+            )
+        })
+        .collect::<QueryResult<Vec<Vec<_>>>>()?;
     Ok(rows.into_iter().flat_map(|x| x).collect())
 }
 
-pub fn get_table_data(conn: &SqliteConnection, table: &TableName)
-    -> QueryResult<Vec<ColumnInformation>>
-{
+pub fn get_table_data(
+    conn: &SqliteConnection,
+    table: &TableName,
+) -> QueryResult<Vec<ColumnInformation>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
@@ -101,7 +115,7 @@ impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
     type Row = (i32, String, String, bool, Option<String>, bool);
 
     fn build(row: Self::Row) -> Self {
-        FullTableInfo{
+        FullTableInfo {
             _cid: row.0,
             name: row.1,
             _type_name: row.2,
@@ -142,11 +156,13 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
-    let results = try!(sql::<pragma_table_info::SqlType>(&query)
-        .load::<FullTableInfo>(conn));
-    Ok(results.into_iter()
-        .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
-        .collect())
+    let results = try!(sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn));
+    Ok(
+        results
+            .into_iter()
+            .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
+            .collect(),
+    )
 }
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
@@ -173,9 +189,8 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         String::from("Date")
     } else if type_name == "time" {
         String::from("Time")
-    }
-    else {
-        return Err(format!("Unsupported type: {}", type_name).into())
+    } else {
+        return Err(format!("Unsupported type: {}", type_name).into());
     };
 
     Ok(ColumnType {
@@ -186,50 +201,43 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
 }
 
 fn is_text(type_name: &str) -> bool {
-    type_name.contains("char") ||
-    type_name.contains("clob") ||
-        type_name.contains("text")
+    type_name.contains("char") || type_name.contains("clob") || type_name.contains("text")
 }
 
 fn is_bool(type_name: &str) -> bool {
-    type_name == "boolean" ||
-        type_name.contains("tiny") &&
-        type_name.contains("int")
+    type_name == "boolean" || type_name.contains("tiny") && type_name.contains("int")
 }
 
 fn is_smallint(type_name: &str) -> bool {
-    type_name == "int2" ||
-        type_name.contains("small") &&
-        type_name.contains("int")
+    type_name == "int2" || type_name.contains("small") && type_name.contains("int")
 }
 
 fn is_bigint(type_name: &str) -> bool {
-    type_name == "int8" ||
-        type_name.contains("big") &&
-        type_name.contains("int")
+    type_name == "int8" || type_name.contains("big") && type_name.contains("int")
 }
 
 fn is_float(type_name: &str) -> bool {
-    type_name.contains("float") ||
-        type_name.contains("real")
+    type_name.contains("float") || type_name.contains("real")
 }
 
 fn is_double(type_name: &str) -> bool {
-    type_name.contains("double") ||
-        type_name.contains("num") ||
-        type_name.contains("dec")
+    type_name.contains("double") || type_name.contains("num") || type_name.contains("dec")
 }
 
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    assert_eq!(Vec::<TableName>::new(), load_table_names(&conn, None).unwrap());
+    assert_eq!(
+        Vec::<TableName>::new(),
+        load_table_names(&conn, None).unwrap()
+    );
 }
 
 #[test]
 fn load_table_names_includes_tables_that_exist() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
     assert!(table_names.contains(&TableName::from_name("users")));
 }
@@ -237,16 +245,22 @@ fn load_table_names_includes_tables_that_exist() {
 #[test]
 fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute(
+        "CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)",
+    ).unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
+    assert!(!table_names
+        .contains(&TableName::from_name("__diesel_metadata")));
 }
 
 #[test]
 fn load_table_names_excludes_sqlite_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute(
+        "CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)",
+    ).unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
     let table_names = load_table_names(&conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
@@ -254,7 +268,8 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
 #[test]
 fn load_table_names_excludes_views() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
     let table_names = load_table_names(&conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
@@ -268,19 +283,25 @@ fn load_table_names_returns_error_when_given_schema_name() {
     let table_names = load_table_names(&conn, Some("stuff"));
     match table_names {
         Ok(_) => panic!("Expected load_table_names to return an error"),
-        Err(e) => assert!(e.description().starts_with("sqlite cannot infer \
-            schema for databases")),
+        Err(e) => assert!(e.description().starts_with(
+            "sqlite cannot infer \
+             schema for databases"
+        )),
     }
 }
 
 #[test]
 fn load_table_names_output_is_ordered() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    conn.execute("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
-    conn.execute("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)").unwrap();
+    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
+    conn.execute("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
+    conn.execute("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
 
-    let table_names = load_table_names(&conn, None).unwrap()
+    let table_names = load_table_names(&conn, None)
+        .unwrap()
         .iter()
         .map(|table| table.to_string())
         .collect::<Vec<_>>();
@@ -292,8 +313,12 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     let connection = SqliteConnection::establish(":memory:").unwrap();
 
     connection.execute("CREATE TABLE table_1 (id)").unwrap();
-    connection.execute("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))").unwrap();
-    connection.execute("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))").unwrap();
+    connection
+        .execute("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))")
+        .unwrap();
+    connection
+        .execute("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))")
+        .unwrap();
 
     let table_1 = TableName::from_name("table_1");
     let table_2 = TableName::from_name("table_2");

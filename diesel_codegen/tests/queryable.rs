@@ -19,12 +19,12 @@ fn named_struct_definition() {
 
 #[test]
 fn tuple_struct() {
-   #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable)]
-   struct MyStruct(#[column_name(foo)] i32, #[column_name(bar)] i32);
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable)]
+    struct MyStruct(#[column_name(foo)] i32, #[column_name(bar)] i32);
 
-   let conn = connection();
-   let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
-   assert_eq!(Ok(MyStruct(1, 2)), data);
+    let conn = connection();
+    let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(&conn);
+    assert_eq!(Ok(MyStruct(1, 2)), data);
 }
 
 #[test]

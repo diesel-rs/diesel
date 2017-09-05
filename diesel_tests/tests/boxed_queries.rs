@@ -4,16 +4,17 @@ use diesel::*;
 #[test]
 fn boxed_queries_can_be_executed() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table)
-        .execute(&connection).unwrap();
-    let query_which_fails_unless_all_segments_are_applied =
-        users::table
-            .select(users::name)
-            .filter(users::name.ne("jim"))
-            .order(users::name.desc())
-            .limit(1)
-            .offset(1)
-            .into_boxed();
+    insert(&NewUser::new("Jim", None))
+        .into(users::table)
+        .execute(&connection)
+        .unwrap();
+    let query_which_fails_unless_all_segments_are_applied = users::table
+        .select(users::name)
+        .filter(users::name.ne("jim"))
+        .order(users::name.desc())
+        .limit(1)
+        .offset(1)
+        .into_boxed();
 
     let expected_data = vec!["Sean".to_string()];
     let data = query_which_fails_unless_all_segments_are_applied.load(&connection);
@@ -23,25 +24,25 @@ fn boxed_queries_can_be_executed() {
 #[test]
 fn boxed_queries_can_differ_conditionally() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table)
-        .execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None))
+        .into(users::table)
+        .execute(&connection)
+        .unwrap();
 
-    enum Query { All, Ordered, One };
-    let source = |query| {
-        match query {
-            Query::All => users::table.into_boxed(),
-            Query::Ordered =>
-                users::table
-                    .order(users::name.desc())
-                    .into_boxed(),
-            Query::One =>
-                users::table
-                    .filter(users::name.ne("jim"))
-                    .order(users::name.desc())
-                    .limit(1)
-                    .offset(1)
-                    .into_boxed(),
-        }
+    enum Query {
+        All,
+        Ordered,
+        One,
+    };
+    let source = |query| match query {
+        Query::All => users::table.into_boxed(),
+        Query::Ordered => users::table.order(users::name.desc()).into_boxed(),
+        Query::One => users::table
+            .filter(users::name.ne("jim"))
+            .order(users::name.desc())
+            .limit(1)
+            .offset(1)
+            .into_boxed(),
     };
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
@@ -63,7 +64,9 @@ fn boxed_queries_can_differ_conditionally() {
 #[test]
 fn boxed_queries_implement_select_dsl() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    let data = users::table.into_boxed().select(users::name)
+    let data = users::table
+        .into_boxed()
+        .select(users::name)
         .load::<String>(&connection);
     assert_eq!(Ok(vec!["Sean".into(), "Tess".into()]), data);
 }
@@ -71,9 +74,12 @@ fn boxed_queries_implement_select_dsl() {
 #[test]
 fn boxed_queries_implement_filter_dsl() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Shane", None)).into(users::table)
-        .execute(&connection).unwrap();
-    let data = users::table.into_boxed()
+    insert(&NewUser::new("Shane", None))
+        .into(users::table)
+        .execute(&connection)
+        .unwrap();
+    let data = users::table
+        .into_boxed()
         .select(users::name)
         .filter(users::name.ne("Sean"))
         .filter(users::name.like("S%"))
@@ -92,7 +98,8 @@ fn boxed_queries_implement_limit_dsl() {
 #[test]
 fn boxed_queries_implement_offset_dsl() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    let data = users::table.into_boxed()
+    let data = users::table
+        .into_boxed()
         .limit(1)
         .offset(1)
         .load(&connection);
@@ -103,7 +110,9 @@ fn boxed_queries_implement_offset_dsl() {
 #[test]
 fn boxed_queries_implement_order_dsl() {
     let connection = connection_with_sean_and_tess_in_users_table();
-    let data = users::table.into_boxed().order(users::name.desc())
+    let data = users::table
+        .into_boxed()
+        .order(users::name.desc())
         .load(&connection);
     let expected_data = vec![
         find_user_by_name("Tess", &connection),
@@ -116,7 +125,8 @@ fn boxed_queries_implement_order_dsl() {
 fn boxed_queries_can_use_borrowed_data() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let s = String::from("Sean");
-    let data = users::table.into_boxed()
+    let data = users::table
+        .into_boxed()
         .filter(users::name.eq(&s))
         .load(&connection);
     let expected_data = vec![find_user_by_name("Sean", &connection)];

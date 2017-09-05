@@ -17,13 +17,16 @@ fn adding_literal_to_column() {
 }
 
 #[test]
-#[cfg(not(feature="sqlite"))] // FIXME: Does SQLite provide a way to detect overflow?
+#[cfg(not(feature = "sqlite"))] // FIXME: Does SQLite provide a way to detect overflow?
 fn overflow_returns_an_error_but_does_not_panic() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let query_result = users.select(id + i32::max_value()).load::<i32>(&connection);
-    assert!(query_result.is_err(), "Integer overflow should have returned an error");
+    assert!(
+        query_result.is_err(),
+        "Integer overflow should have returned an error"
+    );
 }
 
 #[test]
@@ -102,7 +105,9 @@ fn test_adding_nullables() {
     assert_eq!(Ok(expected_data), data);
 
     let expected_data: Vec<Option<i32>> = vec![None; 5];
-    let data = nullable_table.select(value + None as Option<i32>).load(&connection);
+    let data = nullable_table
+        .select(value + None as Option<i32>)
+        .load(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![None, None, Some(2), Some(4), Some(2)];
@@ -120,7 +125,9 @@ fn test_substracting_nullables() {
     assert_eq!(Ok(expected_data), data);
 
     let expected_data: Vec<Option<i32>> = vec![None; 5];
-    let data = nullable_table.select(value - None as Option<i32>).load(&connection);
+    let data = nullable_table
+        .select(value - None as Option<i32>)
+        .load(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![None, None, Some(0), Some(0), Some(0)];
@@ -138,7 +145,9 @@ fn test_multiplying_nullables() {
     assert_eq!(Ok(expected_data), data);
 
     let expected_data: Vec<Option<i32>> = vec![None; 5];
-    let data = nullable_table.select(value * None as Option<i32>).load(&connection);
+    let data = nullable_table
+        .select(value * None as Option<i32>)
+        .load(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![None, None, Some(1), Some(4), Some(1)];
@@ -156,7 +165,9 @@ fn test_dividing_nullables() {
     assert_eq!(Ok(expected_data), data);
 
     let expected_data: Vec<Option<i32>> = vec![None; 5];
-    let data = nullable_table.select(value / None as Option<i32>).load(&connection);
+    let data = nullable_table
+        .select(value / None as Option<i32>)
+        .load(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![None, None, Some(1), Some(1), Some(1)];
@@ -168,8 +179,12 @@ fn mix_and_match_all_numeric_ops() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    connection.execute("INSERT INTO users (id, name) VALUES
-        (3, 'Jim'), (4, 'Bob')").unwrap();
+    connection
+        .execute(
+            "INSERT INTO users (id, name) VALUES
+        (3, 'Jim'), (4, 'Bob')",
+        )
+        .unwrap();
 
     let expected_data = vec![4, 6, 7, 9];
     let data = users.select(id * 3 / 2 + 4 - 1).load(&connection);

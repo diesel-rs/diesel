@@ -1,10 +1,13 @@
-#![recursion_limit="1024"]
+#![recursion_limit = "1024"]
 
-extern crate quickcheck;
-#[macro_use] extern crate assert_matches;
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
+#[macro_use]
+extern crate assert_matches;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 extern crate dotenv;
+extern crate quickcheck;
 
 #[cfg(not(feature = "sqlite"))]
 mod annotations;
@@ -36,7 +39,7 @@ mod schema;
 mod schema_dsl;
 mod schema_inference;
 mod select;
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 mod transactions;
 mod types;
 mod types_roundtrip;

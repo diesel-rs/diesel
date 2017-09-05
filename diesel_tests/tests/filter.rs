@@ -25,7 +25,10 @@ fn filter_by_int_equality() {
     let tess = User::new(tess_id, "Tess");
     assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(&connection));
     assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(id.eq(unused_id)).first::<User>(&connection));
+    assert_eq!(
+        Err(NotFound),
+        users.filter(id.eq(unused_id)).first::<User>(&connection)
+    );
 }
 
 #[test]
@@ -38,7 +41,10 @@ fn filter_by_string_equality() {
     let tess = User::new(2, "Tess");
     assert_eq!(Ok(sean), users.filter(name.eq("Sean")).first(&connection));
     assert_eq!(Ok(tess), users.filter(name.eq("Tess")).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).first::<User>(&connection));
+    assert_eq!(
+        Err(NotFound),
+        users.filter(name.eq("Jim")).first::<User>(&connection)
+    );
 }
 
 #[test]
@@ -104,8 +110,11 @@ fn filter_after_joining() {
     use schema::users::name;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    connection.execute("INSERT INTO posts (id, title, user_id) VALUES
-                       (1, 'Hello', 1), (2, 'World', 2)")
+    connection
+        .execute(
+            "INSERT INTO posts (id, title, user_id) VALUES
+                       (1, 'Hello', 1), (2, 'World', 2)",
+        )
         .unwrap();
 
     let sean = User::new(1, "Sean");
@@ -113,12 +122,20 @@ fn filter_after_joining() {
     let seans_post = Post::new(1, 1, "Hello", None);
     let tess_post = Post::new(2, 2, "World", None);
     let source = users::table.inner_join(posts::table);
-    assert_eq!(Ok((sean, seans_post)),
-        source.filter(name.eq("Sean")).first(&connection));
-    assert_eq!(Ok((tess, tess_post)),
-        source.filter(name.eq("Tess")).first(&connection));
-    assert_eq!(Err(NotFound),
-        source.filter(name.eq("Jim")).first::<(User, Post)>(&connection));
+    assert_eq!(
+        Ok((sean, seans_post)),
+        source.filter(name.eq("Sean")).first(&connection)
+    );
+    assert_eq!(
+        Ok((tess, tess_post)),
+        source.filter(name.eq("Tess")).first(&connection)
+    );
+    assert_eq!(
+        Err(NotFound),
+        source
+            .filter(name.eq("Jim"))
+            .first::<(User, Post)>(&connection)
+    );
 }
 
 #[test]
@@ -128,11 +145,18 @@ fn select_then_filter() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let source = users.select(name);
-    assert_eq!(Ok("Sean".to_string()),
-        source.filter(name.eq("Sean")).first(&connection));
-    assert_eq!(Ok("Tess".to_string()),
-        source.filter(name.eq("Tess")).first(&connection));
-    assert_eq!(Err(NotFound), source.filter(name.eq("Jim")).first::<String>(&connection));
+    assert_eq!(
+        Ok("Sean".to_string()),
+        source.filter(name.eq("Sean")).first(&connection)
+    );
+    assert_eq!(
+        Ok("Tess".to_string()),
+        source.filter(name.eq("Tess")).first(&connection)
+    );
+    assert_eq!(
+        Err(NotFound),
+        source.filter(name.eq("Jim")).first::<String>(&connection)
+    );
 }
 
 #[test]
@@ -143,12 +167,27 @@ fn filter_then_select() {
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
     insert(&data).into(users).execute(&connection).unwrap();
 
-    assert_eq!(Ok("Sean".to_string()),
-        users.filter(name.eq("Sean")).select(name).first(&connection));
-    assert_eq!(Ok("Tess".to_string()),
-        users.filter(name.eq("Tess")).select(name).first(&connection));
-    assert_eq!(Err(NotFound), users.filter(name.eq("Jim")).select(name)
-                                   .first::<String>(&connection));
+    assert_eq!(
+        Ok("Sean".to_string()),
+        users
+            .filter(name.eq("Sean"))
+            .select(name)
+            .first(&connection)
+    );
+    assert_eq!(
+        Ok("Tess".to_string()),
+        users
+            .filter(name.eq("Tess"))
+            .select(name)
+            .first(&connection)
+    );
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(name.eq("Jim"))
+            .select(name)
+            .first::<String>(&connection)
+    );
 }
 
 #[test]
@@ -227,7 +266,9 @@ fn filter_on_column_equality() {
     use self::points::dsl::*;
 
     let connection = connection();
-    connection.execute("INSERT INTO points (x, y) VALUES (1, 1), (1, 2), (2, 2)").unwrap();
+    connection
+        .execute("INSERT INTO points (x, y) VALUES (1, 1), (1, 2), (2, 2)")
+        .unwrap();
 
     let expected_data = vec![(1, 1), (2, 2)];
     let query = points.order(x).filter(x.eq(y));
@@ -240,12 +281,17 @@ fn filter_with_or() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users).execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
-    let data: Vec<_> = users.order(id)
+    let data: Vec<_> = users
+        .order(id)
         .filter(name.eq("Sean").or(name.eq("Tess")))
-        .load(&connection).unwrap();
+        .load(&connection)
+        .unwrap();
 
     assert_sets_eq!(expected_users, data);
 }
@@ -257,13 +303,18 @@ fn or_doesnt_mess_with_precidence_of_previous_statements() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let f = AsExpression::<types::Bool>::as_expression(false);
-    let count = users.filter(f).filter(f.or(true))
-        .count().first(&connection);
+    let count = users
+        .filter(f)
+        .filter(f.or(true))
+        .count()
+        .first(&connection);
 
     assert_eq!(Ok(0), count);
 
-    let count = users.filter(f.or(f).and(f.or(true)))
-        .count().first(&connection);
+    let count = users
+        .filter(f.or(f).and(f.or(true)))
+        .count()
+        .first(&connection);
 
     assert_eq!(Ok(0), count);
 }
@@ -274,7 +325,8 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
     use diesel::expression::dsl::not;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let count = users.filter(not(name.eq("Tess")))
+    let count = users
+        .filter(not(name.eq("Tess")))
         .filter(id.eq(1))
         .count()
         .get_result(&connection);
@@ -288,7 +340,8 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     use diesel::expression::dsl::not;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let count = users.filter(not(name.eq("Tess").and(id.eq(1))))
+    let count = users
+        .filter(not(name.eq("Tess").and(id.eq(1))))
         .count()
         .get_result(&connection);
 
@@ -300,7 +353,9 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
-    fn by_name(name: &str) -> Box<BoxableExpression<users::table, TestBackend, SqlType=types::Bool>> {
+    fn by_name(
+        name: &str,
+    ) -> Box<BoxableExpression<users::table, TestBackend, SqlType = types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

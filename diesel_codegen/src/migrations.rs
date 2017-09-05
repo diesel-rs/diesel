@@ -1,12 +1,12 @@
 use diesel::migrations::search_for_migrations_directory;
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::error::Error;
 use std::env;
 
-pub fn migration_directory_from_given_path(given_path: Option<&str>)
-    -> Result<PathBuf, Box<Error>>
-{
+pub fn migration_directory_from_given_path(
+    given_path: Option<&str>,
+) -> Result<PathBuf, Box<Error>> {
     let cargo_toml_directory = try!(env::var("CARGO_MANIFEST_DIR"));
     let cargo_manifest_path = Path::new(&cargo_toml_directory);
     let migrations_path = given_path.as_ref().map(Path::new);
@@ -47,7 +47,11 @@ mod tests {
         let relative_path = Some(Path::new("special_migrations"));
 
         assert_eq!(
-            tempdir.path().join("foo/special_migrations").canonicalize().ok(),
+            tempdir
+                .path()
+                .join("foo/special_migrations")
+                .canonicalize()
+                .ok(),
             resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }
@@ -61,7 +65,11 @@ mod tests {
         let relative_path = Some(Path::new("../migrations/bar"));
 
         assert_eq!(
-            tempdir.path().join("foo/migrations/bar").canonicalize().ok(),
+            tempdir
+                .path()
+                .join("foo/migrations/bar")
+                .canonicalize()
+                .ok(),
             resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }
@@ -87,7 +95,11 @@ mod tests {
         let cargo_manifest_dir = tempdir.path().join("foo");
 
         assert_eq!(
-            tempdir.path().join("foo/src/migrations").canonicalize().ok(),
+            tempdir
+                .path()
+                .join("foo/src/migrations")
+                .canonicalize()
+                .ok(),
             resolve_migrations_directory(&cargo_manifest_dir, None).ok()
         );
     }
@@ -99,7 +111,11 @@ mod tests {
         let cargo_manifest_dir = tempdir.path().to_owned();
         let relative_path = Some(Path::new("special_migrations"));
         assert_eq!(
-            tempdir.path().join("special_migrations").canonicalize().ok(),
+            tempdir
+                .path()
+                .join("special_migrations")
+                .canonicalize()
+                .ok(),
             resolve_migrations_directory(&cargo_manifest_dir, relative_path).ok()
         );
     }

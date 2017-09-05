@@ -35,14 +35,19 @@ fn now_executes_sql_function_now() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at) VALUES
-                       (NOW() - '1 day'::interval), (NOW() + '1 day'::interval)")
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES
+                       (NOW() - '1 day'::interval), (NOW() + '1 day'::interval)",
+        )
         .unwrap();
 
-    let before_today = has_timestamps.select(id)
+    let before_today = has_timestamps
+        .select(id)
         .filter(created_at.lt(now))
         .load::<i32>(&connection);
-    let after_today = has_timestamps.select(id)
+    let after_today = has_timestamps
+        .select(id)
         .filter(created_at.gt(now))
         .load::<i32>(&connection);
     assert_eq!(Ok(vec![1]), before_today);
@@ -58,11 +63,16 @@ fn now_can_be_used_as_timestamptz() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at) VALUES \
-                        (NOW() - '1 day'::interval)").unwrap();
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES \
+             (NOW() - '1 day'::interval)",
+        )
+        .unwrap();
 
     let created_at_tz = sql::<Timestamptz>("created_at");
-    let before_now = has_timestamps.select(id)
+    let before_now = has_timestamps
+        .select(id)
         .filter(created_at_tz.lt(now))
         .load::<i32>(&connection);
     assert_eq!(Ok(vec![1]), before_now);
@@ -77,11 +87,16 @@ fn now_can_be_used_as_nullable_timestamptz() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at) VALUES \
-                        (NOW() - '1 day'::interval)").unwrap();
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES \
+             (NOW() - '1 day'::interval)",
+        )
+        .unwrap();
 
     let created_at_tz = sql::<Nullable<Timestamptz>>("created_at");
-    let before_now = has_timestamps.select(id)
+    let before_now = has_timestamps
+        .select(id)
         .filter(created_at_tz.lt(now))
         .load::<i32>(&connection);
     assert_eq!(Ok(vec![1]), before_now);
@@ -94,14 +109,19 @@ fn now_executes_sql_function_now() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at) VALUES
-                        (DATETIME('now', '-1 day')), (DATETIME('now', '+1 day'))")
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES
+                        (DATETIME('now', '-1 day')), (DATETIME('now', '+1 day'))",
+        )
         .unwrap();
 
-    let before_today = has_timestamps.select(id)
+    let before_today = has_timestamps
+        .select(id)
         .filter(created_at.lt(now))
         .load::<i32>(&connection);
-    let after_today = has_timestamps.select(id)
+    let after_today = has_timestamps
+        .select(id)
         .filter(created_at.gt(now))
         .load::<i32>(&connection);
     assert_eq!(Ok(vec![1]), before_today);
@@ -110,20 +130,25 @@ fn now_executes_sql_function_now() {
 
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at, updated_at) VALUES
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at, updated_at) VALUES
                        ('2015-11-15 06:07:41', '2015-11-15 20:07:41'),
                        ('2015-11-16 06:07:41', '2015-11-17 20:07:41'),
                        ('2015-11-16 06:07:41', '2015-11-16 02:07:41')
-                       ").unwrap();
+                       ",
+        )
+        .unwrap();
 
     let expected_data = vec![1, 3];
-    let actual_data = has_timestamps.select(id)
+    let actual_data = has_timestamps
+        .select(id)
         .filter(date(created_at).eq(date(updated_at)))
         .load(&connection);
     assert_eq!(Ok(expected_data), actual_data);
@@ -136,9 +161,13 @@ fn time_is_deserialized_properly() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_time (\"time\") VALUES
+    connection
+        .execute(
+            "INSERT INTO has_time (\"time\") VALUES
                        ('00:00:01'), ('00:02:00'), ('03:00:00')
-                       ").unwrap();
+                       ",
+        )
+        .unwrap();
     let one_second = PgTime(1_000_000);
     let two_minutes = PgTime(120_000_000);
     let three_hours = PgTime(10_800_000_000);
@@ -154,11 +183,17 @@ fn interval_is_deserialized_properly() {
     use diesel::expression::dsl::sql;
     let connection = connection();
 
-    let data = select(sql::
-        <(types::Interval, types::Interval, types::Interval, types::Interval)>(
-            "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
-                    '4 years 3 days 2 hours 1 minute'::interval"))
-        .first(&connection);
+    let data = select(sql::<
+        (
+            types::Interval,
+            types::Interval,
+            types::Interval,
+            types::Interval,
+        ),
+    >(
+        "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
+                    '4 years 3 days 2 hours 1 minute'::interval",
+    )).first(&connection);
 
     let one_minute = 1.minute();
     let one_day = 1.day();
@@ -176,12 +211,17 @@ fn adding_interval_to_timestamp() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO has_timestamps (created_at, updated_at) VALUES
-                       ('2015-11-15 06:07:41', '2015-11-15 20:07:41')").unwrap();
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at, updated_at) VALUES
+                       ('2015-11-15 06:07:41', '2015-11-15 20:07:41')",
+        )
+        .unwrap();
 
     let expected_data = select(sql::<types::Timestamp>("'2015-11-16 06:07:41'::timestamp"))
         .get_result::<PgTimestamp>(&connection);
-    let actual_data = has_timestamps.select(created_at + 1.day())
+    let actual_data = has_timestamps
+        .select(created_at + 1.day())
         .first::<PgTimestamp>(&connection);
     assert_eq!(expected_data, actual_data);
 }
@@ -194,47 +234,69 @@ fn adding_interval_to_nullable_things() {
 
     let connection = connection();
     setup_test_table(&connection);
-    connection.execute("INSERT INTO nullable_date_and_time (timestamp, date, time) VALUES
-                       ('2017-08-20 18:13:37', '2017-08-20', '18:13:37')").unwrap();
+    connection
+        .execute(
+            "INSERT INTO nullable_date_and_time (timestamp, date, time) VALUES
+                       ('2017-08-20 18:13:37', '2017-08-20', '18:13:37')",
+        )
+        .unwrap();
 
-    let expected_data = select(sql::<Nullable<types::Timestamp>>("'2017-08-21 18:13:37'::timestamp"))
-        .get_result::<Option<PgTimestamp>>(&connection);
-    let actual_data = nullable_date_and_time.select(timestamp + 1.day())
+    let expected_data = select(sql::<Nullable<types::Timestamp>>(
+        "'2017-08-21 18:13:37'::timestamp",
+    )).get_result::<Option<PgTimestamp>>(&connection);
+    let actual_data = nullable_date_and_time
+        .select(timestamp + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<types::Timestamp>>("'2017-08-21'::timestamp"))
         .get_result::<Option<PgTimestamp>>(&connection);
-    let actual_data = nullable_date_and_time.select(date + 1.day())
+    let actual_data = nullable_date_and_time
+        .select(date + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<types::Time>>("'19:13:37'::time"))
         .get_result::<Option<PgTime>>(&connection);
-    let actual_data = nullable_date_and_time.select(time + 1.hour())
+    let actual_data = nullable_date_and_time
+        .select(time + 1.hour())
         .first::<Option<PgTime>>(&connection);
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
-    create_table("has_timestamps", (
-        integer("id").primary_key().auto_increment(),
-        timestamp("created_at").not_null(),
-        timestamp("updated_at").not_null().default("CURRENT_TIMESTAMP"),
-    )).execute(conn).unwrap();
+    create_table(
+        "has_timestamps",
+        (
+            integer("id").primary_key().auto_increment(),
+            timestamp("created_at").not_null(),
+            timestamp("updated_at")
+                .not_null()
+                .default("CURRENT_TIMESTAMP"),
+        ),
+    ).execute(conn)
+        .unwrap();
 
-    create_table("has_time", (
-        integer("id").primary_key().auto_increment(),
-        time("time").not_null(),
-    )).execute(conn).unwrap();
+    create_table(
+        "has_time",
+        (
+            integer("id").primary_key().auto_increment(),
+            time("time").not_null(),
+        ),
+    ).execute(conn)
+        .unwrap();
 
-    create_table("nullable_date_and_time", (
-        integer("id").primary_key().auto_increment(),
-        timestamp("timestamp"),
-        time("time"),
-        date("date"),
-    )).execute(conn).unwrap();
+    create_table(
+        "nullable_date_and_time",
+        (
+            integer("id").primary_key().auto_increment(),
+            timestamp("timestamp"),
+            time("time"),
+            date("date"),
+        ),
+    ).execute(conn)
+        .unwrap();
 }

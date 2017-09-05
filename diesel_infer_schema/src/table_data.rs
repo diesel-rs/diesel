@@ -20,7 +20,8 @@ impl TableName {
         }
     }
 
-    pub fn new<T, U>(name: T, schema: U) -> Self where
+    pub fn new<T, U>(name: T, schema: U) -> Self
+    where
         T: Into<String>,
         U: Into<String>,
     {
@@ -37,7 +38,8 @@ impl TableName {
     }
 }
 
-impl<ST, DB> Queryable<ST, DB> for TableName where
+impl<ST, DB> Queryable<ST, DB> for TableName
+where
     DB: Backend + HasSqlType<ST>,
     (String, String): FromSqlRow<ST, DB>,
 {
@@ -52,7 +54,7 @@ impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
-            None => write!(out, "{}", self.name)
+            None => write!(out, "{}", self.name),
         }
     }
 }

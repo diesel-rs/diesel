@@ -28,7 +28,7 @@ mod impls_for_insert_and_query {
     use std::error::Error;
     use std::io::Write;
 
-    use super::{MyType, MyEnum};
+    use super::{MyEnum, MyType};
 
     impl HasSqlType<MyType> for Pg {
         fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
@@ -47,7 +47,10 @@ mod impls_for_insert_and_query {
     }
 
     impl ToSql<MyType, Pg> for MyEnum {
-        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+        fn to_sql<W: Write>(
+            &self,
+            out: &mut ToSqlOutput<W, Pg>,
+        ) -> Result<IsNull, Box<Error + Send + Sync>> {
             match *self {
                 MyEnum::Foo => out.write_all(b"foo")?,
                 MyEnum::Bar => out.write_all(b"bar")?,
@@ -57,7 +60,7 @@ mod impls_for_insert_and_query {
     }
 
     impl FromSqlRow<MyType, Pg> for MyEnum {
-        fn build_from_row<T: Row<Pg>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>> {
+        fn build_from_row<T: Row<Pg>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
             match row.take() {
                 Some(b"foo") => Ok(MyEnum::Foo),
                 Some(b"bar") => Ok(MyEnum::Bar),
@@ -69,7 +72,7 @@ mod impls_for_insert_and_query {
 }
 
 #[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
-#[table_name="custom_types"]
+#[table_name = "custom_types"]
 struct HasCustomTypes {
     id: i32,
     custom_enum: MyEnum,
@@ -78,19 +81,31 @@ struct HasCustomTypes {
 #[test]
 fn custom_types_round_trip() {
     let data = vec![
-        HasCustomTypes { id: 1, custom_enum: MyEnum::Foo },
-        HasCustomTypes { id: 2, custom_enum: MyEnum::Bar },
+        HasCustomTypes {
+            id: 1,
+            custom_enum: MyEnum::Foo,
+        },
+        HasCustomTypes {
+            id: 2,
+            custom_enum: MyEnum::Bar,
+        },
     ];
     let connection = connection();
-    connection.batch_execute(r#"
+    connection
+        .batch_execute(
+            r#"
         CREATE TYPE my_type AS ENUM ('foo', 'bar');
         CREATE TABLE custom_types (
             id SERIAL PRIMARY KEY,
             custom_enum my_type NOT NULL
         );
-    "#).unwrap();
+    "#,
+        )
+        .unwrap();
 
-    let inserted = insert(&data).into(custom_types::table)
-        .get_results(&connection).unwrap();
+    let inserted = insert(&data)
+        .into(custom_types::table)
+        .get_results(&connection)
+        .unwrap();
     assert_eq!(data, inserted);
 }

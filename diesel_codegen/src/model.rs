@@ -15,8 +15,12 @@ pub struct Model {
 impl Model {
     pub fn from_item(item: &syn::DeriveInput, derived_from: &str) -> Result<Self, String> {
         let attrs = match item.body {
-            syn::Body::Enum(..) => return Err(format!(
-                "#[derive({})] cannot be used with enums", derived_from)),
+            syn::Body::Enum(..) => {
+                return Err(format!(
+                    "#[derive({})] cannot be used with enums",
+                    derived_from
+                ))
+            }
             syn::Body::Struct(ref fields) => ModelAttrs::from_struct_body(fields),
         };
         let ty = struct_ty(item.ident.clone(), &item.generics);
@@ -25,8 +29,8 @@ impl Model {
         let primary_key_names = list_value_of_attr_with_name(&item.attrs, "primary_key")
             .map(|v| v.into_iter().cloned().collect())
             .unwrap_or_else(|| vec![syn::Ident::new("id")]);
-        let table_name_from_annotation = str_value_of_attr_with_name(
-            &item.attrs, "table_name").map(syn::Ident::new);
+        let table_name_from_annotation =
+            str_value_of_attr_with_name(&item.attrs, "table_name").map(syn::Ident::new);
 
         Ok(Model {
             ty: ty,
@@ -39,9 +43,9 @@ impl Model {
     }
 
     pub fn table_name(&self) -> syn::Ident {
-        self.table_name_from_annotation.clone().unwrap_or_else(|| {
-            syn::Ident::new(infer_table_name(self.name.as_ref()))
-        })
+        self.table_name_from_annotation
+            .clone()
+            .unwrap_or_else(|| syn::Ident::new(infer_table_name(self.name.as_ref())))
     }
 
     pub fn has_table_name_annotation(&self) -> bool {
@@ -96,8 +100,7 @@ impl ModelAttrs {
 
     pub fn as_slice(&self) -> &[Attr] {
         match *self {
-            ModelAttrs::Struct(ref attrs) |
-            ModelAttrs::Tuple(ref attrs) => &*attrs,
+            ModelAttrs::Struct(ref attrs) | ModelAttrs::Tuple(ref attrs) => &*attrs,
         }
     }
 

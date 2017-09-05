@@ -6,16 +6,20 @@ use migrations::migration_directory_from_given_path;
 use std::error::Error;
 use std::path::Path;
 
-use util::{get_options_from_input, get_option};
+use util::{get_option, get_options_from_input};
 
 pub fn derive_embed_migrations(input: syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
-        panic!("This is a bug. Please open a Github issue \
-               with your invocation of `embed_migrations!");
+        panic!(
+            "This is a bug. Please open a Github issue \
+             with your invocation of `embed_migrations!"
+        );
     }
 
     let options = get_options_from_input("embed_migrations_options", &input.attrs, bug);
-    let migrations_path_opt = options.as_ref().map(|o| get_option(o, "migrations_path", bug));
+    let migrations_path_opt = options
+        .as_ref()
+        .map(|o| get_option(o, "migrations_path", bug));
     let migrations_expr = migration_directory_from_given_path(migrations_path_opt)
         .and_then(|path| migration_literals_from_path(&path));
     let migrations_expr = match migrations_expr {

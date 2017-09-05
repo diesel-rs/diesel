@@ -2,7 +2,7 @@ extern crate diesel;
 extern crate dotenv;
 use self::diesel::*;
 use self::dotenv::dotenv;
-use std::{io, env};
+use std::{env, io};
 
 #[cfg(feature = "postgres")]
 fn connection() -> PgConnection {
@@ -38,14 +38,17 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
             println!(r#"cargo:rustc-cfg=feature="backend_specific_database_url""#);
             val
         }
-        _ => {
-            env::var("DATABASE_URL")
-                .expect("DATABASE_URL must be set in order to run tests")
-        }
+        _ => env::var("DATABASE_URL").expect("DATABASE_URL must be set in order to run tests"),
     }
 }
 
 fn main() {
-    let migrations_dir = migrations::find_migrations_directory().unwrap().join(MIGRATION_SUBDIR);
-    migrations::run_pending_migrations_in_directory(&connection(), &migrations_dir, &mut io::sink()).unwrap();
+    let migrations_dir = migrations::find_migrations_directory()
+        .unwrap()
+        .join(MIGRATION_SUBDIR);
+    migrations::run_pending_migrations_in_directory(
+        &connection(),
+        &migrations_dir,
+        &mut io::sink(),
+    ).unwrap();
 }

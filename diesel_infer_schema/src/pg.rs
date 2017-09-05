@@ -19,7 +19,12 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     // Postgres doesn't coerce varchar[] to text[] so print out a message to inform
     // the user.
     if let (true, Some(tpe)) = (is_array, diesel_alias_without_postgres_coercion) {
-        writeln!(&mut stderr(), "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.", attr.column_name, tpe)?;
+        writeln!(
+            &mut stderr(),
+            "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.",
+            attr.column_name,
+            tpe
+        )?;
     }
 
     Ok(ColumnType {

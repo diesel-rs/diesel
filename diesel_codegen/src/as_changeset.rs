@@ -12,7 +12,10 @@ pub fn derive_as_changeset(item: syn::DeriveInput) -> quote::Tokens {
     let table_name = model.table_name();
     let struct_ty = &model.ty;
     let mut lifetimes = item.generics.lifetimes;
-    let attrs = model.attrs.as_slice().iter()
+    let attrs = model
+        .attrs
+        .as_slice()
+        .iter()
         .filter(|a| match a.column_name {
             Some(ref name) => !model.primary_key_names.contains(name),
             None => true,
@@ -20,9 +23,11 @@ pub fn derive_as_changeset(item: syn::DeriveInput) -> quote::Tokens {
         .collect::<Vec<_>>();
 
     if attrs.is_empty() {
-        panic!("Deriving `AsChangeset` on a structure that only contains the primary key isn't \
-            supported. If you want to change the primary key of a row, you should do so with \
-            `.set(table::id.eq(new_id))`. `AsChangeset` never changes the primary key of a row.");
+        panic!(
+            "Deriving `AsChangeset` on a structure that only contains the primary key isn't \
+             supported. If you want to change the primary key of a row, you should do so with \
+             `.set(table::id.eq(new_id))`. `AsChangeset` never changes the primary key of a row."
+        );
     }
 
     if lifetimes.is_empty() {
@@ -47,8 +52,12 @@ fn treat_none_as_null(attrs: &[syn::Attribute]) -> bool {
         None => return false,
     };
 
-    let usage_err = || panic!(r#"`#[changeset_options]` must be in the form \
-        `#[changeset_options(treat_none_as_null = "true")]`"#);
+    let usage_err = || {
+        panic!(
+            r#"`#[changeset_options]` must be in the form \
+        `#[changeset_options(treat_none_as_null = "true")]`"#
+        )
+    };
 
     match options_attr.value {
         syn::MetaItem::List(_, ref values) => {
@@ -56,8 +65,12 @@ fn treat_none_as_null(attrs: &[syn::Attribute]) -> bool {
                 usage_err();
             }
             match values[0] {
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _)))
-                    if name == "treat_none_as_null" => value == "true",
+                syn::NestedMetaItem::MetaItem(
+                    syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _)),
+                ) if name == "treat_none_as_null" =>
+                {
+                    value == "true"
+                }
                 _ => usage_err(),
             }
         }

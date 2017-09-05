@@ -7,8 +7,10 @@ pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
     let model = t!(Model::from_item(&item, "Insertable"));
 
     if !model.has_table_name_annotation() {
-        panic!(r#"`#[derive(Insertable)]` requires the struct to be annotated \
-            with `#[table_name="something"]`"#);
+        panic!(
+            r#"`#[derive(Insertable)]` requires the struct to be annotated \
+            with `#[table_name="something"]`"#
+        );
     }
 
     if !model.generics.ty_params.is_empty() {
@@ -22,8 +24,11 @@ pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
     let fields = model.attrs.as_slice();
 
     if fields.is_empty() {
-        panic!("Failed to derive `Insertable` for `{}`: `Insertable` \
-           cannot be used on structs with empty fields", struct_name);
+        panic!(
+            "Failed to derive `Insertable` for `{}`: `Insertable` \
+             cannot be used on structs with empty fields",
+            struct_name
+        );
     }
 
     quote!(impl_Insertable! {

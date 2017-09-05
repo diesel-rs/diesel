@@ -4,13 +4,13 @@ use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
-#[cfg(all(feature="postgres", feature="backend_specific_database_url"))]
+#[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:PG_DATABASE_URL");
-#[cfg(all(feature="sqlite", feature="backend_specific_database_url"))]
+#[cfg(all(feature = "sqlite", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:SQLITE_DATABASE_URL");
-#[cfg(all(feature="mysql", feature="backend_specific_database_url"))]
+#[cfg(all(feature = "mysql", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:MYSQL_DATABASE_URL");
-#[cfg(not(feature="backend_specific_database_url"))]
+#[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
@@ -23,7 +23,11 @@ pub struct User {
 
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
-        User { id: id, name: name.to_string(), hair_color: None }
+        User {
+            id: id,
+            name: name.to_string(),
+            hair_color: None,
+        }
     }
 
     pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
@@ -60,7 +64,7 @@ impl Comment {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations)]
 #[belongs_to(User)]
 #[belongs_to(Post)]
-#[table_name="followings"]
+#[table_name = "followings"]
 pub struct Following {
     pub user_id: i32,
     pub post_id: i32,
@@ -85,8 +89,8 @@ impl<'a> ::diesel::associations::Identifiable for &'a Following {
     }
 }
 
-#[cfg_attr(feature="postgres", path="postgres_specific_schema.rs")]
-#[cfg_attr(not(feature="postgres"), path="backend_specific_schema.rs")]
+#[cfg_attr(feature = "postgres", path = "postgres_specific_schema.rs")]
+#[cfg_attr(not(feature = "postgres"), path = "backend_specific_schema.rs")]
 mod backend_specifics;
 
 pub use self::backend_specifics::*;
@@ -108,7 +112,7 @@ impl NewUser {
 }
 
 #[derive(Insertable)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -126,16 +130,14 @@ impl NewPost {
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]
-#[table_name="comments"]
+#[table_name = "comments"]
 pub struct NewComment<'a>(
-    #[column_name(post_id)]
-    pub i32,
-    #[column_name(text)]
-    pub &'a str,
+    #[column_name(post_id)] pub i32,
+    #[column_name(text)] pub &'a str,
 );
 
 #[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
-#[table_name="fk_tests"]
+#[table_name = "fk_tests"]
 pub struct FkTest {
     id: i32,
     fk_id: i32,
@@ -143,19 +145,22 @@ pub struct FkTest {
 
 impl FkTest {
     pub fn new(id: i32, fk_id: i32) -> Self {
-        FkTest{ id: id, fk_id: fk_id }
+        FkTest {
+            id: id,
+            fk_id: fk_id,
+        }
     }
 }
 
 #[derive(Queryable, Insertable)]
-#[table_name="nullable_table"]
+#[table_name = "nullable_table"]
 pub struct NullableColumn {
     id: i32,
     value: Option<i32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
-#[table_name="likes"]
+#[table_name = "likes"]
 #[primary_key(user_id, comment_id)]
 #[belongs_to(User)]
 #[belongs_to(Comment)]
@@ -221,17 +226,23 @@ pub fn disable_foreign_keys(connection: &TestConnection) {
 
 #[cfg(feature = "sqlite")]
 pub fn disable_foreign_keys(connection: &TestConnection) {
-    connection.execute("PRAGMA defer_foreign_keys = ON").unwrap();
+    connection
+        .execute("PRAGMA defer_foreign_keys = ON")
+        .unwrap();
 }
 
 #[cfg(feature = "sqlite")]
 pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
-    connection.execute(&format!("DROP TABLE {}", table)).unwrap();
+    connection
+        .execute(&format!("DROP TABLE {}", table))
+        .unwrap();
 }
 
 #[cfg(not(feature = "sqlite"))]
 pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
-    connection.execute(&format!("DROP TABLE {} CASCADE", table)).unwrap();
+    connection
+        .execute(&format!("DROP TABLE {} CASCADE", table))
+        .unwrap();
 }
 
 sql_function!(nextval, nextval_t, (a: types::VarChar) -> types::BigInt);
@@ -243,7 +254,10 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
 }
 
 pub fn insert_sean_and_tess_into_users_table(connection: &TestConnection) {
-    connection.execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+    connection
+        .execute(
+            "INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')",
+        )
         .unwrap();
     ensure_primary_key_seq_greater_than(2, &connection);
 }
@@ -254,12 +268,23 @@ pub fn connection_with_nullable_table_data() -> TestConnection {
     let test_data = vec![
         NullableColumn { id: 1, value: None },
         NullableColumn { id: 2, value: None },
-        NullableColumn { id: 3, value: Some(1) },
-        NullableColumn { id: 4, value: Some(2) },
-        NullableColumn { id: 5, value: Some(1) },
+        NullableColumn {
+            id: 3,
+            value: Some(1),
+        },
+        NullableColumn {
+            id: 4,
+            value: Some(2),
+        },
+        NullableColumn {
+            id: 5,
+            value: Some(1),
+        },
     ];
-    insert(&test_data).into(nullable_table::table)
-        .execute(&connection).unwrap();
+    insert(&test_data)
+        .into(nullable_table::table)
+        .execute(&connection)
+        .unwrap();
 
     connection
 }
@@ -273,7 +298,8 @@ fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
 }
 
 pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
-    users::table.filter(users::name.eq(name))
+    users::table
+        .filter(users::name.eq(name))
         .first(connection)
         .unwrap()
 }

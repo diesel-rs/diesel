@@ -5,10 +5,12 @@ use diesel::*;
 fn one_to_many_returns_query_source_for_association() {
     let (connection, sean, tess, _) = conn_with_test_data();
 
-    let seans_posts = posts::table.filter(posts::user_id.eq(sean.id))
+    let seans_posts = posts::table
+        .filter(posts::user_id.eq(sean.id))
         .load::<Post>(&connection)
         .unwrap();
-    let tess_posts = posts::table.filter(posts::user_id.eq(tess.id))
+    let tess_posts = posts::table
+        .filter(posts::user_id.eq(tess.id))
         .load::<Post>(&connection)
         .unwrap();
 
@@ -24,7 +26,9 @@ fn eager_loading_associations_for_multiple_records() {
     let (connection, sean, tess, _) = conn_with_test_data();
 
     let users = vec![sean.clone(), tess.clone()];
-    let posts = Post::belonging_to(&users).load::<Post>(&connection).unwrap()
+    let posts = Post::belonging_to(&users)
+        .load::<Post>(&connection)
+        .unwrap()
         .grouped_by(&users);
     let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
@@ -55,7 +59,7 @@ mod eager_loading_with_string_keys {
     }
 
     #[test]
-    #[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+    #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
     fn eager_loading_associations_for_multiple_records() {
         let connection = connection();
         drop_table_cascade(&connection, "users");
@@ -71,7 +75,9 @@ mod eager_loading_with_string_keys {
         let tess = User { id: "Tess".into() };
 
         let users = vec![sean.clone(), tess.clone()];
-        let posts = Post::belonging_to(&users).load::<Post>(&connection).unwrap()
+        let posts = Post::belonging_to(&users)
+            .load::<Post>(&connection)
+            .unwrap()
             .grouped_by(&users);
         let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
@@ -89,19 +95,27 @@ fn grouping_associations_maintains_ordering() {
     let users = vec![sean.clone(), tess.clone()];
     let posts = Post::belonging_to(&users)
         .order(posts::title.desc())
-        .load::<Post>(&connection).unwrap()
+        .load::<Post>(&connection)
+        .unwrap()
         .grouped_by(&users);
     let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
-    let seans_posts = Post::belonging_to(&sean).order(posts::title.desc()).load(&connection).unwrap();
-    let tess_posts = Post::belonging_to(&tess).order(posts::title.desc()).load(&connection).unwrap();
+    let seans_posts = Post::belonging_to(&sean)
+        .order(posts::title.desc())
+        .load(&connection)
+        .unwrap();
+    let tess_posts = Post::belonging_to(&tess)
+        .order(posts::title.desc())
+        .load(&connection)
+        .unwrap();
     let expected_data = vec![(sean.clone(), seans_posts), (tess.clone(), tess_posts)];
     assert_eq!(expected_data, users_and_posts);
 
     // Test when sorted manually
     let users = vec![sean.clone(), tess.clone()];
     let mut posts = Post::belonging_to(&users)
-        .load::<Post>(&connection).unwrap();
+        .load::<Post>(&connection)
+        .unwrap();
     posts.sort_by(|a, b| b.title.cmp(&a.title));
     let posts = posts.grouped_by(&users);
     let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
@@ -121,27 +135,46 @@ fn associations_can_be_grouped_multiple_levels_deep() {
     // let comments = Comment::belonging_to(&users).load::<Comment>().unwrap();
     // ```
     let users = vec![User::new(1, "Sean"), User::new(2, "Tess")];
-    let posts = vec![Post::new(1, 1, "Hello", None), Post::new(2, 2, "World", None), Post::new(3, 1, "Hello 2", None)];
-    let comments = vec![Comment::new(1, 3, "LOL"), Comment::new(2, 1, "UR dumb"), Comment::new(3, 3, "Funny")]; // Never read the comments
+    let posts = vec![
+        Post::new(1, 1, "Hello", None),
+        Post::new(2, 2, "World", None),
+        Post::new(3, 1, "Hello 2", None),
+    ];
+    let comments = vec![
+        Comment::new(1, 3, "LOL"),
+        Comment::new(2, 1, "UR dumb"),
+        Comment::new(3, 3, "Funny"),
+    ]; // Never read the comments
 
     let expected_data = vec![
-        (users[0].clone(), vec![(posts[0].clone(), vec![comments[1].clone()]), (posts[2].clone(), vec![comments[0].clone(), comments[2].clone()])]),
+        (
+            users[0].clone(),
+            vec![
+                (posts[0].clone(), vec![comments[1].clone()]),
+                (
+                    posts[2].clone(),
+                    vec![comments[0].clone(), comments[2].clone()],
+                ),
+            ],
+        ),
         (users[1].clone(), vec![(posts[1].clone(), vec![])]),
     ];
 
     let comments = comments.grouped_by(&posts);
     let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);
-    let data = users.into_iter().zip(posts_and_comments).collect::<Vec<_>>();
+    let data = users
+        .into_iter()
+        .zip(posts_and_comments)
+        .collect::<Vec<_>>();
 
     assert_eq!(expected_data, data);
 }
 
 #[test]
 fn self_referencing_associations() {
-    #[derive(Insertable, Queryable, Associations, Identifiable)]
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    #[table_name="trees"]
-    #[belongs_to(Tree, foreign_key="parent_id")]
+    #[derive(Insertable, Queryable, Associations, Identifiable, Debug, Clone, Copy, PartialEq)]
+    #[table_name = "trees"]
+    #[belongs_to(Tree, foreign_key = "parent_id")]
     struct Tree {
         id: i32,
         parent_id: Option<i32>,
@@ -149,19 +182,37 @@ fn self_referencing_associations() {
 
     let conn = connection();
     let test_data = vec![
-        Tree { id: 1, parent_id: None },
-        Tree { id: 2, parent_id: None },
-        Tree { id: 3, parent_id: Some(1) },
-        Tree { id: 4, parent_id: Some(2) },
-        Tree { id: 5, parent_id: Some(1) },
+        Tree {
+            id: 1,
+            parent_id: None,
+        },
+        Tree {
+            id: 2,
+            parent_id: None,
+        },
+        Tree {
+            id: 3,
+            parent_id: Some(1),
+        },
+        Tree {
+            id: 4,
+            parent_id: Some(2),
+        },
+        Tree {
+            id: 5,
+            parent_id: Some(1),
+        },
     ];
-    insert(&test_data).into(trees::table)
-        .execute(&conn).unwrap();
+    insert(&test_data)
+        .into(trees::table)
+        .execute(&conn)
+        .unwrap();
 
-    let parents = trees::table.filter(trees::parent_id.is_null())
-        .load::<Tree>(&conn).unwrap();
-    let children = Tree::belonging_to(&parents)
-        .load::<Tree>(&conn).unwrap();
+    let parents = trees::table
+        .filter(trees::parent_id.is_null())
+        .load::<Tree>(&conn)
+        .unwrap();
+    let children = Tree::belonging_to(&parents).load::<Tree>(&conn).unwrap();
     let children = children.grouped_by(&parents);
     let data = parents.into_iter().zip(children).collect::<Vec<_>>();
 
@@ -174,24 +225,39 @@ fn self_referencing_associations() {
 
 fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None)).into(users::table).execute(&connection).unwrap();
+    insert(&NewUser::new("Jim", None))
+        .into(users::table)
+        .execute(&connection)
+        .unwrap();
 
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
     let jim = find_user_by_name("Jim", &connection);
     let new_posts = vec![sean.new_post("Hello", None), sean.new_post("World", None)];
-    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
-    let new_posts = vec![tess.new_post("Hello 2", None), tess.new_post("World 2", None)];
-    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+    insert(&new_posts)
+        .into(posts::table)
+        .execute(&connection)
+        .unwrap();
+    let new_posts = vec![
+        tess.new_post("Hello 2", None),
+        tess.new_post("World 2", None),
+    ];
+    insert(&new_posts)
+        .into(posts::table)
+        .execute(&connection)
+        .unwrap();
     let new_posts = vec![jim.new_post("Hello 3", None), jim.new_post("World 3", None)];
-    insert(&new_posts).into(posts::table).execute(&connection).unwrap();
+    insert(&new_posts)
+        .into(posts::table)
+        .execute(&connection)
+        .unwrap();
 
     (connection, sean, tess, jim)
 }
 
 
 #[test]
-#[cfg(not(feature="mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn custom_foreign_key() {
     use diesel::*;
     use diesel::connection::SimpleConnection;
@@ -215,11 +281,11 @@ fn custom_foreign_key() {
     #[table_name = "users1"]
     pub struct User {
         id: i32,
-        name: String
+        name: String,
     }
 
     #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
-    #[belongs_to(User, foreign_key="belongs_to_user")]
+    #[belongs_to(User, foreign_key = "belongs_to_user")]
     #[table_name = "posts1"]
     pub struct Post {
         id: i32,
@@ -229,7 +295,9 @@ fn custom_foreign_key() {
 
     joinable!(posts1 -> users1(belongs_to_user));
     let connection = connection();
-    connection.batch_execute(r#"
+    connection
+        .batch_execute(
+            r#"
             CREATE TABLE users1 (id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL);
             CREATE TABLE posts1 (id SERIAL PRIMARY KEY,
@@ -240,13 +308,33 @@ fn custom_foreign_key() {
                    (1, 1, 'Hello'),
                    (2, 2, 'World'),
                    (3, 1, 'Hello 2');
-        "#).unwrap();
+        "#,
+        )
+        .unwrap();
 
-    let sean = User { id: 1, name: "Sean".into() };
-    let tess = User { id: 2, name: "Tess".into() };
-    let post1 = Post { id: 1, belongs_to_user: 1, title: "Hello".into() };
-    let post2 = Post { id: 2, belongs_to_user: 2, title: "World".into() };
-    let post3 = Post { id: 3, belongs_to_user: 1, title: "Hello 2".into() };
+    let sean = User {
+        id: 1,
+        name: "Sean".into(),
+    };
+    let tess = User {
+        id: 2,
+        name: "Tess".into(),
+    };
+    let post1 = Post {
+        id: 1,
+        belongs_to_user: 1,
+        title: "Hello".into(),
+    };
+    let post2 = Post {
+        id: 2,
+        belongs_to_user: 2,
+        title: "World".into(),
+    };
+    let post3 = Post {
+        id: 3,
+        belongs_to_user: 1,
+        title: "Hello 2".into(),
+    };
 
     assert_eq!(
         Post::belonging_to(&sean).load(&connection),
@@ -257,5 +345,4 @@ fn custom_foreign_key() {
         users1::table.inner_join(posts1::table).load(&connection),
         Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
     );
-
 }

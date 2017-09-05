@@ -1,5 +1,5 @@
 use diesel::*;
-use super::{User, posts};
+use super::{posts, User};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 #[belongs_to(User)]

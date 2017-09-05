@@ -1,17 +1,13 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
-
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file="../clippy.toml")))]
-#![cfg_attr(feature = "clippy", allow(
-    option_map_unwrap_or_else, option_map_unwrap_or,
-))]
-#![cfg_attr(feature = "clippy", warn(
-    wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
-    if_not_else, items_after_statements, used_underscore_binding,
-))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(feature = "clippy",
+           warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 
 macro_rules! t {
     ($expr:expr) => {
@@ -22,14 +18,14 @@ macro_rules! t {
     };
 }
 
-#[cfg(all(feature = "dotenv", feature = "diesel_infer_schema"))]
-extern crate dotenv;
+extern crate diesel;
 #[cfg(feature = "diesel_infer_schema")]
 extern crate diesel_infer_schema;
-extern crate diesel;
+#[cfg(all(feature = "dotenv", feature = "diesel_infer_schema"))]
+extern crate dotenv;
+extern crate proc_macro;
 #[macro_use]
 extern crate quote;
-extern crate proc_macro;
 extern crate syn;
 
 mod as_changeset;
@@ -66,7 +62,8 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
 }
 
-#[proc_macro_derive(AsChangeset, attributes(table_name, primary_key, column_name, changeset_options))]
+#[proc_macro_derive(AsChangeset,
+                    attributes(table_name, primary_key, column_name, changeset_options))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive_as_changeset)
 }

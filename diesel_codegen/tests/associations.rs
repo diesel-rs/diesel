@@ -29,7 +29,7 @@ fn simple_belongs_to() {
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
-        name: String
+        name: String,
     }
 
     #[derive(Associations, Identifiable)]
@@ -42,18 +42,25 @@ fn simple_belongs_to() {
 
     joinable!(posts -> users(user_id));
 
-    let _can_join_tables = posts::table.inner_join(users::table)
+    let _can_join_tables = posts::table
+        .inner_join(users::table)
         .select((users::id, users::name, posts::id))
-        .filter(posts::id.eq(1)
+        .filter(
+            posts::id
+                .eq(1)
                 .and(posts::user_id.eq(2))
-                .and(posts::title.eq("Bar")));
+                .and(posts::title.eq("Bar")),
+        );
 
-    let _can_reverse_join_tables = users::table.inner_join(posts::table)
+    let _can_reverse_join_tables = users::table
+        .inner_join(posts::table)
         .select((posts::id, posts::user_id, posts::title))
-        .filter(users::id.eq(1)
-                .and(users::name.eq("Sean")));
+        .filter(users::id.eq(1).and(users::name.eq("Sean")));
 
-    let t = User { id: 42, name: "Sean".into() };
+    let t = User {
+        id: 42,
+        name: "Sean".into(),
+    };
 
     let belong_to = Post::belonging_to(&t);
     let filter = posts::table.filter(posts::user_id.eq(42));
@@ -87,7 +94,7 @@ fn custom_foreign_key() {
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
-        name: String
+        name: String,
     }
 
     #[derive(Associations, Identifiable)]
@@ -101,18 +108,25 @@ fn custom_foreign_key() {
     joinable!(posts -> users(belongs_to_user));
 
 
-    let _can_join_tables = posts::table.inner_join(users::table)
+    let _can_join_tables = posts::table
+        .inner_join(users::table)
         .select((users::id, users::name))
-        .filter(posts::id.eq(1)
-            .and(posts::belongs_to_user.eq(2))
-                .and(posts::title.eq("Bar")));
+        .filter(
+            posts::id
+                .eq(1)
+                .and(posts::belongs_to_user.eq(2))
+                .and(posts::title.eq("Bar")),
+        );
 
-    let _can_reverse_join_tables = users::table.inner_join(posts::table)
+    let _can_reverse_join_tables = users::table
+        .inner_join(posts::table)
         .select((posts::id, posts::belongs_to_user, posts::title))
-        .filter(users::id.eq(1)
-                .and(users::name.eq("Sean")));
+        .filter(users::id.eq(1).and(users::name.eq("Sean")));
 
-    let t = User { id: 42, name: "Sean".into() };
+    let t = User {
+        id: 42,
+        name: "Sean".into(),
+    };
 
     let belong_to = Post::belonging_to(&t);
     let filter = posts::table.filter(posts::belongs_to_user.eq(42));
@@ -141,7 +155,10 @@ fn self_referential() {
         id: i32,
         parent_id: Option<i32>,
     }
-    let t = Tree { id: 42, parent_id: None };
+    let t = Tree {
+        id: 42,
+        parent_id: None,
+    };
 
     let belong_to = Tree::belonging_to(&t);
     let filter = trees::table.filter(trees::parent_id.eq(42));

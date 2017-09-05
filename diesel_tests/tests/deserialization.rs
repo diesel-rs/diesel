@@ -17,5 +17,8 @@ fn generated_queryable_allows_lifetimes() {
         id: 1,
         name: Cow::Owned("Sean".to_string()),
     };
-    assert_eq!(Ok(expected_user), users.select((id, name)).first(&connection));
+    assert_eq!(
+        Ok(expected_user),
+        users.select((id, name)).first(&connection)
+    );
 }

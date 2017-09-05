@@ -1,23 +1,18 @@
 #![feature(test)]
-
 #![allow(non_snake_case)]
 
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
-extern crate test;
 extern crate dotenv;
+extern crate test;
 
 mod schema;
 
 use self::test::Bencher;
-use self::schema::{
-    users, posts, comments,
-    NewUser, NewPost, NewComment,
-    User, Post, Comment,
-    TestConnection,
-};
+use self::schema::{comments, posts, users, Comment, NewComment, NewPost, NewUser, Post,
+                   TestConnection, User};
 use diesel::*;
 
 #[cfg(not(feature = "sqlite"))]
@@ -68,16 +63,31 @@ macro_rules! bench_trivial_query {
 
 // bench_trivial_query!(0,
 //     bench_trivial_query_selecting______0_rows, bench_trivial_query_selecting______0_rows_boxed);
-bench_trivial_query!(1,
-    bench_trivial_query_selecting______1_row, bench_trivial_query_selecting______1_row_boxed);
-bench_trivial_query!(10,
-    bench_trivial_query_selecting_____10_rows, bench_trivial_query_selecting_____10_rows_boxed);
-bench_trivial_query!(100,
-    bench_trivial_query_selecting____100_rows, bench_trivial_query_selecting____100_rows_boxed);
-bench_trivial_query!(1_000,
-    bench_trivial_query_selecting__1_000_rows, bench_trivial_query_selecting__1_000_rows_boxed);
-bench_trivial_query!(10_000,
-    bench_trivial_query_selecting_10_000_rows, bench_trivial_query_selecting_10_000_rows_boxed);
+bench_trivial_query!(
+    1,
+    bench_trivial_query_selecting______1_row,
+    bench_trivial_query_selecting______1_row_boxed
+);
+bench_trivial_query!(
+    10,
+    bench_trivial_query_selecting_____10_rows,
+    bench_trivial_query_selecting_____10_rows_boxed
+);
+bench_trivial_query!(
+    100,
+    bench_trivial_query_selecting____100_rows,
+    bench_trivial_query_selecting____100_rows_boxed
+);
+bench_trivial_query!(
+    1_000,
+    bench_trivial_query_selecting__1_000_rows,
+    bench_trivial_query_selecting__1_000_rows_boxed
+);
+bench_trivial_query!(
+    10_000,
+    bench_trivial_query_selecting_10_000_rows,
+    bench_trivial_query_selecting_10_000_rows_boxed
+);
 
 macro_rules! bench_medium_complex_query {
     ($n:expr, $name:ident, $name_boxed:ident) => {
@@ -124,55 +134,84 @@ macro_rules! bench_medium_complex_query {
 
 // bench_medium_complex_query!(0,
 //     bench_medium_complex_query_selecting______0_rows, bench_medium_complex_query_selecting______0_rows_boxed);
-bench_medium_complex_query!(1,
-    bench_medium_complex_query_selecting______1_row, bench_medium_complex_query_selecting______1_row_boxed);
-bench_medium_complex_query!(10,
-    bench_medium_complex_query_selecting_____10_rows, bench_medium_complex_query_selecting_____10_rows_boxed);
-bench_medium_complex_query!(100,
-    bench_medium_complex_query_selecting____100_rows, bench_medium_complex_query_selecting____100_rows_boxed);
-bench_medium_complex_query!(1_000,
-    bench_medium_complex_query_selecting__1_000_rows, bench_medium_complex_query_selecting__1_000_rows_boxed);
-bench_medium_complex_query!(10_000,
-    bench_medium_complex_query_selecting_10_000_rows, bench_medium_complex_query_selecting_10_000_rows_boxed);
+bench_medium_complex_query!(
+    1,
+    bench_medium_complex_query_selecting______1_row,
+    bench_medium_complex_query_selecting______1_row_boxed
+);
+bench_medium_complex_query!(
+    10,
+    bench_medium_complex_query_selecting_____10_rows,
+    bench_medium_complex_query_selecting_____10_rows_boxed
+);
+bench_medium_complex_query!(
+    100,
+    bench_medium_complex_query_selecting____100_rows,
+    bench_medium_complex_query_selecting____100_rows_boxed
+);
+bench_medium_complex_query!(
+    1_000,
+    bench_medium_complex_query_selecting__1_000_rows,
+    bench_medium_complex_query_selecting__1_000_rows_boxed
+);
+bench_medium_complex_query!(
+    10_000,
+    bench_medium_complex_query_selecting_10_000_rows,
+    bench_medium_complex_query_selecting_10_000_rows_boxed
+);
 
 #[bench]
 fn loading_associations_sequentially(b: &mut Bencher) {
     // SETUP A FUCK TON OF DATA
     let conn = connection();
-    let data: Vec<_> = (0..100).map(|i| {
-        let hair_color = if i % 2 == 0 { "black" } else { "brown" };
-        NewUser::new(&format!("User {}", i), Some(hair_color))
-    }).collect();
+    let data: Vec<_> = (0..100)
+        .map(|i| {
+            let hair_color = if i % 2 == 0 { "black" } else { "brown" };
+            NewUser::new(&format!("User {}", i), Some(hair_color))
+        })
+        .collect();
     insert(&data).into(users::table).execute(&conn).unwrap();
     let all_users = users::table.load::<User>(&conn).unwrap();
-    let data: Vec<_> = all_users.iter().flat_map(|user| {
-        let user_id = user.id;
-        (0..10).map(move |i| {
-            let title = format!("Post {} by user {}", i, user_id);
-            NewPost::new(user_id, &title, None)
+    let data: Vec<_> = all_users
+        .iter()
+        .flat_map(|user| {
+            let user_id = user.id;
+            (0..10).map(move |i| {
+                let title = format!("Post {} by user {}", i, user_id);
+                NewPost::new(user_id, &title, None)
+            })
         })
-    }).collect();
+        .collect();
     insert(&data).into(posts::table).execute(&conn).unwrap();
     let all_posts = posts::table.load::<Post>(&conn).unwrap();
-    let data: Vec<_> = all_posts.iter().flat_map(|post| {
-        let post_id = post.id;
-        (0..10).map(move |i| {
-            let title = format!("Comment {} on post {}", i, post_id);
-            (title, post_id)
+    let data: Vec<_> = all_posts
+        .iter()
+        .flat_map(|post| {
+            let post_id = post.id;
+            (0..10).map(move |i| {
+                let title = format!("Comment {} on post {}", i, post_id);
+                (title, post_id)
+            })
         })
-    }).collect();
-    let comment_data: Vec<_> = data.iter().map(|&(ref title, post_id)| {
-        NewComment(post_id, &title)
-    }).collect();
-    insert(&comment_data).into(comments::table).execute(&conn).unwrap();
+        .collect();
+    let comment_data: Vec<_> = data.iter()
+        .map(|&(ref title, post_id)| NewComment(post_id, &title))
+        .collect();
+    insert(&comment_data)
+        .into(comments::table)
+        .execute(&conn)
+        .unwrap();
 
     // ACTUAL BENCHMARK
     b.iter(|| {
         let users = users::table.load::<User>(&conn).unwrap();
         let posts = Post::belonging_to(&users).load::<Post>(&conn).unwrap();
-        let comments = Comment::belonging_to(&posts).load::<Comment>(&conn).unwrap()
+        let comments = Comment::belonging_to(&posts)
+            .load::<Comment>(&conn)
+            .unwrap()
             .grouped_by(&posts);
         let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);
-        let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users.into_iter().zip(posts_and_comments).collect();
+        let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> =
+            users.into_iter().zip(posts_and_comments).collect();
     })
 }

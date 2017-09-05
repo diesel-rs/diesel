@@ -24,30 +24,31 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
     let model_name_uppercase = model.name.as_ref().to_uppercase();
     let dummy_const = format!("_IMPL_QUERYABLE_FOR_{}", model_name_uppercase).into();
 
-    wrap_item_in_const(dummy_const, quote!(
-        impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
-            __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
-            #row_ty: diesel::types::FromSqlRow<__ST, __DB>,
-        {
-           type Row = #row_ty;
+    wrap_item_in_const(
+        dummy_const,
+        quote!(
+            impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
+                __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
+                #row_ty: diesel::types::FromSqlRow<__ST, __DB>,
+            {
+               type Row = #row_ty;
 
-           fn build(#row_pat: Self::Row) -> Self {
-               #build_expr
-           }
-        }
-    ))
+               fn build(#row_pat: Self::Row) -> Self {
+                   #build_expr
+               }
+            }
+        ),
+    )
 }
 
 fn build_expr_for_model(model: &Model) -> Tokens {
     let struct_name = &model.name;
     let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
 
-    let field_assignments = field_names.map(|field_name| {
-        if model.is_tuple_struct() {
-            quote!(#field_name)
-        } else {
-            quote!(#field_name: #field_name)
-        }
+    let field_assignments = field_names.map(|field_name| if model.is_tuple_struct() {
+        quote!(#field_name)
+    } else {
+        quote!(#field_name: #field_name)
     });
 
     if model.is_tuple_struct() {

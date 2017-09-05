@@ -1,4 +1,4 @@
-use syn::{Ident, Ty, Path};
+use syn::{Ident, Path, Ty};
 
 pub fn ty_ident(ident: Ident) -> Ty {
     ty_path(ident.into())

@@ -7,7 +7,7 @@ mod sqlite {
     use super::chrono::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="infer_all_the_ints"]
+    #[table_name = "infer_all_the_ints"]
     struct InferredInts {
         col1: i32,
         col2: i32,
@@ -42,14 +42,19 @@ mod sqlite {
             col12: 12,
             col13: 13,
         };
-        insert(&inferred_ints).into(infer_all_the_ints::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_ints)
+            .into(infer_all_the_ints::table)
+            .execute(&conn)
+            .unwrap();
 
-        assert_eq!(Ok(vec![inferred_ints]), infer_all_the_ints::table.load(&conn));
+        assert_eq!(
+            Ok(vec![inferred_ints]),
+            infer_all_the_ints::table.load(&conn)
+        );
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="infer_all_the_bools"]
+    #[table_name = "infer_all_the_bools"]
     struct InferredBools {
         col1: bool,
         col2: bool,
@@ -66,14 +71,19 @@ mod sqlite {
             col3: false,
             col4: false,
         };
-        insert(&inferred_bools).into(infer_all_the_bools::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_bools)
+            .into(infer_all_the_bools::table)
+            .execute(&conn)
+            .unwrap();
 
-        assert_eq!(Ok(vec![inferred_bools]), infer_all_the_bools::table.load(&conn));
+        assert_eq!(
+            Ok(vec![inferred_bools]),
+            infer_all_the_bools::table.load(&conn)
+        );
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="infer_all_the_strings"]
+    #[table_name = "infer_all_the_strings"]
     struct InferredStrings {
         col1: String,
         col2: String,
@@ -84,7 +94,7 @@ mod sqlite {
         col7: String,
         col8: String,
         col9: Vec<u8>,
-        col10: Vec<u8>
+        col10: Vec<u8>,
     }
 
     #[test]
@@ -102,14 +112,19 @@ mod sqlite {
             col9: vec![1, 2, 3],
             col10: vec![1, 2, 3],
         };
-        insert(&inferred_strings).into(infer_all_the_strings::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_strings)
+            .into(infer_all_the_strings::table)
+            .execute(&conn)
+            .unwrap();
 
-        assert_eq!(Ok(vec![inferred_strings]), infer_all_the_strings::table.load(&conn));
+        assert_eq!(
+            Ok(vec![inferred_strings]),
+            infer_all_the_strings::table.load(&conn)
+        );
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="infer_all_the_floats"]
+    #[table_name = "infer_all_the_floats"]
     struct InferredFloats {
         col1: f32,
         col2: f32,
@@ -130,14 +145,19 @@ mod sqlite {
             col5: 5.0,
             col6: 6.0,
         };
-        insert(&inferred_floats).into(infer_all_the_floats::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_floats)
+            .into(infer_all_the_floats::table)
+            .execute(&conn)
+            .unwrap();
 
-        assert_eq!(Ok(vec![inferred_floats]), infer_all_the_floats::table.load(&conn));
+        assert_eq!(
+            Ok(vec![inferred_floats]),
+            infer_all_the_floats::table.load(&conn)
+        );
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="infer_all_the_datetime_types"]
+    #[table_name = "infer_all_the_datetime_types"]
     struct InferredDatetimeTypes {
         dt: NaiveDateTime,
         date: NaiveDate,
@@ -157,10 +177,15 @@ mod sqlite {
             timestamp: dt,
         };
 
-        insert(&inferred_datetime_types).into(infer_all_the_datetime_types::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_datetime_types)
+            .into(infer_all_the_datetime_types::table)
+            .execute(&conn)
+            .unwrap();
 
-        assert_eq!(Ok(vec![inferred_datetime_types]), infer_all_the_datetime_types::table.load(&conn));
+        assert_eq!(
+            Ok(vec![inferred_datetime_types]),
+            infer_all_the_datetime_types::table.load(&conn)
+        );
     }
 }
 
@@ -173,7 +198,7 @@ mod postgres {
     use std::collections::Bound;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name="all_the_ranges"]
+    #[table_name = "all_the_ranges"]
     struct InferredRanges {
         int4: (Bound<i32>, Bound<i32>),
         int8: (Bound<i64>, Bound<i64>),
@@ -186,7 +211,7 @@ mod postgres {
     #[test]
     fn ranges_are_correctly_inferred() {
         let conn = connection();
-        let numeric = PgNumeric::Positive{
+        let numeric = PgNumeric::Positive {
             weight: 1,
             scale: 1,
             digits: vec![1],
@@ -198,12 +223,17 @@ mod postgres {
             int8: (Bound::Included(5), Bound::Excluded(13)),
             num: (Bound::Included(numeric), Bound::Unbounded),
             ts: (Bound::Included(dt), Bound::Unbounded),
-            tstz: (Bound::Unbounded, Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc))),
+            tstz: (
+                Bound::Unbounded,
+                Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc)),
+            ),
             date: (Bound::Included(dt.date()), Bound::Unbounded),
         };
 
-        insert(&inferred_ranges).into(all_the_ranges::table)
-            .execute(&conn).unwrap();
+        insert(&inferred_ranges)
+            .into(all_the_ranges::table)
+            .execute(&conn)
+            .unwrap();
 
         assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(&conn));
     }
@@ -215,7 +245,7 @@ mod mysql {
     use schema::*;
 
     #[derive(Insertable)]
-    #[table_name="all_the_blobs"]
+    #[table_name = "all_the_blobs"]
     struct InferredBlobs<'a> {
         id: i32,
         tiny: &'a [u8],
@@ -252,7 +282,10 @@ mod mysql {
             big: vec![0x04],
         };
 
-        insert(&inferred_blobs).into(all_the_blobs::table).execute(&conn).unwrap();
+        insert(&inferred_blobs)
+            .into(all_the_blobs::table)
+            .execute(&conn)
+            .unwrap();
         assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(&conn));
     }
 }
@@ -277,6 +310,9 @@ fn columns_named_as_reserved_keywords_are_renamed() {
     };
 
     let conn = connection();
-    insert(&value).into(with_keywords::table).execute(&conn).unwrap();
+    insert(&value)
+        .into(with_keywords::table)
+        .execute(&conn)
+        .unwrap();
     assert_eq!(Ok(vec![value]), with_keywords::table.load(&conn));
 }
