@@ -15,40 +15,45 @@ fn migration_list_lists_pending_applied_migrations() {
 
     p.command("setup").run();
 
-    p.create_migration("12345_create_users_table",
-                       "CREATE TABLE users ( id INTEGER )",
-                       "DROP TABLE users");
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
 
     assert!(!db.table_exists("users"));
 
     // finds unapplied migration
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout().contains("[ ] 12345_create_users_table"));
 
-    let result = p.command("migration")
-        .arg("run")
-        .run();
+    let result = p.command("migration").arg("run").run();
     assert!(result.is_success());
     assert!(db.table_exists("users"));
 
     // finds applied migration
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout().contains("[X] 12345_create_users_table"));
 }
 
 fn assert_tags_in_order(output: &str, tags: &[&str]) {
-    let matches: Vec<_> = tags.iter().map(|s| {
-        let index = output.find(s).expect(&format!("tag {:?} not found in output: {:?}", s, output));
-        (index, s)
-    }).collect();
+    let matches: Vec<_> = tags.iter()
+        .map(|s| {
+            let index = output
+                .find(s)
+                .expect(&format!("tag {:?} not found in output: {:?}", s, output));
+            (index, s)
+        })
+        .collect();
     for window in matches.as_slice().windows(2) {
-        assert!(window[0].0 < window[1].0, "expected {:?} before {:?}", window[0].1, window[1].1);
+        assert!(
+            window[0].0 < window[1].0,
+            "expected {:?} before {:?}",
+            window[0].1,
+            window[1].1
+        );
     }
 }
 
@@ -63,9 +68,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
     let tag1 = format!("{}_initial", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag1, "", "");
 
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout().contains(&format!("[ ] {}", &tag1)));
 
@@ -74,9 +77,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
     let tag2 = format!("{}_alter", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag2, "", "");
 
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
     assert_tags_in_order(output, &[&tag1, &tag2]);
@@ -109,9 +110,7 @@ fn migration_list_orders_unknown_timestamps_last() {
     let tag3 = format!("{}_migration3", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag3, "", "");
 
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
     assert_tags_in_order(output, &[&tag1, &tag2, &tag3, &tag4, &tag5]);
@@ -143,9 +142,7 @@ fn migration_list_orders_nontimestamp_versions_lexicographically() {
     let tag1 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag1, "", "");
 
-    let result = p.command("migration")
-        .arg("list")
-        .run();
+    let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
     assert_tags_in_order(output, &[&tag1, &tag2, &tag3, &tag4, &tag5, &tag6]);

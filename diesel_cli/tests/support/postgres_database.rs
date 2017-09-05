@@ -1,23 +1,22 @@
 use diesel::connection::SimpleConnection;
 use diesel::expression::sql;
 use diesel::types::Bool;
-use diesel::{Connection, PgConnection, select, LoadDsl};
+use diesel::{select, Connection, LoadDsl, PgConnection};
 
 pub struct Database {
-    url: String
+    url: String,
 }
 
 impl Database {
     pub fn new(url: &str) -> Self {
-        Database {
-            url: url.into()
-        }
+        Database { url: url.into() }
     }
 
     pub fn create(self) -> Self {
         let (database, postgres_url) = self.split_url();
         let conn = PgConnection::establish(&postgres_url).unwrap();
-        conn.execute(&format!(r#"CREATE DATABASE "{}""#, database)).unwrap();
+        conn.execute(&format!(r#"CREATE DATABASE "{}""#, database))
+            .unwrap();
         self
     }
 
@@ -26,11 +25,14 @@ impl Database {
     }
 
     pub fn table_exists(&self, table: &str) -> bool {
-        select(sql::<Bool>(&format!("EXISTS \
-                (SELECT 1 \
-                 FROM information_schema.tables \
-                 WHERE table_name = '{}')", table)))
-            .get_result(&self.conn()).unwrap()
+        select(sql::<Bool>(&format!(
+            "EXISTS \
+             (SELECT 1 \
+             FROM information_schema.tables \
+             WHERE table_name = '{}')",
+            table
+        ))).get_result(&self.conn())
+            .unwrap()
     }
 
     pub fn conn(&self) -> PgConnection {
@@ -39,7 +41,8 @@ impl Database {
     }
 
     pub fn execute(&self, command: &str) {
-        self.conn().batch_execute(command)
+        self.conn()
+            .batch_execute(command)
             .expect(&format!("Error executing command {}", command));
     }
 
@@ -54,9 +57,15 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, postgres_url) = self.split_url();
-        let conn = try_drop!(PgConnection::establish(&postgres_url), "Couldn't connect to database");
+        let conn = try_drop!(
+            PgConnection::establish(&postgres_url),
+            "Couldn't connect to database"
+        );
         conn.silence_notices(|| {
-            try_drop!(conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)), "Couldn't drop database");
+            try_drop!(
+                conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)),
+                "Couldn't drop database"
+            );
         });
     }
 }

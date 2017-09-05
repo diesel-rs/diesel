@@ -4,20 +4,19 @@ use diesel::types::Bool;
 use diesel::*;
 
 pub struct Database {
-    url: String
+    url: String,
 }
 
 impl Database {
     pub fn new(url: &str) -> Self {
-        Database {
-            url: url.into()
-        }
+        Database { url: url.into() }
     }
 
     pub fn create(self) -> Self {
         let (database, mysql_url) = self.split_url();
         let conn = MysqlConnection::establish(&mysql_url).unwrap();
-        conn.execute(&format!("CREATE DATABASE `{}`", database)).unwrap();
+        conn.execute(&format!("CREATE DATABASE `{}`", database))
+            .unwrap();
         self
     }
 
@@ -26,12 +25,15 @@ impl Database {
     }
 
     pub fn table_exists(&self, table: &str) -> bool {
-        select(sql::<Bool>(&format!("EXISTS \
+        select(sql::<Bool>(&format!(
+            "EXISTS \
                 (SELECT 1 \
                  FROM information_schema.tables \
                  WHERE table_name = '{}'
-                 AND table_schema = DATABASE())", table)))
-            .get_result(&self.conn()).unwrap()
+                 AND table_schema = DATABASE())",
+            table
+        ))).get_result(&self.conn())
+            .unwrap()
     }
 
     pub fn conn(&self) -> MysqlConnection {
@@ -40,7 +42,8 @@ impl Database {
     }
 
     pub fn execute(&self, command: &str) {
-        self.conn().batch_execute(command)
+        self.conn()
+            .batch_execute(command)
             .expect(&format!("Error executing command {}", command));
     }
 
@@ -55,7 +58,13 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, mysql_url) = self.split_url();
-        let conn = try_drop!(MysqlConnection::establish(&mysql_url), "Couldn't connect to database");
-        try_drop!(conn.execute(&format!("DROP DATABASE IF EXISTS `{}`", database)), "Couldn't drop database");
+        let conn = try_drop!(
+            MysqlConnection::establish(&mysql_url),
+            "Couldn't connect to database"
+        );
+        try_drop!(
+            conn.execute(&format!("DROP DATABASE IF EXISTS `{}`", database)),
+            "Couldn't drop database"
+        );
     }
 }

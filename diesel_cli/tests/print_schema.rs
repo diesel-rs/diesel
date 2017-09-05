@@ -16,12 +16,18 @@ fn run_infer_schema() {
 
 #[test]
 fn run_infer_schema_whitelist() {
-    test_print_schema("print_schema_whitelist", vec!["--with-docs", "-w", "users1"]);
+    test_print_schema(
+        "print_schema_whitelist",
+        vec!["--with-docs", "-w", "users1"],
+    );
 }
 
 #[test]
 fn run_infer_schema_blacklist() {
-    test_print_schema("print_schema_blacklist", vec!["--with-docs", "-b", "users1"]);
+    test_print_schema(
+        "print_schema_blacklist",
+        vec!["--with-docs", "-b", "users1"],
+    );
 }
 
 #[test]
@@ -37,7 +43,10 @@ fn run_infer_schema_compound_primary_key() {
 #[test]
 #[cfg(feature = "postgres")]
 fn print_schema_specifying_schema_name() {
-    test_print_schema("print_schema_specifying_schema_name", vec!["--with-docs", "--schema", "custom_schema"])
+    test_print_schema(
+        "print_schema_specifying_schema_name",
+        vec!["--with-docs", "--schema", "custom_schema"],
+    )
 }
 
 #[test]
@@ -83,8 +92,7 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
 
 fn read_file(path: &Path) -> String {
     println!("{}", path.display());
-    let mut file = File::open(path)
-        .expect(&format!("Could not open {}", path.display()));
+    let mut file = File::open(path).expect(&format!("Could not open {}", path.display()));
     let mut string = String::new();
     file.read_to_string(&mut string).unwrap();
     string

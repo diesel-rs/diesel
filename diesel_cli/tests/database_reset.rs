@@ -13,9 +13,7 @@ fn reset_drops_the_database() {
 
     assert!(db.table_exists("posts"));
 
-    let result = p.command("database")
-        .arg("reset")
-        .run();
+    let result = p.command("database").arg("reset").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!db.table_exists("posts"));
@@ -30,16 +28,16 @@ fn reset_runs_database_setup() {
 
     db.execute("CREATE TABLE posts ( id INTEGER )");
     db.execute("CREATE TABLE users ( id INTEGER )");
-    p.create_migration("12345_create_users_table",
-                       "CREATE TABLE users ( id INTEGER )",
-                       "DROP TABLE users");
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
 
     assert!(db.table_exists("posts"));
     assert!(db.table_exists("users"));
 
-    let result = p.command("database")
-        .arg("reset")
-        .run();
+    let result = p.command("database").arg("reset").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!db.table_exists("posts"));
@@ -61,7 +59,9 @@ fn reset_handles_postgres_urls_with_username_and_password() {
     let database_url = {
         let mut new_url = url::Url::parse(&p.database_url()).expect("invalid url");
         new_url.set_username("foo").expect("could not set username");
-        new_url.set_password(Some("password")).expect("could not set password");
+        new_url
+            .set_password(Some("password"))
+            .expect("could not set password");
         new_url.to_string()
     };
 
@@ -70,11 +70,21 @@ fn reset_handles_postgres_urls_with_username_and_password() {
         .env("DATABASE_URL", &database_url)
         .run();
 
-    assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());
-    assert!(result.stdout().contains("Dropping database:"),
-        "Unexpected stdout {}", result.stdout());
-    assert!(result.stdout().contains("Creating database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        result.is_success(),
+        "Result was unsuccessful {:?}",
+        result.stdout()
+    );
+    assert!(
+        result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(
+        result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
 }
 
 #[test]
@@ -86,10 +96,12 @@ fn reset_works_with_migration_dir_by_arg() {
 
     db.execute("CREATE TABLE posts ( id INTEGER )");
     db.execute("CREATE TABLE users ( id INTEGER )");
-    p.create_migration_in_directory("foo",
+    p.create_migration_in_directory(
+        "foo",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users");
+        "DROP TABLE users",
+    );
 
     assert!(db.table_exists("posts"));
     assert!(db.table_exists("users"));
@@ -114,10 +126,12 @@ fn reset_works_with_migration_dir_by_env() {
 
     db.execute("CREATE TABLE posts ( id INTEGER )");
     db.execute("CREATE TABLE users ( id INTEGER )");
-    p.create_migration_in_directory("bar",
+    p.create_migration_in_directory(
+        "bar",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users");
+        "DROP TABLE users",
+    );
 
     assert!(db.table_exists("posts"));
     assert!(db.table_exists("users"));
@@ -135,18 +149,24 @@ fn reset_works_with_migration_dir_by_env() {
 
 #[test]
 fn reset_sanitize_database_name() {
-    let p = project("name-with-dashes")
-        .folder("migrations")
-        .build();
+    let p = project("name-with-dashes").folder("migrations").build();
     let _db = database(&p.database_url()).create();
 
-    let result = p.command("database")
-        .arg("reset")
-        .run();
+    let result = p.command("database").arg("reset").run();
 
-    assert!(result.is_success(), "Result was unsuccessful {:?}", result.stdout());
-    assert!(result.stdout().contains("Dropping database:"),
-        "Unexpected stdout {}", result.stdout());
-    assert!(result.stdout().contains("Creating database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        result.is_success(),
+        "Result was unsuccessful {:?}",
+        result.stdout()
+    );
+    assert!(
+        result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(
+        result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
 }

@@ -38,11 +38,24 @@ impl From<result::ConnectionError> for DatabaseError {
 impl Error for DatabaseError {
     fn description(&self) -> &str {
         match *self {
-            CargoTomlNotFound => "Unable to find Cargo.toml in this directory or any parent directories.",
-            DatabaseUrlMissing => "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.",
-            IoError(ref error) => error.cause().map(|e| e.description()).unwrap_or_else(|| error.description()),
-            QueryError(ref error) => error.cause().map(|e| e.description()).unwrap_or_else(|| error.description()),
-            ConnectionError(ref error) => error.cause().map(|e| e.description()).unwrap_or_else(|| error.description()),
+            CargoTomlNotFound => {
+                "Unable to find Cargo.toml in this directory or any parent directories."
+            }
+            DatabaseUrlMissing => {
+                "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set."
+            }
+            IoError(ref error) => error
+                .cause()
+                .map(|e| e.description())
+                .unwrap_or_else(|| error.description()),
+            QueryError(ref error) => error
+                .cause()
+                .map(|e| e.description())
+                .unwrap_or_else(|| error.description()),
+            ConnectionError(ref error) => error
+                .cause()
+                .map(|e| e.description())
+                .unwrap_or_else(|| error.description()),
         }
     }
 }
@@ -56,11 +69,8 @@ impl fmt::Display for DatabaseError {
 impl PartialEq for DatabaseError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                &CargoTomlNotFound,
-                &CargoTomlNotFound,
-            ) => true,
-            _ => false
+            (&CargoTomlNotFound, &CargoTomlNotFound) => true,
+            _ => false,
         }
     }
 }

@@ -31,12 +31,10 @@ pub fn run_print_schema(
         .filter(|t| !filtering.should_ignore_table(t))
         .collect::<Vec<_>>();
     let foreign_keys = load_foreign_key_constraints(database_url, schema_name)?;
-    let foreign_keys = remove_unsafe_foreign_keys_for_codegen(
-        database_url,
-        &foreign_keys,
-        &table_names,
-    );
-    let table_data = table_names.into_iter()
+    let foreign_keys =
+        remove_unsafe_foreign_keys_for_codegen(database_url, &foreign_keys, &table_names);
+    let table_data = table_names
+        .into_iter()
         .map(|t| load_table_data(database_url, t))
         .collect::<Result<_, Box<Error>>>()?;
     let definitions = TableDefinitions {
@@ -82,7 +80,9 @@ impl Display for TableDefinitions {
             } else {
                 write!(f, "\n")?;
             }
-            writeln!(f, "{}",
+            writeln!(
+                f,
+                "{}",
                 TableDefinition {
                     table,
                     include_docs: self.include_docs,
@@ -127,7 +127,9 @@ impl<'a> Display for TableDefinition<'a> {
                 write!(out, "{}", pk)?;
             }
 
-            write!(out, ") {}",
+            write!(
+                out,
+                ") {}",
                 ColumnDefinitions {
                     columns: &self.table.column_data,
                     include_docs: self.include_docs,

@@ -17,7 +17,10 @@ impl DropDatabaseStatement {
     }
 
     pub fn if_exists(self) -> Self {
-        DropDatabaseStatement { if_exists: true, ..self }
+        DropDatabaseStatement {
+            if_exists: true,
+            ..self
+        }
     }
 }
 

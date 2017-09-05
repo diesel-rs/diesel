@@ -2,24 +2,21 @@ use diesel::connection::SimpleConnection;
 use diesel::expression::sql;
 use diesel::sqlite::SqliteConnection;
 use diesel::types::Bool;
-use diesel::{Connection, select, LoadDsl};
+use diesel::{select, Connection, LoadDsl};
 
 use std::fs;
 
 pub struct Database {
-    url: String
+    url: String,
 }
 
 impl Database {
     pub fn new(url: &str) -> Self {
-        Database {
-            url: url.into()
-        }
+        Database { url: url.into() }
     }
 
     pub fn create(self) -> Self {
-        fs::File::create(&self.url)
-            .expect(&format!("Error creating database {}", &self.url));
+        fs::File::create(&self.url).expect(&format!("Error creating database {}", &self.url));
         self
     }
 
@@ -29,12 +26,15 @@ impl Database {
     }
 
     pub fn table_exists(&self, table: &str) -> bool {
-        select(sql::<Bool>(&format!("EXISTS \
-                (SELECT 1 \
-                 FROM sqlite_master \
-                 WHERE type = 'table' \
-                 AND name = '{}')", table)))
-            .get_result(&self.conn()).unwrap()
+        select(sql::<Bool>(&format!(
+            "EXISTS \
+             (SELECT 1 \
+             FROM sqlite_master \
+             WHERE type = 'table' \
+             AND name = '{}')",
+            table
+        ))).get_result(&self.conn())
+            .unwrap()
     }
 
     pub fn conn(&self) -> SqliteConnection {
@@ -43,7 +43,8 @@ impl Database {
     }
 
     pub fn execute(&self, command: &str) {
-        self.conn().batch_execute(command)
+        self.conn()
+            .batch_execute(command)
             .expect(&format!("Error executing command {}", command));
     }
 }

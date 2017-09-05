@@ -1,7 +1,7 @@
 #[cfg(not(feature = "sqlite"))]
-extern crate url;
-#[cfg(not(feature = "sqlite"))]
 extern crate dotenv;
+#[cfg(not(feature = "sqlite"))]
+extern crate url;
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -37,8 +37,7 @@ impl ProjectBuilder {
         File::create(tempdir.path().join("Cargo.toml")).unwrap();
 
         for folder in self.folders {
-            fs::create_dir(tempdir.path().join(folder))
-                .unwrap();
+            fs::create_dir(tempdir.path().join(folder)).unwrap();
         }
 
         Project {
@@ -64,55 +63,65 @@ impl Project {
     }
 
     pub fn migrations(&self) -> Vec<Migration> {
-        self.directory.path().join("migrations")
-            .read_dir().expect("Error reading directory")
-            .map(|e| Migration {
-                path: e.expect("error reading entry").path().into(),
+        self.directory
+            .path()
+            .join("migrations")
+            .read_dir()
+            .expect("Error reading directory")
+            .map(|e| {
+                Migration {
+                    path: e.expect("error reading entry").path().into(),
+                }
             })
             .collect()
     }
 
-    #[cfg(any(feature="postgres", feature="mysql"))]
+    #[cfg(any(feature = "postgres", feature = "mysql"))]
     fn database_url_from_env(&self, var: &str) -> url::Url {
         use self::dotenv::dotenv;
         use std::env;
         dotenv().ok();
 
-        let mut db_url = url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap())
-            .unwrap();
+        let mut db_url =
+            url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap()).unwrap();
         db_url.set_path(&format!("diesel_{}", &self.name));
         db_url
     }
 
 
-    #[cfg(feature="postgres")]
+    #[cfg(feature = "postgres")]
     pub fn database_url(&self) -> String {
         self.database_url_from_env("PG_DATABASE_URL").to_string()
     }
 
-    #[cfg(feature="mysql")]
+    #[cfg(feature = "mysql")]
     pub fn database_url(&self) -> String {
         use std::env;
 
         let mut db_url = self.database_url_from_env("MYSQL_DATABASE_URL");
         if env::var_os("APPVEYOR").is_some() {
-            db_url.set_password(Some(&env::var("MYSQL_PWD").unwrap())).unwrap();
+            db_url
+                .set_password(Some(&env::var("MYSQL_PWD").unwrap()))
+                .unwrap();
         }
         db_url.to_string()
     }
 
-    #[cfg(feature="sqlite")]
+    #[cfg(feature = "sqlite")]
     pub fn database_url(&self) -> String {
-        self.directory.path().join(&self.name)
+        self.directory
+            .path()
+            .join(&self.name)
             .into_os_string()
-            .into_string().unwrap()
+            .into_string()
+            .unwrap()
     }
 
     pub fn has_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.directory.path().join(path).exists()
     }
 
-    #[cfg(feature="postgres")]
+    #[cfg(feature = "postgres")]
     pub fn delete_file<P: AsRef<Path>>(&self, path: P) {
         let file = self.directory.path().join(path);
         fs::remove_dir_all(file).unwrap();
@@ -135,10 +144,13 @@ impl Project {
     }
 }
 
-#[cfg(not(feature="sqlite"))]
+#[cfg(not(feature = "sqlite"))]
 impl Drop for Project {
     fn drop(&mut self) {
-        try_drop!(self.command("database").arg("drop").run().result(), "Couldn't drop database");
+        try_drop!(
+            self.command("database").arg("drop").run().result(),
+            "Couldn't drop database"
+        );
     }
 }
 
@@ -157,7 +169,10 @@ impl Migration {
     }
 
     fn file_name(&self) -> &str {
-        self.path.file_name().expect("migration should have a file name")
-            .to_str().expect("Directory was not valid UTF-8")
+        self.path
+            .file_name()
+            .expect("migration should have a file name")
+            .to_str()
+            .expect("Directory was not valid UTF-8")
     }
 }

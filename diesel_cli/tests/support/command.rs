@@ -1,5 +1,5 @@
-use std::fmt::{Debug, Formatter, Error};
-use std::path::{PathBuf, Path};
+use std::fmt::{Debug, Error, Formatter};
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::{env, str};
 
@@ -38,15 +38,12 @@ impl TestCommand {
 
     pub fn run(self) -> CommandResult {
         let output = self.build_command().output().unwrap();
-        CommandResult {
-            output: output,
-        }
+        CommandResult { output: output }
     }
 
     fn build_command(&self) -> Command {
         let mut command = Command::new(path_to_diesel_cli());
-        command.args(&self.args)
-            .current_dir(&self.cwd);
+        command.args(&self.args).current_dir(&self.cwd);
         for &(ref k, ref v) in self.env_vars.iter() {
             command.env(&k, &v);
         }
@@ -87,7 +84,8 @@ impl CommandResult {
 
 fn path_to_diesel_cli() -> PathBuf {
     Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap())
-        .parent().unwrap()
+        .parent()
+        .unwrap()
         .join("target")
         .join("debug")
         .join("diesel")

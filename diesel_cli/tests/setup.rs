@@ -1,4 +1,4 @@
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 use std::path::Path;
 
 use support::{database, project};
@@ -31,7 +31,7 @@ fn setup_creates_migrations_directory() {
 }
 
 #[test]
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 fn setup_initial_migration_returns_nothing_to_console() {
     let p = project("setup_intial_migration_returns_nothing_to_console").build();
 
@@ -41,7 +41,7 @@ fn setup_initial_migration_returns_nothing_to_console() {
 }
 
 #[test]
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 fn setup_creates_default_migration_file() {
     let p = project("setup_creates_default_migration_file").build();
 
@@ -52,11 +52,14 @@ fn setup_creates_default_migration_file() {
 }
 
 #[test]
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 fn setup_creates_default_migration_file_if_project_is_otherwise_setup() {
-    let p = project("setup_creates_default_migration_file_if_project_is_otherwise_setup").build();
+    let p = project(
+        "setup_creates_default_migration_file_if_project_is_otherwise_setup",
+    ).build();
 
-    let initial_migration_path = Path::new("migrations").join("00000000000000_diesel_initial_setup");
+    let initial_migration_path =
+        Path::new("migrations").join("00000000000000_diesel_initial_setup");
     let result = p.command("setup").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
@@ -84,9 +87,11 @@ fn setup_runs_migrations_if_no_schema_table() {
         .build();
     let db = database(&p.database_url());
 
-    p.create_migration("12345_create_users_table",
-                       "CREATE TABLE users ( id INTEGER )",
-                       "DROP TABLE users");
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
 
     // sanity check
     assert!(!db.exists());
@@ -94,8 +99,11 @@ fn setup_runs_migrations_if_no_schema_table() {
     let result = p.command("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(result.stdout().contains("Running migration 12345"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
     assert!(db.table_exists("users"));
 }
 
@@ -105,11 +113,15 @@ fn setup_doesnt_run_migrations_if_schema_table_exists() {
         .folder("migrations")
         .build();
     let db = database(&p.database_url()).create();
-    db.execute("CREATE TABLE __diesel_schema_migrations ( version INTEGER )");
+    db.execute(
+        "CREATE TABLE __diesel_schema_migrations ( version INTEGER )",
+    );
 
-    p.create_migration("12345_create_users_table",
-                       "CREATE TABLE users ( id INTEGER )",
-                       "DROP TABLE users");
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
 
     let result = p.command("setup").run();
 
@@ -123,8 +135,11 @@ fn setup_notifies_when_creating_a_database() {
 
     let result = p.command("setup").run();
 
-    assert!(result.stdout().contains("Creating database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
 }
 
 #[test]
@@ -135,8 +150,11 @@ fn setup_doesnt_notify_when_not_creating_a_database() {
 
     let result = p.command("setup").run();
 
-    assert!(!result.stdout().contains("Creating database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        !result.stdout().contains("Creating database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
 }
 
 #[test]
@@ -162,9 +180,7 @@ fn setup_works_with_migration_dir_by_env() {
     assert!(!p.has_file("migrations"));
     assert!(!p.has_file("bar"));
 
-    let result = p.command("setup")
-        .env("MIGRATION_DIRECTORY", "bar")
-        .run();
+    let result = p.command("setup").env("MIGRATION_DIRECTORY", "bar").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!p.has_file("migrations"));

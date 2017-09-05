@@ -6,19 +6,16 @@ use diesel::migrations::TIMESTAMP_FORMAT;
 
 #[test]
 fn migration_generate_creates_a_migration_with_the_proper_name() {
-    let p = project("migration_name")
-        .folder("migrations")
-        .build();
-    let result = p.command("migration")
-        .arg("generate")
-        .arg("hello")
-        .run();
+    let p = project("migration_name").folder("migrations").build();
+    let result = p.command("migration").arg("generate").arg("hello").run();
 
     // check overall output
-    let expected_stdout = Regex::new("\
+    let expected_stdout = Regex::new(
+        "\
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
-        ").unwrap();
+        ",
+    ).unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -27,7 +24,11 @@ Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
     let mut stamps_found = 0;
     for caps in captured_timestamps.captures_iter(result.stdout()) {
         let timestamp = Utc.datetime_from_str(&caps["stamp"], TIMESTAMP_FORMAT);
-        assert!(timestamp.is_ok(), "Found invalid timestamp format: {:?}", &caps["stamp"]);
+        assert!(
+            timestamp.is_ok(),
+            "Found invalid timestamp format: {:?}",
+            &caps["stamp"]
+        );
         stamps_found += 1;
     }
     assert_eq!(stamps_found, 2);
@@ -43,13 +44,8 @@ Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
 
 #[test]
 fn migration_generate_creates_a_migration_with_initital_contents() {
-    let p = project("migration_name")
-        .folder("migrations")
-        .build();
-    let result = p.command("migration")
-        .arg("generate")
-        .arg("hello")
-        .run();
+    let p = project("migration_name").folder("migrations").build();
+    let result = p.command("migration").arg("generate").arg("hello").run();
     assert!(result.is_success(), "Command failed: {:?}", result);
 
     let migrations = p.migrations();
@@ -74,9 +70,7 @@ fn migration_generate_creates_a_migration_with_initital_contents() {
 
 #[test]
 fn migration_generate_doesnt_require_database_url_to_be_set() {
-    let p = project("migration_name")
-        .folder("migrations")
-        .build();
+    let p = project("migration_name").folder("migrations").build();
     let result = p.command_without_database_url("migration")
         .arg("generate")
         .arg("hello")
@@ -87,19 +81,19 @@ fn migration_generate_doesnt_require_database_url_to_be_set() {
 
 #[test]
 fn migration_version_can_be_specified_on_creation() {
-    let p = project("migration_name")
-        .folder("migrations")
-        .build();
+    let p = project("migration_name").folder("migrations").build();
     let result = p.command("migration")
         .arg("generate")
         .arg("hello")
         .arg("--version=1234")
         .run();
 
-    let expected_stdout = Regex::new("\
+    let expected_stdout = Regex::new(
+        "\
 Creating migrations.1234_hello.up.sql
 Creating migrations.1234_hello.down.sql
-").unwrap();
+",
+    ).unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -109,9 +103,7 @@ Creating migrations.1234_hello.down.sql
 
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
-    let p = project("migration_name")
-        .folder("foo")
-        .build();
+    let p = project("migration_name").folder("foo").build();
     let result = p.command("migration")
         .arg("generate")
         .arg("stuff")
@@ -119,10 +111,12 @@ fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
         .arg("--migration-dir=foo")
         .run();
 
-    let expected_stdout = Regex::new("\
+    let expected_stdout = Regex::new(
+        "\
 Creating foo.12345_stuff.up.sql
 Creating foo.12345_stuff.down.sql
-").unwrap();
+",
+    ).unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -132,9 +126,7 @@ Creating foo.12345_stuff.down.sql
 
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_env_var() {
-    let p = project("migration_name")
-        .folder("bar")
-        .build();
+    let p = project("migration_name").folder("bar").build();
     let result = p.command("migration")
         .arg("generate")
         .arg("stuff")
@@ -142,10 +134,12 @@ fn migration_directory_can_be_specified_for_generate_by_env_var() {
         .env("MIGRATION_DIRECTORY", "bar")
         .run();
 
-    let expected_stdout = Regex::new("\
+    let expected_stdout = Regex::new(
+        "\
 Creating bar.12345_stuff.up.sql
 Creating bar.12345_stuff.down.sql
-").unwrap();
+",
+    ).unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 

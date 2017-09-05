@@ -7,13 +7,14 @@ fn database_drop_drops_database() {
 
     assert!(db.exists());
 
-    let result = p.command("database")
-        .arg("drop")
-        .run();
+    let result = p.command("database").arg("drop").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(result.stdout().contains("Dropping database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
     assert!(!db.exists());
 }
 
@@ -24,12 +25,13 @@ fn database_drop_does_not_print_to_stdout_if_no_db_exists() {
 
     assert!(!db.exists());
 
-    let result = p.command("database")
-        .arg("drop")
-        .run();
+    let result = p.command("database").arg("drop").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(!result.stdout().contains("Dropping database:"),
-        "Unexpected stdout {}", result.stdout());
+    assert!(
+        !result.stdout().contains("Dropping database:"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
     assert!(!db.exists());
 }
