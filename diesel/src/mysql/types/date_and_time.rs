@@ -78,16 +78,17 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
-        Ok(NaiveDate::from_ymd(
+
+        NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ).and_hms_micro(
+        ).and_then(|v| v.and_hms_micro_opt(
             mysql_time.hour as u32,
             mysql_time.minute as u32,
             mysql_time.second as u32,
             mysql_time.second_part as u32,
-        ))
+        )).ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
     }
 }
 
@@ -249,5 +250,8 @@ mod tests {
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)"));
         assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
+
+        let query = select(sql::<Date>("CAST('0000-0-0' AS DATE)"));
+        assert!(query.get_result::<NaiveDate>(&connection).is_err());
     }
 }
