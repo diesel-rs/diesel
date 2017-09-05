@@ -96,7 +96,7 @@ fn selecting_expression_with_bind_param() {
 
     let source = users.select(name.eq("Sean".to_string()));
     let expected_data = vec![true, false];
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data = source.load::<bool>(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
