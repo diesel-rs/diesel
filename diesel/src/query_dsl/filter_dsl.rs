@@ -32,14 +32,15 @@ use query_source::*;
 /// # }
 /// ```
 pub trait FilterDsl<Predicate>: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
 
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
 
-impl<T, U, Predicate> FilterDsl<Predicate> for T where
-    T: Table + AsQuery<SqlType=<U as Query>::SqlType, Query=U>,
-    U: Query + FilterDsl<Predicate, SqlType=<U as Query>::SqlType>,
+impl<T, U, Predicate> FilterDsl<Predicate> for T
+where
+    T: Table + AsQuery<SqlType = <U as Query>::SqlType, Query = U>,
+    U: Query + FilterDsl<Predicate, SqlType = <U as Query>::SqlType>,
 {
     type Output = Filter<U, Predicate>;
 
@@ -75,12 +76,13 @@ impl<T, U, Predicate> FilterDsl<Predicate> for T where
 /// # }
 /// ```
 pub trait FindDsl<PK>: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
 
     fn find(self, id: PK) -> Self::Output;
 }
 
-impl<T, PK> FindDsl<PK> for T where
+impl<T, PK> FindDsl<PK> for T
+where
     T: Table + FilterDsl<<<T as Table>::PrimaryKey as EqAll<PK>>::Output>,
     T::PrimaryKey: EqAll<PK>,
 {

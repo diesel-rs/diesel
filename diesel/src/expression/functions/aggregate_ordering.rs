@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
-use types::{SqlOrd, HasSqlType, IntoNullable};
+use types::{HasSqlType, IntoNullable, SqlOrd};
 
 macro_rules! ord_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {
@@ -44,8 +44,11 @@ macro_rules! ord_function {
     }
 }
 
-ord_function!(max, Max, "MAX",
-"Represents a SQL `MAX` function. This function can only take types which are
+ord_function!(
+    max,
+    Max,
+    "MAX",
+    "Represents a SQL `MAX` function. This function can only take types which are
 ordered.
 
 # Examples
@@ -67,10 +70,14 @@ ordered.
 #     let connection = establish_connection();
 assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
 # }
-");
+"
+);
 
-ord_function!(min, Min, "MIN",
-"Represents a SQL `MIN` function. This function can only take types which are
+ord_function!(
+    min,
+    Min,
+    "MIN",
+    "Represents a SQL `MIN` function. This function can only take types which are
 ordered.
 
 # Examples
@@ -92,4 +99,5 @@ ordered.
 #     let connection = establish_connection();
 assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
 # }
-");
+"
+);

@@ -1,9 +1,9 @@
 use expression::grouped::Grouped;
 use expression::operators::{And, Or};
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use types::Bool;
 
-pub trait BoolExpressionMethods: Expression<SqlType=Bool> + Sized {
+pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
     /// Creates a SQL `AND` expression
     fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self, T::Expression> {
         And::new(self.as_expression(), other.as_expression())
@@ -19,4 +19,4 @@ pub trait BoolExpressionMethods: Expression<SqlType=Bool> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Bool>> BoolExpressionMethods for T {}
+impl<T: Expression<SqlType = Bool>> BoolExpressionMethods for T {}

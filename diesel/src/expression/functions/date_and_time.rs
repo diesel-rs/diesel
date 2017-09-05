@@ -14,8 +14,7 @@ impl Expression for now {
     type SqlType = Timestamp;
 }
 
-impl NonAggregate for now {
-}
+impl NonAggregate for now {}
 
 impl<DB: Backend> QueryFragment<DB> for now {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -54,14 +53,14 @@ let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwr
 # }
 ");
 
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 use expression::AsExpression;
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 use expression::coerce::Coerce;
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 use types::Timestamptz;
 
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 impl AsExpression<Timestamptz> for now {
     type Expression = Coerce<now, Timestamptz>;
 
@@ -70,7 +69,7 @@ impl AsExpression<Timestamptz> for now {
     }
 }
 
-#[cfg(feature="postgres")]
+#[cfg(feature = "postgres")]
 impl AsExpression<Nullable<Timestamptz>> for now {
     type Expression = Coerce<now, Nullable<Timestamptz>>;
 

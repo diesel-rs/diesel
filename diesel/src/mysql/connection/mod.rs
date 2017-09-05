@@ -27,9 +27,8 @@ unsafe impl Send for MysqlConnection {}
 
 impl SimpleConnection for MysqlConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        self.raw_connection.enable_multi_statements(|| {
-            self.raw_connection.execute(query)
-        })
+        self.raw_connection
+            .enable_multi_statements(|| self.raw_connection.execute(query))
     }
 }
 
@@ -54,12 +53,14 @@ impl Connection for MysqlConnection {
 
     #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize> {
-        self.raw_connection.execute(query)
+        self.raw_connection
+            .execute(query)
             .map(|_| self.raw_connection.affected_rows())
     }
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
@@ -85,11 +86,14 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    where
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let stmt = try!(self.prepare_query(source));
-        unsafe { try!(stmt.execute()); }
+        unsafe {
+            try!(stmt.execute());
+        }
         Ok(stmt.affected_rows())
     }
 
@@ -100,12 +104,15 @@ impl Connection for MysqlConnection {
 }
 
 impl MysqlConnection {
-    fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>> where
+    fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>>
+    where
         T: QueryFragment<Mysql> + QueryId,
     {
-        let mut stmt = self.statement_cache.cached_statement(source, &[], |sql| {
-            self.raw_connection.prepare(sql)
-        })?;
+        let mut stmt = self.statement_cache.cached_statement(
+            source,
+            &[],
+            |sql| self.raw_connection.prepare(sql),
+        )?;
         let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
         try!(source.collect_binds(&mut bind_collector, &()));
         let metadata = bind_collector.metadata;
@@ -115,7 +122,9 @@ impl MysqlConnection {
     }
 
     fn set_config_options(&self) -> QueryResult<()> {
-        self.execute("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")?;
+        self.execute(
+            "SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))",
+        )?;
         self.execute("SET time_zone = '+00:00';")?;
         self.execute("SET character_set_client = 'utf8mb4'")?;
         self.execute("SET character_set_connection = 'utf8mb4'")?;

@@ -1,7 +1,7 @@
 //! The types in this module are all shorthand for `PredicateType<Lhs,
 //! AsExpr<Rhs, Lhs>>`. Since we often need to return concrete types, instead of
 //! a boxed trait object, these can be useful for writing concise return types.
-use super::{Expression, AsExpression};
+use super::{AsExpression, Expression};
 use super::grouped::Grouped;
 use types;
 
@@ -32,14 +32,18 @@ gen_helper_type!(And, Bool);
 gen_helper_type!(Like, VarChar);
 gen_helper_type!(NotLike, VarChar);
 
-pub type Between<Lhs, Rhs> = super::operators::Between<Lhs,
-    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
-pub type NotBetween<Lhs, Rhs> = super::operators::NotBetween<Lhs,
-    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>>;
+pub type Between<Lhs, Rhs> = super::operators::Between<
+    Lhs,
+    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>,
+>;
+pub type NotBetween<Lhs, Rhs> = super::operators::NotBetween<
+    Lhs,
+    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>,
+>;
 /// The return type of `not(expr)`
 pub type Not<Expr> = super::operators::Not<Grouped<AsExprOf<Expr, types::Bool>>>;
 
 #[doc(inline)]
-pub use super::operators::{IsNull, IsNotNull, Asc, Desc};
+pub use super::operators::{Asc, Desc, IsNotNull, IsNull};
 #[doc(inline)]
 pub use super::array_comparison::EqAny;

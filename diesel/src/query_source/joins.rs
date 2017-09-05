@@ -37,17 +37,15 @@ impl<Left, Right, Kind> Join<Left, Right, Kind> {
 
     #[doc(hidden)]
     pub fn on<On>(self, on: On) -> JoinOn<Self, On> {
-        JoinOn {
-            join: self,
-            on: on,
-        }
+        JoinOn { join: self, on: on }
     }
 }
 
 impl_query_id!(Join<Left, Right, Kind>);
 impl_query_id!(JoinOn<Join, On>);
 
-impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
+impl<Left, Right> QuerySource for Join<Left, Right, Inner>
+where
     Left: QuerySource + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
     Left::Output: SelectableExpression<Self>,
@@ -65,7 +63,8 @@ impl<Left, Right> QuerySource for Join<Left, Right, Inner> where
     }
 }
 
-impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
+impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter>
+where
     Left: QuerySource + AppendSelection<Nullable<Right::DefaultSelection>>,
     Right: QuerySource,
     Left::Output: SelectableExpression<Self>,
@@ -79,13 +78,15 @@ impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter> where
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left.append_selection(self.right.default_selection().nullable())
+        self.left
+            .append_selection(self.right.default_selection().nullable())
     }
 }
 
-impl<Join, On> QuerySource for JoinOn<Join, On> where
+impl<Join, On> QuerySource for JoinOn<Join, On>
+where
     Join: QuerySource,
-    On: AppearsOnTable<Join::FromClause, SqlType=Bool> + Clone,
+    On: AppearsOnTable<Join::FromClause, SqlType = Bool> + Clone,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
     type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;
@@ -104,7 +105,8 @@ impl<Join, On> QuerySource for JoinOn<Join, On> where
     }
 }
 
-impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
+impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind>
+where
     DB: Backend,
     Left: QuerySource,
     Left::FromClause: QueryFragment<DB>,
@@ -121,26 +123,26 @@ impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind> where
     }
 }
 
-impl<Left, Right, Kind, T> SelectableExpression<Join<Left, Right, Kind>>
-    for Nullable<T> where
-        T: SelectableExpression<Join<Left, Right, Inner>>,
-        Nullable<T>: AppearsOnTable<Join<Left, Right, Kind>>,
+impl<Left, Right, Kind, T> SelectableExpression<Join<Left, Right, Kind>> for Nullable<T>
+where
+    T: SelectableExpression<Join<Left, Right, Inner>>,
+    Nullable<T>: AppearsOnTable<Join<Left, Right, Kind>>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<Join, On, T> SelectableExpression<JoinOn<Join, On>>
-    for Nullable<T> where
-        Nullable<T>: SelectableExpression<Join>,
-        Nullable<T>: AppearsOnTable<JoinOn<Join, On>>,
+impl<Join, On, T> SelectableExpression<JoinOn<Join, On>> for Nullable<T>
+where
+    Nullable<T>: SelectableExpression<Join>,
+    Nullable<T>: AppearsOnTable<JoinOn<Join, On>>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<From, T> SelectableExpression<SelectStatement<From>>
-    for Nullable<T> where
-        Nullable<T>: SelectableExpression<From>,
-        Nullable<T>: AppearsOnTable<SelectStatement<From>>,
+impl<From, T> SelectableExpression<SelectStatement<From>> for Nullable<T>
+where
+    Nullable<T>: SelectableExpression<From>,
+    Nullable<T>: AppearsOnTable<SelectStatement<From>>,
 {
 }
 
@@ -181,7 +183,8 @@ impl<T: Table, Selection> AppendSelection<Selection> for T {
     }
 }
 
-impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, Kind> where
+impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, Kind>
+where
     Self: QuerySource,
     <Self as QuerySource>::DefaultSelection: TupleAppend<Selection>,
 {
@@ -192,7 +195,8 @@ impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, 
     }
 }
 
-impl<Join, On, Selection> AppendSelection<Selection> for JoinOn<Join, On> where
+impl<Join, On, Selection> AppendSelection<Selection> for JoinOn<Join, On>
+where
     Join: AppendSelection<Selection>,
 {
     type Output = Join::Output;
@@ -228,7 +232,8 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     }
 }
 
-impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind> where
+impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind>
+where
     Left: JoinTo<Right>,
 {
     type FromClause = Left::FromClause;
@@ -239,7 +244,8 @@ impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind> where
     }
 }
 
-impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On> where
+impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On>
+where
     Join: JoinTo<Right>,
 {
     type FromClause = Join::FromClause;
@@ -250,9 +256,10 @@ impl<Join, On, Right> JoinTo<Right> for JoinOn<Join, On> where
     }
 }
 
-use super::{Succ, Never, AppearsInFromClause};
+use super::{AppearsInFromClause, Never, Succ};
 
-impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind> where
+impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
+where
     Left: AppearsInFromClause<T>,
     Right: AppearsInFromClause<T>,
     Left::Count: Plus<Right::Count>,
@@ -260,7 +267,8 @@ impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind> wh
     type Count = <Left::Count as Plus<Right::Count>>::Output;
 }
 
-impl<T, Join, On> AppearsInFromClause<T> for JoinOn<Join, On> where
+impl<T, Join, On> AppearsInFromClause<T> for JoinOn<Join, On>
+where
     Join: AppearsInFromClause<T>,
 {
     type Count = Join::Count;
@@ -270,7 +278,8 @@ pub trait Plus<T> {
     type Output;
 }
 
-impl<T, U> Plus<T> for Succ<U> where
+impl<T, U> Plus<T> for Succ<U>
+where
     U: Plus<T>,
 {
     type Output = Succ<U::Output>;
@@ -293,7 +302,8 @@ impl<Source, On> OnClauseWrapper<Source, On> {
     }
 }
 
-impl<Lhs, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Lhs where
+impl<Lhs, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Lhs
+where
     Lhs: Table,
 {
     type FromClause = Rhs;

@@ -45,8 +45,11 @@ macro_rules! fold_function {
     }
 }
 
-fold_function!(sum, Sum, "SUM",
-"Represents a SQL `SUM` function. This function can only take types which are
+fold_function!(
+    sum,
+    Sum,
+    "SUM",
+    "Represents a SQL `SUM` function. This function can only take types which are
 Foldable.
 
 # Examples
@@ -68,10 +71,14 @@ Foldable.
 #     let connection = establish_connection();
 assert_eq!(Ok(Some(12i64)), animals.select(sum(legs)).first(&connection));
 # }
-");
+"
+);
 
-fold_function!(avg, Avg, "AVG",
-"Represents a SQL `AVG` function. This function can only take types which are
+fold_function!(
+    avg,
+    Avg,
+    "AVG",
+    "Represents a SQL `AVG` function. This function can only take types which are
 Foldable.
 
 # Examples
@@ -96,4 +103,5 @@ Foldable.
 // they return a `Numeric` which doesn't have a corresponding Rust type.
 # }
 ```
-");
+"
+);

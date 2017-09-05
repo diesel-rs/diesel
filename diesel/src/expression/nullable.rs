@@ -13,14 +13,16 @@ impl<T> Nullable<T> {
     }
 }
 
-impl<T> Expression for Nullable<T> where
+impl<T> Expression for Nullable<T>
+where
     T: Expression,
     <T as Expression>::SqlType: IntoNullable,
 {
     type SqlType = <<T as Expression>::SqlType as IntoNullable>::Nullable;
 }
 
-impl<T, DB> QueryFragment<DB> for Nullable<T> where
+impl<T, DB> QueryFragment<DB> for Nullable<T>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {
@@ -31,7 +33,8 @@ impl<T, DB> QueryFragment<DB> for Nullable<T> where
 
 /// Nullable can be used in where clauses everywhere, but can only be used in
 /// select clauses for outer joins.
-impl<T, QS> AppearsOnTable<QS> for Nullable<T> where
+impl<T, QS> AppearsOnTable<QS> for Nullable<T>
+where
     T: AppearsOnTable<QS>,
     Nullable<T>: Expression,
 {
@@ -43,7 +46,8 @@ impl<T: QueryId> QueryId for Nullable<T> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<T> NonAggregate for Nullable<T> where
+impl<T> NonAggregate for Nullable<T>
+where
     T: NonAggregate,
     Nullable<T>: Expression,
 {

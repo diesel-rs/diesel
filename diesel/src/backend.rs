@@ -4,7 +4,8 @@ use query_builder::QueryBuilder;
 use query_builder::bind_collector::BindCollector;
 use types::{self, HasSqlType};
 
-pub trait Backend where
+pub trait Backend
+where
     Self: Sized,
     Self: HasSqlType<types::SmallInt>,
     Self: HasSqlType<types::Integer>,

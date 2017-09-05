@@ -1,11 +1,11 @@
 pub mod changeset;
 pub mod target;
 
-pub use self::changeset::{Changeset, AsChangeset};
-pub use self::target::{UpdateTarget, IntoUpdateTarget};
+pub use self::changeset::{AsChangeset, Changeset};
+pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
-use expression::{Expression, SelectableExpression, NonAggregate};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_source::Table;
@@ -25,9 +25,10 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
 }
 
 impl<T, U> IncompleteUpdateStatement<T, U> {
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset, NoReturningClause> where
+    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset, NoReturningClause>
+    where
         T: Table,
-        V: changeset::AsChangeset<Target=T>,
+        V: changeset::AsChangeset<Target = T>,
         UpdateStatement<T, U, V::Changeset, NoReturningClause>: AsQuery,
     {
         UpdateStatement {
@@ -47,7 +48,8 @@ pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     returning: Ret,
 }
 
-impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
+impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret>
+where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
@@ -58,7 +60,7 @@ impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_noop() {
             return Err(QueryBuilderError(
-                "There are no changes to save. This query cannot be built".into()
+                "There are no changes to save. This query cannot be built".into(),
             ));
         }
 
@@ -75,7 +77,8 @@ impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret> where
 
 impl_query_id!(noop: UpdateStatement<T, U, V, Ret>);
 
-impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause> where
+impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
+where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
 {
@@ -87,7 +90,8 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause> where
     }
 }
 
-impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>> where
+impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
+where
     T: Table,
     Ret: Expression + SelectableExpression<T> + NonAggregate,
 {
@@ -124,7 +128,8 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>> where
+    pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    where
         T: Table,
         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     {

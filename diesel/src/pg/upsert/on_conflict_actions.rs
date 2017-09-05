@@ -145,7 +145,8 @@ pub struct DoUpdate<T> {
     changeset: T,
 }
 
-impl<T> QueryFragment<Pg> for DoUpdate<T> where
+impl<T> QueryFragment<Pg> for DoUpdate<T>
+where
     T: Changeset<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
@@ -164,7 +165,8 @@ impl<T> QueryFragment<Pg> for DoUpdate<T> where
 #[derive(Debug, Clone, Copy)]
 pub struct Excluded<T>(T);
 
-impl<T> QueryFragment<Pg> for Excluded<T> where
+impl<T> QueryFragment<Pg> for Excluded<T>
+where
     T: Column,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
@@ -174,13 +176,15 @@ impl<T> QueryFragment<Pg> for Excluded<T> where
     }
 }
 
-impl<T> Expression for Excluded<T> where
+impl<T> Expression for Excluded<T>
+where
     T: Expression,
 {
     type SqlType = T::SqlType;
 }
 
-impl<T> AppearsOnTable<T::Table> for Excluded<T> where
+impl<T> AppearsOnTable<T::Table> for Excluded<T>
+where
     T: Column,
     Excluded<T>: Expression,
 {
@@ -201,16 +205,17 @@ impl<T> IntoConflictAction<T> for DoNothing {
     }
 }
 
-impl<Table, Changes> IntoConflictAction<Table> for DoUpdate<Changes> where
+impl<Table, Changes> IntoConflictAction<Table> for DoUpdate<Changes>
+where
     Table: QuerySource,
-    Changes: AsChangeset<Target=Table>,
+    Changes: AsChangeset<Target = Table>,
     DoUpdate<Changes::Changeset>: QueryFragment<Pg>,
 {
     type Action = DoUpdate<Changes::Changeset>;
 
     fn into_conflict_action(self) -> Self::Action {
         DoUpdate {
-            changeset: self.changeset.as_changeset()
+            changeset: self.changeset.as_changeset(),
         }
     }
 }

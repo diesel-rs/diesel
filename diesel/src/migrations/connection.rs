@@ -16,27 +16,30 @@ pub trait MigrationConnection: Connection {
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
 }
 
-impl<T> MigrationConnection for T where
+impl<T> MigrationConnection for T
+where
     T: Connection,
     String: FromSql<VarChar, T::Backend>,
     for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, T::Backend>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
-        __diesel_schema_migrations.select(version)
+        __diesel_schema_migrations
+            .select(version)
             .load(self)
             .map(FromIterator::from_iter)
     }
 
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>> {
-        use ::expression::dsl::max;
-        __diesel_schema_migrations.select(max(version))
-            .first(self)
+        use expression::dsl::max;
+        __diesel_schema_migrations.select(max(version)).first(self)
     }
 
     fn insert_new_migration(&self, ver: &str) -> QueryResult<()> {
-        try!(::insert(&NewMigration(ver))
-             .into(__diesel_schema_migrations)
-             .execute(self));
+        try!(
+            ::insert(&NewMigration(ver))
+                .into(__diesel_schema_migrations)
+                .execute(self)
+        );
         Ok(())
     }
 }

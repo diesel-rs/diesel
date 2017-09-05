@@ -7,10 +7,12 @@ use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
 use query_source::Queryable;
-use types::{HasSqlType, FromSql, FromSqlRow, Nullable, ToSql, ToSqlOutput, IsNull, NotNull};
+use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql, ToSqlOutput};
 
-impl<T, DB> HasSqlType<Nullable<T>> for DB where
-    DB: Backend + HasSqlType<T>, T: NotNull,
+impl<T, DB> HasSqlType<Nullable<T>> for DB
+where
+    DB: Backend + HasSqlType<T>,
+    T: NotNull,
 {
     fn metadata(lookup: &DB::MetadataLookup) -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata(lookup)
@@ -21,27 +23,31 @@ impl<T, DB> HasSqlType<Nullable<T>> for DB where
     }
 }
 
-impl<T> QueryId for Nullable<T> where
+impl<T> QueryId for Nullable<T>
+where
     T: QueryId + NotNull,
 {
     type QueryId = T::QueryId;
 
-    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T> where
+impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
+where
     T: FromSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>, ST: NotNull,
+    DB: Backend + HasSqlType<ST>,
+    ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 }
 
-impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T> where
+impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T>
+where
     T: Queryable<ST, DB>,
     DB: Backend + HasSqlType<ST>,
     Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
@@ -54,14 +60,15 @@ impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T> where
     }
 }
 
-impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
+impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T>
+where
     T: FromSqlRow<ST, DB>,
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 
-    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
         let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
@@ -72,12 +79,16 @@ impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T> where
     }
 }
 
-impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
+impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>
+where
     T: ToSql<ST, DB>,
     DB: Backend + HasSqlType<ST>,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, DB>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
@@ -86,7 +97,8 @@ impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T> where
     }
 }
 
-impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
+impl<T, ST> AsExpression<Nullable<ST>> for Option<T>
+where
     ST: NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;
@@ -96,7 +108,8 @@ impl<T, ST> AsExpression<Nullable<ST>> for Option<T> where
     }
 }
 
-impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T> where
+impl<'a, T, ST> AsExpression<Nullable<ST>> for &'a Option<T>
+where
     ST: NotNull,
 {
     type Expression = Bound<Nullable<ST>, Self>;

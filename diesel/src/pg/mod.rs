@@ -14,7 +14,7 @@ pub use self::query_builder::PgQueryBuilder;
 
 pub mod data_types {
     #[doc(inline)]
-    pub use super::types::date_and_time::{PgTimestamp, PgDate, PgTime, PgInterval};
+    pub use super::types::date_and_time::{PgDate, PgInterval, PgTime, PgTimestamp};
     #[doc(inline)]
     pub use super::types::floats::PgNumeric;
     #[doc(inline)]

@@ -3,10 +3,10 @@ use std::marker::PhantomData;
 use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
-use types::{ToSql, HasSqlType};
+use types::{HasSqlType, ToSql};
 
 #[derive(Debug, Clone, Copy)]
-#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct UncheckedBind<Query, Value, ST> {
     query: Query,
     value: Value,
@@ -27,16 +27,18 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     }
 }
 
-impl<Query, Value, ST> QueryId for UncheckedBind<Query, Value, ST> where
+impl<Query, Value, ST> QueryId for UncheckedBind<Query, Value, ST>
+where
     Query: QueryId,
     ST: QueryId,
 {
     type QueryId = UncheckedBind<Query::QueryId, (), ST::QueryId>;
 
-    const HAS_STATIC_QUERY_ID: bool = Query::HAS_STATIC_QUERY_ID && ST::HAS_STATIC_QUERY_ID; 
+    const HAS_STATIC_QUERY_ID: bool = Query::HAS_STATIC_QUERY_ID && ST::HAS_STATIC_QUERY_ID;
 }
 
-impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST> where
+impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST>
+where
     DB: Backend + HasSqlType<ST>,
     Query: QueryFragment<DB>,
     Value: ToSql<ST, DB>,
@@ -48,7 +50,8 @@ impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST>
     }
 }
 
-impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST> where
+impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST>
+where
     Q: Query,
 {
     type SqlType = Q::SqlType;

@@ -38,31 +38,36 @@ impl<T, U> NotIn<T, U> {
     }
 }
 
-impl<T, U> Expression for In<T, U> where
+impl<T, U> Expression for In<T, U>
+where
     T: Expression,
-    U: Expression<SqlType=T::SqlType>,
+    U: Expression<SqlType = T::SqlType>,
 {
     type SqlType = Bool;
 }
 
-impl<T, U> Expression for NotIn<T, U> where
+impl<T, U> Expression for NotIn<T, U>
+where
     T: Expression,
-    U: Expression<SqlType=T::SqlType>,
+    U: Expression<SqlType = T::SqlType>,
 {
     type SqlType = Bool;
 }
 
-impl<T, U> NonAggregate for In<T, U> where
+impl<T, U> NonAggregate for In<T, U>
+where
     In<T, U>: Expression,
 {
 }
 
-impl<T, U> NonAggregate for NotIn<T, U> where
+impl<T, U> NonAggregate for NotIn<T, U>
+where
     NotIn<T, U>: Expression,
 {
 }
 
-impl<T, U, DB> QueryFragment<DB> for In<T, U> where
+impl<T, U, DB> QueryFragment<DB> for In<T, U>
+where
     DB: Backend,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
@@ -80,7 +85,8 @@ impl<T, U, DB> QueryFragment<DB> for In<T, U> where
     }
 }
 
-impl<T, U, DB> QueryFragment<DB> for NotIn<T, U> where
+impl<T, U, DB> QueryFragment<DB> for NotIn<T, U>
+where
     DB: Backend,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
@@ -104,23 +110,23 @@ impl_selectable_expression!(In<T, U>);
 impl_selectable_expression!(NotIn<T, U>);
 
 use std::marker::PhantomData;
-use query_builder::{SelectStatement, BoxedSelectStatement};
+use query_builder::{BoxedSelectStatement, SelectStatement};
 
 pub trait AsInExpression<T> {
-    type InExpression: MaybeEmpty + Expression<SqlType=T>;
+    type InExpression: MaybeEmpty + Expression<SqlType = T>;
 
     fn as_in_expression(self) -> Self::InExpression;
 }
 
-impl<I, T, ST> AsInExpression<ST> for I where
-    I: IntoIterator<Item=T>,
+impl<I, T, ST> AsInExpression<ST> for I
+where
+    I: IntoIterator<Item = T>,
     T: AsExpression<ST>,
 {
     type InExpression = Many<T::Expression>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        let expressions = self.into_iter()
-            .map(AsExpression::as_expression).collect();
+        let expressions = self.into_iter().map(AsExpression::as_expression).collect();
         Many(expressions)
     }
 }
@@ -129,26 +135,32 @@ pub trait MaybeEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl<ST, S, F, W, O, L, Of, G> AsInExpression<ST>
-    for SelectStatement<S, F, W, O, L, Of, G> where
-        SelectStatement<S, F, W, O, L, Of, G>: Query<SqlType=ST>,
-        Subselect<SelectStatement<S, F, W, O, L, Of>, ST>: Expression,
+impl<ST, S, F, W, O, L, Of, G> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G>
+where
+    SelectStatement<S, F, W, O, L, Of, G>: Query<SqlType = ST>,
+    Subselect<SelectStatement<S, F, W, O, L, Of>, ST>: Expression,
 {
     type InExpression = Subselect<Self, ST>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        Subselect { values: self, _sql_type: PhantomData }
+        Subselect {
+            values: self,
+            _sql_type: PhantomData,
+        }
     }
 }
 
-impl<'a, ST, QS, DB> AsInExpression<ST>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType=ST>,
+impl<'a, ST, QS, DB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        Subselect { values: self, _sql_type: PhantomData }
+        Subselect {
+            values: self,
+            _sql_type: PhantomData,
+        }
     }
 }
 
@@ -165,19 +177,22 @@ impl<T> MaybeEmpty for Many<T> {
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Many<T> where
+impl<T, QS> SelectableExpression<QS> for Many<T>
+where
     Many<T>: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
 {
 }
 
-impl<T, QS> AppearsOnTable<QS> for Many<T> where
+impl<T, QS> AppearsOnTable<QS> for Many<T>
+where
     Many<T>: Expression,
     T: AppearsOnTable<QS>,
 {
 }
 
-impl<T, DB> QueryFragment<DB> for Many<T> where
+impl<T, DB> QueryFragment<DB> for Many<T>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {
@@ -214,19 +229,22 @@ impl<T, ST> MaybeEmpty for Subselect<T, ST> {
     }
 }
 
-impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST> where
+impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST>
+where
     Subselect<T, ST>: AppearsOnTable<QS>,
     T: Query,
 {
 }
 
-impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST> where
+impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST>
+where
     Subselect<T, ST>: Expression,
     T: Query,
 {
 }
 
-impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST> where
+impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {

@@ -50,43 +50,58 @@ impl AnsiTransactionManager {
 
     fn change_transaction_depth(&self, by: i32, query: QueryResult<()>) -> QueryResult<()> {
         if query.is_ok() {
-            self.transaction_depth.set(self.transaction_depth.get() + by)
+            self.transaction_depth
+                .set(self.transaction_depth.get() + by)
         }
         query
     }
 }
 
-impl<Conn> TransactionManager<Conn> for AnsiTransactionManager where
+impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
+where
     Conn: Connection,
     Conn::Backend: UsesAnsiSavepointSyntax,
 {
     fn begin_transaction(&self, conn: &Conn) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(1, if transaction_depth == 0 {
-            conn.batch_execute("BEGIN")
-        } else {
-            conn.batch_execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-        })
+        self.change_transaction_depth(
+            1,
+            if transaction_depth == 0 {
+                conn.batch_execute("BEGIN")
+            } else {
+                conn.batch_execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+            },
+        )
     }
 
     fn rollback_transaction(&self, conn: &Conn) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth == 1 {
-            conn.batch_execute("ROLLBACK")
-        } else {
-            conn.batch_execute(&format!("ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                                        transaction_depth - 1))
-        })
+        self.change_transaction_depth(
+            -1,
+            if transaction_depth == 1 {
+                conn.batch_execute("ROLLBACK")
+            } else {
+                conn.batch_execute(&format!(
+                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                    transaction_depth - 1
+                ))
+            },
+        )
     }
 
     fn commit_transaction(&self, conn: &Conn) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(-1, if transaction_depth <= 1 {
-            conn.batch_execute("COMMIT")
-        } else {
-            conn.batch_execute(&format!("RELEASE SAVEPOINT diesel_savepoint_{}",
-                                        transaction_depth - 1))
-        })
+        self.change_transaction_depth(
+            -1,
+            if transaction_depth <= 1 {
+                conn.batch_execute("COMMIT")
+            } else {
+                conn.batch_execute(&format!(
+                    "RELEASE SAVEPOINT diesel_savepoint_{}",
+                    transaction_depth - 1
+                ))
+            },
+        )
     }
 
     fn get_transaction_depth(&self) -> u32 {

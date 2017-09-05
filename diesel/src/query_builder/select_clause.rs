@@ -15,13 +15,15 @@ pub trait SelectClauseExpression<QS> {
     type SelectClauseSqlType;
 }
 
-impl<T, QS> SelectClauseExpression<QS> for SelectClause<T> where
+impl<T, QS> SelectClauseExpression<QS> for SelectClause<T>
+where
     T: SelectableExpression<QS>,
 {
     type SelectClauseSqlType = T::SqlType;
 }
 
-impl<QS> SelectClauseExpression<QS> for DefaultSelectClause where
+impl<QS> SelectClauseExpression<QS> for DefaultSelectClause
+where
     QS: QuerySource,
 {
     type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
@@ -31,7 +33,8 @@ pub trait SelectClauseQueryFragment<QS, DB: Backend> {
     fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
 }
 
-impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T> where
+impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {
@@ -40,7 +43,8 @@ impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T> where
     }
 }
 
-impl<QS, DB> SelectClauseQueryFragment<QS, DB> for DefaultSelectClause where
+impl<QS, DB> SelectClauseQueryFragment<QS, DB> for DefaultSelectClause
+where
     DB: Backend,
     QS: QuerySource,
     QS::DefaultSelection: QueryFragment<DB>,

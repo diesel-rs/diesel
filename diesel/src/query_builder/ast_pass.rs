@@ -3,7 +3,7 @@ use std::{fmt, mem};
 use backend::Backend;
 use query_builder::{BindCollector, QueryBuilder};
 use result::QueryResult;
-use types::{ToSql, HasSqlType};
+use types::{HasSqlType, ToSql};
 
 #[allow(missing_debug_implementations)]
 /// The primary type used when walking a Diesel AST during query execution.
@@ -20,7 +20,8 @@ use types::{ToSql, HasSqlType};
 /// you to find out what the current pass is. You should simply call the
 /// relevant methods and trust that they will be a no-op if they're not relevant
 /// to the current pass.
-pub struct AstPass<'a, DB> where
+pub struct AstPass<'a, DB>
+where
     DB: Backend,
     DB::QueryBuilder: 'a,
     DB::BindCollector: 'a,
@@ -29,11 +30,12 @@ pub struct AstPass<'a, DB> where
     internals: AstPassInternals<'a, DB>,
 }
 
-impl<'a, DB> AstPass<'a, DB> where
+impl<'a, DB> AstPass<'a, DB>
+where
     DB: Backend,
 {
     #[doc(hidden)]
-    #[cfg_attr(feature="clippy", allow(wrong_self_convention))]
+    #[cfg_attr(feature = "clippy", allow(wrong_self_convention))]
     pub fn to_sql(query_builder: &'a mut DB::QueryBuilder) -> Self {
         AstPass {
             internals: AstPassInternals::ToSql(query_builder),
@@ -46,7 +48,10 @@ impl<'a, DB> AstPass<'a, DB> where
         metadata_lookup: &'a DB::MetadataLookup,
     ) -> Self {
         AstPass {
-            internals: AstPassInternals::CollectBinds { collector, metadata_lookup },
+            internals: AstPassInternals::CollectBinds {
+                collector,
+                metadata_lookup,
+            },
         }
     }
 
@@ -58,9 +63,7 @@ impl<'a, DB> AstPass<'a, DB> where
     }
 
     #[doc(hidden)]
-    pub fn debug_binds(
-        formatter: &'a mut fmt::DebugList<'a, 'a>,
-    ) -> Self {
+    pub fn debug_binds(formatter: &'a mut fmt::DebugList<'a, 'a>) -> Self {
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
         }
@@ -79,12 +82,13 @@ impl<'a, DB> AstPass<'a, DB> where
         use self::AstPassInternals::*;
         let internals = match self.internals {
             ToSql(ref mut builder) => ToSql(&mut **builder),
-            CollectBinds { ref mut collector, metadata_lookup } => {
-                CollectBinds {
-                    collector: &mut **collector,
-                    metadata_lookup: &*metadata_lookup,
-                }
-            }
+            CollectBinds {
+                ref mut collector,
+                metadata_lookup,
+            } => CollectBinds {
+                collector: &mut **collector,
+                metadata_lookup: &*metadata_lookup,
+            },
             IsSafeToCachePrepared(ref mut result) => IsSafeToCachePrepared(&mut **result),
             DebugBinds(ref mut f) => {
                 // Safe because the lifetime is always being shortened.
@@ -162,19 +166,22 @@ impl<'a, DB> AstPass<'a, DB> where
     /// This method affects multiple AST passes. It should be called at the
     /// point in the query where you'd want the parameter placeholder (`$1` on
     /// PG, `?` on other backends) to be inserted.
-    pub fn push_bind_param<T, U>(&mut self, bind: &U) -> QueryResult<()> where
+    pub fn push_bind_param<T, U>(&mut self, bind: &U) -> QueryResult<()>
+    where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
         use self::AstPassInternals::*;
         match self.internals {
             ToSql(ref mut out) => out.push_bind_param(),
-            CollectBinds { ref mut collector, metadata_lookup } =>
-                collector.push_bound_value(bind, metadata_lookup)?,
+            CollectBinds {
+                ref mut collector,
+                metadata_lookup,
+            } => collector.push_bound_value(bind, metadata_lookup)?,
             DebugBinds(ref mut f) => {
                 f.entry(bind);
             }
-            _ => {}, // noop
+            _ => {} // noop
         }
         Ok(())
     }
@@ -191,7 +198,8 @@ impl<'a, DB> AstPass<'a, DB> where
     }
 
     #[doc(hidden)]
-    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &U) -> QueryResult<()> where
+    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &U) -> QueryResult<()>
+    where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
@@ -209,7 +217,8 @@ impl<'a, DB> AstPass<'a, DB> where
 /// usage of the methods provided rather than matching on the enum directly.
 /// This essentially mimics the capabilities that would be available if
 /// `AstPass` were a trait.
-enum AstPassInternals<'a, DB> where
+enum AstPassInternals<'a, DB>
+where
     DB: Backend,
     DB::QueryBuilder: 'a,
     DB::BindCollector: 'a,

@@ -32,13 +32,14 @@ use query_source::Table;
 /// # }
 /// ```
 pub trait DistinctDsl: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
     fn distinct(self) -> Self::Output;
 }
 
-impl<T, ST> DistinctDsl for T where
-    T: Table + AsQuery<SqlType=ST>,
-    T::Query: DistinctDsl<SqlType=ST>,
+impl<T, ST> DistinctDsl for T
+where
+    T: Table + AsQuery<SqlType = ST>,
+    T::Query: DistinctDsl<SqlType = ST>,
 {
     type Output = <T::Query as DistinctDsl>::Output;
 

@@ -16,7 +16,8 @@ impl PgMetadataLookup {
     pub fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
         use self::pg_type::dsl::*;
 
-        pg_type.select((oid, typarray))
+        pg_type
+            .select((oid, typarray))
             .filter(typname.eq(type_name))
             .first(&self.conn)
             .unwrap_or_default()

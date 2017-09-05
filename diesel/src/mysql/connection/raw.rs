@@ -1,11 +1,11 @@
 extern crate mysqlclient_sys as ffi;
 
 use std::ffi::CStr;
-use std::os::{raw as libc};
+use std::os::raw as libc;
 use std::ptr;
 use std::sync::{Once, ONCE_INIT};
 
-use result::{ConnectionResult, ConnectionError, QueryResult};
+use result::{ConnectionError, ConnectionResult, QueryResult};
 use super::url::ConnectionOptions;
 use super::stmt::Statement;
 
@@ -23,14 +23,20 @@ impl RawConnection {
         let result = RawConnection(raw_connection);
 
         // This is only non-zero for unrecognized options, which should never happen.
-        let charset_result = unsafe { ffi::mysql_options(
-            result.0,
-            ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
-            b"utf8mb4\0".as_ptr() as *const libc::c_void,
-        ) };
-        assert_eq!(0, charset_result, "MYSQL_SET_CHARSET_NAME was not \
-                   recognized as an option by MySQL. This should never \
-                   happen.");
+        let charset_result = unsafe {
+            ffi::mysql_options(
+                result.0,
+                ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
+                b"utf8mb4\0".as_ptr() as *const libc::c_void,
+            )
+        };
+        assert_eq!(
+            0,
+            charset_result,
+            "MYSQL_SET_CHARSET_NAME was not \
+             recognized as an option by MySQL. This should never \
+             happen."
+        );
 
         result
     }
@@ -48,8 +54,12 @@ impl RawConnection {
                 self.0,
                 host.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
                 user.as_ptr(),
-                password.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
-                database.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
+                password
+                    .map(CStr::as_ptr)
+                    .unwrap_or_else(|| ptr::null_mut()),
+                database
+                    .map(CStr::as_ptr)
+                    .unwrap_or_else(|| ptr::null_mut()),
                 u32::from(port.unwrap_or(0)),
                 ptr::null_mut(),
                 0,
@@ -84,7 +94,8 @@ impl RawConnection {
         Ok(())
     }
 
-    pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T> where
+    pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T>
+    where
         F: FnOnce() -> QueryResult<T>,
     {
         unsafe {
@@ -172,7 +183,9 @@ impl RawConnection {
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
-        unsafe { ffi::mysql_close(self.0); }
+        unsafe {
+            ffi::mysql_close(self.0);
+        }
     }
 }
 

@@ -31,9 +31,7 @@ use types::BigInt;
 /// # }
 /// ```
 pub fn count<T: Expression>(t: T) -> Count<T> {
-    Count {
-        target: t,
-    }
+    Count { target: t }
 }
 
 /// Creates a SQL `COUNT(*)` expression

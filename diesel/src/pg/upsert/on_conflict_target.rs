@@ -51,8 +51,7 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
-pub trait OnConflictTarget<Table>: QueryFragment<Pg> {
-}
+pub trait OnConflictTarget<Table>: QueryFragment<Pg> {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
@@ -64,8 +63,7 @@ impl QueryFragment<Pg> for NoConflictTarget {
     }
 }
 
-impl<Table> OnConflictTarget<Table> for NoConflictTarget {
-}
+impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
@@ -80,10 +78,10 @@ impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
     }
 }
 
-impl<T: Column> OnConflictTarget<T::Table> for ConflictTarget<T> {
-}
+impl<T: Column> OnConflictTarget<T::Table> for ConflictTarget<T> {}
 
-impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
+impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>>
+where
     SqlLiteral<ST>: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
@@ -93,7 +91,8 @@ impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>> where
     }
 }
 
-impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> where
+impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>>
+where
     ConflictTarget<SqlLiteral<ST>>: QueryFragment<Pg>,
 {
 }
@@ -106,8 +105,7 @@ impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
     }
 }
 
-impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {
-}
+impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {}
 
 macro_rules! on_conflict_tuples {
     ($($col:ident),+) => {

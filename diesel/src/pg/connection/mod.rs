@@ -5,7 +5,7 @@ mod row;
 pub mod result;
 mod stmt;
 
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use std::os::raw as libc;
 
 use connection::*;
@@ -36,9 +36,7 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         let query = try!(CString::new(query));
-        let inner_result = unsafe {
-            self.raw_connection.exec(query.as_ptr())
-        };
+        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
         try!(PgResult::new(inner_result?));
         Ok(())
     }
@@ -66,31 +64,37 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    where
         T: AsQuery,
         T::Query: QueryFragment<Pg> + QueryId,
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
         let (query, params) = try!(self.prepare_query(&source.as_query()));
-        query.execute(&self.raw_connection, &params)
+        query
+            .execute(&self.raw_connection, &params)
             .and_then(|r| Cursor::new(r).collect())
     }
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    where
         T: QueryFragment<Pg> + QueryId,
     {
         let (query, params) = try!(self.prepare_query(source));
-        query.execute(&self.raw_connection, &params)
+        query
+            .execute(&self.raw_connection, &params)
             .map(|r| r.rows_affected())
     }
 
     #[doc(hidden)]
     fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
-        self.raw_connection.set_notice_processor(noop_notice_processor);
+        self.raw_connection
+            .set_notice_processor(noop_notice_processor);
         let result = f();
-        self.raw_connection.set_notice_processor(default_notice_processor);
+        self.raw_connection
+            .set_notice_processor(default_notice_processor);
         result
     }
 
@@ -102,28 +106,30 @@ impl Connection for PgConnection {
 
 impl PgConnection {
     #[cfg_attr(feature = "clippy", allow(type_complexity))]
-    fn prepare_query<T: QueryFragment<Pg> + QueryId>(&self, source: &T)
-        -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)>
-    {
+    fn prepare_query<T: QueryFragment<Pg> + QueryId>(
+        &self,
+        source: &T,
+    ) -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         try!(source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self)));
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
         let cache_len = self.statement_cache.len();
-        let query = self.statement_cache.cached_statement(source, &metadata, |sql| {
-            let query_name = if source.is_safe_to_cache_prepared()? {
-                Some(format!("__diesel_stmt_{}", cache_len))
-            } else {
-                None
-            };
-            Statement::prepare(
-                &self.raw_connection,
-                sql,
-                query_name.as_ref().map(|s| &**s),
-                &metadata,
-            )
-        });
+        let query = self.statement_cache
+            .cached_statement(source, &metadata, |sql| {
+                let query_name = if source.is_safe_to_cache_prepared()? {
+                    Some(format!("__diesel_stmt_{}", cache_len))
+                } else {
+                    None
+                };
+                Statement::prepare(
+                    &self.raw_connection,
+                    sql,
+                    query_name.as_ref().map(|s| &**s),
+                    &metadata,
+                )
+            });
 
         Ok((query?, binds))
     }
@@ -140,8 +146,7 @@ impl PgConnection {
     }
 }
 
-extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {
-}
+extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
 
 extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const libc::c_char) {
     use std::io::Write;

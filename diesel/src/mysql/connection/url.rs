@@ -1,9 +1,9 @@
 extern crate url;
 
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use self::url::Url;
 
-use result::{ConnectionResult, ConnectionError};
+use result::{ConnectionError, ConnectionResult};
 
 pub struct ConnectionOptions {
     host: Option<CString>,
@@ -17,7 +17,7 @@ impl ConnectionOptions {
     pub fn parse(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
-            Err(_) => return Err(connection_url_error())
+            Err(_) => return Err(connection_url_error()),
         };
 
         if url.scheme() != "mysql" {
@@ -74,7 +74,7 @@ impl ConnectionOptions {
 
 fn connection_url_error() -> ConnectionError {
     let msg = "MySQL connection URLs must be in the form \
-        `mysql://[[user]:[password]@]host[:port][/database]`";
+               `mysql://[[user]:[password]@]host[:port][/database]`";
     ConnectionError::InvalidConnectionUrl(msg.into())
 }
 
@@ -99,14 +99,20 @@ fn first_path_segment_is_treated_as_database() {
     let bar_cstr = CString::new("bar").unwrap();
     assert_eq!(
         Some(&*foo_cstr),
-        ConnectionOptions::parse("mysql://localhost/foo").unwrap().database()
+        ConnectionOptions::parse("mysql://localhost/foo")
+            .unwrap()
+            .database()
     );
     assert_eq!(
         Some(&*bar_cstr),
-        ConnectionOptions::parse("mysql://localhost/bar").unwrap().database()
+        ConnectionOptions::parse("mysql://localhost/bar")
+            .unwrap()
+            .database()
     );
     assert_eq!(
         None,
-        ConnectionOptions::parse("mysql://localhost").unwrap().database()
+        ConnectionOptions::parse("mysql://localhost")
+            .unwrap()
+            .database()
     );
 }

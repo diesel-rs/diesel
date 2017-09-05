@@ -178,12 +178,13 @@ pub trait OnConflictExtension {
     ///
     /// See the documentation for [`on_constraint`](fn.on_constraint.html) and [`do_update`] for
     /// more examples.
-    fn on_conflict<Target, Action>(&self, target: Target, action: Action)
-        -> OnConflict<&Self, ConflictTarget<Target>, Action>
-    {
+    fn on_conflict<Target, Action>(
+        &self,
+        target: Target,
+        action: Action,
+    ) -> OnConflict<&Self, ConflictTarget<Target>, Action> {
         OnConflict::new(self, ConflictTarget(target), action)
     }
 }
 
-impl<T: ?Sized> OnConflictExtension for T {
-}
+impl<T: ?Sized> OnConflictExtension for T {}

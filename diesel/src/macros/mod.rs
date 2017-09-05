@@ -1054,17 +1054,27 @@ macro_rules! print_sql {
 
 // The order of these modules is important (at least for those which have tests).
 // Utililty macros which don't call any others need to come first.
-#[macro_use] mod internal;
-#[macro_use] mod parse;
-#[macro_use] mod query_id;
-#[macro_use] mod static_cond;
-#[macro_use] mod macros_from_codegen;
-#[macro_use] mod ops;
+#[macro_use]
+mod internal;
+#[macro_use]
+mod parse;
+#[macro_use]
+mod query_id;
+#[macro_use]
+mod static_cond;
+#[macro_use]
+mod macros_from_codegen;
+#[macro_use]
+mod ops;
 
-#[macro_use] mod as_changeset;
-#[macro_use] mod associations;
-#[macro_use] mod identifiable;
-#[macro_use] mod insertable;
+#[macro_use]
+mod as_changeset;
+#[macro_use]
+mod associations;
+#[macro_use]
+mod identifiable;
+#[macro_use]
+mod insertable;
 
 #[cfg(test)]
 mod tests {
@@ -1112,7 +1122,10 @@ mod tests {
     fn table_with_custom_schema() {
         use pg::Pg;
         let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars" -- binds: []"#;
-        assert_eq!(expected_sql, &::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string());
+        assert_eq!(
+            expected_sql,
+            &::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string()
+        );
     }
 
     table! {

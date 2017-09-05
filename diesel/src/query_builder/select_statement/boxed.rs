@@ -11,7 +11,7 @@ use query_dsl::*;
 use query_source::QuerySource;
 use query_source::joins::*;
 use result::QueryResult;
-use types::{HasSqlType, Bool, BigInt};
+use types::{BigInt, Bool, HasSqlType};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
@@ -52,14 +52,16 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB> where
+impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB>
+where
     DB: Backend,
     DB: HasSqlType<ST>,
 {
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> where
+impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB>
+where
     DB: Backend,
     QS: QuerySource,
     QS::FromClause: QueryFragment<DB>,
@@ -84,7 +86,8 @@ impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB> 
     }
 }
 
-impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> where
+impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB>
+where
     DB: Backend,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -108,12 +111,13 @@ impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB> wher
 impl<'a, ST, QS, DB> QueryId for BoxedSelectStatement<'a, ST, QS, DB> {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = false; 
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<'a, ST, QS, DB, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        BoxedSelectStatement<'a, ST, JoinOn<Join<QS, Rhs, Kind>, On>, DB>: AsQuery,
+    for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    BoxedSelectStatement<'a, ST, JoinOn<Join<QS, Rhs, Kind>, On>, DB>: AsQuery,
 {
     type Output = BoxedSelectStatement<'a, ST, JoinOn<Join<QS, Rhs, Kind>, On>, DB>;
 
@@ -131,10 +135,10 @@ impl<'a, ST, QS, DB, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     }
 }
 
-impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend + HasSqlType<Selection::SqlType>,
-        Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
+impl<'a, ST, QS, DB, Selection> SelectDsl<Selection> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend + HasSqlType<Selection::SqlType>,
+    Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
 {
     type Output = BoxedSelectStatement<'a, Selection::SqlType, QS, DB>;
 
@@ -152,11 +156,11 @@ impl<'a, ST, QS, DB, Selection> SelectDsl<Selection>
     }
 }
 
-impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend + HasSqlType<ST> + 'a,
-        Predicate: AppearsOnTable<QS, SqlType=Bool> + NonAggregate,
-        Predicate: QueryFragment<DB> + 'a,
+impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend + HasSqlType<ST> + 'a,
+    Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
+    Predicate: QueryFragment<DB> + 'a,
 {
     type Output = Self;
 
@@ -170,7 +174,8 @@ impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate>
     }
 }
 
-impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB> where
+impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
     DB: Backend,
     BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
@@ -183,7 +188,8 @@ impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB> where
     }
 }
 
-impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB> where
+impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
     DB: Backend,
     BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
@@ -196,11 +202,11 @@ impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB> where
     }
 }
 
-impl<'a, ST, QS, DB, Order> OrderDsl<Order>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend,
-        Order: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
-        BoxedSelectStatement<'a, ST, QS, DB>: Query,
+impl<'a, ST, QS, DB, Order> OrderDsl<Order> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend,
+    Order: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
+    BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;
 
@@ -210,11 +216,11 @@ impl<'a, ST, QS, DB, Order> OrderDsl<Order>
     }
 }
 
-impl<'a, ST, QS, DB, Expr> GroupByDsl<Expr>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        DB: Backend,
-        Expr: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
-        Self: Query,
+impl<'a, ST, QS, DB, Expr> GroupByDsl<Expr> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend,
+    Expr: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
+    Self: Query,
 {
     type Output = Self;
 
@@ -227,9 +233,9 @@ impl<'a, ST, QS, DB, Expr> GroupByDsl<Expr>
 // FIXME: Should we disable joining when `.group_by` has been called? Are there
 // any other query methods where a join no longer has the same semantics as
 // joining on just the table?
-impl<'a, ST, QS, DB, Rhs> JoinTo<Rhs>
-    for BoxedSelectStatement<'a, ST, QS, DB> where
-        QS: JoinTo<Rhs>,
+impl<'a, ST, QS, DB, Rhs> JoinTo<Rhs> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    QS: JoinTo<Rhs>,
 {
     type FromClause = QS::FromClause;
     type OnClause = QS::OnClause;

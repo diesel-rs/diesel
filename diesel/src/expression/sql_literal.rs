@@ -108,7 +108,8 @@ impl<ST> Expression for SqlLiteral<ST> {
     type SqlType = ST;
 }
 
-impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST> where
+impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST>
+where
     DB: Backend + HasSqlType<ST>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -124,14 +125,11 @@ impl<ST> Query for SqlLiteral<ST> {
     type SqlType = ST;
 }
 
-impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {
-}
+impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {}
 
-impl<QS, ST> AppearsOnTable<QS> for SqlLiteral<ST> {
-}
+impl<QS, ST> AppearsOnTable<QS> for SqlLiteral<ST> {}
 
-impl<ST> NonAggregate for SqlLiteral<ST> {
-}
+impl<ST> NonAggregate for SqlLiteral<ST> {}
 
 /// Use literal SQL in the query builder
 ///

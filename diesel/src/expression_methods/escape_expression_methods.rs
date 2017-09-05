@@ -43,8 +43,6 @@ pub trait EscapeExpressionMethods: Sized {
     }
 }
 
-impl<T, U> EscapeExpressionMethods for Like<T, U> {
-}
+impl<T, U> EscapeExpressionMethods for Like<T, U> {}
 
-impl<T, U> EscapeExpressionMethods for NotLike<T, U> {
-}
+impl<T, U> EscapeExpressionMethods for NotLike<T, U> {}

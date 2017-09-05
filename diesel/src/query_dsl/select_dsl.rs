@@ -1,5 +1,5 @@
 use expression::*;
-use query_builder::{Query, AsQuery};
+use query_builder::{AsQuery, Query};
 use query_source::Table;
 
 /// Sets the select clause of a query. If there was already a select clause, it
@@ -7,12 +7,13 @@ use query_source::Table;
 /// for the query (only contains columns from the target table, doesn't mix
 /// aggregate + non-aggregate expressions, etc).
 pub trait SelectDsl<Selection: Expression> {
-    type Output: Query<SqlType=<Selection as Expression>::SqlType>;
+    type Output: Query<SqlType = <Selection as Expression>::SqlType>;
 
     fn select(self, selection: Selection) -> Self::Output;
 }
 
-impl<T, Selection> SelectDsl<Selection> for T where
+impl<T, Selection> SelectDsl<Selection> for T
+where
     Selection: Expression,
     T: Table + AsQuery,
     T::Query: SelectDsl<Selection>,

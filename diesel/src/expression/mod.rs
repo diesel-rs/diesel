@@ -47,13 +47,20 @@ mod unchecked_bind;
 /// generic to export by default. This module exists to conveniently glob import
 /// in functions where you need them.
 pub mod dsl {
-    #[doc(inline)] pub use super::count::{count, count_star};
-    #[doc(inline)] pub use super::exists::exists;
-    #[doc(inline)] pub use super::functions::aggregate_folding::*;
-    #[doc(inline)] pub use super::functions::aggregate_ordering::*;
-    #[doc(inline)] pub use super::functions::date_and_time::*;
-    #[doc(inline)] pub use super::not::not;
-    #[doc(inline)] pub use super::sql_literal::sql;
+    #[doc(inline)]
+    pub use super::count::{count, count_star};
+    #[doc(inline)]
+    pub use super::exists::exists;
+    #[doc(inline)]
+    pub use super::functions::aggregate_folding::*;
+    #[doc(inline)]
+    pub use super::functions::aggregate_ordering::*;
+    #[doc(inline)]
+    pub use super::functions::date_and_time::*;
+    #[doc(inline)]
+    pub use super::not::not;
+    #[doc(inline)]
+    pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres")]
     pub use pg::expression::dsl::*;
@@ -93,7 +100,7 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 /// This trait allows us to use primitives on the right hand side of various
 /// expressions. For example `name.eq("Sean")`
 pub trait AsExpression<T> {
-    type Expression: Expression<SqlType=T>;
+    type Expression: Expression<SqlType = T>;
 
     fn as_expression(self) -> Self::Expression;
 }
@@ -112,16 +119,17 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// SQL type doesn't matter (everything except `select` and `returning`). For
 /// places where nullability is important, `SelectableExpression` is used
 /// instead.
-pub trait AppearsOnTable<QS: ?Sized>: Expression {
-}
+pub trait AppearsOnTable<QS: ?Sized>: Expression {}
 
-impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T> where
+impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T>
+where
     T: AppearsOnTable<QS>,
     Box<T>: Expression,
 {
 }
 
-impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
+impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T
+where
     T: AppearsOnTable<QS>,
     &'a T: Expression,
 {
@@ -135,16 +143,17 @@ impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
-pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {
-}
+pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
-impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T> where
+impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
+where
     T: SelectableExpression<QS>,
     Box<T>: AppearsOnTable<QS>,
 {
 }
 
-impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
+impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T
+where
     T: SelectableExpression<QS>,
     &'a T: AppearsOnTable<QS>,
 {
@@ -154,14 +163,11 @@ impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T where
 /// functions. Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
-pub trait NonAggregate {
-}
+pub trait NonAggregate {}
 
-impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {
-}
+impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
 
-impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {
-}
+impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
 
 use query_builder::{QueryFragment, QueryId};
 
@@ -209,15 +215,18 @@ use query_builder::{QueryFragment, QueryId};
 ///     assert_eq!(result, Ok(vec![User { id: 1, name: "Sean".into() }]));
 /// }
 /// ```
-pub trait BoxableExpression<QS, DB> where
+pub trait BoxableExpression<QS, DB>
+where
     DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS>,
     Self: NonAggregate,
     Self: QueryFragment<DB>,
-{}
+{
+}
 
-impl<QS, T, DB> BoxableExpression<QS, DB> for T where
+impl<QS, T, DB> BoxableExpression<QS, DB> for T
+where
     DB: Backend,
     T: Expression,
     T: SelectableExpression<QS>,
@@ -226,8 +235,8 @@ impl<QS, T, DB> BoxableExpression<QS, DB> for T where
 {
 }
 
-impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType=ST> {
+impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = false; 
+    const HAS_STATIC_QUERY_ID: bool = false;
 }

@@ -61,7 +61,8 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
@@ -74,7 +75,8 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    where
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let mut statement = try!(self.prepare_query(source));
@@ -95,7 +97,10 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
-    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T) -> QueryResult<MaybeCached<Statement>> {
+    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
+        &self,
+        source: &T,
+    ) -> QueryResult<MaybeCached<Statement>> {
         let mut statement = try!(self.cached_prepared_statement(source));
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
@@ -109,12 +114,15 @@ impl SqliteConnection {
         Ok(statement)
     }
 
-    fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(&self, source: &T)
-        -> QueryResult<MaybeCached<Statement>>
-    {
-        self.statement_cache.cached_statement(source, &[], |sql| {
-            Statement::prepare(&self.raw_connection, sql)
-        })
+    fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(
+        &self,
+        source: &T,
+    ) -> QueryResult<MaybeCached<Statement>> {
+        self.statement_cache.cached_statement(
+            source,
+            &[],
+            |sql| Statement::prepare(&self.raw_connection, sql),
+        )
     }
 }
 

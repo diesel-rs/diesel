@@ -32,12 +32,13 @@ impl Statement {
             )
         };
 
-        ensure_sqlite_ok(prepare_result, raw_connection)
-            .map(|_| Statement {
+        ensure_sqlite_ok(prepare_result, raw_connection).map(|_| {
+            Statement {
                 raw_connection: raw_connection.clone(),
                 inner_statement: stmt,
                 bind_index: 0,
-            })
+            }
+        })
     }
 
     fn run(&self) -> QueryResult<()> {
@@ -55,66 +56,61 @@ impl Statement {
         // - If `tpe` is anything other than `Binary` or `Text`, the appropriate
         //   number of bytes were written to `value` for an integer of the
         //   corresponding size.
-        let result = unsafe { match (tpe, value) {
-            (_, None) =>
-                ffi::sqlite3_bind_null(self.inner_statement, self.bind_index),
-            (SqliteType::Binary, Some(bytes)) =>
-                ffi::sqlite3_bind_blob(
+        let result = unsafe {
+            match (tpe, value) {
+                (_, None) => ffi::sqlite3_bind_null(self.inner_statement, self.bind_index),
+                (SqliteType::Binary, Some(bytes)) => ffi::sqlite3_bind_blob(
                     self.inner_statement,
                     self.bind_index,
                     bytes.as_ptr() as *const libc::c_void,
                     bytes.len() as libc::c_int,
                     ffi::SQLITE_TRANSIENT(),
                 ),
-            (SqliteType::Text, Some(bytes)) =>
-                ffi::sqlite3_bind_text(
+                (SqliteType::Text, Some(bytes)) => ffi::sqlite3_bind_text(
                     self.inner_statement,
                     self.bind_index,
                     bytes.as_ptr() as *const libc::c_char,
                     bytes.len() as libc::c_int,
                     ffi::SQLITE_TRANSIENT(),
                 ),
-            (SqliteType::Float, Some(bytes)) => {
-                let value = *(bytes.as_ptr() as *const f32);
-                ffi::sqlite3_bind_double(
-                    self.inner_statement,
-                    self.bind_index,
-                    libc::c_double::from(value),
-                )
+                (SqliteType::Float, Some(bytes)) => {
+                    let value = *(bytes.as_ptr() as *const f32);
+                    ffi::sqlite3_bind_double(
+                        self.inner_statement,
+                        self.bind_index,
+                        libc::c_double::from(value),
+                    )
+                }
+                (SqliteType::Double, Some(bytes)) => {
+                    let value = *(bytes.as_ptr() as *const f64);
+                    ffi::sqlite3_bind_double(
+                        self.inner_statement,
+                        self.bind_index,
+                        value as libc::c_double,
+                    )
+                }
+                (SqliteType::SmallInt, Some(bytes)) => {
+                    let value = *(bytes.as_ptr() as *const i16);
+                    ffi::sqlite3_bind_int(
+                        self.inner_statement,
+                        self.bind_index,
+                        libc::c_int::from(value),
+                    )
+                }
+                (SqliteType::Integer, Some(bytes)) => {
+                    let value = *(bytes.as_ptr() as *const i32);
+                    ffi::sqlite3_bind_int(
+                        self.inner_statement,
+                        self.bind_index,
+                        value as libc::c_int,
+                    )
+                }
+                (SqliteType::Long, Some(bytes)) => {
+                    let value = *(bytes.as_ptr() as *const i64);
+                    ffi::sqlite3_bind_int64(self.inner_statement, self.bind_index, value)
+                }
             }
-            (SqliteType::Double, Some(bytes)) => {
-                let value = *(bytes.as_ptr() as *const f64);
-                ffi::sqlite3_bind_double(
-                    self.inner_statement,
-                    self.bind_index,
-                    value as libc::c_double,
-                )
-            }
-            (SqliteType::SmallInt, Some(bytes)) => {
-                let value = *(bytes.as_ptr() as *const i16);
-                ffi::sqlite3_bind_int(
-                    self.inner_statement,
-                    self.bind_index,
-                    libc::c_int::from(value),
-                )
-            }
-            (SqliteType::Integer, Some(bytes)) => {
-                let value = *(bytes.as_ptr() as *const i32);
-                ffi::sqlite3_bind_int(
-                    self.inner_statement,
-                    self.bind_index,
-                    value as libc::c_int,
-                )
-            }
-            (SqliteType::Long, Some(bytes)) => {
-                let value = *(bytes.as_ptr() as *const i64);
-                ffi::sqlite3_bind_int64(
-                    self.inner_statement,
-                    self.bind_index,
-                    value,
-                )
-            }
-        }};
+        };
 
         ensure_sqlite_ok(result, &self.raw_connection)
     }
@@ -145,8 +141,9 @@ fn last_error(raw_connection: &RawConnection) -> Error {
     let error_message = raw_connection.last_error_message();
     let error_information = Box::new(error_message);
     let error_kind = match raw_connection.last_error_code() {
-        ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY =>
-            DatabaseErrorKind::UniqueViolation,
+        ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY => {
+            DatabaseErrorKind::UniqueViolation
+        }
         ffi::SQLITE_CONSTRAINT_FOREIGNKEY => DatabaseErrorKind::ForeignKeyViolation,
         _ => DatabaseErrorKind::__Unknown,
     };
@@ -160,8 +157,11 @@ impl Drop for Statement {
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
         if let Err(e) = ensure_sqlite_ok(finalize_result, &self.raw_connection) {
             if panicking() {
-                write!(stderr(), "Error finalizing SQLite prepared statement: {:?}", e)
-                    .expect("Error writing to `stderr`");
+                write!(
+                    stderr(),
+                    "Error finalizing SQLite prepared statement: {:?}",
+                    e
+                ).expect("Error writing to `stderr`");
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
             }

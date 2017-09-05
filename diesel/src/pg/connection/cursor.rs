@@ -3,7 +3,7 @@ use query_source::Queryable;
 use result::QueryResult;
 use result::Error::DeserializationError;
 use super::result::PgResult;
-use types::{HasSqlType, FromSqlRow};
+use types::{FromSqlRow, HasSqlType};
 
 use std::marker::PhantomData;
 
@@ -26,7 +26,8 @@ impl<ST, T> Cursor<ST, T> {
     }
 }
 
-impl<ST, T> Iterator for Cursor<ST, T> where
+impl<ST, T> Iterator for Cursor<ST, T>
+where
     Pg: HasSqlType<ST>,
     T: Queryable<ST, Pg>,
 {

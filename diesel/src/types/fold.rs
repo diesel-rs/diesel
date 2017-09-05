@@ -6,7 +6,8 @@ pub trait Foldable {
     type Avg;
 }
 
-impl<T> Foldable for types::Nullable<T> where
+impl<T> Foldable for types::Nullable<T>
+where
     T: Foldable + NotNull,
 {
     type Sum = T::Sum;

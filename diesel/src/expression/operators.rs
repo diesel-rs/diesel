@@ -319,7 +319,8 @@ use query_builder::*;
 use result::QueryResult;
 use super::AppearsOnTable;
 
-impl<T, U, DB> Changeset<DB> for Eq<T, U> where
+impl<T, U, DB> Changeset<DB> for Eq<T, U>
+where
     DB: Backend,
     T: Column,
     U: AppearsOnTable<T::Table> + QueryFragment<DB>,
@@ -335,7 +336,8 @@ impl<T, U, DB> Changeset<DB> for Eq<T, U> where
     }
 }
 
-impl<T, U> AsChangeset for Eq<T, U> where
+impl<T, U> AsChangeset for Eq<T, U>
+where
     T: Column,
     U: AppearsOnTable<T::Table>,
 {

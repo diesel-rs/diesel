@@ -3,9 +3,9 @@ extern crate pq_sys;
 use self::pq_sys::*;
 use std::ffi::CStr;
 use std::os::raw as libc;
-use std::{str, slice};
+use std::{slice, str};
 
-use result::{Error, QueryResult, DatabaseErrorInformation, DatabaseErrorKind};
+use result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 use super::row::PgRow;
 use super::raw::RawResult;
 
@@ -19,22 +19,25 @@ impl PgResult {
 
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
-                Ok(PgResult {
-                    internal_result: internal_result,
-                })
-            },
+            PGRES_COMMAND_OK | PGRES_TUPLES_OK => Ok(PgResult {
+                internal_result: internal_result,
+            }),
             PGRES_EMPTY_QUERY => {
                 let error_message = "Received an empty query".to_string();
-                Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, Box::new(error_message)))
-            },
+                Err(Error::DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new(error_message),
+                ))
+            }
             _ => {
-                let error_kind = match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
-                    Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
-                    Some(error_codes::FOREIGN_KEY_VIOLATION) =>
-                        DatabaseErrorKind::ForeignKeyViolation,
-                    _ => DatabaseErrorKind::__Unknown,
-                };
+                let error_kind =
+                    match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
+                        Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
+                        Some(error_codes::FOREIGN_KEY_VIOLATION) => {
+                            DatabaseErrorKind::ForeignKeyViolation
+                        }
+                        _ => DatabaseErrorKind::__Unknown,
+                    };
                 let error_information = Box::new(PgErrorInformation(internal_result));
                 Err(Error::DatabaseError(error_kind, error_information))
             }
@@ -48,8 +51,9 @@ impl PgResult {
             let count_str = str::from_utf8_unchecked(count_bytes);
             match count_str {
                 "" => 0,
-                _ => count_str.parse()
-                    .expect("Error parsing `rows_affected` as integer value")
+                _ => count_str
+                    .parse()
+                    .expect("Error parsing `rows_affected` as integer value"),
             }
         }
     }
@@ -69,8 +73,8 @@ impl PgResult {
             let row_idx = row_idx as libc::c_int;
             let col_idx = col_idx as libc::c_int;
             unsafe {
-                let value_ptr = PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx)
-                    as *const u8;
+                let value_ptr =
+                    PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx) as *const u8;
                 let num_bytes = PQgetlength(self.internal_result.as_ptr(), row_idx, col_idx);
                 Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
             }
@@ -79,11 +83,12 @@ impl PgResult {
 
     pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
-            0 != PQgetisnull(
-                self.internal_result.as_ptr(),
-                row_idx as libc::c_int,
-                col_idx as libc::c_int,
-            )
+            0 !=
+                PQgetisnull(
+                    self.internal_result.as_ptr(),
+                    row_idx as libc::c_int,
+                    col_idx as libc::c_int,
+                )
         }
     }
 }

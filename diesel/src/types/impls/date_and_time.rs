@@ -1,4 +1,4 @@
-#[cfg(feature="chrono")]
+#[cfg(feature = "chrono")]
 mod chrono {
     extern crate chrono;
     use self::chrono::*;

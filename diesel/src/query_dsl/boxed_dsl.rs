@@ -8,7 +8,8 @@ pub trait InternalBoxedDsl<'a, DB: Backend> {
     fn internal_into_boxed(self) -> Self::Output;
 }
 
-impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
+impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T
+where
     DB: Backend,
     T: Table + AsQuery,
     T::Query: InternalBoxedDsl<'a, DB>,
@@ -90,7 +91,8 @@ impl<'a, T, DB> InternalBoxedDsl<'a, DB> for T where
 /// # }
 /// ```
 pub trait BoxedDsl: Sized {
-    fn into_boxed<'a, DB>(self) -> Self::Output where
+    fn into_boxed<'a, DB>(self) -> Self::Output
+    where
         DB: Backend,
         Self: InternalBoxedDsl<'a, DB>,
     {

@@ -2,11 +2,11 @@ extern crate mysqlclient_sys as ffi;
 
 mod iterator;
 
-use std::os::{raw as libc};
+use std::os::raw as libc;
 use std::ffi::CStr;
 
 use mysql::MysqlType;
-use result::{QueryResult, DatabaseErrorKind};
+use result::{DatabaseErrorKind, QueryResult};
 use self::iterator::StatementIterator;
 use super::bind::Binds;
 
@@ -34,14 +34,17 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()> where
-        Iter: IntoIterator<Item=(MysqlType, Option<Vec<u8>>)>,
+    pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
+    where
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let mut input_binds = Binds::from_input_data(binds);
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
-            unsafe { ffi::mysql_stmt_bind_param(self.stmt, bind_ptr); }
+            unsafe {
+                ffi::mysql_stmt_bind_param(self.stmt, bind_ptr);
+            }
         });
         self.input_binds = Some(input_binds);
         self.did_an_error_occur()
@@ -80,9 +83,12 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    pub unsafe fn fetch_column(&self, bind: &mut ffi::MYSQL_BIND, idx: usize, offset: usize)
-        -> QueryResult<()>
-    {
+    pub unsafe fn fetch_column(
+        &self,
+        bind: &mut ffi::MYSQL_BIND,
+        idx: usize,
+        offset: usize,
+    ) -> QueryResult<()> {
         ffi::mysql_stmt_fetch_column(
             self.stmt,
             bind,
@@ -107,7 +113,7 @@ impl Statement {
     }
 
     fn last_error_type(&self) -> DatabaseErrorKind {
-        let last_error_number = unsafe  { ffi::mysql_stmt_errno(self.stmt) };
+        let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt) };
         // These values are not exposed by the C API, but are documented
         // at https://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html
         // and are from the ANSI SQLSTATE standard

@@ -28,7 +28,8 @@ impl<'a, T, U> InfixNode<'a, T, U> {
     }
 }
 
-impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U> where
+impl<'a, T, U, DB> QueryFragment<DB> for InfixNode<'a, T, U>
+where
     DB: Backend,
     T: QueryFragment<DB>,
     U: QueryFragment<DB>,

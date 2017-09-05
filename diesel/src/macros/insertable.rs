@@ -263,10 +263,17 @@ mod tests {
         }
 
         let conn = connection();
-        let new_user = NewUser { name: "Sean".into(), hair_color: "Black".into() };
-        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+        let new_user = NewUser {
+            name: "Sean".into(),
+            hair_color: "Black".into(),
+        };
+        ::insert(&new_user)
+            .into(users::table)
+            .execute(&conn)
+            .unwrap();
 
-        let saved = users::table.select((users::name, users::hair_color))
+        let saved = users::table
+            .select((users::name, users::hair_color))
             .load::<(String, Option<String>)>(&conn);
         let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
         assert_eq!(Ok(expected), saved);
@@ -361,10 +368,17 @@ mod tests {
         }
 
         let conn = connection();
-        let new_user = NewUser { my_name: "Sean".into(), hair_color: "Black".into() };
-        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+        let new_user = NewUser {
+            my_name: "Sean".into(),
+            hair_color: "Black".into(),
+        };
+        ::insert(&new_user)
+            .into(users::table)
+            .execute(&conn)
+            .unwrap();
 
-        let saved = users::table.select((users::name, users::hair_color))
+        let saved = users::table
+            .select((users::name, users::hair_color))
             .load::<(String, Option<String>)>(&conn);
         let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
         assert_eq!(Ok(expected), saved);
@@ -388,10 +402,17 @@ mod tests {
         }
 
         let conn = connection();
-        let new_user = NewUser { my_name: "Sean".into(), my_hair_color: None };
-        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+        let new_user = NewUser {
+            my_name: "Sean".into(),
+            my_hair_color: None,
+        };
+        ::insert(&new_user)
+            .into(users::table)
+            .execute(&conn)
+            .unwrap();
 
-        let saved = users::table.select((users::name, users::hair_color))
+        let saved = users::table
+            .select((users::name, users::hair_color))
             .load::<(String, Option<String>)>(&conn);
         let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
         assert_eq!(Ok(expected), saved);
@@ -399,10 +420,7 @@ mod tests {
 
     #[test]
     fn tuple_struct() {
-        struct NewUser<'a>(
-            &'a str,
-            Option<&'a str>,
-        );
+        struct NewUser<'a>(&'a str, Option<&'a str>);
 
         impl_Insertable! {
             (users)
@@ -416,9 +434,13 @@ mod tests {
 
         let conn = connection();
         let new_user = NewUser("Sean", None);
-        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+        ::insert(&new_user)
+            .into(users::table)
+            .execute(&conn)
+            .unwrap();
 
-        let saved = users::table.select((users::name, users::hair_color))
+        let saved = users::table
+            .select((users::name, users::hair_color))
             .load::<(String, Option<String>)>(&conn);
         let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
         assert_eq!(Ok(expected), saved);
@@ -426,10 +448,7 @@ mod tests {
 
     #[test]
     fn tuple_struct_without_trailing_comma() {
-        struct NewUser<'a>(
-            &'a str,
-            Option<&'a str>
-        );
+        struct NewUser<'a>(&'a str, Option<&'a str>);
 
         impl_Insertable! {
             (users)
@@ -443,9 +462,13 @@ mod tests {
 
         let conn = connection();
         let new_user = NewUser("Sean", None);
-        ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+        ::insert(&new_user)
+            .into(users::table)
+            .execute(&conn)
+            .unwrap();
 
-        let saved = users::table.select((users::name, users::hair_color))
+        let saved = users::table
+            .select((users::name, users::hair_color))
             .load::<(String, Option<String>)>(&conn);
         let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
         assert_eq!(Ok(expected), saved);

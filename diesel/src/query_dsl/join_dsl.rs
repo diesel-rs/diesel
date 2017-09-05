@@ -1,5 +1,5 @@
 use query_builder::AsQuery;
-use query_source::{Table, JoinTo, QuerySource};
+use query_source::{JoinTo, QuerySource, Table};
 use query_source::joins::{self, OnClauseWrapper};
 
 #[doc(hidden)]
@@ -10,7 +10,8 @@ pub trait InternalJoinDsl<Rhs, Kind, On> {
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output;
 }
 
-impl<T, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for T where
+impl<T, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for T
+where
     T: Table + AsQuery,
     T::Query: InternalJoinDsl<Rhs, Kind, On>,
 {
@@ -30,7 +31,8 @@ pub trait JoinWithImplicitOnClause<Rhs, Kind> {
     fn join_with_implicit_on_clause(self, rhs: Rhs, kind: Kind) -> Self::Output;
 }
 
-impl<Lhs, Rhs, Kind> JoinWithImplicitOnClause<Rhs, Kind> for Lhs where
+impl<Lhs, Rhs, Kind> JoinWithImplicitOnClause<Rhs, Kind> for Lhs
+where
     Lhs: JoinTo<Rhs>,
     Lhs: InternalJoinDsl<<Lhs as JoinTo<Rhs>>::FromClause, Kind, <Lhs as JoinTo<Rhs>>::OnClause>,
 {
@@ -83,7 +85,8 @@ impl<Lhs, Rhs, Kind> JoinWithImplicitOnClause<Rhs, Kind> for Lhs where
 pub trait JoinDsl: Sized {
     /// Join two tables using a SQL `INNER JOIN`. The `ON` clause is defined
     /// via the [associations API](../associations/index.html).
-    fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output where
+    fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    where
         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     {
         self.join_with_implicit_on_clause(rhs, joins::Inner)
@@ -91,22 +94,23 @@ pub trait JoinDsl: Sized {
 
     /// Join two tables using a SQL `LEFT OUTER JOIN`. The `ON` clause is defined
     /// via the [associations API](../associations/index.html).
-    fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output where
+    fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
         self.join_with_implicit_on_clause(rhs, joins::LeftOuter)
     }
 
     /// Alias for `left_outer_join`
-    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output where
+    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
         self.left_outer_join(rhs)
     }
 }
 
-impl<T: AsQuery> JoinDsl for T {
-}
+impl<T: AsQuery> JoinDsl for T {}
 
 pub trait JoinOnDsl: Sized {
     /// Specify the `ON` clause for a join statement. This will override

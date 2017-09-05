@@ -1,5 +1,5 @@
-use expression::{Expression, AsExpression, nullable};
-use expression::array_comparison::{In, NotIn, AsInExpression};
+use expression::{nullable, AsExpression, Expression};
+use expression::array_comparison::{AsInExpression, In, NotIn};
 use expression::operators::*;
 use types::SingleValue;
 
@@ -87,7 +87,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
     /// # }
     /// ```
-    fn eq_any<T>(self, values: T) -> In<Self, T::InExpression> where
+    fn eq_any<T>(self, values: T) -> In<Self, T::InExpression>
+    where
         T: AsInExpression<Self::SqlType>,
     {
         In::new(self, values.as_in_expression())
@@ -127,7 +128,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
     /// # }
     /// ```
-    fn ne_any<T>(self, values: T) -> NotIn<Self, T::InExpression> where
+    fn ne_any<T>(self, values: T) -> NotIn<Self, T::InExpression>
+    where
         T: AsInExpression<Self::SqlType>,
     {
         NotIn::new(self, values.as_in_expression())
@@ -135,12 +137,12 @@ pub trait ExpressionMethods: Expression + Sized {
 
     /// Creates a SQL `IS NULL` expression.
     fn is_null(self) -> IsNull<Self> {
-       IsNull::new(self)
+        IsNull::new(self)
     }
 
     /// Creates a SQL `IS NOT NULL` expression.
     fn is_not_null(self) -> IsNotNull<Self> {
-       IsNotNull::new(self)
+        IsNotNull::new(self)
     }
 
     /// Creates a SQL `>` expression.
@@ -247,15 +249,25 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 
     /// Creates a SQL `BETWEEN` expression using the given range.
-    fn between<T: AsExpression<Self::SqlType>>(self, other: ::std::ops::Range<T>)
-    -> Between<Self, And<T::Expression, T::Expression>> {
-        Between::new(self, And::new(other.start.as_expression(), other.end.as_expression()))
+    fn between<T: AsExpression<Self::SqlType>>(
+        self,
+        other: ::std::ops::Range<T>,
+    ) -> Between<Self, And<T::Expression, T::Expression>> {
+        Between::new(
+            self,
+            And::new(other.start.as_expression(), other.end.as_expression()),
+        )
     }
 
     /// Creates a SQL `NOT BETWEEN` expression using the given range.
-    fn not_between<T: AsExpression<Self::SqlType>>(self, other: ::std::ops::Range<T>)
-    -> NotBetween<Self, And<T::Expression, T::Expression>> {
-        NotBetween::new(self, And::new(other.start.as_expression(), other.end.as_expression()))
+    fn not_between<T: AsExpression<Self::SqlType>>(
+        self,
+        other: ::std::ops::Range<T>,
+    ) -> NotBetween<Self, And<T::Expression, T::Expression>> {
+        NotBetween::new(
+            self,
+            And::new(other.start.as_expression(), other.end.as_expression()),
+        )
     }
 
     /// Creates a SQL `DESC` expression, representing this expression in

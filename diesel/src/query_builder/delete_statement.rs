@@ -23,7 +23,8 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     }
 }
 
-impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
+impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret>
+where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
@@ -41,7 +42,8 @@ impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret> where
 
 impl_query_id!(DeleteStatement<T, U, Ret>);
 
-impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause> where
+impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
+where
     T: Table,
     T::AllColumns: SelectableExpression<T>,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
@@ -54,7 +56,8 @@ impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause> where
     }
 }
 
-impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>> where
+impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>>
+where
     T: Table,
     Ret: SelectableExpression<T>,
 {
@@ -91,7 +94,8 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>> where
+    pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
+    where
         E: SelectableExpression<T>,
         DeleteStatement<T, U, ReturningClause<E>>: Query,
     {

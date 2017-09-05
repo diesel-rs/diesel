@@ -1,9 +1,9 @@
-use std::fmt::{self, Display, Debug};
+use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 use std::mem;
 
 use backend::Backend;
-use super::{QueryBuilder, QueryFragment, AstPass};
+use super::{AstPass, QueryBuilder, QueryFragment};
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.
@@ -25,29 +25,29 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
     }
 }
 
-impl<'a, T, DB> Display for DebugQuery<'a, T, DB> where
+impl<'a, T, DB> Display for DebugQuery<'a, T, DB>
+where
     DB: Backend,
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
-        QueryFragment::<DB>::to_sql(self.query, &mut query_builder)
-            .map_err(|_| fmt::Error)?;
+        QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
         write!(f, "{} -- binds: {:?}", query_builder.finish(), debug_binds)
     }
 }
 
-impl<'a, T, DB> Debug for DebugQuery<'a, T, DB> where
+impl<'a, T, DB> Debug for DebugQuery<'a, T, DB>
+where
     DB: Backend,
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
-        QueryFragment::<DB>::to_sql(self.query, &mut query_builder)
-            .map_err(|_| fmt::Error)?;
+        QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
         f.debug_struct("Query")
             .field("sql", &query_builder.finish())
@@ -72,7 +72,8 @@ impl<'a, T, DB> DebugBinds<'a, T, DB> {
     }
 }
 
-impl<'a, T, DB> Debug for DebugBinds<'a, T, DB> where
+impl<'a, T, DB> Debug for DebugBinds<'a, T, DB>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {

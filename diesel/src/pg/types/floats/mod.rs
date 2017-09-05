@@ -1,9 +1,9 @@
-use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, IsNull, FromSql, ToSql, ToSqlOutput};
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -39,7 +39,7 @@ impl Error for InvalidNumericSign {
 }
 
 impl FromSql<types::Numeric, Pg> for PgNumeric {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mut bytes = not_none!(bytes);
         let ndigits = try!(bytes.read_u16::<NetworkEndian>());
         let mut digits = Vec::with_capacity(ndigits as usize);
@@ -68,7 +68,10 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
@@ -76,18 +79,17 @@ impl ToSql<types::Numeric, Pg> for PgNumeric {
         };
         let empty_vec = Vec::new();
         let digits = match *self {
-            PgNumeric::Positive { ref digits, .. } |
-            PgNumeric::Negative { ref digits, .. } => digits,
+            PgNumeric::Positive { ref digits, .. } | PgNumeric::Negative { ref digits, .. } => {
+                digits
+            }
             PgNumeric::NaN => &empty_vec,
         };
         let weight = match *self {
-            PgNumeric::Positive { weight, .. } |
-            PgNumeric::Negative { weight, .. } => weight,
+            PgNumeric::Positive { weight, .. } | PgNumeric::Negative { weight, .. } => weight,
             PgNumeric::NaN => 0,
         };
         let scale = match *self {
-            PgNumeric::Positive { scale, .. } |
-            PgNumeric::Negative { scale, .. } => scale,
+            PgNumeric::Positive { scale, .. } | PgNumeric::Negative { scale, .. } => scale,
             PgNumeric::NaN => 0,
         };
         try!(out.write_u16::<NetworkEndian>(digits.len() as u16));

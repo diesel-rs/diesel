@@ -3,12 +3,12 @@ use std::error::Error;
 
 use pg::Pg;
 use pg::data_types::PgNumeric;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Numeric};
+use types::{self, FromSql, IsNull, Numeric, ToSql, ToSqlOutput};
 
 primitive_impls!(Numeric -> (PgNumeric, pg: (1700, 1231)));
 
 impl FromSql<types::Bool, Pg> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         match bytes {
             Some(bytes) => Ok(bytes[0] != 0),
             None => Ok(false),
@@ -17,7 +17,10 @@ impl FromSql<types::Bool, Pg> for bool {
 }
 
 impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let write_result = if *self {
             out.write_all(&[1])
         } else {
@@ -25,7 +28,7 @@ impl ToSql<types::Bool, Pg> for bool {
         };
         write_result
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error+Send+Sync>)
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
 

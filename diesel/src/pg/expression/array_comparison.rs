@@ -34,7 +34,8 @@ use types::Array;
 /// assert_eq!(Ok(vec![sean, jim]), data.load(&connection));
 /// # }
 /// ```
-pub fn any<ST, T>(vals: T) -> Any<T::Expression> where
+pub fn any<ST, T>(vals: T) -> Any<T::Expression>
+where
     T: AsExpression<Array<ST>>,
 {
     Any::new(vals.as_expression())
@@ -69,7 +70,8 @@ pub fn any<ST, T>(vals: T) -> Any<T::Expression> where
 /// assert_eq!(Ok(vec![tess]), data.load(&connection));
 /// # }
 /// ```
-pub fn all<ST, T>(vals: T) -> All<T::Expression> where
+pub fn all<ST, T>(vals: T) -> All<T::Expression>
+where
     T: AsExpression<Array<ST>>,
 {
     All::new(vals.as_expression())
@@ -83,19 +85,19 @@ pub struct Any<Expr> {
 
 impl<Expr> Any<Expr> {
     fn new(expr: Expr) -> Self {
-        Any {
-            expr: expr,
-        }
+        Any { expr: expr }
     }
 }
 
-impl<Expr, ST> Expression for Any<Expr> where
-    Expr: Expression<SqlType=Array<ST>>,
+impl<Expr, ST> Expression for Any<Expr>
+where
+    Expr: Expression<SqlType = Array<ST>>,
 {
     type SqlType = ST;
 }
 
-impl<Expr> QueryFragment<Pg> for Any<Expr> where
+impl<Expr> QueryFragment<Pg> for Any<Expr>
+where
     Expr: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
@@ -109,7 +111,8 @@ impl<Expr> QueryFragment<Pg> for Any<Expr> where
 impl_query_id!(Any<Expr>);
 impl_selectable_expression!(Any<Expr>);
 
-impl<Expr> NonAggregate for Any<Expr> where
+impl<Expr> NonAggregate for Any<Expr>
+where
     Expr: NonAggregate,
 {
 }
@@ -122,19 +125,19 @@ pub struct All<Expr> {
 
 impl<Expr> All<Expr> {
     fn new(expr: Expr) -> Self {
-        All {
-            expr: expr,
-        }
+        All { expr: expr }
     }
 }
 
-impl<Expr, ST> Expression for All<Expr> where
-    Expr: Expression<SqlType=Array<ST>>,
+impl<Expr, ST> Expression for All<Expr>
+where
+    Expr: Expression<SqlType = Array<ST>>,
 {
     type SqlType = ST;
 }
 
-impl<Expr> QueryFragment<Pg> for All<Expr> where
+impl<Expr> QueryFragment<Pg> for All<Expr>
+where
     Expr: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
@@ -148,7 +151,8 @@ impl<Expr> QueryFragment<Pg> for All<Expr> where
 impl_query_id!(All<Expr>);
 impl_selectable_expression!(All<Expr>);
 
-impl<Expr> NonAggregate for All<Expr> where
+impl<Expr> NonAggregate for All<Expr>
+where
     Expr: NonAggregate,
 {
 }

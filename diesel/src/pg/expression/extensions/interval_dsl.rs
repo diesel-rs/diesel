@@ -41,7 +41,7 @@ use data_types::PgInterval;
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
-pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
+pub trait MicroIntervalDsl: Sized + Mul<Self, Output = Self> {
     /// Returns a PgInterval representing `self` as microseconds
     fn microseconds(self) -> PgInterval;
     #[doc(hidden)]
@@ -132,7 +132,7 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
-pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output=Self>  {
+pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
     /// Returns a PgInterval representing `self` in days
     fn days(self) -> PgInterval;
     /// Returns a PgInterval representing `self` in months
@@ -247,7 +247,7 @@ mod tests {
     use self::quickcheck::quickcheck;
     use self::dotenv::dotenv;
 
-    use ::{types, select};
+    use {select, types};
     use data_types::PgInterval;
     use expression::dsl::sql;
     use prelude::*;

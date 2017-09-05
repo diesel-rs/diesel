@@ -107,17 +107,18 @@ pub struct StatementCache<DB: Backend, Statement> {
     pub cache: RefCell<HashMap<StatementCacheKey<DB>, Statement>>,
 }
 
-#[cfg_attr(feature="clippy", allow(len_without_is_empty))]
-impl<DB, Statement> StatementCache<DB, Statement> where
+#[cfg_attr(feature = "clippy", allow(len_without_is_empty))]
+impl<DB, Statement> StatementCache<DB, Statement>
+where
     DB: Backend,
     DB::TypeMetadata: Clone,
     DB::QueryBuilder: Default,
     StatementCacheKey<DB>: Hash + Eq,
 {
-    #[cfg_attr(feature="clippy", allow(new_without_default_derive))]
+    #[cfg_attr(feature = "clippy", allow(new_without_default_derive))]
     pub fn new() -> Self {
         StatementCache {
-            cache: RefCell::new(HashMap::new())
+            cache: RefCell::new(HashMap::new()),
         }
     }
 
@@ -130,7 +131,8 @@ impl<DB, Statement> StatementCache<DB, Statement> where
         source: &T,
         bind_types: &[DB::TypeMetadata],
         prepare_fn: F,
-    ) -> QueryResult<MaybeCached<Statement>> where
+    ) -> QueryResult<MaybeCached<Statement>>
+    where
         T: QueryFragment<DB> + QueryId,
         F: FnOnce(&str) -> QueryResult<Statement>,
     {
@@ -140,7 +142,7 @@ impl<DB, Statement> StatementCache<DB, Statement> where
 
         if !source.is_safe_to_cache_prepared()? {
             let sql = try!(cache_key.sql(source));
-            return prepare_fn(&sql).map(MaybeCached::CannotCache)
+            return prepare_fn(&sql).map(MaybeCached::CannotCache);
         }
 
         refmut_map_result(self.cache.borrow_mut(), |cache| {
@@ -194,17 +196,18 @@ pub enum StatementCacheKey<DB: Backend> {
     Sql {
         sql: String,
         bind_types: Vec<DB::TypeMetadata>,
-    }
+    },
 }
 
-impl<DB> StatementCacheKey<DB> where
+impl<DB> StatementCacheKey<DB>
+where
     DB: Backend,
     DB::QueryBuilder: Default,
     DB::TypeMetadata: Clone,
 {
-    pub fn for_source<T>(source: &T, bind_types: &[DB::TypeMetadata])
-        -> QueryResult<Self> where
-            T: QueryFragment<DB> + QueryId,
+    pub fn for_source<T>(source: &T, bind_types: &[DB::TypeMetadata]) -> QueryResult<Self>
+    where
+        T: QueryFragment<DB> + QueryId,
     {
         match T::query_id() {
             Some(id) => Ok(StatementCacheKey::Type(id)),
@@ -236,9 +239,9 @@ impl<DB> StatementCacheKey<DB> where
 ///
 /// If we were in Haskell (and if `RefMut` were a functor), this would just be
 /// `sequenceA`.
-fn refmut_map_result<T, U, F>(refmut: RefMut<T>, mapper: F)
-    -> QueryResult<RefMut<U>> where
-        F: FnOnce(&mut T) -> QueryResult<&mut U>,
+fn refmut_map_result<T, U, F>(refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
+where
+    F: FnOnce(&mut T) -> QueryResult<&mut U>,
 {
     use std::mem;
 

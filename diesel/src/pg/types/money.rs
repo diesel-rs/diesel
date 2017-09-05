@@ -3,7 +3,7 @@ use std::error::Error;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
 
-use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 
 /// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
 /// type, meant only to indicate the integer's meaning.  The fractional precision of the value is
@@ -20,7 +20,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
 pub struct PgMoney(pub i64);
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Money};
+use types::{self, FromSql, IsNull, Money, ToSql, ToSqlOutput};
 
 // https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L429-L432
 primitive_impls!(Money -> (PgMoney, pg: (790, 791)));
@@ -28,12 +28,18 @@ primitive_impls!(Money -> (PgMoney, pg: (790, 791)));
 impl FromSql<types::Money, Pg> for PgMoney {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mut bytes = not_none!(bytes);
-        bytes.read_i64::<NetworkEndian>().map(PgMoney).map_err(|e| e.into())
+        bytes
+            .read_i64::<NetworkEndian>()
+            .map(PgMoney)
+            .map_err(|e| e.into())
     }
 }
 
 impl ToSql<types::Money, Pg> for PgMoney {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         out.write_i64::<NetworkEndian>(self.0)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())
@@ -46,7 +52,10 @@ impl Add for PgMoney {
     ///
     /// Performs a checked addition, and will `panic!` on overflow in both `debug` and `release`.
     fn add(self, rhs: PgMoney) -> Self::Output {
-        self.0.checked_add(rhs.0).map(PgMoney).expect("overflow adding money amounts")
+        self.0
+            .checked_add(rhs.0)
+            .map(PgMoney)
+            .expect("overflow adding money amounts")
     }
 }
 
@@ -55,7 +64,9 @@ impl AddAssign for PgMoney {
     ///
     /// Performs a checked addition, and will `panic!` on overflow in both `debug` and `release`.
     fn add_assign(&mut self, rhs: PgMoney) {
-        self.0 = self.0.checked_add(rhs.0).expect("overflow adding money amounts")
+        self.0 = self.0
+            .checked_add(rhs.0)
+            .expect("overflow adding money amounts")
     }
 }
 
@@ -65,7 +76,10 @@ impl Sub for PgMoney {
     ///
     /// Performs a checked subtraction, and will `panic!` on underflow in both `debug` and `release`.
     fn sub(self, rhs: PgMoney) -> Self::Output {
-        self.0.checked_sub(rhs.0).map(PgMoney).expect("underflow subtracting money amounts")
+        self.0
+            .checked_sub(rhs.0)
+            .map(PgMoney)
+            .expect("underflow subtracting money amounts")
     }
 }
 
@@ -74,7 +88,9 @@ impl SubAssign for PgMoney {
     ///
     /// Performs a checked subtraction, and will `panic!` on underflow in both `debug` and `release`.
     fn sub_assign(&mut self, rhs: PgMoney) {
-        self.0 = self.0.checked_sub(rhs.0).expect("underflow subtracting money amounts")
+        self.0 = self.0
+            .checked_sub(rhs.0)
+            .expect("underflow subtracting money amounts")
     }
 }
 

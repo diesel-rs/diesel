@@ -182,8 +182,7 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
             id: i32,
-            #[allow(dead_code)]
-            foo: i32,
+            #[allow(dead_code)] foo: i32,
         }
 
         impl_Identifiable! {
@@ -206,8 +205,7 @@ mod test {
 
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
-            #[allow(dead_code)]
-            foo: i32,
+            #[allow(dead_code)] foo: i32,
             id: i32,
         }
 
@@ -232,8 +230,7 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
             id: &'static str,
-            #[allow(dead_code)]
-            foo: i32,
+            #[allow(dead_code)] foo: i32,
         }
 
         impl_Identifiable! {
@@ -245,7 +242,10 @@ mod test {
         }
 
         let foo1 = Foo { id: "hi", foo: 2 };
-        let foo2 = Foo { id: "there", foo: 3 };
+        let foo2 = Foo {
+            id: "there",
+            foo: 3,
+        };
         assert_eq!(&"hi", foo1.id());
         assert_eq!(&"there", foo2.id());
     }
@@ -257,8 +257,7 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo<'a> {
             id: &'a str,
-            #[allow(dead_code)]
-            foo: i32,
+            #[allow(dead_code)] foo: i32,
         }
 
         impl_Identifiable! {
@@ -270,7 +269,10 @@ mod test {
         }
 
         let foo1 = Foo { id: "hi", foo: 2 };
-        let foo2 = Foo { id: "there", foo: 3 };
+        let foo2 = Foo {
+            id: "there",
+            foo: 3,
+        };
         assert_eq!(&"hi", foo1.id());
         assert_eq!(&"there", foo2.id());
     }
@@ -296,8 +298,16 @@ mod test {
             }
         }
 
-        let foo1 = Foo { id: 1, foo_id: "hi", foo: 2 };
-        let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
+        let foo1 = Foo {
+            id: 1,
+            foo_id: "hi",
+            foo: 2,
+        };
+        let foo2 = Foo {
+            id: 2,
+            foo_id: "there",
+            foo: 3,
+        };
         assert_eq!(&"hi", foo1.id());
         assert_eq!(&"there", foo2.id());
     }
@@ -323,8 +333,16 @@ mod test {
             }
         }
 
-        let foo1 = Foo { id: 1, foo_id: "hi", foo: 2 };
-        let foo2 = Foo { id: 2, foo_id: "there", foo: 3 };
+        let foo1 = Foo {
+            id: 1,
+            foo_id: "hi",
+            foo: 2,
+        };
+        let foo2 = Foo {
+            id: 2,
+            foo_id: "there",
+            foo: 3,
+        };
         assert_eq!(&"hi", foo1.id());
         assert_eq!(&"there", foo2.id());
     }
@@ -352,8 +370,18 @@ mod test {
             }
         }
 
-        let foo1 = Foo { id: 1, foo_id: 2, bar_id: 3, foo: 4 };
-        let foo2 = Foo { id: 5, foo_id: 6, bar_id: 7, foo: 8 };
+        let foo1 = Foo {
+            id: 1,
+            foo_id: 2,
+            bar_id: 3,
+            foo: 4,
+        };
+        let foo2 = Foo {
+            id: 5,
+            foo_id: 6,
+            bar_id: 7,
+            foo: 8,
+        };
         assert_eq!((&2, &3), foo1.id());
         assert_eq!((&6, &7), foo2.id());
     }

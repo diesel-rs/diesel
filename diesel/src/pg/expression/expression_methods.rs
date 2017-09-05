@@ -1,4 +1,4 @@
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use super::operators::*;
 use types::{Array, Text};
 
@@ -29,9 +29,9 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(&connection));
     /// # }
     /// ```
-    fn is_not_distinct_from<T>(self, other: T)
-        -> IsNotDistinctFrom<Self, T::Expression> where
-            T: AsExpression<Self::SqlType>,
+    fn is_not_distinct_from<T>(self, other: T) -> IsNotDistinctFrom<Self, T::Expression>
+    where
+        T: AsExpression<Self::SqlType>,
     {
         IsNotDistinctFrom::new(self, other.as_expression())
     }
@@ -62,9 +62,9 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(&connection));
     /// # }
     /// ```
-    fn is_distinct_from<T>(self, other: T)
-        -> IsDistinctFrom<Self, T::Expression> where
-            T: AsExpression<Self::SqlType>,
+    fn is_distinct_from<T>(self, other: T) -> IsDistinctFrom<Self, T::Expression>
+    where
+        T: AsExpression<Self::SqlType>,
     {
         IsDistinctFrom::new(self, other.as_expression())
     }
@@ -78,18 +78,21 @@ use types::VarChar;
 #[doc(hidden)]
 pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// Returns a PostgreSQL "AT TIME ZONE" expression
-    fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression> where
+    fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression>
+    where
         T: AsExpression<VarChar>,
     {
         AtTimeZone::new(self, timezone.as_expression())
     }
 }
 
-impl<T: Expression> PgTimestampExpressionMethods for T where
+impl<T: Expression> PgTimestampExpressionMethods for T
+where
     T::SqlType: DateTimeLike,
-{}
+{
+}
 
-pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
+pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// Compares two arrays for common elements, using the `&&` operator in
     /// the final SQL
     ///
@@ -141,7 +144,8 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// assert_eq!(Ok(Vec::new()), query.load::<i32>(&conn));
     /// # }
     /// ```
-    fn overlaps_with<T>(self, other: T) -> OverlapsWith<Self, T::Expression> where
+    fn overlaps_with<T>(self, other: T) -> OverlapsWith<Self, T::Expression>
+    where
         T: AsExpression<Self::SqlType>,
     {
         OverlapsWith::new(self, other.as_expression())
@@ -192,7 +196,8 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// assert_eq!(Ok(Vec::new()), query.load::<i32>(&conn));
     /// # }
     /// ```
-    fn contains<T>(self, other: T) -> Contains<Self, T::Expression> where
+    fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
+    where
         T: AsExpression<Self::SqlType>,
     {
         Contains::new(self, other.as_expression())
@@ -244,21 +249,23 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType=Array<ST>> + Sized {
     /// assert_eq!(Ok(Vec::new()), query.load::<i32>(&conn));
     /// # }
     /// ```
-    fn is_contained_by<T>(self, other: T) -> IsContainedBy<Self, T::Expression> where
+    fn is_contained_by<T>(self, other: T) -> IsContainedBy<Self, T::Expression>
+    where
         T: AsExpression<Self::SqlType>,
     {
         IsContainedBy::new(self, other.as_expression())
     }
 }
 
-impl<T, ST> ArrayExpressionMethods<ST> for T where
-    T: Expression<SqlType=Array<ST>>,
+impl<T, ST> ArrayExpressionMethods<ST> for T
+where
+    T: Expression<SqlType = Array<ST>>,
 {
 }
 
 use expression::operators::{Asc, Desc};
 
-pub trait SortExpressionMethods : Sized {
+pub trait SortExpressionMethods: Sized {
     /// Specify that nulls should come before other values in this ordering.
     /// Normally, nulls come last when sorting in ascending order and first
     /// when sorting in descending order.
@@ -350,7 +357,7 @@ impl<T> SortExpressionMethods for Asc<T> {}
 
 impl<T> SortExpressionMethods for Desc<T> {}
 
-pub trait PgTextExpressionMethods: Expression<SqlType=Text> + Sized {
+pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// Returns a SQL `ILIKE` expression
     fn ilike<T: AsExpression<Text>>(self, other: T) -> ILike<Self, T::Expression> {
         ILike::new(self.as_expression(), other.as_expression())
@@ -362,4 +369,4 @@ pub trait PgTextExpressionMethods: Expression<SqlType=Text> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Text>> PgTextExpressionMethods for T {}
+impl<T: Expression<SqlType = Text>> PgTextExpressionMethods for T {}

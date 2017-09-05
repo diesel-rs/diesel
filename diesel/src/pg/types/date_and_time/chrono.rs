@@ -1,10 +1,12 @@
 //! This module makes it possible to map `chrono::DateTime` values to postgres `Date`
 //! and `Timestamp` fields. It is enabled with the `chrono` feature.
+
 extern crate chrono;
 
 use std::error::Error;
 use std::io::Write;
-use self::chrono::{Duration, NaiveDateTime, NaiveDate, NaiveTime, DateTime, TimeZone, Utc, FixedOffset, Local};
+use self::chrono::{DateTime, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime,
+                   TimeZone, Utc};
 use self::chrono::naive::MAX_DATE;
 
 use pg::Pg;
@@ -25,7 +27,7 @@ fn pg_epoch() -> NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let PgTimestamp(offset) = try!(FromSql::<Timestamp, Pg>::from_sql(bytes));
         match pg_epoch().checked_add_signed(Duration::microseconds(offset)) {
             Some(v) => Ok(v),
@@ -38,11 +40,15 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let time = match (self.signed_duration_since(pg_epoch())).num_microseconds() {
             Some(time) => time,
             None => {
-                let error_message = format!("{:?} as microseconds is too large to fit in an i64", self);
+                let error_message =
+                    format!("{:?} as microseconds is too large to fit in an i64", self);
                 return Err(Box::<Error + Send + Sync>::from(error_message));
             }
         };
@@ -51,26 +57,35 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl FromSql<Timestamptz, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         FromSql::<Timestamp, Pg>::from_sql(bytes)
     }
 }
 
 impl ToSql<Timestamptz, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         ToSql::<Timestamp, Pg>::to_sql(self, out)
     }
 }
 
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
-        let naive_date_time = try!(<NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes));
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+        let naive_date_time = try!(<NaiveDateTime as FromSql<
+            Timestamptz,
+            Pg,
+        >>::from_sql(bytes));
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }
 
 impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
     }
 }
@@ -80,17 +95,20 @@ fn midnight() -> NaiveTime {
 }
 
 impl ToSql<Time, Pg> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let duration = self.signed_duration_since(midnight());
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
-            None => unreachable!()
+            None => unreachable!(),
         }
     }
 }
 
 impl FromSql<Time, Pg> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let PgTime(offset) = try!(FromSql::<Time, Pg>::from_sql(bytes));
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
@@ -102,20 +120,22 @@ fn pg_epoch_date() -> NaiveDate {
 }
 
 impl ToSql<Date, Pg> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
         ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }
 }
 
 impl FromSql<Date, Pg> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {
-                let error_message = format!("Chrono can only represent dates up to {:?}",
-                                            MAX_DATE);
+                let error_message = format!("Chrono can only represent dates up to {:?}", MAX_DATE);
                 Err(Box::<Error + Send + Sync>::from(error_message))
             }
         }
@@ -124,15 +144,15 @@ impl FromSql<Date, Pg> for NaiveDate {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
     extern crate chrono;
+    extern crate dotenv;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc, TimeZone, FixedOffset};
+    use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
     use self::chrono::naive::MAX_DATE;
     use self::dotenv::dotenv;
 
-    use ::select;
-    use expression::dsl::{sql, now};
+    use select;
+    use expression::dsl::{now, sql};
     use prelude::*;
     use types::{Date, Time, Timestamp, Timestamptz};
 
@@ -165,7 +185,9 @@ mod tests {
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = connection();
         let time = FixedOffset::west(3600).ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time));
+        let query = select(
+            sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time),
+        );
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -173,8 +195,8 @@ mod tests {
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
-            .get_result(&connection);
+        let epoch_from_sql =
+            select(sql::<Timestamp>("'1970-01-01'::timestamp")).get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
@@ -182,8 +204,8 @@ mod tests {
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = connection();
         let time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let epoch_from_sql = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz"))
-            .get_result(&connection);
+        let epoch_from_sql =
+            select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz")).get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
@@ -205,7 +227,9 @@ mod tests {
         let connection = connection();
         let time = FixedOffset::east(3600).ymd(2016, 1, 2).and_hms(1, 0, 0);
         let expected = NaiveDate::from_ymd(2016, 1, 1).and_hms(20, 0, 0);
-        let query = select(AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"));
+        let query = select(
+            AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"),
+        );
         assert_eq!(Ok(expected), query.get_result(&connection));
     }
 
@@ -222,7 +246,9 @@ mod tests {
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
-        let query = select(sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven));
+        let query = select(
+            sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven),
+        );
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -239,7 +265,10 @@ mod tests {
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time"));
-        assert_eq!(Ok(roughly_half_past_eleven), query.get_result::<NaiveTime>(&connection));
+        assert_eq!(
+            Ok(roughly_half_past_eleven),
+            query.get_result::<NaiveTime>(&connection)
+        );
     }
 
     #[test]
@@ -275,7 +304,10 @@ mod tests {
         let connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("'2000-1-1'::date"));
-        assert_eq!(Ok(january_first_2000), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(
+            Ok(january_first_2000),
+            query.get_result::<NaiveDate>(&connection)
+        );
 
         let distant_past = NaiveDate::from_ymd(-398, 4, 11);
         let query = select(sql::<Date>("'399-4-11 BC'::date"));
@@ -291,10 +323,16 @@ mod tests {
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("'2018-1-1'::date"));
-        assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(
+            Ok(january_first_2018),
+            query.get_result::<NaiveDate>(&connection)
+        );
 
         let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date"));
-        assert_eq!(Ok(distant_future), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(
+            Ok(distant_future),
+            query.get_result::<NaiveDate>(&connection)
+        );
     }
 }

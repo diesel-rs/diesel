@@ -10,18 +10,20 @@ use std::ffi::NulError;
 /// future without a major version bump.
 pub enum Error {
     InvalidCString(NulError),
-    DatabaseError(DatabaseErrorKind, Box<DatabaseErrorInformation+Send+Sync>),
+    DatabaseError(
+        DatabaseErrorKind,
+        Box<DatabaseErrorInformation + Send + Sync>,
+    ),
     NotFound,
-    QueryBuilderError(Box<StdError+Send+Sync>),
-    DeserializationError(Box<StdError+Send+Sync>),
-    SerializationError(Box<StdError+Send+Sync>),
+    QueryBuilderError(Box<StdError + Send + Sync>),
+    DeserializationError(Box<StdError + Send + Sync>),
+    SerializationError(Box<StdError + Send + Sync>),
     /// You can return this variant inside of a transaction when you want to
     /// roll it back, but have no actual error to return. Diesel will never
     /// return this variant unless you gave it to us, and it can be safely
     /// ignored in error handling.
     RollbackTransaction,
-    #[doc(hidden)]
-    __Nonexhaustive,
+    #[doc(hidden)] __Nonexhaustive,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -34,8 +36,7 @@ pub enum DatabaseErrorKind {
     UniqueViolation,
     ForeignKeyViolation,
     UnableToSendCommand,
-    #[doc(hidden)]
-    __Unknown, // Match against _ instead, more variants may be added in the future
+    #[doc(hidden)] __Unknown, // Match against _ instead, more variants may be added in the future
 }
 
 pub trait DatabaseErrorInformation {
@@ -47,7 +48,7 @@ pub trait DatabaseErrorInformation {
     fn constraint_name(&self) -> Option<&str>;
 }
 
-impl fmt::Debug for DatabaseErrorInformation+Send+Sync {
+impl fmt::Debug for DatabaseErrorInformation + Send + Sync {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.message(), f)
     }
@@ -58,11 +59,21 @@ impl DatabaseErrorInformation for String {
         self
     }
 
-    fn details(&self) -> Option<&str> { None }
-    fn hint(&self) -> Option<&str> { None }
-    fn table_name(&self) -> Option<&str> { None }
-    fn column_name(&self) -> Option<&str> { None }
-    fn constraint_name(&self) -> Option<&str> { None }
+    fn details(&self) -> Option<&str> {
+        None
+    }
+    fn hint(&self) -> Option<&str> {
+        None
+    }
+    fn table_name(&self) -> Option<&str> {
+        None
+    }
+    fn column_name(&self) -> Option<&str> {
+        None
+    }
+    fn constraint_name(&self) -> Option<&str> {
+        None
+    }
 }
 
 #[derive(Debug)]
@@ -75,8 +86,7 @@ pub enum ConnectionError {
     /// This variant is returned if an error occurred executing the query to set
     /// those options. Diesel will never affect global configuration.
     CouldntSetupConfiguration(Error),
-    #[doc(hidden)]
-    __Nonexhaustive, // Match against _ instead, more variants may be added in the future
+    #[doc(hidden)] __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
 /// A specialized result type for queries.
@@ -198,8 +208,9 @@ impl PartialEq for Error {
     fn eq(&self, other: &Error) -> bool {
         match (self, other) {
             (&Error::InvalidCString(ref a), &Error::InvalidCString(ref b)) => a == b,
-            (&Error::DatabaseError(_, ref a), &Error::DatabaseError(_, ref b)) =>
-                a.message() == b.message(),
+            (&Error::DatabaseError(_, ref a), &Error::DatabaseError(_, ref b)) => {
+                a.message() == b.message()
+            }
             (&Error::NotFound, &Error::NotFound) => true,
             _ => false,
         }

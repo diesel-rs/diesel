@@ -5,14 +5,15 @@ use query_source::Table;
 /// will be overridden. This is automatically implemented for the various query
 /// builder types.
 pub trait OffsetDsl: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
 
     fn offset(self, offset: i64) -> Self::Output;
 }
 
-impl<T, ST> OffsetDsl for T where
-    T: Table + AsQuery<SqlType=ST>,
-    T::Query: OffsetDsl<SqlType=ST>,
+impl<T, ST> OffsetDsl for T
+where
+    T: Table + AsQuery<SqlType = ST>,
+    T::Query: OffsetDsl<SqlType = ST>,
 {
     type Output = <T::Query as OffsetDsl>::Output;
 

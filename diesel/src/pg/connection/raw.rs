@@ -3,9 +3,9 @@
 extern crate pq_sys;
 
 use self::pq_sys::*;
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use std::os::raw as libc;
-use std::{str, ptr};
+use std::{ptr, str};
 
 use result::*;
 
@@ -23,11 +23,9 @@ impl RawConnection {
         let connection_status = unsafe { PQstatus(connection_ptr) };
 
         match connection_status {
-            CONNECTION_OK => {
-                Ok(RawConnection {
-                    internal_connection: connection_ptr,
-                })
-            }
+            CONNECTION_OK => Ok(RawConnection {
+                internal_connection: connection_ptr,
+            }),
             _ => {
                 let message = last_error_message(connection_ptr);
                 Err(ConnectionError::BadConnection(message))
@@ -41,7 +39,11 @@ impl RawConnection {
 
     pub fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
-            PQsetNoticeProcessor(self.internal_connection, Some(notice_processor), ptr::null_mut());
+            PQsetNoticeProcessor(
+                self.internal_connection,
+                Some(notice_processor),
+                ptr::null_mut(),
+            );
         }
     }
 

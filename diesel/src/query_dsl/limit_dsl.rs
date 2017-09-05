@@ -5,14 +5,15 @@ use query_source::Table;
 /// will be overridden. This is automatically implemented for the various query
 /// builder types.
 pub trait LimitDsl: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
 
     fn limit(self, limit: i64) -> Self::Output;
 }
 
-impl<T, ST> LimitDsl for T where
-    T: Table + AsQuery<SqlType=ST>,
-    T::Query: LimitDsl<SqlType=ST>,
+impl<T, ST> LimitDsl for T
+where
+    T: Table + AsQuery<SqlType = ST>,
+    T::Query: LimitDsl<SqlType = ST>,
 {
     type Output = <T::Query as LimitDsl>::Output;
 

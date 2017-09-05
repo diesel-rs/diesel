@@ -2,7 +2,7 @@ use expression::{Expression, NonAggregate};
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
-use types::{Timestamp, Timestamptz, Date, VarChar};
+use types::{Date, Timestamp, Timestamptz, VarChar};
 
 /// Marker trait for types which are valid in `AT TIME ZONE` expressions
 pub trait DateTimeLike {}
@@ -25,20 +25,23 @@ impl<Ts, Tz> AtTimeZone<Ts, Tz> {
     }
 }
 
-impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz> where
+impl<Ts, Tz> Expression for AtTimeZone<Ts, Tz>
+where
     Ts: Expression,
     Ts::SqlType: DateTimeLike,
-    Tz: Expression<SqlType=VarChar>,
+    Tz: Expression<SqlType = VarChar>,
 {
     type SqlType = Timestamp;
 }
 
-impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz> where
+impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz>
+where
     AtTimeZone<Ts, Tz>: Expression,
 {
 }
 
-impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz> where
+impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz>
+where
     Ts: QueryFragment<Pg>,
     Tz: QueryFragment<Pg>,
 {

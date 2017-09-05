@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::{ptr, str};
@@ -17,9 +17,8 @@ impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
         let database_url = try!(CString::new(database_url));
-        let connection_status = unsafe {
-            ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer)
-        };
+        let connection_status =
+            unsafe { ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) };
 
         match connection_status {
             ffi::SQLITE_OK => Ok(RawConnection {
@@ -78,8 +77,11 @@ impl Drop for RawConnection {
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {
-                write!(stderr(), "Error closing SQLite connection: {}", error_message)
-                    .expect("Error writing to `stderr`");
+                write!(
+                    stderr(),
+                    "Error closing SQLite connection: {}",
+                    error_message
+                ).expect("Error writing to `stderr`");
             } else {
                 panic!("Error closing SQLite connection: {}", error_message);
             }

@@ -34,18 +34,12 @@ pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::query_id::QueryId;
 #[doc(hidden)]
-pub use self::select_statement::{SelectStatement, BoxedSelectStatement};
+pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 #[doc(inline)]
-pub use self::update_statement::{
-    AsChangeset,
-    Changeset,
-    IncompleteUpdateStatement,
-    IntoUpdateTarget,
-    UpdateStatement,
-    UpdateTarget,
-};
+pub use self::update_statement::{AsChangeset, Changeset, IncompleteUpdateStatement,
+                                 IntoUpdateTarget, UpdateStatement, UpdateTarget};
 #[doc(inline)]
-pub use self::insert_statement::{IncompleteInsertStatement, IncompleteDefaultInsertStatement};
+pub use self::insert_statement::{IncompleteDefaultInsertStatement, IncompleteInsertStatement};
 
 use std::error::Error;
 
@@ -54,7 +48,7 @@ use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
-pub type BuildQueryResult = Result<(), Box<Error+Send+Sync>>;
+pub type BuildQueryResult = Result<(), Box<Error + Send + Sync>>;
 
 /// Apps should not need to concern themselves with this trait.
 ///
@@ -107,7 +101,8 @@ pub trait QueryFragment<DB: Backend> {
     }
 }
 
-impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
+impl<T: ?Sized, DB> QueryFragment<DB> for Box<T>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {
@@ -116,7 +111,8 @@ impl<T: ?Sized, DB> QueryFragment<DB> for Box<T> where
     }
 }
 
-impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T where
+impl<'a, T: ?Sized, DB> QueryFragment<DB> for &'a T
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {
@@ -136,7 +132,7 @@ impl<DB: Backend> QueryFragment<DB> for () {
 /// specified, or to automatically add `RETURNING *` in certain contexts
 pub trait AsQuery {
     type SqlType;
-    type Query: Query<SqlType=Self::SqlType>;
+    type Query: Query<SqlType = Self::SqlType>;
 
     fn as_query(self) -> Self::Query;
 }
@@ -205,7 +201,8 @@ pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
 
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", feature = "postgres"))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String where
+pub fn deprecated_debug_sql<T>(query: &T) -> String
+where
     T: QueryFragment<::pg::Pg>,
 {
     debug_query(query).to_string()
@@ -213,22 +210,28 @@ pub fn deprecated_debug_sql<T>(query: &T) -> String where
 
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", feature = "mysql", not(feature = "postgres")))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String where
+pub fn deprecated_debug_sql<T>(query: &T) -> String
+where
     T: QueryFragment<::mysql::Mysql>,
 {
     debug_query(query).to_string()
 }
 
 #[doc(hidden)]
-#[cfg(all(feature = "with-deprecated", feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String where
+#[cfg(all(feature = "with-deprecated", feature = "sqlite",
+            not(any(feature = "postgres", feature = "mysql"))))]
+pub fn deprecated_debug_sql<T>(query: &T) -> String
+where
     T: QueryFragment<::sqlite::Sqlite>,
 {
     debug_query(query).to_string()
 }
 
 #[doc(hidden)]
-#[cfg(all(feature = "with-deprecated", not(any(feature = "postgres", feature = "mysql", feature = "sqlite"))))]
+#[cfg(all(feature = "with-deprecated",
+            not(any(feature = "postgres", feature = "mysql", feature = "sqlite"))))]
 pub fn deprecated_debug_sql<T>(_query: &T) -> String {
-    String::from("At least one backend must be enabled to generated debug SQL")
+    String::from(
+        "At least one backend must be enabled to generated debug SQL",
+    )
 }

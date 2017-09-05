@@ -3,10 +3,10 @@ extern crate time;
 use std::error::Error;
 use std::io::Write;
 
-use self::time::{Timespec, Duration};
+use self::time::{Duration, Timespec};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
+use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
 
 expression_impls!(Timestamp -> Timespec);
 queryable_impls!(Timestamp -> Timespec);
@@ -14,7 +14,10 @@ queryable_impls!(Timestamp -> Timespec);
 const TIME_SEC_CONV: i64 = 946_684_800;
 
 impl ToSql<types::Timestamp, Pg> for Timespec {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = *self - pg_epoch;
         let t = try!(duration.num_microseconds().ok_or("Overflow error"));
@@ -23,7 +26,7 @@ impl ToSql<types::Timestamp, Pg> for Timespec {
 }
 
 impl FromSql<types::Timestamp, Pg> for Timespec {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let t = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);
@@ -38,10 +41,10 @@ mod tests {
     extern crate time;
 
     use self::dotenv::dotenv;
-    use self::time::{Timespec, Duration};
+    use self::time::{Duration, Timespec};
 
-    use ::select;
-    use expression::dsl::{sql, now};
+    use select;
+    use expression::dsl::{now, sql};
     use prelude::*;
     use types::Timestamp;
 
@@ -64,8 +67,8 @@ mod tests {
     #[test]
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
-        let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
-            .get_result::<Timespec>(&connection);
+        let epoch_from_sql =
+            select(sql::<Timestamp>("'1970-01-01'::timestamp")).get_result::<Timespec>(&connection);
         assert_eq!(Ok(Timespec::new(0, 0)), epoch_from_sql);
     }
 

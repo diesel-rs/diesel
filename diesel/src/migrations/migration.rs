@@ -56,25 +56,32 @@ impl<'a> Migration for &'a Migration {
 }
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
-    file_names(path).map(|files| {
-        files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
-    }).unwrap_or(false)
+    file_names(path)
+        .map(|files| {
+            files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
+        })
+        .unwrap_or(false)
 }
 
 fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
-    try!(path.read_dir()).map(|entry| {
-        let file_name = try!(entry).file_name();
+    try!(path.read_dir())
+        .map(|entry| {
+            let file_name = try!(entry).file_name();
 
-        // FIXME(killercup): Decide whether to add MigrationError variant for this
-        match file_name.into_string() {
-            Ok(utf8_file_name) => Ok(utf8_file_name),
-            Err(original_os_string) =>
-                panic!("Can't convert file name `{:?}` into UTF8 string", original_os_string)
-        }
-    }).filter(|file_name| match *file_name {
-        Ok(ref name) => !name.starts_with('.'),
-        _ => true
-    }).collect()
+            // FIXME(killercup): Decide whether to add MigrationError variant for this
+            match file_name.into_string() {
+                Ok(utf8_file_name) => Ok(utf8_file_name),
+                Err(original_os_string) => panic!(
+                    "Can't convert file name `{:?}` into UTF8 string",
+                    original_os_string
+                ),
+            }
+        })
+        .filter(|file_name| match *file_name {
+            Ok(ref name) => !name.starts_with('.'),
+            _ => true,
+        })
+        .collect()
 }
 
 #[doc(hidden)]
@@ -130,7 +137,7 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
 mod tests {
     extern crate tempdir;
 
-    use super::{version_from_path, valid_sql_migration_directory};
+    use super::{valid_sql_migration_directory, version_from_path};
 
     use self::tempdir::TempDir;
     use std::fs;

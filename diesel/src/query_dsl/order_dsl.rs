@@ -42,15 +42,16 @@ use query_source::Table;
 /// # }
 /// ```
 pub trait OrderDsl<Expr: Expression>: AsQuery {
-    type Output: AsQuery<SqlType=Self::SqlType>;
+    type Output: AsQuery<SqlType = Self::SqlType>;
 
     fn order(self, expr: Expr) -> Self::Output;
 }
 
-impl<T, Expr, ST> OrderDsl<Expr> for T where
+impl<T, Expr, ST> OrderDsl<Expr> for T
+where
     Expr: Expression,
-    T: Table + AsQuery<SqlType=ST>,
-    T::Query: OrderDsl<Expr, SqlType=ST>,
+    T: Table + AsQuery<SqlType = ST>,
+    T::Query: OrderDsl<Expr, SqlType = ST>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
 

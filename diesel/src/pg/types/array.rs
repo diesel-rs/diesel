@@ -1,13 +1,14 @@
-use byteorder::{ReadBytesExt, WriteBytesExt, NetworkEndian};
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
-use pg::{Pg, PgTypeMetadata, PgMetadataLookup};
+use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use query_source::Queryable;
 use types::*;
 
-impl<T> HasSqlType<Array<T>> for Pg where
+impl<T> HasSqlType<Array<T>> for Pg
+where
     Pg: HasSqlType<T>,
 {
     fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
@@ -20,24 +21,23 @@ impl<T> HasSqlType<Array<T>> for Pg where
 
 impl_query_id!(Array<T>);
 
-impl<T> NotNull for Array<T> {
-}
+impl<T> NotNull for Array<T> {}
 
-impl<T> SingleValue for Array<T> {
-}
+impl<T> SingleValue for Array<T> {}
 
-impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
+impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
+where
     T: FromSql<ST, Pg>,
     Pg: HasSqlType<ST>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mut bytes = not_none!(bytes);
         let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
         let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
         let _oid = try!(bytes.read_i32::<NetworkEndian>());
 
         if num_dimensions == 0 {
-            return Ok(Vec::new())
+            return Ok(Vec::new());
         }
 
         let num_elements = try!(bytes.read_i32::<NetworkEndian>());
@@ -47,32 +47,36 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T> where
             return Err("multi-dimensional arrays are not supported".into());
         }
         if lower_bound != 1 {
-            return Err("lower bound must be 1".into())
+            return Err("lower bound must be 1".into());
         }
 
-        (0..num_elements).map(|_| {
-            let elem_size = try!(bytes.read_i32::<NetworkEndian>());
-            if has_null && elem_size == -1 {
-                T::from_sql(None)
-            } else {
-                let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
-                bytes = new_bytes;
-                T::from_sql(Some(elem_bytes))
-            }
-        }).collect()
+        (0..num_elements)
+            .map(|_| {
+                let elem_size = try!(bytes.read_i32::<NetworkEndian>());
+                if has_null && elem_size == -1 {
+                    T::from_sql(None)
+                } else {
+                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
+                    bytes = new_bytes;
+                    T::from_sql(Some(elem_bytes))
+                }
+            })
+            .collect()
     }
 }
 
-impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T> where
+impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T>
+where
     Pg: HasSqlType<ST>,
     Vec<T>: FromSql<Array<ST>, Pg>,
 {
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error+Send+Sync>> {
+    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
         FromSql::<Array<ST>, Pg>::from_sql(row.take())
     }
 }
 
-impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T> where
+impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T>
+where
     T: FromSql<ST, Pg> + Queryable<ST, Pg>,
     Pg: HasSqlType<ST>,
 {
@@ -108,11 +112,15 @@ array_as_expression!(Vec<T>, Nullable<Array<ST>>);
 array_as_expression!(&'a Vec<T>, Array<ST>);
 array_as_expression!(&'a Vec<T>, Nullable<Array<ST>>);
 
-impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
+impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T]
+where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
@@ -140,30 +148,42 @@ impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T] where
     }
 }
 
-impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T] where
+impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T]
+where
     Pg: HasSqlType<ST>,
     &'a [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
 
-impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T> where
+impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
+where
     Pg: HasSqlType<ST>,
     for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         (self as &[T]).to_sql(out)
     }
 }
 
-impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T> where
+impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
+where
     Pg: HasSqlType<ST>,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }

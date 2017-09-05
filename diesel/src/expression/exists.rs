@@ -43,16 +43,17 @@ pub fn exists<T: AsQuery>(query: T) -> Exists<T::Query> {
 #[derive(Debug, Clone, Copy)]
 pub struct Exists<T>(T);
 
-impl<T> Expression for Exists<T> where
+impl<T> Expression for Exists<T>
+where
     T: Query,
 {
     type SqlType = Bool;
 }
 
-impl<T> NonAggregate for Exists<T> {
-}
+impl<T> NonAggregate for Exists<T> {}
 
-impl<T, DB> QueryFragment<DB> for Exists<T> where
+impl<T, DB> QueryFragment<DB> for Exists<T>
+where
     DB: Backend,
     T: QueryFragment<DB>,
 {

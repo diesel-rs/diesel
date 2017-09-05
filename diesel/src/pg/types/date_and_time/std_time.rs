@@ -3,7 +3,7 @@ use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
+use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
 
 expression_impls!(Timestamp -> SystemTime);
 queryable_impls!(Timestamp -> SystemTime);
@@ -14,7 +14,10 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -29,7 +32,7 @@ impl ToSql<types::Timestamp, Pg> for SystemTime {
 }
 
 impl FromSql<types::Timestamp, Pg> for SystemTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let usecs_passed = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);
@@ -64,10 +67,10 @@ mod tests {
     extern crate dotenv;
 
     use self::dotenv::dotenv;
-    use std::time::{SystemTime, Duration, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    use ::select;
-    use expression::dsl::{sql, now};
+    use select;
+    use expression::dsl::{now, sql};
     use prelude::*;
     use types::Timestamp;
 

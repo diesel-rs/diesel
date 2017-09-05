@@ -1,8 +1,8 @@
-use expression::{Expression, AsExpression};
+use expression::{AsExpression, Expression};
 use expression::operators::{Concat, Like, NotLike};
 use types::Text;
 
-pub trait TextExpressionMethods: Expression<SqlType=Text> + Sized {
+pub trait TextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// Concatenates two strings using the `||` operator.
     ///
     /// # Example
@@ -45,4 +45,4 @@ pub trait TextExpressionMethods: Expression<SqlType=Text> + Sized {
     }
 }
 
-impl<T: Expression<SqlType=Text>> TextExpressionMethods for T {}
+impl<T: Expression<SqlType = Text>> TextExpressionMethods for T {}

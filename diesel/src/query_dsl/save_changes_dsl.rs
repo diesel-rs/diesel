@@ -10,8 +10,9 @@ pub trait InternalSaveChangesDsl<Conn, T>: Sized {
     fn internal_save_changes(self, connection: &Conn) -> QueryResult<T>;
 }
 
-impl<T, U, Conn> InternalSaveChangesDsl<Conn, U> for T where
-    T: Copy + AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+impl<T, U, Conn> InternalSaveChangesDsl<Conn, U> for T
+where
+    T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
     Update<T, T>: LoadDsl<Conn> + LoadQuery<Conn, U>,
 {
     fn internal_save_changes(self, conn: &Conn) -> QueryResult<U> {
@@ -23,9 +24,10 @@ impl<T, U, Conn> InternalSaveChangesDsl<Conn, U> for T where
 use sqlite::SqliteConnection;
 
 #[cfg(feature = "sqlite")]
-impl<T, U> InternalSaveChangesDsl<SqliteConnection, U> for T where
+impl<T, U> InternalSaveChangesDsl<SqliteConnection, U> for T
+where
     T: Copy + Identifiable,
-    T: AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+    T: AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
     T::Table: FindDsl<T::Id>,
     Update<T, T>: ExecuteDsl<SqliteConnection>,
     Find<T::Table, T::Id>: LoadQuery<SqliteConnection, U>,
@@ -40,9 +42,10 @@ impl<T, U> InternalSaveChangesDsl<SqliteConnection, U> for T where
 use mysql::MysqlConnection;
 
 #[cfg(feature = "mysql")]
-impl<T, U> InternalSaveChangesDsl<MysqlConnection, U> for T where
+impl<T, U> InternalSaveChangesDsl<MysqlConnection, U> for T
+where
     T: Copy + Identifiable,
-    T: AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
+    T: AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
     T::Table: FindDsl<T::Id>,
     Update<T, T>: ExecuteDsl<MysqlConnection>,
     Find<T::Table, T::Id>: LoadQuery<MysqlConnection, U>,
@@ -58,13 +61,16 @@ pub trait SaveChangesDsl<Conn> {
     ///
     /// `foo.save_changes(&conn)` is equivalent to
     /// `update(foo::table().find(foo.id())).set(&foo).get_result(&conn)`
-    fn save_changes<T>(self, connection: &Conn) -> QueryResult<T> where
+    fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
+    where
         Self: InternalSaveChangesDsl<Conn, T>,
     {
         self.internal_save_changes(connection)
     }
 }
 
-impl<T, Conn> SaveChangesDsl<Conn> for T where
-    T: Copy + AsChangeset<Target=<T as HasTable>::Table> + IntoUpdateTarget,
-{}
+impl<T, Conn> SaveChangesDsl<Conn> for T
+where
+    T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
+{
+}

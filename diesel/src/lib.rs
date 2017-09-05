@@ -2,29 +2,26 @@
 //! interactions. [A getting started guide](http://diesel.rs/guides/getting-started/) can be
 //! found on our website.
 #![cfg_attr(feature = "unstable", feature(specialization))]
-
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
-
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file="../clippy.toml")))]
-#![cfg_attr(feature = "clippy", allow(
-    option_map_unwrap_or_else, option_map_unwrap_or,
-    match_same_arms, type_complexity,
-))]
-#![cfg_attr(feature = "clippy", warn(
-    option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention,
-    mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
-    enum_glob_use, if_not_else, items_after_statements, used_underscore_binding,
-))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy",
+           allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
+                   type_complexity))]
+#![cfg_attr(feature = "clippy",
+           warn(option_unwrap_used, result_unwrap_used, print_stdout,
+                  wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                  unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
+                  used_underscore_binding))]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
-extern crate byteorder;
 #[cfg(feature = "postgres")]
 #[macro_use]
 extern crate bitflags;
+extern crate byteorder;
 
 #[macro_use]
 mod macros;
@@ -82,23 +79,19 @@ pub mod helper_types {
     use super::expression::helper_types::Eq;
 
     /// Represents the return type of `.select(selection)`
-    pub type Select<Source, Selection> =
-        <Source as SelectDsl<Selection>>::Output;
+    pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `.filter(predicate)`
-    pub type Filter<Source, Predicate> =
-        <Source as FilterDsl<Predicate>>::Output;
+    pub type Filter<Source, Predicate> = <Source as FilterDsl<Predicate>>::Output;
 
     /// Represents the return type of `.filter(lhs.eq(rhs))`
-    pub type FindBy<Source, Column, Value> =
-        Filter<Source, Eq<Column, Value>>;
+    pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
     /// Represents the return type of `.find(pk)`
     pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
 
     /// Represents the return type of `.order(ordering)`
-    pub type Order<Source, Ordering> =
-        <Source as OrderDsl<Ordering>>::Output;
+    pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
 
     /// Represents the return type of `.limit()`
     pub type Limit<Source> = <Source as LimitDsl>::Output;
@@ -107,13 +100,19 @@ pub mod helper_types {
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
     /// Represents the return type of `.inner_join(rhs)`
-    pub type InnerJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<Rhs, joins::Inner>>::Output;
+    pub type InnerJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<
+        Rhs,
+        joins::Inner,
+    >>::Output;
 
     /// Represents the return type of `.left_join(rhs)`
-    pub type LeftJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
+    pub type LeftJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<
+        Rhs,
+        joins::LeftOuter,
+    >>::Output;
 
     use super::associations::HasTable;
-    use super::query_builder::{UpdateStatement, IntoUpdateTarget, AsChangeset};
+    use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
     /// Represents the return type of `update(lhs).set(rhs)`
     pub type Update<Target, Changes> = UpdateStatement<
         <Target as HasTable>::Table,
@@ -126,13 +125,13 @@ pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
-    pub use expression::{Expression, SelectableExpression, AppearsOnTable, BoxableExpression};
+    pub use expression::{AppearsOnTable, BoxableExpression, Expression, SelectableExpression};
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
     pub use query_dsl::*;
-    pub use query_source::{QuerySource, Queryable, Table, Column, JoinTo};
-    pub use result::{QueryResult, ConnectionError, ConnectionResult, OptionalExtension};
+    pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
+    pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "postgres")]
     pub use pg::PgConnection;
@@ -146,7 +145,7 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{insert, update, delete, select, insert_default_values};
+pub use query_builder::functions::{delete, insert, insert_default_values, select, update};
 #[cfg(feature = "sqlite")]
 pub use sqlite::query_builder::functions::*;
 pub use result::Error::NotFound;

@@ -6,7 +6,7 @@ use std::error::Error;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use pg::Pg;
-use types::{self, ToSql, ToSqlOutput, IsNull, FromSql, Cidr, Inet, MacAddr};
+use types::{self, Cidr, FromSql, Inet, IsNull, MacAddr, ToSql, ToSqlOutput};
 use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
 
 #[cfg(windows)]
@@ -47,15 +47,17 @@ impl FromSql<types::MacAddr, Pg> for [u8; 6] {
         assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
         Ok([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]])
     }
-
 }
 
 impl ToSql<types::MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
-   }
+    }
 }
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
@@ -136,9 +138,9 @@ impl_Sql!(types::Cidr, 1);
 #[test]
 fn macaddr_roundtrip() {
     let mut bytes = ToSqlOutput::test();
-    let input_address = [0x52, 0x54,0x00, 0xfb, 0xc6, 0x16];
+    let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<types::MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-    let output_address:[u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
+    let output_address: [u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
     assert_eq!(input_address, output_address);
 }
 

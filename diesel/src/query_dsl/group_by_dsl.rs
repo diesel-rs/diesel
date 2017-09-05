@@ -1,5 +1,5 @@
 use expression::Expression;
-use query_builder::{Query, AsQuery};
+use query_builder::{AsQuery, Query};
 use query_source::Table;
 
 pub trait GroupByDsl<Expr: Expression> {
@@ -8,7 +8,8 @@ pub trait GroupByDsl<Expr: Expression> {
     fn group_by(self, expr: Expr) -> Self::Output;
 }
 
-impl<T, Expr> GroupByDsl<Expr> for T where
+impl<T, Expr> GroupByDsl<Expr> for T
+where
     Expr: Expression,
     T: Table + AsQuery,
     T::Query: GroupByDsl<Expr>,

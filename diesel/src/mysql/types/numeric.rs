@@ -1,4 +1,4 @@
-#[cfg(feature="bigdecimal")]
+#[cfg(feature = "bigdecimal")]
 pub mod bigdecimal {
     extern crate bigdecimal;
 
@@ -9,10 +9,13 @@ pub mod bigdecimal {
 
     use self::bigdecimal::BigDecimal;
 
-    use types::{self, FromSql, ToSql, ToSqlOutput, IsNull, HasSqlType};
+    use types::{self, FromSql, HasSqlType, IsNull, ToSql, ToSqlOutput};
 
     impl ToSql<types::Numeric, Mysql> for BigDecimal {
-        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+        fn to_sql<W: Write>(
+            &self,
+            out: &mut ToSqlOutput<W, Mysql>,
+        ) -> Result<IsNull, Box<Error + Send + Sync>> {
             write!(out, "{}", *self)
                 .map(|_| IsNull::No)
                 .map_err(|e| e.into())
@@ -20,11 +23,12 @@ pub mod bigdecimal {
     }
 
     impl FromSql<types::Numeric, Mysql> for BigDecimal {
-        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
             let bytes = not_none!(bytes);
-            BigDecimal::parse_bytes(bytes, 10)
-                .ok_or_else(|| Box::from(format!("{:?} is not valid decimal number ", bytes)))
-       }
+            BigDecimal::parse_bytes(bytes, 10).ok_or_else(|| {
+                Box::from(format!("{:?} is not valid decimal number ", bytes))
+            })
+        }
     }
 
     impl HasSqlType<BigDecimal> for Mysql {

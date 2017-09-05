@@ -13,7 +13,8 @@ mod date_and_time;
 /// imported by [`expression::dsl`](../../expression/dsl/index.html) when
 /// compiled with the `feature = "postgres"` flag.
 pub mod dsl {
-    #[doc(inline)] pub use super::array_comparison::{any, all};
+    #[doc(inline)]
+    pub use super::array_comparison::{all, any};
 
     pub use super::extensions::*;
 }

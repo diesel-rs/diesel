@@ -5,7 +5,7 @@ use result::Error::DeserializationError;
 use result::QueryResult;
 use sqlite::Sqlite;
 use super::stmt::StatementUse;
-use types::{HasSqlType, FromSqlRow};
+use types::{FromSqlRow, HasSqlType};
 
 pub struct StatementIterator<'a, ST, T> {
     stmt: StatementUse<'a>,
@@ -21,7 +21,8 @@ impl<'a, ST, T> StatementIterator<'a, ST, T> {
     }
 }
 
-impl<'a, ST, T> Iterator for StatementIterator<'a, ST, T> where
+impl<'a, ST, T> Iterator for StatementIterator<'a, ST, T>
+where
     Sqlite: HasSqlType<ST>,
     T: Queryable<ST, Sqlite>,
 {

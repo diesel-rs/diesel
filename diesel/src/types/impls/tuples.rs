@@ -2,13 +2,13 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::{Expression, SelectableExpression, AppearsOnTable, NonAggregate};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use insertable::{ColumnInsertValue, InsertValues};
 use query_builder::*;
-use query_source::{QuerySource, Queryable, Table, Column};
+use query_source::{Column, QuerySource, Queryable, Table};
 use result::QueryResult;
 use row::Row;
-use types::{HasSqlType, FromSqlRow, NotNull};
+use types::{FromSqlRow, HasSqlType, NotNull};
 use util::TupleAppend;
 
 macro_rules! tuple_impls {

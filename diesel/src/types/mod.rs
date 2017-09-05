@@ -54,7 +54,8 @@ use std::io::{self, Write};
 /// - [`bool`][bool]
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Bool;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Bool;
 
 /// The tinyint SQL type. This is only available on MySQL.
 ///
@@ -67,7 +68,8 @@ use std::io::{self, Write};
 /// - [`i8`][i8]
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Tinyint;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Tinyint;
 
 /// The small integer SQL type.
 ///
@@ -80,9 +82,12 @@ use std::io::{self, Write};
 /// - [`i16`][i16]
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
-#[derive(Debug, Clone, Copy, Default)] pub struct SmallInt;
-#[doc(hidden)] pub type Int2 = SmallInt;
-#[doc(hidden)] pub type Smallint = SmallInt;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SmallInt;
+#[doc(hidden)]
+pub type Int2 = SmallInt;
+#[doc(hidden)]
+pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
@@ -95,8 +100,10 @@ use std::io::{self, Write};
 /// - [`i32`][i32]
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Integer;
-#[doc(hidden)] pub type Int4 = Integer;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Integer;
+#[doc(hidden)]
+pub type Int4 = Integer;
 
 /// The big integer SQL type.
 ///
@@ -109,9 +116,12 @@ use std::io::{self, Write};
 /// - [`i64`][i64]
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
-#[derive(Debug, Clone, Copy, Default)] pub struct BigInt;
-#[doc(hidden)] pub type Int8 = BigInt;
-#[doc(hidden)] pub type Bigint = BigInt;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct BigInt;
+#[doc(hidden)]
+pub type Int8 = BigInt;
+#[doc(hidden)]
+pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
@@ -124,8 +134,10 @@ use std::io::{self, Write};
 /// - [`f32`][f32]
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Float;
-#[doc(hidden)] pub type Float4 = Float;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Float;
+#[doc(hidden)]
+pub type Float4 = Float;
 
 /// The double precision float SQL type.
 ///
@@ -138,8 +150,10 @@ use std::io::{self, Write};
 /// - [`f64`][f64]
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Double;
-#[doc(hidden)] pub type Float8 = Double;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Double;
+#[doc(hidden)]
+pub type Float8 = Double;
 
 /// The numeric SQL type.
 ///
@@ -159,13 +173,14 @@ use std::io::{self, Write};
 ///
 /// [BigDecimal]: /bigdecimal/struct.BigDecimal.html
 /// [bigdecimal]: /bigdecimal/index.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Numeric;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Numeric;
 pub type Decimal = Numeric;
 
-#[cfg(not(feature="postgres"))]
+#[cfg(not(feature = "postgres"))]
 impl NotNull for Numeric {}
 
-#[cfg(not(feature="postgres"))]
+#[cfg(not(feature = "postgres"))]
 impl SingleValue for Numeric {}
 
 /// The text SQL type.
@@ -186,13 +201,19 @@ impl SingleValue for Numeric {}
 ///
 /// [String]: https://doc.rust-lang.org/nightly/std/string/struct.String.html
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Text;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Text;
 pub type VarChar = Text;
-#[doc(hidden)] pub type Varchar = VarChar;
-#[doc(hidden)] pub type Char = Text;
-#[doc(hidden)] pub type Tinytext = Text;
-#[doc(hidden)] pub type Mediumtext = Text;
-#[doc(hidden)] pub type Longtext = Text;
+#[doc(hidden)]
+pub type Varchar = VarChar;
+#[doc(hidden)]
+pub type Char = Text;
+#[doc(hidden)]
+pub type Tinytext = Text;
+#[doc(hidden)]
+pub type Mediumtext = Text;
+#[doc(hidden)]
+pub type Longtext = Text;
 
 /// The binary SQL type.
 ///
@@ -209,14 +230,21 @@ pub type VarChar = Text;
 ///
 /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Binary;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Binary;
 
-#[doc(hidden)] pub type Tinyblob = Binary;
-#[doc(hidden)] pub type Blob = Binary;
-#[doc(hidden)] pub type Mediumblob = Binary;
-#[doc(hidden)] pub type Longblob = Binary;
-#[doc(hidden)] pub type Varbinary = Binary;
-#[doc(hidden)] pub type Bit = Binary;
+#[doc(hidden)]
+pub type Tinyblob = Binary;
+#[doc(hidden)]
+pub type Blob = Binary;
+#[doc(hidden)]
+pub type Mediumblob = Binary;
+#[doc(hidden)]
+pub type Longblob = Binary;
+#[doc(hidden)]
+pub type Varbinary = Binary;
+#[doc(hidden)]
+pub type Bit = Binary;
 
 /// The date SQL type.
 ///
@@ -231,7 +259,8 @@ pub type VarChar = Text;
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
 /// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Date;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Date;
 
 /// The interval SQL type.
 ///
@@ -249,7 +278,8 @@ pub type VarChar = Text;
 ///
 /// [PgInterval]: /diesel/pg/data_types/struct.PgInterval.html
 /// [interval dsls]: /diesel/pg/expression/extensions/index.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Interval;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Interval;
 
 #[cfg(not(feature = "postgres"))]
 impl NotNull for Interval {} // FIXME: Interval should not be in this file
@@ -267,7 +297,8 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Time;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Time;
 
 /// The timestamp/datetime SQL type.
 ///
@@ -288,7 +319,8 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
 /// [Timespec]: /time/struct.Timespec.html
-#[derive(Debug, Clone, Copy, Default)] pub struct Timestamp;
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Timestamp;
 
 /// The nullable SQL type. This wraps another SQL type to indicate that it can
 /// be null. By default all values are assumed to be `NOT NULL`.
@@ -301,7 +333,8 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
-#[derive(Debug, Clone, Copy, Default)] pub struct Nullable<ST: NotNull>(ST);
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Nullable<ST: NotNull>(ST);
 
 #[cfg(feature = "postgres")]
 pub use pg::types::sql_types::*;
@@ -317,8 +350,7 @@ pub trait HasSqlType<ST>: TypeMetadata {
     }
 }
 
-pub trait NotNull {
-}
+pub trait NotNull {}
 
 pub trait IntoNullable {
     type Nullable;
@@ -332,16 +364,14 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
     type Nullable = Nullable<T>;
 }
 
-pub trait SingleValue {
-}
+pub trait SingleValue {}
 
-impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {
-}
+impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 
 /// How to deserialize a single field of a given type. The input will always be
 /// the binary representation, not the text.
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error+Send+Sync>>;
+    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
 /// How to deserialize multiple fields, with a known type. This type is
@@ -351,7 +381,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     /// the number of times you would call `row.take()` in `build_from_row`
     const FIELDS_NEEDED: usize = 1;
 
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error+Send+Sync>>;
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -363,7 +393,8 @@ pub enum IsNull {
 
 #[derive(Clone, Copy)]
 #[doc(hidden)]
-pub struct ToSqlOutput<'a, T, DB> where
+pub struct ToSqlOutput<'a, T, DB>
+where
     DB: TypeMetadata,
     DB::MetadataLookup: 'a,
 {
@@ -373,7 +404,10 @@ pub struct ToSqlOutput<'a, T, DB> where
 
 impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
     pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
-        ToSqlOutput { out, metadata_lookup }
+        ToSqlOutput {
+            out,
+            metadata_lookup,
+        }
     }
 
     pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
@@ -434,7 +468,8 @@ impl<'a, T, DB: TypeMetadata> DerefMut for ToSqlOutput<'a, T, DB> {
     }
 }
 
-impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB> where
+impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB>
+where
     DB: TypeMetadata,
     T: PartialEq<U>,
 {
@@ -443,7 +478,8 @@ impl<'a, T, U, DB> PartialEq<U> for ToSqlOutput<'a, T, DB> where
     }
 }
 
-impl<'a, T, DB> fmt::Debug for ToSqlOutput<'a, T, DB> where
+impl<'a, T, DB> fmt::Debug for ToSqlOutput<'a, T, DB>
+where
     T: fmt::Debug,
     DB: TypeMetadata,
 {
@@ -456,14 +492,21 @@ impl<'a, T, DB> fmt::Debug for ToSqlOutput<'a, T, DB> where
 /// included as a bind parameter, and is expected to be the binary format, not
 /// text.
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>>;
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, DB>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>>;
 }
 
-impl<'a, A, T, DB> ToSql<A, DB> for &'a T where
+impl<'a, A, T, DB> ToSql<A, DB> for &'a T
+where
     DB: Backend + HasSqlType<A>,
     T: ToSql<A, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, DB>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         (*self).to_sql(out)
     }
 }

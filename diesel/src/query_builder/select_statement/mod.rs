@@ -25,11 +25,11 @@ use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::NoWhereClause;
-use super::{Query, QueryFragment, AstPass};
+use super::{AstPass, Query, QueryFragment};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
-#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
     From,
     Select = DefaultSelectClause,
@@ -90,41 +90,41 @@ impl<F> SelectStatement<F> {
     }
 }
 
-impl<F, S, D, W, O, L, Of, G> Query
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        S: SelectClauseExpression<F>,
+impl<F, S, D, W, O, L, Of, G> Query for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    S: SelectClauseExpression<F>,
 {
     type SqlType = S::SelectClauseSqlType;
 }
 
 #[cfg(feature = "postgres")]
-impl<F, S, D, W, O, L, Of, G> Expression
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        S: SelectClauseExpression<F>,
+impl<F, S, D, W, O, L, Of, G> Expression for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    S: SelectClauseExpression<F>,
 {
     type SqlType = ::types::Array<S::SelectClauseSqlType>;
 }
 
 #[cfg(not(feature = "postgres"))]
-impl<F, S, D, W, O, L, Of, G> Expression
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        S: SelectClauseExpression<F>,
+impl<F, S, D, W, O, L, Of, G> Expression for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    S: SelectClauseExpression<F>,
 {
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        DB: Backend,
-        S: SelectClauseQueryFragment<F, DB>,
-        F: QuerySource,
-        F::FromClause: QueryFragment<DB>,
-        D: QueryFragment<DB>,
-        W: QueryFragment<DB>,
-        O: QueryFragment<DB>,
-        L: QueryFragment<DB>,
-        Of: QueryFragment<DB>,
-        G: QueryFragment<DB>,
+impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    DB: Backend,
+    S: SelectClauseQueryFragment<F, DB>,
+    F: QuerySource,
+    F::FromClause: QueryFragment<DB>,
+    D: QueryFragment<DB>,
+    W: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    L: QueryFragment<DB>,
+    Of: QueryFragment<DB>,
+    G: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -141,16 +141,16 @@ impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB>
     }
 }
 
-impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
-    for SelectStatement<(), S, D, W, O, L, Of, G> where
-        DB: Backend,
-        S: SelectClauseQueryFragment<(), DB>,
-        D: QueryFragment<DB>,
-        W: QueryFragment<DB>,
-        O: QueryFragment<DB>,
-        L: QueryFragment<DB>,
-        Of: QueryFragment<DB>,
-        G: QueryFragment<DB>,
+impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB> for SelectStatement<(), S, D, W, O, L, Of, G>
+where
+    DB: Backend,
+    S: SelectClauseQueryFragment<(), DB>,
+    D: QueryFragment<DB>,
+    W: QueryFragment<DB>,
+    O: QueryFragment<DB>,
+    L: QueryFragment<DB>,
+    Of: QueryFragment<DB>,
+    G: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -168,32 +168,35 @@ impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB>
 impl_query_id!(SelectStatement<F, S, D, W, O, L, Of, G>);
 
 impl<F, S, D, W, O, L, Of, G, QS> SelectableExpression<QS>
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        SelectStatement<F, S, D, W, O, L, Of, G>: AppearsOnTable<QS>,
+    for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    SelectStatement<F, S, D, W, O, L, Of, G>: AppearsOnTable<QS>,
 {
 }
 
-impl<S, F, D, W, O, L, Of, G, QS> AppearsOnTable<QS>
-    for SelectStatement<S, F, D, W, O, L, Of, G> where
-        SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
+impl<S, F, D, W, O, L, Of, G, QS> AppearsOnTable<QS> for SelectStatement<S, F, D, W, O, L, Of, G>
+where
+    SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
 {
 }
 
-impl<F, S, D, W, O, L, Of, G> NonAggregate
-    for SelectStatement<F, S, D, W, O, L, Of, G> where
-        SelectStatement<F, S, D, W, O, L, Of, G>: Expression,
+impl<F, S, D, W, O, L, Of, G> NonAggregate for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    SelectStatement<F, S, D, W, O, L, Of, G>: Expression,
 {
 }
 
 /// Allow `SelectStatement<From>` to act as if it were `From` as long as
 /// no other query methods have been called on it
-impl<From, T> AppearsInFromClause<T> for SelectStatement<From> where
+impl<From, T> AppearsInFromClause<T> for SelectStatement<From>
+where
     From: AppearsInFromClause<T>,
 {
     type Count = From::Count;
 }
 
-impl<From> QuerySource for SelectStatement<From> where
+impl<From> QuerySource for SelectStatement<From>
+where
     From: QuerySource,
     From::DefaultSelection: SelectableExpression<Self>,
 {
@@ -209,7 +212,8 @@ impl<From> QuerySource for SelectStatement<From> where
     }
 }
 
-impl<From, Selection> AppendSelection<Selection> for SelectStatement<From> where
+impl<From, Selection> AppendSelection<Selection> for SelectStatement<From>
+where
     From: AppendSelection<Selection>,
 {
     type Output = From::Output;

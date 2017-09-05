@@ -23,8 +23,9 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     }
 }
 
-impl<Predicate> WhereAnd<Predicate> for NoWhereClause where
-    Predicate: Expression<SqlType=Bool>,
+impl<Predicate> WhereAnd<Predicate> for NoWhereClause
+where
+    Predicate: Expression<SqlType = Bool>,
 {
     type Output = WhereClause<Predicate>;
 
@@ -42,7 +43,8 @@ impl<DB: Backend> Into<Option<Box<QueryFragment<DB>>>> for NoWhereClause {
 #[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
 
-impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
+impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr>
+where
     DB: Backend,
     Expr: QueryFragment<DB>,
 {
@@ -55,9 +57,10 @@ impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr> where
 
 impl_query_id!(WhereClause<T>);
 
-impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
-    Expr: Expression<SqlType=Bool>,
-    Predicate: Expression<SqlType=Bool>,
+impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr>
+where
+    Expr: Expression<SqlType = Bool>,
+    Predicate: Expression<SqlType = Bool>,
 {
     type Output = WhereClause<And<Expr, Predicate>>;
 
@@ -66,10 +69,10 @@ impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr> where
     }
 }
 
-impl<'a, DB, Predicate> Into<Option<Box<QueryFragment<DB> + 'a>>>
-    for WhereClause<Predicate> where
-        DB: Backend,
-        Predicate: QueryFragment<DB> + 'a,
+impl<'a, DB, Predicate> Into<Option<Box<QueryFragment<DB> + 'a>>> for WhereClause<Predicate>
+where
+    DB: Backend,
+    Predicate: QueryFragment<DB> + 'a,
 {
     fn into(self) -> Option<Box<QueryFragment<DB> + 'a>> {
         Some(Box::new(self.0))

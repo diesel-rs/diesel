@@ -1,20 +1,20 @@
-#[cfg(feature="bigdecimal")]
+#[cfg(feature = "bigdecimal")]
 mod bigdecimal {
-    extern crate num_traits;
+    extern crate bigdecimal;
     extern crate num_bigint;
     extern crate num_integer;
-    extern crate bigdecimal;
+    extern crate num_traits;
 
     use self::bigdecimal::BigDecimal;
-    use self::num_bigint::{Sign, BigInt, BigUint};
+    use self::num_bigint::{BigInt, BigUint, Sign};
     use self::num_integer::Integer;
-    use self::num_traits::{Signed, Zero, ToPrimitive};
+    use self::num_traits::{Signed, ToPrimitive, Zero};
     use std::error::Error;
     use std::io::prelude::*;
 
     use pg::Pg;
     use pg::data_types::PgNumeric;
-    use types::{self, FromSql, ToSql, ToSqlOutput, IsNull};
+    use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
     /// Iterator over the digits of a big uint in base 10k.
     /// The digits will be returned in little endian order.
@@ -53,13 +53,14 @@ mod bigdecimal {
 
             let unnecessary_zeroes = if weight >= 0 {
                 let index_of_decimal = (weight + 1) as usize;
-                digits.get(index_of_decimal..).expect("enough digits exist")
+                digits
+                    .get(index_of_decimal..)
+                    .expect("enough digits exist")
                     .iter()
                     .rev()
                     .take_while(|i| i.is_zero())
                     .count()
-            }
-            else {
+            } else {
                 0
             };
 
@@ -68,10 +69,14 @@ mod bigdecimal {
 
             match decimal.sign() {
                 Sign::Plus => PgNumeric::Positive {
-                    digits, scale, weight
+                    digits,
+                    scale,
+                    weight,
                 },
                 Sign::Minus => PgNumeric::Negative {
-                    digits, scale, weight
+                    digits,
+                    scale,
+                    weight,
                 },
                 Sign::NoSign => PgNumeric::Positive {
                     digits: vec![0],
@@ -89,17 +94,28 @@ mod bigdecimal {
     }
 
     impl ToSql<types::Numeric, Pg> for BigDecimal {
-        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+        fn to_sql<W: Write>(
+            &self,
+            out: &mut ToSqlOutput<W, Pg>,
+        ) -> Result<IsNull, Box<Error + Send + Sync>> {
             let numeric = PgNumeric::from(self);
             ToSql::<types::Numeric, Pg>::to_sql(&numeric, out)
         }
     }
 
     impl FromSql<types::Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+        fn from_sql(numeric: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
             let (sign, weight, _, digits) = match PgNumeric::from_sql(numeric)? {
-                PgNumeric::Positive { weight, scale, digits } => (Sign::Plus, weight, scale, digits),
-                PgNumeric::Negative { weight, scale, digits } => (Sign::Minus, weight, scale, digits),
+                PgNumeric::Positive {
+                    weight,
+                    scale,
+                    digits,
+                } => (Sign::Plus, weight, scale, digits),
+                PgNumeric::Negative {
+                    weight,
+                    scale,
+                    digits,
+                } => (Sign::Minus, weight, scale, digits),
                 PgNumeric::NaN => return Err(Box::from("NaN is not (yet) supported in BigDecimal")),
             };
             let mut result = BigUint::default();
@@ -125,42 +141,78 @@ mod bigdecimal {
         #[test]
         fn bigdecimal_to_pgnumeric_converts_digits_to_base_10000() {
             let decimal = BigDecimal::from_str("1").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![1] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 0,
+                digits: vec![1],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("10").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![10] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 0,
+                digits: vec![10],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("10000").unwrap();
-            let expected = PgNumeric::Positive { weight: 1, scale: 0, digits: vec![1, 0] };
+            let expected = PgNumeric::Positive {
+                weight: 1,
+                scale: 0,
+                digits: vec![1, 0],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("10001").unwrap();
-            let expected = PgNumeric::Positive { weight: 1, scale: 0, digits: vec![1, 1] };
+            let expected = PgNumeric::Positive {
+                weight: 1,
+                scale: 0,
+                digits: vec![1, 1],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("100000000").unwrap();
-            let expected = PgNumeric::Positive { weight: 2, scale: 0, digits: vec![1, 0, 0] };
+            let expected = PgNumeric::Positive {
+                weight: 2,
+                scale: 0,
+                digits: vec![1, 0, 0],
+            };
             assert_eq!(expected, decimal.into());
         }
 
         #[test]
         fn bigdecimal_to_pg_numeric_properly_adjusts_scale() {
             let decimal = BigDecimal::from_str("1").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 0, digits: vec![1] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 0,
+                digits: vec![1],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("1.0").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 1, digits: vec![1] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 1,
+                digits: vec![1],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("1.1").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 1, digits: vec![1, 1000] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 1,
+                digits: vec![1, 1000],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("1.10").unwrap();
-            let expected = PgNumeric::Positive { weight: 0, scale: 2, digits: vec![1, 1000] };
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 2,
+                digits: vec![1, 1000],
+            };
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("100000000.0001").unwrap();
@@ -172,7 +224,11 @@ mod bigdecimal {
             assert_eq!(expected, decimal.into());
 
             let decimal = BigDecimal::from_str("0.1").unwrap();
-            let expected = PgNumeric::Positive { weight: -1, scale: 1, digits: vec![1000] };
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 1,
+                digits: vec![1000],
+            };
             assert_eq!(expected, decimal.into());
         }
 

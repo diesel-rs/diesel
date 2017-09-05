@@ -33,19 +33,18 @@ pub enum ColumnInsertValue<Col, Expr> {
     Default(Col),
 }
 
-type ValuesFn<Item, T, DB> = fn(Item) -> <Item as Insertable<T, DB>>::Values;
+type ValuesFn<Item, T, DB> = fn(Item)
+    -> <Item as Insertable<T, DB>>::Values;
 
-impl<Iter, T, DB> Insertable<T, DB> for Iter where
+impl<Iter, T, DB> Insertable<T, DB> for Iter
+where
     T: Table,
     DB: Backend + SupportsDefaultKeyword,
     Iter: IntoIterator,
     Iter::Item: Insertable<T, DB>,
     Iter::IntoIter: Clone,
 {
-    type Values = BatchInsertValues<iter::Map<
-        Iter::IntoIter,
-        ValuesFn<Iter::Item, T, DB>,
-    >>;
+    type Values = BatchInsertValues<iter::Map<Iter::IntoIter, ValuesFn<Iter::Item, T, DB>>>;
 
     fn values(self) -> Self::Values {
         let values = self.into_iter()
@@ -57,14 +56,17 @@ impl<Iter, T, DB> Insertable<T, DB> for Iter where
 #[derive(Debug, Clone)]
 pub struct BatchInsertValues<T>(T);
 
-impl<T, DB> InsertValues<DB> for BatchInsertValues<T> where
+impl<T, DB> InsertValues<DB> for BatchInsertValues<T>
+where
     T: Iterator + Clone,
     T::Item: InsertValues<DB>,
     DB: Backend,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.0.clone()
-            .next().expect("Tried to read column names from empty list of rows")
+        self.0
+            .clone()
+            .next()
+            .expect("Tried to read column names from empty list of rows")
             .column_names(out)
     }
 

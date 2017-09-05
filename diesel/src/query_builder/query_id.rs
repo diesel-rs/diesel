@@ -18,26 +18,26 @@ pub trait QueryId {
 impl QueryId for () {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = true; 
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 impl<T: QueryId + ?Sized> QueryId for Box<T> {
     type QueryId = T::QueryId;
 
-    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;     
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
 
 impl<'a, T: QueryId + ?Sized> QueryId for &'a T {
     type QueryId = T::QueryId;
 
-    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID; 
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
 impl<DB> QueryId for QueryFragment<DB> {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = false; 
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 #[cfg(test)]
@@ -83,7 +83,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(features="postgres")]
+    #[cfg(features = "postgres")]
     fn boxed_queries_do_not_have_static_query_id() {
         use pg::Pg;
         assert!(query_id(users::table.into_boxed::<Pg>()).is_none());

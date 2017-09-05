@@ -37,26 +37,22 @@ impl<Records, Target, Action> OnConflict<Records, Target, Action> {
 impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a OnConflictDoNothing<T> {
     type InsertStatement = InsertStatement<Tab, Self, Op>;
 
-    fn into_insert_statement(self, target: Tab, operator: Op)
-        -> Self::InsertStatement
-    {
+    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
         InsertStatement::no_returning_clause(target, self, operator)
     }
 }
 
 impl<'a, Recods, Target, Action, Tab, Op> IntoInsertStatement<Tab, Op>
-    for &'a OnConflict<Recods, Target, Action>
-{
+    for &'a OnConflict<Recods, Target, Action> {
     type InsertStatement = InsertStatement<Tab, Self, Op>;
 
-    fn into_insert_statement(self, target: Tab, operator: Op)
-        -> Self::InsertStatement
-    {
+    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
         InsertStatement::no_returning_clause(target, self, operator)
     }
 }
 
-impl<'a, T, Tab> Insertable<Tab, Pg> for &'a OnConflictDoNothing<T> where
+impl<'a, T, Tab> Insertable<Tab, Pg> for &'a OnConflictDoNothing<T>
+where
     Tab: Table,
     T: Insertable<Tab, Pg> + Copy,
     T: UndecoratedInsertRecord<Tab>,
@@ -73,12 +69,13 @@ impl<'a, T, Tab> Insertable<Tab, Pg> for &'a OnConflictDoNothing<T> where
 }
 
 impl<'a, Records, Target, Action, Tab> Insertable<Tab, Pg>
-    for &'a OnConflict<Records, Target, Action> where
-        Tab: Table,
-        Records: Insertable<Tab, Pg> + Copy,
-        Records: UndecoratedInsertRecord<Tab>,
-        Target: OnConflictTarget<Tab> + Clone,
-        Action: IntoConflictAction<Tab> + Copy,
+    for &'a OnConflict<Records, Target, Action>
+where
+    Tab: Table,
+    Records: Insertable<Tab, Pg> + Copy,
+    Records: UndecoratedInsertRecord<Tab>,
+    Target: OnConflictTarget<Tab> + Clone,
+    Action: IntoConflictAction<Tab> + Copy,
 {
     type Values = OnConflictValues<Records::Values, Target, Action::Action>;
 
@@ -99,7 +96,8 @@ pub struct OnConflictValues<Values, Target, Action> {
     action: Action,
 }
 
-impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Target, Action> where
+impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Target, Action>
+where
     Values: InsertValues<Pg>,
     Target: QueryFragment<Pg>,
     Action: QueryFragment<Pg>,

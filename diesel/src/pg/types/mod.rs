@@ -28,7 +28,8 @@ pub mod sql_types {
     /// - [`u32`][u32]
     ///
     /// [u32]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Oid;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Oid;
 
     /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
     /// to `timestamptz`.
@@ -48,7 +49,8 @@ pub mod sql_types {
     /// [PgTimestamp]: /diesel/pg/data_types/struct.PgTimestamp.html
     /// [NaiveDateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/naive/datetime/struct.NaiveDateTime.html
     /// [DateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/datetime/struct.DateTime.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Timestamptz;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Timestamptz;
 
     /// The `Array` SQL type. This wraps another type to represent a SQL array of
     /// that type. Multidimensional arrays are not supported, nor are arrays
@@ -65,7 +67,8 @@ pub mod sql_types {
     ///
     /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Array<ST>(ST);
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Array<ST>(ST);
 
     /// The `Range` SQL type. This wraps another type to represent a SQL range of
     /// that type.
@@ -79,14 +82,21 @@ pub mod sql_types {
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
     /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Range<ST>(ST);
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Range<ST>(ST);
 
-    #[doc(hidden)] pub type Int4range = Range<::types::Int4>;
-    #[doc(hidden)] pub type Int8range = Range<::types::Int8>;
-    #[doc(hidden)] pub type Daterange = Range<::types::Date>;
-    #[doc(hidden)] pub type Numrange = Range<::types::Numeric>;
-    #[doc(hidden)] pub type Tsrange = Range<::types::Timestamp>;
-    #[doc(hidden)] pub type Tstzrange = Range<::types::Timestamptz>;
+    #[doc(hidden)]
+    pub type Int4range = Range<::types::Int4>;
+    #[doc(hidden)]
+    pub type Int8range = Range<::types::Int8>;
+    #[doc(hidden)]
+    pub type Daterange = Range<::types::Date>;
+    #[doc(hidden)]
+    pub type Numrange = Range<::types::Numeric>;
+    #[doc(hidden)]
+    pub type Tsrange = Range<::types::Timestamp>;
+    #[doc(hidden)]
+    pub type Tstzrange = Range<::types::Timestamptz>;
 
     /// Alias for `SmallInt`
     pub type SmallSerial = ::types::SmallInt;
@@ -109,7 +119,8 @@ pub mod sql_types {
     /// - [`uuid::Uuid`][Uuid]
     ///
     /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Uuid;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
     pub type Bytea = ::types::Binary;
@@ -136,7 +147,8 @@ pub mod sql_types {
     /// - [`serde_json`][Value]
     ///
     /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
-    #[derive(Debug, Clone, Copy, Default)] pub struct Json;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Json;
 
     #[cfg(feature = "serde_json")]
     /// The `jsonb` SQL type.  This type can only be used with `feature =
@@ -232,7 +244,8 @@ pub mod sql_types {
     /// assert_eq!(santas_address, inserted_contact.address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)] pub struct Jsonb;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Jsonb;
 
     /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
     ///
@@ -304,7 +317,8 @@ pub mod sql_types {
     /// assert_eq!(Cents(123_456), inserted_item.price);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)] pub struct Money;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Money;
 
     #[cfg(feature = "network-address")]
     /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
@@ -369,7 +383,8 @@ pub mod sql_types {
     /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_device.macaddr);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)] pub struct MacAddr;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct MacAddr;
 
     #[cfg(feature = "network-address")]
     #[doc(hidden)]
@@ -444,7 +459,8 @@ pub mod sql_types {
     /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)] pub struct Inet;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Inet;
 
     #[cfg(feature = "network-address")]
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
@@ -514,5 +530,6 @@ pub mod sql_types {
     /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default)] pub struct Cidr;
+    #[derive(Debug, Clone, Copy, Default)]
+    pub struct Cidr;
 }

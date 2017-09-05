@@ -43,8 +43,8 @@ use super::nodes::Replace;
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// ```
-pub fn insert_or_replace<T: ?Sized>(records: &T)
-    -> IncompleteInsertStatement<&T, Or<Insert, Replace>>
-{
+pub fn insert_or_replace<T: ?Sized>(
+    records: &T,
+) -> IncompleteInsertStatement<&T, Or<Insert, Replace>> {
     IncompleteInsertStatement::new(records, Or::new(Insert, Replace))
 }

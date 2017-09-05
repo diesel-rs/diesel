@@ -1,4 +1,4 @@
-use super::{Statement, Binds, ffi, libc};
+use super::{ffi, libc, Binds, Statement};
 use result::QueryResult;
 use row::Row;
 use mysql::{Mysql, MysqlType};
@@ -24,7 +24,8 @@ impl<'a> StatementIterator<'a> {
         })
     }
 
-    pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>> where
+    pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>>
+    where
         F: FnMut(MysqlRow) -> QueryResult<T>,
     {
         let mut results = Vec::new();
@@ -47,7 +48,7 @@ impl<'a> StatementIterator<'a> {
             0 => self.output_binds.update_buffer_lengths(),
             _error => if let Err(e) = self.stmt.did_an_error_occur() {
                 return Some(Err(e));
-            }
+            },
         }
 
         Some(Ok(MysqlRow {

@@ -32,23 +32,27 @@ impl<T, ST> Coerce<T, ST> {
     }
 }
 
-impl<T, ST> Expression for Coerce<T, ST> where
+impl<T, ST> Expression for Coerce<T, ST>
+where
     T: Expression,
 {
     type SqlType = ST;
 }
 
-impl<T, ST, QS> SelectableExpression<QS> for Coerce<T, ST> where
+impl<T, ST, QS> SelectableExpression<QS> for Coerce<T, ST>
+where
     T: SelectableExpression<QS>,
 {
 }
 
-impl<T, ST, QS> AppearsOnTable<QS> for Coerce<T, ST> where
+impl<T, ST, QS> AppearsOnTable<QS> for Coerce<T, ST>
+where
     T: AppearsOnTable<QS>,
 {
 }
 
-impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
+impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST>
+where
     T: QueryFragment<DB>,
     DB: Backend,
 {
@@ -60,10 +64,11 @@ impl<T, ST, DB> QueryFragment<DB> for Coerce<T, ST> where
 impl<T: QueryId, ST: 'static> QueryId for Coerce<T, ST> {
     type QueryId = Coerce<T::QueryId, ST>;
 
-    const HAS_STATIC_QUERY_ID: bool = true; 
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
-impl<T, ST> NonAggregate for Coerce<T, ST> where
+impl<T, ST> NonAggregate for Coerce<T, ST>
+where
     T: NonAggregate,
     Coerce<T, ST>: Expression,
 {

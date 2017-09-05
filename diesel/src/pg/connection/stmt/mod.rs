@@ -22,15 +22,19 @@ impl Statement {
         conn: &RawConnection,
         param_data: &Vec<Option<Vec<u8>>>,
     ) -> QueryResult<PgResult> {
-        let params_pointer = param_data.iter()
-            .map(|data| data.as_ref().map(|d| d.as_ptr() as *const libc::c_char)
-                 .unwrap_or(ptr::null()))
+        let params_pointer = param_data
+            .iter()
+            .map(|data| {
+                data.as_ref()
+                    .map(|d| d.as_ptr() as *const libc::c_char)
+                    .unwrap_or(ptr::null())
+            })
             .collect::<Vec<_>>();
-        let param_lengths = param_data.iter()
-            .map(|data| data
-                .as_ref()
-                .map(|d| d.len() as libc::c_int)
-                .unwrap_or(0))
+        let param_lengths = param_data
+            .iter()
+            .map(|data| {
+                data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0)
+            })
             .collect::<Vec<_>>();
         let internal_res = unsafe {
             conn.exec_prepared(

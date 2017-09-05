@@ -7,9 +7,9 @@ use query_source::Queryable;
 use result::*;
 use types::HasSqlType;
 
-pub use self::transaction_manager::{TransactionManager, AnsiTransactionManager};
+pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 #[doc(hidden)]
-pub use self::statement_cache::{StatementCache, StatementCacheKey, MaybeCached};
+pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
 
 /// Perform simple operations on a backend.
 pub trait SimpleConnection {
@@ -93,7 +93,8 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///     ]));
     /// }
     /// ```
-    fn transaction<T, E, F>(&self, f: F) -> Result<T, E> where
+    fn transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    where
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
     {
@@ -103,11 +104,11 @@ pub trait Connection: SimpleConnection + Sized + Send {
             Ok(value) => {
                 try!(transaction_manager.commit_transaction(self));
                 Ok(value)
-            },
+            }
             Err(e) => {
                 try!(transaction_manager.rollback_transaction(self));
                 Err(e)
-            },
+            }
         }
     }
 
@@ -121,7 +122,8 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     /// Executes the given function inside a transaction, but does not commit
     /// it. Panics if the given function returns an `Err`.
-    fn test_transaction<T, E, F>(&self, f: F) -> T where
+    fn test_transaction<T, E, F>(&self, f: F) -> T
+    where
         F: FnOnce() -> Result<T, E>,
     {
         let mut user_result = None;
@@ -136,16 +138,20 @@ pub trait Connection: SimpleConnection + Sized + Send {
     fn execute(&self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>> where
+    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>;
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize> where
+    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    where
         T: QueryFragment<Self::Backend> + QueryId;
 
-    #[doc(hidden)] fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
-    #[doc(hidden)] fn transaction_manager(&self) -> &Self::TransactionManager;
+    #[doc(hidden)]
+    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
+    #[doc(hidden)]
+    fn transaction_manager(&self) -> &Self::TransactionManager;
 }

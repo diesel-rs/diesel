@@ -5,10 +5,10 @@ use self::chrono::*;
 use std::error::Error;
 use std::io::Write;
 use std::os::raw as libc;
-use std::{ptr, mem, slice};
+use std::{mem, ptr, slice};
 
 use mysql::Mysql;
-use types::{ToSql, ToSqlOutput, FromSql, IsNull, Timestamp, Time, Date, Datetime};
+use types::{Date, Datetime, FromSql, IsNull, Time, Timestamp, ToSql, ToSqlOutput};
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
@@ -48,19 +48,25 @@ mysql_time_impls!(Time);
 mysql_time_impls!(Date);
 
 impl ToSql<Datetime, Mysql> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Mysql>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         <NaiveDateTime as ToSql<Timestamp, Mysql>>::to_sql(self, out)
     }
 }
 
 impl FromSql<Datetime, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         <NaiveDateTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)
     }
 }
 
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Mysql>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;
@@ -76,24 +82,32 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ).and_then(|v| v.and_hms_micro_opt(
-            mysql_time.hour as u32,
-            mysql_time.minute as u32,
-            mysql_time.second as u32,
-            mysql_time.second_part as u32,
-        )).ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
+        ).and_then(|v| {
+            v.and_hms_micro_opt(
+                mysql_time.hour as u32,
+                mysql_time.minute as u32,
+                mysql_time.second as u32,
+                mysql_time.second_part as u32,
+            )
+        })
+            .ok_or_else(|| {
+                format!("Cannot parse this date: {:?}", mysql_time).into()
+            })
     }
 }
 
 impl ToSql<Time, Mysql> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Mysql>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.hour = self.hour() as libc::c_uint;
@@ -105,7 +119,7 @@ impl ToSql<Time, Mysql> for NaiveTime {
 }
 
 impl FromSql<Time, Mysql> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
         Ok(NaiveTime::from_hms(
             mysql_time.hour as u32,
@@ -116,7 +130,10 @@ impl FromSql<Time, Mysql> for NaiveTime {
 }
 
 impl ToSql<Date, Mysql> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> Result<IsNull, Box<Error+Send+Sync>> {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Mysql>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;
@@ -128,7 +145,7 @@ impl ToSql<Date, Mysql> for NaiveDate {
 }
 
 impl FromSql<Date, Mysql> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
         Ok(NaiveDate::from_ymd(
             mysql_time.year as i32,
@@ -140,16 +157,16 @@ impl FromSql<Date, Mysql> for NaiveDate {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
     extern crate chrono;
+    extern crate dotenv;
 
     use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
     use self::dotenv::dotenv;
 
-    use expression::dsl::{sql, now};
+    use expression::dsl::{now, sql};
     use prelude::*;
     use select;
-    use types::{Date, Time, Timestamp, Datetime};
+    use types::{Date, Datetime, Time, Timestamp};
 
     fn connection() -> MysqlConnection {
         dotenv().ok();
@@ -175,11 +192,11 @@ mod tests {
     fn unix_epoch_decodes_correctly() {
         let connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let epoch_from_sql = select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)"))
-            .get_result(&connection);
+        let epoch_from_sql =
+            select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)")).get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
-        let epoch_from_sql = select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)"))
-            .get_result(&connection);
+        let epoch_from_sql =
+            select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)")).get_result(&connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
@@ -208,7 +225,9 @@ mod tests {
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms(23, 37, 4);
-        let query = select(sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven));
+        let query = select(
+            sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven),
+        );
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -225,18 +244,25 @@ mod tests {
 
         let roughly_half_past_eleven = NaiveTime::from_hms(23, 37, 4);
         let query = select(sql::<Time>("CAST('23:37:04' AS TIME)"));
-        assert_eq!(Ok(roughly_half_past_eleven), query.get_result::<NaiveTime>(&connection));
+        assert_eq!(
+            Ok(roughly_half_past_eleven),
+            query.get_result::<NaiveTime>(&connection)
+        );
     }
 
     #[test]
     fn dates_encode_correctly() {
         let connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
-        let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000));
+        let query = select(
+            sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000),
+        );
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
-        let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018));
+        let query = select(
+            sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018),
+        );
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -245,11 +271,17 @@ mod tests {
         let connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)"));
-        assert_eq!(Ok(january_first_2000), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(
+            Ok(january_first_2000),
+            query.get_result::<NaiveDate>(&connection)
+        );
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)"));
-        assert_eq!(Ok(january_first_2018), query.get_result::<NaiveDate>(&connection));
+        assert_eq!(
+            Ok(january_first_2018),
+            query.get_result::<NaiveDate>(&connection)
+        );
 
         let query = select(sql::<Date>("CAST('0000-0-0' AS DATE)"));
         assert!(query.get_result::<NaiveDate>(&connection).is_err());

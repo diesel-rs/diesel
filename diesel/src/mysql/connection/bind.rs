@@ -1,7 +1,7 @@
 extern crate mysqlclient_sys as ffi;
 
 use std::mem;
-use std::os::{raw as libc};
+use std::os::raw as libc;
 
 use mysql::MysqlType;
 use result::QueryResult;
@@ -12,33 +12,34 @@ pub struct Binds {
 }
 
 impl Binds {
-    pub fn from_input_data<Iter>(input: Iter) -> Self where
-        Iter: IntoIterator<Item=(MysqlType, Option<Vec<u8>>)>,
+    pub fn from_input_data<Iter>(input: Iter) -> Self
+    where
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let data = input.into_iter().map(|(tpe, bytes)| {
-            BindData::for_input(tpe, bytes)
-        }).collect();
+        let data = input
+            .into_iter()
+            .map(|(tpe, bytes)| BindData::for_input(tpe, bytes))
+            .collect();
 
-        Binds {
-            data: data,
-        }
+        Binds { data: data }
     }
 
     pub fn from_output_types(types: Vec<MysqlType>) -> Self {
-        let data = types.into_iter()
+        let data = types
+            .into_iter()
             .map(mysql_type_to_ffi_type)
             .map(BindData::for_output)
             .collect();
 
-        Binds {
-            data: data,
-        }
+        Binds { data: data }
     }
 
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T where
+    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        let mut binds = self.data.iter_mut()
+        let mut binds = self.data
+            .iter_mut()
             .map(|x| unsafe { x.mysql_bind() })
             .collect::<Vec<_>>();
         f(binds.as_mut_ptr())
@@ -58,9 +59,7 @@ impl Binds {
             }
         }
 
-        unsafe {
-            self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))
-        }
+        unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
     }
 
     pub fn update_buffer_lengths(&mut self) {
@@ -161,8 +160,11 @@ impl BindData {
             let offset = self.bytes.capacity();
             let truncated_amount = self.length as usize - offset;
 
-            debug_assert!(truncated_amount > 0, "output buffers were invalidated \
-                without calling `mysql_stmt_bind_result`");
+            debug_assert!(
+                truncated_amount > 0,
+                "output buffers were invalidated \
+                 without calling `mysql_stmt_bind_result`"
+            );
             self.bytes.set_len(offset);
             self.bytes.reserve(truncated_amount);
             self.bytes.set_len(self.length as usize);
@@ -180,7 +182,9 @@ impl BindData {
         use result::Error::DeserializationError;
 
         if self.is_truncated() && self.is_fixed_size_buffer() {
-            Err(DeserializationError("Numeric overflow/underflow occurred".into()))
+            Err(DeserializationError(
+                "Numeric overflow/underflow occurred".into(),
+            ))
         } else {
             Ok(())
         }
@@ -212,18 +216,13 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
     match tpe {
         t::MYSQL_TYPE_TINY => Some(1),
-        t::MYSQL_TYPE_YEAR |
-        t::MYSQL_TYPE_SHORT => Some(2),
-        t::MYSQL_TYPE_INT24 |
-        t::MYSQL_TYPE_LONG |
-        t::MYSQL_TYPE_FLOAT => Some(4),
-        t::MYSQL_TYPE_LONGLONG |
-        t::MYSQL_TYPE_DOUBLE => Some(8),
+        t::MYSQL_TYPE_YEAR | t::MYSQL_TYPE_SHORT => Some(2),
+        t::MYSQL_TYPE_INT24 | t::MYSQL_TYPE_LONG | t::MYSQL_TYPE_FLOAT => Some(4),
+        t::MYSQL_TYPE_LONGLONG | t::MYSQL_TYPE_DOUBLE => Some(8),
         t::MYSQL_TYPE_TIME |
         t::MYSQL_TYPE_DATE |
         t::MYSQL_TYPE_DATETIME |
-        t::MYSQL_TYPE_TIMESTAMP =>
-            Some(size_of::<ffi::MYSQL_TIME>()),
+        t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<ffi::MYSQL_TIME>()),
         _ => None,
     }
 }

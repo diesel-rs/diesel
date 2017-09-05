@@ -33,4 +33,3 @@ macro_rules! static_cond {
         static_cond!(@go $lhs $rhs $els $then);
     };
 }
-

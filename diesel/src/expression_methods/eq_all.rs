@@ -8,14 +8,15 @@ use types::Bool;
 /// implemented on columns in the `column!` macro.
 #[doc(hidden)]
 pub trait EqAll<Rhs> {
-    type Output: Expression<SqlType=Bool>;
+    type Output: Expression<SqlType = Bool>;
 
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
 
 // FIXME: This is much easier to represent with a macro once macro types are stable
 // which appears to be slated for 1.13
-impl<L1, L2, R1, R2> EqAll<(R1, R2)> for (L1, L2) where
+impl<L1, L2, R1, R2> EqAll<(R1, R2)> for (L1, L2)
+where
     L1: EqAll<R1>,
     L2: EqAll<R2>,
 {
@@ -26,51 +27,71 @@ impl<L1, L2, R1, R2> EqAll<(R1, R2)> for (L1, L2) where
     }
 }
 
-impl<L1, L2, L3, R1, R2, R3> EqAll<(R1, R2, R3)> for (L1, L2, L3) where
+impl<L1, L2, L3, R1, R2, R3> EqAll<(R1, R2, R3)> for (L1, L2, L3)
+where
     L1: EqAll<R1>,
     L2: EqAll<R2>,
     L3: EqAll<R3>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>>;
+    type Output = And<
+        <L1 as EqAll<R1>>::Output,
+        And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>,
+    >;
 
     fn eq_all(self, rhs: (R1, R2, R3)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(
-            self.1.eq_all(rhs.1).and(self.2.eq_all(rhs.2)))
+        self.0
+            .eq_all(rhs.0)
+            .and(self.1.eq_all(rhs.1).and(self.2.eq_all(rhs.2)))
     }
 }
 
-impl<L1, L2, L3, L4, R1, R2, R3, R4> EqAll<(R1, R2, R3, R4)> for (L1, L2, L3, L4) where
+impl<L1, L2, L3, L4, R1, R2, R3, R4> EqAll<(R1, R2, R3, R4)> for (L1, L2, L3, L4)
+where
     L1: EqAll<R1>,
     L2: EqAll<R2>,
     L3: EqAll<R3>,
     L4: EqAll<R4>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, <L4 as EqAll<R4>>::Output>>>;
+    type Output = And<
+        <L1 as EqAll<R1>>::Output,
+        And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, <L4 as EqAll<R4>>::Output>>,
+    >;
 
     fn eq_all(self, rhs: (R1, R2, R3, R4)) -> Self::Output {
         self.0.eq_all(rhs.0).and(
-            self.1.eq_all(rhs.1).and(
-            self.2.eq_all(rhs.2).and(
-            self.3.eq_all(rhs.3)
-            )))
+            self.1
+                .eq_all(rhs.1)
+                .and(self.2.eq_all(rhs.2).and(self.3.eq_all(rhs.3))),
+        )
     }
 }
 
-impl<L1, L2, L3, L4, L5, R1, R2, R3, R4, R5> EqAll<(R1, R2, R3, R4, R5)> for (L1, L2, L3, L4, L5) where
+impl<L1, L2, L3, L4, L5, R1, R2, R3, R4, R5> EqAll<(R1, R2, R3, R4, R5)> for (L1, L2, L3, L4, L5)
+where
     L1: EqAll<R1>,
     L2: EqAll<R2>,
     L3: EqAll<R3>,
     L4: EqAll<R4>,
     L5: EqAll<R5>,
 {
-    type Output = And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, And<<L4 as EqAll<R4>>::Output, <L5 as EqAll<R5>>::Output>>>>;
+    type Output = And<
+        <L1 as EqAll<R1>>::Output,
+        And<
+            <L2 as EqAll<R2>>::Output,
+            And<
+                <L3 as EqAll<R3>>::Output,
+                And<<L4 as EqAll<R4>>::Output, <L5 as EqAll<R5>>::Output>,
+            >,
+        >,
+    >;
 
     fn eq_all(self, rhs: (R1, R2, R3, R4, R5)) -> Self::Output {
         self.0.eq_all(rhs.0).and(
             self.1.eq_all(rhs.1).and(
-            self.2.eq_all(rhs.2).and(
-            self.3.eq_all(rhs.3).and(
-            self.4.eq_all(rhs.4)
-            ))))
+                self.2
+                    .eq_all(rhs.2)
+                    .and(self.3.eq_all(rhs.3).and(self.4.eq_all(rhs.4))),
+            ),
+        )
     }
 }
