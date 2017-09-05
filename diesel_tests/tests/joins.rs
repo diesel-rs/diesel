@@ -312,15 +312,20 @@ fn join_with_explicit_on_clause() {
     let post_one = posts::table.filter(posts::title.eq("Post One"))
         .first::<Post>(&connection)
         .unwrap();
-    let expected_data = vec![
+    let expected_data = Ok(vec![
         (sean, post_one.clone()),
         (tess, post_one),
-    ];
+    ]);
 
     let data = users::table.inner_join(posts::table.on(posts::title.eq("Post One")))
         .load(&connection);
 
-    assert_eq!(Ok(expected_data), data);
+    assert_eq!(expected_data, data);
+
+    let data = users::table.inner_join(posts::table.on(posts::title.eq_any(vec!["Post One"])))
+        .load(&connection);
+
+    assert_eq!(expected_data, data);
 }
 
 #[test]

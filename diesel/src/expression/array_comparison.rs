@@ -152,7 +152,7 @@ impl<'a, ST, QS, DB> AsInExpression<ST>
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {
