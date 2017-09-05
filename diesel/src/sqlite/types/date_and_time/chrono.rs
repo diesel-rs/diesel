@@ -22,10 +22,8 @@ fn parse_sqlite_date(date: &str) -> Result<NaiveDate, Box<Error+Send+Sync>> {
         return Ok(NaiveDate::from_ymd(-(ymd[0] as i32), ymd[1], ymd[2]))
     }
 
-    match NaiveDate::from_ymd_opt(ymd[0] as i32, ymd[1], ymd[2]) {
-        Some(d) => Ok(d),
-        None => Err(format! ("Cannot parse this date: {:?}", ymd).into()),
-    }
+    NaiveDate::from_ymd_opt(ymd[0] as i32, ymd[1], ymd[2])
+        .ok_or_else(|| format!("Cannot parse this date: {:?}", ymd).into())
 }
 
 fn dump_sqlite_date<T: Datelike>(date: &T) -> String {

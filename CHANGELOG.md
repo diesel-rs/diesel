@@ -11,6 +11,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
   use associated constants where appropriate.
 
+### Fixed
+
+* When using MySQL and SQLite, dates which cannot be represented by `chrono`
+  (such as `0000-00-00`) will now properly return an error instead of panicking.
+
 ## [0.16.0] - 2017-08-24
 
 ### Added
