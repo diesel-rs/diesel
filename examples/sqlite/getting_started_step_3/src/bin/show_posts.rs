@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_sqlite;
 extern crate diesel;
+extern crate diesel_demo_step_3_sqlite;
 
 use self::diesel_demo_step_3_sqlite::*;
 use self::diesel_demo_step_3_sqlite::models::*;
@@ -9,7 +9,8 @@ fn main() {
     use diesel_demo_step_3_sqlite::schema::posts::dsl::*;
 
     let connection = establish_connection();
-    let results = posts.filter(published.eq(true))
+    let results = posts
+        .filter(published.eq(true))
         .limit(5)
         .load::<Post>(&connection)
         .expect("Error loading posts");

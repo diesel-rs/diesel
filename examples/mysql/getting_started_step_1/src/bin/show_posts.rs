@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_1_mysql;
 extern crate diesel;
+extern crate diesel_demo_step_1_mysql;
 
 use diesel_demo_step_1_mysql::*;
 use self::models::*;
@@ -9,7 +9,8 @@ fn main() {
     use self::schema::posts::dsl::*;
 
     let connection = establish_connection();
-    let results = posts.filter(published.eq(true))
+    let results = posts
+        .filter(published.eq(true))
         .limit(5)
         .load::<Post>(&connection)
         .expect("Error loading posts");

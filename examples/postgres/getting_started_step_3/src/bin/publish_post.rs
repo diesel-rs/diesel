@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_pg;
 extern crate diesel;
+extern crate diesel_demo_step_3_pg;
 
 use diesel::prelude::*;
 use diesel_demo_step_3_pg::*;
@@ -9,8 +9,11 @@ use std::env::args;
 fn main() {
     use self::schema::posts::dsl::{posts, published};
 
-    let id = args().nth(1).expect("publish_post requires a post id")
-        .parse::<i32>().expect("Invalid ID");
+    let id = args()
+        .nth(1)
+        .expect("publish_post requires a post id")
+        .parse::<i32>()
+        .expect("Invalid ID");
     let connection = establish_connection();
 
     let post = diesel::update(posts.find(id))

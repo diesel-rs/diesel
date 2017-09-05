@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_mysql;
 extern crate diesel;
+extern crate diesel_demo_step_3_mysql;
 
 use diesel_demo_step_3_mysql::*;
 use std::io::{stdin, Read};
@@ -14,7 +14,11 @@ fn main() {
     stdin().read_line(&mut title).unwrap();
     let title = title.trim_right(); // Remove the trailing newline
 
-    println!("\nOk! Let's write {} (Press {} when finished)\n", title, EOF);
+    println!(
+        "\nOk! Let's write {} (Press {} when finished)\n",
+        title,
+        EOF
+    );
     stdin().read_to_string(&mut body).unwrap();
 
     let post = create_post(&connection, title, &body);

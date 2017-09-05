@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_sqlite;
 extern crate diesel;
+extern crate diesel_demo_step_3_sqlite;
 
 use self::diesel::prelude::*;
 use self::diesel_demo_step_3_sqlite::*;
@@ -20,7 +20,8 @@ fn main() {
         .execute(&connection)
         .expect(&format!("Unable to find post {}", id));
 
-    let post: models::Post = posts.find(id)
+    let post: models::Post = posts
+        .find(id)
         .first(&connection)
         .expect(&format!("Unable to find post {}", id));
 

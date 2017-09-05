@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_sqlite;
 extern crate diesel;
+extern crate diesel_demo_step_3_sqlite;
 
 use self::diesel::prelude::*;
 use self::diesel_demo_step_3_sqlite::*;

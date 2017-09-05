@@ -1,5 +1,7 @@
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 extern crate dotenv;
 
 pub mod schema;
@@ -9,26 +11,26 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{Post, NewPost};
+use self::models::{NewPost, Post};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }
 
 pub fn create_post(conn: &MysqlConnection, title: &str, body: &str) -> Post {
-    use schema::posts::dsl::{posts, id};
+    use schema::posts::dsl::{id, posts};
 
     let new_post = NewPost {
         title: title,
         body: body,
     };
 
-    diesel::insert(&new_post).into(posts)
+    diesel::insert(&new_post)
+        .into(posts)
         .execute(conn)
         .expect("Error saving new post");
 

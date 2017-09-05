@@ -1,5 +1,7 @@
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 
 use std::time::SystemTime;
 
@@ -33,8 +35,7 @@ pub struct Post {
 pub fn publish_all_posts(conn: &PgConnection) -> QueryResult<usize> {
     use posts::dsl::*;
 
-    diesel::update(posts).set(draft.eq(false))
-        .execute(conn)
+    diesel::update(posts).set(draft.eq(false)).execute(conn)
 }
 
 #[test]
@@ -52,8 +53,7 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
     use diesel::expression::dsl::now;
 
     let target = posts.filter(publish_at.lt(now));
-    diesel::update(target).set(draft.eq(false))
-        .execute(conn)
+    diesel::update(target).set(draft.eq(false)).execute(conn)
 }
 
 #[test]
@@ -64,14 +64,15 @@ fn examine_sql_from_publish_pending_posts() {
     let target = posts.filter(publish_at.lt(now));
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 \
-        WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
-        -- binds: [false]",
+         WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
+         -- binds: [false]",
         debug_query(&diesel::update(target).set(draft.eq(false))).to_string()
     );
 }
 
 pub fn publish_post(post: Post, conn: &PgConnection) -> QueryResult<usize> {
-    diesel::update(&post).set(posts::draft.eq(false))
+    diesel::update(&post)
+        .set(posts::draft.eq(false))
         .execute(conn)
 }
 
@@ -87,7 +88,7 @@ fn examine_sql_from_publish_post() {
     };
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2 \
-        -- binds: [false, 1]",
+         -- binds: [false, 1]",
         debug_query(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
     );
 }
@@ -95,7 +96,8 @@ fn examine_sql_from_publish_post() {
 pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
     use posts::dsl::*;
 
-    diesel::update(posts).set(visit_count.eq(visit_count + 1))
+    diesel::update(posts)
+        .set(visit_count.eq(visit_count + 1))
         .execute(conn)
 }
 
@@ -105,8 +107,9 @@ fn examine_sql_from_increment_visit_counts() {
 
     assert_eq!(
         "UPDATE \"posts\" SET \"visit_count\" = \"posts\".\"visit_count\" + $1 \
-        -- binds: [1]",
-        debug_query::<Pg, _>(&diesel::update(posts).set(visit_count.eq(visit_count + 1))).to_string()
+         -- binds: [1]",
+        debug_query::<Pg, _>(&diesel::update(posts).set(visit_count.eq(visit_count + 1)))
+            .to_string()
     );
 }
 
@@ -131,14 +134,13 @@ fn examine_sql_from_hide_everything() {
     ));
     assert_eq!(
         "UPDATE \"posts\" SET \"title\" = $1, \"body\" = $2 \
-        -- binds: [\"[REDACTED]\", \"This post has been classified\"]",
+         -- binds: [\"[REDACTED]\", \"This post has been classified\"]",
         debug_query::<Pg, _>(&query).to_string()
     );
 }
 
 pub fn update_from_post_fields(post: Post, conn: &PgConnection) -> QueryResult<usize> {
-    diesel::update(posts::table).set(&post)
-        .execute(conn)
+    diesel::update(posts::table).set(&post).execute(conn)
 }
 
 #[test]
@@ -154,18 +156,20 @@ fn examine_sql_from_update_post_fields() {
     };
     let sql = format!(
         "UPDATE \"posts\" SET \
-            \"title\" = $1, \
-            \"body\" = $2, \
-            \"draft\" = $3, \
-            \"publish_at\" = $4, \
-            \"visit_count\" = $5 \
-            -- binds: [\
-                \"\", \
-                \"\", \
-                false, \
-                {:?}, \
-                0\
-            ]", now);
+         \"title\" = $1, \
+         \"body\" = $2, \
+         \"draft\" = $3, \
+         \"publish_at\" = $4, \
+         \"visit_count\" = $5 \
+         -- binds: [\
+         \"\", \
+         \"\", \
+         false, \
+         {:?}, \
+         0\
+         ]",
+        now
+    );
     assert_eq!(
         sql,
         debug_query(&diesel::update(posts::table).set(&post)).to_string()
@@ -174,7 +178,7 @@ fn examine_sql_from_update_post_fields() {
 
 pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
     #[derive(AsChangeset)]
-    #[table_name="posts"]
+    #[table_name = "posts"]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,
@@ -191,7 +195,7 @@ pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
 #[test]
 fn examine_sql_from_update_with_option() {
     #[derive(AsChangeset)]
-    #[table_name="posts"]
+    #[table_name = "posts"]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,
@@ -201,11 +205,10 @@ fn examine_sql_from_update_with_option() {
         title: None,
         body: Some("My new post"),
     };
-    let query = diesel::update(posts::table)
-        .set(&post_form);
+    let query = diesel::update(posts::table).set(&post_form);
     assert_eq!(
         "UPDATE \"posts\" SET \"body\" = $1 \
-        -- binds: [\"My new post\"]",
+         -- binds: [\"My new post\"]",
         debug_query::<Pg, _>(&query).to_string()
     );
 }

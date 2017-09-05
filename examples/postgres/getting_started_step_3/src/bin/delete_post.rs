@@ -1,5 +1,5 @@
-extern crate diesel_demo_step_3_pg;
 extern crate diesel;
+extern crate diesel_demo_step_3_pg;
 
 use diesel::prelude::*;
 use diesel_demo_step_3_pg::*;
