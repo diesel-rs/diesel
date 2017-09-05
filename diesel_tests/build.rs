@@ -4,6 +4,14 @@ use self::diesel::*;
 use self::dotenv::dotenv;
 use std::{env, io};
 
+#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+compile_error!(
+    "At least one backend must be used to test this crate.\n \
+    Pass argument `--features \"<backend>\"` with one or more of the following backends, \
+    'mysql', 'postgres', or 'sqlite'. \n\n \
+    ex. cargo test --features \"mysql postgres sqlite\"\n"
+);
+
 #[cfg(feature = "postgres")]
 fn connection() -> PgConnection {
     let database_url = database_url_from_env("PG_DATABASE_URL");

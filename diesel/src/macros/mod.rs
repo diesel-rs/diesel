@@ -401,9 +401,8 @@ macro_rules! __diesel_table_impl {
         table_doc = [$($doc:expr,)*];
         $($rest:tt)*
     ) => {
-        // Remove this workaround as soon as rust issue 40872 is implemented
-        // https://github.com/rust-lang/rust/issues/40872
-        const ERROR: i32 = env!("invalid table! syntax");
+        compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
+        `http://docs.diesel.rs/diesel/macro.table.html`");
     };
 
     // Put a parse annotation and empty fields for imports and documentation on top

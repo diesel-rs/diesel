@@ -140,8 +140,12 @@ cfg_if! {
             connection
         }
     } else {
-        // FIXME: https://github.com/rust-lang/rfcs/pull/1695
-        // compile_error!("At least one backend must be enabled to run tests");
+        compile_error!(
+            "At least one backend must be used to test this crate.\n \
+            Pass argument `--features \"<backend>\"` with one or more of the following backends, \
+            'mysql', 'postgres', or 'sqlite'. \n\n \
+            ex. cargo test --features \"mysql postgres sqlite\"\n"
+        );
     }
 }
 
