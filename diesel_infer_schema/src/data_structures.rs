@@ -92,7 +92,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ForeignKeyConstraint {
     pub child_table: TableName,
     pub parent_table: TableName,

@@ -52,5 +52,5 @@ table! {
     }
 }
 
-joinable!(posts -> users (user_id));
 joinable!(comments -> posts (post_id));
+joinable!(posts -> users (user_id));
