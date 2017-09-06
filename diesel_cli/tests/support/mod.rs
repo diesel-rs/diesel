@@ -22,6 +22,13 @@ mod project_builder;
 #[cfg_attr(feature = "mysql", path = "mysql_database.rs")]
 pub mod database;
 
+#[cfg(rustfmt)]
+mod sqlite_database;
+#[cfg(rustfmt)]
+mod postgres_database;
+#[cfg(rustfmt)]
+mod mysql_database;
+
 pub use self::project_builder::project;
 
 pub fn database(url: &str) -> database::Database {
