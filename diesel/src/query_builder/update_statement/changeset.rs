@@ -19,15 +19,24 @@ use result::QueryResult;
 /// annotate your struct with `#[changeset_options(treat_none_as_null =
 /// "true")]`.
 pub trait AsChangeset {
+    /// The table which `Self::Changeset` will be updating
     type Target: QuerySource;
+
+    /// The update statement this type represents
     type Changeset;
 
+    /// Convert `self` into the actual update statement being executed
     fn as_changeset(self) -> Self::Changeset;
 }
 
 /// Apps should not need to concern themselves with this trait.
 pub trait Changeset<DB: Backend> {
+    /// Does this changeset actually include any changes?
     fn is_noop(&self) -> bool;
+
+    /// See [`QueryFragment#walk_ast`]
+    ///
+    /// [`QueryFragment#walk_ast`]: trait.QueryFragment.html#tymethod.walk_ast
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 }
 
