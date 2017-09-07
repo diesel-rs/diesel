@@ -208,7 +208,7 @@ pub fn load_foreign_key_constraints(
 ) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
     let connection = try!(establish_connection(database_url));
 
-    match connection {
+    let constraints = match connection {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(c) => ::sqlite::load_foreign_key_constraints(&c, schema_name),
         #[cfg(feature = "postgres")]
@@ -219,7 +219,9 @@ pub fn load_foreign_key_constraints(
         InferConnection::Mysql(c) => {
             ::mysql::load_foreign_key_constraints(&c, schema_name).map_err(Into::into)
         }
-    }
+    };
+
+    constraints.map(|mut ct| { ct.sort(); ct })
 }
 
 macro_rules! doc_comment {
