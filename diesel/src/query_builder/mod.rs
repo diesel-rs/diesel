@@ -56,9 +56,18 @@ pub type BuildQueryResult = Result<(), Box<Error + Send + Sync>>;
 /// of these as an argument if you're implementing
 /// [`QueryFragment`](trait.QueryFragment.html) manually.
 pub trait QueryBuilder<DB: Backend> {
+    /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
+
+    /// Quote `identifier`, and add it to the end of the query being
+    /// constructed.
     fn push_identifier(&mut self, identifier: &str) -> QueryResult<()>;
+
+    /// Add a placeholder for a bind parameter to the end of the query being
+    /// constructed.
     fn push_bind_param(&mut self);
+
+    /// Returns the constructed SQL query.
     fn finish(self) -> String;
 }
 
