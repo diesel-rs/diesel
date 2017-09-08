@@ -255,7 +255,7 @@ macro_rules! AsChangeset_changeset_ty {
             $($rest:tt)*
         },
     ) => {
-        Option<$crate::expression::helper_types::Eq<
+        Option<$crate::dsl::Eq<
             $table_name::$column_name,
             &'update $field_ty,
         >>
@@ -272,7 +272,7 @@ macro_rules! AsChangeset_changeset_ty {
             $($ignore:tt)*
         },
     ) => {
-        $crate::expression::helper_types::Eq<
+        $crate::dsl::Eq<
             $table_name::$column_name,
             &'update $field_ty,
         >

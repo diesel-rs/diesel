@@ -164,7 +164,7 @@ mod tests {
     use std::env;
 
     use expression::AsExpression;
-    use expression::dsl::sql;
+    use dsl::sql;
     use prelude::*;
     use super::*;
     use types::{Integer, VarChar};

@@ -26,7 +26,7 @@ use types::Bool;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     use diesel::select;
-/// #     use diesel::expression::dsl::exists;
+/// #     use diesel::dsl::exists;
 /// #     let connection = establish_connection();
 /// let sean_exists = select(exists(users.filter(name.eq("Sean"))))
 ///     .get_result(&connection);

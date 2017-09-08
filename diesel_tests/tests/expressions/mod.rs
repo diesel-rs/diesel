@@ -6,7 +6,7 @@ use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
 use diesel::query_builder::*;
-use diesel::expression::dsl::*;
+use diesel::dsl::*;
 
 #[test]
 fn test_count_counts_the_rows() {

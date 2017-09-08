@@ -2,7 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::expression::{max, min};
+use diesel::dsl::{max, min};
 
 table! {
     stuff (b) {

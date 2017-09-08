@@ -12,6 +12,7 @@ macro_rules! __diesel_operator_body {
         backend_ty = $backend_ty:ty,
     ) => {
         #[derive(Debug, Clone, Copy)]
+        #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
             $($field_name: $ty_param,)+
         }

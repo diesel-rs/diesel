@@ -1,7 +1,7 @@
 use schema::*;
 use diesel::types::*;
 use diesel::expression::AsExpression;
-use diesel::expression::dsl::sql;
+use diesel::dsl::sql;
 use diesel::*;
 
 #[test]
@@ -41,7 +41,7 @@ fn query_which_cannot_be_transmitted_gives_proper_error_message() {
 fn empty_query_gives_proper_error_instead_of_panicking() {
     use diesel::result::Error::DatabaseError;
     use diesel::result::DatabaseErrorKind::__Unknown;
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
 
     let connection = connection();
     let query = sql::<Integer>("");

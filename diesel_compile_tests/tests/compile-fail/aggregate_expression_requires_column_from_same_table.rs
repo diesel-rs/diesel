@@ -16,7 +16,7 @@ table! {
 }
 
 fn main() {
-    use diesel::expression::dsl::*;
+    use diesel::dsl::*;
     let source = users::table.select(sum(posts::id));
     //~^ ERROR E0277
     //~| ERROR AppearsInFromClause

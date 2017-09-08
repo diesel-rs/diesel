@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use diesel::*;
-use diesel::expression::dsl::sql;
+use diesel::dsl::sql;
 use diesel::sqlite::{Sqlite, SqliteConnection};
 
 use table_data::TableName;

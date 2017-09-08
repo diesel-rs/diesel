@@ -1,7 +1,6 @@
+use dsl::{Eq, EqAny, Filter, FindBy};
 use expression::AsExpression;
-use expression::helper_types::{Eq, EqAny};
 use expression::array_comparison::AsInExpression;
-use helper_types::{Filter, FindBy};
 use prelude::*;
 use super::{HasTable, Identifiable};
 

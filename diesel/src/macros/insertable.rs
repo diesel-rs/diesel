@@ -165,7 +165,7 @@ macro_rules! impl_Insertable {
                 ($(
                     $crate::insertable::ColumnInsertValue<
                         $table_name::$column_name,
-                        $crate::expression::helper_types::AsExpr<
+                        $crate::dsl::AsExpr<
                             &'insert $field_ty,
                             $table_name::$column_name,
                         >,
@@ -175,7 +175,7 @@ macro_rules! impl_Insertable {
             type Values = ($(
                 $crate::insertable::ColumnInsertValue<
                     $table_name::$column_name,
-                    $crate::expression::helper_types::AsExpr<
+                    $crate::dsl::AsExpr<
                         &'insert $field_ty,
                         $table_name::$column_name,
                     >,

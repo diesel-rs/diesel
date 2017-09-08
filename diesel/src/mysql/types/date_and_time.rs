@@ -167,7 +167,7 @@ mod tests {
     use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
     use self::dotenv::dotenv;
 
-    use expression::dsl::{now, sql};
+    use dsl::{now, sql};
     use prelude::*;
     use select;
     use types::{Date, Datetime, Time, Timestamp};

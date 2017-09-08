@@ -110,7 +110,7 @@ mod tests {
     use self::dotenv::dotenv;
 
     use select;
-    use expression::dsl::{now, sql};
+    use dsl::{now, sql};
     use prelude::*;
     use types::{Date, Time, Timestamp};
 

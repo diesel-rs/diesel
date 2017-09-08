@@ -50,7 +50,7 @@ fn examine_sql_from_publish_all_posts() {
 
 pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
     use posts::dsl::*;
-    use diesel::expression::dsl::now;
+    use diesel::dsl::now;
 
     let target = posts.filter(publish_at.lt(now));
     diesel::update(target).set(draft.eq(false)).execute(conn)
@@ -59,7 +59,7 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
 #[test]
 fn examine_sql_from_publish_pending_posts() {
     use posts::dsl::*;
-    use diesel::expression::dsl::now;
+    use diesel::dsl::now;
 
     let target = posts.filter(publish_at.lt(now));
     assert_eq!(

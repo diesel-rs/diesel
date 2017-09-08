@@ -1,5 +1,5 @@
 use diesel::connection::SimpleConnection;
-use diesel::expression::sql;
+use diesel::dsl::sql;
 use diesel::types::Bool;
 use diesel::*;
 

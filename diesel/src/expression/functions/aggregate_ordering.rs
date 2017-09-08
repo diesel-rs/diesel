@@ -17,6 +17,7 @@ macro_rules! ord_function {
         }
 
         #[derive(Debug, Clone, Copy)]
+        #[doc(hidden)]
         pub struct $type_name<T> {
             target: T,
         }
@@ -56,7 +57,7 @@ ordered.
 ```rust
 # #[macro_use] extern crate diesel;
 # include!(\"../../doctest_setup.rs\");
-# use diesel::expression::dsl::*;
+# use diesel::dsl::*;
 #
 # table! {
 #     users {
@@ -85,7 +86,7 @@ ordered.
 ```rust
 # #[macro_use] extern crate diesel;
 # include!(\"../../doctest_setup.rs\");
-# use diesel::expression::dsl::*;
+# use diesel::dsl::*;
 #
 # table! {
 #     users {

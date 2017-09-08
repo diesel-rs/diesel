@@ -1,5 +1,5 @@
 use associations::{HasTable, Identifiable};
-use helper_types::Find;
+use dsl::Find;
 use query_dsl::FindDsl;
 
 #[doc(hidden)]

@@ -3,7 +3,7 @@
 
 use diesel::*;
 use diesel::types::*;
-use diesel::expression::dsl::*;
+use diesel::dsl::*;
 use diesel::pg::upsert::*;
 
 table! {

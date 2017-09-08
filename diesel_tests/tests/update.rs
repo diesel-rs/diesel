@@ -352,7 +352,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
 #[test]
 #[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target() {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
     use diesel::pg::upsert::*;
     use diesel::types::Text;
     use schema::users::dsl::*;

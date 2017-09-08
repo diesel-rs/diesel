@@ -40,12 +40,11 @@ pub mod nullable;
 #[doc(hidden)]
 #[macro_use]
 pub mod operators;
+#[doc(hidden)]
 pub mod sql_literal;
 mod unchecked_bind;
 
-/// Reexports various top level functions and core extensions that are too
-/// generic to export by default. This module exists to conveniently glob import
-/// in functions where you need them.
+#[doc(hidden)]
 pub mod dsl {
     #[doc(inline)]
     pub use super::count::{count, count_star};
@@ -66,7 +65,7 @@ pub mod dsl {
     pub use pg::expression::dsl::*;
 }
 
-pub use self::dsl::*;
+#[doc(inline)]
 pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;

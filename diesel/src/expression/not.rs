@@ -1,5 +1,5 @@
+use dsl::Not;
 use expression::AsExpression;
-use expression::helper_types::Not;
 use expression::grouped::Grouped;
 use types::Bool;
 
@@ -21,7 +21,7 @@ use types::Bool;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
-/// use diesel::expression::not;
+/// use diesel::dsl::not;
 ///
 /// let users_with_name = users.select(id).filter(name.eq("Sean"));
 /// let users_not_with_name = users.select(id).filter(

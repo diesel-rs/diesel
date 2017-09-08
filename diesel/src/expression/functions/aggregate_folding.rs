@@ -17,6 +17,7 @@ macro_rules! fold_function {
         }
 
         #[derive(Debug, Clone, Copy)]
+        #[doc(hidden)]
         pub struct $type_name<T> {
             target: T,
         }
@@ -57,7 +58,7 @@ Foldable.
 ```rust
 # #[macro_use] extern crate diesel;
 # include!(\"../../doctest_setup.rs\");
-# use diesel::expression::dsl::*;
+# use diesel::dsl::*;
 #
 # table! {
 #     users {
@@ -86,7 +87,7 @@ Foldable.
 ```rust
 # #[macro_use] extern crate diesel;
 # include!(\"../../doctest_setup.rs\");
-# use diesel::expression::dsl::*;
+# use diesel::dsl::*;
 #
 # table! {
 #     users {

@@ -1,5 +1,5 @@
+use dsl::AsExprOf;
 use expression::AsExpression;
-use expression::helper_types::AsExprOf;
 use expression::operators::{Escape, Like, NotLike};
 use types::VarChar;
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify

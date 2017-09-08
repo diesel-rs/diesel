@@ -49,7 +49,7 @@ fn with_safe_select() {
 
 #[test]
 fn with_select_sql() {
-    use diesel::expression::dsl::sql;
+    use diesel::dsl::sql;
 
     let connection = connection();
     connection
