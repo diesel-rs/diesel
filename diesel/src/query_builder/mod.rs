@@ -165,9 +165,14 @@ impl<DB: Backend> QueryFragment<DB> for () {
 /// internally to automatically add the right select clause when none is
 /// specified, or to automatically add `RETURNING *` in certain contexts
 pub trait AsQuery {
+    /// The SQL type of `Self::Query`
     type SqlType;
+
+    /// What kind of query does this type represent?
     type Query: Query<SqlType = Self::SqlType>;
 
+    /// Converts a type which semantically represents a SQL query into the
+    /// actual query being executed. See the trait level docs for more.
     fn as_query(self) -> Self::Query;
 }
 
