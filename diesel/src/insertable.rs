@@ -108,9 +108,7 @@ where
     type Values = BatchInsertValues<'a, T>;
 
     fn values(self) -> Self::Values {
-        BatchInsertValues {
-            records: self,
-        }
+        BatchInsertValues { records: self }
     }
 }
 

@@ -48,6 +48,15 @@ matrix:
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
+  include:
+  - rust: nightly-2017-08-31
+    env: RUSTFMT=YESPLEASE
+    script:
+    - |
+      if ! [ -x "$(command -v foo)" ]; then
+        cargo install rustfmt-nightly --vers 0.2.5
+      fi
+    - cargo fmt --all -- --write-mode=diff
 env:
   # TODO: why is there no database specified for Postgres?
   matrix:
