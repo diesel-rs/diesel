@@ -221,7 +221,10 @@ pub fn load_foreign_key_constraints(
         }
     };
 
-    constraints.map(|mut ct| { ct.sort(); ct })
+    constraints.map(|mut ct| {
+        ct.sort();
+        ct
+    })
 }
 
 macro_rules! doc_comment {
