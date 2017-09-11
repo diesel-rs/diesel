@@ -1,5 +1,6 @@
 use super::schema::*;
 use diesel::*;
+use diesel::connection::SimpleConnection;
 use schema_dsl::*;
 
 #[test]
@@ -181,4 +182,85 @@ fn selection_using_subselect() {
         .unwrap();
 
     assert_eq!(vec!["Hello".to_string()], data);
+}
+
+table! {
+    users_select_for_update {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+#[cfg(not(feature = "sqlite"))]
+#[test]
+fn select_for_update_locks_selected_rows() {
+    use self::users_select_for_update::dsl::*;
+    use std::mem::drop;
+    use std::sync::mpsc;
+    use std::thread;
+    use std::time::Duration;
+
+    let conn_1 = connection_without_transaction();
+    conn_1
+        .execute("DROP TABLE IF EXISTS users_select_for_update")
+        .unwrap();
+    create_table(
+        "users_select_for_update",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            string("hair_color"),
+        ),
+    ).execute(&conn_1)
+        .unwrap();
+    conn_1
+        .batch_execute(
+            "
+            -- MySQL locks the whole table without this index
+            CREATE UNIQUE INDEX users_select_for_update_name ON users_select_for_update (name);
+            INSERT INTO users_select_for_update (name) VALUES ('Sean'), ('Tess');
+        ",
+        )
+        .unwrap();
+    conn_1.begin_test_transaction().unwrap();
+
+    let _sean = users_select_for_update
+        .for_update()
+        .filter(name.eq("Sean"))
+        .first::<User>(&conn_1)
+        .unwrap();
+
+    let (send, recv) = mpsc::channel();
+    let send2 = send.clone();
+
+    let _blocked_thread = thread::spawn(move || {
+        let conn_2 = connection();
+        update(users_select_for_update.filter(name.eq("Sean")))
+            .set(name.eq("Jim"))
+            .execute(&conn_2)
+            .unwrap();
+        send.send("Sean").unwrap();
+    });
+
+    let _unblocked_thread = thread::spawn(move || {
+        let conn_3 = connection();
+        update(users_select_for_update.filter(name.eq("Tess")))
+            .set(name.eq("Bob"))
+            .execute(&conn_3)
+            .unwrap();
+        send2.send("Tess").unwrap();
+    });
+
+    let timeout = Duration::from_secs(1);
+    let next_selected_name = recv.recv_timeout(timeout).unwrap();
+    // conn_3 will always complete before conn_2, as conn_2 is blocked
+    assert_eq!("Tess", next_selected_name);
+    let next_selected_name = recv.recv_timeout(timeout);
+    // conn_2 should still be blocked
+    assert!(next_selected_name.is_err());
+    drop(conn_1);
+    let next_selected_name = recv.recv_timeout(timeout).unwrap();
+    // Dropping conn_1 unblocks conn_2
+    assert_eq!("Sean", next_selected_name);
 }

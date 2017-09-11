@@ -19,6 +19,7 @@ use query_source::*;
 use query_source::joins::AppendSelection;
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
+use super::for_update_clause::NoForUpdateClause;
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
@@ -39,6 +40,7 @@ pub struct SelectStatement<
     Limit = NoLimitClause,
     Offset = NoOffsetClause,
     GroupBy = NoGroupByClause,
+    ForUpdate = NoForUpdateClause,
 > {
     select: Select,
     from: From,
@@ -48,9 +50,10 @@ pub struct SelectStatement<
     limit: Limit,
     offset: Offset,
     group_by: GroupBy,
+    for_update: ForUpdate,
 }
 
-impl<F, S, D, W, O, L, Of, G> SelectStatement<F, S, D, W, O, L, Of, G> {
+impl<F, S, D, W, O, L, Of, G, FU> SelectStatement<F, S, D, W, O, L, Of, G, FU> {
     #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
     pub fn new(
         select: S,
@@ -61,6 +64,7 @@ impl<F, S, D, W, O, L, Of, G> SelectStatement<F, S, D, W, O, L, Of, G> {
         limit: L,
         offset: Of,
         group_by: G,
+        for_update: FU,
     ) -> Self {
         SelectStatement {
             select: select,
@@ -71,6 +75,7 @@ impl<F, S, D, W, O, L, Of, G> SelectStatement<F, S, D, W, O, L, Of, G> {
             limit: limit,
             offset: offset,
             group_by: group_by,
+            for_update,
         }
     }
 }
@@ -86,11 +91,12 @@ impl<F> SelectStatement<F> {
             NoLimitClause,
             NoOffsetClause,
             NoGroupByClause,
+            NoForUpdateClause,
         )
     }
 }
 
-impl<F, S, D, W, O, L, Of, G> Query for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU> Query for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     S: SelectClauseExpression<F>,
 {
@@ -98,7 +104,7 @@ where
 }
 
 #[cfg(feature = "postgres")]
-impl<F, S, D, W, O, L, Of, G> Expression for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU> Expression for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     S: SelectClauseExpression<F>,
 {
@@ -106,14 +112,15 @@ where
 }
 
 #[cfg(not(feature = "postgres"))]
-impl<F, S, D, W, O, L, Of, G> Expression for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU> Expression for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     S: SelectClauseExpression<F>,
 {
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, L, Of, G, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, DB> QueryFragment<DB>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<F, DB>,
@@ -125,6 +132,7 @@ where
     L: QueryFragment<DB>,
     Of: QueryFragment<DB>,
     G: QueryFragment<DB>,
+    FU: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -137,11 +145,13 @@ where
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
+        self.for_update.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
 
-impl<S, D, W, O, L, Of, G, DB> QueryFragment<DB> for SelectStatement<(), S, D, W, O, L, Of, G>
+impl<S, D, W, O, L, Of, G, FU, DB> QueryFragment<DB>
+    for SelectStatement<(), S, D, W, O, L, Of, G, FU>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<(), DB>,
@@ -151,6 +161,7 @@ where
     L: QueryFragment<DB>,
     Of: QueryFragment<DB>,
     G: QueryFragment<DB>,
+    FU: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -161,28 +172,30 @@ where
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
+        self.for_update.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
 
-impl_query_id!(SelectStatement<F, S, D, W, O, L, Of, G>);
+impl_query_id!(SelectStatement<F, S, D, W, O, L, Of, G, FU>);
 
-impl<F, S, D, W, O, L, Of, G, QS> SelectableExpression<QS>
-    for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, QS> SelectableExpression<QS>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: AppearsOnTable<QS>,
+    Self: AppearsOnTable<QS>,
 {
 }
 
-impl<S, F, D, W, O, L, Of, G, QS> AppearsOnTable<QS> for SelectStatement<S, F, D, W, O, L, Of, G>
+impl<S, F, D, W, O, L, Of, G, FU, QS> AppearsOnTable<QS>
+    for SelectStatement<S, F, D, W, O, L, Of, FU, G>
 where
-    SelectStatement<S, F, D, W, O, L, Of, G>: Expression,
+    Self: Expression,
 {
 }
 
-impl<F, S, D, W, O, L, Of, G> NonAggregate for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU> NonAggregate for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: Expression,
+    Self: Expression,
 {
 }
 

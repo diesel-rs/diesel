@@ -72,6 +72,8 @@ use diesel::types::Integer;
 use diesel::pg::Pg;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
+#[cfg(feature = "mysql")]
+use diesel::mysql::Mysql;
 
 impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols>
 where
@@ -138,6 +140,19 @@ where
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTOINCREMENT");
+        Ok(())
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl<Col> QueryFragment<Mysql> for AutoIncrement<Col>
+where
+    Col: QueryFragment<Mysql>,
+{
+    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
+        out.push_sql(" AUTO_INCREMENT");
         Ok(())
     }
 }

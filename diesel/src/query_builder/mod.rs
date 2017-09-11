@@ -18,6 +18,7 @@ pub mod functions;
 #[doc(hidden)]
 pub mod nodes;
 mod distinct_clause;
+pub(crate) mod for_update_clause;
 mod group_by_clause;
 mod limit_clause;
 mod offset_clause;
