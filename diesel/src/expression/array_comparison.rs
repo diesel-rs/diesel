@@ -17,8 +17,10 @@ pub struct NotIn<T, U> {
     values: U,
 }
 
-pub type EqAny<T, U> = In<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
-pub type NeAny<T, U> = NotIn<T, <U as AsInExpression<SqlTypeOf<T>>>::InExpression>;
+/// The return type of `lhs.eq_any(rhs)`
+pub type EqAny<Lhs, Rhs> = In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>;
+/// The return type of `lhs.ne_any(rhs)`
+pub type NeAny<Lhs, Rhs> = NotIn<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>;
 
 impl<T, U> In<T, U> {
     pub fn new(left: T, values: U) -> Self {
