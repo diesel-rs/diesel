@@ -1,4 +1,4 @@
-use std::iter;
+use std::marker::PhantomData;
 
 use backend::{Backend, SupportsDefaultKeyword};
 use result::QueryResult;
@@ -33,49 +33,61 @@ pub enum ColumnInsertValue<Col, Expr> {
     Default(Col),
 }
 
-type ValuesFn<Item, T, DB> = fn(Item)
-    -> <Item as Insertable<T, DB>>::Values;
-
-impl<Iter, T, DB> Insertable<T, DB> for Iter
+impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a [T]
 where
-    T: Table,
+    Tab: Table,
     DB: Backend + SupportsDefaultKeyword,
-    Iter: IntoIterator,
-    Iter::Item: Insertable<T, DB>,
-    Iter::IntoIter: Clone,
+    &'a T: Insertable<Tab, DB>,
 {
-    type Values = BatchInsertValues<iter::Map<Iter::IntoIter, ValuesFn<Iter::Item, T, DB>>>;
+    type Values = BatchInsertValues<'a, T, Tab>;
 
     fn values(self) -> Self::Values {
-        let values = self.into_iter()
-            .map(Insertable::values as ValuesFn<Iter::Item, T, DB>);
-        BatchInsertValues(values)
+        BatchInsertValues {
+            records: self,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a Vec<T>
+where
+    Tab: Table,
+    DB: Backend,
+    &'a [T]: Insertable<Tab, DB>,
+{
+    type Values = <&'a [T] as Insertable<Tab, DB>>::Values;
+
+    fn values(self) -> Self::Values {
+        (&**self).values()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct BatchInsertValues<T>(T);
+pub struct BatchInsertValues<'a, T: 'a, Tab> {
+    records: &'a [T],
+    _marker: PhantomData<Tab>,
+}
 
-impl<T, DB> InsertValues<DB> for BatchInsertValues<T>
+impl<'a, T, Tab, DB> InsertValues<DB> for BatchInsertValues<'a, T, Tab>
 where
-    T: Iterator + Clone,
-    T::Item: InsertValues<DB>,
-    DB: Backend,
+    Tab: Table,
+    DB: Backend + SupportsDefaultKeyword,
+    &'a T: Insertable<Tab, DB>,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.0
-            .clone()
-            .next()
+        self.records
+            .get(0)
             .expect("Tried to read column names from empty list of rows")
+            .values()
             .column_names(out)
     }
 
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        for (i, values) in self.0.clone().enumerate() {
+        for (i, record) in self.records.iter().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
             }
-            values.walk_ast(out.reborrow())?;
+            record.values().walk_ast(out.reborrow())?;
         }
         Ok(())
     }
