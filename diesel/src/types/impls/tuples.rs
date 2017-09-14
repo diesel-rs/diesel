@@ -1,11 +1,11 @@
 use std::error::Error;
 
 use associations::BelongsTo;
-use backend::{Backend, SupportsDefaultKeyword};
+use backend::Backend;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use insertable::{ColumnInsertValue, InsertValues};
+use insertable::InsertValues;
 use query_builder::*;
-use query_source::{Column, QuerySource, Queryable, Table};
+use query_source::{QuerySource, Queryable, Table};
 use result::QueryResult;
 use row::Row;
 use types::{FromSqlRow, HasSqlType, NotNull};
@@ -85,78 +85,47 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
             }
 
-            #[cfg_attr(feature = "clippy", allow(eq_op))] // Clippy doesn't like the trivial case for 1-tuples
-            impl<$($T,)+ $($ST,)+ Tab, DB> InsertValues<DB>
-                for ($(ColumnInsertValue<$T, $ST>,)+) where
-                    DB: Backend + SupportsDefaultKeyword,
-                    Tab: Table,
-                    $($T: Column<Table=Tab>,)+
-                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<DB>,)+
+            #[allow(unused_assignments)]
+            impl<$($T,)+ Tab, DB> InsertValues<Tab, DB> for ($($T,)+)
+            where
+                Tab: Table,
+                DB: Backend,
+                $($T: InsertValues<Tab, DB>,)+
             {
                 fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
+                    let mut needs_comma = false;
                     $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
+                        let noop_element = self.$idx.is_noop();
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.column_names(out)?;
+                            needs_comma = true;
                         }
-                        try!(out.push_identifier($T::NAME));
                     )+
                     Ok(())
                 }
 
                 fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     out.push_sql("(");
+                    let mut needs_comma = false;
                     $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
-                        }
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            value.walk_ast(out.reborrow())?;
-                        } else {
-                            out.push_sql("DEFAULT");
+                        let noop_element = self.$idx.is_noop();
+                        if !noop_element {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.walk_ast(out.reborrow())?;
+                            needs_comma = true;
                         }
                     )+
                     out.push_sql(")");
                     Ok(())
                 }
-            }
 
-            #[cfg(feature = "sqlite")]
-            impl<$($T,)+ $($ST,)+ Tab> InsertValues<::sqlite::Sqlite>
-                for ($(ColumnInsertValue<$T, $ST>,)+) where
-                    Tab: Table,
-                    $($T: Column<Table=Tab>,)+
-                    $($ST: Expression<SqlType=$T::SqlType> + QueryFragment<::sqlite::Sqlite>,)+
-            {
-                #[allow(unused_assignments)]
-                fn column_names(&self, out: &mut ::sqlite::SqliteQueryBuilder) -> QueryResult<()> {
-                    let mut columns_present = false;
-                    $(
-                        if let ColumnInsertValue::Expression(..) = self.$idx {
-                            if columns_present {
-                                out.push_sql(", ");
-                            }
-                            try!(out.push_identifier($T::NAME));
-                            columns_present = true;
-                        }
-                    )+
-                    Ok(())
-                }
-
-                #[allow(unused_assignments)]
-                fn walk_ast(&self, mut out: AstPass<::sqlite::Sqlite>) -> QueryResult<()> {
-                    out.push_sql("(");
-                    let mut columns_present = false;
-                    $(
-                        if let ColumnInsertValue::Expression(_, ref value) = self.$idx {
-                            if columns_present {
-                                out.push_sql(", ");
-                            }
-                            value.walk_ast(out.reborrow())?;
-                            columns_present = true;
-                        }
-                    )+
-                    out.push_sql(")");
-                    Ok(())
+                fn is_noop(&self) -> bool {
+                    $(self.$idx.is_noop() &&)+ true
                 }
             }
 

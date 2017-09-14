@@ -170,7 +170,7 @@ macro_rules! impl_Insertable {
                             $table_name::$column_name,
                         >,
                     >
-                ,)+): $crate::insertable::InsertValues<DB>,
+                ,)+): $crate::insertable::InsertValues<$table_name::table, DB>,
         {
             type Values = ($(
                 $crate::insertable::ColumnInsertValue<
