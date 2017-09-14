@@ -243,6 +243,7 @@ mod tests {
         users {
             id -> Integer,
             name -> VarChar,
+            #[default_value="'Green'"]
             hair_color -> Nullable<VarChar>,
         }
     }

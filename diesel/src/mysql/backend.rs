@@ -42,5 +42,4 @@ impl TypeMetadata for Mysql {
     type MetadataLookup = ();
 }
 
-impl SupportsDefaultKeyword for Mysql {}
 impl UsesAnsiSavepointSyntax for Mysql {}

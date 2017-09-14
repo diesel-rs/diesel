@@ -150,6 +150,24 @@ impl FkTest {
     }
 }
 
+#[cfg(not(feature = "mysql"))]
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable)]
+#[table_name = "users_with_default"]
+pub struct NewUserWithDefault {
+    pub name: String,
+    pub hair_color: Option<String>,
+}
+
+#[cfg(not(feature = "mysql"))]
+impl NewUserWithDefault {
+    pub fn new(name: &str, hair_color: Option<&str>) -> Self {
+        NewUserWithDefault {
+            name: name.to_string(),
+            hair_color: hair_color.map(|s| s.to_string()),
+        }
+    }
+}
+
 #[derive(Queryable, Insertable)]
 #[table_name = "nullable_table"]
 pub struct NullableColumn {

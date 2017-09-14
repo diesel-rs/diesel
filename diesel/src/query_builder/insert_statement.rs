@@ -1,4 +1,4 @@
-use backend::{Backend, SupportsDefaultKeyword};
+use backend::Backend;
 use connection::Connection;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use insertable::{InsertValues, Insertable};
@@ -257,7 +257,7 @@ impl<T, U, Op> BatchInsertStatement<T, U, Op> {
 impl<'a, T, U, Op, Ret, Conn, DB> ExecuteDsl<Conn, DB> for BatchInsertStatement<T, &'a [U], Op, Ret>
 where
     Conn: Connection<Backend = DB>,
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend,
     InsertStatement<T, &'a [U], Op, Ret>: ExecuteDsl<Conn>,
 {
     fn execute(self, conn: &Conn) -> QueryResult<usize> {
@@ -266,25 +266,6 @@ where
         } else {
             self.into_insert_statement().execute(conn)
         }
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
-    for BatchInsertStatement<T, &'a [U], Op, Ret>
-where
-    InsertStatement<T, &'a U, Op, Ret>: ExecuteDsl<::sqlite::SqliteConnection>,
-    T: Copy,
-    Op: Copy,
-    Ret: Copy,
-{
-    fn execute(self, conn: &::sqlite::SqliteConnection) -> QueryResult<usize> {
-        let mut result = 0;
-        for record in self.records {
-            result += InsertStatement::new(self.target, record, self.operator, self.returning)
-                .execute(conn)?;
-        }
-        Ok(result)
     }
 }
 

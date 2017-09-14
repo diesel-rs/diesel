@@ -31,5 +31,4 @@ pub trait TypeMetadata {
 }
 
 pub trait SupportsReturningClause {}
-pub trait SupportsDefaultKeyword {}
 pub trait UsesAnsiSavepointSyntax {}

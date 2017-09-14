@@ -1,0 +1,5 @@
+CREATE TABLE users_with_default (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name VARCHAR NOT NULL,
+  hair_color VARCHAR DEFAULT 'Green'
+);

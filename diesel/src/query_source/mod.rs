@@ -38,6 +38,7 @@ pub trait Column: Expression {
     type Table: Table;
 
     const NAME: &'static str;
+    const DEFAULT: &'static str;
 }
 
 /// A SQL database table. Types which implement this trait should have been
