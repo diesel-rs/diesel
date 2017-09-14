@@ -96,9 +96,10 @@ pub struct OnConflictValues<Values, Target, Action> {
     action: Action,
 }
 
-impl<Values, Target, Action> InsertValues<Pg> for OnConflictValues<Values, Target, Action>
+impl<Tab, Values, Target, Action> InsertValues<Tab, Pg> for OnConflictValues<Values, Target, Action>
 where
-    Values: InsertValues<Pg>,
+    Tab: Table,
+    Values: InsertValues<Tab, Pg>,
     Target: QueryFragment<Pg>,
     Action: QueryFragment<Pg>,
 {
@@ -112,5 +113,9 @@ where
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
         Ok(())
+    }
+
+    fn is_noop(&self) -> bool {
+        self.values.is_noop()
     }
 }
