@@ -107,12 +107,16 @@ where
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
-        out.push_sql(" (");
-        if let Some(builder) = out.reborrow().query_builder() {
-            values.column_names(builder)?;
+        if self.records.values().is_noop() {
+            out.push_sql(" DEFAULT VALUES");
+        } else {
+            out.push_sql(" (");
+            if let Some(builder) = out.reborrow().query_builder() {
+                values.column_names(builder)?;
+            }
+            out.push_sql(") VALUES ");
+            self.records.values().walk_ast(out.reborrow())?;
         }
-        out.push_sql(") VALUES ");
-        self.records.values().walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
     }
@@ -333,69 +337,52 @@ where
 {
 }
 
-/// The structure returned by [`insert_default_values`](/diesel/fn.insert_default_values.html). The
-/// only thing that can be done with it is call `into`.
-#[derive(Debug, Copy, Clone, Default)]
-pub struct IncompleteDefaultInsertStatement {}
+#[derive(Debug, Clone, Copy)]
+#[doc(hidden)]
+pub struct DefaultValues;
 
-#[derive(Debug, Copy, Clone)]
-pub struct DefaultInsertStatement<T, Ret = NoReturningClause> {
-    target: T,
-    returning: Ret,
-}
+impl<Tab> IntoInsertStatement<Tab, Insert> for DefaultValues {
+    type InsertStatement = InsertStatement<Tab, Self, Insert>;
 
-impl IncompleteDefaultInsertStatement {
-    #[doc(hidden)]
-    pub fn new() -> Self {
-        IncompleteDefaultInsertStatement {}
-    }
-
-    /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> DefaultInsertStatement<S> {
-        DefaultInsertStatement {
-            target: target,
-            returning: NoReturningClause,
-        }
+    fn into_insert_statement(self, target: Tab, operator: Insert) -> Self::InsertStatement {
+        InsertStatement::no_returning_clause(target, self, operator)
     }
 }
 
-impl<T> DefaultInsertStatement<T, NoReturningClause> {
-    /// Specify what expression is returned after execution of the `insert_default_values`.
-    /// This method can only be called once.
-    pub fn returning<E>(self, returns: E) -> DefaultInsertStatement<T, ReturningClause<E>>
-    where
-        DefaultInsertStatement<T, ReturningClause<E>>: Query,
-    {
-        DefaultInsertStatement {
-            target: self.target,
-            returning: ReturningClause(returns),
-        }
+impl<'a, Tab> IntoInsertStatement<Tab, Insert> for &'a DefaultValues {
+    type InsertStatement = <DefaultValues as IntoInsertStatement<Tab, Insert>>::InsertStatement;
+
+    fn into_insert_statement(self, target: Tab, operator: Insert) -> Self::InsertStatement {
+        (*self).into_insert_statement(target, operator)
     }
 }
 
-impl<T, Ret> Query for DefaultInsertStatement<T, ReturningClause<Ret>>
+impl<Tab, DB> Insertable<Tab, DB> for DefaultValues
 where
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
-{
-    type SqlType = Ret::SqlType;
-}
-
-impl<T, Ret, DB> QueryFragment<DB> for DefaultInsertStatement<T, Ret>
-where
+    Tab: Table,
     DB: Backend,
-    T: Table,
-    T::FromClause: QueryFragment<DB>,
-    Ret: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.unsafe_to_cache_prepared();
+    type Values = Self;
 
-        out.push_sql("INSERT INTO ");
-        self.target.from_clause().walk_ast(out.reborrow())?;
-        out.push_sql("DEFAULT VALUES ");
-        self.returning.walk_ast(out.reborrow())?;
+    fn values(self) -> Self::Values {
+        self
+    }
+}
+
+impl<Tab, DB> InsertValues<Tab, DB> for DefaultValues
+where
+    Tab: Table,
+    DB: Backend,
+{
+    fn column_names(&self, _: &mut DB::QueryBuilder) -> QueryResult<()> {
         Ok(())
     }
-}
 
-impl_query_id!(noop: DefaultInsertStatement<T, Ret>);
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
+    }
+
+    fn is_noop(&self) -> bool {
+        true
+    }
+}
