@@ -2,6 +2,7 @@ use associations::HasTable;
 use backend::Backend;
 use expression::*;
 use query_builder::distinct_clause::*;
+use query_builder::for_update_clause::*;
 use query_builder::group_by_clause::*;
 use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
@@ -17,12 +18,12 @@ use query_source::joins::{Join, JoinOn, JoinTo};
 use super::BoxedSelectStatement;
 use types::{self, Bool};
 
-impl<F, S, D, W, O, L, Of, G, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
-    for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G>: AsQuery,
+    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G, FU>: AsQuery,
 {
-    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G>;
+    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G, FU>;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
         SelectStatement::new(
@@ -34,17 +35,18 @@ where
             self.limit,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
 
-impl<F, S, D, W, O, L, Of, G, Selection, Type> SelectDsl<Selection>
-    for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, Selection, Type> SelectDsl<Selection>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     Selection: Expression<SqlType = Type>,
-    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G>: Query<SqlType = Type>,
+    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>: Query<SqlType = Type>,
 {
-    type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G>;
+    type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>;
 
     fn select(self, selection: Selection) -> Self::Output {
         SelectStatement::new(
@@ -56,6 +58,7 @@ where
             self.limit,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
@@ -77,19 +80,20 @@ where
             self.limit,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
 
-impl<ST, F, S, D, W, O, L, Of, G, Predicate> FilterDsl<Predicate>
-    for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<ST, F, S, D, W, O, L, Of, G, FU, Predicate> FilterDsl<Predicate>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W::Output, O, L, Of, G>: Query<SqlType = ST>,
+    Self: AsQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>: Query<SqlType = ST>,
     Predicate: AppearsOnTable<F, SqlType = Bool> + NonAggregate,
     W: WhereAnd<Predicate>,
 {
-    type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G>;
+    type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
@@ -101,6 +105,7 @@ where
             self.limit,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
@@ -109,7 +114,7 @@ use dsl::Filter;
 use expression_methods::EqAll;
 use query_source::Table;
 
-impl<F, S, D, W, O, L, Of, G, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     F: Table,
     F::PrimaryKey: EqAll<PK>,
@@ -123,13 +128,14 @@ where
     }
 }
 
-impl<ST, F, S, D, W, O, L, Of, G, Expr> OrderDsl<Expr> for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<ST, F, S, D, W, O, L, Of, G, FU, Expr> OrderDsl<Expr>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     Expr: AppearsOnTable<F>,
-    SelectStatement<F, S, D, W, O, L, Of, G>: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G>: AsQuery<SqlType = ST>,
+    Self: AsQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>: AsQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G>;
+    type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>;
 
     fn order(self, expr: Expr) -> Self::Output {
         let order = OrderClause(expr);
@@ -142,6 +148,7 @@ where
             self.limit,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
@@ -149,12 +156,12 @@ where
 #[doc(hidden)]
 pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
 
-impl<ST, F, S, D, W, O, L, Of, G> LimitDsl for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<ST, F, S, D, W, O, L, Of, G, FU> LimitDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G>: Query<SqlType = ST>,
+    Self: AsQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>: Query<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G>;
+    type Output = SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>;
 
     fn limit(self, limit: i64) -> Self::Output {
         let limit_clause = LimitClause(AsExpression::<types::BigInt>::as_expression(limit));
@@ -167,6 +174,7 @@ where
             limit_clause,
             self.offset,
             self.group_by,
+            self.for_update,
         )
     }
 }
@@ -174,12 +182,12 @@ where
 #[doc(hidden)]
 pub type Offset = Limit;
 
-impl<ST, F, S, D, W, O, L, Of, G> OffsetDsl for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<ST, F, S, D, W, O, L, Of, G, FU> OffsetDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G>: AsQuery<SqlType = ST>,
+    Self: AsQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>: AsQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G>;
+    type Output = SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>;
 
     fn offset(self, offset: i64) -> Self::Output {
         let offset_clause = OffsetClause(AsExpression::<types::BigInt>::as_expression(offset));
@@ -192,6 +200,7 @@ where
             self.limit,
             offset_clause,
             self.group_by,
+            self.for_update,
         )
     }
 }
@@ -214,6 +223,35 @@ where
             self.limit,
             self.offset,
             group_by,
+            self.for_update,
+        )
+    }
+}
+
+impl<F, S, W, O, L, Of> ForUpdateDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
+    type Output = SelectStatement<
+        F,
+        S,
+        NoDistinctClause,
+        W,
+        O,
+        L,
+        Of,
+        NoGroupByClause,
+        ForUpdateClause,
+    >;
+
+    fn for_update(self) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            ForUpdateClause,
         )
     }
 }
@@ -275,7 +313,7 @@ where
     }
 }
 
-impl<F, S, D, W, O, L, Of, G> HasTable for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU> HasTable for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     F: HasTable,
 {
@@ -303,7 +341,7 @@ where
 // FIXME: Should we disable joining when `.group_by` has been called? Are there
 // any other query methods where a join no longer has the same semantics as
 // joining on just the table?
-impl<F, S, D, W, O, L, Of, G, Rhs> JoinTo<Rhs> for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<F, S, D, W, O, L, Of, G, FU, Rhs> JoinTo<Rhs> for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     F: JoinTo<Rhs>,
 {

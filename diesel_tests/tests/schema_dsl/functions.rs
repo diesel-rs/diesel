@@ -11,7 +11,7 @@ pub fn integer<'a>(name: &'a str) -> Column<'a, types::Integer> {
 }
 
 pub fn string<'a>(name: &'a str) -> Column<'a, types::VarChar> {
-    Column::new(name, "VARCHAR")
+    Column::new(name, "VARCHAR(255)")
 }
 
 pub fn timestamp<'a>(name: &'a str) -> Column<'a, types::VarChar> {

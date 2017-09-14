@@ -100,6 +100,9 @@ pub mod helper_types {
     /// Represents the return type of `.filter(lhs.eq(rhs))`
     pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
+    /// Represents the return type of `.for_update()`
+    pub type ForUpdate<Source> = <Source as ForUpdateDsl>::Output;
+
     /// Represents the return type of `.find(pk)`
     pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
 

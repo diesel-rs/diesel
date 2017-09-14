@@ -9,6 +9,7 @@ mod join_dsl;
 pub mod limit_dsl;
 #[doc(hidden)]
 pub mod load_dsl;
+mod locking_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
 #[doc(hidden)]
@@ -27,6 +28,7 @@ pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::limit_dsl::LimitDsl;
 pub use self::load_dsl::{ExecuteDsl, FirstDsl, LoadDsl, LoadQuery};
+pub use self::locking_dsl::ForUpdateDsl;
 pub use self::offset_dsl::OffsetDsl;
 pub use self::order_dsl::OrderDsl;
 pub use self::save_changes_dsl::SaveChangesDsl;

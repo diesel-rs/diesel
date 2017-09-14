@@ -6,6 +6,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* The `.for_update()` method has been added to select statements, allowing
+  construction of `SELECT ... FOR UPDATE`.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
