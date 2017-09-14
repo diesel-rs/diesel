@@ -14,6 +14,7 @@ pub struct ColumnInformation {
     pub column_name: String,
     pub type_name: String,
     pub nullable: bool,
+    pub default_value: Option<String>
 }
 
 #[derive(Debug)]
@@ -50,10 +51,11 @@ pub struct ColumnDefinition {
     pub ty: ColumnType,
     pub docs: String,
     pub rust_name: Option<String>,
+    pub default_value: Option<String>
 }
 
 impl ColumnInformation {
-    pub fn new<T, U>(column_name: T, type_name: U, nullable: bool) -> Self
+    pub fn new<T, U>(column_name: T, type_name: U, nullable: bool, default_value: Option<String>) -> Self
     where
         T: Into<String>,
         U: Into<String>,
@@ -62,6 +64,7 @@ impl ColumnInformation {
             column_name: column_name.into(),
             type_name: type_name.into(),
             nullable: nullable,
+            default_value: default_value
         }
     }
 }
@@ -75,7 +78,7 @@ where
     type Row = (String, String, String);
 
     fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.0, row.1, row.2 == "YES")
+        ColumnInformation::new(row.0, row.1, row.2 == "YES", None)
     }
 }
 
@@ -88,7 +91,7 @@ where
     type Row = (i32, String, String, bool, Option<String>, bool);
 
     fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.1, row.2, !row.3)
+        ColumnInformation::new(row.1, row.2, !row.3, row.4)
     }
 }
 

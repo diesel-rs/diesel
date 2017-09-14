@@ -1,6 +1,6 @@
 use std::iter;
 
-use backend::{Backend, SupportsDefaultKeyword};
+use backend::Backend;
 use result::QueryResult;
 use query_builder::AstPass;
 use query_source::Table;
@@ -39,7 +39,7 @@ type ValuesFn<Item, T, DB> = fn(Item)
 impl<Iter, T, DB> Insertable<T, DB> for Iter
 where
     T: Table,
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend,
     Iter: IntoIterator,
     Iter::Item: Insertable<T, DB>,
     Iter::IntoIter: Clone,

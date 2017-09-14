@@ -1,7 +1,7 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*),  $sql_name:expr, $($doc:expr),*) => {
+    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*),  $sql_name:expr, $default_value:expr, $($doc:expr),*) => {
         $(
             #[doc=$doc]
         )*
@@ -69,6 +69,7 @@ macro_rules! __diesel_column {
             type Table = $($table)::*;
 
             const NAME: &'static str = $sql_name;
+            const DEFAULT: &'static str = $default_value;
         }
 
         impl<T> $crate::EqAll<T> for $column_name where
@@ -428,11 +429,12 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
         current_column_sql_name = [$($current_column_sql_name:expr)*],
+        current_column_default_value = [$($current_column_default_value:expr)*],
         #[doc=$new_doc:expr]
         $($body:tt)*
     ) => {
@@ -441,11 +443,12 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [$($column_doc)*$new_doc],
             current_column_sql_name = [$($current_column_sql_name)*],
+            current_column_default_value = [$($current_column_default_value)*],
             $($body)*
         }
     };
@@ -457,11 +460,12 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
         current_column_sql_name = [],
+        current_column_default_value = [$($current_column_default_value:expr)*],
         #[sql_name=$new_sql_name:expr]
         $($body:tt)*
     ) => {
@@ -470,11 +474,43 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [$($column_doc)*],
             current_column_sql_name = [$new_sql_name],
+            current_column_default_value = [$($current_column_default_value)*],
+            $($body)*
+        }
+    };
+
+    // Parse the default_value attribute and forward the remaining table body to further instances of
+    // this macro
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [$($current_column_sql_name:expr)*],
+        current_column_default_value = [],
+        #[default_value=$new_default_value:expr]
+        $($body:tt)*
+    ) => {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            current_column_doc = [$($column_doc)*],
+            current_column_sql_name = [$($current_column_sql_name)*],
+            current_column_default_value = [$new_default_value],
             $($body)*
         }
     };
@@ -491,11 +527,12 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
         current_column_sql_name = [$new_sql_name:expr],
+        current_column_default_value = [$new_default_value:expr],
         $new_column_name:ident -> $($ty_path:tt)::* $(<$($ty_params:tt)::*>)*,
         $($body:tt)*
     ) => {
@@ -504,12 +541,13 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
-                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*
+                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*]; sql_name = $new_sql_name; default_value = $new_default_value,],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
             current_column_sql_name = [],
+            current_column_default_value = [],
             $($body)*
         }
     };
@@ -523,11 +561,12 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
         current_column_sql_name = [$new_sql_name:expr],
+        current_column_default_value = [$new_default_value:expr],
         $new_column_name:ident -> $new_column_ty:ty,
         $($body:tt)*
     ) => {
@@ -536,12 +575,13 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
-                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*
+                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*]; sql_name = $new_sql_name; default_value = $new_default_value,],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [],
             current_column_sql_name = [],
+            current_column_default_value = [],
             $($body)*
         }
     };
@@ -566,6 +606,7 @@ macro_rules! table_body {
             table_doc = [$($table_doc)*],
             current_column_doc = [],
             current_column_sql_name = [],
+            current_column_default_value = [],
             $($body)+
         }
     };
@@ -576,11 +617,12 @@ macro_rules! table_body {
         table_name = $name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [$($column_doc:expr)*],
         current_column_sql_name = [],
+        current_column_default_value = [$($current_column_default_value:expr)*],
         $new_column_name:ident ->
         $($body:tt)*
     ) => {
@@ -589,11 +631,42 @@ macro_rules! table_body {
             table_name = $name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*],
             imports = ($($($import)::+),+),
             table_doc = [$($table_doc)*],
             current_column_doc = [$($column_doc)*],
             current_column_sql_name = [stringify!($new_column_name)],
+            current_column_default_value = [$($current_column_default_value)*],
+            $new_column_name -> $($body)*
+        }
+    };
+
+    //   Add a default_value arg if we find a column definition without any sql_name attribute before
+    (
+        schema_name = $schema_name:ident,
+        table_name = $name:ident,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)*],
+        imports = ($($($import:tt)::+),+),
+        table_doc = [$($table_doc:expr)*],
+        current_column_doc = [$($column_doc:expr)*],
+        current_column_sql_name = [$($current_column_sql_name:expr)*],
+        current_column_default_value = [],
+        $new_column_name:ident ->
+        $($body:tt)*
+    ) => {
+        table_body! {
+            schema_name = $schema_name,
+            table_name = $name,
+            primary_key_ty = $primary_key_ty,
+            primary_key_expr = $primary_key_expr,
+            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name; default_value = $default_value,)*],
+            imports = ($($($import)::+),+),
+            table_doc = [$($table_doc)*],
+            current_column_doc = [$($column_doc)*],
+            current_column_sql_name = [$($current_column_sql_name)*],
+            current_column_default_value = ["NULL"],
             $new_column_name -> $($body)*
         }
     };
@@ -615,6 +688,7 @@ macro_rules! table_body {
             table_doc = [$($table_doc)*],
             current_column_doc = [],
             current_column_sql_name = [],
+            current_column_default_value = [],
             $($body)+
         }
     };
@@ -626,11 +700,12 @@ macro_rules! table_body {
         table_name = $table_name:ident,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)+],
+        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*]; sql_name = $sql_name:expr; default_value = $default_value:expr,)+],
         imports = ($($($import:tt)::+),+),
         table_doc = [$($table_doc:expr)*],
         current_column_doc = [],
         current_column_sql_name = [],
+        current_column_default_value = [],
     ) => {
         $(
             #[doc=$table_doc]
@@ -824,7 +899,7 @@ macro_rules! table_body {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $sql_name, $($doc),*);)+
+                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $sql_name, $default_value, $($doc),*);)+
             }
         }
     }

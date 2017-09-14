@@ -83,15 +83,15 @@ fn insert_records_with_custom_returning_clause() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: use users table
 fn batch_insert_with_defaults() {
-    use schema::users::table as users;
+    use schema::users_with_default::table as users_with_default;
     use schema_dsl::*;
 
     let connection = connection();
-    drop_table_cascade(&connection, "users");
+    drop_table_cascade(&connection, "users_with_default");
     create_table(
-        "users",
+        "users_with_default",
         (
             integer("id").primary_key().auto_increment(),
             string("name").not_null(),
@@ -100,11 +100,11 @@ fn batch_insert_with_defaults() {
     ).execute(&connection)
         .unwrap();
 
-    let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
+    let new_users_with_default: &[_] = &[
+        NewUserWithDefault::new("Sean", Some("Black")),
+        NewUserWithDefault::new("Tess", None),
     ];
-    insert(new_users).into(users).execute(&connection).unwrap();
+    insert(new_users_with_default).into(users_with_default).execute(&connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -118,21 +118,21 @@ fn batch_insert_with_defaults() {
             hair_color: Some("Green".to_string()),
         },
     ];
-    let actual_users = users.load(&connection).unwrap();
+    let actual_users = users_with_default.load(&connection).unwrap();
 
     assert_eq!(expected_users, actual_users);
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: use users table
 fn insert_with_defaults() {
-    use schema::users::table as users;
+    use schema::users_with_default::table as users_with_default;
     use schema_dsl::*;
 
     let connection = connection();
-    drop_table_cascade(&connection, "users");
+    drop_table_cascade(&connection, "users_with_default");
     create_table(
-        "users",
+        "users_with_default",
         (
             integer("id").primary_key().auto_increment(),
             string("name").not_null(),
@@ -140,8 +140,8 @@ fn insert_with_defaults() {
         ),
     ).execute(&connection)
         .unwrap();
-    insert(&NewUser::new("Tess", None))
-        .into(users)
+    insert(&NewUserWithDefault::new("Tess", None))
+        .into(users_with_default)
         .execute(&connection)
         .unwrap();
 
@@ -152,7 +152,7 @@ fn insert_with_defaults() {
             hair_color: Some("Green".to_string()),
         },
     ];
-    let actual_users = users.load(&connection).unwrap();
+    let actual_users = users_with_default.load(&connection).unwrap();
 
     assert_eq!(expected_users, actual_users);
 }

@@ -279,6 +279,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
                 sql_name: c.column_name,
                 ty,
                 rust_name,
+                default_value: c.default_value
             })
         })
         .collect::<Result<_, Box<Error>>>()?;

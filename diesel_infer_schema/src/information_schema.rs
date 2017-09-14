@@ -420,10 +420,10 @@ mod tests {
 
         let table_1 = TableName::new("table_1", "test_schema");
         let table_2 = TableName::new("table_2", "test_schema");
-        let id = ColumnInformation::new("id", "int4", false);
-        let text_col = ColumnInformation::new("text_col", "varchar", true);
-        let not_null = ColumnInformation::new("not_null", "text", false);
-        let array_col = ColumnInformation::new("array_col", "_varchar", false);
+        let id = ColumnInformation::new("id", "int4", false, None);
+        let text_col = ColumnInformation::new("text_col", "varchar", true, None);
+        let not_null = ColumnInformation::new("not_null", "text", false, None);
+        let array_col = ColumnInformation::new("array_col", "_varchar", false, None);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&connection, &table_1)
