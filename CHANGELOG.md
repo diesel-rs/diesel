@@ -11,10 +11,17 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `.for_update()` method has been added to select statements, allowing
   construction of `SELECT ... FOR UPDATE`.
 
+* Added `insert(&default_values())` as a replacement for
+  `insert_default_values()`
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
   use associated constants where appropriate.
+
+### Deprecated
+
+* Deprecated `insert_default_values()` in favor of `insert(&default_values())`
 
 ### Fixed
 

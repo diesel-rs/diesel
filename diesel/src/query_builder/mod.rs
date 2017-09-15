@@ -40,7 +40,7 @@ pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::update_statement::{AsChangeset, Changeset, IncompleteUpdateStatement,
                                  IntoUpdateTarget, UpdateStatement, UpdateTarget};
 #[doc(inline)]
-pub use self::insert_statement::{IncompleteDefaultInsertStatement, IncompleteInsertStatement};
+pub use self::insert_statement::IncompleteInsertStatement;
 
 use std::error::Error;
 

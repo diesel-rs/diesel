@@ -268,6 +268,40 @@ fn insert_empty_slice_with_returning() {
 
 #[test]
 #[cfg(not(feature = "mysql"))]
+fn insert_only_default_values_deprecated() {
+    use schema::users::table as users;
+    use schema_dsl::*;
+    let connection = connection();
+
+    drop_table_cascade(&connection, "users");
+    create_table(
+        "users",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null().default("'Sean'"),
+            string("hair_color").not_null().default("'Green'"),
+        ),
+    ).execute(&connection)
+        .unwrap();
+
+    insert_default_values()
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+    assert_eq!(
+        users.load::<User>(&connection),
+        Ok(vec![
+            User {
+                id: 1,
+                name: "Sean".into(),
+                hair_color: Some("Green".into()),
+            },
+        ])
+    );
+}
+
+#[test]
+#[cfg(not(feature = "mysql"))]
 fn insert_only_default_values() {
     use schema::users::table as users;
     use schema_dsl::*;
@@ -284,7 +318,10 @@ fn insert_only_default_values() {
     ).execute(&connection)
         .unwrap();
 
-    insert_default_values().into(users).execute(&connection);
+    insert(&default_values())
+        .into(users)
+        .execute(&connection)
+        .unwrap();
     assert_eq!(
         users.load::<User>(&connection),
         Ok(vec![
