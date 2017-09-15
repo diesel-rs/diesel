@@ -53,7 +53,7 @@ matrix:
     env: RUSTFMT=YESPLEASE
     script:
     - |
-      if ! [ -x "$(command -v foo)" ]; then
+      if ! [ -x "$(command -v rustfmt)" ]; then
         cargo install rustfmt-nightly --vers 0.2.5
       fi
     - cargo fmt --all -- --write-mode=diff
