@@ -1,5 +1,5 @@
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::Expression;
+use expression::{AppearsOnTable, Expression};
 use result::QueryResult;
 use query_builder::{AstPass, QueryBuilder, QueryFragment};
 use query_source::{Column, Table};
@@ -49,7 +49,7 @@ impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr
 where
     DB: Backend + SupportsDefaultKeyword,
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<DB>,
+    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<DB> + AppearsOnTable<()>,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
@@ -74,7 +74,7 @@ where
 impl<Col, Expr> InsertValues<Col::Table, Sqlite> for ColumnInsertValue<Col, Expr>
 where
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<Sqlite>,
+    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<Sqlite> + AppearsOnTable<()>,
 {
     fn column_names(&self, out: &mut <Sqlite as Backend>::QueryBuilder) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(..) = *self {

@@ -164,6 +164,41 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = establish_connection();
+/// let rows_inserted = diesel::insert(&name.eq("Sean"))
+///     .into(users)
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(1), rows_inserted);
+///
+/// let new_users = vec![
+///     name.eq("Tess"),
+///     name.eq("Jim"),
+/// ];
+///
+/// let rows_inserted = diesel::insert(&new_users)
+///     .into(users)
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(2), rows_inserted);
+/// # }
+/// ```
+///
+/// ### Using struct for values
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = establish_connection();
 /// // Insert one record at a time
 ///
 /// let new_user = NewUser { name: "Ruby Rhod".to_string() };
