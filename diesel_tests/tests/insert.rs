@@ -369,3 +369,32 @@ fn insert_only_default_values_with_returning() {
         ])
     );
 }
+
+#[test]
+fn insert_single_bare_value() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    insert(&name.eq("Sean"))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_names = vec!["Sean".to_string()];
+    let actual_names = users.select(name).load(&connection);
+    assert_eq!(Ok(expected_names), actual_names);
+}
+
+#[test]
+fn insert_multiple_bare_values() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    let new_users = vec![name.eq("Sean"), name.eq("Tess")];
+
+    insert(&new_users).into(users).execute(&connection).unwrap();
+
+    let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
+    let actual_names = users.select(name).load(&connection);
+    assert_eq!(Ok(expected_names), actual_names);
+}

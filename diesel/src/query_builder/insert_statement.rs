@@ -1,10 +1,11 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use connection::Connection;
 use expression::{Expression, NonAggregate, SelectableExpression};
+use expression::operators::Eq;
 use insertable::{InsertValues, Insertable};
 use query_builder::*;
 use query_dsl::{ExecuteDsl, LoadDsl, LoadQuery};
-use query_source::Table;
+use query_source::{Column, Table};
 use result::QueryResult;
 use super::returning_clause::*;
 
@@ -337,6 +338,12 @@ where
 {
 }
 
+impl<'a, Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for &'a Eq<Lhs, Rhs>
+where
+    Lhs: Column,
+{
+}
+
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub struct DefaultValues;
@@ -354,6 +361,17 @@ impl<'a, Tab> IntoInsertStatement<Tab, Insert> for &'a DefaultValues {
 
     fn into_insert_statement(self, target: Tab, operator: Insert) -> Self::InsertStatement {
         (*self).into_insert_statement(target, operator)
+    }
+}
+
+impl<'a, Lhs, Rhs, Op> IntoInsertStatement<Lhs::Table, Op> for &'a Eq<Lhs, Rhs>
+where
+    Lhs: Column,
+{
+    type InsertStatement = InsertStatement<Lhs::Table, Self, Op>;
+
+    fn into_insert_statement(self, target: Lhs::Table, operator: Op) -> Self::InsertStatement {
+        InsertStatement::no_returning_clause(target, self, operator)
     }
 }
 
