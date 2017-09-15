@@ -183,6 +183,43 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # }
 /// ```
 ///
+/// ### Using a tuple for values
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use self::users::dsl::*;
+/// #     let connection = establish_connection();
+/// #     diesel::delete(users).execute(&connection).unwrap();
+/// let new_user = (id.eq(1), name.eq("Sean"));
+/// let rows_inserted = diesel::insert(&new_user)
+///     .into(users)
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(1), rows_inserted);
+///
+/// let new_users = vec![
+///     (id.eq(2), name.eq("Tess")),
+///     (id.eq(2), name.eq("Jim")),
+/// ];
+///
+/// let rows_inserted = diesel::insert(&new_users)
+///     .into(users)
+///     .execute(&connection);
+///
+/// // assert_eq!(Ok(2), rows_inserted);
+/// # }
+/// ```
+///
 /// ### Using struct for values
 ///
 /// ```rust

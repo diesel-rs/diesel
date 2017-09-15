@@ -48,7 +48,13 @@ pub trait InsertValues<T: Table, DB: Backend> {
 #[derive(Debug, Copy, Clone)]
 pub enum ColumnInsertValue<Col, Expr> {
     Expression(Col, Expr),
-    Default(Col),
+    Default,
+}
+
+impl<Col, Expr> Default for ColumnInsertValue<Col, Expr> {
+    fn default() -> Self {
+        ColumnInsertValue::Default
+    }
 }
 
 impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
@@ -110,6 +116,7 @@ where
     Tab: Table,
     DB: Backend,
     BatchInsertValues<'a, T>: InsertValues<Tab, DB>,
+    &'a T: UndecoratedInsertRecord<Tab>,
 {
     type Values = BatchInsertValues<'a, T>;
 
@@ -121,7 +128,6 @@ where
 impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a [T]
 where
     DB: Backend + SupportsDefaultKeyword,
-    &'a T: UndecoratedInsertRecord<T>,
 {
     fn rows_to_insert(&self) -> usize {
         self.len()
@@ -157,6 +163,23 @@ where
 {
     fn rows_to_insert(&self) -> usize {
         1
+    }
+}
+
+impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a Option<T>
+where
+    Tab: Table,
+    DB: Backend,
+    &'a T: Insertable<Tab, DB>,
+    <&'a T as Insertable<Tab, DB>>::Values: Default,
+{
+    type Values = <&'a T as Insertable<Tab, DB>>::Values;
+
+    fn values(self) -> Self::Values {
+        match *self {
+            Some(ref v) => v.values(),
+            None => Default::default(),
+        }
     }
 }
 

@@ -279,6 +279,12 @@ where
 {
 }
 
+impl<'a, Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for &'a Option<Eq<Lhs, Rhs>>
+where
+    &'a Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>,
+{
+}
+
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub struct DefaultValues;

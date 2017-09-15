@@ -24,4 +24,10 @@ fn main() {
         .execute(&conn)
         //~^ ERROR E0599
         .unwrap();
+
+    insert(&(posts::id.eq(1), users::id.eq(2)))
+        .into(users::table)
+        .execute(&conn)
+        //~^ ERROR E0599
+        .unwrap();
 }

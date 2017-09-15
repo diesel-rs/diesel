@@ -3,8 +3,9 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use insertable::InsertValues;
+use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
+use query_builder::insert_statement::UndecoratedInsertRecord;
 use query_source::{QuerySource, Queryable, Table};
 use result::QueryResult;
 use row::Row;
@@ -83,6 +84,38 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
+            }
+
+            impl<'a, $($T,)+ Tab> UndecoratedInsertRecord<Tab> for &'a ($($T,)+)
+            where
+                $(&'a $T: UndecoratedInsertRecord<Tab>,)+
+            {
+            }
+
+            impl<'a, $($T,)+ DB> CanInsertInSingleQuery<DB> for &'a ($($T,)+)
+            where
+                DB: Backend,
+                $(&'a $T: CanInsertInSingleQuery<DB>,)+
+            {
+                fn rows_to_insert(&self) -> usize {
+                    $(debug_assert_eq!((&self.$idx).rows_to_insert(), 1);)+
+                    1
+                }
+            }
+
+            impl<'a, $($T,)+ Tab, DB> Insertable<Tab, DB> for &'a ($($T,)+)
+            where
+                Tab: Table,
+                DB: Backend,
+                $(&'a $T: Insertable<Tab, DB> + UndecoratedInsertRecord<Tab>,)+
+            {
+                type Values = ($(
+                    <&'a $T as Insertable<Tab, DB>>::Values,
+                )+);
+
+                fn values(self) -> Self::Values {
+                    ($(self.$idx.values(),)+)
+                }
             }
 
             #[allow(unused_assignments)]

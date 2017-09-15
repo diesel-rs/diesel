@@ -411,3 +411,121 @@ fn insert_multiple_bare_values() {
     let actual_names = users.select(name).load(&connection);
     assert_eq!(Ok(expected_names), actual_names);
 }
+
+#[test]
+fn insert_single_tuple() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    insert(&(name.eq("Sean"), hair_color.eq("Brown")))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_data = vec![("Sean".to_string(), Some("Brown".to_string()))];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+#[should_panic] // FIXME: We need to rejigger where the parens are added for values
+fn insert_nested_tuples() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    insert(&(id.eq(1), (name.eq("Sean"), hair_color.eq("Brown"))))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_data = vec![User::with_hair_color(1, "Sean", "Brown")];
+    let actual_data = users.load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+#[should_panic] // FIXME: We need to rejigger where the parens are added for values
+fn insert_mixed_tuple_and_insertable_struct() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    let new_user = NewUser::new("Sean", Some("Brown"));
+    insert(&(id.eq(3), new_user))
+        .into(users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_data = vec![User::with_hair_color(3, "Sean", "Brown")];
+    let actual_data = users.load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+fn insert_multiple_tuples() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    let new_users = vec![
+        (name.eq("Sean"), hair_color.eq("Brown")),
+        (name.eq("Tess"), hair_color.eq("Green")),
+    ];
+    insert(&new_users).into(users).execute(&connection).unwrap();
+
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Brown".to_string())),
+        ("Tess".to_string(), Some("Green".to_string())),
+    ];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+fn insert_optional_field_with_null() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    let new_users = vec![
+        (name.eq("Sean"), hair_color.eq(Some("Brown"))),
+        (name.eq("Tess"), hair_color.eq(None)),
+    ];
+    insert(&new_users).into(users).execute(&connection).unwrap();
+
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Brown".to_string())),
+        ("Tess".to_string(), None),
+    ];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+#[cfg(not(feature = "mysql"))]
+#[cfg_attr(feature = "postgres", should_panic)] // FIXME: We need to rejigger where the parens are added for values
+fn insert_optional_field_with_default() {
+    use schema::users::dsl::*;
+    use schema_dsl::*;
+    let connection = connection();
+    drop_table_cascade(&connection, "users");
+    create_table(
+        "users",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            string("hair_color").not_null().default("'Green'"),
+        ),
+    ).execute(&connection)
+        .unwrap();
+
+    let new_users = vec![
+        (name.eq("Sean"), Some(hair_color.eq("Brown"))),
+        (name.eq("Tess"), None),
+    ];
+    insert(&new_users).into(users).execute(&connection).unwrap();
+
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Brown".to_string())),
+        ("Tess".to_string(), Some("Green".to_string())),
+    ];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
