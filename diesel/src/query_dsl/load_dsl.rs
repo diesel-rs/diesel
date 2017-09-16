@@ -74,6 +74,39 @@ pub trait FirstDsl<Conn>: LimitDsl + LoadDsl<Conn> {
     /// `Err(NotFound)` if no results are returned. If the query truly is
     /// optional, you can call `.optional()` on the result of this to get a
     /// `Result<Option<U>>`.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::NotFound;
+    /// table! {
+    ///     users {
+    ///         id -> Integer,
+    ///         name -> VarChar,
+    ///     }
+    /// }
+    ///
+    /// #[derive(Queryable, PartialEq, Debug)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # fn main() {
+    /// #   let connection = establish_connection();
+    /// let user1 = NewUser { name: "Sean".into() };
+    /// let user2 = NewUser { name: "Pascal".into() };
+    /// diesel::insert(&vec![user1, user2]).into(users::table).execute(&connection).unwrap();
+    ///
+    /// let user = users::table.order(users::id.asc()).first(&connection);
+    /// assert_eq!(Ok(User { id: 1, name: "Sean".into() }), user);
+    /// let user = users::table.filter(users::name.eq("Foo")).first::<User>(&connection);
+    /// assert_eq!(Err(NotFound), user);
+    /// # }
+    /// ```
     fn first<U>(self, conn: &Conn) -> QueryResult<U>
     where
         Limit<Self>: LoadQuery<Conn, U>,
