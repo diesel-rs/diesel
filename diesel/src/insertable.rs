@@ -1,5 +1,6 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression};
+use expression::operators::Eq;
 use result::QueryResult;
 use query_builder::{AstPass, QueryBuilder, QueryFragment};
 use query_source::{Column, Table};
@@ -21,6 +22,10 @@ pub trait Insertable<T: Table, DB: Backend> {
     type Values: InsertValues<T, DB>;
 
     fn values(self) -> Self::Values;
+}
+
+pub trait CanInsertInSingleQuery<DB: Backend> {
+    fn rows_to_insert(&self) -> usize;
 }
 
 pub trait InsertValues<T: Table, DB: Backend> {
@@ -112,6 +117,15 @@ where
     }
 }
 
+impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a [T]
+where
+    DB: Backend + SupportsDefaultKeyword,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.len()
+    }
+}
+
 impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a Vec<T>
 where
     Tab: Table,
@@ -122,6 +136,25 @@ where
 
     fn values(self) -> Self::Values {
         (&**self).values()
+    }
+}
+
+impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a Vec<T>
+where
+    DB: Backend,
+    &'a [T]: CanInsertInSingleQuery<DB>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.as_slice().rows_to_insert()
+    }
+}
+
+impl<'a, Lhs, Rhs, DB> CanInsertInSingleQuery<DB> for &'a Eq<Lhs, Rhs>
+where
+    DB: Backend,
+{
+    fn rows_to_insert(&self) -> usize {
+        1
     }
 }
 

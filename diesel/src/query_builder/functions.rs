@@ -275,8 +275,9 @@ where
 /// query can return the inserted rows if you choose.
 #[cfg(feature = "with-deprecated")]
 #[deprecated(since = "0.99.0", note = "use `insert(&default_values())` instead")]
-pub fn insert_default_values() -> IncompleteInsertStatement<DefaultValues, Insert> {
-    IncompleteInsertStatement::new(DefaultValues, Insert)
+pub fn insert_default_values() -> IncompleteInsertStatement<&'static DefaultValues, Insert> {
+    static STATIC_DEFAULT_VALUES: &'static DefaultValues = &DefaultValues;
+    insert(STATIC_DEFAULT_VALUES)
 }
 
 pub fn default_values() -> DefaultValues {

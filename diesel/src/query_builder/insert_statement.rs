@@ -1,8 +1,8 @@
-use backend::{Backend, SupportsDefaultKeyword};
+use backend::Backend;
 use connection::Connection;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
-use insertable::{InsertValues, Insertable};
+use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_dsl::{ExecuteDsl, LoadDsl, LoadQuery};
 use query_source::{Column, Table};
@@ -27,44 +27,13 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> T::InsertStatement
-    where
-        T: IntoInsertStatement<S, Op>,
-    {
-        self.records.into_insert_statement(target, self.operator)
-    }
-}
-
-pub trait IntoInsertStatement<Tab, Op> {
-    type InsertStatement;
-
-    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement;
-}
-
-impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a [T]
-where
-    &'a T: UndecoratedInsertRecord<Tab>,
-{
-    type InsertStatement = BatchInsertStatement<Tab, Self, Op, NoReturningClause>;
-
-    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
+    pub fn into<S>(self, target: S) -> BatchInsertStatement<S, T, Op> {
         BatchInsertStatement {
-            operator: operator,
+            operator: self.operator,
             target: target,
-            records: self,
+            records: self.records,
             returning: NoReturningClause,
         }
-    }
-}
-
-impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a Vec<T>
-where
-    &'a [T]: IntoInsertStatement<Tab, Op>,
-{
-    type InsertStatement = <&'a [T] as IntoInsertStatement<Tab, Op>>::InsertStatement;
-
-    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
-        (&**self).into_insert_statement(target, operator)
     }
 }
 
@@ -74,12 +43,6 @@ pub struct InsertStatement<T, U, Op = Insert, Ret = NoReturningClause> {
     target: T,
     records: U,
     returning: Ret,
-}
-
-impl<T, U, Op> InsertStatement<T, U, Op> {
-    pub fn no_returning_clause(target: T, records: U, operator: Op) -> Self {
-        InsertStatement::new(target, records, operator, NoReturningClause)
-    }
 }
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
@@ -125,73 +88,11 @@ where
 
 impl_query_id!(noop: InsertStatement<T, U, Op, Ret>);
 
-impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
-where
-    T: Table,
-    InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
-{
-    type SqlType = <Self::Query as Query>::SqlType;
-    type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
-
-    fn as_query(self) -> Self::Query {
-        self.returning(T::all_columns())
-    }
-}
-
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
     Ret: Expression + SelectableExpression<T> + NonAggregate,
 {
     type SqlType = Ret::SqlType;
-}
-
-impl<T, U, Op> InsertStatement<T, U, Op, NoReturningClause> {
-    /// Specify what expression is returned after execution of the `insert`.
-    /// This method can only be called once.
-    ///
-    /// # Examples
-    ///
-    /// ### Inserting a record:
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// # #[cfg(feature = "postgres")]
-    /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let new_user = NewUser {
-    ///     name: "Timmy".to_string(),
-    /// };
-    ///
-    /// let inserted_name = diesel::insert(&new_user)
-    ///     .into(users)
-    ///     .returning(name)
-    ///     .get_result(&connection);
-    /// assert_eq!(Ok("Timmy".to_string()), inserted_name);
-    /// # }
-    /// # #[cfg(not(feature = "postgres"))]
-    /// # fn main() {}
-    /// ```
-    pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    where
-        InsertStatement<T, U, Op, ReturningClause<E>>: Query,
-    {
-        InsertStatement {
-            operator: self.operator,
-            target: self.target,
-            records: self.records,
-            returning: ReturningClause(returns),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -259,14 +160,15 @@ impl<T, U, Op> BatchInsertStatement<T, U, Op> {
     }
 }
 
-impl<'a, T, U, Op, Ret, Conn, DB> ExecuteDsl<Conn, DB> for BatchInsertStatement<T, &'a [U], Op, Ret>
+impl<T, U, Op, Ret, Conn, DB> ExecuteDsl<Conn, DB> for BatchInsertStatement<T, U, Op, Ret>
 where
     Conn: Connection<Backend = DB>,
-    DB: Backend + SupportsDefaultKeyword,
-    InsertStatement<T, &'a [U], Op, Ret>: ExecuteDsl<Conn>,
+    DB: Backend,
+    U: CanInsertInSingleQuery<DB>,
+    InsertStatement<T, U, Op, Ret>: ExecuteDsl<Conn>,
 {
     fn execute(self, conn: &Conn) -> QueryResult<usize> {
-        if self.records.is_empty() {
+        if self.records.rows_to_insert() == 0 {
             Ok(0)
         } else {
             self.into_insert_statement().execute(conn)
@@ -293,12 +195,31 @@ where
     }
 }
 
-impl<'a, T, U, V, Op, Ret, Conn> LoadQuery<Conn, V> for BatchInsertStatement<T, &'a [U], Op, Ret>
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
+    for BatchInsertStatement<T, &'a Vec<U>, Op, Ret>
 where
-    InsertStatement<T, &'a [U], Op, Ret>: LoadQuery<Conn, V>,
+    BatchInsertStatement<T, &'a [U], Op, Ret>: ExecuteDsl<::sqlite::SqliteConnection>,
+{
+    fn execute(self, conn: &::sqlite::SqliteConnection) -> QueryResult<usize> {
+        BatchInsertStatement {
+            records: &**self.records,
+            target: self.target,
+            operator: self.operator,
+            returning: self.returning,
+        }.execute(conn)
+    }
+}
+
+impl<T, U, V, Op, Ret, Conn> LoadQuery<Conn, V>
+    for BatchInsertStatement<T, U, Op, ReturningClause<Ret>>
+where
+    Conn: Connection,
+    U: CanInsertInSingleQuery<Conn::Backend>,
+    InsertStatement<T, U, Op, ReturningClause<Ret>>: LoadQuery<Conn, V>,
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<V>> {
-        if self.records.is_empty() {
+        if self.records.rows_to_insert() == 0 {
             Ok(Vec::new())
         } else {
             self.into_insert_statement().internal_load(conn)
@@ -306,7 +227,18 @@ where
     }
 }
 
-impl<'a, T, U, Op, Ret, Conn> LoadDsl<Conn> for BatchInsertStatement<T, &'a [U], Op, Ret> {}
+impl<T, U, V, Op, Conn> LoadQuery<Conn, V> for BatchInsertStatement<T, U, Op>
+where
+    T: Table,
+    BatchInsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: LoadQuery<Conn, V>,
+{
+    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<V>> {
+        self.returning(T::all_columns()).internal_load(conn)
+    }
+}
+
+
+impl<T, U, Op, Ret, Conn> LoadDsl<Conn> for BatchInsertStatement<T, U, Op, Ret> {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Insert;
@@ -348,42 +280,21 @@ where
 #[doc(hidden)]
 pub struct DefaultValues;
 
-impl<Tab> IntoInsertStatement<Tab, Insert> for DefaultValues {
-    type InsertStatement = InsertStatement<Tab, Self, Insert>;
-
-    fn into_insert_statement(self, target: Tab, operator: Insert) -> Self::InsertStatement {
-        InsertStatement::no_returning_clause(target, self, operator)
+impl<'a, DB: Backend> CanInsertInSingleQuery<DB> for &'a DefaultValues {
+    fn rows_to_insert(&self) -> usize {
+        1
     }
 }
 
-impl<'a, Tab> IntoInsertStatement<Tab, Insert> for &'a DefaultValues {
-    type InsertStatement = <DefaultValues as IntoInsertStatement<Tab, Insert>>::InsertStatement;
-
-    fn into_insert_statement(self, target: Tab, operator: Insert) -> Self::InsertStatement {
-        (*self).into_insert_statement(target, operator)
-    }
-}
-
-impl<'a, Lhs, Rhs, Op> IntoInsertStatement<Lhs::Table, Op> for &'a Eq<Lhs, Rhs>
-where
-    Lhs: Column,
-{
-    type InsertStatement = InsertStatement<Lhs::Table, Self, Op>;
-
-    fn into_insert_statement(self, target: Lhs::Table, operator: Op) -> Self::InsertStatement {
-        InsertStatement::no_returning_clause(target, self, operator)
-    }
-}
-
-impl<Tab, DB> Insertable<Tab, DB> for DefaultValues
+impl<'a, Tab, DB> Insertable<Tab, DB> for &'a DefaultValues
 where
     Tab: Table,
     DB: Backend,
 {
-    type Values = Self;
+    type Values = DefaultValues;
 
     fn values(self) -> Self::Values {
-        self
+        *self
     }
 }
 

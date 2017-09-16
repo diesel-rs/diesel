@@ -158,7 +158,7 @@ macro_rules! impl_Insertable {
         lifetimes = ($($lifetime:tt),*),
         self_to_columns = $self_to_columns:pat,
         columns = ($($column_name:ident, $field_ty:ty, $field_kind:ident),+),
-    ) => { __diesel_parse_as_item! {
+    ) => {
         impl<$($lifetime,)* 'insert, DB> $crate::insertable::Insertable<$table_name::table, DB>
             for &'insert $struct_ty where
                 DB: $crate::backend::Backend,
@@ -193,26 +193,21 @@ macro_rules! impl_Insertable {
             }
         }
 
-    } __diesel_parse_as_item! {
-        impl<$($lifetime: 'insert,)* 'insert, Op> $crate::query_builder::insert_statement::IntoInsertStatement<$table_name::table, Op>
+        impl<$($lifetime,)* 'insert, DB> $crate::insertable::CanInsertInSingleQuery<DB>
             for &'insert $struct_ty
+        where
+            DB: $crate::backend::Backend,
         {
-            type InsertStatement = $crate::query_builder::insert_statement::InsertStatement<$table_name::table, Self, Op>;
-
-            fn into_insert_statement(self, target: $table_name::table, operator: Op) -> Self::InsertStatement {
-                $crate::query_builder::insert_statement::InsertStatement::no_returning_clause(
-                    target,
-                    self,
-                    operator,
-                )
+            fn rows_to_insert(&self) -> usize {
+                1
             }
         }
-    } __diesel_parse_as_item! {
+
         impl<$($lifetime: 'insert,)* 'insert> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
             for &'insert $struct_ty
         {
         }
-    }};
+    };
 }
 
 #[doc(hidden)]

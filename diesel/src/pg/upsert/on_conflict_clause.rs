@@ -34,23 +34,6 @@ impl<Records, Target, Action> OnConflict<Records, Target, Action> {
     }
 }
 
-impl<'a, T, Tab, Op> IntoInsertStatement<Tab, Op> for &'a OnConflictDoNothing<T> {
-    type InsertStatement = InsertStatement<Tab, Self, Op>;
-
-    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
-        InsertStatement::no_returning_clause(target, self, operator)
-    }
-}
-
-impl<'a, Recods, Target, Action, Tab, Op> IntoInsertStatement<Tab, Op>
-    for &'a OnConflict<Recods, Target, Action> {
-    type InsertStatement = InsertStatement<Tab, Self, Op>;
-
-    fn into_insert_statement(self, target: Tab, operator: Op) -> Self::InsertStatement {
-        InsertStatement::no_returning_clause(target, self, operator)
-    }
-}
-
 impl<'a, T, Tab> Insertable<Tab, Pg> for &'a OnConflictDoNothing<T>
 where
     Tab: Table,
@@ -65,6 +48,15 @@ where
             target: NoConflictTarget,
             action: DoNothing,
         }
+    }
+}
+
+impl<'a, T> CanInsertInSingleQuery<Pg> for &'a OnConflictDoNothing<T>
+where
+    T: CanInsertInSingleQuery<Pg>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.0.rows_to_insert()
     }
 }
 
@@ -85,6 +77,16 @@ where
             target: self.target.clone(),
             action: self.action.into_conflict_action(),
         }
+    }
+}
+
+impl<'a, Records, Target, Action> CanInsertInSingleQuery<Pg>
+    for &'a OnConflict<Records, Target, Action>
+where
+    Records: CanInsertInSingleQuery<Pg>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.records.rows_to_insert()
     }
 }
 

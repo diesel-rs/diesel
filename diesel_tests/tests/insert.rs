@@ -267,6 +267,19 @@ fn insert_empty_slice_with_returning() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn upsert_empty_slice() {
+    use diesel::pg::upsert::*;
+    let connection = connection();
+
+    let inserted_records = insert(&Vec::<NewUser>::new().on_conflict_do_nothing())
+        .into(users::table)
+        .execute(&connection);
+
+    assert_eq!(Ok(0), inserted_records);
+}
+
+#[test]
 #[cfg(not(feature = "mysql"))]
 fn insert_only_default_values_deprecated() {
     use schema::users::table as users;
