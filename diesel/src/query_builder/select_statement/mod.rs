@@ -8,6 +8,7 @@
 //! L: Limit Clause
 //! Of: Offset Clause
 //! G: Group By Clause
+//! FU: For Update Clause
 mod dsl_impls;
 mod boxed;
 
