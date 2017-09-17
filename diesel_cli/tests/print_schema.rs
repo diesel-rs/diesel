@@ -51,6 +51,15 @@ fn print_schema_specifying_schema_name() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn print_schema_specifying_schema_name_with_foreign_keys() {
+    test_print_schema(
+        "print_schema_specifying_schema_name_with_foreign_keys",
+        vec!["--with-docs", "--schema", "custom_schema"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn print_schema_with_foreign_keys() {
     test_print_schema("print_schema_with_foreign_keys", vec!["--with-docs"]);
 }
