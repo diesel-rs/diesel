@@ -21,7 +21,7 @@ fn main() {
 
     insert(&posts::id.eq(1))
         .into(users::table)
-        //~^ ERROR mismatched types
         .execute(&conn)
+        //~^ ERROR E0599
         .unwrap();
 }

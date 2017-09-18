@@ -150,7 +150,10 @@ impl<T, U, Op> BatchInsertStatement<T, U, Op> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> BatchInsertStatement<T, U, Op, ReturningClause<E>> {
+    pub fn returning<E>(self, returns: E) -> BatchInsertStatement<T, U, Op, ReturningClause<E>>
+    where
+        InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    {
         BatchInsertStatement {
             operator: self.operator,
             target: self.target,

@@ -33,7 +33,7 @@ fn main() {
 
     // Using UFCS to get a more specific error message
     let column_from_other_table = <_ as ExecuteDsl<_>>::execute(
-        //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
+        //~^ ERROR E0277
         insert(&NewUser("Sean").on_conflict(posts::id, do_nothing())).into(users),
         &connection,
     );

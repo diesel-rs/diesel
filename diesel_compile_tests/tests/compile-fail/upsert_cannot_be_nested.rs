@@ -28,9 +28,9 @@ fn main() {
     insert(&NewUser("Sean").on_conflict(id, do_nothing()).on_conflict(id, do_nothing())).into(users).execute(&connection);
     //~^ ERROR no method named `execute`
     insert(&vec![NewUser("Sean").on_conflict_do_nothing()]).into(users).execute(&connection);
-    //~^ ERROR E0061
+    //~^ ERROR E0599
     insert(&vec![&NewUser("Sean").on_conflict_do_nothing()]).into(users).execute(&connection);
-    //~^ ERROR E0061
+    //~^ ERROR E0599
     insert(&vec![&NewUser("Sean").on_conflict(id, do_nothing())]).into(users).execute(&connection);
-    //~^ ERROR E0061
+    //~^ ERROR E0599
 }

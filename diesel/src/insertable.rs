@@ -3,6 +3,7 @@ use expression::{AppearsOnTable, Expression};
 use expression::operators::Eq;
 use result::QueryResult;
 use query_builder::{AstPass, QueryBuilder, QueryFragment};
+use query_builder::insert_statement::UndecoratedInsertRecord;
 use query_source::{Column, Table};
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;
@@ -120,6 +121,7 @@ where
 impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a [T]
 where
     DB: Backend + SupportsDefaultKeyword,
+    &'a T: UndecoratedInsertRecord<T>,
 {
     fn rows_to_insert(&self) -> usize {
         self.len()
