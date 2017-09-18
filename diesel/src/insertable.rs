@@ -43,6 +43,13 @@ pub trait InsertValues<T: Table, DB: Backend> {
     /// single row. Types which represent multiple rows will always return
     /// `false` for this, even if they will insert 0 rows.
     fn is_noop(&self) -> bool;
+
+    // FIXME: Once #1166 is done we should just wrap the value in a `Grouped`
+    // when it is passed to `insert`
+    #[doc(hidden)]
+    fn requires_parenthesis(&self) -> bool {
+        true
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -205,7 +212,7 @@ where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         for (i, record) in self.records.iter().enumerate() {
             if i != 0 {
-                out.push_sql(", ");
+                out.push_sql("), (");
             }
             record.values().walk_ast(out.reborrow())?;
         }
