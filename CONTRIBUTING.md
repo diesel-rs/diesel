@@ -68,7 +68,7 @@ Thank you! We'll try to respond as quickly as possible.
    These are the same as when compiling Diesel. It's generally a good idea
    to install _all_ drivers so you can run all tests locally.
 
-   *Shortcut:* On MacOS, you don't need to install anything to work with SQLite.
+   *Shortcut:* On macOS, you don't need to install anything to work with SQLite.
    For PostgreSQL, you'll only need the server (`libpq` is installed by
    default). To get started, `brew install postgresql mysql` and follow the
    instructions shown to set up the database servers.
@@ -80,7 +80,7 @@ Thank you! We'll try to respond as quickly as possible.
    local setup.
 
    *Note:* If you didn't specify the MySQL user to be one with elevated
-   permissions, you'll want to make a command like ```mysql -c "GRANT ALL ON
+   permissions, you'll want to run a command like ```mysql -c "GRANT ALL ON
    `diesel_%`.* TO ''@'localhost';" -uroot```, or something similar for the
    user that you've specified.
 
