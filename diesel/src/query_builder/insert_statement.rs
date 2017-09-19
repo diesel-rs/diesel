@@ -1,12 +1,14 @@
 use backend::Backend;
-use connection::Connection;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
-use query_dsl::{ExecuteDsl, LoadDsl, LoadQuery};
+#[cfg(feature = "sqlite")]
+use query_dsl::ExecuteDsl;
 use query_source::{Column, Table};
 use result::QueryResult;
+#[cfg(feature = "sqlite")]
+use sqlite::{Sqlite, SqliteConnection};
 use super::returning_clause::*;
 
 /// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
@@ -27,13 +29,8 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> BatchInsertStatement<S, T, Op> {
-        BatchInsertStatement {
-            operator: self.operator,
-            target: target,
-            records: self.records,
-            returning: NoReturningClause,
-        }
+    pub fn into<S>(self, target: S) -> InsertStatement<S, T, Op> {
+        InsertStatement::new(target, self.records, self.operator, NoReturningClause)
     }
 }
 
@@ -46,7 +43,7 @@ pub struct InsertStatement<T, U, Op = Insert, Ret = NoReturningClause> {
 }
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
-    pub fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
+    fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
         InsertStatement {
             operator: operator,
             target: target,
@@ -61,13 +58,19 @@ where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
-    U: Insertable<T, DB> + Copy,
+    U: Insertable<T, DB> + CanInsertInSingleQuery<DB> + Copy,
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        let values = self.records.values();
         out.unsafe_to_cache_prepared();
+
+        if self.records.rows_to_insert() == 0 {
+            out.push_sql("SELECT 1 WHERE 1=0");
+            return Ok(());
+        }
+
+        let values = self.records.values();
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
@@ -86,7 +89,52 @@ where
     }
 }
 
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
+where
+    InsertStatement<T, &'a U, Op>: QueryFragment<Sqlite>,
+    T: Copy,
+    Op: Copy,
+{
+    fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
+        let mut result = 0;
+        for record in self.records {
+            result += InsertStatement::new(self.target, record, self.operator, self.returning)
+                .execute(conn)?;
+        }
+        Ok(result)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a Vec<U>, Op>
+where
+    InsertStatement<T, &'a [U], Op>: ExecuteDsl<SqliteConnection>,
+{
+    fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
+        InsertStatement::new(
+            self.target,
+            self.records.as_slice(),
+            self.operator,
+            self.returning,
+        ).execute(conn)
+    }
+}
+
 impl_query_id!(noop: InsertStatement<T, U, Op, Ret>);
+
+impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
+where
+    T: Table,
+    InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
+{
+    type SqlType = <Self::Query as Query>::SqlType;
+    type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
+
+    fn as_query(self) -> Self::Query {
+        self.returning(T::all_columns())
+    }
+}
 
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
@@ -95,27 +143,7 @@ where
     type SqlType = Ret::SqlType;
 }
 
-#[derive(Debug, Clone, Copy)]
-/// The result of calling `insert(records).into(some_table)` when `records` is
-/// a slice or a `Vec`. When calling methods from `ExecuteDsl` or `LoadDsl`.
-/// When the given slice is empty, this struct will not execute any queries.
-/// When the given slice is not empty, this will execute a single bulk insert
-/// on backends which support the `DEFAULT` keyword, and one query per record
-/// on backends which do not (SQLite).
-pub struct BatchInsertStatement<T, U, Op = Insert, Ret = NoReturningClause> {
-    operator: Op,
-    target: T,
-    records: U,
-    returning: Ret,
-}
-
-impl<T, U, Op, Ret> BatchInsertStatement<T, U, Op, Ret> {
-    fn into_insert_statement(self) -> InsertStatement<T, U, Op, Ret> {
-        InsertStatement::new(self.target, self.records, self.operator, self.returning)
-    }
-}
-
-impl<T, U, Op> BatchInsertStatement<T, U, Op> {
+impl<T, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.
     /// # Examples
     ///
@@ -150,98 +178,18 @@ impl<T, U, Op> BatchInsertStatement<T, U, Op> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
-    pub fn returning<E>(self, returns: E) -> BatchInsertStatement<T, U, Op, ReturningClause<E>>
+    pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     where
         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     {
-        BatchInsertStatement {
-            operator: self.operator,
-            target: self.target,
-            records: self.records,
-            returning: ReturningClause(returns),
-        }
+        InsertStatement::new(
+            self.target,
+            self.records,
+            self.operator,
+            ReturningClause(returns),
+        )
     }
 }
-
-impl<T, U, Op, Ret, Conn, DB> ExecuteDsl<Conn, DB> for BatchInsertStatement<T, U, Op, Ret>
-where
-    Conn: Connection<Backend = DB>,
-    DB: Backend,
-    U: CanInsertInSingleQuery<DB>,
-    InsertStatement<T, U, Op, Ret>: ExecuteDsl<Conn>,
-{
-    fn execute(self, conn: &Conn) -> QueryResult<usize> {
-        if self.records.rows_to_insert() == 0 {
-            Ok(0)
-        } else {
-            self.into_insert_statement().execute(conn)
-        }
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
-    for BatchInsertStatement<T, &'a [U], Op, Ret>
-where
-    InsertStatement<T, &'a U, Op, Ret>: ExecuteDsl<::sqlite::SqliteConnection>,
-    T: Copy,
-    Op: Copy,
-    Ret: Copy,
-{
-    fn execute(self, conn: &::sqlite::SqliteConnection) -> QueryResult<usize> {
-        let mut result = 0;
-        for record in self.records {
-            result += InsertStatement::new(self.target, record, self.operator, self.returning)
-                .execute(conn)?;
-        }
-        Ok(result)
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op, Ret> ExecuteDsl<::sqlite::SqliteConnection>
-    for BatchInsertStatement<T, &'a Vec<U>, Op, Ret>
-where
-    BatchInsertStatement<T, &'a [U], Op, Ret>: ExecuteDsl<::sqlite::SqliteConnection>,
-{
-    fn execute(self, conn: &::sqlite::SqliteConnection) -> QueryResult<usize> {
-        BatchInsertStatement {
-            records: &**self.records,
-            target: self.target,
-            operator: self.operator,
-            returning: self.returning,
-        }.execute(conn)
-    }
-}
-
-impl<T, U, V, Op, Ret, Conn> LoadQuery<Conn, V>
-    for BatchInsertStatement<T, U, Op, ReturningClause<Ret>>
-where
-    Conn: Connection,
-    U: CanInsertInSingleQuery<Conn::Backend>,
-    InsertStatement<T, U, Op, ReturningClause<Ret>>: LoadQuery<Conn, V>,
-{
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<V>> {
-        if self.records.rows_to_insert() == 0 {
-            Ok(Vec::new())
-        } else {
-            self.into_insert_statement().internal_load(conn)
-        }
-    }
-}
-
-impl<T, U, V, Op, Conn> LoadQuery<Conn, V> for BatchInsertStatement<T, U, Op>
-where
-    T: Table,
-    BatchInsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: LoadQuery<Conn, V>,
-{
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<V>> {
-        self.returning(T::all_columns()).internal_load(conn)
-    }
-}
-
-
-impl<T, U, Op, Ret, Conn> LoadDsl<Conn> for BatchInsertStatement<T, U, Op, Ret> {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Insert;
@@ -289,7 +237,7 @@ where
 #[doc(hidden)]
 pub struct DefaultValues;
 
-impl<'a, DB: Backend> CanInsertInSingleQuery<DB> for &'a DefaultValues {
+impl<DB: Backend> CanInsertInSingleQuery<DB> for DefaultValues {
     fn rows_to_insert(&self) -> usize {
         1
     }

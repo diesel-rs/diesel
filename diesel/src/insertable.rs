@@ -29,6 +29,16 @@ pub trait CanInsertInSingleQuery<DB: Backend> {
     fn rows_to_insert(&self) -> usize;
 }
 
+impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a T
+where
+    T: ?Sized + CanInsertInSingleQuery<DB>,
+    DB: Backend,
+{
+    fn rows_to_insert(&self) -> usize {
+        (*self).rows_to_insert()
+    }
+}
+
 pub trait InsertValues<T: Table, DB: Backend> {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()>;
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()>;
@@ -125,9 +135,10 @@ where
     }
 }
 
-impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a [T]
+impl<T, DB> CanInsertInSingleQuery<DB> for [T]
 where
     DB: Backend + SupportsDefaultKeyword,
+    T: CanInsertInSingleQuery<DB>,
 {
     fn rows_to_insert(&self) -> usize {
         self.len()
@@ -147,21 +158,34 @@ where
     }
 }
 
-impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a Vec<T>
+impl<T, DB> CanInsertInSingleQuery<DB> for Vec<T>
 where
     DB: Backend,
-    &'a [T]: CanInsertInSingleQuery<DB>,
+    [T]: CanInsertInSingleQuery<DB>,
 {
     fn rows_to_insert(&self) -> usize {
         self.as_slice().rows_to_insert()
     }
 }
 
-impl<'a, Lhs, Rhs, DB> CanInsertInSingleQuery<DB> for &'a Eq<Lhs, Rhs>
+impl<Lhs, Rhs, DB> CanInsertInSingleQuery<DB> for Eq<Lhs, Rhs>
 where
     DB: Backend,
 {
     fn rows_to_insert(&self) -> usize {
+        1
+    }
+}
+
+impl<T, DB> CanInsertInSingleQuery<DB> for Option<T>
+where
+    DB: Backend,
+    T: CanInsertInSingleQuery<DB>,
+{
+    fn rows_to_insert(&self) -> usize {
+        if let Some(ref value) = *self {
+            debug_assert_eq!(value.rows_to_insert(), 1);
+        }
         1
     }
 }

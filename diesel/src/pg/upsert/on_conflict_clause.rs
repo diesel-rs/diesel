@@ -51,7 +51,7 @@ where
     }
 }
 
-impl<'a, T> CanInsertInSingleQuery<Pg> for &'a OnConflictDoNothing<T>
+impl<T> CanInsertInSingleQuery<Pg> for OnConflictDoNothing<T>
 where
     T: CanInsertInSingleQuery<Pg>,
 {
@@ -80,8 +80,7 @@ where
     }
 }
 
-impl<'a, Records, Target, Action> CanInsertInSingleQuery<Pg>
-    for &'a OnConflict<Records, Target, Action>
+impl<Records, Target, Action> CanInsertInSingleQuery<Pg> for OnConflict<Records, Target, Action>
 where
     Records: CanInsertInSingleQuery<Pg>,
 {
