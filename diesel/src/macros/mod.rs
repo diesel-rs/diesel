@@ -654,7 +654,23 @@ macro_rules! table_body {
             /// table struct renamed to the module name. This is meant to be
             /// glob imported for functions which only deal with one table.
             pub mod dsl {
-                pub use super::columns::{$($column_name),+};
+                $(static_cond! {
+                    if $table_name == $column_name {
+                        compile_error!(concat!(
+                            "Column `",
+                            stringify!($column_name),
+                            "` cannot be named the same as its table.\n \
+                            You may use `#[sql_name = \"",
+                            stringify!($column_name),
+                            "\"]` to reference the table's `",
+                            stringify!($column_name),
+                            "` column. \n \
+                            Docs available at: `http://docs.diesel.rs/diesel/macro.table.html`\n"
+                        ));
+                    } else {
+                        pub use super::columns::{$column_name};
+                    }
+                })+
                 pub use super::table as $table_name;
             }
 
