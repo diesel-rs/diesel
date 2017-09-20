@@ -26,7 +26,7 @@ Guides on more specific features are coming soon.
 ## Code of conduct
 
 Anyone who interacts with Diesel in any space, including but not limited to
-this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/master/code_of_conduct.md)
+this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/master/code_of_conduct.md).
 
 ## License
 
