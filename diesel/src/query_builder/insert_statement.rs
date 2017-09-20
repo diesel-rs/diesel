@@ -66,7 +66,9 @@ where
         out.unsafe_to_cache_prepared();
 
         if self.records.rows_to_insert() == 0 {
-            out.push_sql("SELECT 1 WHERE 1=0");
+            out.push_sql("SELECT 1 FROM ");
+            self.target.from_clause().walk_ast(out.reborrow())?;
+            out.push_sql(" WHERE 1=0");
             return Ok(());
         }
 
