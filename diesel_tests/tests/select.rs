@@ -150,8 +150,8 @@ fn selecting_columns_with_different_definition_order() {
     ).execute(&connection)
         .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
-    insert(&NewUser::new("Sean", Some("black")))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&NewUser::new("Sean", Some("black")))
         .execute(&connection)
         .unwrap();
     let user_from_select = users::table.first(&connection);

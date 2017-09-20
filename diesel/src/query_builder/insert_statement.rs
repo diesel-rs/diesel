@@ -2,6 +2,8 @@ use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
+#[cfg(feature = "mysql")]
+use mysql::Mysql;
 use query_builder::*;
 #[cfg(feature = "sqlite")]
 use query_dsl::ExecuteDsl;
@@ -11,18 +13,79 @@ use result::QueryResult;
 use sqlite::{Sqlite, SqliteConnection};
 use super::returning_clause::*;
 
-/// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
-/// is call `into`.
-#[derive(Debug, Copy, Clone)]
+/// The structure returned by [`insert_into`](../../fn.insert_into.html).
+#[derive(Debug, Clone, Copy)]
 pub struct IncompleteInsertStatement<T, Op> {
-    records: T,
+    target: T,
     operator: Op,
 }
 
 impl<T, Op> IncompleteInsertStatement<T, Op> {
+    pub(crate) fn new(target: T, operator: Op) -> Self {
+        IncompleteInsertStatement { target, operator }
+    }
+
+    /// Inserts `DEFAULT VALUES` into the targeted table.
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users (name) {
+    /// #         name -> Text,
+    /// #         hair_color -> Text,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use diesel::insert_into;
+    /// #     use users::dsl::*;
+    /// #     let connection = connection_no_data();
+    /// connection.execute("CREATE TABLE users (
+    ///     name TEXT NOT NULL DEFAULT 'Sean',
+    ///     hair_color TEXT NOT NULL DEFAULT 'Green'
+    /// )").unwrap();
+    ///
+    /// insert_into(users)
+    ///     .default_values()
+    ///     .execute(&connection)
+    ///     .unwrap();
+    ///
+    /// let expected_data = vec![
+    ///     ("Sean".to_string(), "Green".to_string()),
+    /// ];
+    /// assert_eq!(Ok(expected_data), users.load(&connection));
+    /// # }
+    /// ```
+    pub fn default_values(self) -> InsertStatement<T, &'static DefaultValues, Op> {
+        static STATIC_DEFAULT_VALUES: &'static DefaultValues = &DefaultValues;
+        self.values(STATIC_DEFAULT_VALUES)
+    }
+
+    /// Inserts the given values into the table passed to `insert_into`.
+    ///
+    /// See the documentation of [`insert_into`](../fn.insert_into.html) for
+    /// usage examples.
+    pub fn values<U: ?Sized>(self, records: &U) -> InsertStatement<T, &U, Op> {
+        InsertStatement::new(self.target, records, self.operator, NoReturningClause)
+    }
+}
+
+/// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
+/// is call `into`.
+#[derive(Debug, Copy, Clone)]
+#[cfg(feature = "with-deprecated")]
+pub struct DeprecatedIncompleteInsertStatement<T, Op> {
+    records: T,
+    operator: Op,
+}
+
+#[cfg(feature = "with-deprecated")]
+impl<T, Op> DeprecatedIncompleteInsertStatement<T, Op> {
     #[doc(hidden)]
     pub fn new(records: T, operator: Op) -> Self {
-        IncompleteInsertStatement {
+        DeprecatedIncompleteInsertStatement {
             records: records,
             operator: operator,
         }
@@ -177,8 +240,8 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     ///     NewUser { name: "Jimmy".to_string(), },
     /// ];
     ///
-    /// let inserted_names = diesel::insert(&new_users)
-    ///     .into(users)
+    /// let inserted_names = diesel::insert_into(users)
+    ///     .values(&new_users)
     ///     .returning(name)
     ///     .get_results(&connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
@@ -200,6 +263,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct Insert;
 
 impl<DB: Backend> QueryFragment<DB> for Insert {
@@ -210,6 +274,28 @@ impl<DB: Backend> QueryFragment<DB> for Insert {
 }
 
 impl_query_id!(Insert);
+
+#[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
+pub struct Replace;
+
+#[cfg(feature = "sqlite")]
+impl QueryFragment<Sqlite> for Replace {
+    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+        out.push_sql("REPLACE");
+        Ok(())
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl QueryFragment<Mysql> for Replace {
+    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+        out.push_sql("REPLACE");
+        Ok(())
+    }
+}
+
+impl_query_id!(Replace);
 
 /// Marker trait to indicate that no additional operations have been added
 /// to a record for insert. Used to prevent things like

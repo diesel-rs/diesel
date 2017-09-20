@@ -30,8 +30,8 @@ pub fn create_post(conn: &SqliteConnection, title: &str, body: &str) -> usize {
         body: body,
     };
 
-    diesel::insert(&new_post)
-        .into(posts::table)
+    diesel::insert_into(posts::table)
+        .values(&new_post)
         .execute(conn)
         .expect("Error saving new post")
 }

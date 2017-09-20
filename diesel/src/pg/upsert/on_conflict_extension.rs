@@ -16,19 +16,21 @@ pub trait OnConflictExtension {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// use self::diesel::pg::upsert::*;
+    /// #     use users::dsl::*;
+    /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Sean", };
     ///
-    /// let inserted_row_count = diesel::insert(&user.on_conflict_do_nothing())
-    ///     .into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&user.on_conflict_do_nothing())
+    ///     .execute(&conn);
     /// assert_eq!(Ok(1), inserted_row_count);
     ///
-    /// let inserted_row_count = diesel::insert(&user.on_conflict_do_nothing())
-    ///     .into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&user.on_conflict_do_nothing())
+    ///     .execute(&conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
     /// ```
@@ -41,15 +43,16 @@ pub trait OnConflictExtension {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// use self::diesel::pg::upsert::*;
+    /// #     use users::dsl::*;
+    /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Sean", };
     ///
-    /// let inserted_row_count = diesel::insert(&vec![user, user].on_conflict_do_nothing())
-    ///     .into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&vec![user, user].on_conflict_do_nothing())
+    ///     .execute(&conn);
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
     /// ```
@@ -62,16 +65,17 @@ pub trait OnConflictExtension {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// use self::diesel::pg::upsert::*;
+    /// #     use users::dsl::*;
+    /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Sean", };
     ///
     /// let new_users: &[User] = &[user, user];
-    /// let inserted_row_count = diesel::insert(&new_users.on_conflict_do_nothing())
-    ///     .into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&new_users.on_conflict_do_nothing())
+    ///     .execute(&conn);
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
     /// ```
@@ -103,8 +107,8 @@ pub trait OnConflictExtension {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// use self::diesel::pg::upsert::*;
+    /// #     use users::dsl::*;
+    /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
@@ -113,16 +117,20 @@ pub trait OnConflictExtension {
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
     ///
-    /// assert_eq!(Ok(1), diesel::insert(&user).into(users).execute(&conn));
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
     ///
-    /// let inserted_row_count = diesel::insert(
-    ///     &same_name_different_id.on_conflict(name, do_nothing())
-    /// ).into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(
+    ///         &same_name_different_id.on_conflict(name, do_nothing())
+    ///     )
+    ///     .execute(&conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     ///
-    /// let pk_conflict_result = diesel::insert(
-    ///     &same_id_different_name.on_conflict(name, do_nothing())
-    /// ).into(users).execute(&conn);
+    /// let pk_conflict_result = diesel::insert_into(users)
+    ///     .values(
+    ///         &same_id_different_name.on_conflict(name, do_nothing())
+    ///     )
+    ///     .execute(&conn);
     /// assert!(pk_conflict_result.is_err());
     /// # }
     /// ```
@@ -151,8 +159,8 @@ pub trait OnConflictExtension {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
-    /// use self::diesel::pg::upsert::*;
+    /// #     use users::dsl::*;
+    /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("DROP TABLE users").unwrap();
@@ -162,16 +170,20 @@ pub trait OnConflictExtension {
     /// let same_name_different_hair_color = User { id: 2, name: "Sean", hair_color: "brown" };
     /// let same_same_name_same_hair_color = User { id: 3, name: "Sean", hair_color: "black" };
     ///
-    /// assert_eq!(Ok(1), diesel::insert(&user).into(users).execute(&conn));
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
     ///
-    /// let inserted_row_count = diesel::insert(
-    ///     &same_name_different_hair_color.on_conflict((name, hair_color), do_nothing())
-    /// ).into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(
+    ///         &same_name_different_hair_color.on_conflict((name, hair_color), do_nothing())
+    ///     )
+    ///     .execute(&conn);
     /// assert_eq!(Ok(1), inserted_row_count);
     ///
-    /// let inserted_row_count = diesel::insert(
-    ///     &same_same_name_same_hair_color.on_conflict((name, hair_color), do_nothing())
-    /// ).into(users).execute(&conn);
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(
+    ///         &same_same_name_same_hair_color.on_conflict((name, hair_color), do_nothing())
+    ///     )
+    ///     .execute(&conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
     /// ```

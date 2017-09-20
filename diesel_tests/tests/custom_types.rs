@@ -103,8 +103,8 @@ fn custom_types_round_trip() {
         )
         .unwrap();
 
-    let inserted = insert(&data)
-        .into(custom_types::table)
+    let inserted = insert_into(custom_types::table)
+        .values(&data)
         .get_results(&connection)
         .unwrap();
     assert_eq!(data, inserted);

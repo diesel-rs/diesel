@@ -18,8 +18,8 @@ mod using_infer_schema {
     #[test]
     fn custom_schemas_are_loaded_by_infer_schema() {
         let conn = connection();
-        insert(&NewUser { id: 1 })
-            .into(users::table)
+        insert_into(users::table)
+            .values(&NewUser { id: 1 })
             .execute(&conn)
             .unwrap();
         let users = users::table.select(users::id).load(&conn);
@@ -47,8 +47,8 @@ mod using_infer_table_from_schema {
     #[test]
     fn custom_schemas_are_loaded_by_infer_table_from_schema() {
         let conn = connection();
-        insert(&NewUser { id: 1 })
-            .into(users::table)
+        insert_into(users::table)
+            .values(&NewUser { id: 1 })
             .execute(&conn)
             .unwrap();
         let users = users::table.select(users::id).load(&conn);
@@ -77,10 +77,11 @@ mod using_infer_table_from_schema_with_default_schema {
     #[test]
     fn custom_schemas_are_loaded_by_infer_table_from_schema() {
         let conn = connection();
-        insert(&NewUser {
-            id: 1,
-            name: "Sean",
-        }).into(users::table)
+        insert_into(users::table)
+            .values(&NewUser {
+                id: 1,
+                name: "Sean",
+            })
             .execute(&conn)
             .unwrap();
         let users = users::table.select(users::id).load(&conn);

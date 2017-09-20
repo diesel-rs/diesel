@@ -22,7 +22,7 @@ fn query_which_cannot_be_transmitted_gives_proper_error_message() {
 
     // Create a query with 90000 binds, 2 binds per row
     let data: &[NewComment<'static>] = &[NewComment(1, "hi"); 45_000];
-    let query_with_to_many_binds = insert(data).into(comments);
+    let query_with_to_many_binds = insert_into(comments).values(data);
 
     match query_with_to_many_binds.execute(&connection()) {
         Ok(_) => panic!(

@@ -19,14 +19,14 @@ table! {
 fn main() {
     let conn = PgConnection::establish("").unwrap();
 
-    insert(&posts::id.eq(1))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&posts::id.eq(1))
         .execute(&conn)
         //~^ ERROR E0599
         .unwrap();
 
-    insert(&(posts::id.eq(1), users::id.eq(2)))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&(posts::id.eq(1), users::id.eq(2)))
         .execute(&conn)
         //~^ ERROR E0599
         .unwrap();

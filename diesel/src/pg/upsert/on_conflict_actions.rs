@@ -33,19 +33,21 @@ pub fn do_nothing() -> DoNothing {
 /// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
-/// use self::diesel::pg::upsert::*;
+/// #     use users::dsl::*;
+/// use diesel::pg::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
 /// let user = User { id: 1, name: "Pascal" };
 /// let user2 = User { id: 1, name: "Sean" };
 ///
-/// assert_eq!(Ok(1), diesel::insert(&user).into(users).execute(&conn));
+/// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
 ///
-/// let insert_count = diesel::insert(
-///     &user2.on_conflict(id, do_update().set(name.eq("I DONT KNOW ANYMORE")))
-/// ).into(users).execute(&conn);
+/// let insert_count = diesel::insert_into(users)
+///     .values(
+///         &user2.on_conflict(id, do_update().set(name.eq("I DONT KNOW ANYMORE")))
+///     )
+///     .execute(&conn);
 /// assert_eq!(Ok(1), insert_count);
 ///
 /// let users_in_db = users.load(&conn);
@@ -61,19 +63,21 @@ pub fn do_nothing() -> DoNothing {
 /// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
-/// use self::diesel::pg::upsert::*;
+/// #     use users::dsl::*;
+/// use diesel::pg::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
 /// let user = User { id: 1, name: "Pascal" };
 /// let user2 = User { id: 1, name: "Sean" };
 ///
-/// assert_eq!(Ok(1), diesel::insert(&user).into(users).execute(&conn));
+/// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
 ///
-/// let insert_count = diesel::insert(
-///     &user2.on_conflict(id, do_update().set(&user2))
-/// ).into(users).execute(&conn);
+/// let insert_count = diesel::insert_into(users)
+///     .values(
+///         &user2.on_conflict(id, do_update().set(&user2))
+///     )
+///     .execute(&conn);
 /// assert_eq!(Ok(1), insert_count);
 ///
 /// let users_in_db = users.load(&conn);
@@ -89,8 +93,8 @@ pub fn do_nothing() -> DoNothing {
 /// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
-/// use self::diesel::pg::upsert::*;
+/// #     use users::dsl::*;
+/// use diesel::pg::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
@@ -98,11 +102,14 @@ pub fn do_nothing() -> DoNothing {
 /// let user2 = User { id: 1, name: "Sean" };
 /// let user3 = User { id: 2, name: "Tess" };
 ///
-/// assert_eq!(Ok(1), diesel::insert(&user).into(users).execute(&conn));
+/// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
 ///
-/// let insert_count = diesel::insert(&vec![user2, user3]
-///     .on_conflict(id, do_update().set(name.eq(excluded(name))))
-/// ).into(users).execute(&conn);
+/// let insert_count = diesel::insert_into(users)
+///     .values(
+///         &vec![user2, user3]
+///             .on_conflict(id, do_update().set(name.eq(excluded(name))))
+///     )
+///     .execute(&conn);
 /// assert_eq!(Ok(2), insert_count);
 ///
 /// let users_in_db = users.load(&conn);

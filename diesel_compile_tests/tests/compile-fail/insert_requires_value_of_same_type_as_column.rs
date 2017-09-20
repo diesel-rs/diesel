@@ -16,6 +16,7 @@ fn main() {
     use users::dsl::*;
     let conn = PgConnection::establish("").unwrap();
 
-    insert(&name.eq(1));
-    //~^ ERROR E0277
+    insert_into(users)
+        .values(&name.eq(1));
+        //~^ ERROR E0277
 }

@@ -16,8 +16,8 @@ fn main() {
     use users::dsl::*;
     let conn = PgConnection::establish("").unwrap();
 
-    insert(&name.eq(hair_color))
-        .into(users)
+    insert_into(users)
+        .values(&name.eq(hair_color))
         .execute(&conn)
         //~^ ERROR E0599
         .unwrap();

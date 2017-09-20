@@ -3,8 +3,6 @@ use query_builder::QueryBuilder;
 use result::QueryResult;
 
 pub mod functions;
-#[doc(hidden)]
-pub mod nodes;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]

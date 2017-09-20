@@ -1,4 +1,3 @@
-use diesel::*;
 use super::{posts, User};
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]

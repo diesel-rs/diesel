@@ -26,8 +26,8 @@ fn main() {
     query.returning(name);
     //~^ ERROR: no method named `returning`
 
-    let query = insert(&NewUser("Hello".into()))
-        .into(users)
+    let query = insert_into(users)
+        .values(&NewUser("Hello".into()))
         .returning(id);
     query.returning(name);
     //~^ ERROR: no method named `returning`

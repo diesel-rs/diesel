@@ -28,25 +28,25 @@ fn main() {
     use self::users::dsl::*;
     let connection = PgConnection::establish("postgres://localhost").unwrap();
 
-    let valid_insert = insert(&NewUser("Sean").on_conflict(id, do_nothing())).into(users).execute(&connection);
+    let valid_insert = insert_into(users).values(&NewUser("Sean").on_conflict(id, do_nothing())).execute(&connection);
     // Sanity check, no error
 
     // Using UFCS to get a more specific error message
     let column_from_other_table = <_ as ExecuteDsl<_>>::execute(
-        //~^ ERROR E0277
-        insert(&NewUser("Sean").on_conflict(posts::id, do_nothing())).into(users),
+        //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
+        insert_into(users).values(&NewUser("Sean").on_conflict(posts::id, do_nothing())),
         &connection,
     );
 
     let expression_using_column_from_other_table = <_ as ExecuteDsl<_>>::execute(
         //~^ ERROR E0277
-        insert(&NewUser("Sean").on_conflict(lower(posts::title), do_nothing())).into(users),
+        insert_into(users).values(&NewUser("Sean").on_conflict(lower(posts::title), do_nothing())),
         &connection,
     );
 
     let random_non_expression = <_ as ExecuteDsl<_>>::execute(
         //~^ ERROR E0277
-        insert(&NewUser("Sean").on_conflict("id", do_nothing())).into(users),
+        insert_into(users).values(&NewUser("Sean").on_conflict("id", do_nothing())),
         &connection,
     );
 }

@@ -220,7 +220,7 @@ error[E0277]: the trait bound `&diesel_demo::models::NewUser<'_>: diesel::query_
 ```
 
 In the above error, the compiler is telling us there is an unsatisfied trait bound from `IntoInsertStatement`.
-`diesel::insert()` returns an `IncompleteInsertStatement`,
+`diesel::insert()` returns an `DeprecatedIncompleteInsertStatement`,
 which implements `into()`.
 `into()` specifies the table the `Insertable` data should be passed to.
 If your struct isn't `Insertable`, Rust will get confused and ask you implement this trait.

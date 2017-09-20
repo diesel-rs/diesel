@@ -36,8 +36,8 @@ where
 
     fn insert_new_migration(&self, ver: &str) -> QueryResult<()> {
         try!(
-            ::insert(&NewMigration(ver))
-                .into(__diesel_schema_migrations)
+            ::insert_into(__diesel_schema_migrations)
+                .values(&NewMigration(ver))
                 .execute(self)
         );
         Ok(())

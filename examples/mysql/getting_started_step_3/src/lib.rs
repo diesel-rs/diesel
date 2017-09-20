@@ -29,8 +29,8 @@ pub fn create_post(conn: &MysqlConnection, title: &str, body: &str) -> Post {
         body: body,
     };
 
-    diesel::insert(&new_post)
-        .into(posts)
+    diesel::insert_into(posts)
+        .values(&new_post)
         .execute(conn)
         .expect("Error saving new post");
 

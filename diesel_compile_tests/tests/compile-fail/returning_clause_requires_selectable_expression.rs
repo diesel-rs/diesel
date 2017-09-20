@@ -31,8 +31,8 @@ fn main() {
         .returning(non_users::columns::noname);
     //~^ ERROR SelectableExpression
 
-    insert(&NewUser("Hello".into()))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
     //~^ ERROR SelectableExpression
 

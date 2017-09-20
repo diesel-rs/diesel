@@ -11,8 +11,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `.for_update()` method has been added to select statements, allowing
   construction of `SELECT ... FOR UPDATE`.
 
-* Added `insert(&default_values())` as a replacement for
+* Added `insert_into(table).default_values()` as a replacement for
   `insert_default_values()`
+
+* Added `insert_into(table).values(values)` as a replacement for
+  `insert(values).into(table)`.
+
+* Added support for MySQL's `REPLACE INTO` as `replace_into(table)`.
+
+* Added `replace_into(table).values(values)` as a replacement for
+  `insert_or_replace(values).into(table)`.
 
 ### Changed
 
@@ -21,7 +29,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Deprecated
 
-* Deprecated `insert_default_values()` in favor of `insert(&default_values())`
+* Deprecated `insert_default_values()` in favor of
+  `insert_into(table).default_values()`
+
+* Deprecated `insert(values).into(table)` in favor of
+  `insert_into(table).values(values)`.
+
+* Deprecated `insert_or_replace(values).into(table)` in favor of
+  `replace_into(table).values(values)`.
 
 ### Removed
 

@@ -62,7 +62,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///     let conn = establish_connection();
     ///     let _ = conn.transaction::<_, Error, _>(|| {
     ///         let new_user = NewUser { name: "Ruby".into() };
-    ///         diesel::insert(&new_user).into(users::table).execute(&conn)?;
+    ///         diesel::insert_into(users::table).values(&new_user).execute(&conn)?;
     ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
     ///             User { id: 1, name: "Sean".into() },
     ///             User { id: 2, name: "Tess".into() },
@@ -74,7 +74,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///
     ///     let _ = conn.transaction::<(), Error, _>(|| {
     ///         let new_user = NewUser { name: "Pascal".into() };
-    ///         diesel::insert(&new_user).into(users::table).execute(&conn)?;
+    ///         diesel::insert_into(users::table).values(&new_user).execute(&conn)?;
     ///
     ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
     ///             User { id: 1, name: "Sean".into() },

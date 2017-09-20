@@ -99,7 +99,7 @@ pub trait FirstDsl<Conn>: LimitDsl + LoadDsl<Conn> {
     /// #   let connection = establish_connection();
     /// let user1 = NewUser { name: "Sean".into() };
     /// let user2 = NewUser { name: "Pascal".into() };
-    /// diesel::insert(&vec![user1, user2]).into(users::table).execute(&connection).unwrap();
+    /// diesel::insert_into(users::table).values(&vec![user1, user2]).execute(&connection).unwrap();
     ///
     /// let user = users::table.order(users::id.asc()).first(&connection);
     /// assert_eq!(Ok(User { id: 1, name: "Sean".into() }), user);

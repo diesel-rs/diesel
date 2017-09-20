@@ -216,8 +216,8 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let new_post = sean.new_post("Hello", Some("world"));
-    insert(&new_post)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_post)
         .execute(&connection)
         .unwrap();
 
@@ -250,8 +250,8 @@ fn can_update_with_struct_containing_single_field() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let new_post = sean.new_post("Hello", Some("world"));
-    insert(&new_post)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_post)
         .execute(&connection)
         .unwrap();
 
@@ -285,8 +285,8 @@ fn struct_with_option_fields_treated_as_null() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let new_post = sean.new_post("Hello", Some("world"));
-    insert(&new_post)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_post)
         .execute(&connection)
         .unwrap();
     let post = posts::table
@@ -340,10 +340,11 @@ fn upsert_with_no_changes_executes_do_nothing() {
     }
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let result = insert(
-        &User::new(1, "Sean")
-            .on_conflict(users::id, do_update().set(&Changes { hair_color: None })),
-    ).into(users::table)
+    let result = insert_into(users::table)
+        .values(
+            &User::new(1, "Sean")
+                .on_conflict(users::id, do_update().set(&Changes { hair_color: None })),
+        )
         .execute(&connection);
 
     assert_eq!(Ok(0), result);
@@ -371,8 +372,8 @@ fn upsert_with_sql_literal_for_target() {
     ];
     let conflict_target = sql::<Text>("(name) WHERE name != 'Tess'");
     let conflict_action = do_update().set(hair_color.eq(excluded(hair_color)));
-    insert(&new_users.on_conflict(conflict_target, conflict_action))
-        .into(users)
+    insert_into(users)
+        .values(&new_users.on_conflict(conflict_target, conflict_action))
         .execute(&connection)
         .unwrap();
 
