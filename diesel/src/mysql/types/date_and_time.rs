@@ -229,9 +229,7 @@ mod tests {
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms(23, 37, 4);
-        let query = select(
-            sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven),
-        );
+        let query = select(sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -258,15 +256,11 @@ mod tests {
     fn dates_encode_correctly() {
         let connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
-        let query = select(
-            sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000),
-        );
+        let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000));
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
-        let query = select(
-            sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018),
-        );
+        let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -288,9 +282,7 @@ mod tests {
         );
 
         connection
-            .execute(
-                "SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))",
-            )
+            .execute("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))")
             .unwrap();
         let query = select(sql::<Date>("CAST('0000-00-00' AS DATE)"));
         assert!(query.get_result::<NaiveDate>(&connection).is_err());

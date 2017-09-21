@@ -40,7 +40,7 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2017-08-31
+  - rust: nightly-2017-09-20
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
@@ -49,12 +49,12 @@ matrix:
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
   include:
-  - rust: nightly-2017-08-31
+  - rust: nightly-2017-09-20
     env: RUSTFMT=YESPLEASE
     script:
     - |
       if ! [ -x "$(command -v rustfmt)" ]; then
-        cargo install rustfmt-nightly --vers 0.2.5
+        cargo install rustfmt-nightly --vers 0.2.7
       fi
     - cargo fmt --all -- --write-mode=diff
 env:

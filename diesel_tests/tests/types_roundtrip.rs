@@ -39,7 +39,9 @@ where
         } else {
             true
         },
-        Err(Error::DatabaseError(_, ref e)) if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" => {
+        Err(Error::DatabaseError(_, ref e))
+            if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
+        {
             true
         }
         Err(e) => panic!("Query failed: {:?}", e),
@@ -94,7 +96,12 @@ mod sqlite_types {
     test_round_trip!(timestamp_roundtrips, Timestamp, String);
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
-    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
+    test_round_trip!(
+        naive_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_naive_datetime
+    );
 }
 
 #[cfg(feature = "postgres")]
@@ -111,28 +118,82 @@ mod pg_types {
     test_round_trip!(interval_roundtrips, Interval, PgInterval);
     test_round_trip!(numeric_roundtrips, Numeric, PgNumeric);
     test_round_trip!(money_roundtrips, Money, PgMoney);
-    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
+    test_round_trip!(
+        naive_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_naive_datetime
+    );
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
-    test_round_trip!(naive_datetime_roundtrips_tz, Timestamptz, (i64, u32), mk_naive_datetime);
-    test_round_trip!(uuid_roundtrips, Uuid, (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)), mk_uuid);
+    test_round_trip!(
+        naive_datetime_roundtrips_tz,
+        Timestamptz,
+        (i64, u32),
+        mk_naive_datetime
+    );
+    test_round_trip!(
+        uuid_roundtrips,
+        Uuid,
+        (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)),
+        mk_uuid
+    );
     test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
     test_round_trip!(array_of_dynamic_size_roundtrips, Array<Text>, Vec<String>);
-    test_round_trip!(array_of_nullable_roundtrips, Array<Nullable<Text>>, Vec<Option<String>>);
-    test_round_trip!(macaddr_roundtrips, MacAddr, (u8, u8, u8, u8, u8, u8), mk_macaddr);
+    test_round_trip!(
+        array_of_nullable_roundtrips,
+        Array<Nullable<Text>>,
+        Vec<Option<String>>
+    );
+    test_round_trip!(
+        macaddr_roundtrips,
+        MacAddr,
+        (u8, u8, u8, u8, u8, u8),
+        mk_macaddr
+    );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
-    test_round_trip!(cidr_v6_roundtrips, Cidr, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
+    test_round_trip!(
+        cidr_v6_roundtrips,
+        Cidr,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6
+    );
     test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
-    test_round_trip!(inet_v6_roundtrips, Inet, (u16, u16, u16, u16, u16, u16, u16, u16), mk_ipv6);
+    test_round_trip!(
+        inet_v6_roundtrips,
+        Inet,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6
+    );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(int4range_roundtrips, Range<Int4>, (i32, i32), mk_bounds);
     test_round_trip!(int8range_roundtrips, Range<Int8>, (i64, i64), mk_bounds);
-    test_round_trip!(daterange_roundtrips, Range<Date>, (u32, u32), mk_date_bounds);
-    test_round_trip!(numrange_roundtrips, Range<Numeric>, (i64, u64, i64, u64), mk_num_bounds);
-    test_round_trip!(tsrange_roundtrips, Range<Timestamp>, (i64, u32, i64, u32), mk_ts_bounds);
-    test_round_trip!(tstzrange_roundtrips, Range<Timestamptz>, (i64, u32, i64, u32), mk_tstz_bounds);
+    test_round_trip!(
+        daterange_roundtrips,
+        Range<Date>,
+        (u32, u32),
+        mk_date_bounds
+    );
+    test_round_trip!(
+        numrange_roundtrips,
+        Range<Numeric>,
+        (i64, u64, i64, u64),
+        mk_num_bounds
+    );
+    test_round_trip!(
+        tsrange_roundtrips,
+        Range<Timestamp>,
+        (i64, u32, i64, u32),
+        mk_ts_bounds
+    );
+    test_round_trip!(
+        tstzrange_roundtrips,
+        Range<Timestamptz>,
+        (i64, u32, i64, u32),
+        mk_tstz_bounds
+    );
 
 
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
@@ -209,8 +270,18 @@ mod mysql_types {
     use super::*;
 
     test_round_trip!(i8_roundtrips, Tinyint, i8);
-    test_round_trip!(naive_datetime_roundtrips, Timestamp, (i64, u32), mk_naive_datetime);
-    test_round_trip!(naive_datetime_roundtrips_to_datetime, Datetime, (i64, u32), mk_naive_datetime);
+    test_round_trip!(
+        naive_datetime_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_naive_datetime
+    );
+    test_round_trip!(
+        naive_datetime_roundtrips_to_datetime,
+        Datetime,
+        (i64, u32),
+        mk_naive_datetime
+    );
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
@@ -277,5 +348,10 @@ mod unstable_types {
         }
     }
 
-    test_round_trip!(systemtime_roundtrips, Timestamp, SystemTime, strip_nanosecond_precision);
+    test_round_trip!(
+        systemtime_roundtrips,
+        Timestamp,
+        SystemTime,
+        strip_nanosecond_precision
+    );
 }

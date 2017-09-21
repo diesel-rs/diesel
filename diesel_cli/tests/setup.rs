@@ -54,9 +54,7 @@ fn setup_creates_default_migration_file() {
 #[test]
 #[cfg(feature = "postgres")]
 fn setup_creates_default_migration_file_if_project_is_otherwise_setup() {
-    let p = project(
-        "setup_creates_default_migration_file_if_project_is_otherwise_setup",
-    ).build();
+    let p = project("setup_creates_default_migration_file_if_project_is_otherwise_setup").build();
 
     let initial_migration_path =
         Path::new("migrations").join("00000000000000_diesel_initial_setup");
@@ -113,9 +111,7 @@ fn setup_doesnt_run_migrations_if_schema_table_exists() {
         .folder("migrations")
         .build();
     let db = database(&p.database_url()).create();
-    db.execute(
-        "CREATE TABLE __diesel_schema_migrations ( version INTEGER )",
-    );
+    db.execute("CREATE TABLE __diesel_schema_migrations ( version INTEGER )");
 
     p.create_migration(
         "12345_create_users_table",

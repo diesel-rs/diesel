@@ -238,9 +238,7 @@ fn test_sum_for_nullable() {
 
     let connection = connection();
     connection
-        .execute(
-            "INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)",
-        )
+        .execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)")
         .unwrap();
     let source = numbers.select(sum(n));
 
@@ -278,9 +276,7 @@ fn test_avg_for_nullable() {
 
     let connection = connection();
     connection
-        .execute(
-            "INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)",
-        )
+        .execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)")
         .unwrap();
     let source = numbers.select(avg(n));
 

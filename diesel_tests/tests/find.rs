@@ -8,9 +8,7 @@ fn find() {
     let connection = connection();
 
     connection
-        .execute(
-            "INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')",
-        )
+        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
 
     assert_eq!(Ok(User::new(1, "Sean")), users.find(1).first(&connection));
@@ -33,9 +31,7 @@ fn find_with_non_serial_pk() {
 
     let connection = connection();
     connection
-        .execute(
-            "INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')",
-        )
+        .execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     assert_eq!(

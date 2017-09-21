@@ -6,9 +6,8 @@ fn ci_text_exists_and_coerces_from_text() {
     use schema::citext_table::dsl::*;
 
     let conn = connection();
-    conn.execute(
-        "INSERT INTO citext_table (citext_field) VALUES ('foo'::citext), ('bar'::citext)",
-    ).unwrap();
+    conn.execute("INSERT INTO citext_table (citext_field) VALUES ('foo'::citext), ('bar'::citext)")
+        .unwrap();
     let data = citext_table
         .filter(citext_field.eq("foo"))
         .select(citext_field)

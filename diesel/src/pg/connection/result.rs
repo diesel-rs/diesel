@@ -83,8 +83,8 @@ impl PgResult {
 
     pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
-            0 !=
-                PQgetisnull(
+            0
+                != PQgetisnull(
                     self.internal_result.as_ptr(),
                     row_idx as libc::c_int,
                     col_idx as libc::c_int,

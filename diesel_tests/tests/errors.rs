@@ -39,7 +39,10 @@ fn unique_constraints_report_correct_constraint_name() {
             assert_eq!(None, e.column_name());
             assert_eq!(Some("users_name"), e.constraint_name());
         }
-        _ => panic!("{:?} did not match Err(DatabaseError(UniqueViolation, e))", failure),
+        _ => panic!(
+            "{:?} did not match Err(DatabaseError(UniqueViolation, e))",
+            failure
+        ),
     };
 }
 
@@ -93,6 +96,9 @@ fn foreign_key_violation_correct_constraint_name() {
             assert_eq!(None, e.column_name());
             assert_eq!(Some("fk_tests_fk_id_fkey"), e.constraint_name());
         }
-        _ => panic!("{:?} did not match Err(DatabaseError(ForeignKeyViolation, e))", failure),
+        _ => panic!(
+            "{:?} did not match Err(DatabaseError(ForeignKeyViolation, e))",
+            failure
+        ),
     }
 }

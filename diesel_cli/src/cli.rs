@@ -17,19 +17,16 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
-        .subcommand(
-            SubCommand::with_name("run").about("Runs all pending migrations"),
-        )
-        .subcommand(
-            SubCommand::with_name("revert").about("Reverts the latest run migration"),
-        )
+        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
+        .subcommand(SubCommand::with_name("revert").about("Reverts the latest run migration"))
         .subcommand(SubCommand::with_name("redo").about(
             "Reverts and re-runs the latest migration. Useful \
              for testing that a migration can in fact be reverted.",
         ))
-        .subcommand(SubCommand::with_name("list").about(
-            "Lists all available migrations, marking those that have been applied.",
-        ))
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("Lists all available migrations, marking those that have been applied."),
+        )
         .subcommand(
             SubCommand::with_name("pending")
                 .about("Returns true if there are any pending migrations."),
@@ -68,9 +65,7 @@ pub fn build_cli() -> App<'static, 'static> {
     let database_subcommand = SubCommand::with_name("database")
         .alias("db")
         .arg(migration_dir_arg())
-        .about(
-            "A group of commands for setting up and resetting your database.",
-        )
+        .about("A group of commands for setting up and resetting your database.")
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(SubCommand::with_name("setup").about(
             "Creates the database specified in your DATABASE_URL, \

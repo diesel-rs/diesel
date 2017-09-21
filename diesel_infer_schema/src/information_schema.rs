@@ -339,9 +339,7 @@ mod tests {
             .execute("CREATE SCHEMA other_test_schema")
             .unwrap();
         connection
-            .execute(
-                "CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)",
-            )
+            .execute("CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)")
             .unwrap();
 
         let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
@@ -388,9 +386,7 @@ mod tests {
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
-            .execute(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)",
-            )
+            .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)")
             .unwrap();
         connection.execute("CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))").unwrap();
 
@@ -413,9 +409,7 @@ mod tests {
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)").unwrap();
         connection
-            .execute(
-                "CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)",
-            )
+            .execute("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)")
             .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");

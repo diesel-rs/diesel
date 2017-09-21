@@ -514,9 +514,7 @@ fn selecting_four_tables_deep() {
     } = test_data;
 
     let data = users::table
-        .inner_join(
-            posts::table.inner_join(comments::table.inner_join(likes::table)),
-        )
+        .inner_join(posts::table.inner_join(comments::table.inner_join(likes::table)))
         .order((users::id, posts::id, comments::id))
         .load(&connection);
     let expected = vec![
@@ -528,9 +526,7 @@ fn selecting_four_tables_deep() {
     assert_eq!(Ok(expected), data);
 
     let data = users::table
-        .inner_join(
-            posts::table.inner_join(comments::table.left_outer_join(likes::table)),
-        )
+        .inner_join(posts::table.inner_join(comments::table.left_outer_join(likes::table)))
         .order((users::id, posts::id, comments::id))
         .load(&connection);
     let expected = vec![
@@ -630,9 +626,7 @@ fn selecting_crazy_nested_joins() {
     assert_eq!(Ok(expected), data);
 
     let data = users::table
-        .inner_join(
-            posts::table.left_join(comments::table.left_join(likes::table)),
-        )
+        .inner_join(posts::table.left_join(comments::table.left_join(likes::table)))
         .left_join(followings::table)
         .order((users::id, posts::id, comments::id))
         .load(&connection);

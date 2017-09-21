@@ -185,9 +185,7 @@ mod tests {
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = connection();
         let time = FixedOffset::west(3600).ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let query = select(
-            sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time),
-        );
+        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 
@@ -227,9 +225,7 @@ mod tests {
         let connection = connection();
         let time = FixedOffset::east(3600).ymd(2016, 1, 2).and_hms(1, 0, 0);
         let expected = NaiveDate::from_ymd(2016, 1, 1).and_hms(20, 0, 0);
-        let query = select(
-            AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"),
-        );
+        let query = select(AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"));
         assert_eq!(Ok(expected), query.get_result(&connection));
     }
 
@@ -246,9 +242,7 @@ mod tests {
         assert!(query.get_result::<bool>(&connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
-        let query = select(
-            sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven),
-        );
+        let query = select(sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 

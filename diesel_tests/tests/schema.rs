@@ -11,7 +11,8 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, Associations)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
+         Associations)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -253,9 +254,7 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
 
 pub fn insert_sean_and_tess_into_users_table(connection: &TestConnection) {
     connection
-        .execute(
-            "INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')",
-        )
+        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
     ensure_primary_key_seq_greater_than(2, &connection);
 }

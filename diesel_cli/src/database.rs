@@ -27,8 +27,8 @@ impl Backend {
     fn for_url(database_url: &str) -> Self {
         match database_url {
             #[cfg(feature = "postgres")]
-            _ if database_url.starts_with("postgres://") ||
-                database_url.starts_with("postgresql://") =>
+            _ if database_url.starts_with("postgres://")
+                || database_url.starts_with("postgresql://") =>
             {
                 Backend::Pg
             }

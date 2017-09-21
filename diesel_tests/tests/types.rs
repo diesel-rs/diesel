@@ -736,7 +736,7 @@ fn mysql_numeric_bigdecimal_from_sql() {
 
     // Some non standard values:
     let query = "cast(18446744073709551616 as decimal)"; // 2^64; doesn't fit in u64
-    // It is mysql, it will trim it even in strict mode
+                                                         // It is mysql, it will trim it even in strict mode
     let expected_value: BigDecimal = "9999999999.00"
         .parse()
         .expect("Could not parse to a BigDecimal");
@@ -840,17 +840,15 @@ fn pg_v6address_from_sql() {
     use std::str::FromStr;
 
     let query = "'2001:4f8:3:ba::/64'::cidr";
-    let expected_value = ipnetwork::IpNetwork::V6(
-        ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap(),
-    );
+    let expected_value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
     assert_eq!(
         expected_value,
         query_single_value::<Cidr, ipnetwork::IpNetwork>(query)
     );
     let query = "'2001:4f8:3:ba::/64'::inet";
-    let expected_value = ipnetwork::IpNetwork::V6(
-        ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap(),
-    );
+    let expected_value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
     assert_eq!(
         expected_value,
         query_single_value::<Inet, ipnetwork::IpNetwork>(query)
@@ -891,17 +889,15 @@ fn pg_v6address_to_sql_v6address() {
     use std::str::FromStr;
 
     let expected_value = "'2001:4f8:3:ba::/64'::cidr";
-    let value = ipnetwork::IpNetwork::V6(
-        ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap(),
-    );
+    let value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
     assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
         expected_value,
         value
     ));
     let expected_value = "'2001:4f8:3:ba::/64'::cidr";
-    let value = ipnetwork::IpNetwork::V6(
-        ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap(),
-    );
+    let value =
+        ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::from_str("2001:4f8:3:ba::/64").unwrap());
     assert!(query_to_sql_equality::<Inet, ipnetwork::IpNetwork>(
         expected_value,
         value

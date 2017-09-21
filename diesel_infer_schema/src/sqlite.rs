@@ -245,9 +245,8 @@ fn load_table_names_includes_tables_that_exist() {
 #[test]
 fn load_table_names_excludes_diesel_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute(
-        "CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)",
-    ).unwrap();
+    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
     assert!(!table_names
         .contains(&TableName::from_name("__diesel_metadata")));
@@ -256,9 +255,8 @@ fn load_table_names_excludes_diesel_metadata_tables() {
 #[test]
 fn load_table_names_excludes_sqlite_metadata_tables() {
     let conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute(
-        "CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)",
-    ).unwrap();
+    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
     let table_names = load_table_names(&conn, None);

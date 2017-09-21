@@ -86,8 +86,8 @@ pub fn load_table_names(
 pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
     match database_url {
         #[cfg(feature = "postgres")]
-        _ if database_url.starts_with("postgres://") ||
-            database_url.starts_with("postgresql://") =>
+        _ if database_url.starts_with("postgres://")
+            || database_url.starts_with("postgresql://") =>
         {
             establish_real_connection(database_url).map(InferConnection::Pg)
         }
@@ -143,9 +143,7 @@ fn get_column_information(
         InferConnection::Mysql(ref c) => ::information_schema::get_table_data(c, table),
     };
     if let Err(NotFound) = column_info {
-        Err(
-            format!("no table exists named {}", table.to_string()).into(),
-        )
+        Err(format!("no table exists named {}", table.to_string()).into())
     } else {
         column_info.map_err(Into::into)
     }
