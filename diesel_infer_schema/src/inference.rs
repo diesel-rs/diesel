@@ -114,6 +114,13 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
                 database_url,
             ).into(),
         ),
+        #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+        _ => compile_error!(
+                "At least one backend must be specified for use with this crate.\n \
+                In Cargo.toml, please specify `features = [\"postgresql\"]`, \
+                `features = [\"mysql\"]`, or `features = [\"sqlite\"]`\n\n \
+                ex. `diesel_codegen { features = [\"postgres\"] }`\n "
+        )
     }
 }
 
