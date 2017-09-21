@@ -326,10 +326,7 @@ fn nested_queryable_derives() {
         .unwrap();
     let post = posts::table.first(&conn).unwrap();
 
-    let expected = UserAndPost {
-        user: sean,
-        post,
-    };
+    let expected = UserAndPost { user: sean, post };
     let actual = users::table.inner_join(posts::table).get_result(&conn);
 
     assert_eq!(Ok(expected), actual);
