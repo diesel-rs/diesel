@@ -26,4 +26,4 @@ lint = ["clippy"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "diesel-rs/diesel" }
+appveyor = { repository = "sgrif/diesel" }
