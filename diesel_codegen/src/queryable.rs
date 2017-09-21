@@ -29,11 +29,12 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
         quote!(
             impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
                 __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
-                #row_ty: diesel::types::FromSqlRow<__ST, __DB>,
+                #row_ty: diesel::Queryable<__ST, __DB>,
             {
-               type Row = #row_ty;
+               type Row = <#row_ty as diesel::Queryable<__ST, __DB>>::Row;
 
-               fn build(#row_pat: Self::Row) -> Self {
+               fn build(row: Self::Row) -> Self {
+                   let #row_pat = diesel::Queryable::build(row);
                    #build_expr
                }
             }

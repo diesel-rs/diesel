@@ -20,6 +20,7 @@ pub enum MyEnum {
 }
 
 mod impls_for_insert_and_query {
+    use diesel::Queryable;
     use diesel::expression::AsExpression;
     use diesel::expression::bound::Bound;
     use diesel::pg::Pg;
@@ -67,6 +68,14 @@ mod impls_for_insert_and_query {
                 Some(_) => Err("Unrecognized enum variant".into()),
                 None => Err("Unexpected null for non-null column".into()),
             }
+        }
+    }
+
+    impl Queryable<MyType, Pg> for MyEnum {
+        type Row = Self;
+
+        fn build(row: Self::Row) -> Self {
+            row
         }
     }
 }
