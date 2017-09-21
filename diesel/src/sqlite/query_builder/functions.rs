@@ -1,5 +1,5 @@
 #![cfg(feature = "with-deprecated")]
-use query_builder::insert_statement::{Replace, DeprecatedIncompleteInsertStatement};
+use query_builder::insert_statement::{DeprecatedIncompleteInsertStatement, Replace};
 
 /// Creates a SQLite `INSERT OR REPLACE` statement. If a constraint violation
 /// fails, SQLite will attempt to replace the offending row instead.

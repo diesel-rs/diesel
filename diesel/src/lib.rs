@@ -161,7 +161,7 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{insert_into, delete, select, update, replace_into};
+pub use query_builder::functions::{delete, insert_into, replace_into, select, update};
 #[cfg(feature = "with-deprecated")]
 #[doc(inline)]
 #[allow(deprecated)]

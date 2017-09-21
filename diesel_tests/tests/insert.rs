@@ -10,7 +10,10 @@ fn insert_records() {
         NewUser::new("Tess", None),
     ];
 
-    insert_into(users).values(new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
     let actual_users = users.load::<User>(&connection).unwrap();
 
     let expected_users = vec![
@@ -104,7 +107,10 @@ fn batch_insert_with_defaults() {
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    insert_into(users).values(new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_users = vec![
         User {
@@ -180,7 +186,10 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
             name: "Tess".to_string(),
         },
     ];
-    let count = insert_into(users).values(new_users).execute(&connection).unwrap();
+    let count = insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
     let second_count = insert_into(users)
         .values(&BaldUser {
             name: "Guy".to_string(),
@@ -209,7 +218,10 @@ fn insert_borrowed_content() {
     use schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[BorrowedUser { name: "Sean" }, BorrowedUser { name: "Tess" }];
-    insert_into(users).values(new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
 
     let actual_users = users.load::<User>(&connection).unwrap();
     let expected_users = vec![
@@ -344,7 +356,10 @@ fn insert_multiple_bare_values() {
 
     let new_users = vec![name.eq("Sean"), name.eq("Tess")];
 
-    insert_into(users).values(&new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
     let actual_names = users.select(name).load(&connection);
@@ -406,7 +421,10 @@ fn insert_multiple_tuples() {
         (name.eq("Sean"), hair_color.eq("Brown")),
         (name.eq("Tess"), hair_color.eq("Green")),
     ];
-    insert_into(users).values(&new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),
@@ -425,7 +443,10 @@ fn insert_optional_field_with_null() {
         (name.eq("Sean"), hair_color.eq(Some("Brown"))),
         (name.eq("Tess"), hair_color.eq(None)),
     ];
-    insert_into(users).values(&new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),
@@ -456,7 +477,10 @@ fn insert_optional_field_with_default() {
         (name.eq("Sean"), Some(hair_color.eq("Brown"))),
         (name.eq("Tess"), None),
     ];
-    insert_into(users).values(&new_users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),

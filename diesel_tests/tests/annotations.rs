@@ -275,7 +275,10 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
             name: "Bob",
         },
     ];
-    assert_eq!(Ok(2), insert_into(users::table).values(&data).execute(&conn));
+    assert_eq!(
+        Ok(2),
+        insert_into(users::table).values(&data).execute(&conn)
+    );
 
     let users = users::table.load::<User>(&conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");
@@ -302,7 +305,10 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
         id: nextval("users_id_seq"),
         name: "Jim",
     };
-    assert_eq!(Ok(1), insert_into(users::table).values(&data).execute(&conn));
+    assert_eq!(
+        Ok(1),
+        insert_into(users::table).values(&data).execute(&conn)
+    );
 
     let users = users::table.load::<User>(&conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");

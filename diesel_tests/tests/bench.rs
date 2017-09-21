@@ -1,6 +1,6 @@
 #![feature(test)]
 #![allow(non_snake_case)]
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
 #[macro_use]
 extern crate diesel;
@@ -171,7 +171,10 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             NewUser::new(&format!("User {}", i), Some(hair_color))
         })
         .collect();
-    insert_into(users::table).values(&data).execute(&conn).unwrap();
+    insert_into(users::table)
+        .values(&data)
+        .execute(&conn)
+        .unwrap();
     let all_users = users::table.load::<User>(&conn).unwrap();
     let data: Vec<_> = all_users
         .iter()
@@ -183,7 +186,10 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             })
         })
         .collect();
-    insert_into(posts::table).values(&data).execute(&conn).unwrap();
+    insert_into(posts::table)
+        .values(&data)
+        .execute(&conn)
+        .unwrap();
     let all_posts = posts::table.load::<Post>(&conn).unwrap();
     let data: Vec<_> = all_posts
         .iter()

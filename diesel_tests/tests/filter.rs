@@ -57,7 +57,10 @@ fn filter_by_equality_on_nullable_columns() {
         NewUser::new("Tess", Some("brown")),
         NewUser::new("Jim", Some("black")),
     ];
-    insert_into(users).values(&data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&data)
+        .execute(&connection)
+        .unwrap();
 
     let data = users.order(id).load::<User>(&connection).unwrap();
     let sean = data[0].clone();
@@ -80,7 +83,10 @@ fn filter_by_is_not_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    insert_into(users).values(&data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&data)
+        .execute(&connection)
+        .unwrap();
     let data = users.order(id).load::<User>(&connection).unwrap();
     let derek = data[0].clone();
 
@@ -97,7 +103,10 @@ fn filter_by_is_null_on_nullable_columns() {
         NewUser::new("Derek", Some("red")),
         NewUser::new("Gordon", None),
     ];
-    insert_into(users).values(&data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&data)
+        .execute(&connection)
+        .unwrap();
     let data = users.order(id).load::<User>(&connection).unwrap();
     let gordon = data[1].clone();
 
@@ -165,7 +174,10 @@ fn filter_then_select() {
 
     let connection = connection();
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    insert_into(users).values(&data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&data)
+        .execute(&connection)
+        .unwrap();
 
     assert_eq!(
         Ok("Sean".to_string()),
@@ -202,7 +214,10 @@ fn filter_on_multiple_columns() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    insert_into(users).values(data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(data)
+        .execute(&connection)
+        .unwrap();
     let data = users.order(id).load::<User>(&connection).unwrap();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
@@ -234,7 +249,10 @@ fn filter_called_twice_means_same_thing_as_and() {
         NewUser::new("Tess", Some("black")),
         NewUser::new("Tess", Some("brown")),
     ];
-    insert_into(users).values(data).execute(&connection).unwrap();
+    insert_into(users)
+        .values(data)
+        .execute(&connection)
+        .unwrap();
     let data = users.order(id).load::<User>(&connection).unwrap();
     let black_haired_sean = data[0].clone();
     let brown_haired_sean = data[1].clone();
