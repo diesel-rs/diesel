@@ -28,7 +28,7 @@ use query_builder::insert_statement::{Replace, DeprecatedIncompleteInsertStateme
 /// #
 /// # fn main() {
 /// #     use users::dsl::*;
-/// #     use diesel::{insert, insert_or_replace};
+/// #     use diesel::{insert_into, insert_or_replace};
 /// #     use diesel::sqlite::SqliteConnection;
 /// #
 /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
