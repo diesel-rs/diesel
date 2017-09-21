@@ -109,7 +109,13 @@ where
     }
 
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        if self.values.requires_parenthesis() {
+            out.push_sql("(");
+        }
         self.values.walk_ast(out.reborrow())?;
+        if self.values.requires_parenthesis() {
+            out.push_sql(")");
+        }
         out.push_sql(" ON CONFLICT");
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
@@ -118,5 +124,9 @@ where
 
     fn is_noop(&self) -> bool {
         self.values.is_noop()
+    }
+
+    fn requires_parenthesis(&self) -> bool {
+        false
     }
 }

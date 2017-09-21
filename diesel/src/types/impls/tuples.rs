@@ -141,7 +141,6 @@ macro_rules! tuple_impls {
                 }
 
                 fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                    out.push_sql("(");
                     let mut needs_comma = false;
                     $(
                         let noop_element = self.$idx.is_noop();
@@ -153,7 +152,6 @@ macro_rules! tuple_impls {
                             needs_comma = true;
                         }
                     )+
-                    out.push_sql(")");
                     Ok(())
                 }
 

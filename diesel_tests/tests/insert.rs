@@ -428,7 +428,6 @@ fn insert_single_tuple() {
 }
 
 #[test]
-#[should_panic] // FIXME: We need to rejigger where the parens are added for values
 fn insert_nested_tuples() {
     use schema::users::dsl::*;
     let connection = connection();
@@ -444,7 +443,6 @@ fn insert_nested_tuples() {
 }
 
 #[test]
-#[should_panic] // FIXME: We need to rejigger where the parens are added for values
 fn insert_mixed_tuple_and_insertable_struct() {
     use schema::users::dsl::*;
     let connection = connection();
@@ -500,7 +498,6 @@ fn insert_optional_field_with_null() {
 
 #[test]
 #[cfg(not(feature = "mysql"))]
-#[cfg_attr(feature = "postgres", should_panic)] // FIXME: We need to rejigger where the parens are added for values
 fn insert_optional_field_with_default() {
     use schema::users::dsl::*;
     use schema_dsl::*;

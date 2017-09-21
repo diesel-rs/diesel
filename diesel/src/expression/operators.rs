@@ -355,11 +355,11 @@ impl<'a, T, U, DB> Insertable<T::Table, DB> for &'a Eq<T, U>
 where
     T: Column + Copy,
     DB: Backend,
-    (ColumnInsertValue<T, &'a U>,): InsertValues<T::Table, DB>,
+    ColumnInsertValue<T, &'a U>: InsertValues<T::Table, DB>,
 {
-    type Values = (ColumnInsertValue<T, &'a U>,);
+    type Values = ColumnInsertValue<T, &'a U>;
 
     fn values(self) -> Self::Values {
-        (ColumnInsertValue::Expression(self.left, &self.right),)
+        ColumnInsertValue::Expression(self.left, &self.right)
     }
 }

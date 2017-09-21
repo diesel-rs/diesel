@@ -76,7 +76,7 @@ where
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
-        if self.records.values().is_noop() {
+        if values.is_noop() {
             out.push_sql(" DEFAULT VALUES");
         } else {
             out.push_sql(" (");
@@ -84,7 +84,13 @@ where
                 values.column_names(builder)?;
             }
             out.push_sql(") VALUES ");
-            self.records.values().walk_ast(out.reborrow())?;
+            if values.requires_parenthesis() {
+                out.push_sql("(");
+            }
+            values.walk_ast(out.reborrow())?;
+            if values.requires_parenthesis() {
+                out.push_sql(")");
+            }
         }
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
