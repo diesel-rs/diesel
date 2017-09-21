@@ -33,8 +33,8 @@ use query_builder::insert_statement::{Replace, DeprecatedIncompleteInsertStateme
 /// #
 /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
 /// #     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR)").unwrap();
-/// insert(users).values(&NewUser::new("Sean")).execute(&conn).unwrap();
-/// insert(users).values(&NewUser::new("Tess")).execute(&conn).unwrap();
+/// insert_into(users).values(&NewUser::new("Sean")).execute(&conn).unwrap();
+/// insert_into(users).values(&NewUser::new("Tess")).execute(&conn).unwrap();
 ///
 /// let new_user = User { id: 1, name: "Jim" };
 /// insert_or_replace(&new_user).into(users).execute(&conn).unwrap();

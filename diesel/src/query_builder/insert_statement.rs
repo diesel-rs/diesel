@@ -1,3 +1,5 @@
+use std::any::*;
+
 use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
@@ -43,8 +45,8 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// #     use users::dsl::*;
     /// #     let connection = connection_no_data();
     /// connection.execute("CREATE TABLE users (
-    ///     name TEXT NOT NULL DEFAULT 'Sean',
-    ///     hair_color TEXT NOT NULL DEFAULT 'Green'
+    ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
+    ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
     /// )").unwrap();
     ///
     /// insert_into(users)
@@ -341,6 +343,7 @@ impl<'a, Tab, DB> Insertable<Tab, DB> for &'a DefaultValues
 where
     Tab: Table,
     DB: Backend,
+    DefaultValues: InsertValues<Tab, DB>,
 {
     type Values = DefaultValues;
 
@@ -352,7 +355,7 @@ where
 impl<Tab, DB> InsertValues<Tab, DB> for DefaultValues
 where
     Tab: Table,
-    DB: Backend,
+    DB: Backend + Any,
 {
     fn column_names(&self, _: &mut DB::QueryBuilder) -> QueryResult<()> {
         Ok(())
@@ -362,7 +365,18 @@ where
         Ok(())
     }
 
+    #[cfg(not(feature = "mysql"))]
     fn is_noop(&self) -> bool {
         true
+    }
+
+    #[cfg(feature = "mysql")]
+    fn is_noop(&self) -> bool {
+        // The syntax for this on MySQL is
+        // INSERT INTO table () VALUES ()
+        //
+        // This is hacky, but it's the easiest way to get this done without a
+        // deeper restructuring of this code.
+        TypeId::of::<DB>() != TypeId::of::<::mysql::Mysql>()
     }
 }
