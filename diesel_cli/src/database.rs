@@ -61,10 +61,10 @@ impl Backend {
             }
             #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
             _ => compile_error!(
-                    "At least one backend must be specified for use with this crate. \
-                    You may omit the unneeded dependencies in the following command. \n\n \
-                    ex. `cargo install diesel_cli --no-default-features --features mysql postgres sqlite` \n"
-            )
+                "At least one backend must be specified for use with this crate. \
+                 You may omit the unneeded dependencies in the following command. \n\n \
+                 ex. `cargo install diesel_cli --no-default-features --features mysql postgres sqlite` \n"
+            ),
         }
     }
 }
