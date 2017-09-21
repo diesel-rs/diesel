@@ -92,13 +92,13 @@ macro_rules! tuple_impls {
             {
             }
 
-            impl<'a, $($T,)+ DB> CanInsertInSingleQuery<DB> for &'a ($($T,)+)
+            impl<$($T,)+ DB> CanInsertInSingleQuery<DB> for ($($T,)+)
             where
                 DB: Backend,
-                $(&'a $T: CanInsertInSingleQuery<DB>,)+
+                $($T: CanInsertInSingleQuery<DB>,)+
             {
                 fn rows_to_insert(&self) -> usize {
-                    $(debug_assert_eq!((&self.$idx).rows_to_insert(), 1);)+
+                    $(debug_assert_eq!(self.$idx.rows_to_insert(), 1);)+
                     1
                 }
             }

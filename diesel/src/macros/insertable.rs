@@ -193,8 +193,8 @@ macro_rules! impl_Insertable {
             }
         }
 
-        impl<$($lifetime,)* 'insert, DB> $crate::insertable::CanInsertInSingleQuery<DB>
-            for &'insert $struct_ty
+        impl<$($lifetime,)* DB> $crate::insertable::CanInsertInSingleQuery<DB>
+            for $struct_ty
         where
             DB: $crate::backend::Backend,
         {

@@ -23,6 +23,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Deprecated `insert_default_values()` in favor of `insert(&default_values())`
 
+### Removed
+
+* `IntoInsertStatement` and `BatchInsertStatement` have been removed. It's
+  unlikely that your application is using these types, but `InsertStatement` is
+  now the only "insert statement" type.
+
 ### Fixed
 
 * When using MySQL and SQLite, dates which cannot be represented by `chrono`

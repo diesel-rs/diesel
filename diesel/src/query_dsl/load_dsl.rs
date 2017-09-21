@@ -126,10 +126,11 @@ pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Conn
     fn execute(self, conn: &Conn) -> QueryResult<usize>;
 }
 
-impl<Conn, T> ExecuteDsl<Conn> for T
+impl<Conn, DB, T> ExecuteDsl<Conn, DB> for T
 where
-    Conn: Connection,
-    T: QueryFragment<Conn::Backend> + QueryId,
+    Conn: Connection<Backend = DB>,
+    DB: Backend,
+    T: QueryFragment<DB> + QueryId,
 {
     fn execute(self, conn: &Conn) -> QueryResult<usize> {
         conn.execute_returning_count(&self)

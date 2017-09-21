@@ -55,7 +55,10 @@ impl Statement {
     /// which `results` has previously been called?
     pub unsafe fn execute(&self) -> QueryResult<()> {
         ffi::mysql_stmt_execute(self.stmt);
-        self.did_an_error_occur()
+        self.did_an_error_occur()?;
+        ffi::mysql_stmt_store_result(self.stmt);
+        self.did_an_error_occur()?;
+        Ok(())
     }
 
     pub fn affected_rows(&self) -> usize {
