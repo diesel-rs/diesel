@@ -1,5 +1,6 @@
 #![feature(test)]
 #![allow(non_snake_case)]
+#![recursion_limit = "128"]
 
 #[macro_use]
 extern crate diesel;
@@ -38,7 +39,7 @@ macro_rules! bench_trivial_query {
             let data: Vec<_> = (0..$n).map(|i| {
                 NewUser::new(&format!("User {}", i), None)
             }).collect();
-            insert(&data).into(users::table).execute(&conn).unwrap();
+            insert_into(users::table).values(&data).execute(&conn).unwrap();
 
             b.iter(|| {
                 users::table.load::<User>(&conn).unwrap()
@@ -52,7 +53,7 @@ macro_rules! bench_trivial_query {
             let data: Vec<_> = (0..$n).map(|i| {
                 NewUser::new(&format!("User {}", i), None)
             }).collect();
-            insert(&data).into(users::table).execute(&conn).unwrap();
+            insert_into(users::table).values(&data).execute(&conn).unwrap();
 
             b.iter(|| {
                 users::table.into_boxed().load::<User>(&conn).unwrap()
@@ -99,7 +100,7 @@ macro_rules! bench_medium_complex_query {
                 let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                 NewUser::new(&format!("User {}", i), Some(hair_color))
             }).collect();
-            insert(&data).into(users::table).execute(&conn).unwrap();
+            insert_into(users::table).values(&data).execute(&conn).unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
@@ -118,7 +119,7 @@ macro_rules! bench_medium_complex_query {
                 let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                 NewUser::new(&format!("User {}", i), Some(hair_color))
             }).collect();
-            insert(&data).into(users::table).execute(&conn).unwrap();
+            insert_into(users::table).values(&data).execute(&conn).unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
@@ -170,7 +171,10 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             NewUser::new(&format!("User {}", i), Some(hair_color))
         })
         .collect();
-    insert(&data).into(users::table).execute(&conn).unwrap();
+    insert_into(users::table)
+        .values(&data)
+        .execute(&conn)
+        .unwrap();
     let all_users = users::table.load::<User>(&conn).unwrap();
     let data: Vec<_> = all_users
         .iter()
@@ -182,7 +186,10 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             })
         })
         .collect();
-    insert(&data).into(posts::table).execute(&conn).unwrap();
+    insert_into(posts::table)
+        .values(&data)
+        .execute(&conn)
+        .unwrap();
     let all_posts = posts::table.load::<Post>(&conn).unwrap();
     let data: Vec<_> = all_posts
         .iter()
@@ -197,8 +204,8 @@ fn loading_associations_sequentially(b: &mut Bencher) {
     let comment_data: Vec<_> = data.iter()
         .map(|&(ref title, post_id)| NewComment(post_id, &title))
         .collect();
-    insert(&comment_data)
-        .into(comments::table)
+    insert_into(comments::table)
+        .values(&comment_data)
         .execute(&conn)
         .unwrap();
 

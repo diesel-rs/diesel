@@ -10,7 +10,10 @@ fn insert_records() {
         NewUser::new("Tess", None),
     ];
 
-    insert(new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
     let actual_users = users.load::<User>(&connection).unwrap();
 
     let expected_users = vec![
@@ -38,8 +41,8 @@ fn insert_records_using_returning_clause() {
         NewUser::new("Tess", None),
     ];
 
-    let inserted_users = insert(new_users)
-        .into(users)
+    let inserted_users = insert_into(users)
+        .values(new_users)
         .get_results::<User>(&connection)
         .unwrap();
     let expected_users = vec![
@@ -69,8 +72,8 @@ fn insert_records_with_custom_returning_clause() {
         NewUser::new("Tess", None),
     ];
 
-    let inserted_users = insert(new_users)
-        .into(users)
+    let inserted_users = insert_into(users)
+        .values(new_users)
         .returning((name, hair_color))
         .get_results::<(String, Option<String>)>(&connection)
         .unwrap();
@@ -104,7 +107,10 @@ fn batch_insert_with_defaults() {
         NewUser::new("Sean", Some("Black")),
         NewUser::new("Tess", None),
     ];
-    insert(new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_users = vec![
         User {
@@ -140,8 +146,8 @@ fn insert_with_defaults() {
         ),
     ).execute(&connection)
         .unwrap();
-    insert(&NewUser::new("Tess", None))
-        .into(users)
+    insert_into(users)
+        .values(&NewUser::new("Tess", None))
         .execute(&connection)
         .unwrap();
 
@@ -180,10 +186,14 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
             name: "Tess".to_string(),
         },
     ];
-    let count = insert(new_users).into(users).execute(&connection).unwrap();
-    let second_count = insert(&BaldUser {
-        name: "Guy".to_string(),
-    }).into(users)
+    let count = insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
+    let second_count = insert_into(users)
+        .values(&BaldUser {
+            name: "Guy".to_string(),
+        })
         .execute(&connection)
         .unwrap();
 
@@ -208,7 +218,10 @@ fn insert_borrowed_content() {
     use schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[BorrowedUser { name: "Sean" }, BorrowedUser { name: "Tess" }];
-    insert(new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
 
     let actual_users = users.load::<User>(&connection).unwrap();
     let expected_users = vec![
@@ -220,31 +233,11 @@ fn insert_borrowed_content() {
 }
 
 #[test]
-#[cfg(feature = "sqlite")]
-fn insert_on_conflict_replace() {
-    use schema::users::dsl::*;
-    use diesel::insert_or_replace;
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-
-    let mut sean = find_user_by_name("Sean", &connection);
-    sean.name = "Jim".into();
-    insert_or_replace(&sean)
-        .into(users)
-        .execute(&connection)
-        .unwrap();
-
-    let expected_names = vec!["Jim".into(), "Tess".into()];
-    let names = users.select(name).order(id).load::<String>(&connection);
-    assert_eq!(Ok(expected_names), names);
-}
-
-#[test]
 fn insert_empty_slice() {
     let connection = connection();
 
-    let inserted_records = insert(&Vec::<NewUser>::new())
-        .into(users::table)
+    let inserted_records = insert_into(users::table)
+        .values(&Vec::<NewUser>::new())
         .execute(&connection);
 
     assert_eq!(Ok(0), inserted_records);
@@ -255,11 +248,11 @@ fn insert_empty_slice() {
 fn insert_empty_slice_with_returning() {
     let connection = connection();
 
-    let insert_one = insert(&Vec::<NewUser>::new())
-        .into(users::table)
+    let insert_one = insert_into(users::table)
+        .values(&Vec::<NewUser>::new())
         .get_result::<User>(&connection);
-    let insert_all = insert(&Vec::<NewUser>::new())
-        .into(users::table)
+    let insert_all = insert_into(users::table)
+        .values(&Vec::<NewUser>::new())
         .get_results::<User>(&connection);
 
     assert_eq!(Ok(None), insert_one.optional());
@@ -272,8 +265,8 @@ fn upsert_empty_slice() {
     use diesel::pg::upsert::*;
     let connection = connection();
 
-    let inserted_records = insert(&Vec::<NewUser>::new().on_conflict_do_nothing())
-        .into(users::table)
+    let inserted_records = insert_into(users::table)
+        .values(&Vec::<NewUser>::new().on_conflict_do_nothing())
         .execute(&connection);
 
     assert_eq!(Ok(0), inserted_records);
@@ -314,40 +307,6 @@ fn insert_only_default_values_deprecated() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))]
-fn insert_only_default_values() {
-    use schema::users::table as users;
-    use schema_dsl::*;
-    let connection = connection();
-
-    drop_table_cascade(&connection, "users");
-    create_table(
-        "users",
-        (
-            integer("id").primary_key().auto_increment(),
-            string("name").not_null().default("'Sean'"),
-            string("hair_color").not_null().default("'Green'"),
-        ),
-    ).execute(&connection)
-        .unwrap();
-
-    insert(&default_values())
-        .into(users)
-        .execute(&connection)
-        .unwrap();
-    assert_eq!(
-        users.load::<User>(&connection),
-        Ok(vec![
-            User {
-                id: 1,
-                name: "Sean".into(),
-                hair_color: Some("Green".into()),
-            },
-        ])
-    );
-}
-
-#[test]
 #[cfg(feature = "postgres")]
 fn insert_only_default_values_with_returning() {
     use schema::users::table as users;
@@ -365,22 +324,14 @@ fn insert_only_default_values_with_returning() {
         ),
     ).execute(&connection)
         .unwrap();
-    let result = LoadDsl::get_result::<i32>(
-        insert_default_values().into(users).returning(id),
-        &connection,
-    ).unwrap();
+    let inserted_rows = insert_into(users)
+        .default_values()
+        .returning(id)
+        .execute(&connection);
+    let expected_users = vec![User::with_hair_color(1, "Sean", "Green")];
 
-    assert_eq!(result, 1);
-    assert_eq!(
-        users.load::<User>(&connection),
-        Ok(vec![
-            User {
-                id: 1,
-                name: "Sean".into(),
-                hair_color: Some("Green".into()),
-            },
-        ])
-    );
+    assert_eq!(Ok(1), inserted_rows);
+    assert_eq!(Ok(expected_users), users.load(&connection));
 }
 
 #[test]
@@ -388,8 +339,8 @@ fn insert_single_bare_value() {
     use schema::users::dsl::*;
     let connection = connection();
 
-    insert(&name.eq("Sean"))
-        .into(users)
+    insert_into(users)
+        .values(&name.eq("Sean"))
         .execute(&connection)
         .unwrap();
 
@@ -405,7 +356,10 @@ fn insert_multiple_bare_values() {
 
     let new_users = vec![name.eq("Sean"), name.eq("Tess")];
 
-    insert(&new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
     let actual_names = users.select(name).load(&connection);
@@ -417,8 +371,8 @@ fn insert_single_tuple() {
     use schema::users::dsl::*;
     let connection = connection();
 
-    insert(&(name.eq("Sean"), hair_color.eq("Brown")))
-        .into(users)
+    insert_into(users)
+        .values(&(name.eq("Sean"), hair_color.eq("Brown")))
         .execute(&connection)
         .unwrap();
 
@@ -432,8 +386,8 @@ fn insert_nested_tuples() {
     use schema::users::dsl::*;
     let connection = connection();
 
-    insert(&(id.eq(1), (name.eq("Sean"), hair_color.eq("Brown"))))
-        .into(users)
+    insert_into(users)
+        .values(&(id.eq(1), (name.eq("Sean"), hair_color.eq("Brown"))))
         .execute(&connection)
         .unwrap();
 
@@ -448,8 +402,8 @@ fn insert_mixed_tuple_and_insertable_struct() {
     let connection = connection();
 
     let new_user = NewUser::new("Sean", Some("Brown"));
-    insert(&(id.eq(3), new_user))
-        .into(users)
+    insert_into(users)
+        .values(&(id.eq(3), new_user))
         .execute(&connection)
         .unwrap();
 
@@ -467,7 +421,10 @@ fn insert_multiple_tuples() {
         (name.eq("Sean"), hair_color.eq("Brown")),
         (name.eq("Tess"), hair_color.eq("Green")),
     ];
-    insert(&new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),
@@ -486,7 +443,10 @@ fn insert_optional_field_with_null() {
         (name.eq("Sean"), hair_color.eq(Some("Brown"))),
         (name.eq("Tess"), hair_color.eq(None)),
     ];
-    insert(&new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),
@@ -517,7 +477,10 @@ fn insert_optional_field_with_default() {
         (name.eq("Sean"), Some(hair_color.eq("Brown"))),
         (name.eq("Tess"), None),
     ];
-    insert(&new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Brown".to_string())),

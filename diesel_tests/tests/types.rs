@@ -122,9 +122,10 @@ fn test_chrono_types_sqlite() {
         time: dt.time(),
     };
 
-    insert(&new_time_types)
-        .into(has_time_types::table)
-        .execute(&connection);
+    insert_into(has_time_types::table)
+        .values(&new_time_types)
+        .execute(&connection)
+        .unwrap();
 
     let result = has_time_types::table
         .first::<NewTimeTypes>(&connection)
@@ -959,8 +960,8 @@ fn pg_jsonb_to_sql_jsonb() {
 fn text_array_can_be_assigned_to_varchar_array_column() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
-    let post = insert(&sean.new_post("Hello", None))
-        .into(posts::table)
+    let post = insert_into(posts::table)
+        .values(&sean.new_post("Hello", None))
         .get_result::<Post>(&conn)
         .unwrap();
 

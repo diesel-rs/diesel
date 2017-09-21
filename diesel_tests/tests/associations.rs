@@ -203,8 +203,8 @@ fn self_referencing_associations() {
             parent_id: Some(1),
         },
     ];
-    insert(&test_data)
-        .into(trees::table)
+    insert_into(trees::table)
+        .values(&test_data)
         .execute(&conn)
         .unwrap();
 
@@ -225,8 +225,8 @@ fn self_referencing_associations() {
 
 fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let connection = connection_with_sean_and_tess_in_users_table();
-    insert(&NewUser::new("Jim", None))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&NewUser::new("Jim", None))
         .execute(&connection)
         .unwrap();
 
@@ -234,21 +234,21 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
     let tess = find_user_by_name("Tess", &connection);
     let jim = find_user_by_name("Jim", &connection);
     let new_posts = vec![sean.new_post("Hello", None), sean.new_post("World", None)];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
     let new_posts = vec![
         tess.new_post("Hello 2", None),
         tess.new_post("World 2", None),
     ];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
     let new_posts = vec![jim.new_post("Hello 3", None), jim.new_post("World 3", None)];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
 

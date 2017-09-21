@@ -19,6 +19,8 @@ struct User {
 
 fn main() {
     let connection = PgConnection::establish("").unwrap();
-    insert_or_replace(&User { id: 1 }).into(users::table).execute(&connection).unwrap();
-    //~^ ERROR type mismatch resolving `<diesel::PgConnection as diesel::Connection>::Backend == diesel::sqlite::Sqlite`
+    replace_into(users::table)
+        .values(&User { id: 1 })
+        .execute(&connection);
+        //~^ ERROR E0277
 }

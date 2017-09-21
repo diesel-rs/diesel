@@ -86,7 +86,7 @@ impl<ST> SqlLiteral<ST> {
     /// #     use diesel::dsl::sql;
     /// #     use diesel::types::{Integer, Text};
     /// #     let connection = establish_connection();
-    /// #     diesel::insert(&NewUser::new("Jim")).into(users)
+    /// #     diesel::insert_into(users).values(&NewUser::new("Jim"))
     /// #         .execute(&connection).unwrap();
     /// #[cfg(not(feature="postgres"))]
     /// let query = sql::<Text>("SELECT name FROM users WHERE id > ? AND name <> ?");

@@ -1,6 +1,6 @@
-use expression::operators::Or;
-use query_builder::insert_statement::{IncompleteInsertStatement, Insert};
-use super::nodes::Replace;
+#![cfg(feature = "with-deprecated")]
+use query_builder::insert_statement::{DeprecatedIncompleteInsertStatement, Replace};
+
 /// Creates a SQLite `INSERT OR REPLACE` statement. If a constraint violation
 /// fails, SQLite will attempt to replace the offending row instead.
 ///
@@ -27,14 +27,14 @@ use super::nodes::Replace;
 /// #
 /// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
-/// #     use self::diesel::{insert, insert_or_replace};
-/// #     use self::diesel::sqlite::SqliteConnection;
+/// #     use users::dsl::*;
+/// #     use diesel::{insert_into, insert_or_replace};
+/// #     use diesel::sqlite::SqliteConnection;
 /// #
 /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
 /// #     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR)").unwrap();
-/// insert(&NewUser::new("Sean")).into(users).execute(&conn).unwrap();
-/// insert(&NewUser::new("Tess")).into(users).execute(&conn).unwrap();
+/// insert_into(users).values(&NewUser::new("Sean")).execute(&conn).unwrap();
+/// insert_into(users).values(&NewUser::new("Tess")).execute(&conn).unwrap();
 ///
 /// let new_user = User { id: 1, name: "Jim" };
 /// insert_or_replace(&new_user).into(users).execute(&conn).unwrap();
@@ -43,8 +43,9 @@ use super::nodes::Replace;
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// ```
+#[deprecated(since = "0.99.0", note = "use `replace_into` instead")]
 pub fn insert_or_replace<T: ?Sized>(
     records: &T,
-) -> IncompleteInsertStatement<&T, Or<Insert, Replace>> {
-    IncompleteInsertStatement::new(records, Or::new(Insert, Replace))
+) -> DeprecatedIncompleteInsertStatement<&T, Replace> {
+    DeprecatedIncompleteInsertStatement::new(records, Replace)
 }

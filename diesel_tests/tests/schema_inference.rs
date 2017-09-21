@@ -42,8 +42,8 @@ mod sqlite {
             col12: 12,
             col13: 13,
         };
-        insert(&inferred_ints)
-            .into(infer_all_the_ints::table)
+        insert_into(infer_all_the_ints::table)
+            .values(&inferred_ints)
             .execute(&conn)
             .unwrap();
 
@@ -71,8 +71,8 @@ mod sqlite {
             col3: false,
             col4: false,
         };
-        insert(&inferred_bools)
-            .into(infer_all_the_bools::table)
+        insert_into(infer_all_the_bools::table)
+            .values(&inferred_bools)
             .execute(&conn)
             .unwrap();
 
@@ -112,8 +112,8 @@ mod sqlite {
             col9: vec![1, 2, 3],
             col10: vec![1, 2, 3],
         };
-        insert(&inferred_strings)
-            .into(infer_all_the_strings::table)
+        insert_into(infer_all_the_strings::table)
+            .values(&inferred_strings)
             .execute(&conn)
             .unwrap();
 
@@ -145,8 +145,8 @@ mod sqlite {
             col5: 5.0,
             col6: 6.0,
         };
-        insert(&inferred_floats)
-            .into(infer_all_the_floats::table)
+        insert_into(infer_all_the_floats::table)
+            .values(&inferred_floats)
             .execute(&conn)
             .unwrap();
 
@@ -177,8 +177,8 @@ mod sqlite {
             timestamp: dt,
         };
 
-        insert(&inferred_datetime_types)
-            .into(infer_all_the_datetime_types::table)
+        insert_into(infer_all_the_datetime_types::table)
+            .values(&inferred_datetime_types)
             .execute(&conn)
             .unwrap();
 
@@ -230,8 +230,8 @@ mod postgres {
             date: (Bound::Included(dt.date()), Bound::Unbounded),
         };
 
-        insert(&inferred_ranges)
-            .into(all_the_ranges::table)
+        insert_into(all_the_ranges::table)
+            .values(&inferred_ranges)
             .execute(&conn)
             .unwrap();
 
@@ -282,8 +282,8 @@ mod mysql {
             big: vec![0x04],
         };
 
-        insert(&inferred_blobs)
-            .into(all_the_blobs::table)
+        insert_into(all_the_blobs::table)
+            .values(&inferred_blobs)
             .execute(&conn)
             .unwrap();
         assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(&conn));
@@ -310,8 +310,8 @@ fn columns_named_as_reserved_keywords_are_renamed() {
     };
 
     let conn = connection();
-    insert(&value)
-        .into(with_keywords::table)
+    insert_into(with_keywords::table)
+        .values(&value)
         .execute(&conn)
         .unwrap();
     assert_eq!(Ok(vec![value]), with_keywords::table.load(&conn));

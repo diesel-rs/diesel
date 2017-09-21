@@ -161,12 +161,13 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{default_values, delete, insert, select, update};
+pub use query_builder::functions::{delete, insert_into, replace_into, select, update};
 #[cfg(feature = "with-deprecated")]
 #[doc(inline)]
 #[allow(deprecated)]
-pub use query_builder::functions::insert_default_values;
-#[cfg(feature = "sqlite")]
+pub use query_builder::functions::{insert, insert_default_values};
+#[cfg(all(feature = "sqlite", feature = "with-deprecated"))]
+#[allow(deprecated)]
 pub use sqlite::query_builder::functions::*;
 pub use result::Error::NotFound;
 #[doc(inline)]

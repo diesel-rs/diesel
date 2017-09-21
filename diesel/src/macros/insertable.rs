@@ -262,8 +262,8 @@ mod tests {
             name: "Sean".into(),
             hair_color: "Black".into(),
         };
-        ::insert(&new_user)
-            .into(users::table)
+        ::insert_into(users::table)
+            .values(&new_user)
             .execute(&conn)
             .unwrap();
 
@@ -288,7 +288,7 @@ mod tests {
 
                 let conn = connection();
                 let new_user = NewUser { name: "Sean".into(), hair_color: None };
-                ::insert(&new_user).into(users::table).execute(&conn).unwrap();
+                ::insert_into(users::table).values(&new_user).execute(&conn).unwrap();
 
                 let saved = users::table.select((users::name, users::hair_color))
                     .load::<(String, Option<String>)>(&conn);
@@ -367,8 +367,8 @@ mod tests {
             my_name: "Sean".into(),
             hair_color: "Black".into(),
         };
-        ::insert(&new_user)
-            .into(users::table)
+        ::insert_into(users::table)
+            .values(&new_user)
             .execute(&conn)
             .unwrap();
 
@@ -401,8 +401,8 @@ mod tests {
             my_name: "Sean".into(),
             my_hair_color: None,
         };
-        ::insert(&new_user)
-            .into(users::table)
+        ::insert_into(users::table)
+            .values(&new_user)
             .execute(&conn)
             .unwrap();
 
@@ -429,8 +429,8 @@ mod tests {
 
         let conn = connection();
         let new_user = NewUser("Sean", None);
-        ::insert(&new_user)
-            .into(users::table)
+        ::insert_into(users::table)
+            .values(&new_user)
             .execute(&conn)
             .unwrap();
 
@@ -457,8 +457,8 @@ mod tests {
 
         let conn = connection();
         let new_user = NewUser("Sean", None);
-        ::insert(&new_user)
-            .into(users::table)
+        ::insert_into(users::table)
+            .values(&new_user)
             .execute(&conn)
             .unwrap();
 
@@ -500,7 +500,7 @@ mod tests {
                 conn.execute("DROP TABLE IF EXISTS posts").unwrap();
                 conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
                 let new_post = NewPost { tags: &["hi", "there"] };
-                ::insert(&new_post).into(posts::table).execute(&conn).unwrap();
+                ::insert_into(posts::table).values(&new_post).execute(&conn).unwrap();
 
                 let saved = posts::table.select(posts::tags).load::<Vec<String>>(&conn);
                 let expected = vec![vec![String::from("hi"), String::from("there")]];

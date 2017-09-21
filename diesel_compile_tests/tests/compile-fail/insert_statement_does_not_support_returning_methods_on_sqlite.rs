@@ -43,13 +43,13 @@ impl_Insertable! {
 fn main() {
     let connection = SqliteConnection::establish(":memory:").unwrap();
 
-    insert(&NewUser("Hello".into()))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&NewUser("Hello".into()))
         .get_result::<User>(&connection);
     //~^ ERROR: SupportsReturningClause
 
-    insert(&NewUser("Hello".into()))
-        .into(users::table)
+    insert_into(users::table)
+        .values(&NewUser("Hello".into()))
         .returning(users::name)
         .get_result::<String>(&connection);
     //~^ ERROR: SupportsReturningClause

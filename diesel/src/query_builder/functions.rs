@@ -2,7 +2,9 @@ use dsl::Select;
 use expression::Expression;
 use query_dsl::SelectDsl;
 use super::delete_statement::DeleteStatement;
-use super::insert_statement::{DefaultValues, Insert};
+#[cfg(feature = "with-deprecated")]
+use super::insert_statement::{DefaultValues, DeprecatedIncompleteInsertStatement};
+use super::insert_statement::{Insert, Replace};
 use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarget,
             SelectStatement};
 
@@ -24,7 +26,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use users::dsl::*;
 /// #     let connection = establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
@@ -103,7 +105,7 @@ pub fn update<T: IntoUpdateTarget>(
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use self::users::dsl::*;
+/// #     use users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// let old_count = get_count();
@@ -131,7 +133,7 @@ pub fn update<T: IntoUpdateTarget>(
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use self::users::dsl::*;
+/// #     use users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// try!(diesel::delete(users).execute(&connection));
@@ -291,8 +293,161 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn insert<T: ?Sized>(records: &T) -> IncompleteInsertStatement<&T, Insert> {
-    IncompleteInsertStatement::new(records, Insert)
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "0.99.0", note = "use `insert_into` instead")]
+pub fn insert<T: ?Sized>(records: &T) -> DeprecatedIncompleteInsertStatement<&T, Insert> {
+    DeprecatedIncompleteInsertStatement::new(records, Insert)
+}
+
+/// Creates an `INSERT` statement. Will add the given data to a table. As with
+/// other commands, the resulting query can return the inserted rows if you
+/// choose if you are using PostgreSQL.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// let rows_inserted = diesel::insert_into(users)
+///     .values(&name.eq("Sean"))
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(1), rows_inserted);
+///
+/// let new_users = vec![
+///     name.eq("Tess"),
+///     name.eq("Jim"),
+/// ];
+///
+/// let rows_inserted = diesel::insert_into(users)
+///     .values(&new_users)
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(2), rows_inserted);
+/// # }
+/// ```
+///
+/// ### Using a tuple for values
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// #     diesel::delete(users).execute(&connection).unwrap();
+/// let new_user = (id.eq(1), name.eq("Sean"));
+/// let rows_inserted = diesel::insert_into(users)
+///     .values(&new_user)
+///     .execute(&connection);
+///
+/// assert_eq!(Ok(1), rows_inserted);
+///
+/// let new_users = vec![
+///     (id.eq(2), name.eq("Tess")),
+///     (id.eq(2), name.eq("Jim")),
+/// ];
+///
+/// let rows_inserted = diesel::insert_into(users)
+///     .values(&new_users)
+///     .execute(&connection);
+///
+/// // assert_eq!(Ok(2), rows_inserted);
+/// # }
+/// ```
+///
+/// ### Using struct for values
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// // Insert one record at a time
+///
+/// let new_user = NewUser { name: "Ruby Rhod".to_string() };
+///
+/// diesel::insert_into(users)
+///     .values(&new_user)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// // Insert many records
+///
+/// let new_users = vec![
+///     NewUser { name: "Leeloo Multipass".to_string(), },
+///     NewUser { name: "Korben Dallas".to_string(), },
+/// ];
+///
+/// let inserted_names = diesel::insert_into(users)
+///     .values(&new_users)
+///     .execute(&connection)
+///     .unwrap();
+/// # }
+/// ```
+///
+/// ### With return value
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> Text,
+/// #     }
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// // postgres only
+/// let new_users = vec![
+///     NewUser { name: "Diva Plavalaguna".to_string(), },
+///     NewUser { name: "Father Vito Cornelius".to_string(), },
+/// ];
+///
+/// let inserted_names = diesel::insert_into(users)
+///     .values(&new_users)
+///     .returning(name)
+///     .get_results(&connection);
+/// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
+    IncompleteInsertStatement::new(target, Insert)
 }
 
 /// Creates a bare select statement, with no from clause. Primarily used for
@@ -311,12 +466,71 @@ where
 /// This function is not exported by default. As with other commands, the resulting
 /// query can return the inserted rows if you choose.
 #[cfg(feature = "with-deprecated")]
-#[deprecated(since = "0.99.0", note = "use `insert(&default_values())` instead")]
-pub fn insert_default_values() -> IncompleteInsertStatement<&'static DefaultValues, Insert> {
+#[deprecated(since = "0.99.0", note = "use `insert_into(table).default_values()` instead")]
+#[allow(deprecated)]
+pub fn insert_default_values() -> DeprecatedIncompleteInsertStatement<&'static DefaultValues, Insert> {
     static STATIC_DEFAULT_VALUES: &'static DefaultValues = &DefaultValues;
     insert(STATIC_DEFAULT_VALUES)
 }
 
-pub fn default_values() -> DefaultValues {
-    DefaultValues
+/// Creates a `REPLACE` statement.
+///
+/// If a constraint violation fails, the database will attempt to replace the
+/// offending row instead. This function is only available with MySQL and
+/// SQLite.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # #[derive(Insertable)]
+/// # #[table_name="users"]
+/// # struct User<'a> {
+/// #     id: i32,
+/// #     name: &'a str,
+/// # }
+/// #
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {
+/// #     use users::dsl::*;
+/// #     use diesel::{insert_into, replace_into};
+/// #
+/// #     let conn = establish_connection();
+/// #     conn.execute("DELETE FROM users").unwrap();
+/// replace_into(users)
+///     .values(&vec![
+///         User {
+///             id: 1,
+///             name: "Sean",
+///         },
+///         User {
+///             id: 2,
+///             name: "Tess",
+///         },
+///     ])
+///     .execute(&conn)
+///     .unwrap();
+///
+/// let new_user = User { id: 1, name: "Jim" };
+/// replace_into(users)
+///     .values(&new_user)
+///     .execute(&conn)
+///     .unwrap();
+///
+/// let names = users.select(name).order(id).load::<String>(&conn);
+/// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
+/// # }
+/// # #[cfg(feature = "postgres")] fn main() {}
+pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
+    IncompleteInsertStatement::new(target, Replace)
 }

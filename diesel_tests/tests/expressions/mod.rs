@@ -14,8 +14,8 @@ fn test_count_counts_the_rows() {
     let source = users.select(count(id));
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None))
-        .into(users)
+    insert_into(users)
+        .values(&NewUser::new("Sean", None))
         .execute(&connection)
         .unwrap();
     assert_eq!(Ok(1), source.first(&connection));
@@ -27,8 +27,8 @@ fn test_count_star() {
     let source = users.count();
 
     assert_eq!(Ok(0), source.first(&connection));
-    insert(&NewUser::new("Sean", None))
-        .into(users)
+    insert_into(users)
+        .values(&NewUser::new("Sean", None))
         .execute(&connection)
         .unwrap();
     assert_eq!(Ok(1), source.first(&connection));
@@ -77,7 +77,10 @@ fn max_returns_same_type_as_expression_being_maximized() {
         NewUser::new("C", None),
         NewUser::new("A", None),
     ];
-    insert(data).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(data)
+        .execute(&connection)
+        .unwrap();
     assert_eq!(Ok(Some("C".to_string())), source.first(&connection));
     connection
         .execute("DELETE FROM users WHERE name = 'C'")
@@ -168,7 +171,10 @@ fn function_with_multiple_arguments() {
         NewUser::new("Sean", Some("black")),
         NewUser::new("Tess", None),
     ];
-    insert(&new_users).into(users).execute(&connection).unwrap();
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
 
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
     let data = users

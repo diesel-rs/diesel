@@ -34,7 +34,7 @@ fn main() {
     let new_user = NewUser {
         name: "Foobar".to_string(),
     };
-    let stmt = insert(&new_user).into(users).returning((name, bad::age));
+    let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
     //~^ ERROR SelectableExpression
     //~| ERROR AppearsInFromClause
     //~| ERROR E0277

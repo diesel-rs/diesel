@@ -20,7 +20,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
     /// assert_eq!(Ok(1), data.first(&connection));
@@ -46,7 +46,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
     /// assert_eq!(Ok(2), data.first(&connection));
@@ -75,7 +75,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -113,7 +113,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -161,7 +161,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.gt(1));
     /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
@@ -187,7 +187,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.ge(2));
     /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
@@ -213,7 +213,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.lt(2));
     /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
@@ -239,7 +239,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.le(2));
     /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
@@ -297,7 +297,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use users::dsl::*;
     /// #     let order = "name";
     /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
     ///     if order == "name" {
@@ -329,7 +329,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use self::diesel::types::*;
+    /// # use diesel::types::*;
     /// #
     /// table! {
     ///     users {
@@ -360,8 +360,8 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// #  joinable!(posts -> users (user_id));
     ///
     /// fn main() {
-    ///     use self::users::dsl::*;
-    ///     use self::posts::dsl::{posts, author_name};
+    ///     use users::dsl::*;
+    ///     use posts::dsl::{posts, author_name};
     ///     let connection = establish_connection();
     ///
     ///     let data = users.inner_join(posts)

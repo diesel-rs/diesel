@@ -70,8 +70,8 @@ fn find_with_composite_pk() {
 
     let connection = connection();
     disable_foreign_keys(&connection);
-    insert(&vec![first_following, second_following, third_following])
-        .into(followings)
+    insert_into(followings)
+        .values(&vec![first_following, second_following, third_following])
         .execute(&connection)
         .unwrap();
 

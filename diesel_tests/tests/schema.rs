@@ -278,8 +278,8 @@ pub fn connection_with_nullable_table_data() -> TestConnection {
             value: Some(1),
         },
     ];
-    insert(&test_data)
-        .into(nullable_table::table)
+    insert_into(nullable_table::table)
+        .values(&test_data)
         .execute(&connection)
         .unwrap();
 

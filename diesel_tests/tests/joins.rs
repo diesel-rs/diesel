@@ -330,8 +330,8 @@ fn selecting_complex_expression_from_right_side_of_left_join() {
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
     sql_function!(lower, lower_t, (x: Text) -> Text);
@@ -356,8 +356,8 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
 
@@ -386,8 +386,8 @@ fn join_with_explicit_on_clause() {
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
 
@@ -665,8 +665,8 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         NewPost::new(tess.id, "Second Post", None),
         NewPost::new(sean.id, "Third Post", None),
     ];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&new_posts)
         .execute(&connection)
         .unwrap();
 
@@ -679,8 +679,8 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         NewComment(posts[2].id, "Second Comment"),
         NewComment(posts[0].id, "Third Comment"),
     ];
-    insert(&new_comments)
-        .into(comments::table)
+    insert_into(comments::table)
+        .values(&new_comments)
         .execute(&connection)
         .unwrap();
 
@@ -692,8 +692,8 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         user_id: tess.id,
         comment_id: *comments[0].id(),
     };
-    insert(&like)
-        .into(likes::table)
+    insert_into(likes::table)
+        .values(&like)
         .execute(&connection)
         .unwrap();
 
@@ -707,8 +707,8 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         post_id: posts[1].id,
         email_notifications: false,
     };
-    insert(&new_following)
-        .into(followings::table)
+    insert_into(followings::table)
+        .values(&new_following)
         .execute(&connection)
         .unwrap();
     let followings = followings::table

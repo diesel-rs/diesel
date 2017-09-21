@@ -14,13 +14,13 @@ fn association_where_struct_name_doesnt_match_table_name() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &connection);
-    insert(&sean.new_post("Hello", None))
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&sean.new_post("Hello", None))
         .execute(&connection)
         .unwrap();
     let post = posts::table.first::<Post>(&connection).unwrap();
-    insert(&NewComment(post.id, "comment"))
-        .into(comments::table)
+    insert_into(comments::table)
+        .values(&NewComment(post.id, "comment"))
         .execute(&connection)
         .unwrap();
 
@@ -82,13 +82,13 @@ fn association_where_parent_and_child_have_underscores() {
 
     let sean = find_user_by_name("Sean", &connection);
     let new_post = SpecialPost::new(sean.id, "title");
-    let special_post: SpecialPost = insert(&new_post)
-        .into(special_posts::table)
+    let special_post: SpecialPost = insert_into(special_posts::table)
+        .values(&new_post)
         .get_result(&connection)
         .unwrap();
     let new_comment = SpecialComment::new(special_post.id);
-    insert(&new_comment)
-        .into(special_comments::table)
+    insert_into(special_comments::table)
+        .values(&new_comment)
         .execute(&connection)
         .unwrap();
 
@@ -275,7 +275,10 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
             name: "Bob",
         },
     ];
-    assert_eq!(Ok(2), insert(&data).into(users::table).execute(&conn));
+    assert_eq!(
+        Ok(2),
+        insert_into(users::table).values(&data).execute(&conn)
+    );
 
     let users = users::table.load::<User>(&conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");
@@ -302,7 +305,10 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
         id: nextval("users_id_seq"),
         name: "Jim",
     };
-    assert_eq!(Ok(1), insert(&data).into(users::table).execute(&conn));
+    assert_eq!(
+        Ok(1),
+        insert_into(users::table).values(&data).execute(&conn)
+    );
 
     let users = users::table.load::<User>(&conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");

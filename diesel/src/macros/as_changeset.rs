@@ -49,8 +49,8 @@
 /// # fn main() {
 /// #     use users::dsl::*;
 /// #     let connection = establish_connection();
-/// diesel::insert(&NewUser::new("Sean"))
-///     .into(users)
+/// diesel::insert_into(users)
+///     .values(&NewUser::new("Sean"))
 ///     .execute(&connection)
 ///     .unwrap();
 /// let user_id = users.select(id).order(id.desc()).first(&connection).unwrap();

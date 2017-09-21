@@ -221,8 +221,8 @@ pub mod sql_types {
     /// }
     ///
     /// # fn main() {
-    /// #     use self::diesel::insert;
-    /// #     use self::contacts::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #     use contacts::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
@@ -239,7 +239,7 @@ pub mod sql_types {
     ///     name: "Claus".into(),
     ///     address: santas_address.clone()
     /// };
-    /// let inserted_contact = insert(&new_contact).into(contacts)
+    /// let inserted_contact = insert_into(contacts).values(&new_contact)
     ///     .get_result::<Contact>(&connection).unwrap();
     /// assert_eq!(santas_address, inserted_contact.address);
     /// # }
@@ -300,8 +300,8 @@ pub mod sql_types {
     /// }
     ///
     /// # fn main() {
-    /// #     use self::diesel::insert;
-    /// #     use self::items::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #     use items::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
@@ -312,7 +312,7 @@ pub mod sql_types {
     ///     name: "Shiny Thing".into(),
     ///     price: Cents(123_456),
     /// };
-    /// let inserted_item = insert(&new_item).into(items)
+    /// let inserted_item = insert_into(items).values(&new_item)
     ///     .get_result::<Item>(&connection).unwrap();
     /// assert_eq!(Cents(123_456), inserted_item.price);
     /// # }
@@ -368,8 +368,8 @@ pub mod sql_types {
     /// }
     ///
     /// # fn main() {
-    /// #     use self::diesel::insert;
-    /// #     use self::devices::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #     use devices::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE devices (
     /// #         id SERIAL PRIMARY KEY,
@@ -378,7 +378,7 @@ pub mod sql_types {
     /// let new_device = NewDevice {
     ///     macaddr: [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03],
     /// };
-    /// let inserted_device = insert(&new_device).into(devices)
+    /// let inserted_device = insert_into(devices).values(&new_device)
     ///     .get_result::<Device>(&connection).unwrap();
     /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_device.macaddr);
     /// # }
@@ -443,8 +443,8 @@ pub mod sql_types {
     /// }
     ///
     /// # fn main() {
-    /// #     use self::diesel::insert;
-    /// #     use self::clients::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #     use clients::dsl::*;
     /// #     use std::str::FromStr;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (
@@ -454,7 +454,7 @@ pub mod sql_types {
     /// let new_client = NewClient {
     ///     ip_address: "10.1.9.32/32".parse().unwrap(),
     /// };
-    /// let inserted_client = insert(&new_client).into(clients)
+    /// let inserted_client = insert_into(clients).values(&new_client)
     ///     .get_result::<Client>(&connection).unwrap();
     /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }
@@ -514,8 +514,8 @@ pub mod sql_types {
     /// }
     ///
     /// # fn main() {
-    /// #     use self::diesel::insert;
-    /// #     use self::clients::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #     use clients::dsl::*;
     /// #     use std::str::FromStr;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (
@@ -525,7 +525,7 @@ pub mod sql_types {
     /// let new_client = NewClient {
     ///     ip_address: "10.1.9.32/32".parse().unwrap(),
     /// };
-    /// let inserted_client = insert(&new_client).into(clients)
+    /// let inserted_client = insert_into(clients).values(&new_client)
     ///     .get_result::<Client>(&connection).unwrap();
     /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
     /// # }

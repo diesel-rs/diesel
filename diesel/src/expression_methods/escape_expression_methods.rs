@@ -20,9 +20,9 @@ use types::VarChar;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// #     use diesel::insert;
+/// #     use diesel::insert_into;
 /// #     let connection = establish_connection();
-/// #     insert(&NewUser { name: "Ha%%0r".into() }).into(users)
+/// #     insert_into(users).values(&NewUser { name: "Ha%%0r".into() })
 /// #         .execute(&connection).unwrap();
 /// let users_with_percent = users.select(name)
 ///     .filter(name.like("%😀%%").escape('😀'))
