@@ -1,6 +1,5 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression};
-use expression::operators::Eq;
 use result::QueryResult;
 use query_builder::{AstPass, QueryBuilder, QueryFragment};
 use query_builder::insert_statement::UndecoratedInsertRecord;
@@ -19,8 +18,8 @@ use sqlite::Sqlite;
 /// also be annotated with `#[table_name = "some_table_name"]`. If the field
 /// name of your struct differs from the name of the column, you can annotate
 /// the field with `#[column_name = "some_column_name"]`.
-pub trait Insertable<T: Table, DB: Backend> {
-    type Values: InsertValues<T, DB>;
+pub trait Insertable<T> {
+    type Values;
 
     fn values(self) -> Self::Values;
 }
@@ -36,6 +35,24 @@ where
 {
     fn rows_to_insert(&self) -> usize {
         (*self).rows_to_insert()
+    }
+}
+
+impl<T, DB> CanInsertInSingleQuery<DB> for [T]
+where
+    DB: Backend + SupportsDefaultKeyword,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<T, U, DB> CanInsertInSingleQuery<DB> for ColumnInsertValue<T, U>
+where
+    DB: Backend,
+{
+    fn rows_to_insert(&self) -> usize {
+        1
     }
 }
 
@@ -128,83 +145,34 @@ where
     }
 }
 
-impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a [T]
+impl<'a, T, Tab> Insertable<Tab> for &'a [T]
 where
-    Tab: Table,
-    DB: Backend,
-    BatchInsertValues<'a, T>: InsertValues<Tab, DB>,
     &'a T: UndecoratedInsertRecord<Tab>,
 {
-    type Values = BatchInsertValues<'a, T>;
+    type Values = Self;
 
     fn values(self) -> Self::Values {
-        BatchInsertValues { records: self }
+        self
     }
 }
 
-impl<T, DB> CanInsertInSingleQuery<DB> for [T]
+impl<'a, T, Tab> Insertable<Tab> for &'a Vec<T>
 where
-    DB: Backend + SupportsDefaultKeyword,
-    T: CanInsertInSingleQuery<DB>,
+    &'a [T]: Insertable<Tab>,
 {
-    fn rows_to_insert(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a Vec<T>
-where
-    Tab: Table,
-    DB: Backend,
-    &'a [T]: Insertable<Tab, DB>,
-{
-    type Values = <&'a [T] as Insertable<Tab, DB>>::Values;
+    type Values = <&'a [T] as Insertable<Tab>>::Values;
 
     fn values(self) -> Self::Values {
         (&**self).values()
     }
 }
 
-impl<T, DB> CanInsertInSingleQuery<DB> for Vec<T>
+impl<'a, T, Tab> Insertable<Tab> for &'a Option<T>
 where
-    DB: Backend,
-    [T]: CanInsertInSingleQuery<DB>,
+    &'a T: Insertable<Tab>,
+    <&'a T as Insertable<Tab>>::Values: Default,
 {
-    fn rows_to_insert(&self) -> usize {
-        self.as_slice().rows_to_insert()
-    }
-}
-
-impl<Lhs, Rhs, DB> CanInsertInSingleQuery<DB> for Eq<Lhs, Rhs>
-where
-    DB: Backend,
-{
-    fn rows_to_insert(&self) -> usize {
-        1
-    }
-}
-
-impl<T, DB> CanInsertInSingleQuery<DB> for Option<T>
-where
-    DB: Backend,
-    T: CanInsertInSingleQuery<DB>,
-{
-    fn rows_to_insert(&self) -> usize {
-        if let Some(ref value) = *self {
-            debug_assert_eq!(value.rows_to_insert(), 1);
-        }
-        1
-    }
-}
-
-impl<'a, T, Tab, DB> Insertable<Tab, DB> for &'a Option<T>
-where
-    Tab: Table,
-    DB: Backend,
-    &'a T: Insertable<Tab, DB>,
-    <&'a T as Insertable<Tab, DB>>::Values: Default,
-{
-    type Values = <&'a T as Insertable<Tab, DB>>::Values;
+    type Values = <&'a T as Insertable<Tab>>::Values;
 
     fn values(self) -> Self::Values {
         match *self {
@@ -214,27 +182,22 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct BatchInsertValues<'a, T: 'a> {
-    records: &'a [T],
-}
-
-impl<'a, T, Tab, DB> InsertValues<Tab, DB> for BatchInsertValues<'a, T>
+impl<'a, T, Tab, DB> InsertValues<Tab, DB> for &'a [T]
 where
     Tab: Table,
     DB: Backend + SupportsDefaultKeyword,
-    &'a T: Insertable<Tab, DB>,
+    &'a T: Insertable<Tab>,
+    <&'a T as Insertable<Tab>>::Values: InsertValues<Tab, DB>,
 {
     fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.records
-            .get(0)
+        self.get(0)
             .expect("Tried to read column names from empty list of rows")
             .values()
             .column_names(out)
     }
 
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        for (i, record) in self.records.iter().enumerate() {
+        for (i, record) in self.iter().enumerate() {
             if i != 0 {
                 out.push_sql("), (");
             }

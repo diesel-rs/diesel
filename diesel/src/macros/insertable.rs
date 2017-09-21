@@ -159,18 +159,8 @@ macro_rules! impl_Insertable {
         self_to_columns = $self_to_columns:pat,
         columns = ($($column_name:ident, $field_ty:ty, $field_kind:ident),+),
     ) => {
-        impl<$($lifetime,)* 'insert, DB> $crate::insertable::Insertable<$table_name::table, DB>
-            for &'insert $struct_ty where
-                DB: $crate::backend::Backend,
-                ($(
-                    $crate::insertable::ColumnInsertValue<
-                        $table_name::$column_name,
-                        $crate::dsl::AsExpr<
-                            &'insert $field_ty,
-                            $table_name::$column_name,
-                        >,
-                    >
-                ,)+): $crate::insertable::InsertValues<$table_name::table, DB>,
+        impl<$($lifetime,)* 'insert> $crate::insertable::Insertable<$table_name::table>
+            for &'insert $struct_ty
         {
             type Values = ($(
                 $crate::insertable::ColumnInsertValue<
@@ -190,16 +180,6 @@ macro_rules! impl_Insertable {
                 ($(
                     Insertable_column_expr!($table_name::$column_name, $column_name, $field_kind)
                 ,)+)
-            }
-        }
-
-        impl<$($lifetime,)* DB> $crate::insertable::CanInsertInSingleQuery<DB>
-            for $struct_ty
-        where
-            DB: $crate::backend::Backend,
-        {
-            fn rows_to_insert(&self) -> usize {
-                1
             }
         }
 

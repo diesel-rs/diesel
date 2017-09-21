@@ -20,14 +20,10 @@ fn main() {
     let conn = PgConnection::establish("").unwrap();
 
     insert_into(users::table)
-        .values(&posts::id.eq(1))
-        .execute(&conn)
-        //~^ ERROR E0599
-        .unwrap();
+        .values(&posts::id.eq(1));
+        //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
 
     insert_into(users::table)
-        .values(&(posts::id.eq(1), users::id.eq(2)))
-        .execute(&conn)
-        //~^ ERROR E0599
-        .unwrap();
+        .values(&(posts::id.eq(1), users::id.eq(2)));
+        //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
 }

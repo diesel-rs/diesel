@@ -31,22 +31,15 @@ fn main() {
     let valid_insert = insert_into(users).values(&NewUser("Sean").on_conflict(id, do_nothing())).execute(&connection);
     // Sanity check, no error
 
-    // Using UFCS to get a more specific error message
-    let column_from_other_table = <_ as ExecuteDsl<_>>::execute(
+    let column_from_other_table = insert_into(users)
+        .values(&NewUser("Sean").on_conflict(posts::id, do_nothing()));
         //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
-        insert_into(users).values(&NewUser("Sean").on_conflict(posts::id, do_nothing())),
-        &connection,
-    );
 
-    let expression_using_column_from_other_table = <_ as ExecuteDsl<_>>::execute(
-        //~^ ERROR E0277
-        insert_into(users).values(&NewUser("Sean").on_conflict(lower(posts::title), do_nothing())),
-        &connection,
-    );
+    let expression_using_column_from_other_table = insert_into(users)
+        .values(&NewUser("Sean").on_conflict(lower(posts::title), do_nothing()));
+        //~^ ERROR the trait bound `lower_t<posts::columns::title>: diesel::Column` is not satisfied
 
-    let random_non_expression = <_ as ExecuteDsl<_>>::execute(
-        //~^ ERROR E0277
-        insert_into(users).values(&NewUser("Sean").on_conflict("id", do_nothing())),
-        &connection,
-    );
+    let random_non_expression = insert_into(users)
+        .values(&NewUser("Sean").on_conflict("id", do_nothing()));
+        //~^ ERROR the trait bound `&str: diesel::Column` is not satisfied
 }
