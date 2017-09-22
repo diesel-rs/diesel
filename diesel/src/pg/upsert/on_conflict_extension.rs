@@ -1,5 +1,8 @@
-pub use super::on_conflict_clause::*;
-pub use super::on_conflict_target::*;
+use expression::operators::Eq;
+use query_builder::insert_statement::{InsertStatement, UndecoratedInsertRecord};
+use super::on_conflict_actions::*;
+use super::on_conflict_clause::*;
+use super::on_conflict_target::*;
 
 /// Adds extension methods related to PG upsert
 pub trait OnConflictExtension {
@@ -79,6 +82,8 @@ pub trait OnConflictExtension {
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
     /// ```
+    #[cfg(feature = "with-deprecated")]
+    #[deprecated(since = "0.99.0", note = "use `.values().on_conflict_do_nothing()` instead")]
     fn on_conflict_do_nothing(&self) -> OnConflictDoNothing<&Self> {
         OnConflictDoNothing::new(self)
     }
@@ -199,4 +204,76 @@ pub trait OnConflictExtension {
     }
 }
 
-impl<T: ?Sized> OnConflictExtension for T {}
+// We want to ensure that the deprecated methods are not present on
+// `InsertStatement`, but is present on all types which implement `Insertable`.
+// Unfortunately there's no trait bound that we can target without knowing the
+// table, so we have to implement it manually instead.
+//
+// There are two additional impls in `impls/tuples.rs` and `macros/insertable.rs`
+impl<Lhs, Rhs> OnConflictExtension for Eq<Lhs, Rhs> {}
+impl<T> OnConflictExtension for [T] {}
+impl<T> OnConflictExtension for Vec<T> {}
+impl<T> OnConflictExtension for Option<T> {}
+
+impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
+where
+    U: UndecoratedInsertRecord<T>,
+{
+    /// Adds `ON CONFLICT DO NOTHING` to the insert statement, without
+    /// specifying any columns or constraints to restrict the conflict to.
+    ///
+    /// # Examples
+    ///
+    /// ### Single Record
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("on_conflict_docs_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     use users::dsl::*;
+    /// #     let conn = establish_connection();
+    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// let user = User { id: 1, name: "Sean", };
+    ///
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&user)
+    ///     .on_conflict_do_nothing()
+    ///     .execute(&conn);
+    /// assert_eq!(Ok(1), inserted_row_count);
+    ///
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&user)
+    ///     .on_conflict_do_nothing()
+    ///     .execute(&conn);
+    /// assert_eq!(Ok(0), inserted_row_count);
+    /// # }
+    /// ```
+    ///
+    /// ### Vec of Records
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("on_conflict_docs_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     use users::dsl::*;
+    /// #     let conn = establish_connection();
+    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// let user = User { id: 1, name: "Sean", };
+    ///
+    /// let inserted_row_count = diesel::insert_into(users)
+    ///     .values(&vec![user, user])
+    ///     .on_conflict_do_nothing()
+    ///     .execute(&conn);
+    /// assert_eq!(Ok(1), inserted_row_count);
+    /// # }
+    /// ```
+    pub fn on_conflict_do_nothing(
+        self,
+    ) -> InsertStatement<T, OnConflictValues<U, NoConflictTarget, DoNothing>, Op, Ret> {
+        self.replace_values(OnConflictValues::do_nothing)
+    }
+}

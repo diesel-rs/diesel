@@ -262,11 +262,11 @@ fn insert_empty_slice_with_returning() {
 #[test]
 #[cfg(feature = "postgres")]
 fn upsert_empty_slice() {
-    use diesel::pg::upsert::*;
     let connection = connection();
 
     let inserted_records = insert_into(users::table)
-        .values(&Vec::<NewUser>::new().on_conflict_do_nothing())
+        .values(&Vec::<NewUser>::new())
+        .on_conflict_do_nothing()
         .execute(&connection);
 
     assert_eq!(Ok(0), inserted_records);

@@ -9,8 +9,10 @@ use super::on_conflict_actions::*;
 use super::on_conflict_target::*;
 
 #[derive(Debug, Clone, Copy)]
+#[cfg(feature = "with-deprecated")]
 pub struct OnConflictDoNothing<T>(T);
 
+#[cfg(feature = "with-deprecated")]
 impl<T> OnConflictDoNothing<T> {
     pub fn new(records: T) -> Self {
         OnConflictDoNothing(records)
@@ -34,6 +36,7 @@ impl<Records, Target, Action> OnConflict<Records, Target, Action> {
     }
 }
 
+#[cfg(feature = "with-deprecated")]
 impl<'a, T, Tab> Insertable<Tab> for &'a OnConflictDoNothing<T>
 where
     T: Insertable<Tab> + Copy,
@@ -75,6 +78,22 @@ pub struct OnConflictValues<Values, Target, Action> {
     values: Values,
     target: Target,
     action: Action,
+}
+
+impl<Values> OnConflictValues<Values, NoConflictTarget, DoNothing> {
+    pub(crate) fn do_nothing(values: Values) -> Self {
+        Self::new(values, NoConflictTarget, DoNothing)
+    }
+}
+
+impl<Values, Target, Action> OnConflictValues<Values, Target, Action> {
+    pub(crate) fn new(values: Values, target: Target, action: Action) -> Self {
+        OnConflictValues {
+            values,
+            target,
+            action,
+        }
+    }
 }
 
 impl<Values, Target, Action> CanInsertInSingleQuery<Pg> for OnConflictValues<Values, Target, Action>

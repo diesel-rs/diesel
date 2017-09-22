@@ -183,10 +183,29 @@ macro_rules! impl_Insertable {
             }
         }
 
-        impl<$($lifetime: 'insert,)* 'insert> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
-            for &'insert $struct_ty
+        impl<$($lifetime,)*> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
+            for $struct_ty
         {
         }
+
+        __diesel_impl_on_conflict_extension!($struct_ty, $($lifetime,)*);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "postgres")]
+macro_rules! __diesel_impl_on_conflict_extension {
+    ($struct_ty:ty, $($lifetimes:tt)*) => {
+        impl<$($lifetimes)*> $crate::pg::upsert::OnConflictExtension for $struct_ty {}
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "postgres"))]
+macro_rules! __diesel_impl_on_conflict_extension {
+    ($struct_ty:ty, $($lifetimes:tt)*) => {
     };
 }
 

@@ -3,7 +3,7 @@ use std::any::*;
 use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
-use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
+use insertable::*;
 #[cfg(feature = "mysql")]
 use mysql::Mysql;
 use query_builder::*;
@@ -131,6 +131,14 @@ impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
             records: records,
             returning: returning,
         }
+    }
+
+    #[cfg(feature = "postgres")]
+    pub(crate) fn replace_values<F, V>(self, f: F) -> InsertStatement<T, V, Op, Ret>
+    where
+        F: FnOnce(U) -> V,
+    {
+        InsertStatement::new(self.target, f(self.records), self.operator, self.returning)
     }
 }
 
@@ -313,27 +321,39 @@ impl_query_id!(Replace);
 /// from compiling.
 pub trait UndecoratedInsertRecord<Table> {}
 
-impl<'a, T, Table> UndecoratedInsertRecord<Table> for &'a [T]
+impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T
 where
-    &'a T: UndecoratedInsertRecord<Table>,
+    T: ?Sized + UndecoratedInsertRecord<Tab>,
 {
 }
 
-impl<'a, T, Table> UndecoratedInsertRecord<Table> for &'a Vec<T>
+impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U>
 where
-    &'a [T]: UndecoratedInsertRecord<Table>,
+    T: Column,
 {
 }
 
-impl<'a, Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for &'a Eq<Lhs, Rhs>
+impl<T, Table> UndecoratedInsertRecord<Table> for [T]
+where
+    T: UndecoratedInsertRecord<Table>,
+{
+}
+
+impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T>
+where
+    [T]: UndecoratedInsertRecord<Table>,
+{
+}
+
+impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs>
 where
     Lhs: Column,
 {
 }
 
-impl<'a, Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for &'a Option<Eq<Lhs, Rhs>>
+impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>>
 where
-    &'a Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>,
+    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>,
 {
 }
 

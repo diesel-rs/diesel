@@ -86,9 +86,9 @@ macro_rules! tuple_impls {
             impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
             }
 
-            impl<'a, $($T,)+ Tab> UndecoratedInsertRecord<Tab> for &'a ($($T,)+)
+            impl<$($T,)+ Tab> UndecoratedInsertRecord<Tab> for ($($T,)+)
             where
-                $(&'a $T: UndecoratedInsertRecord<Tab>,)+
+                $($T: UndecoratedInsertRecord<Tab>,)+
             {
             }
 
@@ -115,6 +115,9 @@ macro_rules! tuple_impls {
                     ($(self.$idx.values(),)+)
                 }
             }
+
+            #[cfg(feature = "postgres")]
+            impl<$($T,)+> ::pg::upsert::OnConflictExtension for ($($T,)+) {}
 
             #[allow(unused_assignments)]
             impl<$($T,)+ Tab, DB> InsertValues<Tab, DB> for ($($T,)+)

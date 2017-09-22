@@ -4,7 +4,6 @@
 use diesel::*;
 use diesel::types::*;
 use diesel::dsl::*;
-use diesel::pg::upsert::*;
 
 table! {
     users {
@@ -33,7 +32,8 @@ fn main() {
     users.select(id).filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&connection);
     //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
-    insert_into(users).values(&NewUser("Sean").on_conflict_do_nothing())
+    insert_into(users).values(&NewUser("Sean"))
+        .on_conflict_do_nothing()
         .execute(&connection);
     //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
 }
