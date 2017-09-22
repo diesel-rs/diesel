@@ -489,3 +489,16 @@ fn insert_optional_field_with_default() {
     let actual_data = users.select((name, hair_color)).load(&connection);
     assert_eq!(Ok(expected_data), actual_data);
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn batch_insert_is_atomic_on_sqlite() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    let new_users = vec![Some(name.eq("Sean")), None];
+    let result = insert(&new_users).into(users).execute(&connection);
+    assert!(result.is_err());
+
+    assert_eq!(Ok(0), users.count().get_result(&connection));
+}

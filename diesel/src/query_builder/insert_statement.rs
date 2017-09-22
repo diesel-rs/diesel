@@ -170,12 +170,15 @@ where
     Op: Copy,
 {
     fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
-        let mut result = 0;
-        for record in self.records {
-            result += InsertStatement::new(self.target, record, self.operator, self.returning)
-                .execute(conn)?;
-        }
-        Ok(result)
+        use connection::Connection;
+        conn.transaction(|| {
+            let mut result = 0;
+            for record in self.records {
+                result += InsertStatement::new(self.target, record, self.operator, self.returning)
+                    .execute(conn)?;
+            }
+            Ok(result)
+        })
     }
 }
 
