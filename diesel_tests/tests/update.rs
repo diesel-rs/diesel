@@ -341,10 +341,10 @@ fn upsert_with_no_changes_executes_do_nothing() {
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let result = insert_into(users::table)
-        .values(
-            &User::new(1, "Sean")
-                .on_conflict(users::id, do_update().set(&Changes { hair_color: None })),
-        )
+        .values(&User::new(1, "Sean"))
+        .on_conflict(users::id)
+        .do_update()
+        .set(&Changes { hair_color: None })
         .execute(&connection);
 
     assert_eq!(Ok(0), result);
@@ -370,10 +370,11 @@ fn upsert_with_sql_literal_for_target() {
         NewUser::new("Sean", Some("Green")),
         NewUser::new("Tess", Some("Blue")),
     ];
-    let conflict_target = sql::<Text>("(name) WHERE name != 'Tess'");
-    let conflict_action = do_update().set(hair_color.eq(excluded(hair_color)));
     insert_into(users)
-        .values(&new_users.on_conflict(conflict_target, conflict_action))
+        .values(&new_users)
+        .on_conflict(sql::<Text>("(name) WHERE name != 'Tess'"))
+        .do_update()
+        .set(hair_color.eq(excluded(hair_color)))
         .execute(&connection)
         .unwrap();
 

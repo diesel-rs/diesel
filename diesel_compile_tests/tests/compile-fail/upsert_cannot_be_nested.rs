@@ -49,10 +49,26 @@ fn main() {
                 .on_conflict(id, do_nothing()));
                 //~^ ERROR no method named `on_conflict` found
     insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict_do_nothing()
+        .on_conflict(id);
+        //~^ ERROR no method named `on_conflict` found
+    insert_into(users)
+        .values(&NewUser("Sean")
+                .on_conflict_do_nothing())
+        .on_conflict(id);
+        //~^ ERROR no method named `on_conflict` found
+    insert_into(users)
         .values(&NewUser("Sean")
                 .on_conflict(id, do_nothing())
                 .on_conflict(id, do_nothing()));
                 //~^ ERROR no method named `on_conflict` found
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_nothing()
+        .on_conflict(id);
+        //~^ ERROR no method named `on_conflict` found
     insert_into(users)
         .values(&vec![NewUser("Sean").on_conflict_do_nothing()]);
         //~^ ERROR UndecoratedInsertRecord
