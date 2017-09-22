@@ -315,7 +315,7 @@ diesel_postfix_operator!(Desc, " DESC", ());
 diesel_prefix_operator!(Not, "NOT ");
 
 use backend::Backend;
-use insertable::{ColumnInsertValue, InsertValues, Insertable};
+use insertable::{ColumnInsertValue, Insertable};
 use query_source::Column;
 use query_builder::*;
 use result::QueryResult;
@@ -351,11 +351,9 @@ where
     }
 }
 
-impl<'a, T, U, DB> Insertable<T::Table, DB> for &'a Eq<T, U>
+impl<'a, T, U> Insertable<T::Table> for &'a Eq<T, U>
 where
     T: Column + Copy,
-    DB: Backend,
-    ColumnInsertValue<T, &'a U>: InsertValues<T::Table, DB>,
 {
     type Values = ColumnInsertValue<T, &'a U>;
 

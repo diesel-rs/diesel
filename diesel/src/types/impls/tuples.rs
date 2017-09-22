@@ -103,14 +103,12 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<'a, $($T,)+ Tab, DB> Insertable<Tab, DB> for &'a ($($T,)+)
+            impl<'a, $($T,)+ Tab> Insertable<Tab> for &'a ($($T,)+)
             where
-                Tab: Table,
-                DB: Backend,
-                $(&'a $T: Insertable<Tab, DB> + UndecoratedInsertRecord<Tab>,)+
+                $(&'a $T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,)+
             {
                 type Values = ($(
-                    <&'a $T as Insertable<Tab, DB>>::Values,
+                    <&'a $T as Insertable<Tab>>::Values,
                 )+);
 
                 fn values(self) -> Self::Values {

@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
+use expression::bound::Bound;
 use prelude::*;
-use super::schema::NewMigration;
+use insertable::ColumnInsertValue;
+use query_builder::insert_statement::InsertStatement;
 use super::schema::__diesel_schema_migrations::dsl::*;
 use types::{FromSql, VarChar};
 
@@ -20,7 +22,8 @@ impl<T> MigrationConnection for T
 where
     T: Connection,
     String: FromSql<VarChar, T::Backend>,
-    for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations, T::Backend>,
+    // FIXME: HRTB is preventing projecting on any associated types here
+    for<'a> InsertStatement<__diesel_schema_migrations, ColumnInsertValue<version, &'a Bound<VarChar, &'a str>>>: ExecuteDsl<T>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations
@@ -37,7 +40,7 @@ where
     fn insert_new_migration(&self, ver: &str) -> QueryResult<()> {
         try!(
             ::insert_into(__diesel_schema_migrations)
-                .values(&NewMigration(ver))
+                .values(&version.eq(ver))
                 .execute(self)
         );
         Ok(())

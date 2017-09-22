@@ -34,10 +34,9 @@ impl<Records, Target, Action> OnConflict<Records, Target, Action> {
     }
 }
 
-impl<'a, T, Tab> Insertable<Tab, Pg> for &'a OnConflictDoNothing<T>
+impl<'a, T, Tab> Insertable<Tab> for &'a OnConflictDoNothing<T>
 where
-    Tab: Table,
-    T: Insertable<Tab, Pg> + Copy,
+    T: Insertable<Tab> + Copy,
     T: UndecoratedInsertRecord<Tab>,
 {
     type Values = OnConflictValues<T::Values, NoConflictTarget, DoNothing>;
@@ -51,20 +50,9 @@ where
     }
 }
 
-impl<T> CanInsertInSingleQuery<Pg> for OnConflictDoNothing<T>
+impl<'a, Records, Target, Action, Tab> Insertable<Tab> for &'a OnConflict<Records, Target, Action>
 where
-    T: CanInsertInSingleQuery<Pg>,
-{
-    fn rows_to_insert(&self) -> usize {
-        self.0.rows_to_insert()
-    }
-}
-
-impl<'a, Records, Target, Action, Tab> Insertable<Tab, Pg>
-    for &'a OnConflict<Records, Target, Action>
-where
-    Tab: Table,
-    Records: Insertable<Tab, Pg> + Copy,
+    Records: Insertable<Tab> + Copy,
     Records: UndecoratedInsertRecord<Tab>,
     Target: OnConflictTarget<Tab> + Clone,
     Action: IntoConflictAction<Tab> + Copy,
@@ -80,14 +68,6 @@ where
     }
 }
 
-impl<Records, Target, Action> CanInsertInSingleQuery<Pg> for OnConflict<Records, Target, Action>
-where
-    Records: CanInsertInSingleQuery<Pg>,
-{
-    fn rows_to_insert(&self) -> usize {
-        self.records.rows_to_insert()
-    }
-}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
@@ -95,6 +75,15 @@ pub struct OnConflictValues<Values, Target, Action> {
     values: Values,
     target: Target,
     action: Action,
+}
+
+impl<Values, Target, Action> CanInsertInSingleQuery<Pg> for OnConflictValues<Values, Target, Action>
+where
+    Values: CanInsertInSingleQuery<Pg>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.values.rows_to_insert()
+    }
 }
 
 impl<Tab, Values, Target, Action> InsertValues<Tab, Pg> for OnConflictValues<Values, Target, Action>

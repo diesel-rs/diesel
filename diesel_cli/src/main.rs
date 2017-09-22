@@ -27,9 +27,7 @@ mod query_helper;
 
 use chrono::*;
 use clap::{ArgMatches, Shell};
-use diesel::migrations::schema::*;
-use diesel::types::{FromSql, VarChar};
-use diesel::{migrations, Connection, Insertable};
+use diesel::migrations::{self, MigrationConnection};
 use std::any::Any;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
@@ -263,9 +261,7 @@ fn search_for_cargo_toml_directory(path: &Path) -> DatabaseResult<PathBuf> {
 /// transaction. If either part fails, the transaction is not committed.
 fn redo_latest_migration<Conn>(conn: &Conn, migrations_dir: &Path)
 where
-    Conn: Connection + Any,
-    String: FromSql<VarChar, Conn::Backend>,
-    for<'a> &'a NewMigration<'a>: Insertable<__diesel_schema_migrations::table, Conn::Backend>,
+    Conn: MigrationConnection + Any,
 {
     let migration_inner = || {
         let reverted_version = try!(migrations::revert_latest_migration_in_directory(

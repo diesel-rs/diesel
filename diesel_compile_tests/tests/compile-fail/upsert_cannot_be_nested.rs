@@ -20,19 +20,21 @@ fn main() {
     let connection = PgConnection::establish("postgres://localhost").unwrap();
 
     insert_into(users).values(&NewUser("Sean").on_conflict_do_nothing().on_conflict_do_nothing()).execute(&connection);
-    //~^ ERROR no method named `execute`
+    //~^ ERROR E0277
     insert_into(users).values(&NewUser("Sean").on_conflict(id, do_nothing()).on_conflict_do_nothing()).execute(&connection);
-    //~^ ERROR no method named `execute`
+    //~^ ERROR E0277
     insert_into(users).values(&NewUser("Sean").on_conflict_do_nothing().on_conflict(id, do_nothing())).execute(&connection);
-    //~^ ERROR no method named `execute`
+    //~^ ERROR E0277
     insert_into(users).values(&NewUser("Sean").on_conflict(id, do_nothing()).on_conflict(id, do_nothing())).execute(&connection);
-    //~^ ERROR no method named `execute`
+    //~^ ERROR E0277
     insert_into(users).values(&vec![NewUser("Sean").on_conflict_do_nothing()]).execute(&connection);
-    //~^ ERROR E0599
+    //~^ ERROR E0277
     insert_into(users).values(&vec![&NewUser("Sean").on_conflict_do_nothing()]).execute(&connection);
-    //~^ ERROR E0599
+    //~^ ERROR no method named `execute`
+    //~| ERROR E0277
     insert_into(users).values(&vec![&NewUser("Sean").on_conflict(id, do_nothing())]).execute(&connection);
-    //~^ ERROR E0599
+    //~^ ERROR no method named `execute`
+    //~| ERROR E0277
     insert_into(users).values(&(name.eq("Sean").on_conflict_do_nothing(),)).execute(&connection);
-    //~^ ERROR E0599
+    //~^ ERROR E0277
 }

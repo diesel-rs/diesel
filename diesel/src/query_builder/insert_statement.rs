@@ -60,7 +60,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// assert_eq!(Ok(expected_data), users.load(&connection));
     /// # }
     /// ```
-    pub fn default_values(self) -> InsertStatement<T, &'static DefaultValues, Op> {
+    pub fn default_values(self) -> InsertStatement<T, DefaultValues, Op> {
         static STATIC_DEFAULT_VALUES: &'static DefaultValues = &DefaultValues;
         self.values(STATIC_DEFAULT_VALUES)
     }
@@ -69,8 +69,16 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     ///
     /// See the documentation of [`insert_into`](../fn.insert_into.html) for
     /// usage examples.
-    pub fn values<U: ?Sized>(self, records: &U) -> InsertStatement<T, &U, Op> {
-        InsertStatement::new(self.target, records, self.operator, NoReturningClause)
+    pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+    where
+        U: Insertable<T>,
+    {
+        InsertStatement::new(
+            self.target,
+            records.values(),
+            self.operator,
+            NoReturningClause,
+        )
     }
 }
 
@@ -94,8 +102,16 @@ impl<T, Op> DeprecatedIncompleteInsertStatement<T, Op> {
     }
 
     /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> InsertStatement<S, T, Op> {
-        InsertStatement::new(target, self.records, self.operator, NoReturningClause)
+    pub fn into<S>(self, target: S) -> InsertStatement<S, T::Values, Op>
+    where
+        T: Insertable<S>,
+    {
+        InsertStatement::new(
+            target,
+            self.records.values(),
+            self.operator,
+            NoReturningClause,
+        )
     }
 }
 
@@ -123,7 +139,7 @@ where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
-    U: Insertable<T, DB> + CanInsertInSingleQuery<DB> + Copy,
+    U: InsertValues<T, DB> + CanInsertInSingleQuery<DB>,
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
@@ -137,23 +153,22 @@ where
             return Ok(());
         }
 
-        let values = self.records.values();
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
-        if values.is_noop() {
+        if self.records.is_noop() {
             out.push_sql(" DEFAULT VALUES");
         } else {
             out.push_sql(" (");
             if let Some(builder) = out.reborrow().query_builder() {
-                values.column_names(builder)?;
+                self.records.column_names(builder)?;
             }
             out.push_sql(") VALUES ");
-            if values.requires_parenthesis() {
+            if self.records.requires_parenthesis() {
                 out.push_sql("(");
             }
-            values.walk_ast(out.reborrow())?;
-            if values.requires_parenthesis() {
+            self.records.walk_ast(out.reborrow())?;
+            if self.records.requires_parenthesis() {
                 out.push_sql(")");
             }
         }
@@ -165,7 +180,8 @@ where
 #[cfg(feature = "sqlite")]
 impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
 where
-    InsertStatement<T, &'a U, Op>: QueryFragment<Sqlite>,
+    &'a U: Insertable<T>,
+    InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>: QueryFragment<Sqlite>,
     T: Copy,
     Op: Copy,
 {
@@ -174,26 +190,15 @@ where
         conn.transaction(|| {
             let mut result = 0;
             for record in self.records {
-                result += InsertStatement::new(self.target, record, self.operator, self.returning)
-                    .execute(conn)?;
+                result += InsertStatement::new(
+                    self.target,
+                    record.values(),
+                    self.operator,
+                    self.returning,
+                ).execute(conn)?;
             }
             Ok(result)
         })
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a Vec<U>, Op>
-where
-    InsertStatement<T, &'a [U], Op>: ExecuteDsl<SqliteConnection>,
-{
-    fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
-        InsertStatement::new(
-            self.target,
-            self.records.as_slice(),
-            self.operator,
-            self.returning,
-        ).execute(conn)
     }
 }
 
@@ -342,12 +347,7 @@ impl<DB: Backend> CanInsertInSingleQuery<DB> for DefaultValues {
     }
 }
 
-impl<'a, Tab, DB> Insertable<Tab, DB> for &'a DefaultValues
-where
-    Tab: Table,
-    DB: Backend,
-    DefaultValues: InsertValues<Tab, DB>,
-{
+impl<'a, Tab> Insertable<Tab> for &'a DefaultValues {
     type Values = DefaultValues;
 
     fn values(self) -> Self::Values {
