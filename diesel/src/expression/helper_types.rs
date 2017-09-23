@@ -41,15 +41,15 @@ pub type Like<Lhs, Rhs> = super::operators::Like<Lhs, AsExprOf<Rhs, types::VarCh
 /// The return type of `lhs.not_like(rhs)`
 pub type NotLike<Lhs, Rhs> = super::operators::NotLike<Lhs, AsExprOf<Rhs, types::VarChar>>;
 
-/// The return type of `lhs.between(rhs..rhs)`
-pub type Between<Lhs, Rhs> = super::operators::Between<
+/// The return type of `lhs.between(lower, upper)`
+pub type Between<Lhs, Lower, Upper> = super::operators::Between<
     Lhs,
-    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>,
+    super::operators::And<AsExpr<Lower, Lhs>, AsExpr<Upper, Lhs>>,
 >;
-/// The return type of `lhs.not_between(rhs..rhs)`
-pub type NotBetween<Lhs, Rhs> = super::operators::NotBetween<
+/// The return type of `lhs.not_between(lower, upper)`
+pub type NotBetween<Lhs, Lower, Upper> = super::operators::NotBetween<
     Lhs,
-    super::operators::And<AsExpr<Rhs, Lhs>, AsExpr<Rhs, Lhs>>,
+    super::operators::And<AsExpr<Lower, Lhs>, AsExpr<Upper, Lhs>>,
 >;
 /// The return type of `not(expr)`
 pub type Not<Expr> = super::operators::Not<Grouped<AsExprOf<Expr, types::Bool>>>;

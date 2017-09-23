@@ -121,7 +121,7 @@ fn filter_by_between() {
     assert_eq!(
         vec![sean, tess.clone(), jim.clone()],
         users
-            .filter(id.between(1..3))
+            .filter(id.between(1, 3))
             .order(id.asc())
             .load(&connection)
             .unwrap()
@@ -129,7 +129,7 @@ fn filter_by_between() {
     assert_eq!(
         vec![tess, jim],
         users
-            .filter(id.between(2..3))
+            .filter(id.between(2, 3))
             .order(id.asc())
             .load(&connection)
             .unwrap()
