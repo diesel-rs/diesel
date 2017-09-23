@@ -2,6 +2,7 @@ use backend::Backend;
 use insertable::*;
 use pg::Pg;
 use query_builder::*;
+#[cfg(feature = "with-deprecated")]
 use query_builder::insert_statement::*;
 use query_source::Table;
 use result::QueryResult;
@@ -20,12 +21,14 @@ impl<T> OnConflictDoNothing<T> {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[cfg(feature = "with-deprecated")]
 pub struct OnConflict<Records, Target, Action> {
     records: Records,
     target: Target,
     action: Action,
 }
 
+#[cfg(feature = "with-deprecated")]
 impl<Records, Target, Action> OnConflict<Records, Target, Action> {
     pub fn new(records: Records, target: Target, action: Action) -> Self {
         OnConflict {
@@ -53,6 +56,7 @@ where
     }
 }
 
+#[cfg(feature = "with-deprecated")]
 impl<'a, Records, Target, Action, Tab> Insertable<Tab> for &'a OnConflict<Records, Target, Action>
 where
     Records: Insertable<Tab> + Copy,

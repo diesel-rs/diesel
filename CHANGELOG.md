@@ -25,6 +25,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `on_conflict_do_nothing` on `InsertStatement` as a replacement for
   `on_conflict_do_nothing` on `Insertable` structs.
 
+* Added `on_conflict` on `InsertStatement` as a replacement for
+  `on_conflict` on `Insertable` structs.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
@@ -43,6 +46,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Deprecated `.values(x.on_conflict_do_nothing())` in favor of
   `.values(x).on_conflict_do_nothing()`
+
+* Deprecated `.values(x.on_conflict(y, do_nothing()))` in favor of
+  `.values(x).on_conflict(y).do_nothing()`
+
+* Deprecated `.values(x.on_conflict(y, do_update().set(z)))` in favor of
+  `.values(x).on_conflict(y).do_update().set(z)`
 
 ### Removed
 

@@ -10,6 +10,8 @@ use result::QueryResult;
 /// nothing when *any* constraint conflicts, use
 /// [`on_conflict_do_nothing()`](trait.OnConflictExtension.html#method.on_conflict_do_nothing)
 /// instead.
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "0.99.0", note = "use `.values(...).on_conflict(...).do_nothing()` instead")]
 pub fn do_nothing() -> DoNothing {
     DoNothing
 }
@@ -115,6 +117,8 @@ pub fn do_nothing() -> DoNothing {
 /// let users_in_db = users.load(&conn);
 /// assert_eq!(Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]), users_in_db);
 /// # }
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "0.99.0", note = "use `.values(...).on_conflict(...).do_update()` instead")]
 pub fn do_update() -> IncompleteDoUpdate {
     IncompleteDoUpdate
 }
@@ -136,8 +140,10 @@ impl QueryFragment<Pg> for DoNothing {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[cfg(feature = "with-deprecated")]
 pub struct IncompleteDoUpdate;
 
+#[cfg(feature = "with-deprecated")]
 impl IncompleteDoUpdate {
     pub fn set<T: AsChangeset>(self, changeset: T) -> DoUpdate<T> {
         DoUpdate {
@@ -150,6 +156,12 @@ impl IncompleteDoUpdate {
 #[derive(Debug, Clone, Copy)]
 pub struct DoUpdate<T> {
     changeset: T,
+}
+
+impl<T> DoUpdate<T> {
+    pub(crate) fn new(changeset: T) -> Self {
+        DoUpdate { changeset }
+    }
 }
 
 impl<T> QueryFragment<Pg> for DoUpdate<T>
@@ -198,12 +210,14 @@ where
 }
 
 #[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
 pub trait IntoConflictAction<T> {
     type Action: QueryFragment<Pg>;
 
     fn into_conflict_action(self) -> Self::Action;
 }
 
+#[cfg(feature = "with-deprecated")]
 impl<T> IntoConflictAction<T> for DoNothing {
     type Action = Self;
 
@@ -212,6 +226,7 @@ impl<T> IntoConflictAction<T> for DoNothing {
     }
 }
 
+#[cfg(feature = "with-deprecated")]
 impl<Table, Changes> IntoConflictAction<Table> for DoUpdate<Changes>
 where
     Table: QuerySource,
