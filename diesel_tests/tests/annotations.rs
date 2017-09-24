@@ -315,3 +315,25 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
 
     assert!(jim.is_some());
 }
+
+#[test]
+fn nested_queryable_derives() {
+    #[derive(Queryable, Debug, PartialEq)]
+    struct UserAndPost {
+        user: User,
+        post: Post,
+    }
+
+    let conn = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &conn);
+    insert(&sean.new_post("Hi", None))
+        .into(posts::table)
+        .execute(&conn)
+        .unwrap();
+    let post = posts::table.first(&conn).unwrap();
+
+    let expected = UserAndPost { user: sean, post };
+    let actual = users::table.inner_join(posts::table).get_result(&conn);
+
+    assert_eq!(Ok(expected), actual);
+}

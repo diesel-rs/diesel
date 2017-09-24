@@ -1,4 +1,5 @@
 use syn;
+use std::slice;
 
 use attr::Attr;
 use util::*;
@@ -102,6 +103,10 @@ impl ModelAttrs {
         match *self {
             ModelAttrs::Struct(ref attrs) | ModelAttrs::Tuple(ref attrs) => &*attrs,
         }
+    }
+
+    pub fn iter(&self) -> slice::Iter<Attr> {
+        self.as_slice().iter()
     }
 
     pub fn is_tuple(&self) -> bool {

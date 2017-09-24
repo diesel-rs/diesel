@@ -14,11 +14,11 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
         .build();
     let struct_ty = &model.ty;
 
-    let row_ty = model.attrs.as_slice().iter().map(|a| &a.ty);
+    let row_ty = model.attrs.iter().map(|a| &a.ty);
     let row_ty = quote!((#(#row_ty,)*));
 
     let build_expr = build_expr_for_model(&model);
-    let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
+    let field_names = model.attrs.iter().map(Attr::name_for_pattern);
     let row_pat = quote!((#(#field_names,)*));
 
     let model_name_uppercase = model.name.as_ref().to_uppercase();
@@ -29,11 +29,12 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
         quote!(
             impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
                 __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
-                #row_ty: diesel::types::FromSqlRow<__ST, __DB>,
+                #row_ty: diesel::Queryable<__ST, __DB>,
             {
-               type Row = #row_ty;
+               type Row = <#row_ty as diesel::Queryable<__ST, __DB>>::Row;
 
-               fn build(#row_pat: Self::Row) -> Self {
+               fn build(row: Self::Row) -> Self {
+                   let #row_pat = diesel::Queryable::build(row);
                    #build_expr
                }
             }
@@ -43,19 +44,13 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
 
 fn build_expr_for_model(model: &Model) -> Tokens {
     let struct_name = &model.name;
-    let field_names = model.attrs.as_slice().iter().map(Attr::name_for_pattern);
-
-    let field_assignments = field_names.map(|field_name| if model.is_tuple_struct() {
-        quote!(#field_name)
-    } else {
-        quote!(#field_name: #field_name)
-    });
+    let field_names = model.attrs.iter().map(Attr::name_for_pattern);
 
     if model.is_tuple_struct() {
-        quote!(#struct_name(#(#field_assignments),*))
+        quote!(#struct_name(#(#field_names),*))
     } else {
         quote!(#struct_name {
-            #(#field_assignments,)*
+            #(#field_names,)*
         })
     }
 }

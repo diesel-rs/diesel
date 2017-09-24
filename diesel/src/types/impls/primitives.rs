@@ -128,6 +128,19 @@ where
     }
 }
 
+impl<'a, T: ?Sized, ST, DB> ::Queryable<ST, DB> for Cow<'a, T>
+where
+    T: 'a + ToOwned,
+    DB: Backend + HasSqlType<ST>,
+    Self: ::types::FromSqlRow<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> Self {
+        row
+    }
+}
+
 use expression::bound::Bound;
 use expression::{AsExpression, Expression};
 impl<'a, T: ?Sized, ST> ::expression::AsExpression<ST> for Cow<'a, T>
