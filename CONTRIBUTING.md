@@ -107,3 +107,22 @@ Thank you! We'll try to respond as quickly as possible.
    everything.)
 
 [rustup]: https://www.rustup.rs
+
+
+### Common Abbreviations
+
+`ST`: Sql Type. Basically always has the `NativeSqlType` constraint
+
+`DB`: Database. Basically always has the `Backend` constraint.
+
+`QS`: Query Source. Usually doesn't have a constraint, but sometimes will have `QuerySource` attached
+
+`PK`: Primary Key
+
+`Lhs`: Left Hand Side
+
+`Rhs`: Right Hand Side
+
+`Conn`: Connection
+
+Generally, we prefer to give our types meaningful names. `Lhs` and `Rhs` vs `T` and `U` for a binary expression, for example.
