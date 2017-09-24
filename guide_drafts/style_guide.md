@@ -51,6 +51,27 @@ Just don't.
 
 It rarely actually improves readability. The next line should start 4 spaces deeper than the previous, at the same indentation level, or 4 spaces shallower. Not 7 because it lets a `:` line up, as we'll have to re-align everything as soon as we add a longer key.
 
+Examples:
+
+``` rust
+// GOOD
+fn my_function(
+    this_is_a_longer_arg: Type1,
+    shorter_arg: Type2,
+) -> ReturnType {
+{
+    // ...
+}
+
+// BAD
+fn my_function(
+    this_is_a_longer_arg: Type1,
+             shorter_arg: Type2,
+) -> ReturnType {
+    // ...
+}
+```
+
 
 ### Always use trailing commas for multiline groupings
 
