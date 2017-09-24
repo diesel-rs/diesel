@@ -10,7 +10,7 @@ in order to support unrelated changes.
 
 Note that these are guidelines, not hard rules. Use your best judgement.
 
-**If you find existing code that doesn't already adhere to these guidelines, don't change it simply to adhere to them**
+**If you find existing code that doesn't already adhere to these guidelines, don't change it simply to adhere to them.**
 
 If we start changing code for style reasons only, it completely defeats the purpose of trying to avoid git churn in the first place. Do change code that doesn't adhere to these guidelines if you're already changing that line for other reasons.
 
@@ -49,7 +49,7 @@ the opening bracket visually separates the function signature and the fuction bo
 which may be at the same indent level (as above).
 Additionally, we need the indentation level of the function body to be independent of the struct definition.
 
-### Do not token align.
+### Do not token align
 
 The next line should start
 4 spaces deeper than the previous,
