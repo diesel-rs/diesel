@@ -52,8 +52,10 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
     use posts::dsl::*;
     use diesel::dsl::now;
 
-    let target = posts.filter(publish_at.lt(now));
-    diesel::update(target).set(draft.eq(false)).execute(conn)
+    diesel::update(posts)
+        .filter(publish_at.lt(now))
+        .set(draft.eq(false))
+        .execute(conn)
 }
 
 #[test]
@@ -61,12 +63,14 @@ fn examine_sql_from_publish_pending_posts() {
     use posts::dsl::*;
     use diesel::dsl::now;
 
-    let target = posts.filter(publish_at.lt(now));
+    let query = diesel::update(posts)
+        .filter(publish_at.lt(now))
+        .set(draft.eq(false));
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 \
          WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
          -- binds: [false]",
-        debug_query(&diesel::update(target).set(draft.eq(false))).to_string()
+        debug_query(&query).to_string()
     );
 }
 

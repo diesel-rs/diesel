@@ -28,7 +28,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// # fn main() {
 /// #     use users::dsl::*;
 /// #     let connection = establish_connection();
-/// let updated_row = diesel::update(users.filter(id.eq(1)))
+/// let updated_row = diesel::update(users.find(1))
 ///     .set(name.eq("James"))
 ///     .get_result(&connection);
 /// // On backends that support it, you can call `get_result` instead of `execute`
@@ -66,7 +66,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// #     surname VARCHAR)").unwrap();
 /// # connection.execute("INSERT INTO users(name, surname) VALUES('Sean', 'Griffin')").unwrap();
 ///
-/// let updated_row = diesel::update(users.filter(id.eq(1)))
+/// let updated_row = diesel::update(users.find(1))
 ///     .set((name.eq("James"), surname.eq("Bond")))
 ///     .get_result(&connection);
 ///
