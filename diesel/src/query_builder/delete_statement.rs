@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{SelectableExpression, AppearsOnTable};
+use expression::{AppearsOnTable, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;

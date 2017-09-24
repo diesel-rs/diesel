@@ -80,12 +80,10 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
         U: WhereAnd<V>,
         V: AppearsOnTable<T>,
     {
-        IncompleteUpdateStatement::new(
-            UpdateTarget {
-                table: self.0.table,
-                where_clause: self.0.where_clause.and(predicate),
-            }
-        )
+        IncompleteUpdateStatement::new(UpdateTarget {
+            table: self.0.table,
+            where_clause: self.0.where_clause.and(predicate),
+        })
     }
 }
 
