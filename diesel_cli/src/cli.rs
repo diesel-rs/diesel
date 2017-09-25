@@ -133,6 +133,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(generate_bash_completion_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
+        .setting(AppSettings::PropagateGlobalValuesDown)
 }
 
 fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
