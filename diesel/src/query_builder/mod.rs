@@ -33,14 +33,15 @@ pub mod update_statement;
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
+pub use self::delete_statement::DeleteStatement;
+#[doc(inline)]
+pub use self::insert_statement::IncompleteInsertStatement;
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 #[doc(inline)]
 pub use self::update_statement::{AsChangeset, Changeset, IncompleteUpdateStatement,
                                  IntoUpdateTarget, UpdateStatement, UpdateTarget};
-#[doc(inline)]
-pub use self::insert_statement::IncompleteInsertStatement;
 
 use std::error::Error;
 
