@@ -139,7 +139,6 @@ pub trait MaybeEmpty {
 
 impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, FU>
 where
-    Self: Query<SqlType = ST>,
     Subselect<Self, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
@@ -221,7 +220,7 @@ pub struct Subselect<T, ST> {
     _sql_type: PhantomData<ST>,
 }
 
-impl<T: Query, ST> Expression for Subselect<T, ST> {
+impl<T: Expression, ST> Expression for Subselect<T, ST> {
     type SqlType = ST;
 }
 
@@ -234,14 +233,14 @@ impl<T, ST> MaybeEmpty for Subselect<T, ST> {
 impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST>
 where
     Subselect<T, ST>: AppearsOnTable<QS>,
-    T: Query,
+    T: SelectableExpression<QS>,
 {
 }
 
 impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST>
 where
     Subselect<T, ST>: Expression,
-    T: Query,
+    T: AppearsOnTable<QS>,
 {
 }
 

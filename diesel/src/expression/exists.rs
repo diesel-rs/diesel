@@ -36,8 +36,8 @@ use types::Bool;
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
 /// ```
-pub fn exists<T: AsQuery>(query: T) -> Exists<T::Query> {
-    Exists(query.as_query())
+pub fn exists<T>(query: T) -> Exists<T> {
+    Exists(query)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -45,7 +45,7 @@ pub struct Exists<T>(T);
 
 impl<T> Expression for Exists<T>
 where
-    T: Query,
+    T: Expression,
 {
     type SqlType = Bool;
 }

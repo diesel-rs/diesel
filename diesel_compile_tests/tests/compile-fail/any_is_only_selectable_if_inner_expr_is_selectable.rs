@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate diesel;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
 use diesel::dsl::*;
@@ -17,10 +17,21 @@ table! {
     }
 }
 
+#[derive(Queryable)]
+struct Stuff {
+    id: i32,
+    name: String,
+}
+
 fn main() {
     use self::stuff::dsl::*;
 
-    stuff.filter(name.eq(any(more_stuff::names)));
+    let conn = PgConnection::establish("").unwrap();
+
+    let _ = LoadDsl::load::<Stuff>(
     //~^ ERROR E0277
     //~| ERROR E0271
+        stuff.filter(name.eq(any(more_stuff::names))),
+        &conn,
+    );
 }

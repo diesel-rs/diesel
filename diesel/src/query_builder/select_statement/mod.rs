@@ -17,7 +17,7 @@ pub use self::boxed::BoxedSelectStatement;
 use backend::Backend;
 use expression::*;
 use query_source::*;
-use query_source::joins::AppendSelection;
+use query_source::joins::{AppendSelection, Inner, Join};
 use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
 use super::for_update_clause::NoForUpdateClause;
@@ -26,7 +26,7 @@ use super::limit_clause::NoLimitClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
-use super::where_clause::NoWhereClause;
+use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
 
 #[derive(Debug, Clone, Copy)]
@@ -100,6 +100,7 @@ impl<F> SelectStatement<F> {
 impl<F, S, D, W, O, L, Of, G, FU> Query for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     S: SelectClauseExpression<F>,
+    W: ValidWhereClause<F>,
 {
     type SqlType = S::SelectClauseSqlType;
 }
@@ -188,9 +189,10 @@ where
 }
 
 impl<S, F, D, W, O, L, Of, G, FU, QS> AppearsOnTable<QS>
-    for SelectStatement<S, F, D, W, O, L, Of, FU, G>
+    for SelectStatement<F, S, D, W, O, L, Of, FU, G>
 where
     Self: Expression,
+    W: ValidWhereClause<Join<F, QS, Inner>>,
 {
 }
 
