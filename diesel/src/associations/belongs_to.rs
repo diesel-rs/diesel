@@ -51,7 +51,7 @@ where
     &'a Parent: Identifiable,
     Child: HasTable + BelongsTo<Parent>,
     Id<&'a Parent>: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
-    <Child as HasTable>::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
+    Child::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
     Child::ForeignKeyColumn: ExpressionMethods,
 {
     type Output = FindBy<Child::Table, Child::ForeignKeyColumn, Id<&'a Parent>>;

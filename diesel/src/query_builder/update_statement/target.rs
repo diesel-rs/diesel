@@ -1,6 +1,7 @@
 use associations::{HasTable, Identifiable};
 use dsl::Find;
 use query_dsl::FindDsl;
+use query_source::Table;
 
 #[doc(hidden)]
 #[derive(Debug)]
@@ -26,10 +27,11 @@ pub trait IntoUpdateTarget: HasTable {
     fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause>;
 }
 
-impl<T: Identifiable, V> IntoUpdateTarget for T
+impl<T, Tab, V> IntoUpdateTarget for T
 where
-    T::Table: FindDsl<T::Id>,
-    Find<T::Table, T::Id>: IntoUpdateTarget<Table = T::Table, WhereClause = V>,
+    T: Identifiable<Table = Tab>,
+    Tab: Table + FindDsl<T::Id>,
+    Find<Tab, T::Id>: IntoUpdateTarget<Table = Tab, WhereClause = V>,
 {
     type WhereClause = V;
 

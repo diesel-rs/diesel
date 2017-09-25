@@ -1,6 +1,5 @@
 use dsl::Filter;
 use expression_methods::*;
-use query_builder::{AsQuery, Query};
 use query_source::*;
 
 /// Adds to the `WHERE` clause of a query. If there is already a `WHERE` clause,
@@ -31,18 +30,18 @@ use query_source::*;
 /// assert_eq!(Ok(2), tess_id);
 /// # }
 /// ```
-pub trait FilterDsl<Predicate>: AsQuery {
-    type Output: AsQuery<SqlType = Self::SqlType>;
+pub trait FilterDsl<Predicate> {
+    type Output;
 
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
 
-impl<T, U, Predicate> FilterDsl<Predicate> for T
+impl<T, Predicate> FilterDsl<Predicate> for T
 where
-    T: Table + AsQuery<SqlType = <U as Query>::SqlType, Query = U>,
-    U: Query + FilterDsl<Predicate, SqlType = <U as Query>::SqlType>,
+    T: Table,
+    T::Query: FilterDsl<Predicate>,
 {
-    type Output = Filter<U, Predicate>;
+    type Output = Filter<T::Query, Predicate>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         self.as_query().filter(predicate)
@@ -75,8 +74,8 @@ where
 /// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
 /// # }
 /// ```
-pub trait FindDsl<PK>: AsQuery {
-    type Output: AsQuery<SqlType = Self::SqlType>;
+pub trait FindDsl<PK> {
+    type Output;
 
     fn find(self, id: PK) -> Self::Output;
 }
