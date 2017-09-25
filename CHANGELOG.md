@@ -28,6 +28,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `on_conflict` on `InsertStatement` as a replacement for
   `on_conflict` on `Insertable` structs.
 
+* `filter` can now be called on update and delete statements. This means that
+  instead of `update(users.filter(...))` you can write
+  `update(users).filter(...)`. This allows line breaks to more naturally be
+  introduced.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to

@@ -1,7 +1,8 @@
 use backend::Backend;
-use expression::SelectableExpression;
+use expression::{AppearsOnTable, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
+use query_builder::where_clause::*;
 use query_source::Table;
 use result::QueryResult;
 
@@ -19,6 +20,54 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
             table: table,
             where_clause: where_clause,
             returning: NoReturningClause,
+        }
+    }
+}
+
+impl<T, U, Ret> DeleteStatement<T, U, Ret> {
+    /// Adds the given predicate to the `WHERE` clause of the statement being
+    /// constructed.
+    ///
+    /// If there is already a `WHERE` clause, the predicate will be appended
+    /// with `AND`. There is no difference in behavior between
+    /// `delete(table.filter(x))` and `delete(table).filter(x)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let deleted_rows = diesel::delete(users)
+    ///     .filter(name.eq("Sean"))
+    ///     .execute(&connection);
+    /// assert_eq!(Ok(1), deleted_rows);
+    ///
+    /// let expected_names = vec!["Tess".to_string()];
+    /// let names = users.select(name).load(&connection);
+    ///
+    /// assert_eq!(Ok(expected_names), names);
+    /// # }
+    /// ```
+    pub fn filter<V>(self, predicate: V) -> DeleteStatement<T, U::Output, Ret>
+    where
+        U: WhereAnd<V>,
+        V: AppearsOnTable<T>,
+    {
+        DeleteStatement {
+            table: self.table,
+            where_clause: self.where_clause.and(predicate),
+            returning: self.returning,
         }
     }
 }

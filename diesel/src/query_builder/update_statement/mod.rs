@@ -5,9 +5,10 @@ pub use self::changeset::{AsChangeset, Changeset};
 pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
-use expression::{Expression, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
+use query_builder::where_clause::*;
 use query_source::Table;
 use result::Error::QueryBuilderError;
 use result::QueryResult;
@@ -38,6 +39,52 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
             returning: NoReturningClause,
         }
     }
+
+    /// Adds the given predicate to the `WHERE` clause of the statement being
+    /// constructed.
+    ///
+    /// If there is already a `WHERE` clause, the predicate will be appended
+    /// with `AND`. There is no difference in behavior between
+    /// `update(table.filter(x))` and `update(table).filter(x)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let updated_rows = diesel::update(users)
+    ///     .filter(name.eq("Sean"))
+    ///     .set(name.eq("Jim"))
+    ///     .execute(&connection);
+    /// assert_eq!(Ok(1), updated_rows);
+    ///
+    /// let expected_names = vec!["Jim".to_string(), "Tess".to_string()];
+    /// let names = users.select(name).order(id).load(&connection);
+    ///
+    /// assert_eq!(Ok(expected_names), names);
+    /// # }
+    /// ```
+    pub fn filter<V>(self, predicate: V) -> IncompleteUpdateStatement<T, U::Output>
+    where
+        U: WhereAnd<V>,
+        V: AppearsOnTable<T>,
+    {
+        IncompleteUpdateStatement::new(UpdateTarget {
+            table: self.0.table,
+            where_clause: self.0.where_clause.and(predicate),
+        })
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -46,6 +93,56 @@ pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     where_clause: U,
     values: V,
     returning: Ret,
+}
+
+impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
+    /// Adds the given predicate to the `WHERE` clause of the statement being
+    /// constructed.
+    ///
+    /// If there is already a `WHERE` clause, the predicate will be appended
+    /// with `AND`. There is no difference in behavior between
+    /// `update(table.filter(x))` and `update(table).filter(x)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let updated_rows = diesel::update(users)
+    ///     .set(name.eq("Jim"))
+    ///     .filter(name.eq("Sean"))
+    ///     .execute(&connection);
+    /// assert_eq!(Ok(1), updated_rows);
+    ///
+    /// let expected_names = vec!["Jim".to_string(), "Tess".to_string()];
+    /// let names = users.select(name).order(id).load(&connection);
+    ///
+    /// assert_eq!(Ok(expected_names), names);
+    /// # }
+    /// ```
+    pub fn filter<W>(self, predicate: W) -> UpdateStatement<T, U::Output, V, Ret>
+    where
+        U: WhereAnd<W>,
+        W: AppearsOnTable<T>,
+    {
+        UpdateStatement {
+            table: self.table,
+            where_clause: self.where_clause.and(predicate),
+            values: self.values,
+            returning: self.returning,
+        }
+    }
 }
 
 impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret>
