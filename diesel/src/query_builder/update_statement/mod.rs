@@ -6,6 +6,7 @@ pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use prelude::*;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
@@ -39,6 +40,14 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
             returning: NoReturningClause,
         }
     }
+}
+
+impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = IncompleteUpdateStatement<T, U::Output>;
 
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
@@ -75,11 +84,7 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    pub fn filter<V>(self, predicate: V) -> IncompleteUpdateStatement<T, U::Output>
-    where
-        U: WhereAnd<V>,
-        V: AppearsOnTable<T>,
-    {
+    fn filter(self, predicate: Predicate) -> Self::Output {
         IncompleteUpdateStatement::new(UpdateTarget {
             table: self.0.table,
             where_clause: self.0.where_clause.and(predicate),
@@ -95,7 +100,13 @@ pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     returning: Ret,
 }
 
-impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
+impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = UpdateStatement<T, U::Output, V, Ret>;
+
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
     ///
@@ -131,11 +142,7 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    pub fn filter<W>(self, predicate: W) -> UpdateStatement<T, U::Output, V, Ret>
-    where
-        U: WhereAnd<W>,
-        W: AppearsOnTable<T>,
-    {
+    fn filter(self, predicate: Predicate) -> Self::Output {
         UpdateStatement {
             table: self.table,
             where_clause: self.where_clause.and(predicate),

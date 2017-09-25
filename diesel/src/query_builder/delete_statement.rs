@@ -1,5 +1,6 @@
 use backend::Backend;
 use expression::{AppearsOnTable, SelectableExpression};
+use prelude::*;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
@@ -24,7 +25,13 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     }
 }
 
-impl<T, U, Ret> DeleteStatement<T, U, Ret> {
+impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = DeleteStatement<T, U::Output, Ret>;
+
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
     ///
@@ -59,11 +66,7 @@ impl<T, U, Ret> DeleteStatement<T, U, Ret> {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    pub fn filter<V>(self, predicate: V) -> DeleteStatement<T, U::Output, Ret>
-    where
-        U: WhereAnd<V>,
-        V: AppearsOnTable<T>,
-    {
+    fn filter(self, predicate: Predicate) -> Self::Output {
         DeleteStatement {
             table: self.table,
             where_clause: self.where_clause.and(predicate),

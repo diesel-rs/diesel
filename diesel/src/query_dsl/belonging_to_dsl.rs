@@ -1,7 +1,5 @@
-use query_builder::AsQuery;
-
 pub trait BelongingToDsl<T> {
-    type Output: AsQuery;
+    type Output;
 
     fn belonging_to(other: T) -> Self::Output;
 }
