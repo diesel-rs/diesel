@@ -15,6 +15,11 @@
 /// If any column name would collide with a rust keyword, a `_` will
 /// automatically be placed at the end of the name. For example, a column called
 /// `type` will be referenced as `type_` in the generated module.
+///
+/// Using the `infer_schema!` macro enables Diesel to automatically detect which
+/// tables can be joined.
+/// You must have foreign key constraints on the child table's foreign key column
+/// for this feature to work.
 macro_rules! infer_schema {
     ($database_url: expr) => {
         mod __diesel_infer_schema {
@@ -54,6 +59,10 @@ macro_rules! infer_schema {
 ///
 /// This macro can only be used in combination with the `diesel_codegen` or
 /// `diesel_codegen_syntex` crates. It will not work on its own.
+///
+/// When using the `infer_table_from_schema!` macro,
+/// Diesel can't automatically detect which tables can be joined.
+/// Use the `joinable!` macro in your schema to specify how tables can be joined
 macro_rules! infer_table_from_schema {
     ($database_url: expr, $table_name: expr) => {
         #[derive(InferTableFromSchema)]

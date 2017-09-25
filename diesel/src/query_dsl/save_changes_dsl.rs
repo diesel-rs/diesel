@@ -61,6 +61,41 @@ pub trait SaveChangesDsl<Conn> {
     ///
     /// `foo.save_changes(&conn)` is equivalent to
     /// `update(foo::table().find(foo.id())).set(&foo).get_result(&conn)`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # #[derive(AsChangeset, Debug, PartialEq, Identifiable, Queryable)]
+    /// # struct Animal {
+    /// #    id: i32,
+    /// #    species: String,
+    /// #    legs: i32,
+    /// #    name: Option<String>,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let mut spider = animals.filter(species.eq("spider"))
+    ///     .first::<Animal>(&connection)
+    ///     .expect("Too scary to load");
+    ///
+    /// spider.species = String::from("solifuge");
+    /// spider.legs = 10;
+    ///
+    /// spider.save_changes::<Animal>(&connection).expect("Error saving changes");
+    ///
+    /// let changed_animal = animals.find(spider.id())
+    ///     .first::<Animal>(&connection);
+    ///
+    /// assert_eq!(Ok(Animal { id: 2, species: "solifuge".to_string(), legs: 10, name: None }), changed_animal);
+    /// # }
+    /// ```
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
     where
         Self: InternalSaveChangesDsl<Conn, T>,

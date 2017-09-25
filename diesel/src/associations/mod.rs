@@ -67,8 +67,8 @@
 //! Once the associations are defined, you can join between the two tables using the
 //! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
 //!
-//! [inner-join]: ../query_source/trait.Table.html#method.inner_join
-//! [left-outer-join]: ../query_source/trait.Table.html#method.left_outer_join
+//! [inner-join]: ../prelude/trait.JoinDsl.html#method.inner_join
+//! [left-outer-join]: ../prelude/trait.JoinDsl.html#method.left_outer_join
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
@@ -231,7 +231,7 @@
 //! assert_eq!(result, expected);
 //! # }
 //! ```
-//! [`grouped_by`][grouped-by] takes a `Vec<Child>` and a `Vec<Parent>` and returns a
+//! [`grouped_by`][grouped-by] is called on a `Vec<Child>` with their `&Vec<Parent>` and returns a
 //! `Vec<Vec<Child>>` where the index of the children matches the index of the parent they belong
 //! to. Or to put it another way, it returns them in an order ready to be `zip`ed with the parents. You
 //! can do this multiple times. For example, if you wanted to load the comments for all the posts

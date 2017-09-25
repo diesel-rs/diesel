@@ -10,7 +10,7 @@ pub struct UpdateTarget<Table, WhereClause> {
     pub where_clause: WhereClause,
 }
 
-/// A type which can be passed to `update`.
+/// A type which can be passed to `update` or `delete`.
 ///
 /// Apps will never need to implement this type directly. There are three kinds
 /// of things which implement this trait. Tables, queries which have only had
