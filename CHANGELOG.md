@@ -33,6 +33,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `update(users).filter(...)`. This allows line breaks to more naturally be
   introduced.
 
+* Subselects can now reference columns from the outer table. For example,
+  `users.filter(exists(posts.filter(user_id.eq(users::id))))` will now compile.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
