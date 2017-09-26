@@ -5,11 +5,61 @@ macro_rules! __diesel_operator_body {
         notation = $notation:ident,
         struct_name = $name:ident,
         operator = $operator:expr,
+        return_ty = ReturnBasedOnArgs,
+        ty_params = ($($ty_param:ident,)+),
+        field_names = $field_names:tt,
+        backend_ty_params = $backend_ty_params:tt,
+        backend_ty = $backend_ty:ty,
+    ) => {
+        __diesel_operator_body! {
+            notation = $notation,
+            struct_name = $name,
+            operator = $operator,
+            return_ty = ST,
+            ty_params = ($($ty_param,)+),
+            field_names = $field_names,
+            backend_ty_params = $backend_ty_params,
+            backend_ty = $backend_ty,
+            expression_ty_params = (ST,),
+            expression_bounds = ($($ty_param: $crate::expression::Expression<SqlType = ST>,)+),
+        }
+    };
+
+    (
+        notation = $notation:ident,
+        struct_name = $name:ident,
+        operator = $operator:expr,
+        return_ty = $return_ty:ty,
+        ty_params = ($($ty_param:ident,)+),
+        field_names = $field_names:tt,
+        backend_ty_params = $backend_ty_params:tt,
+        backend_ty = $backend_ty:ty,
+    ) => {
+        __diesel_operator_body! {
+            notation = $notation,
+            struct_name = $name,
+            operator = $operator,
+            return_ty = $return_ty,
+            ty_params = ($($ty_param,)+),
+            field_names = $field_names,
+            backend_ty_params = $backend_ty_params,
+            backend_ty = $backend_ty,
+            expression_ty_params = (),
+            expression_bounds = ($($ty_param: $crate::expression::Expression,)+),
+        }
+    };
+
+    (
+        notation = $notation:ident,
+        struct_name = $name:ident,
+        operator = $operator:expr,
         return_ty = $return_ty:ty,
         ty_params = ($($ty_param:ident,)+),
         field_names = ($($field_name:ident,)+),
         backend_ty_params = ($($backend_ty_param:ident,)*),
         backend_ty = $backend_ty:ty,
+        expression_ty_params = ($($expression_ty_params:ident,)*),
+        expression_bounds = ($($expression_bounds:tt)*),
     ) => {
         #[derive(Debug, Clone, Copy)]
         #[doc(hidden)]
@@ -26,8 +76,8 @@ macro_rules! __diesel_operator_body {
         impl_query_id!($name<$($ty_param),+>);
         impl_selectable_expression!($name<$($ty_param),+>);
 
-        impl<$($ty_param,)+> $crate::expression::Expression for $name<$($ty_param,)+> where
-            $($ty_param: $crate::expression::Expression,)+
+        impl<$($ty_param,)+ $($expression_ty_params,)*> $crate::expression::Expression for $name<$($ty_param,)+> where
+            $($expression_bounds)*
         {
             type SqlType = $return_ty;
         }
@@ -175,12 +225,12 @@ macro_rules! diesel_infix_operator {
         diesel_infix_operator!($name, $operator, $crate::types::Bool, backend: $backend);
     };
 
-    ($name:ident, $operator:expr, $return_ty:ty) => {
+    ($name:ident, $operator:expr, $($return_ty:tt)::*) => {
         __diesel_operator_body!(
             notation = infix,
             struct_name = $name,
             operator = $operator,
-            return_ty = $return_ty,
+            return_ty = $($return_ty)::*,
             ty_params = (T, U,),
             field_names = (left, right,),
             backend_ty_params = (DB,),
@@ -292,7 +342,7 @@ macro_rules! diesel_prefix_operator {
     };
 }
 
-diesel_infix_operator!(Concat, " || ", ::types::Text);
+diesel_infix_operator!(Concat, " || ", ReturnBasedOnArgs);
 diesel_infix_operator!(And, " AND ");
 diesel_infix_operator!(Between, " BETWEEN ");
 diesel_infix_operator!(Escape, " ESCAPE ");
