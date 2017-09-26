@@ -191,7 +191,7 @@ fn migration_run_runs_pending_migrations_custom_database_url_1() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p.command_without_database_url("migration")
         .arg("run")
         .arg("--database-url")
         .arg(db_url)
@@ -223,7 +223,7 @@ fn migration_run_runs_pending_migrations_custom_database_url_2() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p.command_without_database_url("migration")
         .arg("--database-url")
         .arg(db_url)
         .arg("run")
