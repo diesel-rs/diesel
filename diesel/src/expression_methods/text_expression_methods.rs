@@ -26,8 +26,8 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE users (
     /// #         id INTEGER PRIMARY KEY,
-    /// #         name VARCHAR NOT NULL,
-    /// #         hair_color VARCHAR
+    /// #         name VARCHAR(255) NOT NULL,
+    /// #         hair_color VARCHAR(255)
     /// #     )").unwrap();
     /// #
     /// #     insert_into(users)
