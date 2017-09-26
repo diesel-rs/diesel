@@ -65,8 +65,8 @@ where
 
 impl<ST, F, S, D, W, O, L, Of, G> DistinctDsl for SelectStatement<F, S, D, W, O, L, Of, G>
 where
-    SelectStatement<F, S, D, W, O, L, Of, G>: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, DistinctClause, W, O, L, Of, G>: AsQuery<SqlType = ST>,
+    Self: Expression<SqlType = ST>,
+    SelectStatement<F, S, DistinctClause, W, O, L, Of, G>: Expression<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, DistinctClause, W, O, L, Of, G>;
 
@@ -130,8 +130,8 @@ impl<ST, F, S, D, W, O, L, Of, G, FU, Expr> OrderDsl<Expr>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     Expr: AppearsOnTable<F>,
-    Self: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>: AsQuery<SqlType = ST>,
+    Self: Expression<SqlType = ST>,
+    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>: Expression<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>;
 
@@ -156,8 +156,8 @@ pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
 
 impl<ST, F, S, D, W, O, L, Of, G, FU> LimitDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Self: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>: Query<SqlType = ST>,
+    Self: Expression<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>: Expression<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>;
 
@@ -182,8 +182,8 @@ pub type Offset = Limit;
 
 impl<ST, F, S, D, W, O, L, Of, G, FU> OffsetDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Self: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>: AsQuery<SqlType = ST>,
+    Self: Expression<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>: Expression<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>;
 

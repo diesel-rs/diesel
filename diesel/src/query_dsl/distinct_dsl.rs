@@ -1,4 +1,3 @@
-use query_builder::AsQuery;
 use query_source::Table;
 
 /// Adds the `DISTINCT` keyword to a query.
@@ -31,15 +30,15 @@ use query_source::Table;
 /// assert_eq!(Ok(vec![sean.clone()]), distinct_names);
 /// # }
 /// ```
-pub trait DistinctDsl: AsQuery {
-    type Output: AsQuery<SqlType = Self::SqlType>;
+pub trait DistinctDsl {
+    type Output;
     fn distinct(self) -> Self::Output;
 }
 
-impl<T, ST> DistinctDsl for T
+impl<T> DistinctDsl for T
 where
-    T: Table + AsQuery<SqlType = ST>,
-    T::Query: DistinctDsl<SqlType = ST>,
+    T: Table,
+    T::Query: DistinctDsl,
 {
     type Output = <T::Query as DistinctDsl>::Output;
 
