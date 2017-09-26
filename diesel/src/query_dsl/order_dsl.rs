@@ -1,5 +1,4 @@
 use expression::Expression;
-use query_builder::AsQuery;
 use query_source::Table;
 
 /// Sets the order clause of a query. If there was already a order clause, it
@@ -41,17 +40,17 @@ use query_source::Table;
 /// assert_eq!(vec![(String::from("Saul"), 3), (String::from("Stan"), 6), (String::from("Stan"), 5), (String::from("Steve"), 4)], ordered_name_id_pairs);
 /// # }
 /// ```
-pub trait OrderDsl<Expr: Expression>: AsQuery {
-    type Output: AsQuery<SqlType = Self::SqlType>;
+pub trait OrderDsl<Expr: Expression> {
+    type Output;
 
     fn order(self, expr: Expr) -> Self::Output;
 }
 
-impl<T, Expr, ST> OrderDsl<Expr> for T
+impl<T, Expr> OrderDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table + AsQuery<SqlType = ST>,
-    T::Query: OrderDsl<Expr, SqlType = ST>,
+    T: Table,
+    T::Query: OrderDsl<Expr>,
 {
     type Output = <T::Query as OrderDsl<Expr>>::Output;
 

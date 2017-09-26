@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
+use dsl::AsExprOf;
 use expression::*;
 use query_builder::*;
+use query_builder::distinct_clause::DistinctClause;
 use query_builder::group_by_clause::GroupByClause;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
@@ -135,6 +137,19 @@ where
     }
 }
 
+impl<'a, ST, QS, DB> DistinctDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend,
+    DistinctClause: QueryFragment<DB>,
+{
+    type Output = Self;
+
+    fn distinct(mut self) -> Self::Output {
+        self.distinct = Box::new(DistinctClause);
+        self
+    }
+}
+
 impl<'a, ST, QS, DB, Selection> SelectDsl<Selection> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend + HasSqlType<Selection::SqlType>,
@@ -177,7 +192,7 @@ where
 impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend,
-    BoxedSelectStatement<'a, ST, QS, DB>: Query,
+    LimitClause<AsExprOf<i64, BigInt>>: QueryFragment<DB>,
 {
     type Output = Self;
 
@@ -191,7 +206,7 @@ where
 impl<'a, ST, QS, DB> OffsetDsl for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend,
-    BoxedSelectStatement<'a, ST, QS, DB>: Query,
+    OffsetClause<AsExprOf<i64, BigInt>>: QueryFragment<DB>,
 {
     type Output = Self;
 
@@ -206,7 +221,6 @@ impl<'a, ST, QS, DB, Order> OrderDsl<Order> for BoxedSelectStatement<'a, ST, QS,
 where
     DB: Backend,
     Order: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
-    BoxedSelectStatement<'a, ST, QS, DB>: Query,
 {
     type Output = Self;
 
