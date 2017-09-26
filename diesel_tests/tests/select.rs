@@ -264,3 +264,27 @@ fn select_for_update_locks_selected_rows() {
     // Dropping conn_1 unblocks conn_2
     assert_eq!("Sean", next_selected_name);
 }
+
+#[test]
+fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+    let new_post = tess.new_post("Tess", None);
+    insert_into(posts::table)
+        .values(&vec![
+            tess.new_post("Tess", None),
+            sean.new_post("Hi", None),
+        ])
+        .execute(&connection)
+        .unwrap();
+
+    let invalid_query_but_valid_subselect = posts::table
+        .filter(posts::title.eq(users::name))
+        .select(posts::user_id);
+    let users_with_post_using_name_as_title = users::table
+        .filter(users::id.eq_any(invalid_query_but_valid_subselect))
+        .load(&connection);
+
+    assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
+}

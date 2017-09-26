@@ -40,11 +40,11 @@ where
     }
 }
 
-impl<F, S, D, W, O, L, Of, G, FU, Selection, Type> SelectDsl<Selection>
+impl<F, S, D, W, O, L, Of, G, FU, Selection> SelectDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Selection: Expression<SqlType = Type>,
-    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>: Query<SqlType = Type>,
+    Selection: Expression,
+    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>: Expression,
 {
     type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>;
 
