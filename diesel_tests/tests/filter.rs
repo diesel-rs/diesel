@@ -317,10 +317,9 @@ fn filter_with_or() {
 #[test]
 fn or_doesnt_mess_with_precidence_of_previous_statements() {
     use schema::users::dsl::*;
-    use diesel::expression::AsExpression;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let f = AsExpression::<types::Bool>::as_expression(false);
+    let f = false.into_sql::<types::Bool>();
     let count = users
         .filter(f)
         .filter(f.or(true))

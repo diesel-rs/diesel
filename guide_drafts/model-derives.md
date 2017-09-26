@@ -257,7 +257,7 @@ where DB: Backend,
 
     #[allow(non_shorthand_field_patterns)]
     fn values(self) -> Self::Values {
-        use diesel::expression::{AsExpression, Expression};
+        use diesel::expression::{Expression, IntoSql};
         use diesel::insertable::ColumnInsertValue;
 
         let NewUser {
@@ -270,17 +270,17 @@ where DB: Backend,
         (
             ColumnInsertValue::Expression(
                   users::first_name,
-                  AsExpression::<<users::first_name as Expression>::SqlType>::as_expression(first_name)
+                  first_name.into_sql::<<users::first_name as Expression>::SqlType>()
             ),
 
             ColumnInsertValue::Expression(
                 users::last_name,
-                AsExpression::<<users::last_name as Expression>::SqlType>::as_expression(last_name)
+                last_name.into_sql::<<users::last_name as Expression>::SqlType>()
             ),
 
             ColumnInsertValue::Expression(
                 users::last_name,
-                AsExpression::<<users::email as Expression>::SqlType>::as_expression(email)
+                email.into_sql::<<users::email as Expression>::SqlType>()
             ),
         )
     }

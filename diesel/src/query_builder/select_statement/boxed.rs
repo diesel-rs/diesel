@@ -182,8 +182,7 @@ where
     type Output = Self;
 
     fn limit(mut self, limit: i64) -> Self::Output {
-        let limit_expression = AsExpression::<BigInt>::as_expression(limit);
-        self.limit = Box::new(LimitClause(limit_expression));
+        self.limit = Box::new(LimitClause(limit.into_sql::<BigInt>()));
         self
     }
 }
@@ -196,8 +195,7 @@ where
     type Output = Self;
 
     fn offset(mut self, offset: i64) -> Self::Output {
-        let offset_expression = AsExpression::<BigInt>::as_expression(offset);
-        self.offset = Box::new(OffsetClause(offset_expression));
+        self.offset = Box::new(OffsetClause(offset.into_sql::<BigInt>()));
         self
     }
 }

@@ -143,7 +143,8 @@ where
 
 use expression::bound::Bound;
 use expression::{AsExpression, Expression};
-impl<'a, T: ?Sized, ST> ::expression::AsExpression<ST> for Cow<'a, T>
+
+impl<'a, T: ?Sized, ST> AsExpression<ST> for Cow<'a, T>
 where
     T: 'a + ToOwned,
     Bound<ST, Cow<'a, T>>: Expression<SqlType = ST>,
@@ -155,14 +156,14 @@ where
     }
 }
 
-impl<'a, 'b, T: ?Sized, ST> ::expression::AsExpression<ST> for &'b Cow<'a, T>
+impl<'a, 'b, T: ?Sized, ST> AsExpression<ST> for &'b Cow<'a, T>
 where
     T: 'a + ToOwned,
-    &'b T: AsExpression<ST>,
+    Bound<ST, &'b T>: Expression<SqlType = ST>,
 {
-    type Expression = <&'b T as AsExpression<ST>>::Expression;
+    type Expression = Bound<ST, &'b T>;
 
     fn as_expression(self) -> Self::Expression {
-        (&**self).as_expression()
+        Bound::new(&**self)
     }
 }

@@ -1,6 +1,5 @@
 use schema::*;
 use diesel::types::*;
-use diesel::expression::AsExpression;
 use diesel::dsl::sql;
 use diesel::*;
 
@@ -8,8 +7,8 @@ use diesel::*;
 #[cfg(not(feature = "mysql"))] // ? IS NULL is invalid syntax for MySQL
 fn bind_params_are_passed_for_null_when_not_inserting() {
     let connection = connection();
-    let query = select(sql::<Integer>("1"))
-        .filter(AsExpression::<Nullable<Integer>>::as_expression(None::<i32>).is_null());
+    let query =
+        select(sql::<Integer>("1")).filter(None::<i32>.into_sql::<Nullable<Integer>>().is_null());
     assert_eq!(Ok(1), query.first(&connection));
 }
 

@@ -1,5 +1,6 @@
 use associations::HasTable;
 use backend::Backend;
+use dsl::AsExprOf;
 use expression::*;
 use query_builder::distinct_clause::*;
 use query_builder::for_update_clause::*;
@@ -16,7 +17,7 @@ use query_dsl::boxed_dsl::InternalBoxedDsl;
 use query_source::QuerySource;
 use query_source::joins::{Join, JoinOn, JoinTo};
 use super::BoxedSelectStatement;
-use types::{self, Bool};
+use types::{BigInt, Bool};
 
 impl<F, S, D, W, O, L, Of, G, FU, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
@@ -152,7 +153,7 @@ where
 }
 
 #[doc(hidden)]
-pub type Limit = <i64 as AsExpression<types::BigInt>>::Expression;
+pub type Limit = AsExprOf<i64, BigInt>;
 
 impl<ST, F, S, D, W, O, L, Of, G, FU> LimitDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
@@ -162,7 +163,7 @@ where
     type Output = SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>;
 
     fn limit(self, limit: i64) -> Self::Output {
-        let limit_clause = LimitClause(AsExpression::<types::BigInt>::as_expression(limit));
+        let limit_clause = LimitClause(limit.into_sql::<BigInt>());
         SelectStatement::new(
             self.select,
             self.from,
@@ -188,7 +189,7 @@ where
     type Output = SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>;
 
     fn offset(self, offset: i64) -> Self::Output {
-        let offset_clause = OffsetClause(AsExpression::<types::BigInt>::as_expression(offset));
+        let offset_clause = OffsetClause(offset.into_sql::<BigInt>());
         SelectStatement::new(
             self.select,
             self.from,
