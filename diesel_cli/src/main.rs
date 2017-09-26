@@ -76,7 +76,6 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(database_url, redo_latest_migration(&dir));
         }
         ("list", Some(args)) => {
-            use std::cmp::Ordering;
             use std::ffi::OsStr;
 
             let database_url = database::database_url(matches);
@@ -100,29 +99,7 @@ fn run_migration_command(matches: &ArgMatches) {
                 })
                 .collect::<Vec<_>>();
 
-            // sort migrations by version timestamp, push non-conforming timestamped versions to the bottom
-            sorted.sort_by(|a, b| {
-                let version_a = a.0
-                    .split('_')
-                    .nth(0)
-                    .expect(&format!("Unexpected version format {:?}", a.0));
-                let ver_date_a = Utc.datetime_from_str(version_a, TIMESTAMP_FORMAT);
-                let version_b = b.0
-                    .split('_')
-                    .nth(0)
-                    .expect(&format!("Unexpected version format {:?}", b.0));
-                let ver_date_b = Utc.datetime_from_str(version_b, TIMESTAMP_FORMAT);
-                match (ver_date_a.is_ok(), ver_date_b.is_ok()) {
-                    (false, false) => version_a.to_lowercase().cmp(&version_b.to_lowercase()),
-                    (true, false) => Ordering::Less,
-                    (false, true) => Ordering::Greater,
-                    (true, true) => {
-                        let a = ver_date_a.unwrap();
-                        let b = ver_date_b.unwrap();
-                        a.cmp(&b)
-                    }
-                }
-            });
+            sorted.sort();
 
             println!("Migrations:");
             for (name, applied) in sorted {
