@@ -19,7 +19,7 @@ fn main() {
     update(users::table).filter(users::id.eq(1));
 
     update(users::table.filter(posts::id.eq(1)));
-    //~^ ERROR E0271
+    //~^ ERROR E0277
     //~| ERROR E0277
 
     update(users::table).filter(posts::id.eq(1));

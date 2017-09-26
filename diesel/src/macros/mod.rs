@@ -745,6 +745,10 @@ macro_rules! table_body {
                 type Count = Once;
             }
 
+            impl AppearsInFromClause<table> for () {
+                type Count = Never;
+            }
+
             impl<T> AppearsInFromClause<T> for table where
                 T: Table + JoinTo<table>,
             {
@@ -1103,6 +1107,7 @@ mod tests {
     }
 
     mod my_types {
+        #[derive(Debug, Clone, Copy)]
         pub struct MyCustomType;
     }
 

@@ -85,12 +85,10 @@ where
     }
 }
 
-impl<ST, F, S, D, W, O, L, Of, G, FU, Predicate> FilterDsl<Predicate>
+impl<F, S, D, W, O, L, Of, G, FU, Predicate> FilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Self: AsQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>: Query<SqlType = ST>,
-    Predicate: AppearsOnTable<F, SqlType = Bool> + NonAggregate,
+    Predicate: Expression<SqlType = Bool> + NonAggregate,
     W: WhereAnd<Predicate>,
 {
     type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>;
@@ -327,6 +325,7 @@ where
 impl<F, W> IntoUpdateTarget for SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>
 where
     SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>: HasTable,
+    W: ValidWhereClause<F>,
 {
     type WhereClause = W;
 
