@@ -117,7 +117,7 @@ fn migration_list_orders_unknown_timestamps_last() {
 }
 
 #[test]
-fn migration_list_orders_nontimestamp_versions_lexicographically() {
+fn migration_list_orders_nontimestamp_versions_alphabetically() {
     let p = project("migration_list_nontimestamp_versions")
         .folder("migrations")
         .build();
@@ -133,14 +133,14 @@ fn migration_list_orders_nontimestamp_versions_lexicographically() {
     let tag5 = "aa_migration";
     p.create_migration(&tag5, "", "");
 
-    let tag2 = "!wow_migration";
-    p.create_migration(&tag2, "", "");
+    let tag1 = "!wow_migration";
+    p.create_migration(&tag1, "", "");
 
     let tag3 = "7letters";
     p.create_migration(&tag3, "", "");
 
-    let tag1 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag1, "", "");
+    let tag2 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
+    p.create_migration(&tag2, "", "");
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
