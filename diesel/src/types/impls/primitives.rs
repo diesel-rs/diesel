@@ -23,6 +23,7 @@ primitive_impls!(Time);
 primitive_impls!(Timestamp);
 
 expression_impls!(Text -> &'a str);
+expression_impls!(Text -> char);
 expression_impls!(Binary -> &'a [u8]);
 
 impl NotNull for () {}
@@ -55,6 +56,21 @@ where
         out: &mut ToSqlOutput<W, DB>,
     ) -> Result<IsNull, Box<Error + Send + Sync>> {
         (self as &str).to_sql(out)
+    }
+}
+
+impl<DB> ToSql<types::Text, DB> for char
+where
+    DB: Backend,
+    for<'a> &'a str: ToSql<types::Text, DB>,
+{
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, DB>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+        let mut buf = [0; 4];
+        let s = &*self.encode_utf8(&mut buf);
+        s.to_sql(out)
     }
 }
 

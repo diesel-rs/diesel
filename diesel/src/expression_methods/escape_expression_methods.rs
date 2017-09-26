@@ -35,11 +35,8 @@ use types::VarChar;
 /// # }
 /// ```
 pub trait EscapeExpressionMethods: Sized {
-    fn escape(self, character: char) -> Escape<Self, AsExprOf<String, VarChar>> {
-        Escape::new(
-            self,
-            AsExpression::<VarChar>::as_expression(character.to_string()),
-        )
+    fn escape(self, character: char) -> Escape<Self, AsExprOf<char, VarChar>> {
+        Escape::new(self, AsExpression::<VarChar>::as_expression(character))
     }
 }
 
