@@ -54,6 +54,7 @@ fn main() {
     let migrations_dir = migrations::find_migrations_directory()
         .unwrap()
         .join(MIGRATION_SUBDIR);
+    println!("cargo:rerun-if-changed={}", MIGRATION_SUBDIR);
     migrations::run_pending_migrations_in_directory(
         &connection(),
         &migrations_dir,

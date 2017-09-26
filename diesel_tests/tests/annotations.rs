@@ -326,8 +326,8 @@ fn nested_queryable_derives() {
 
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
-    insert(&sean.new_post("Hi", None))
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&sean.new_post("Hi", None))
         .execute(&conn)
         .unwrap();
     let post = posts::table.first(&conn).unwrap();

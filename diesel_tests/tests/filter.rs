@@ -394,9 +394,11 @@ fn filter_subselect_referencing_outer_table() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
 
-    let new_posts = vec![sean.new_post("Hello", None), sean.new_post("Hello 2", None)];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&vec![
+            sean.new_post("Hello", None),
+            sean.new_post("Hello 2", None),
+        ])
         .execute(&conn)
         .unwrap();
 
@@ -426,9 +428,11 @@ fn filter_subselect_with_pg_any() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
 
-    let new_posts = vec![sean.new_post("Hello", None), sean.new_post("Hello 2", None)];
-    insert(&new_posts)
-        .into(posts::table)
+    insert_into(posts::table)
+        .values(&vec![
+            sean.new_post("Hello", None),
+            sean.new_post("Hello 2", None),
+        ])
         .execute(&conn)
         .unwrap();
 

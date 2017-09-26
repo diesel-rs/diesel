@@ -331,8 +331,6 @@ fn update_with_no_changes() {
 #[test]
 #[cfg(feature = "postgres")]
 fn upsert_with_no_changes_executes_do_nothing() {
-    use diesel::pg::upsert::*;
-
     #[derive(AsChangeset)]
     #[table_name = "users"]
     struct Changes {
