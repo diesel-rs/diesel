@@ -4,7 +4,6 @@ extern crate chrono;
 
 pub use quickcheck::quickcheck;
 use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use self::chrono::naive::{MAX_DATE, MIN_DATE};
 
 pub use schema::{connection, TestConnection};
 pub use diesel::*;
@@ -308,6 +307,8 @@ fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
+    use self::chrono::naive::MAX_DATE;
+
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
     let latest_chrono_date = MAX_DATE;
     let num_days_representable = latest_chrono_date
@@ -328,6 +329,8 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "sqlite")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
+    use self::chrono::naive::{MAX_DATE, MIN_DATE};
+
     let earliest_sqlite_date = MIN_DATE;
     let latest_sqlite_date = MAX_DATE;
     let num_days_representable = latest_sqlite_date

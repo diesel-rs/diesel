@@ -270,7 +270,6 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
     let tess = find_user_by_name("Tess", &connection);
-    let new_post = tess.new_post("Tess", None);
     insert_into(posts::table)
         .values(&vec![
             tess.new_post("Tess", None),

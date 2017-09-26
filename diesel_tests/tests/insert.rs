@@ -274,6 +274,7 @@ fn upsert_empty_slice() {
 
 #[test]
 #[cfg(not(feature = "mysql"))]
+#[allow(deprecated)]
 fn insert_only_default_values_deprecated() {
     use schema::users::table as users;
     use schema_dsl::*;
