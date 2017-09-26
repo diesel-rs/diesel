@@ -312,6 +312,8 @@ pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
     }.map_err(Into::into)
 }
 
+// FIXME: remove the recursive call here as soon as
+// https://github.com/kbknapp/clap-rs/issues/978 is fixed
 fn database_url_from_cli(matches: &ArgMatches) -> Option<String> {
     matches
         .value_of("DATABASE_URL")
