@@ -16,10 +16,7 @@ pub fn derive_as_changeset(item: syn::DeriveInput) -> quote::Tokens {
         .attrs
         .as_slice()
         .iter()
-        .filter(|a| match a.column_name() {
-            Some(name) => !model.primary_key_names.contains(name),
-            None => true,
-        })
+        .filter(|a| !model.primary_key_names.contains(a.column_name()))
         .collect::<Vec<_>>();
 
     if attrs.is_empty() {

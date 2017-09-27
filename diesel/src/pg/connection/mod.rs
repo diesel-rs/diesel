@@ -12,10 +12,10 @@ use connection::*;
 use pg::{Pg, PgMetadataLookup};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
-use query_source::Queryable;
+use query_source::{Queryable, QueryableByName};
 use result::*;
 use result::ConnectionError::CouldntSetupConfiguration;
-use self::cursor::Cursor;
+use self::cursor::*;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
@@ -75,6 +75,19 @@ impl Connection for PgConnection {
         query
             .execute(&self.raw_connection, &params)
             .and_then(|r| Cursor::new(r).collect())
+    }
+
+    #[doc(hidden)]
+    #[doc(hidden)]
+    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
+    where
+        T: QueryFragment<Pg> + QueryId,
+        U: QueryableByName<Pg>,
+    {
+        let (query, params) = try!(self.prepare_query(source));
+        query
+            .execute(&self.raw_connection, &params)
+            .and_then(|r| NamedCursor::new(r).collect())
     }
 
     #[doc(hidden)]

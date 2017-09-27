@@ -1,8 +1,9 @@
 use pg::Pg;
-use query_source::Queryable;
-use result::QueryResult;
+use query_source::{Queryable, QueryableByName};
 use result::Error::DeserializationError;
+use result::QueryResult;
 use super::result::PgResult;
+use super::row::PgNamedRow;
 use types::{FromSqlRow, HasSqlType};
 
 use std::marker::PhantomData;
@@ -44,5 +45,37 @@ where
                 .map_err(DeserializationError);
             Some(value)
         }
+    }
+}
+
+pub struct NamedCursor {
+    db_result: PgResult,
+}
+
+impl NamedCursor {
+    pub fn new(db_result: PgResult) -> Self {
+        NamedCursor { db_result }
+    }
+
+    pub fn collect<T>(self) -> QueryResult<Vec<T>>
+    where
+        T: QueryableByName<Pg>,
+    {
+        use result::Error::DeserializationError;
+
+        (0..self.db_result.num_rows())
+            .map(|i| {
+                let row = PgNamedRow::new(&self, i);
+                T::build(&row).map_err(DeserializationError)
+            })
+            .collect()
+    }
+
+    pub fn index_of_column(&self, column_name: &str) -> Option<usize> {
+        self.db_result.field_number(column_name)
+    }
+
+    pub fn get_value(&self, row: usize, column: usize) -> Option<&[u8]> {
+        self.db_result.get(row, column)
     }
 }

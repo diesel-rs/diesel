@@ -3,7 +3,7 @@ mod transaction_manager;
 
 use backend::Backend;
 use query_builder::{AsQuery, QueryFragment, QueryId};
-use query_source::Queryable;
+use query_source::{Queryable, QueryableByName};
 use result::*;
 use types::HasSqlType;
 
@@ -144,6 +144,12 @@ pub trait Connection: SimpleConnection + Sized + Send {
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>;
+
+    #[doc(hidden)]
+    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
+    where
+        T: QueryFragment<Self::Backend> + QueryId,
+        U: QueryableByName<Self::Backend>;
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>

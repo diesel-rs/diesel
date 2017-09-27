@@ -6,9 +6,9 @@ use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression}
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_builder::insert_statement::UndecoratedInsertRecord;
-use query_source::{QuerySource, Queryable, Table};
+use query_source::*;
 use result::QueryResult;
-use row::Row;
+use row::*;
 use types::{FromSqlRow, HasSqlType, NotNull};
 use util::TupleAppend;
 
@@ -58,6 +58,16 @@ macro_rules! tuple_impls {
 
                 fn build(row: Self::Row) -> Self {
                     ($($T::build(row.$idx),)+)
+                }
+            }
+
+            impl<$($T,)+ DB> QueryableByName<DB> for ($($T,)+)
+            where
+                DB: Backend,
+                $($T: QueryableByName<DB>,)+
+            {
+                fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
+                    Ok(($($T::build(row)?,)+))
                 }
             }
 

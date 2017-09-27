@@ -4,6 +4,7 @@ use backend::Backend;
 use expression::*;
 use query_builder::*;
 use result::QueryResult;
+#[cfg(feature = "with-deprecated")]
 use super::unchecked_bind::UncheckedBind;
 use types::HasSqlType;
 
@@ -99,6 +100,8 @@ impl<ST> SqlLiteral<ST> {
     /// assert_eq!(Ok(expected), query.load(&connection));
     /// # }
     /// ```
+    #[deprecated(since = "0.99.0", note = "use `sql_query` if you need bind parameters")]
+    #[cfg(feature = "with-deprecated")]
     pub fn bind<BindST, T>(self, bind_value: T) -> UncheckedBind<Self, T, BindST> {
         UncheckedBind::new(self, bind_value)
     }
@@ -137,11 +140,9 @@ impl<ST> NonAggregate for SqlLiteral<ST> {}
 /// DSL. You will need to provide the SQL type of the expression, in addition to
 /// the SQL.
 ///
-/// # Bound parameters
-///
-/// If you need to pass arguments to your query, you should use [`.bind()`].
-///
-/// [`.bind()`]: ../sql_literal/struct.SqlLiteral.html#method.bind
+/// This function is intended for use when you need a small bit of raw SQL in
+/// your query. If you want to write the entire query using raw SQL, use
+/// [`sql_query`](../fn.sql_query.html) instead.
 ///
 /// # Safety
 ///

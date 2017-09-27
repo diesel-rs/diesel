@@ -31,10 +31,13 @@ impl Attr {
         self.field_name.as_ref().unwrap_or(&self.field_position)
     }
 
-    pub fn column_name(&self) -> Option<&syn::Ident> {
+    pub fn column_name(&self) -> &syn::Ident {
         self.column_name
             .as_ref()
             .or_else(|| self.field_name.as_ref())
+            .expect(
+                "All fields of tuple structs must be annotated with `#[column_name=\"something\"]`",
+            )
     }
 
     fn field_kind(&self) -> &str {

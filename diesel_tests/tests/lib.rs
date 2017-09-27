@@ -34,6 +34,7 @@ mod joins;
 mod macros;
 mod order;
 mod perf_details;
+mod raw_sql;
 mod schema;
 mod schema_dsl;
 mod schema_inference;

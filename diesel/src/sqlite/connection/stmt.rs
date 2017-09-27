@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr;
@@ -115,6 +115,21 @@ impl Statement {
         ensure_sqlite_ok(result, &self.raw_connection)
     }
 
+    fn num_fields(&self) -> usize {
+        unsafe { ffi::sqlite3_column_count(self.inner_statement) as usize }
+    }
+
+    /// The lifetime of the returned CStr is shorter than self. This function
+    /// should be tied to a lifetime that ends before the next call to `reset`
+    unsafe fn field_name<'a>(&self, idx: usize) -> Option<&'a CStr> {
+        let ptr = ffi::sqlite3_column_name(self.inner_statement, idx as libc::c_int);
+        if ptr.is_null() {
+            None
+        } else {
+            Some(CStr::from_ptr(ptr))
+        }
+    }
+
     fn step(&mut self) -> Option<SqliteRow> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
             ffi::SQLITE_DONE => None,
@@ -186,6 +201,14 @@ impl<'a> StatementUse<'a> {
 
     pub fn step(&mut self) -> Option<SqliteRow> {
         self.statement.step()
+    }
+
+    pub fn num_fields(&self) -> usize {
+        self.statement.num_fields()
+    }
+
+    pub fn field_name(&self, idx: usize) -> Option<&'a CStr> {
+        unsafe { self.statement.field_name(idx) }
     }
 }
 

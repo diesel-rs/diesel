@@ -1,13 +1,15 @@
 extern crate mysqlclient_sys as ffi;
 
 mod iterator;
+mod metadata;
 
 use std::os::raw as libc;
 use std::ffi::CStr;
 
 use mysql::MysqlType;
 use result::{DatabaseErrorKind, QueryResult};
-use self::iterator::StatementIterator;
+use self::iterator::*;
+use self::metadata::*;
 use super::bind::Binds;
 
 pub struct Statement {
@@ -73,6 +75,14 @@ impl Statement {
         StatementIterator::new(self, types)
     }
 
+    /// This function should be called instead of `execute` for queries which
+    /// have a return value. After calling this function, `execute` can never
+    /// be called on this statement.
+    pub unsafe fn named_results(&mut self) -> QueryResult<NamedStatementIterator> {
+        NamedStatementIterator::new(self)
+    }
+
+
     fn last_error_message(&self) -> String {
         unsafe { CStr::from_ptr(ffi::mysql_stmt_error(self.stmt)) }
             .to_string_lossy()
@@ -99,6 +109,16 @@ impl Statement {
             offset as libc::c_ulong,
         );
         self.did_an_error_occur()
+    }
+
+    fn metadata(&self) -> QueryResult<StatementMetadata> {
+        use result::Error::DeserializationError;
+
+        let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt).as_mut() };
+        self.did_an_error_occur()?;
+        result_ptr
+            .map(StatementMetadata::new)
+            .ok_or_else(|| DeserializationError("No metadata exists".into()))
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {

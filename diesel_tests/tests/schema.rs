@@ -12,7 +12,7 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 infer_schema!("dotenv:DATABASE_URL");
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
-         Associations)]
+         Associations, QueryableByName)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,

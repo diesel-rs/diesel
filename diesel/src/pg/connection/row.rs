@@ -1,6 +1,7 @@
 use pg::Pg;
-use row::Row;
+use row::*;
 use super::result::PgResult;
+use super::cursor::NamedCursor;
 
 pub struct PgRow<'a> {
     db_result: &'a PgResult,
@@ -27,5 +28,26 @@ impl<'a> Row<Pg> for PgRow<'a> {
 
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| self.db_result.is_null(self.row_idx, self.col_idx + i))
+    }
+}
+
+pub struct PgNamedRow<'a> {
+    cursor: &'a NamedCursor,
+    idx: usize,
+}
+
+impl<'a> PgNamedRow<'a> {
+    pub fn new(cursor: &'a NamedCursor, idx: usize) -> Self {
+        PgNamedRow { cursor, idx }
+    }
+}
+
+impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
+    fn get_raw_value(&self, index: usize) -> Option<&[u8]> {
+        self.cursor.get_value(self.idx, index)
+    }
+
+    fn index_of(&self, column_name: &str) -> Option<usize> {
+        self.cursor.index_of_column(column_name)
     }
 }

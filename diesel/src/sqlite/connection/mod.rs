@@ -17,7 +17,7 @@ use query_builder::bind_collector::RawBytesBindCollector;
 use query_source::*;
 use result::*;
 use self::raw::RawConnection;
-use self::statement_iterator::StatementIterator;
+use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use sqlite::Sqlite;
 use types::HasSqlType;
@@ -71,6 +71,18 @@ impl Connection for SqliteConnection {
         let mut statement = try!(self.prepare_query(&source.as_query()));
         let statement_use = StatementUse::new(&mut statement);
         let iter = StatementIterator::new(statement_use);
+        iter.collect()
+    }
+
+    #[doc(hidden)]
+    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
+    where
+        T: QueryFragment<Self::Backend> + QueryId,
+        U: QueryableByName<Self::Backend>,
+    {
+        let mut statement = try!(self.prepare_query(source));
+        let statement_use = StatementUse::new(&mut statement);
+        let iter = NamedStatementIterator::new(statement_use)?;
         iter.collect()
     }
 

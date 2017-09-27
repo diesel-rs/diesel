@@ -1,6 +1,8 @@
-use super::{ffi, libc, Binds, Statement};
+use std::collections::HashMap;
+
+use super::{ffi, libc, Binds, Statement, StatementMetadata};
 use result::QueryResult;
-use row::Row;
+use row::*;
 use mysql::{Mysql, MysqlType};
 
 pub struct StatementIterator<'a> {
@@ -13,10 +15,7 @@ impl<'a> StatementIterator<'a> {
     pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
 
-        unsafe {
-            output_binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
-            stmt.execute()?;
-        }
+        execute_statement(stmt, &mut output_binds)?;
 
         Ok(StatementIterator {
             stmt: stmt,
@@ -36,25 +35,14 @@ impl<'a> StatementIterator<'a> {
     }
 
     fn next(&mut self) -> Option<QueryResult<MysqlRow>> {
-        let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.stmt) };
-        match next_row_result as libc::c_uint {
-            ffi::MYSQL_NO_DATA => return None,
-            ffi::MYSQL_DATA_TRUNCATED => {
-                let res = self.output_binds.populate_dynamic_buffers(self.stmt);
-                if let Err(e) = res {
-                    return Some(Err(e));
-                }
-            }
-            0 => self.output_binds.update_buffer_lengths(),
-            _error => if let Err(e) = self.stmt.did_an_error_occur() {
-                return Some(Err(e));
-            },
+        match populate_row_buffers(self.stmt, &mut self.output_binds) {
+            Ok(Some(())) => Some(Ok(MysqlRow {
+                col_idx: 0,
+                binds: &mut self.output_binds,
+            })),
+            Ok(None) => None,
+            Err(e) => Some(Err(e)),
         }
-
-        Some(Ok(MysqlRow {
-            col_idx: 0,
-            binds: &mut self.output_binds,
-        }))
     }
 }
 
@@ -72,5 +60,85 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
 
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| self.binds.field_data(self.col_idx + i).is_none())
+    }
+}
+
+pub struct NamedStatementIterator<'a> {
+    stmt: &'a mut Statement,
+    output_binds: Binds,
+    metadata: StatementMetadata,
+}
+
+#[cfg_attr(feature = "clippy", allow(should_implement_trait))] // don't need `Iterator` here
+impl<'a> NamedStatementIterator<'a> {
+    pub fn new(stmt: &'a mut Statement) -> QueryResult<Self> {
+        let metadata = stmt.metadata()?;
+        let mut output_binds = Binds::from_result_metadata(metadata.fields());
+
+        execute_statement(stmt, &mut output_binds)?;
+
+        Ok(NamedStatementIterator {
+            stmt,
+            output_binds,
+            metadata,
+        })
+    }
+
+    pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>>
+    where
+        F: FnMut(NamedMysqlRow) -> QueryResult<T>,
+    {
+        let mut results = Vec::new();
+        while let Some(row) = self.next() {
+            results.push(f(row?)?);
+        }
+        Ok(results)
+    }
+
+    fn next(&mut self) -> Option<QueryResult<NamedMysqlRow>> {
+        match populate_row_buffers(self.stmt, &mut self.output_binds) {
+            Ok(Some(())) => Some(Ok(NamedMysqlRow {
+                binds: &self.output_binds,
+                column_indices: self.metadata.column_indices(),
+            })),
+            Ok(None) => None,
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
+pub struct NamedMysqlRow<'a> {
+    binds: &'a Binds,
+    column_indices: &'a HashMap<&'a str, usize>,
+}
+
+impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
+    fn index_of(&self, column_name: &str) -> Option<usize> {
+        self.column_indices.get(column_name).cloned()
+    }
+
+    fn get_raw_value(&self, idx: usize) -> Option<&[u8]> {
+        self.binds.field_data(idx)
+    }
+}
+
+fn execute_statement(stmt: &mut Statement, binds: &mut Binds) -> QueryResult<()> {
+    unsafe {
+        binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
+        stmt.execute()?;
+    }
+    Ok(())
+}
+
+fn populate_row_buffers(stmt: &Statement, binds: &mut Binds) -> QueryResult<Option<()>> {
+    let next_row_result = unsafe { ffi::mysql_stmt_fetch(stmt.stmt) };
+    match next_row_result as libc::c_uint {
+        ffi::MYSQL_NO_DATA => Ok(None),
+        ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(stmt).map(Some),
+        0 => {
+            binds.update_buffer_lengths();
+            Ok(Some(()))
+        }
+        _error => stmt.did_an_error_occur().map(Some),
     }
 }
