@@ -34,8 +34,6 @@ mod joins;
 mod macros;
 mod order;
 mod perf_details;
-#[cfg(feature = "postgres")]
-mod postgres_types;
 mod schema;
 mod schema_dsl;
 mod schema_inference;

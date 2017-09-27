@@ -128,9 +128,6 @@ pub mod sql_types {
     #[doc(hidden)]
     pub type Bpchar = ::types::VarChar;
 
-    #[doc(hidden)]
-    pub type Citext = ::types::Text;
-
     #[cfg(feature = "serde_json")]
     /// The JSON SQL type.  This type can only be used with `feature =
     /// "serde_json"`
