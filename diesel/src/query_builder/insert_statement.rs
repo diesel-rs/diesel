@@ -195,6 +195,9 @@ where
 {
     fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
         use connection::Connection;
+        if self.records.is_empty() {
+            return Ok(0);
+        }
         conn.transaction(|| {
             let mut result = 0;
             for record in self.records {
