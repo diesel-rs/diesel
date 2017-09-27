@@ -176,7 +176,9 @@ fn any_pending_migrations_after_running_and_creating() {
 
 #[test]
 fn migration_run_runs_pending_migrations_custom_database_url_1() {
-    let p = project("migration_run_custom_db_url_1").folder("migrations").build();
+    let p = project("migration_run_custom_db_url_1")
+        .folder("migrations")
+        .build();
     let db_url = p.database_url();
     let db = database(&db_url);
 
@@ -208,7 +210,9 @@ fn migration_run_runs_pending_migrations_custom_database_url_1() {
 
 #[test]
 fn migration_run_runs_pending_migrations_custom_database_url_2() {
-    let p = project("migration_run_custom_db_url_2").folder("migrations").build();
+    let p = project("migration_run_custom_db_url_2")
+        .folder("migrations")
+        .build();
     let db_url = p.database_url();
     let db = database(&db_url);
 

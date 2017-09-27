@@ -318,7 +318,12 @@ fn database_url_from_cli(matches: &ArgMatches) -> Option<String> {
     matches
         .value_of("DATABASE_URL")
         .map(Into::into)
-        .or_else(|| matches.subcommand().1.and_then(|s| database_url_from_cli(s)))
+        .or_else(|| {
+            matches
+                .subcommand()
+                .1
+                .and_then(|s| database_url_from_cli(s))
+        })
 }
 
 pub fn database_url(matches: &ArgMatches) -> String {
