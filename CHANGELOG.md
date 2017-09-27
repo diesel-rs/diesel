@@ -67,6 +67,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   unlikely that your application is using these types, but `InsertStatement` is
   now the only "insert statement" type.
 
+* `Citext` as a type alias for `Text` has been removed. Writing
+  `citext_column.eq("foo")` would perform a case-sensitive comparison. More
+  fleshed out support will be required.
+
 ### Fixed
 
 * When using MySQL and SQLite, dates which cannot be represented by `chrono`

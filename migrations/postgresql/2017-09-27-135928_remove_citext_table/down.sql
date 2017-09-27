@@ -1,0 +1,2 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE TABLE citext_table (citext_field CITEXT PRIMARY KEY);
