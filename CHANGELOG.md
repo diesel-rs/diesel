@@ -36,6 +36,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Subselects can now reference columns from the outer table. For example,
   `users.filter(exists(posts.filter(user_id.eq(users::id))))` will now compile.
 
+* `TextExpressionMethods` is now implemented for expressions of type
+  `Nullable<Text>` as well as `Text`.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
