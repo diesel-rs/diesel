@@ -69,6 +69,7 @@ pub mod dsl {
 pub use self::sql_literal::SqlLiteral;
 
 use backend::Backend;
+use dsl::AsExprOf;
 
 /// Represents a typed fragment of SQL.
 ///
@@ -89,15 +90,16 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
     type SqlType = T::SqlType;
 }
 
-/// Describes how a type can be represented as an expression for a given type.
-/// These types couldn't just implement [`Expression`](trait.Expression.html)
-/// directly, as many things can be used as an expression of multiple types.
-/// (`String` for example, can be used as either
-/// [`VarChar`](../types/type.VarChar.html) or
-/// [`Text`](../types/struct.Text.html)).
+/// Converts a type to its representation for use in Diesel's query builder.
 ///
-/// This trait allows us to use primitives on the right hand side of various
-/// expressions. For example `name.eq("Sean")`
+/// Implementations of this trait will generally do one of 3 things:
+///
+/// - Return `self` for types which are already parts of Diesel's query builder
+/// - Perform some implicit coercion (for example, allowing [`now`] to be used as
+///   both [`Timestamp`] and [`Timestamptz`].
+/// - Indicate that the type has data which will be sent separately from the
+///   query. This is generally referred as a "bind parameter". Types which
+///   implement [`ToSql`] will generally implement `AsExpression` this way.
 pub trait AsExpression<T> {
     type Expression: Expression<SqlType = T>;
 
@@ -111,6 +113,65 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
         self
     }
 }
+
+/// Converts a type to its representation for use in Diesel's query builder.
+///
+/// This trait only exists to make usage of `AsExpression` more ergonomic when
+/// the `SqlType` cannot be inferred. It is generally used when you need to use
+/// a Rust value as the left hand side of an expression, or when you want to
+/// select a constant value.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # fn main() {
+/// use diesel::types::Text;
+/// #   let conn = establish_connection();
+/// let names = users::table
+///     .select("The Amazing ".into_sql::<Text>().concat(users::name))
+///     .load(&conn);
+/// let expected_names = vec![
+///     "The Amazing Sean".to_string(),
+///     "The Amazing Tess".to_string(),
+/// ];
+/// assert_eq!(Ok(expected_names), names);
+/// # }
+/// ```
+pub trait IntoSql {
+    /// Convert `self` to an expression for Diesel's query builder.
+    ///
+    /// There is no difference in behavior between `x.into_sql::<Y>()` and
+    /// `AsExpression::<Y>::as_expression(x)`.
+    fn into_sql<T>(self) -> AsExprOf<Self, T>
+    where
+        Self: AsExpression<T> + Sized,
+    {
+        self.as_expression()
+    }
+
+    /// Convert `&self` to an expression for Diesel's query builder.
+    ///
+    /// There is no difference in behavior between `x.as_sql::<Y>()` and
+    /// `AsExpression::<Y>::as_expression(&x)`.
+    fn as_sql<'a, T>(&'a self) -> AsExprOf<&'a Self, T>
+    where
+        &'a Self: AsExpression<T>,
+    {
+        self.as_expression()
+    }
+}
+
+impl<T> IntoSql for T {}
 
 /// Indicates that all elements of an expression are valid given a from clause.
 /// This is used to ensure that `users.filter(posts::id.eq(1))` fails to

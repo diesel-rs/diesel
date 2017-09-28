@@ -141,7 +141,8 @@ pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
-    pub use expression::{AppearsOnTable, BoxableExpression, Expression, SelectableExpression};
+    pub use expression::{AppearsOnTable, BoxableExpression, Expression, IntoSql,
+                         SelectableExpression};
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;

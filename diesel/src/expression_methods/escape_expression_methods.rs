@@ -1,5 +1,5 @@
 use dsl::AsExprOf;
-use expression::AsExpression;
+use expression::IntoSql;
 use expression::operators::{Escape, Like, NotLike};
 use types::VarChar;
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify
@@ -36,10 +36,7 @@ use types::VarChar;
 /// ```
 pub trait EscapeExpressionMethods: Sized {
     fn escape(self, character: char) -> Escape<Self, AsExprOf<String, VarChar>> {
-        Escape::new(
-            self,
-            AsExpression::<VarChar>::as_expression(character.to_string()),
-        )
+        Escape::new(self, character.to_string().into_sql::<VarChar>())
     }
 }
 

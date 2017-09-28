@@ -174,7 +174,7 @@ macro_rules! impl_Insertable {
 
             #[allow(non_shorthand_field_patterns)]
             fn values(self) -> Self::Values {
-                use $crate::expression::{AsExpression, Expression};
+                use $crate::expression::{Expression, IntoSql};
                 use $crate::insertable::ColumnInsertValue;
                 let $self_to_columns = *self;
                 ($(
@@ -222,8 +222,7 @@ macro_rules! Insertable_column_expr {
     ($column:path, $field_access:expr, regular) => {
         ColumnInsertValue::Expression(
             $column,
-            AsExpression::<<$column as Expression>::SqlType>
-                ::as_expression($field_access),
+            $field_access.into_sql::<<$column as Expression>::SqlType>(),
         )
     };
 }

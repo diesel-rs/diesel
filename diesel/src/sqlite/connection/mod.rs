@@ -132,7 +132,6 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use expression::AsExpression;
     use dsl::sql;
     use prelude::*;
     use super::*;
@@ -141,7 +140,7 @@ mod tests {
     #[test]
     fn prepared_statements_are_cached_when_run() {
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        let query = ::select(AsExpression::<Integer>::as_expression(1));
+        let query = ::select(1.into_sql::<Integer>());
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok(1), query.get_result(&connection));
@@ -160,7 +159,7 @@ mod tests {
     #[test]
     fn queries_containing_sql_literal_nodes_are_not_cached() {
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let one_as_expr = 1.into_sql::<Integer>();
         let query = ::select(one_as_expr.eq(sql::<Integer>("1")));
 
         assert_eq!(Ok(true), query.get_result(&connection));
@@ -170,7 +169,7 @@ mod tests {
     #[test]
     fn queries_containing_in_with_vec_are_not_cached() {
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let one_as_expr = 1.into_sql::<Integer>();
         let query = ::select(one_as_expr.eq_any(vec![1, 2, 3]));
 
         assert_eq!(Ok(true), query.get_result(&connection));
@@ -180,7 +179,7 @@ mod tests {
     #[test]
     fn queries_containing_in_with_subselect_are_cached() {
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        let one_as_expr = AsExpression::<Integer>::as_expression(1);
+        let one_as_expr = 1.into_sql::<Integer>();
         let query = ::select(one_as_expr.eq_any(::select(one_as_expr)));
 
         assert_eq!(Ok(true), query.get_result(&connection));

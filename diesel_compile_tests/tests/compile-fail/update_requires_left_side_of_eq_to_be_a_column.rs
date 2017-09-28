@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::expression::AsExpression;
 
 table! {
     users {
@@ -14,7 +13,7 @@ table! {
 fn main() {
     use self::users::dsl::*;
 
-    let foo = AsExpression::<types::VarChar>::as_expression("foo");
+    let foo = "foo".into_sql::<types::VarChar>();
     let command = update(users).set(foo.eq(name));
     //~^ ERROR Column
 }

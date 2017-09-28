@@ -163,7 +163,6 @@ mod tests {
     use self::dotenv::dotenv;
     use std::env;
 
-    use expression::AsExpression;
     use dsl::sql;
     use prelude::*;
     use super::*;
@@ -173,7 +172,7 @@ mod tests {
     fn prepared_statements_are_cached() {
         let connection = connection();
 
-        let query = ::select(AsExpression::<Integer>::as_expression(1));
+        let query = ::select(1.into_sql::<Integer>());
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok(1), query.get_result(&connection));
@@ -184,8 +183,8 @@ mod tests {
     fn queries_with_identical_sql_but_different_types_are_cached_separately() {
         let connection = connection();
 
-        let query = ::select(AsExpression::<Integer>::as_expression(1));
-        let query2 = ::select(AsExpression::<VarChar>::as_expression("hi"));
+        let query = ::select(1.into_sql::<Integer>());
+        let query2 = ::select("hi".into_sql::<VarChar>());
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
@@ -196,8 +195,8 @@ mod tests {
     fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
         let connection = connection();
 
-        let query = ::select(AsExpression::<Integer>::as_expression(1)).into_boxed::<Pg>();
-        let query2 = ::select(AsExpression::<VarChar>::as_expression("hi")).into_boxed::<Pg>();
+        let query = ::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
+        let query2 = ::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
 
         assert_eq!(0, connection.statement_cache.len());
         assert_eq!(Ok(1), query.get_result(&connection));
@@ -210,7 +209,7 @@ mod tests {
         let connection = connection();
 
         sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
-        let hi = AsExpression::<VarChar>::as_expression("HI");
+        let hi = "HI".into_sql::<VarChar>();
         let query = ::select(hi).into_boxed::<Pg>();
         let query2 = ::select(lower(hi)).into_boxed::<Pg>();
 

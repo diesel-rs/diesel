@@ -221,11 +221,10 @@ mod tests {
 
     #[test]
     fn times_with_timezones_round_trip_after_conversion() {
-        use expression::AsExpression;
         let connection = connection();
         let time = FixedOffset::east(3600).ymd(2016, 1, 2).and_hms(1, 0, 0);
         let expected = NaiveDate::from_ymd(2016, 1, 1).and_hms(20, 0, 0);
-        let query = select(AsExpression::<Timestamptz>::as_expression(time).at_time_zone("EDT"));
+        let query = select(time.into_sql::<Timestamptz>().at_time_zone("EDT"));
         assert_eq!(Ok(expected), query.get_result(&connection));
     }
 

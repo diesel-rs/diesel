@@ -29,7 +29,7 @@ where
         + QueryId,
 {
     let connection = connection();
-    let query = select(AsExpression::<ST>::as_expression(value.clone()));
+    let query = select(value.clone().into_sql::<ST>());
     let result = query.get_result::<T>(&connection);
     match result {
         Ok(res) => if value != res {
