@@ -1,12 +1,11 @@
 use syn;
-use std::slice;
 
 use attr::Attr;
 use util::*;
 
 pub struct Model {
     pub ty: syn::Ty,
-    pub attrs: ModelAttrs,
+    pub attrs: Vec<Attr>,
     pub name: syn::Ident,
     pub generics: syn::Generics,
     pub primary_key_names: Vec<syn::Ident>,
@@ -22,7 +21,7 @@ impl Model {
                     derived_from
                 ))
             }
-            syn::Body::Struct(ref fields) => ModelAttrs::from_struct_body(fields),
+            syn::Body::Struct(ref fields) => attrs_from_struct_body(fields),
         };
         let ty = struct_ty(item.ident.clone(), &item.generics);
         let name = item.ident.clone();
@@ -52,10 +51,6 @@ impl Model {
     pub fn has_table_name_annotation(&self) -> bool {
         self.table_name_from_annotation.is_some()
     }
-
-    pub fn is_tuple_struct(&self) -> bool {
-        self.attrs.is_tuple()
-    }
 }
 
 pub fn infer_association_name(name: &str) -> String {
@@ -80,41 +75,12 @@ fn infer_table_name(name: &str) -> String {
     result
 }
 
-pub enum ModelAttrs {
-    Struct(Vec<Attr>),
-    Tuple(Vec<Attr>),
-}
-
-impl ModelAttrs {
-    fn from_struct_body(body: &syn::VariantData) -> Self {
-        let attrs = body.fields()
-            .into_iter()
-            .enumerate()
-            .map(Attr::from_struct_field)
-            .collect();
-
-        match *body {
-            syn::VariantData::Struct(_) => ModelAttrs::Struct(attrs),
-            _ => ModelAttrs::Tuple(attrs),
-        }
-    }
-
-    pub fn as_slice(&self) -> &[Attr] {
-        match *self {
-            ModelAttrs::Struct(ref attrs) | ModelAttrs::Tuple(ref attrs) => &*attrs,
-        }
-    }
-
-    pub fn iter(&self) -> slice::Iter<Attr> {
-        self.as_slice().iter()
-    }
-
-    pub fn is_tuple(&self) -> bool {
-        match *self {
-            ModelAttrs::Struct(_) => false,
-            ModelAttrs::Tuple(_) => true,
-        }
-    }
+fn attrs_from_struct_body(body: &syn::VariantData) -> Vec<Attr> {
+    body.fields()
+        .into_iter()
+        .enumerate()
+        .map(Attr::from_struct_field)
+        .collect()
 }
 
 #[test]

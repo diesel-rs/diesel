@@ -1,7 +1,6 @@
 use quote::Tokens;
 use syn;
 
-use attr::Attr;
 use model::Model;
 use util::wrap_item_in_const;
 
@@ -18,8 +17,6 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
     let row_ty = quote!((#(#row_ty,)*));
 
     let build_expr = build_expr_for_model(&model);
-    let field_names = model.attrs.iter().map(Attr::name_for_pattern);
-    let row_pat = quote!((#(#field_names,)*));
 
     let model_name_uppercase = model.name.as_ref().to_uppercase();
     let dummy_const = format!("_IMPL_QUERYABLE_FOR_{}", model_name_uppercase).into();
@@ -34,7 +31,7 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
                type Row = <#row_ty as diesel::Queryable<__ST, __DB>>::Row;
 
                fn build(row: Self::Row) -> Self {
-                   let #row_pat = diesel::Queryable::build(row);
+                   let row: #row_ty = diesel::Queryable::build(row);
                    #build_expr
                }
             }
@@ -43,14 +40,13 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
 }
 
 fn build_expr_for_model(model: &Model) -> Tokens {
-    let struct_name = &model.name;
-    let field_names = model.attrs.iter().map(Attr::name_for_pattern);
+    let attr_exprs = model.attrs.iter().map(|attr| {
+        let name = attr.field_name();
+        let idx = &attr.field_position;
+        quote!(#name: row.#idx)
+    });
 
-    if model.is_tuple_struct() {
-        quote!(#struct_name(#(#field_names),*))
-    } else {
-        quote!(#struct_name {
-            #(#field_names,)*
-        })
-    }
+    quote!(Self {
+        #(#attr_exprs,)*
+    })
 }

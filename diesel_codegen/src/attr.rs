@@ -1,16 +1,14 @@
 use quote;
 use syn;
 
-use std::borrow::Cow;
-
 use util::*;
 
 #[derive(Debug)]
 pub struct Attr {
-    pub column_name: Option<syn::Ident>,
-    pub field_name: Option<syn::Ident>,
+    column_name: Option<syn::Ident>,
+    field_name: Option<syn::Ident>,
     pub ty: syn::Ty,
-    field_position: usize,
+    pub field_position: syn::Ident,
 }
 
 impl Attr {
@@ -25,15 +23,18 @@ impl Attr {
             column_name: column_name,
             field_name: field_name,
             ty: ty,
-            field_position: index,
+            field_position: index.to_string().into(),
         }
     }
 
-    pub fn name_for_pattern(&self) -> Cow<syn::Ident> {
-        match self.field_name {
-            Some(ref name) => Cow::Borrowed(name),
-            None => Cow::Owned(format!("field_{}", self.field_position).into()),
-        }
+    pub fn field_name(&self) -> &syn::Ident {
+        self.field_name.as_ref().unwrap_or(&self.field_position)
+    }
+
+    pub fn column_name(&self) -> Option<&syn::Ident> {
+        self.column_name
+            .as_ref()
+            .or_else(|| self.field_name.as_ref())
     }
 
     fn field_kind(&self) -> &str {
