@@ -2,6 +2,7 @@ extern crate url;
 
 use std::ffi::{CStr, CString};
 use self::url::Url;
+use self::url::percent_encoding::percent_decode;
 
 use result::{ConnectionError, ConnectionResult};
 
@@ -32,9 +33,9 @@ impl ConnectionOptions {
             Some(host) => Some(try!(CString::new(host.as_bytes()))),
             None => None,
         };
-        let user = try!(CString::new(url.username().as_bytes()));
+        let user = try!(decode_into_cstring(url.username()));
         let password = match url.password() {
-            Some(password) => Some(try!(CString::new(password.as_bytes()))),
+            Some(password) => Some(try!(decode_into_cstring(password))),
             None => None,
         };
         let database = match url.path_segments().and_then(|mut iter| iter.nth(0)) {
@@ -70,6 +71,15 @@ impl ConnectionOptions {
     pub fn port(&self) -> Option<u16> {
         self.port
     }
+}
+
+fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
+    let decoded = try!(
+        percent_decode(s.as_bytes())
+            .decode_utf8()
+            .map_err(|_| { connection_url_error() })
+    );
+    CString::new(decoded.as_bytes()).map_err(Into::into)
 }
 
 fn connection_url_error() -> ConnectionError {
@@ -115,4 +125,28 @@ fn first_path_segment_is_treated_as_database() {
             .unwrap()
             .database()
     );
+}
+
+#[test]
+fn userinfo_should_be_percent_decode() {
+    use self::url::percent_encoding::{utf8_percent_encode, USERINFO_ENCODE_SET};
+
+    let username = "x#gfuL?4Zuj{n73m}eeJt0";
+    let encoded_username = utf8_percent_encode(username, USERINFO_ENCODE_SET);
+
+    let password = "x/gfuL?4Zuj{n73m}eeJt1";
+    let encoded_password = utf8_percent_encode(password, USERINFO_ENCODE_SET);
+
+    let db_url = format!(
+        "mysql://{}:{}@localhost/bar",
+        encoded_username,
+        encoded_password
+    );
+    let db_url = Url::parse(&db_url).unwrap();
+
+    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+    let username = CString::new(username.as_bytes()).unwrap();
+    let password = CString::new(password.as_bytes()).unwrap();
+    assert_eq!(username, conn_opts.user);
+    assert_eq!(password, conn_opts.password.unwrap());
 }
