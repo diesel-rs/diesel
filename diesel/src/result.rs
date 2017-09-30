@@ -27,14 +27,21 @@ pub enum Error {
 }
 
 #[derive(Debug, Clone, Copy)]
-/// The kind of database error that occurred. This is not meant to exhaustively
-/// cover all possible errors, but is used to identify errors which are commonly
-/// recovered from programatically. This enum is not intended to be exhaustively
-/// matched, and new variants may be added in the future without a major version
-/// bump.
+/// The kind of database error that occurred.
+///
+/// This is not meant to exhaustively cover all possible errors, but is used to
+/// identify errors which are commonly recovered from programatically. This enum
+/// is not intended to be exhaustively matched, and new variants may be added in
+/// the future without a major version bump.
 pub enum DatabaseErrorKind {
+    /// A unique constraint was violated.
     UniqueViolation,
+    /// A foreign key constraint was violated.
     ForeignKeyViolation,
+    /// The query could not be sent to the database due to a protocol violation.
+    ///
+    /// An example of a case where this would occur is if you attempted to send
+    /// a query with more than 65000 bind parameters using PostgreSQL.
     UnableToSendCommand,
     #[doc(hidden)] __Unknown, // Match against _ instead, more variants may be added in the future
 }
