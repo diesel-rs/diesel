@@ -1,3 +1,5 @@
+//! Errors, type aliases, and functions related to working with `Result`.
+
 use std::convert::From;
 use std::error::Error as StdError;
 use std::fmt::{self, Display};
