@@ -39,12 +39,40 @@ pub enum DatabaseErrorKind {
     #[doc(hidden)] __Unknown, // Match against _ instead, more variants may be added in the future
 }
 
+/// Information about an error that was returned by the database.
 pub trait DatabaseErrorInformation {
+    /// The primary human-readable error message. Typically one line.
     fn message(&self) -> &str;
+
+    /// An optional secondary error message providing more details about the
+    /// problem, if it was provided by the database. Might span multiple lines.
     fn details(&self) -> Option<&str>;
+
+    /// An optional suggestion of what to do about the problem, if one was
+    /// provided by the database.
     fn hint(&self) -> Option<&str>;
+
+    /// The name of the table the error was associated with, if the error was
+    /// associated with a specific table and the backend supports retrieving
+    /// that information.
+    ///
+    /// Currently this method will return `None` for all backends other than
+    /// PostgreSQL.
     fn table_name(&self) -> Option<&str>;
+
+    /// The name of the column the error was associated with, if the error was
+    /// associated with a specific column and the backend supports retrieving
+    /// that information.
+    ///
+    /// Currently this method will return `None` for all backends other than
+    /// PostgreSQL.
     fn column_name(&self) -> Option<&str>;
+
+    /// The constraint that was violated if this error is a constraint violation
+    /// and the backend supports retrieving that information.
+    ///
+    /// Currently this method will return `None` for all backends other than
+    /// PostgreSQL.
     fn constraint_name(&self) -> Option<&str>;
 }
 
