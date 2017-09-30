@@ -14,7 +14,7 @@ use query_source::Table;
 use result::Error::QueryBuilderError;
 use result::QueryResult;
 
-/// The type returned by [`update`](/diesel/fn.update.html). The only thing you can do
+/// The type returned by [`update`](../fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
 #[derive(Debug)]
 pub struct IncompleteUpdateStatement<T, U>(UpdateTarget<T, U>);
@@ -27,6 +27,11 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
 }
 
 impl<T, U> IncompleteUpdateStatement<T, U> {
+    /// Provides the `SET` clause of the `UPDATE` statement.
+    ///
+    /// See [`update`](../fn.update.html) for usage examples, or [the update
+    /// guide](http://diesel.rs/guides/all-about-updates/) for a more exhaustive
+    /// set of examples.
     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset, NoReturningClause>
     where
         T: Table,
@@ -93,6 +98,11 @@ where
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Represents a complete `UPDATE` statement.
+///
+/// See [`update`](../fn.update.html) for usage examples, or [the update
+/// guide](http://diesel.rs/guides/all-about-updates/) for a more exhaustive
+/// set of examples.
 pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     table: T,
     where_clause: U,

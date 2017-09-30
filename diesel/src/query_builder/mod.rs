@@ -28,7 +28,7 @@ mod select_clause;
 mod select_statement;
 pub mod where_clause;
 pub mod insert_statement;
-pub mod update_statement;
+mod update_statement;
 
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
