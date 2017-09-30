@@ -258,6 +258,16 @@ impl StdError for Error {
             Error::__Nonexhaustive => unreachable!(),
         }
     }
+
+    fn cause(&self) -> Option<&StdError> {
+        match *self {
+            Error::InvalidCString(ref e) => Some(e),
+            Error::QueryBuilderError(ref e) => Some(&**e),
+            Error::DeserializationError(ref e) => Some(&**e),
+            Error::SerializationError(ref e) => Some(&**e),
+            _ => None,
+        }
+    }
 }
 
 impl Display for ConnectionError {
@@ -280,6 +290,14 @@ impl StdError for ConnectionError {
             ConnectionError::InvalidConnectionUrl(ref s) => s,
             ConnectionError::CouldntSetupConfiguration(ref e) => e.description(),
             ConnectionError::__Nonexhaustive => unreachable!(),
+        }
+    }
+
+    fn cause(&self) -> Option<&StdError> {
+        match *self {
+            ConnectionError::InvalidCString(ref e) => Some(e),
+            ConnectionError::CouldntSetupConfiguration(ref e) => Some(e),
+            _ => None,
         }
     }
 }
