@@ -76,11 +76,19 @@ impl DatabaseErrorInformation for String {
     }
 }
 
+/// Errors which can occur during [`Connection::establish`]
+///
+/// [`Connection::establish`]: ../connection/trait.Connection.html?search=#tymethod.establish
 #[derive(Debug)]
 pub enum ConnectionError {
+    /// The connection URL contained a `NUL` byte.
     InvalidCString(NulError),
+    /// The database returned an error.
     BadConnection(String),
+    /// The connection URL could not be parsed.
     InvalidConnectionUrl(String),
+    /// Diesel could not configure the database connection.
+    ///
     /// Diesel may try to automatically set session specific configuration
     /// values, such as UTF8 encoding, or enabling the `||` operator on MySQL.
     /// This variant is returned if an error occurred executing the query to set
