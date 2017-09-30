@@ -3,6 +3,7 @@
 //! the methods on [`Table`](/diesel/query_source/trait.Table.html)
 #[doc(hidden)]
 pub mod joins;
+mod peano_numbers;
 
 use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
@@ -10,6 +11,7 @@ use query_builder::*;
 use types::{FromSqlRow, HasSqlType};
 
 pub use self::joins::JoinTo;
+pub use self::peano_numbers::*;
 
 /// Trait indicating that a record can be queried from the database. This trait
 /// can be derived automatically using `diesel_codegen`. This trait can only be derived for
@@ -53,9 +55,3 @@ pub trait Table: QuerySource + AsQuery + Sized {
 pub trait AppearsInFromClause<QS> {
     type Count;
 }
-
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct Never;
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct Succ<T>(T);
-pub type Once = Succ<Never>;
