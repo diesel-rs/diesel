@@ -33,19 +33,9 @@ impl ConnectionOptions {
             Some(host) => Some(try!(CString::new(host.as_bytes()))),
             None => None,
         };
-        let username = match percent_decode(url.username().as_ref()).decode_utf8() {
-            Ok(username) => username,
-            Err(_) => return Err(connection_url_error()),
-        };
-        let user = try!(CString::new(username.as_ref().as_bytes()));
+        let user = try!(decode_into_cstring(url.username()));
         let password = match url.password() {
-            Some(password) => {
-                let password = match percent_decode(password.as_ref()).decode_utf8() {
-                    Ok(password) => password,
-                    Err(_) => return Err(connection_url_error()),
-                };
-                Some(try!(CString::new(password.as_ref().as_bytes())))
-            }
+            Some(password) => Some(try!(decode_into_cstring(password))),
             None => None,
         };
         let database = match url.path_segments().and_then(|mut iter| iter.nth(0)) {
@@ -81,6 +71,15 @@ impl ConnectionOptions {
     pub fn port(&self) -> Option<u16> {
         self.port
     }
+}
+
+fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
+    let decoded = try!(
+        percent_decode(s.as_bytes())
+            .decode_utf8()
+            .map_err(|_| { connection_url_error() })
+    );
+    CString::new(decoded.as_bytes()).map_err(Into::into)
 }
 
 fn connection_url_error() -> ConnectionError {
@@ -130,7 +129,7 @@ fn first_path_segment_is_treated_as_database() {
 
 #[test]
 fn userinfo_should_be_percent_decode() {
-    use self::url::percent_encoding::{USERINFO_ENCODE_SET, utf8_percent_encode};
+    use self::url::percent_encoding::{utf8_percent_encode, USERINFO_ENCODE_SET};
 
     let username = "x#gfuL?4Zuj{n73m}eeJt0";
     let encoded_username = utf8_percent_encode(username, USERINFO_ENCODE_SET);
