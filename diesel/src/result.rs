@@ -5,19 +5,54 @@ use std::ffi::NulError;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
-/// The generic "things can fail in a myriad of ways" enum. This type is not
-/// intended to be exhaustively matched, and new variants may be added in the
-/// future without a major version bump.
+/// The generic "things can fail in a myriad of ways" enum.
+///
+/// This type is not intended to be exhaustively matched, and new variants may
+/// be added in the future without a major version bump.
 pub enum Error {
+    /// The query contained a nul byte.
     InvalidCString(NulError),
+    /// The database returned an error.
+    ///
+    /// While Diesel prevents almost all sources of runtime errors at compile
+    /// time, it does not attempt to prevent 100% of them. Typically this error
+    /// will occur from insert or update statements due to a constraint
+    /// violation.
     DatabaseError(
         DatabaseErrorKind,
         Box<DatabaseErrorInformation + Send + Sync>,
     ),
+    /// No rows were returned by a query expected to return at least one row.
+    ///
+    /// This variant is only returned by [`get_result`] and [`first`]. [`load`]
+    /// does not treat 0 rows as an error. If you would like to allow either 0
+    /// or 1 rows, call [`optional`] on the result.
+    ///
+    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
+    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
+    /// [`load`]: ../prelude/trait.LoadDsl.html#method.load
+    /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
     NotFound,
+    /// The query could not be constructed
+    ///
+    /// An example of when this error could occur is if you are attempting to
+    /// construct an update statement with no changes (e.g. all fields on the
+    /// struct are `None`).
     QueryBuilderError(Box<StdError + Send + Sync>),
+    /// An error occurred deserializing the data being sent to the database.
+    ///
+    /// Typically this error means that the stated type of the query is
+    /// incorrect. An example of when this error might occur in normal usage is
+    /// attempting to deserialize an infinite date into chrono.
     DeserializationError(Box<StdError + Send + Sync>),
+    /// An error occurred serializing the data being sent to the database.
+    ///
+    /// An example of when this error would be returned is if you attempted to
+    /// serialize a `chrono::NaiveDate` earlier than the earliest date supported
+    /// by PostgreSQL.
     SerializationError(Box<StdError + Send + Sync>),
+    /// Roll back the current transaction.
+    ///
     /// You can return this variant inside of a transaction when you want to
     /// roll it back, but have no actual error to return. Diesel will never
     /// return this variant unless you gave it to us, and it can be safely
