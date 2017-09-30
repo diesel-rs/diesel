@@ -79,6 +79,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * When using MySQL and SQLite, dates which cannot be represented by `chrono`
   (such as `0000-00-00`) will now properly return an error instead of panicking.
 
+* MySQL URLs will now properly percent decode the username and password.
+
 ## [0.16.0] - 2017-08-24
 
 ### Added
