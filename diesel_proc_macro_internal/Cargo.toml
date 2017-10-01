@@ -12,6 +12,9 @@ diesel = { version = "0.16.0", default-features = false }
 diesel_infer_schema = { version = "0.16.0", default-features = false }
 clippy = { optional = true, version = "=0.0.162" }
 
+[dev-dependencies]
+tempdir = "^0.3.4"
+
 [lib]
 proc-macro = true
 
