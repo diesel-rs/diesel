@@ -1,3 +1,14 @@
+// Built-in Lints
+#![deny(warnings, missing_copy_implementations)]
+// Clippy lints
+#![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(feature = "clippy",
+           warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+
 #[allow(unused_imports)]
 #[macro_use]
 extern crate diesel_proc_macro_internal;
@@ -87,8 +98,8 @@ macro_rules! infer_table_from_schema {
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
-/// # include!("../doctest_setup.rs");
+/// # #[macro_use] extern crate diesel_proc_macro;
+/// # include!("../../diesel/src/doctest_setup.rs");
 /// # table! {
 /// #   users {
 /// #       id -> Integer,

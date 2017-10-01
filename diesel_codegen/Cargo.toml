@@ -18,7 +18,7 @@ clippy = { optional = true, version = "=0.0.162" }
 
 [dev-dependencies]
 tempdir = "0.3.4"
-cfg-if = "0.1.0"
+diesel = { version = "0.16", features = ["sqlite"] }
 
 [lib]
 proc-macro = true

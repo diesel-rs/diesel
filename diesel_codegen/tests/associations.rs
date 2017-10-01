@@ -1,11 +1,6 @@
 #![allow(dead_code, unused_must_use)]
 
-#[cfg(feature = "sqlite")]
 type Backend = ::diesel::sqlite::Sqlite;
-#[cfg(feature = "mysql")]
-type Backend = ::diesel::mysql::Mysql;
-#[cfg(feature = "postgres")]
-type Backend = ::diesel::pg::Pg;
 
 #[test]
 fn simple_belongs_to() {

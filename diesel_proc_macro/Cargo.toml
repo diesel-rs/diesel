@@ -9,9 +9,14 @@ license = "MIT OR Apache-2.0"
 diesel_proc_macro_internal = { path = "../diesel_proc_macro_internal" }
 clippy = { optional = true, version = "=0.0.162" }
 
+[dev-dependencies]
+diesel = "0.16.0"
+dotenv = ">= 0.8, <0.11"
+cfg-if = "0.1.0"
+
 [features]
-default = ["dotenv", "sqlite"]
-dotenv = ["diesel_proc_macro_internal/dotenv"]
+default = ["dotenv_macro"]
+dotenv_macro = ["diesel_proc_macro_internal/dotenv"]
 lint = ["clippy"]
 postgres = ["diesel_proc_macro_internal/postgres"]
 sqlite = ["diesel_proc_macro_internal/sqlite"]
