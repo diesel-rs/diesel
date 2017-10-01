@@ -1,0 +1,18 @@
+[package]
+name = "diesel_proc_macro"
+version = "0.16.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+#diesel_proc_macro_internal = "0.16.0"
+diesel_proc_macro_internal = { path = "../diesel_proc_macro_internal" }
+clippy = { optional = true, version = "=0.0.162" }
+
+[features]
+default = ["dotenv", "sqlite"]
+dotenv = ["diesel_proc_macro_internal/dotenv"]
+lint = ["clippy"]
+postgres = ["diesel_proc_macro_internal/postgres"]
+sqlite = ["diesel_proc_macro_internal/sqlite"]
+mysql = ["diesel_proc_macro_internal/mysql"]

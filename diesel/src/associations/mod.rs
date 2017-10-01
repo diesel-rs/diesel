@@ -7,9 +7,6 @@
 //! [open-issue]: https://github.com/diesel-rs/diesel/issues/new
 //! [gitter]: https://gitter.im/diesel-rs/diesel
 //!
-//! Note: The derives in this guide are provided by `diesel_codegen`. Make sure you have
-//! `#[macro_use] extern crate diesel_codegen;` at the root of your crate.
-//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with
 //! `#[belongs_to]`.
@@ -18,7 +15,6 @@
 //! // You need to have the table definitions from `infer_schema!` or `table!` in scope to
 //! // derive Identifiable.
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!

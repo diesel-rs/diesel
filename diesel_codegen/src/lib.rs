@@ -33,18 +33,12 @@ mod as_changeset;
 mod associations;
 mod ast_builder;
 mod attr;
-mod embed_migrations;
 mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
 mod queryable_by_name;
-#[cfg(feature = "diesel_infer_schema")]
-mod schema_inference;
-#[cfg(feature = "diesel_infer_schema")]
-mod database_url;
 mod util;
-mod migrations;
 
 use proc_macro::TokenStream;
 use syn::parse_derive_input;
@@ -78,23 +72,6 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Associations, attributes(table_name, belongs_to))]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
-}
-
-#[proc_macro_derive(InferSchema, attributes(infer_schema_options))]
-#[cfg(feature = "diesel_infer_schema")]
-pub fn derive_infer_schema(input: TokenStream) -> TokenStream {
-    expand_derive(input, schema_inference::derive_infer_schema)
-}
-
-#[proc_macro_derive(InferTableFromSchema, attributes(infer_table_from_schema_options))]
-#[cfg(feature = "diesel_infer_schema")]
-pub fn derive_infer_table_from_schema(input: TokenStream) -> TokenStream {
-    expand_derive(input, schema_inference::derive_infer_table_from_schema)
-}
-
-#[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
-pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
-    expand_derive(input, embed_migrations::derive_embed_migrations)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {

@@ -16,7 +16,6 @@
 /// # Example
 ///
 /// ```
-/// # #[macro_use] extern crate diesel_codegen;
 /// # #[macro_use] extern crate diesel;
 /// # table! { users { id -> Integer, name -> VarChar, } }
 /// # include!("../doctest_setup.rs");

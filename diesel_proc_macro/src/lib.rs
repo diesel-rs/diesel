@@ -1,3 +1,9 @@
+#[allow(unused_imports)]
+#[macro_use]
+extern crate diesel_proc_macro_internal;
+#[doc(hidden)]
+pub use diesel_proc_macro_internal::*;
+
 #[macro_export]
 /// Queries the database for the names of all tables, and calls
 /// [`infer_table_from_schema!`](macro.infer_table_from_schema.html) for each
@@ -8,9 +14,6 @@
 /// Attempting to use the `env!` or `dotenv!` macros here will not work due to
 /// limitations of the Macros 1.1 system, but you can pass a string in the form
 /// `"env:SOME_ENV_VAR"` or `"dotenv:SOME_ENV_VAR"` to achieve the same effect.
-///
-/// This macro can only be used in combination with the `diesel_codegen` crate.
-/// It will not work on its own.
 ///
 /// If any column name would collide with a rust keyword, a `_` will
 /// automatically be placed at the end of the name. For example, a column called
@@ -57,9 +60,6 @@ macro_rules! infer_schema {
 /// issue](https://github.com/diesel-rs/diesel/issues/new) if this happens
 /// unexpectedly for a type listed in our docs.)
 ///
-/// This macro can only be used in combination with the `diesel_codegen` or
-/// `diesel_codegen_syntex` crates. It will not work on its own.
-///
 /// When using the `infer_table_from_schema!` macro,
 /// Diesel can't automatically detect which tables can be joined.
 /// Use the `joinable!` macro in your schema to specify how tables can be joined
@@ -82,9 +82,6 @@ macro_rules! infer_table_from_schema {
 /// unspecified, Diesel Codegen will search for the migrations directory in the same way that
 /// Diesel CLI does. If specified, the path should be relative to the directory where `Cargo.toml`
 /// resides.
-///
-/// This macro can only be used in combination with the `diesel_codegen` or
-/// `diesel_codegen_syntex` crates. It will not work on its own.
 ///
 /// # Examples
 ///

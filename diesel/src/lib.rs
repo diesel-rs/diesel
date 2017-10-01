@@ -33,6 +33,11 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
+#[allow(unused_imports)]
+#[macro_use]
+extern crate diesel_codegen;
+#[doc(hidden)]
+pub use diesel_codegen::*;
 
 #[macro_use]
 mod macros;

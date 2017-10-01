@@ -17,7 +17,6 @@ pub trait OnConflictExtension {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -44,7 +43,6 @@ pub trait OnConflictExtension {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -66,7 +64,6 @@ pub trait OnConflictExtension {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -110,7 +107,6 @@ pub trait OnConflictExtension {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -146,7 +142,6 @@ pub trait OnConflictExtension {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -232,7 +227,6 @@ where
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -259,7 +253,6 @@ where
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -296,7 +289,6 @@ where
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -330,7 +322,6 @@ where
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -437,7 +428,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -466,7 +456,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -495,7 +484,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {

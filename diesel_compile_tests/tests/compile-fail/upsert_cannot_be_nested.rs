@@ -1,5 +1,4 @@
 #[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
 
 use diesel::*;
 use diesel::pg::upsert::*;

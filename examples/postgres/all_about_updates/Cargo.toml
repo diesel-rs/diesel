@@ -5,4 +5,4 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "0.16.0", features = ["postgres"] }
-diesel_codegen = "0.16.0"
+diesel_proc_macro = { path = "../../../diesel_proc_macro", version = "0.16.0" }

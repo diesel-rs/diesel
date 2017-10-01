@@ -6,5 +6,5 @@ authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 
 [dependencies]
 diesel = { version = "0.16.0", features = ["sqlite"] }
-diesel_codegen = { version = "0.16.0", features = ["sqlite"] }
+diesel_proc_macro = { path = "../../../diesel_proc_macro", version = "0.16.0", features = ["sqlite"] }
 dotenv = "0.10"

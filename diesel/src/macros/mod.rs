@@ -1183,8 +1183,6 @@ mod query_id;
 #[macro_use]
 mod static_cond;
 #[macro_use]
-mod macros_from_codegen;
-#[macro_use]
 mod ops;
 
 #[macro_use]

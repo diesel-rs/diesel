@@ -154,7 +154,6 @@ impl<ST> NonAggregate for SqlLiteral<ST> {}
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
 /// use diesel::dsl::sql;
 /// use diesel::types::{Bool, Integer, Text};
 /// # include!("../doctest_setup.rs");
