@@ -1,6 +1,6 @@
 //! # Diesel
 //!
-//! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions. 
+//! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
 //!
 //! * [Homepage](http://diesel.rs/)
 //! * [Getting Started Guide](http://diesel.rs/guides/getting-started/)
