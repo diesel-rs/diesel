@@ -1,6 +1,17 @@
-//! Diesel is an ORM and query builder designed to reduce the boilerplate for database
-//! interactions. [A getting started guide](http://diesel.rs/guides/getting-started/) can be
-//! found on our website.
+//! # Diesel
+//!
+//! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
+//!
+//! * [Homepage](http://diesel.rs/)
+//! * [Getting Started Guide](http://diesel.rs/guides/getting-started/)
+//! * [Source Code](https://github.com/diesel-rs/diesel/)
+//!
+//! ## Crates
+//!
+//! * **Diesel**: core libary, documented here
+//! * [**Diesel Codegen**](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen): library of procedural macros
+//! * [**Diesel CLI**](https://github.com/diesel-rs/diesel/tree/master/diesel_cli): command line tool that aids in managing your database schema
+//!
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
