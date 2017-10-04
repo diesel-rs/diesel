@@ -50,6 +50,7 @@ Thank you! We'll try to respond as quickly as possible.
 
 ## Contribute code to Diesel
 
+
 ### Setting up Diesel locally
 
 1. Install Rust using [rustup], which allows you to easily switch between Rust
@@ -60,7 +61,10 @@ Thank you! We'll try to respond as quickly as possible.
    continuous integration. Find it by looking for a line like
    `rust: nightly-2017-06-06` in the `.travis.yml` file. You can install and
    set a custom nightly version for a project using
-   `rustup override add nightly-2017-06-06`.
+
+   ```
+   rustup override add nightly-2017-06-06
+   ```
 
 2. Install the system libraries needed to interface with the database systems
    you wish to use.
@@ -107,6 +111,37 @@ Thank you! We'll try to respond as quickly as possible.
    everything.)
 
 [rustup]: https://www.rustup.rs
+
+### Coding Style
+
+We follow the [Rust Style Guide](https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md), enforced using [rustfmt](https://github.com/rust-lang-nursery/rustfmt).
+To run rustfmt tests locally:
+
+1. Use rustup to set rust toolchain
+   to the nightly version specified in Diesel's [.travis.yml](./.travis.yml)
+   (see above).
+
+2. Install the nightly version of rustfmt used in
+   Diesel's continuous integration.
+   Look for and run the line from [.travis.yml](./.travis.yml) that looks like
+
+   ```
+   cargo install rustfmt-nightly --vers x.x.x
+   ```
+
+3. Run rustfmt using cargo from the root of your diesel repo.
+
+   ```
+   cargo fmt --all -- --write-mode=diff
+   ```
+
+   If all code is properly formatted (e.g. if you have not made any changes),
+   this should run without error.
+   If your code needs to be reformatted,
+   you will see a diff between your code and properly formatted code.
+
+You can also use rustfmt to make corrections or highlight issues in your editor.
+Check out [their README](https://github.com/rust-lang-nursery/rustfmt) for details.
 
 
 ### Common Abbreviations
