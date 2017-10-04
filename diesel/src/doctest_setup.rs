@@ -16,6 +16,7 @@ cfg_if! {
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
 
             connection
         }
@@ -49,6 +50,16 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
+
+            connection.execute("CREATE TABLE comments (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER NOT NULL,
+                body VARCHAR NOT NULL
+            )").unwrap();
+            connection.execute("INSERT INTO comments (post_id, body) VALUES
+                (1, 'Great post'),
+                (2, 'Yay! I am learning Rust'),
+                (3, 'I enjoyed your post')").unwrap();
 
             connection
         }
@@ -89,6 +100,16 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
+            
+            connection.execute("CREATE TABLE comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                body VARCHAR NOT NULL
+            )").unwrap();
+            connection.execute("INSERT INTO comments (post_id, body) VALUES
+                (1, 'Great post'),
+                (2, 'Yay! I am learning Rust'),
+                (3, 'I enjoyed your post')").unwrap();
 
             connection
         }
@@ -102,6 +123,7 @@ cfg_if! {
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
 
             connection
         }
@@ -135,6 +157,16 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
+            
+            connection.execute("CREATE TABLE comments (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                post_id INTEGER NOT NULL,
+                body TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").unwrap();
+            connection.execute("INSERT INTO comments (post_id, body) VALUES
+                (1, 'Great post'),
+                (2, 'Yay! I am learning Rust'),
+                (3, 'I enjoyed your post')").unwrap();
 
             connection.begin_test_transaction().unwrap();
             connection
@@ -218,6 +250,13 @@ impl_Insertable! {
 
 mod schema {
     table! {
+        comments {
+            id -> Integer,
+            post_id -> Integer,
+            body -> VarChar,
+        }
+    }
+    table! {
         posts {
             id -> Integer,
             user_id -> Integer,
@@ -231,3 +270,4 @@ mod schema {
         }
     }
 }
+joinable!(schema::posts -> schema::users(user_id));
