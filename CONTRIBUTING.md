@@ -130,15 +130,26 @@ To run rustfmt tests locally:
    ```
 
 3. Run rustfmt using cargo from the root of your diesel repo.
+   
+   To see changes that need to be made, run
 
    ```
    cargo fmt --all -- --write-mode=diff
    ```
 
    If all code is properly formatted (e.g. if you have not made any changes),
-   this should run without error.
+   this should run without error or output.
    If your code needs to be reformatted,
    you will see a diff between your code and properly formatted code.
+   If you see code here that you didn't make any changes to
+   then you are probably running the wrong version of rustfmt.
+   Once you are ready to apply the formatting changes, run 
+
+   ```
+   cargo fmt --all
+   ```
+
+   You won't see any output, but all your files will be corrected.
 
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang-nursery/rustfmt) for details.
