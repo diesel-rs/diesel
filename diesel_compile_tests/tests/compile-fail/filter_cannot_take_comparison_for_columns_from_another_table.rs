@@ -18,6 +18,8 @@ table! {
     }
 }
 
+enable_multi_table_joins!(users, posts);
+
 #[derive(Queryable)]
 struct User {
     id: i32,
@@ -28,8 +30,7 @@ fn main() {
     let conn = PgConnection::establish("").unwrap();
 
     let _ = LoadDsl::load::<User>(
-    //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
+    //~^ ERROR type mismatch resolving `<users::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
         users::table.filter(posts::id.eq(1)),
         &conn,
     );
@@ -38,17 +39,14 @@ fn main() {
         .into_boxed::<Pg>()
         .filter(posts::id.eq(1));
         //~^ ERROR AppearsInFromClause
-        //~| ERROR E0277
 
     let _ = BoxedDsl::into_boxed::<Pg>(
     //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
         users::table.filter(posts::id.eq(1))
     );
 
     let _ = LoadDsl::load::<User>(
     //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
         users::table.filter(users::name.eq(posts::title)),
         &conn,
     );
@@ -56,11 +54,9 @@ fn main() {
     let _ = users::table.into_boxed::<Pg>()
         .filter(users::name.eq(posts::title));
         //~^ ERROR AppearsInFromClause
-        //~| ERROR E0277
 
     let _ = BoxedDsl::into_boxed::<Pg>(
     //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
         users::table
             .filter(users::name.eq(posts::title))
     );

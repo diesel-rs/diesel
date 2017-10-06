@@ -1,10 +1,11 @@
+use backend::Backend;
 use expression::SelectableExpression;
 use expression::grouped::Grouped;
 use expression::nullable::Nullable;
 use prelude::*;
 use query_builder::*;
 use result::QueryResult;
-use super::QuerySource;
+use super::{AppearsInFromClause, Plus, QuerySource};
 use types::Bool;
 use util::TupleAppend;
 
@@ -206,8 +207,6 @@ where
     }
 }
 
-use backend::Backend;
-
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Inner;
@@ -256,8 +255,6 @@ where
     }
 }
 
-use super::{AppearsInFromClause, Never, Succ};
-
 impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
 where
     Left: AppearsInFromClause<T>,
@@ -272,21 +269,6 @@ where
     Join: AppearsInFromClause<T>,
 {
     type Count = Join::Count;
-}
-
-pub trait Plus<T> {
-    type Output;
-}
-
-impl<T, U> Plus<T> for Succ<U>
-where
-    U: Plus<T>,
-{
-    type Output = Succ<U::Output>;
-}
-
-impl<T> Plus<T> for Never {
-    type Output = T;
 }
 
 #[doc(hidden)]
