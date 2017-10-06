@@ -341,6 +341,21 @@ fn insert_single_bare_value() {
     let connection = connection();
 
     insert_into(users)
+        .values(name.eq("Sean"))
+        .execute(&connection)
+        .unwrap();
+
+    let expected_names = vec!["Sean".to_string()];
+    let actual_names = users.select(name).load(&connection);
+    assert_eq!(Ok(expected_names), actual_names);
+}
+
+#[test]
+fn insert_single_bare_value_reference() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    insert_into(users)
         .values(&name.eq("Sean"))
         .execute(&connection)
         .unwrap();
@@ -369,6 +384,21 @@ fn insert_multiple_bare_values() {
 
 #[test]
 fn insert_single_tuple() {
+    use schema::users::dsl::*;
+    let connection = connection();
+
+    insert_into(users)
+        .values((name.eq("Sean"), hair_color.eq("Brown")))
+        .execute(&connection)
+        .unwrap();
+
+    let expected_data = vec![("Sean".to_string(), Some("Brown".to_string()))];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
+fn insert_single_tuple_reference() {
     use schema::users::dsl::*;
     let connection = connection();
 
