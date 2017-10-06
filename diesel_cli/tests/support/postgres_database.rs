@@ -61,11 +61,9 @@ impl Drop for Database {
             PgConnection::establish(&postgres_url),
             "Couldn't connect to database"
         );
-        conn.silence_notices(|| {
-            try_drop!(
-                conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)),
-                "Couldn't drop database"
-            );
-        });
+        try_drop!(
+            conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)),
+            "Couldn't drop database"
+        );
     }
 }

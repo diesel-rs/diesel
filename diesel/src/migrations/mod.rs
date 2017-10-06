@@ -235,14 +235,12 @@ pub fn setup_database<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
 }
 
 fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
-    conn.silence_notices(|| {
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
-            version VARCHAR(50) PRIMARY KEY NOT NULL,
-            run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )",
-        )
-    })
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (\
+         version VARCHAR(50) PRIMARY KEY NOT NULL,\
+         run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\
+         )",
+    )
 }
 
 #[doc(hidden)]

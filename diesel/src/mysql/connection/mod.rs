@@ -81,11 +81,6 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
-        f()
-    }
-
-    #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,

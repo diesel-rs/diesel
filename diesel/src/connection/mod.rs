@@ -151,7 +151,5 @@ pub trait Connection: SimpleConnection + Sized + Send {
         T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T;
-    #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager;
 }
