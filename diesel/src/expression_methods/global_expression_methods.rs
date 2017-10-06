@@ -56,7 +56,9 @@ pub trait ExpressionMethods: Expression + Sized {
         NotEq::new(self, other.as_expression())
     }
 
-    /// Creates a SQL `IN` statement. Queries using this method will not be
+    /// Creates a SQL `IN` statement.
+    ///
+    /// Queries using this method will not be
     /// placed in the prepared statement cache. On PostgreSQL, you should use
     /// `eq(any())` instead. This method may change in the future to
     /// automatically perform `= ANY` on PostgreSQL.
@@ -94,7 +96,9 @@ pub trait ExpressionMethods: Expression + Sized {
         In::new(self, values.as_in_expression())
     }
 
-    /// Creates a SQL `NOT IN` statement. Queries using this method will not be
+    /// Creates a SQL `NOT IN` statement.
+    ///
+    /// Queries using this method will not be
     /// placed in the prepared statement cache. On PostgreSQL, you should use
     /// `ne(any())` instead. This method may change in the future to
     /// automatically perform `!= ANY` on PostgreSQL.
@@ -136,11 +140,49 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 
     /// Creates a SQL `IS NULL` expression.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(name.is_null())
+    ///     .first(&connection);
+    /// #
+    /// assert_eq!(Ok("spider".to_string()), data);
+    /// # }
     fn is_null(self) -> IsNull<Self> {
         IsNull::new(self)
     }
 
     /// Creates a SQL `IS NOT NULL` expression.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(name.is_not_null())
+    ///     .first(&connection);
+    /// #
+    /// assert_eq!(Ok("dog".to_string()), data);
+    /// # }
     fn is_not_null(self) -> IsNotNull<Self> {
         IsNotNull::new(self)
     }
@@ -249,6 +291,25 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 
     /// Creates a SQL `BETWEEN` expression using the given range.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(legs.between(2..6))
+    ///     .first(&connection);
+    /// #
+    /// assert_eq!(Ok("dog".to_string()), data);
+    /// # }
     fn between<T: AsExpression<Self::SqlType>>(
         self,
         other: ::std::ops::Range<T>,
@@ -260,6 +321,25 @@ pub trait ExpressionMethods: Expression + Sized {
     }
 
     /// Creates a SQL `NOT BETWEEN` expression using the given range.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(legs.not_between(2..6))
+    ///     .first(&connection);
+    /// #
+    /// assert_eq!(Ok("spider".to_string()), data);
+    /// # }
     fn not_between<T: AsExpression<Self::SqlType>>(
         self,
         other: ::std::ops::Range<T>,
