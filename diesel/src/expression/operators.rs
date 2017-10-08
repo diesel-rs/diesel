@@ -401,13 +401,25 @@ where
     }
 }
 
-impl<'a, T, U> Insertable<T::Table> for &'a Eq<T, U>
+impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
-    T: Column + Copy,
+    T: Column,
 {
-    type Values = ColumnInsertValue<T, &'a U>;
+    type Values = ColumnInsertValue<T, U>;
 
     fn values(self) -> Self::Values {
-        ColumnInsertValue::Expression(self.left, &self.right)
+        ColumnInsertValue::Expression(self.left, self.right)
+    }
+}
+
+impl<'a, T, Tab, U> Insertable<Tab> for &'a Eq<T, U>
+where
+    T: Copy,
+    Eq<T, &'a U>: Insertable<Tab>,
+{
+    type Values = <Eq<T, &'a U> as Insertable<Tab>>::Values;
+
+    fn values(self) -> Self::Values {
+        Eq::new(self.left, &self.right).values()
     }
 }
