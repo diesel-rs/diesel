@@ -25,8 +25,8 @@ table! {
 }
 
 joinable!(comments -> posts (post_id));
-enable_multi_table_joins!(users, posts);
-enable_multi_table_joins!(users, comments);
+allow_tables_to_appear_in_same_query!(users, posts);
+allow_tables_to_appear_in_same_query!(users, comments);
 
 fn main() {
     let _ = users::table.inner_join(posts::table);

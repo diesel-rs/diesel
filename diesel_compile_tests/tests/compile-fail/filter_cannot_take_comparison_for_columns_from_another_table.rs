@@ -18,7 +18,7 @@ table! {
     }
 }
 
-enable_multi_table_joins!(users, posts);
+allow_tables_to_appear_in_same_query!(users, posts);
 
 #[derive(Queryable)]
 struct User {

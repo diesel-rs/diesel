@@ -301,7 +301,7 @@ pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
         .unwrap()
 }
 
-enable_multi_table_joins!(users, comments);
-enable_multi_table_joins!(posts, likes);
-enable_multi_table_joins!(followings, likes);
-enable_multi_table_joins!(followings, comments);
+allow_tables_to_appear_in_same_query!(users, comments);
+allow_tables_to_appear_in_same_query!(posts, likes);
+allow_tables_to_appear_in_same_query!(followings, likes);
+allow_tables_to_appear_in_same_query!(followings, comments);
