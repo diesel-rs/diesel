@@ -5,7 +5,7 @@ mod row;
 pub mod result;
 mod stmt;
 
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::os::raw as libc;
 
 use connection::*;
@@ -89,16 +89,6 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
-        self.raw_connection
-            .set_notice_processor(noop_notice_processor);
-        let result = f();
-        self.raw_connection
-            .set_notice_processor(default_notice_processor);
-        result
-    }
-
-    #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
@@ -142,19 +132,13 @@ impl PgConnection {
     fn set_config_options(&self) -> QueryResult<()> {
         self.execute("SET TIME ZONE 'UTC'")?;
         self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
+        self.raw_connection
+            .set_notice_processor(noop_notice_processor);
         Ok(())
     }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
-
-extern "C" fn default_notice_processor(_: *mut libc::c_void, message: *const libc::c_char) {
-    use std::io::Write;
-    let c_str = unsafe { CStr::from_ptr(message) };
-    ::std::io::stderr()
-        .write_all(c_str.to_bytes())
-        .expect("Error writing to `stderr`");
-}
 
 #[cfg(test)]
 mod tests {

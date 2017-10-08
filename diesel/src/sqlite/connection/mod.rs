@@ -86,11 +86,6 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn silence_notices<F: FnOnce() -> T, T>(&self, f: F) -> T {
-        f()
-    }
-
-    #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
