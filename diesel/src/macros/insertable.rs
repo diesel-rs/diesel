@@ -467,6 +467,40 @@ mod tests {
         assert_eq!(Ok(expected), saved);
     }
 
+    #[test]
+    fn named_struct_with_unusual_reference_type() {
+        struct NewUser<'a> {
+            name: &'a String,
+            hair_color: Option<&'a String>,
+        }
+
+        impl_Insertable! {
+            (users)
+            struct NewUser<'a> {
+                name: &'a String,
+                hair_color: Option<&'a String>,
+            }
+        }
+
+        let conn = connection();
+        let sean = "Sean".to_string();
+        let black = "Black".to_string();
+        let new_user = NewUser {
+            name: &sean,
+            hair_color: Some(&black),
+        };
+        ::insert_into(users::table)
+            .values(&new_user)
+            .execute(&conn)
+            .unwrap();
+
+        let saved = users::table
+            .select((users::name, users::hair_color))
+            .load(&conn);
+        let expected = vec![(sean.clone(), Some(black.clone()))];
+        assert_eq!(Ok(expected), saved);
+    }
+
     cfg_if! {
         if #[cfg(feature = "sqlite")] {
             fn connection() -> ::test_helpers::TestConnection {

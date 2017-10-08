@@ -111,8 +111,10 @@ array_as_expression!(Vec<T>, Array<ST>);
 array_as_expression!(Vec<T>, Nullable<Array<ST>>);
 array_as_expression!(&'a Vec<T>, Array<ST>);
 array_as_expression!(&'a Vec<T>, Nullable<Array<ST>>);
+array_as_expression!(&'a &'b Vec<T>, Array<ST>);
+array_as_expression!(&'a &'b Vec<T>, Nullable<Array<ST>>);
 
-impl<'a, ST, T> ToSql<Array<ST>, Pg> for &'a [T]
+impl<ST, T> ToSql<Array<ST>, Pg> for [T]
 where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
@@ -148,10 +150,10 @@ where
     }
 }
 
-impl<'a, ST, T> ToSql<Nullable<Array<ST>>, Pg> for &'a [T]
+impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
     Pg: HasSqlType<ST>,
-    &'a [T]: ToSql<Array<ST>, Pg>,
+    [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(
         &self,
@@ -164,7 +166,7 @@ where
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
 where
     Pg: HasSqlType<ST>,
-    for<'a> &'a [T]: ToSql<Array<ST>, Pg>,
+    [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
     fn to_sql<W: Write>(

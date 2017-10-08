@@ -31,11 +31,11 @@ queryable_impls!(Time -> String);
 queryable_impls!(Timestamp -> String);
 
 expression_impls!(Date -> String);
-expression_impls!(Date -> &'a str);
+expression_impls!(Date -> str, unsized);
 expression_impls!(Time -> String);
-expression_impls!(Time -> &'a str);
+expression_impls!(Time -> str, unsized);
 expression_impls!(Timestamp -> String);
-expression_impls!(Timestamp -> &'a str);
+expression_impls!(Timestamp -> str, unsized);
 
 impl FromSql<types::Date, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {
@@ -43,7 +43,7 @@ impl FromSql<types::Date, Sqlite> for String {
     }
 }
 
-impl<'a> ToSql<types::Date, Sqlite> for &'a str {
+impl ToSql<types::Date, Sqlite> for str {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, Sqlite>,
@@ -67,7 +67,7 @@ impl FromSql<types::Time, Sqlite> for String {
     }
 }
 
-impl<'a> ToSql<types::Time, Sqlite> for &'a str {
+impl ToSql<types::Time, Sqlite> for str {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, Sqlite>,
@@ -91,7 +91,7 @@ impl FromSql<types::Timestamp, Sqlite> for String {
     }
 }
 
-impl<'a> ToSql<types::Timestamp, Sqlite> for &'a str {
+impl ToSql<types::Timestamp, Sqlite> for str {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, Sqlite>,

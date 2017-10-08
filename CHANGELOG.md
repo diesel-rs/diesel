@@ -81,6 +81,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * MySQL URLs will now properly percent decode the username and password.
 
+* References to types other than `str` and slice can now appear on structs which
+  derive `Insertable` or `AsChangeset`.
+
 ## [0.16.0] - 2017-08-24
 
 ### Added

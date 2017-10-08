@@ -501,7 +501,7 @@ pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T
 where
     DB: Backend + HasSqlType<A>,
-    T: ToSql<A, DB>,
+    T: ToSql<A, DB> + ?Sized,
 {
     fn to_sql<W: Write>(
         &self,
