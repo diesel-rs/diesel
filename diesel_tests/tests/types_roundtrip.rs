@@ -13,7 +13,6 @@ pub use diesel::types::{HasSqlType, ToSql};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
-use std::collections::Bound;
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool
 where

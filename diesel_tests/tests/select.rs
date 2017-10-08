@@ -1,6 +1,5 @@
 use super::schema::*;
 use diesel::*;
-use diesel::connection::SimpleConnection;
 use schema_dsl::*;
 
 #[test]

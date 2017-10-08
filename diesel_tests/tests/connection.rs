@@ -1,7 +1,3 @@
-use schema::connection_without_transaction;
-use diesel::*;
-use diesel::dsl::sql;
-
 table! {
     auto_time {
         id -> Integer,
