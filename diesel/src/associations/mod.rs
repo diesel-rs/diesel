@@ -1,4 +1,3 @@
-// FIXME: Replace these examples with executable tests
 //! Traits related to relationships between multiple tables.
 //!
 //! **Note: This feature is under active development, and we are seeking feedback on the APIs that
@@ -40,9 +39,14 @@
 //!
 //! # fn main() {
 //! # let connection = establish_connection();
-//! # let user = users::table.find(2).get_result::<User>(&connection).unwrap();
-//! # let posts = Post::belonging_to(&user).load::<Post>(&connection);
-//! # assert_eq!(posts, Ok(vec![Post { id: 3, user_id: 2, title: "My first post too".to_owned() }]));
+//! # use users::dsl::*;
+//! let user = users.find(2).get_result::<User>(&connection).unwrap();
+//! let posts = Post::belonging_to(&user)
+//!     .load::<Post>(&connection);
+//!
+//! assert_eq!(posts,
+//!     Ok(vec![Post { id: 3, user_id: 2, title: "My first post too".to_owned() }])
+//! );
 //! # }
 //! ```
 //!
@@ -63,23 +67,99 @@
 //! Once the associations are defined, you can join between the two tables using the
 //! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
 //!
-//! [inner-join]: /diesel/query_source/trait.Table.html#method.inner_join
-//! [left-outer-join]: /diesel/query_source/trait.Table.html#method.left_outer_join
+//! [inner-join]: ../query_source/trait.Table.html#method.inner_join
+//! [left-outer-join]: ../query_source/trait.Table.html#method.left_outer_join
 //!
-//! ```ignore
-//! let data: Vec<(User, Post)> = users::table.inner_join(posts::table).load(&connection);
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # #[macro_use] extern crate diesel_codegen;
+//! # include!("../doctest_setup.rs");
+//! # use schema::users;
+//! # use schema::posts;
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
+//! # pub struct User {
+//! #     id: i32,
+//! #     name: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[belongs_to(User)]
+//! # pub struct Post {
+//! #     id: i32,
+//! #     user_id: i32,
+//! #     title: String,
+//! # }
+//! #
+//! # fn main() {
+//! #   use users::dsl::*;
+//! #   use posts::dsl::*;
+//! #   let connection = establish_connection();
+//! #
+//! let data: Vec<(User, Post)> = users.inner_join(posts)
+//!     .load(&connection)
+//!     .expect("Couldn't load query");
+//! let expected = vec![
+//!     (
+//!         User { id: 1, name: "Sean".to_string() },
+//!         Post { id: 1, user_id: 1, title: "My first post".to_string() }
+//!     ),
+//!     (
+//!         User { id: 1, name: "Sean".to_string() },
+//!         Post { id: 2, user_id: 1, title: "About Rust".to_string() }
+//!     ),
+//!     (
+//!         User { id: 2, name: "Tess".to_string() },
+//!         Post { id: 3, user_id: 2, title: "My first post too".to_string() }
+//!     ),
+//! ];
+//!
+//! assert_eq!(data, expected);
+//! # }
 //! ```
-//!
 //! Typically however, queries are loaded in multiple queries. For most datasets, the reduced
 //! amount of duplicated information sent over the wire saves more time than the extra round trip
 //! costs us. You can load the children for a single parent using the
 //! [`belonging_to`][belonging-to]
 //!
-//! [belonging-to]: /diesel/prelude/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [belonging-to]: ../prelude/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
-//! ```ignore
-//! let user = try!(users::find(1).first(&connection));
-//! let posts = Post::belonging_to(&user).load(&connection);
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # #[macro_use] extern crate diesel_codegen;
+//! # include!("../doctest_setup.rs");
+//! # use schema::users;
+//! # use schema::posts;
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
+//! # pub struct User {
+//! #     id: i32,
+//! #     name: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[belongs_to(User)]
+//! # pub struct Post {
+//! #     id: i32,
+//! #     user_id: i32,
+//! #     title: String,
+//! # }
+//! #
+//! # fn main() {
+//! #   use users::dsl::*;
+//! #   let connection = establish_connection();
+//! #
+//! let user = users.find(1).first::<User>(&connection).expect("Error loading user");
+//! let post_list = Post::belonging_to(&user)
+//!     .load::<Post>(&connection)
+//!     .expect("Error loading posts");
+//! let expected = vec![
+//!     Post { id: 1, user_id: 1, title: "My first post".to_string() },
+//!     Post { id: 2, user_id: 1, title: "About Rust".to_string() },
+//! ];
+//!
+//! assert_eq!(post_list, expected);
+//! # }
 //! ```
 //!
 //! If you're coming from other ORMs, you'll notice that this design is quite different from most.
@@ -99,15 +179,58 @@
 //!
 //! [grouped-by]: trait.GroupedBy.html#tymethod.grouped_by
 //!
-//! ```ignore
-//! fn first_twenty_users_and_their_posts(conn: &PgConnection) -> QueryResult<Vec<(User, Vec<Post>)>> {
-//!     let users = try!(users::limit(20).load::<User>(conn));
-//!     let posts = try!(Post::belonging_to(&users).load::<Post>(conn));
-//!     let grouped_posts = posts.grouped_by(&users);
-//!     users.into_iter().zip(grouped_posts).collect()
-//! }
-//! ```
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # #[macro_use] extern crate diesel_codegen;
+//! # include!("../doctest_setup.rs");
+//! # use schema::users;
+//! # use schema::posts;
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
+//! # pub struct User {
+//! #     id: i32,
+//! #     name: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[belongs_to(User)]
+//! # pub struct Post {
+//! #     id: i32,
+//! #     user_id: i32,
+//! #     title: String,
+//! # }
+//! #
+//! # fn main() {
+//! #   use users::dsl::*;
+//! #   let connection = establish_connection();
+//! #
+//! let users_vec = users
+//!     .load::<User>(&connection)
+//!     .expect("Error loading user");
+//! let posts_vec = Post::belonging_to(&users_vec)
+//!     .load::<Post>(&connection)
+//!     .expect("Error loading posts");
+//! let grouped_posts = posts_vec.grouped_by(&users_vec);
+//! let result: Vec<(User, Vec<Post>)> = users_vec.into_iter().zip(grouped_posts).collect();
+//! let expected = vec![
+//!     (
+//!         User { id: 1, name: "Sean".to_string() },
+//!         vec![
+//!             Post { id: 1, user_id: 1, title: "My first post".to_string() },
+//!             Post { id: 2, user_id: 1, title: "About Rust".to_string() },
+//!         ]
+//!     ),
+//!     (
+//!         User { id: 2, name: "Tess".to_string() },
+//!         vec![
+//!             Post { id: 3, user_id: 2, title: "My first post too".to_string() }
+//!         ]
+//!     )
+//! ];
 //!
+//! assert_eq!(result, expected);
+//! # }
+//! ```
 //! [`grouped_by`][grouped-by] takes a `Vec<Child>` and a `Vec<Parent>` and returns a
 //! `Vec<Vec<Child>>` where the index of the children matches the index of the parent they belong
 //! to. Or to put it another way, it returns them in an order ready to be `zip`ed with the parents. You
@@ -115,12 +238,89 @@
 //! as well, you could do this: (explicit type annotations have been added for documentation
 //! purposes)
 //!
-//! ```ignore
-//! let posts: Vec<Post> = try!(Post::belonging_to(&users).load());
-//! let comments: Vec<Comment> = try!(Comment::belonging_to(&posts).load());
-//! let comments: Vec<Vec<Comment>> = comments.grouped_by(&posts);
-//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts.into_iter().zip(comments).grouped_by(&users);
-//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users.into_iter().zip(posts_and_comments).collect();
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # #[macro_use] extern crate diesel_codegen;
+//! # include!("../doctest_setup.rs");
+//! # use schema::users;
+//! # use schema::posts;
+//! # use schema::comments;
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
+//! # pub struct User {
+//! #     id: i32,
+//! #     name: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[belongs_to(User)]
+//! # pub struct Post {
+//! #     id: i32,
+//! #     user_id: i32,
+//! #     title: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[belongs_to(Post)]
+//! # pub struct Comment {
+//! #     id: i32,
+//! #     post_id: i32,
+//! #     body: String,
+//! # }
+//! #
+//! # fn main() {
+//! #   use users::dsl::*;
+//! #   let connection = establish_connection();
+//! #
+//! let users_vec: Vec<User> = users.load::<User>(&connection)
+//!     .expect("error loading users");
+//! let posts_vec: Vec<Post> = Post::belonging_to(&users_vec)
+//!     .load::<Post>(&connection)
+//!     .expect("error loading posts");
+//! let comments_vec: Vec<Comment> = Comment::belonging_to(&posts_vec)
+//!     .load::<Comment>(&connection)
+//!     .expect("Error loading comments");
+//! let grouped_comments: Vec<Vec<Comment>> = comments_vec.grouped_by(&posts_vec);
+//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts_vec
+//!     .into_iter()
+//!     .zip(grouped_comments)
+//!     .grouped_by(&users_vec);
+//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users_vec
+//!     .into_iter()
+//!     .zip(posts_and_comments)
+//!     .collect();
+//! let expected = vec![
+//!     (
+//!         User { id: 1, name: "Sean".to_string() },
+//!         vec![
+//!             (
+//!                 Post { id: 1, user_id: 1, title: "My first post".to_string() },
+//!                 vec![ Comment { id: 1, post_id: 1, body: "Great post".to_string() } ]
+//!             ),
+//!             (
+//!                 Post { id: 2, user_id: 1, title: "About Rust".to_string() },
+//!                 vec![
+//!                     Comment { id: 2, post_id: 2, body: "Yay! I am learning Rust".to_string() }
+//!                 ]
+//!
+//!             )
+//!         ]
+//!     ),
+//!     (
+//!         User { id: 2, name: "Tess".to_string() },
+//!         vec![
+//!             (
+//!                 Post { id: 3, user_id: 2, title: "My first post too".to_string() },
+//!                 vec![ Comment { id: 3, post_id: 3, body: "I enjoyed your post".to_string() } ]
+//!             )
+//!         ]
+//!     )
+//! ];
+//!
+//! assert_eq!(result, expected);
+//! # }
+//!
+//!
 //! ```
 //!
 //! And that's it. This module will be expanded in the future with more complex joins, and the
