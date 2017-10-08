@@ -420,6 +420,20 @@ fn filter_subselect_referencing_outer_table() {
 }
 
 #[test]
+fn filter_subselect_with_boxed_query() {
+    use schema::users::dsl::*;
+
+    let conn = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &conn);
+
+    let subselect = users.filter(name.eq("Sean")).select(id).into_boxed();
+
+    let expected = Ok(vec![sean]);
+    let data = users.filter(id.eq_any(subselect)).load(&conn);
+    assert_eq!(expected, data);
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn filter_subselect_with_pg_any() {
     use diesel::dsl::any;
