@@ -10,8 +10,6 @@ use diesel::*;
 use diesel::pg::Pg;
 use diesel::types::*;
 
-use quickcheck::quickcheck;
-
 table! {
     has_timestamps {
         id -> Integer,
@@ -220,8 +218,6 @@ fn i64_to_sql_bigint() {
         283_745_982_373
     ));
 }
-
-use std::{f32, f64};
 
 #[test]
 #[cfg(feature = "postgres")]

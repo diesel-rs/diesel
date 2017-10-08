@@ -1,6 +1,4 @@
 use diesel::*;
-use dotenv::dotenv;
-use std::env;
 
 #[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:PG_DATABASE_URL");

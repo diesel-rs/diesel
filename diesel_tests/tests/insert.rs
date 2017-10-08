@@ -528,7 +528,7 @@ fn batch_insert_is_atomic_on_sqlite() {
     let connection = connection();
 
     let new_users = vec![Some(name.eq("Sean")), None];
-    let result = insert(&new_users).into(users).execute(&connection);
+    let result = insert_into(users).values(&new_users).execute(&connection);
     assert!(result.is_err());
 
     assert_eq!(Ok(0), users.count().get_result(&connection));

@@ -1,8 +1,6 @@
 use schema::{connection, TestConnection};
 use diesel::*;
-use diesel::data_types::*;
 use diesel::dsl::*;
-use diesel::types::Nullable;
 
 table! {
     has_timestamps {
