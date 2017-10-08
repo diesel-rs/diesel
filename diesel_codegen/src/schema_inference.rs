@@ -1,5 +1,5 @@
-use syn;
 use quote;
+use syn;
 
 use database_url::extract_database_url;
 use diesel_infer_schema::*;
@@ -43,8 +43,10 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
         let foreign_key = syn::Ident::new(fk.foreign_key);
         quote!(joinable!(#child_table -> #parent_table (#foreign_key));)
     });
+    let table_idents = table_names.iter().map(|t| syn::Ident::from(&*t.name));
+    let multi_table_joins = quote!(allow_tables_to_appear_in_same_query!(#(#table_idents,)*););
 
-    let tokens = quote!(#(#tables)* #(#joinables)*);
+    let tokens = quote!(#(#tables)* #(#joinables)* #multi_table_joins);
     if let Some(schema_name) = schema_name {
         let schema_ident = syn::Ident::new(schema_name);
         quote!(pub mod #schema_ident { #tokens })

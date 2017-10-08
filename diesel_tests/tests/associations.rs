@@ -45,6 +45,7 @@ mod eager_loading_with_string_keys {
 
     table! { users { id -> Text, } }
     table! { posts { id -> Text, user_id -> Text, } }
+    allow_tables_to_appear_in_same_query!(users, posts);
 
     #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
     pub struct User {
@@ -276,6 +277,8 @@ fn custom_foreign_key() {
             title -> Text,
         }
     }
+
+    allow_tables_to_appear_in_same_query!(users1, posts1);
 
     #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
     #[table_name = "users1"]

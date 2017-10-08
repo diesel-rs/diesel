@@ -749,12 +749,6 @@ macro_rules! table_body {
                 type Count = Never;
             }
 
-            impl<T> AppearsInFromClause<T> for table where
-                T: Table + JoinTo<table>,
-            {
-                type Count = Never;
-            }
-
             impl<Left, Right, Kind> JoinTo<Join<Left, Right, Kind>> for table where
                 Join<Left, Right, Kind>: JoinTo<table>,
             {
@@ -888,35 +882,43 @@ macro_rules! __diesel_table_query_source_impl {
     };
 }
 
-/// Allow two tables to be referenced in a join query.
+/// Allow two tables to be referenced in a join query without providing an
+/// explicit `ON` clause.
+///
+/// The generated `ON` clause will always join to the primary key of the parent
+/// table. This macro removes the need to call [`.on`] explicitly, you will
+/// still need to invoke [`allow_tables_to_appear_in_same_query!`] for these two tables to
+/// be able to use the resulting query, unless you are using `infer_schema!` or
+/// `diesel print-schema` which will generate it for you.
+///
+/// If you are using `infer_schema!` or `diesel print-schema`, an invocation of
+/// this macro will be generated for every foreign key in your database unless
+/// one of the following is true:
+///
+/// - The foreign key references something other than the primary key
+/// - The foreign key is composite
+/// - There is more than one foreign key connecting two tables
+/// - The foreign key is self-referential
 ///
 /// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # use diesel::prelude::*;
-/// mod schema {
-///    table! {
-///         users(id) {
-///             id -> Integer,
-///         }
-///     }
-///     table! {
-///         posts(id) {
-///             id -> Integer,
-///             user_id -> Integer,
-///         }
-///     }
-///
-/// }
-///
-/// joinable!(schema::posts -> schema::users(user_id));
-///
-/// # fn main() {
+/// # include!("../doctest_setup.rs");
 /// use schema::*;
 ///
-/// // Without the joinable! call, this wouldn't compile
-/// let query = users::table.inner_join(posts::table);
+/// joinable!(posts -> users (user_id));
+/// allow_tables_to_appear_in_same_query!(posts, users);
+///
+/// # fn main() {
+/// let implicit_on_clause = users::table.inner_join(posts::table);
+/// let implicit_on_clause_sql = diesel::debug_query::<DB, _>(&implicit_on_clause).to_string();
+///
+/// let explicit_on_clause = users::table
+///     .inner_join(posts::table.on(posts::user_id.eq(users::id)));
+/// let explicit_on_clause_sql = diesel::debug_query::<DB, _>(&explicit_on_clause).to_string();
+///
+/// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
 /// ```
 #[macro_export]
@@ -965,7 +967,9 @@ macro_rules! joinable_inner {
     }
 }
 
+
 #[deprecated(since = "0.16.0", note = "use `allow_tables_to_appear_in_same_query!` instead")]
+#[cfg(feature = "with-deprecated")]
 #[macro_export]
 macro_rules! enable_multi_table_joins {
     ($left_mod:ident, $right_mod:ident) => {
@@ -973,33 +977,53 @@ macro_rules! enable_multi_table_joins {
     }
 }
 
-/// Allow two tables which are otherwise unrelated to be used together in a
-/// multi-table join. This macro only needs to be invoked when the two tables
-/// don't have an association between them (e.g. parent to grandchild)
+/// Allow two or more tables which are otherwise unrelated to be used together
+/// in a query.
+///
+/// This macro must be invoked any time two tables need to appear in the same
+/// query either because they are being joined together, or because one appears
+/// in a subselect. When this macro is invoked with more than 2 tables, every
+/// combination of those tables will be allowed to appear together.
+///
+/// If you are using `infer_schema!` or `diesel print-schema`, an invocation of
+/// this macro will be generated for you for all tables in your schema.
 ///
 /// # Example
 ///
 /// ```ignore
 /// // This would be required to do `users.inner_join(posts.inner_join(comments))`
-/// // if there were an association between users and posts, and an association
-/// // between posts and comments, but no association between users and comments
-/// enable_multi_table_joins!(users, comments);
+/// allow_tables_to_appear_in_same_query!(comments, posts, users);
+/// ```
+///
+/// When more than two tables are passed, the relevant code is generated for
+/// every combination of those tables. This code would be equivalent to the
+/// previous example.
+///
+/// ```ignore
+/// allow_tables_to_appear_in_same_query!(comments, posts);
+/// allow_tables_to_appear_in_same_query!(comments, users);
+/// allow_tables_to_appear_in_same_query!(posts, users);
 /// ```
 #[macro_export]
 macro_rules! allow_tables_to_appear_in_same_query {
-    ($left_mod:ident, $right_mod:ident) => {
-        impl $crate::query_source::AppearsInFromClause<$left_mod::table>
-            for $right_mod::table
-        {
-            type Count = $crate::query_source::Never;
-        }
+    ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
+        $(
+            impl $crate::query_source::AppearsInFromClause<$left_mod::table>
+                for $right_mod::table
+            {
+                type Count = $crate::query_source::Never;
+            }
 
-        impl $crate::query_source::AppearsInFromClause<$right_mod::table>
-            for $left_mod::table
-        {
-            type Count = $crate::query_source::Never;
-        }
-    }
+            impl $crate::query_source::AppearsInFromClause<$right_mod::table>
+                for $left_mod::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+        )+
+        allow_tables_to_appear_in_same_query!($($right_mod,)+);
+    };
+
+    ($last_table:ident,) => {};
 }
 
 /// Takes a query `QueryFragment` expression as an argument and returns a string
