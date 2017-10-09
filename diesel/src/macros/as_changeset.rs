@@ -219,20 +219,20 @@ macro_rules! impl_AsChangeset {
                 for &'update $struct_ty
             {
                 type Target = $table_name::table;
-                type Changeset = $changeset_ty;
+                type Changeset = <$changeset_ty as $crate::query_builder::AsChangeset>::Changeset;
 
                 #[allow(non_shorthand_field_patterns)]
                 fn as_changeset(self) -> Self::Changeset {
                     use $crate::prelude::ExpressionMethods;
                     let $self_to_columns = *self;
-                    ($(
+                    $crate::query_builder::AsChangeset::as_changeset(($(
                         AsChangeset_column_expr!(
                             $table_name::$column_name,
                             $column_name,
                             none_as_null = $treat_none_as_null,
                             field_kind = $field_kind,
                         )
-                    ,)+)
+                    ,)+))
                 }
             }
         }

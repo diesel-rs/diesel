@@ -80,6 +80,7 @@ pub trait InsertValues<T: Table, DB: Backend> {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub enum ColumnInsertValue<Col, Expr> {
     Expression(Col, Expr),
     Default,
@@ -167,18 +168,26 @@ where
     }
 }
 
-impl<'a, T, Tab> Insertable<Tab> for &'a Option<T>
+impl<T, Tab> Insertable<Tab> for Option<T>
 where
-    &'a T: Insertable<Tab>,
-    <&'a T as Insertable<Tab>>::Values: Default,
+    T: Insertable<Tab>,
+    T::Values: Default,
 {
-    type Values = <&'a T as Insertable<Tab>>::Values;
+    type Values = T::Values;
 
     fn values(self) -> Self::Values {
-        match *self {
-            Some(ref v) => v.values(),
-            None => Default::default(),
-        }
+        self.map(Insertable::values).unwrap_or_default()
+    }
+}
+
+impl<'a, T, Tab> Insertable<Tab> for &'a Option<T>
+where
+    Option<&'a T>: Insertable<Tab>,
+{
+    type Values = <Option<&'a T> as Insertable<Tab>>::Values;
+
+    fn values(self) -> Self::Values {
+        self.as_ref().values()
     }
 }
 

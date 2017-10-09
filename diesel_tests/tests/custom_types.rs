@@ -38,6 +38,7 @@ mod impls_for_insert_and_query {
     }
 
     impl NotNull for MyType {}
+    impl SingleValue for MyType {}
 
     impl<'a> AsExpression<MyType> for &'a MyEnum {
         type Expression = Bound<MyType, &'a MyEnum>;

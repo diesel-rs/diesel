@@ -162,24 +162,19 @@ macro_rules! impl_Insertable {
         impl<$($lifetime,)* 'insert> $crate::insertable::Insertable<$table_name::table>
             for &'insert $struct_ty
         {
-            type Values = ($(
-                $crate::insertable::ColumnInsertValue<
+            type Values = <($(
+                Option<$crate::dsl::Eq<
                     $table_name::$column_name,
-                    $crate::dsl::AsExpr<
-                        &'insert $field_ty,
-                        $table_name::$column_name,
-                    >,
-                >
-            ,)+);
+                    &'insert $field_ty,
+                >>,
+            )+) as $crate::insertable::Insertable<$table_name::table>>::Values;
 
             #[allow(non_shorthand_field_patterns)]
             fn values(self) -> Self::Values {
-                use $crate::expression::{Expression, IntoSql};
-                use $crate::insertable::ColumnInsertValue;
                 let $self_to_columns = *self;
-                ($(
+                $crate::insertable::Insertable::values(($(
                     Insertable_column_expr!($table_name::$column_name, $column_name, $field_kind)
-                ,)+)
+                ,)+))
             }
         }
 
@@ -213,17 +208,16 @@ macro_rules! __diesel_impl_on_conflict_extension {
 #[macro_export]
 macro_rules! Insertable_column_expr {
     ($column:path, $field_access:expr, option) => {
-        match *$field_access {
-            Some(ref value) => Insertable_column_expr!($column, value, regular),
-            None => ColumnInsertValue::Default,
-        }
+        $field_access
+            .as_ref()
+            .and_then(|value| Insertable_column_expr!($column, value, regular))
     };
 
     ($column:path, $field_access:expr, regular) => {
-        ColumnInsertValue::Expression(
+        Some($crate::ExpressionMethods::eq(
             $column,
-            $field_access.into_sql::<<$column as Expression>::SqlType>(),
-        )
+            $field_access,
+        ))
     };
 }
 
