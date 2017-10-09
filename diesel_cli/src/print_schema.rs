@@ -158,7 +158,7 @@ impl<'a> Display for ColumnDefinitions<'a> {
                     }
                 }
                 if let Some(ref rust_name) = column.rust_name {
-                    writeln!(out, r#"#[sql_name = {}]"#, column.sql_name)?;
+                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
                     writeln!(out, "{} -> {},", rust_name, column.ty)?;
                 } else {
                     writeln!(out, "{} -> {},", column.sql_name, column.ty)?;
