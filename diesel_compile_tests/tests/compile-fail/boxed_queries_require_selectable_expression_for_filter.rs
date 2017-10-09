@@ -21,5 +21,4 @@ table! {
 fn main() {
     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));
     //~^ ERROR AppearsInFromClause
-    //~| ERROR E0277
 }

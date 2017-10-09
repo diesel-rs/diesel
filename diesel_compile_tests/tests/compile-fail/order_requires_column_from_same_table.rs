@@ -18,5 +18,4 @@ table! {
 fn main() {
     let source = users::table.order(posts::id);
     //~^ ERROR E0277
-    //~| ERROR E0271
 }

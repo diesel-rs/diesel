@@ -26,6 +26,8 @@ fn simple_belongs_to() {
         }
     }
 
+    allow_tables_to_appear_in_same_query!(users, posts);
+
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
@@ -91,6 +93,8 @@ fn custom_foreign_key() {
         }
     }
 
+    allow_tables_to_appear_in_same_query!(users, posts);
+
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
@@ -147,7 +151,6 @@ fn self_referential() {
             parent_id -> Nullable<Integer>,
         }
     }
-
 
     #[derive(Associations, Identifiable)]
     #[belongs_to(Tree, foreign_key = "parent_id")]

@@ -907,8 +907,10 @@ macro_rules! __diesel_table_query_source_impl {
 /// # include!("../doctest_setup.rs");
 /// use schema::*;
 ///
+/// # /*
 /// joinable!(posts -> users (user_id));
 /// allow_tables_to_appear_in_same_query!(posts, users);
+/// # */
 ///
 /// # fn main() {
 /// let implicit_on_clause = users::table.inner_join(posts::table);
