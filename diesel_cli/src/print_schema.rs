@@ -202,9 +202,7 @@ impl<'a, 'b: 'a> PadAdapter<'a, 'b> {
 impl<'a, 'b: 'a> Write for PadAdapter<'a, 'b> {
     fn write_str(&mut self, mut s: &str) -> fmt::Result {
         while !s.is_empty() {
-            if self.on_newline {
-                self.fmt.write_str("    ")?;
-            }
+            let on_newline = self.on_newline;
 
             let split = match s.find('\n') {
                 Some(pos) => {
@@ -216,7 +214,13 @@ impl<'a, 'b: 'a> Write for PadAdapter<'a, 'b> {
                     s.len()
                 }
             };
-            self.fmt.write_str(&s[..split])?;
+
+            let to_write = &s[..split];
+            if on_newline && to_write != "\n" {
+                self.fmt.write_str("    ")?;
+            }
+            self.fmt.write_str(to_write)?;
+
             s = &s[split..];
         }
 

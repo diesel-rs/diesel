@@ -12,7 +12,7 @@ pub mod custom_schema {
             id -> Int4,
         }
     }
-    
+
     table! {
         /// Representation of the `custom_schema.b` table.
         ///
@@ -32,6 +32,6 @@ pub mod custom_schema {
             parent -> Int4,
         }
     }
-    
+
     joinable!(b -> a (parent));
 }
