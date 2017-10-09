@@ -965,6 +965,14 @@ macro_rules! joinable_inner {
     }
 }
 
+#[deprecated(since = "0.16.0", note = "use `allow_tables_to_appear_in_same_query!` instead")]
+#[macro_export]
+macro_rules! enable_multi_table_joins {
+    ($left_mod:ident, $right_mod:ident) => {
+        enable_multi_table_joins!($left_mod, $right_mod);
+    }
+}
+
 /// Allow two tables which are otherwise unrelated to be used together in a
 /// multi-table join. This macro only needs to be invoked when the two tables
 /// don't have an association between them (e.g. parent to grandchild)
@@ -978,7 +986,7 @@ macro_rules! joinable_inner {
 /// enable_multi_table_joins!(users, comments);
 /// ```
 #[macro_export]
-macro_rules! enable_multi_table_joins {
+macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $right_mod:ident) => {
         impl $crate::query_source::AppearsInFromClause<$left_mod::table>
             for $right_mod::table

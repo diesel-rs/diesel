@@ -21,9 +21,9 @@ table! {
     }
 }
 
-enable_multi_table_joins!(users, posts);
-enable_multi_table_joins!(users, comments);
-enable_multi_table_joins!(posts, comments);
+allow_tables_to_appear_in_same_query!(users, posts);
+allow_tables_to_appear_in_same_query!(users, comments);
+allow_tables_to_appear_in_same_query!(posts, comments);
 
 fn main() {
     use diesel::dsl::{any, exists};

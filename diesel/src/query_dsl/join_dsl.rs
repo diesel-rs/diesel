@@ -55,9 +55,9 @@ where
 /// and we do not currently have a fleshed out story for dealing with table
 /// aliases.
 ///
-/// You may also need to call [`enable_multi_table_joins!`][] (particularly if
+/// You may also need to call [`allow_tables_to_appear_in_same_query!`][] (particularly if
 /// you see an unexpected error about `AppearsInFromClause`). See the
-/// documentation for [`enable_multi_table_joins!`][] for details.
+/// documentation for [`allow_tables_to_appear_in_same_query!`][] for details.
 ///
 /// Diesel expects multi-table joins to be semantically grouped based on the
 /// relationships. For example, `users.inner_join(posts.inner_join(comments))`
@@ -81,7 +81,7 @@ where
 /// ```
 ///
 /// [associations]: ../associations/index.html
-/// [`enable_multi_table_joins!`]: ../macro.enable_multi_table_joins.html
+/// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
 pub trait JoinDsl: Sized {
     /// Join two tables using a SQL `INNER JOIN`. The `ON` clause is defined
     /// via the [associations API](../associations/index.html).
@@ -137,7 +137,7 @@ pub trait JoinOnDsl: Sized {
     /// #     }
     /// # }
     /// #
-    /// # enable_multi_table_joins!(users, posts);
+    /// # allow_tables_to_appear_in_same_query!(users, posts);
     /// #
     /// # fn main() {
     /// #     let connection = establish_connection();

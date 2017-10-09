@@ -112,8 +112,8 @@ mod information_schema {
         }
     }
 
-    enable_multi_table_joins!(table_constraints, referential_constraints);
-    enable_multi_table_joins!(key_column_usage, table_constraints);
+    allow_tables_to_appear_in_same_query!(table_constraints, referential_constraints);
+    allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
 
 pub fn get_table_data<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<ColumnInformation>>

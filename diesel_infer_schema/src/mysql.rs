@@ -29,7 +29,7 @@ mod information_schema {
         }
     }
 
-    enable_multi_table_joins!(table_constraints, key_column_usage);
+    allow_tables_to_appear_in_same_query!(table_constraints, key_column_usage);
 }
 
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
