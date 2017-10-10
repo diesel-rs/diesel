@@ -46,8 +46,12 @@ where
 
 /// Methods allowing various joins between two or more tables.
 ///
-/// Joining between two tables requires a [`#[belongs_to]`
-/// association][associations] that defines the relationship.
+/// If you have invoked [`joinable!`] for the two tables, you can pass that
+/// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
+/// clause.
+///
+/// [`joinable!`]: ../macro.joinable.html
+/// [`.on`]: trait.JoinOnDsl.html#method.on
 ///
 /// You can join to as many tables as you'd like in a query, with the
 /// restriction that no table can appear in the query more than once. The reason
@@ -114,7 +118,9 @@ impl<T: AsQuery> JoinDsl for T {}
 
 pub trait JoinOnDsl: Sized {
     /// Specify the `ON` clause for a join statement. This will override
-    /// any implicit `ON` clause that would come from `#[belongs_to]`
+    /// any implicit `ON` clause that would come from [`joinable!`]
+    ///
+    /// [`joinable!`]: ../macro.joinable.html
     ///
     /// # Example
     ///
