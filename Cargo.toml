@@ -7,8 +7,11 @@ members = [
     # "diesel_compile_tests",
     "diesel_tests",
     "diesel_infer_schema",
-    "diesel_proc_macro",
-    "diesel_proc_macro_internal",
+    "diesel_infer_schema/infer_schema_internals",
+    "diesel_infer_schema/infer_schema_macros",
+    "diesel_migrations",
+    "diesel_migrations/migrations_internals",
+    "diesel_migrations/migrations_macros",
     "examples/mysql/getting_started_step_1",
     "examples/mysql/getting_started_step_2",
     "examples/mysql/getting_started_step_3",
@@ -25,5 +28,3 @@ members = [
 "diesel:0.16.0" = { path = "diesel" }
 "diesel_codegen:0.16.0" = { path = "diesel_codegen" }
 "diesel_infer_schema:0.16.0" = { path = "diesel_infer_schema" }
-"diesel_proc_macro_internal:0.16.0" = { path = "diesel_proc_macro_internal" }
-"diesel_proc_macro:0.16.0" = { path = "diesel_proc_macro" }

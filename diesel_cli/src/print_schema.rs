@@ -1,4 +1,4 @@
-use diesel_infer_schema::*;
+use infer_schema_internals::*;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 

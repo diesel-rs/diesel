@@ -1,3 +1,4 @@
+extern crate diesel_migrations as migrations;
 extern crate diesel;
 extern crate dotenv;
 use self::diesel::*;

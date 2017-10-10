@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate diesel;
 #[macro_use]
-extern crate diesel_proc_macro;
+extern crate diesel_infer_schema;
 extern crate dotenv;
 
 pub mod schema;

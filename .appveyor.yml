@@ -45,8 +45,18 @@ test_script:
   - cargo test
   - cd ../diesel
   - cargo test --features "%backend% extras"
-  - cd ../diesel_proc_macro
+  - cd ../diesel_infer_schema/infer_schema_internals
+  - cargo test --features "%backend%"
+  - cd ../../diesel_infer_schema/infer_schema_macros
+  - cargo test --features "%backend% dotenv"
+  - cd ../../diesel_infer_schema
   - cargo test --features "%backend% dotenv_macro"
+  - cd ../diesel_migrations/migrations_internals
+  - cargo test
+  - cd ../../diesel_migrations/migrations_macros
+  - cargo test
+  - cd ../../diesel_migrations/
+  - cargo test --features "%backend%"
   - cd ../diesel_cli
   - cargo test --no-default-features --features "%backend%"
   - cd ../diesel_tests

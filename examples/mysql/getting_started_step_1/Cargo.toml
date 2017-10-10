@@ -5,5 +5,5 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "0.16.0", features = ["mysql"] }
-diesel_proc_macro = { path = "../../../diesel_proc_macro", version = "0.16.0", features = ["mysql"] }
+diesel_infer_schema = { path = "../../../diesel_infer_schema", version = "0.16.0", features = ["mysql"] }
 dotenv = "0.10"

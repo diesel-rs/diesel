@@ -1,0 +1,24 @@
+[package]
+name = "diesel_migrations"
+version = "0.16.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+description = "Migratation managment for diesel"
+documentation = "http://docs.diesel.rs"
+homepage = "http://diesel.rs"
+
+
+[dependencies]
+clippy = { optional = true, version = "=0.0.162" }
+migrations_internals = { version = "0.16.0", path = "./migrations_internals" }
+migrations_macros = { version = "0.16.0", path = "./migrations_macros" }
+
+[dev-dependencies]
+diesel = { version = "0.16.0", features = ["sqlite", "postgres", "mysql"] }
+
+[features]
+default = []
+lint = ["clippy"]
+sqlite = []
+postgres = []
+mysql = []

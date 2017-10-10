@@ -72,7 +72,6 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-pub mod migrations;
 pub mod query_dsl;
 pub mod query_source;
 pub mod result;

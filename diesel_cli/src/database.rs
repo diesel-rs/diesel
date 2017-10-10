@@ -2,6 +2,7 @@ use clap::ArgMatches;
 use diesel::dsl::sql;
 use diesel::types::Bool;
 use diesel::*;
+use migrations_internals as migrations;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 use super::query_helper;
 

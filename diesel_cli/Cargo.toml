@@ -19,8 +19,9 @@ chrono = "0.4"
 clap = ">=2.27.0"
 diesel = { version = "0.16.0", default-features = false }
 dotenv = ">=0.8, <0.11"
-diesel_infer_schema = "0.16.0"
+infer_schema_internals = { version = "0.16.0", path = "../diesel_infer_schema/infer_schema_internals" }
 clippy = { optional = true, version = "=0.0.162" }
+migrations_internals = { version = "0.16.0", path = "../diesel_migrations/migrations_internals" }
 
 [dev-dependencies]
 difference = "1.0"
@@ -31,9 +32,9 @@ url = { version = "1.4.0" }
 [features]
 default = ["postgres", "sqlite", "mysql"]
 lint = ["clippy"]
-postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
-sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
-mysql = ["diesel/mysql", "diesel_infer_schema/mysql"]
+postgres = ["diesel/postgres", "infer_schema_internals/postgres"]
+sqlite = ["diesel/sqlite", "infer_schema_internals/sqlite"]
+mysql = ["diesel/mysql", "infer_schema_internals/mysql"]
 
 [[test]]
 name = "tests"

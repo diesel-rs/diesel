@@ -14,13 +14,13 @@ before_script:
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
 script:
 - |
-  (cd diesel_codegen && travis-cargo test) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel && travis-cargo test -- --no-default-features --features "unstable extras $BACKEND")
   else
     (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
   fi &&
   (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
+    (cd diesel_codegen && travis-cargo test -- --features "$BACKEND") &&
   if [[ "$BACKEND" == postgres ]]; then
     (cd examples/postgres && ./test_all)
   fi &&
@@ -31,9 +31,12 @@ script:
     (cd examples/sqlite && ./test_all)
   fi &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_proc_macro_internal && travis-cargo test -- --no-default-features --features "dotenv $BACKEND") &&
-  (cd diesel_proc_macro && travis-cargo test -- --no-default-features --features "dotenv_macro $BACKEND") &&
+  (cd diesel_infer_schema/infer_schema_internals && travis-cargo test -- --no-default-features --features "$BACKEND") &&
+  (cd diesel_infer_schema/infer_schema_macros && travis-cargo test -- --no-default-features --features "$BACKEND") &&
+  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "dotenv_macro $BACKEND") &&
+  (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
+  (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
+  (cd diesel_migrations/ && travis-cargo test --features "$BACKEND" ) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else
