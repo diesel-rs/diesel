@@ -94,6 +94,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * References to types other than `str` and slice can now appear on structs which
   derive `Insertable` or `AsChangeset`.
 
+* Deserializing a date/time/timestamp column into a chrono type on SQLite will
+  now handle any value that is in a format documented as valid for SQLite's
+  `strftime` function except for the string `'now'`.
+
 ## [0.16.0] - 2017-08-24
 
 ### Added
