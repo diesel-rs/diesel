@@ -22,8 +22,8 @@ primitive_impls!(Date);
 primitive_impls!(Time);
 primitive_impls!(Timestamp);
 
-expression_impls!(Text -> &'a str);
-expression_impls!(Binary -> &'a [u8]);
+expression_impls!(Text -> str, unsized);
+expression_impls!(Binary -> [u8], unsized);
 
 impl NotNull for () {}
 
@@ -34,7 +34,7 @@ impl<DB: Backend<RawValue = [u8]>> FromSql<types::Text, DB> for String {
     }
 }
 
-impl<'a, DB: Backend> ToSql<types::Text, DB> for &'a str {
+impl<DB: Backend> ToSql<types::Text, DB> for str {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, DB>,
@@ -48,7 +48,7 @@ impl<'a, DB: Backend> ToSql<types::Text, DB> for &'a str {
 impl<DB> ToSql<types::Text, DB> for String
 where
     DB: Backend,
-    for<'a> &'a str: ToSql<types::Text, DB>,
+    str: ToSql<types::Text, DB>,
 {
     fn to_sql<W: Write>(
         &self,
@@ -67,7 +67,7 @@ impl<DB: Backend<RawValue = [u8]>> FromSql<types::Binary, DB> for Vec<u8> {
 impl<DB> ToSql<types::Binary, DB> for Vec<u8>
 where
     DB: Backend,
-    for<'a> &'a [u8]: ToSql<types::Binary, DB>,
+    [u8]: ToSql<types::Binary, DB>,
 {
     fn to_sql<W: Write>(
         &self,
@@ -77,7 +77,7 @@ where
     }
 }
 
-impl<'a, DB: Backend> ToSql<types::Binary, DB> for &'a [u8] {
+impl<DB: Backend> ToSql<types::Binary, DB> for [u8] {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, DB>,
