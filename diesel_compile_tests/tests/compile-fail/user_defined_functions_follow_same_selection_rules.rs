@@ -38,7 +38,6 @@ fn main() {
 
     let _ = LoadDsl::load::<User>(
     //~^ ERROR E0277
-    //~| ERROR E0271
         users::table.filter(name.eq(bar(title))),
         &conn,
     );

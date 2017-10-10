@@ -256,6 +256,7 @@ mod schema {
             body -> VarChar,
         }
     }
+
     table! {
         posts {
             id -> Integer,
@@ -263,11 +264,14 @@ mod schema {
             title -> VarChar,
         }
     }
+
     table! {
         users {
             id -> Integer,
             name -> VarChar,
         }
     }
+
+    joinable!(posts -> users (user_id));
+    allow_tables_to_appear_in_same_query!(comments, posts, users);
 }
-joinable!(schema::posts -> schema::users(user_id));

@@ -23,11 +23,9 @@ fn main() {
     //~| ERROR E0277
 
     update(users::table).filter(posts::id.eq(1));
-    //~^ ERROR E0271
-    //~| ERROR E0277
+    //~^ ERROR E0277
 
     update(users::table).set(users::id.eq(1))
         .filter(posts::id.eq(1));
-        //~^ ERROR E0271
-        //~| ERROR E0277
+        //~^ ERROR E0277
 }

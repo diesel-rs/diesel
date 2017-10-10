@@ -34,4 +34,9 @@ pub mod custom_schema {
     }
 
     joinable!(b -> a (parent));
+
+    allow_tables_to_appear_in_same_query!(
+        a,
+        b,
+    );
 }

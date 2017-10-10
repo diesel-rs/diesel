@@ -30,7 +30,6 @@ fn main() {
 
     let _ = LoadDsl::load::<Stuff>(
     //~^ ERROR E0277
-    //~| ERROR E0271
         stuff.filter(name.eq(any(more_stuff::names))),
         &conn,
     );

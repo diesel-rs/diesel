@@ -300,8 +300,3 @@ pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
         .first(connection)
         .unwrap()
 }
-
-allow_tables_to_appear_in_same_query!(users, comments);
-allow_tables_to_appear_in_same_query!(posts, likes);
-allow_tables_to_appear_in_same_query!(followings, likes);
-allow_tables_to_appear_in_same_query!(followings, comments);

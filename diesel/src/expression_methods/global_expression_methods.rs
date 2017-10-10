@@ -426,18 +426,19 @@ pub trait NullableExpressionMethods: Expression + Sized {
     ///     }
     /// }
     /// #
-    /// #  pub struct User {
-    /// #      id: i32,
-    /// #      name: VarChar,
-    /// #  }
+    /// # pub struct User {
+    /// #     id: i32,
+    /// #     name: VarChar,
+    /// # }
     /// #
-    /// #  pub struct Post {
-    /// #      id: i32,
-    /// #      user_id: i32,
-    /// #      author_name: Option<VarChar>,
-    /// #  }
+    /// # pub struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     author_name: Option<VarChar>,
+    /// # }
     /// #
-    /// #  joinable!(posts -> users (user_id));
+    /// # joinable!(posts -> users (user_id));
+    /// # allow_tables_to_appear_in_same_query!(posts, users);
     ///
     /// fn main() {
     ///     use users::dsl::*;
