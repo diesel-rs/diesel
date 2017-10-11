@@ -7,7 +7,7 @@ extern crate assert_matches;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_infer_schema;
-#[macro_use]
+#[cfg_attr(feature = "sqlite", macro_use)]
 extern crate diesel_migrations;
 extern crate dotenv;
 extern crate quickcheck;

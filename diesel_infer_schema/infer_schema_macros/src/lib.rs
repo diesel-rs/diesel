@@ -10,9 +10,9 @@
                   unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 
 extern crate diesel;
-extern crate infer_schema_internals;
 #[cfg(all(feature = "dotenv"))]
 extern crate dotenv;
+extern crate infer_schema_internals;
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;

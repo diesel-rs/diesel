@@ -14,8 +14,8 @@ extern crate chrono;
 extern crate clap;
 #[cfg_attr(any(feature = "mysql", feature = "postgres"), macro_use)]
 extern crate diesel;
-extern crate infer_schema_internals;
 extern crate dotenv;
+extern crate infer_schema_internals;
 extern crate migrations_internals;
 
 mod database_error;

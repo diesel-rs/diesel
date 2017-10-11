@@ -20,7 +20,7 @@ script:
     (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
   fi &&
   (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
-    (cd diesel_derives && travis-cargo test -- --features "$BACKEND") &&
+  (cd diesel_derives && travis-cargo test -- --features "$BACKEND") &&
   if [[ "$BACKEND" == postgres ]]; then
     (cd examples/postgres && ./test_all)
   fi &&
@@ -36,7 +36,7 @@ script:
   (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "dotenv_macro $BACKEND") &&
   (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
   (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
-  (cd diesel_migrations/ && travis-cargo test --features "$BACKEND" ) &&
+  (cd diesel_migrations/ && travis-cargo test -- --features "$BACKEND" ) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
   else

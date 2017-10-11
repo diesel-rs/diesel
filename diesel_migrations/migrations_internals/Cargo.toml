@@ -10,6 +10,9 @@ homepage = "http://diesel.rs"
 clippy = { optional = true, version = "=0.0.162" }
 diesel = "0.16.0"
 
+[dev-dependencies]
+tempdir = "0.3.4"
+
 [features]
 default = []
 lint = ["clippy"]

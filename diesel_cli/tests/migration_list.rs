@@ -4,7 +4,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use support::{database, project};
-use diesel::migrations::TIMESTAMP_FORMAT;
+use migrations_internals::TIMESTAMP_FORMAT;
 
 #[test]
 fn migration_list_lists_pending_applied_migrations() {

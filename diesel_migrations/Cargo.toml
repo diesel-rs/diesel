@@ -15,6 +15,8 @@ migrations_macros = { version = "0.16.0", path = "./migrations_macros" }
 
 [dev-dependencies]
 diesel = { version = "0.16.0", features = ["sqlite", "postgres", "mysql"] }
+dotenv = ">=0.8, <0.11"
+cfg-if = "0.1.0"
 
 [features]
 default = []

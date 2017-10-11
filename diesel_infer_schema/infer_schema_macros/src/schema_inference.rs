@@ -44,7 +44,11 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
         quote!(joinable!(#child_table -> #parent_table (#foreign_key));)
     });
 
-    let tokens = quote!(#(#tables)* #(#joinables)*);
+    let table_idents = table_names.iter().map(|t| syn::Ident::from(&*t.name));
+    let multi_table_joins = quote!(allow_tables_to_appear_in_same_query!(#(#table_idents,)*););
+
+
+    let tokens = quote!(#(#tables)* #(#joinables)* #multi_table_joins);
     if let Some(schema_name) = schema_name {
         let schema_ident = syn::Ident::new(schema_name);
         quote!(pub mod #schema_ident { #tokens })
