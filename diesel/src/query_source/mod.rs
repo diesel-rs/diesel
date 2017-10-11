@@ -17,7 +17,7 @@ pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
 /// Trait indicating that a record can be queried from the database. This trait
-/// can be derived automatically using `diesel_codegen`. This trait can only be derived for
+/// can be derived automatically using `diesel_derives`. This trait can only be derived for
 /// structs, not enums.
 pub trait Queryable<ST, DB>
 where

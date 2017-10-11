@@ -31,7 +31,7 @@ fn load_dotenv_file() -> Result<(), String> {
 #[cfg(not(feature = "dotenv"))]
 fn load_dotenv_file() -> Result<(), String> {
     Err(String::from(
-        "diesel_codegen must be compiled with the \"dotenv\" \
+        "infer_schema_internals must be compiled with the \"dotenv\" \
          feature to correctly interpret strings starting with `dotenv:`",
     ))
 }

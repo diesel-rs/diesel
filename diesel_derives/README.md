@@ -25,7 +25,7 @@ It also provides the macros [`infer_schema!`][infer-schema],
 First, add this crate to Cargo.toml as so:
 
 ```toml
-diesel_codegen = { version = "0.16.0", features = ["postgres"] }
+diesel_derives = { version = "0.16.0", features = ["postgres"] }
 ```
 
 If you are using SQLite, be sure to specify `sqlite` instead of `postgres` in
@@ -34,7 +34,7 @@ the `features` section.
 Next, at the root of your crate add:
 
 ```rust
-#[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate diesel_derives;
 ```
 
 See the documentation for each trait/macro for additional details and

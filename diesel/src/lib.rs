@@ -9,7 +9,7 @@
 //! ## Crates
 //!
 //! * **Diesel**: core libary, documented here
-//! * [**Diesel Codegen**](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen): library of procedural macros
+//! * [**Diesel Derives**](https://github.com/diesel-rs/diesel/tree/master/diesel_derives): library of custom derives
 //! * [**Diesel CLI**](https://github.com/diesel-rs/diesel/tree/master/diesel_cli): command line tool that aids in managing your database schema
 //!
 #![cfg_attr(feature = "unstable", feature(specialization))]
@@ -35,9 +35,9 @@ extern crate bitflags;
 extern crate byteorder;
 #[allow(unused_imports)]
 #[macro_use]
-extern crate diesel_codegen;
+extern crate diesel_derives;
 #[doc(hidden)]
-pub use diesel_codegen::*;
+pub use diesel_derives::*;
 
 #[macro_use]
 mod macros;

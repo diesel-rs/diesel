@@ -41,10 +41,10 @@ before_test:
   - mysql -e "create database diesel_test; create database diesel_unit_test;" -uroot
 
 test_script:
-  - cd diesel_codegen
-  - cargo test
-  - cd ../diesel
+  - cd diesel
   - cargo test --features "%backend% extras"
+  - cd ../diesel_derives
+  - cargo test --features "%backend%"
   - cd ../diesel_infer_schema/infer_schema_internals
   - cargo test --features "%backend%"
   - cd ../../diesel_infer_schema/infer_schema_macros

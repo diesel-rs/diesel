@@ -13,7 +13,7 @@ use sqlite::Sqlite;
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_codegen` by adding
+/// This trait can be automatically derived using `diesel_derives` by adding
 /// `#[derive(Insertable)]` to your struct. Structs which derive this trait must
 /// also be annotated with `#[table_name = "some_table_name"]`. If the field
 /// name of your struct differs from the name of the column, you can annotate

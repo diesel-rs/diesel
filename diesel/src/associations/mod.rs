@@ -68,7 +68,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -122,7 +121,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -177,7 +175,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -236,7 +233,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -352,7 +348,7 @@ impl<'a, T: HasTable> HasTable for &'a T {
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_codegen` by adding
+/// This trait can be automatically derived using `diesel_derives` by adding
 /// `#[derive(Identifiable)]` to your struct. The primary key will be assumed to be a field and
 /// column called `id`. If it's not, you can annotate your structure with `#[primary_key(your_id)]`
 /// or `#[primary_key(your_id, second_id)]`. By default the table will be assumed to be the plural

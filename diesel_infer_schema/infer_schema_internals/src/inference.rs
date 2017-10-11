@@ -119,7 +119,7 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
             "At least one backend must be specified for use with this crate.\n \
              In Cargo.toml, please specify `features = [\"postgresql\"]`, \
              `features = [\"mysql\"]`, or `features = [\"sqlite\"]`\n\n \
-             ex. `diesel_codegen { features = [\"postgres\"] }`\n "
+             ex. `infer_schema_internals { features = [\"postgres\"] }`\n "
         ),
     }
 }

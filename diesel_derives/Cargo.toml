@@ -1,5 +1,5 @@
 [package]
-name = "diesel_codegen"
+name = "diesel_derives"
 version = "0.16.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
@@ -7,7 +7,7 @@ description = "Custom derive and procedural macros for Diesel"
 readme = "README.md"
 documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
-repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
+repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
