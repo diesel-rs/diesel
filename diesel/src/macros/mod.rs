@@ -975,7 +975,7 @@ macro_rules! joinable_inner {
 #[macro_export]
 macro_rules! enable_multi_table_joins {
     ($left_mod:ident, $right_mod:ident) => {
-        enable_multi_table_joins!($left_mod, $right_mod);
+        allow_tables_to_appear_in_same_query!($left_mod, $right_mod);
     }
 }
 
