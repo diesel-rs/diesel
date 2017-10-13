@@ -7,6 +7,7 @@ use std::{ptr, str};
 
 use result::*;
 use result::Error::DatabaseError;
+use connection::AsRawHandle;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -66,6 +67,14 @@ impl RawConnection {
 
     pub fn last_error_code(&self) -> libc::c_int {
         unsafe { ffi::sqlite3_extended_errcode(self.internal_connection) }
+    }
+}
+
+impl AsRawHandle for RawConnection {
+    type Target = *mut ffi::sqlite3;
+
+    fn as_raw(&self) -> *mut ffi::sqlite3 {
+        self.internal_connection
     }
 }
 

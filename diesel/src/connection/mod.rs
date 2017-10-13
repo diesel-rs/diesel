@@ -153,3 +153,12 @@ pub trait Connection: SimpleConnection + Sized + Send {
     #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager;
 }
+
+/// Get access to the underlying connection
+pub trait AsRawHandle {
+    type Target;
+
+    /// Get a copy of raw handle of the underlying database library. You are
+    /// responsible for tracking ownership and synchronizing access.
+    fn as_raw(&self) -> Self::Target;
+}

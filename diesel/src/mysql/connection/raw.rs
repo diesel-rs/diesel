@@ -8,6 +8,7 @@ use std::sync::{Once, ONCE_INIT};
 use result::{ConnectionError, ConnectionResult, QueryResult};
 use super::url::ConnectionOptions;
 use super::stmt::Statement;
+use connection::AsRawHandle;
 
 pub struct RawConnection(*mut ffi::MYSQL);
 
@@ -178,6 +179,14 @@ impl RawConnection {
         let more_results = unsafe { ffi::mysql_next_result(self.0) == 0 };
         self.did_an_error_occur()?;
         Ok(more_results)
+    }
+}
+
+impl AsRawHandle for RawConnection {
+    type Target = *mut ffi::MYSQL;
+
+    fn as_raw(&self) -> *mut ffi::MYSQL {
+        self.0
     }
 }
 
