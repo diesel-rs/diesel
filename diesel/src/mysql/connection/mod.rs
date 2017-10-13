@@ -98,6 +98,14 @@ impl Connection for MysqlConnection {
     }
 }
 
+impl AsRawHandle for MysqlConnection {
+    type Target = <RawConnection as AsRawHandle>::Target;
+
+    fn as_raw(&self) -> Self::Target {
+        self.raw_connection.as_raw()
+    }
+}
+
 impl MysqlConnection {
     fn prepare_query<T>(&self, source: &T) -> QueryResult<MaybeCached<Statement>>
     where

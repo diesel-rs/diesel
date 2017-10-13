@@ -8,6 +8,7 @@ use std::os::raw as libc;
 use std::{ptr, str};
 
 use result::*;
+use connection::AsRawHandle;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -87,6 +88,14 @@ impl RawConnection {
             param_types,
         );
         RawResult::new(ptr, self)
+    }
+}
+
+impl AsRawHandle for RawConnection {
+    type Target = *mut PGconn;
+
+    fn as_raw(&self) -> *mut PGconn {
+        self.internal_connection
     }
 }
 

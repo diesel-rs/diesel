@@ -94,6 +94,14 @@ impl Connection for PgConnection {
     }
 }
 
+impl AsRawHandle for PgConnection {
+    type Target = <RawConnection as AsRawHandle>::Target;
+
+    fn as_raw(&self) -> Self::Target {
+        self.raw_connection.as_raw()
+    }
+}
+
 impl PgConnection {
     #[cfg_attr(feature = "clippy", allow(type_complexity))]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(

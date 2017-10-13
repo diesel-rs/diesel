@@ -91,6 +91,14 @@ impl Connection for SqliteConnection {
     }
 }
 
+impl AsRawHandle for SqliteConnection {
+    type Target = <RawConnection as AsRawHandle>::Target;
+
+    fn as_raw(&self) -> Self::Target {
+        self.raw_connection.as_raw()
+    }
+}
+
 impl SqliteConnection {
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
         &self,
