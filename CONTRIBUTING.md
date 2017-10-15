@@ -50,7 +50,6 @@ Thank you! We'll try to respond as quickly as possible.
 
 ## Contribute code to Diesel
 
-
 ### Setting up Diesel locally
 
 1. Install Rust using [rustup], which allows you to easily switch between Rust
@@ -63,7 +62,7 @@ Thank you! We'll try to respond as quickly as possible.
    set a custom nightly version for a project using
 
    ```
-   rustup override add nightly-2017-06-06
+   rustup override add nightly-2017-09-20
    ```
 
 2. Install the system libraries needed to interface with the database systems
