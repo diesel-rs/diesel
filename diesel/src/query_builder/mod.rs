@@ -52,6 +52,7 @@ use result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
+/// A specialized Result type used with the query builder.
 pub type BuildQueryResult = Result<(), Box<Error + Send + Sync>>;
 
 /// Apps should not need to concern themselves with this trait.
@@ -75,11 +76,24 @@ pub trait QueryBuilder<DB: Backend> {
     fn finish(self) -> String;
 }
 
-/// A complete SQL query with a return type. This can be a select statement, or
-/// a command such as `update` or `insert` with a `RETURNING` clause. Unlike
-/// [`Expression`](../expression/trait.Expression.html), types implementing this
+/// A complete SQL query with a return type.
+///
+/// This can be a select statement, or a command such as `update` or `insert`
+/// with a `RETURNING` clause. Unlike [`Expression`], types implementing this
 /// trait are guaranteed to be executable on their own.
+///
+/// Just because a type doesn't implement this trait doesn't mean that it
+/// doesn't represent a complete SQL query, just that it doesn't have a return
+/// type. For example, an `INSERT` statement without a `RETURNING` clause will
+/// not implement this trait, but can still be executed.
+///
+/// [`Expression`]: ../expression/trait.Expression.html
 pub trait Query {
+    /// The SQL type that this query represents.
+    ///
+    /// This is the SQL type of the `SELECT` clause for select statements, and
+    /// the SQL type of the `RETURNING` clause for insert, update, or delete
+    /// statements.
     type SqlType;
 }
 
@@ -87,11 +101,15 @@ impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
 }
 
-/// An untyped fragment of SQL. This may be a complete SQL command (such as
-/// an update statement without a `RETURNING` clause), or a subsection (such as
-/// our internal types used to represent a `WHERE` clause). All methods on
-/// [`Connection`](../connection/trait.Connection.html) that execute a query require this
-/// trait to be implemented.
+/// An untyped fragment of SQL.
+///
+/// This may be a complete SQL command (such as an update statement without a
+/// `RETURNING` clause), or a subsection (such as our internal types used to
+/// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
+/// [`LoadDsl`] will generally require that this trait be implemented.
+///
+/// [`ExecuteDsl`]: ../prelude/trait.ExecuteDsl.html
+/// [`LoadDsl`]: ../prelude/trait.LoadDsl.html
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///
@@ -165,9 +183,10 @@ impl<DB: Backend> QueryFragment<DB> for () {
     }
 }
 
-/// Types that can be converted into a complete, typed SQL query. This is used
-/// internally to automatically add the right select clause when none is
-/// specified, or to automatically add `RETURNING *` in certain contexts
+/// Types that can be converted into a complete, typed SQL query.
+///
+/// This is used internally to automatically add the right select clause when
+/// none is specified, or to automatically add `RETURNING *` in certain contexts
 pub trait AsQuery {
     /// The SQL type of `Self::Query`
     type SqlType;
