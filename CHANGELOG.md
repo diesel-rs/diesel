@@ -159,6 +159,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Changed the migration directory name format to `%Y-%m-%d-%H%M%S`.
 
+* `between` and `not_between` now take two arguments, rather than a range.
+
 ### Removed
 
 * `debug_sql!` has been deprecated in favor of `diesel::debug_query`.

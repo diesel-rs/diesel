@@ -290,7 +290,8 @@ pub trait ExpressionMethods: Expression + Sized {
         LtEq::new(self, other.as_expression())
     }
 
-    /// Creates a SQL `BETWEEN` expression using the given range.
+    /// Creates a SQL `BETWEEN` expression using the given lower and upper
+    /// bounds.
     ///
     /// # Example
     ///
@@ -305,22 +306,22 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// let data = animals
     ///     .select(species)
-    ///     .filter(legs.between(2..6))
+    ///     .filter(legs.between(2, 6))
     ///     .first(&connection);
     /// #
     /// assert_eq!(Ok("dog".to_string()), data);
     /// # }
-    fn between<T: AsExpression<Self::SqlType>>(
-        self,
-        other: ::std::ops::Range<T>,
-    ) -> Between<Self, And<T::Expression, T::Expression>> {
-        Between::new(
-            self,
-            And::new(other.start.as_expression(), other.end.as_expression()),
-        )
+    /// ```
+    fn between<T, U>(self, lower: T, upper: U) -> Between<Self, And<T::Expression, U::Expression>>
+    where
+        T: AsExpression<Self::SqlType>,
+        U: AsExpression<Self::SqlType>,
+    {
+        Between::new(self, And::new(lower.as_expression(), upper.as_expression()))
     }
 
-    /// Creates a SQL `NOT BETWEEN` expression using the given range.
+    /// Creates a SQL `NOT BETWEEN` expression using the given lower and upper
+    /// bounds.
     ///
     /// # Example
     ///
@@ -335,19 +336,21 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// let data = animals
     ///     .select(species)
-    ///     .filter(legs.not_between(2..6))
+    ///     .filter(legs.not_between(2, 6))
     ///     .first(&connection);
     /// #
     /// assert_eq!(Ok("spider".to_string()), data);
     /// # }
-    fn not_between<T: AsExpression<Self::SqlType>>(
+    fn not_between<T, U>(
         self,
-        other: ::std::ops::Range<T>,
-    ) -> NotBetween<Self, And<T::Expression, T::Expression>> {
-        NotBetween::new(
-            self,
-            And::new(other.start.as_expression(), other.end.as_expression()),
-        )
+        lower: T,
+        upper: U,
+    ) -> NotBetween<Self, And<T::Expression, U::Expression>>
+    where
+        T: AsExpression<Self::SqlType>,
+        U: AsExpression<Self::SqlType>,
+    {
+        NotBetween::new(self, And::new(lower.as_expression(), upper.as_expression()))
     }
 
     /// Creates a SQL `DESC` expression, representing this expression in
