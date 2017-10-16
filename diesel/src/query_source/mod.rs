@@ -5,9 +5,12 @@
 pub mod joins;
 mod peano_numbers;
 
+use std::error::Error;
+
 use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
+use row::NamedRow;
 use types::{FromSqlRow, HasSqlType};
 
 pub use self::joins::JoinTo;
@@ -23,6 +26,33 @@ where
     type Row: FromSqlRow<ST, DB>;
 
     fn build(row: Self::Row) -> Self;
+}
+
+/// Deserializes the result of a query constructed with [`sql_query`].
+///
+/// # Deriving
+///
+/// This trait can be automatically derived by `diesel_codegen`. To derive this
+/// trait, the struct must be associated with a single table. If the table name
+/// is different than `"struct_name" + "s"`, you can annotate your struct with
+/// `#[table_name = "some_table"]`.
+///
+/// The module for that table must be in scope. For example, to derive this for
+/// a struct called `User`, you will likely need a line such as `use
+/// schema::users;`
+///
+/// If the name of a field on your struct is different than the column in your
+/// `table!` declaration, or if you are deriving this trait on a tuple struct,
+/// you can annotate the field with `#[column_name = "some_column"]`. For tuple
+/// structs, all fields must have this annotation.
+///
+/// [`sql_query`]: ../fn.sql_query.html
+pub trait QueryableByName<DB>
+where
+    Self: Sized,
+    DB: Backend,
+{
+    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
 #[doc(hidden)]

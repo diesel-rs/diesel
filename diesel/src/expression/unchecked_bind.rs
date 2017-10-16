@@ -1,3 +1,5 @@
+#![cfg(feature = "with-deprecated")]
+
 use std::marker::PhantomData;
 
 use backend::Backend;

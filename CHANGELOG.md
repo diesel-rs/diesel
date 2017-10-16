@@ -42,6 +42,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `allow_tables_to_appear_in_same_query!` can now take more than 2 tables, and is the same
   as invoking it separately for every combination of those tables.
 
+* Added `sql_query`, a new API for dropping to raw SQL that is more pleasant to
+  use than `sql` for complete queries. The main difference from `sql` is that
+  you do not need to state the return type, and data is loaded from the query by
+  name rather than by index.
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
@@ -73,6 +78,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Deprecated `enable_multi_table_joins` in favor of
   `allow_tables_to_appear_in_same_query!`
+
+* Deprecated `SqlLiteral#bind`. `sql` is intended for use with small fragments
+  of SQL, not complete queries. Writing bind parameters in raw SQL when you are
+  not writing the whole query is error-prone. Use `sql_query` if you need raw
+  SQL with bind parameters.
 
 ### Removed
 

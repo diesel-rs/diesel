@@ -1,4 +1,4 @@
-use super::{posts, User};
+use super::*;
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
 #[belongs_to(User)]

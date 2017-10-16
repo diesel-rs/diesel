@@ -38,6 +38,7 @@ mod identifiable;
 mod insertable;
 mod model;
 mod queryable;
+mod queryable_by_name;
 #[cfg(feature = "diesel_infer_schema")]
 mod schema_inference;
 #[cfg(feature = "diesel_infer_schema")]
@@ -51,6 +52,11 @@ use syn::parse_derive_input;
 #[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
+}
+
+#[proc_macro_derive(QueryableByName, attributes(table_name, column_name))]
+pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
+    expand_derive(input, queryable_by_name::derive)
 }
 
 #[proc_macro_derive(Identifiable, attributes(table_name, primary_key))]

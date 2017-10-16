@@ -6,7 +6,7 @@ mod url;
 use connection::*;
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
-use query_source::Queryable;
+use query_source::{Queryable, QueryableByName};
 use result::*;
 use self::raw::RawConnection;
 use self::stmt::Statement;
@@ -78,6 +78,19 @@ impl Connection for MysqlConnection {
                 .map(U::build)
                 .map_err(DeserializationError)
         })
+    }
+
+    #[doc(hidden)]
+    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
+    where
+        T: QueryFragment<Self::Backend> + QueryId,
+        U: QueryableByName<Self::Backend>,
+    {
+        use result::Error::DeserializationError;
+
+        let mut stmt = self.prepare_query(source)?;
+        let results = unsafe { stmt.named_results()? };
+        results.map(|row| U::build(&row).map_err(DeserializationError))
     }
 
     #[doc(hidden)]

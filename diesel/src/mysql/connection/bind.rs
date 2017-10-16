@@ -34,6 +34,16 @@ impl Binds {
         Binds { data: data }
     }
 
+    pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
+        let data = fields
+            .iter()
+            .map(|field| field.type_)
+            .map(BindData::for_output)
+            .collect();
+
+        Binds { data }
+    }
+
     pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
