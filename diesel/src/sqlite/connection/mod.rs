@@ -80,7 +80,7 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
         U: QueryableByName<Self::Backend>,
     {
-        let mut statement = try!(self.prepare_query(source));
+        let mut statement = self.prepare_query(source)?;
         let statement_use = StatementUse::new(&mut statement);
         let iter = NamedStatementIterator::new(statement_use)?;
         iter.collect()

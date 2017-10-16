@@ -78,13 +78,12 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    #[doc(hidden)]
     fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
     where
         T: QueryFragment<Pg> + QueryId,
         U: QueryableByName<Pg>,
     {
-        let (query, params) = try!(self.prepare_query(source));
+        let (query, params) = self.prepare_query(source)?;
         query
             .execute(&self.raw_connection, &params)
             .and_then(|r| NamedCursor::new(r).collect())

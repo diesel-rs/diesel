@@ -88,7 +88,7 @@ impl Connection for MysqlConnection {
     {
         use result::Error::DeserializationError;
 
-        let mut stmt = try!(self.prepare_query(source));
+        let mut stmt = self.prepare_query(source)?;
         let results = unsafe { stmt.named_results()? };
         results.map(|row| U::build(&row).map_err(DeserializationError))
     }
