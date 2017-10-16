@@ -132,6 +132,12 @@ impl RawResult {
     pub fn as_ptr(&self) -> *mut PGresult {
         self.0
     }
+
+    pub fn error_message(&self) -> &str {
+        let ptr = unsafe { PQresultErrorMessage(self.0) };
+        let cstr = unsafe { CStr::from_ptr(ptr) };
+        cstr.to_str().unwrap_or_default()
+    }
 }
 
 impl Drop for RawResult {
