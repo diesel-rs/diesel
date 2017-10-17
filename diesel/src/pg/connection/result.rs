@@ -106,10 +106,8 @@ struct PgErrorInformation(RawResult);
 
 impl DatabaseErrorInformation for PgErrorInformation {
     fn message(&self) -> &str {
-        match get_result_field(self.0.as_ptr(), ResultField::MessagePrimary) {
-            Some(e) => e,
-            None => unreachable!("Per PGs documentation, all errors should have a message"),
-        }
+        get_result_field(self.0.as_ptr(), ResultField::MessagePrimary)
+            .unwrap_or_else(|| self.0.error_message())
     }
 
     fn details(&self) -> Option<&str> {
