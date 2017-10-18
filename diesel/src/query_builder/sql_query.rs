@@ -38,7 +38,6 @@ impl SqlQuery {
     ///
     /// ```
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # use schema::users;

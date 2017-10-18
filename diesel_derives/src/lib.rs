@@ -19,11 +19,6 @@ macro_rules! t {
     };
 }
 
-extern crate diesel;
-#[cfg(feature = "diesel_infer_schema")]
-extern crate diesel_infer_schema;
-#[cfg(all(feature = "dotenv", feature = "diesel_infer_schema"))]
-extern crate dotenv;
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
