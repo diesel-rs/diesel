@@ -3,7 +3,7 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use deserialize;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use expression::{AsExpression, AppearsOnTable, Expression, AsExpressionList, NonAggregate, SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;
@@ -244,6 +244,16 @@ macro_rules! tuple_impls {
                 fn tuple_append(self, next: Next) -> Self::Output {
                     let ($($T,)+) = self;
                     ($($T,)+ next)
+                }
+            }
+
+            impl<$($T,)+ ST> AsExpressionList<ST> for ($($T,)+) where
+                $($T: AsExpression<ST>,)+
+            {
+                type Expression = ($($T::Expression,)+);
+
+                fn as_expression_list(self) -> Self::Expression {
+                    ($(self.$idx.as_expression(),)+)
                 }
             }
         )+

@@ -339,3 +339,17 @@ impl<'a, QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> + 'a {
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
+
+/// Converts a tuple of values into a tuple of Diesel expressions.
+///
+/// This trait is similar to [`AsExpression`], but it operates on tuples.
+/// The expressions must all be of the same SQL type.
+///
+/// [`AsExpression`]: trait.AsExpression.html
+pub trait AsExpressionList<ST> {
+    /// The final output expression
+    type Expression;
+
+    /// Perform the conversion
+    fn as_expression_list(self) -> Self::Expression;
+}
