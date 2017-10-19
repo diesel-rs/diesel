@@ -73,6 +73,86 @@ macro_rules! sql_function_body {
 }
 
 #[macro_export]
+#[doc(hidden)]
+macro_rules! sql_array_function {
+    ($fn_name:ident, $struct_name:ident, $arg_type:ty) => {
+        #[allow(non_camel_case_types)]
+        #[derive(Debug, Clone)]
+        #[doc(hidden)]
+        pub struct $struct_name<a> {
+            a: Vec<a>,
+        }
+
+        #[allow(non_camel_case_types)]
+        pub type $fn_name<a> = $struct_name<
+            <a as $crate::expression::AsExpression<$arg_type>>::Expression
+        >;
+
+        #[allow(non_camel_case_types)]
+        pub fn $fn_name<a>(a: Vec<a>)
+            -> $fn_name<a>
+            where a: $crate::expression::AsExpression<$arg_type>
+        {
+            $struct_name {
+                a: a.into_iter().map(|a| a.as_expression()).collect(),
+            }
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<a> $crate::expression::Expression for $struct_name<a> where
+            for <'a> (&'a a): $crate::expression::Expression,
+        {
+            type SqlType = Array<$arg_type>;
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<a, DB> $crate::query_builder::QueryFragment<DB> for $struct_name<a> where
+            DB: $crate::backend::Backend,
+            for <'a> (&'a a): $crate::query_builder::QueryFragment<DB>,
+        {
+            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                out.push_sql(concat!("ARRAY["));
+                let mut f = true;
+                for x in &self.a {
+                    if f {
+                        f = false;
+                    } else {
+                        out.push_sql(", ");
+                    }
+                    $crate::query_builder::QueryFragment::walk_ast(
+                        &(&x), out.reborrow())?;
+                }
+                out.push_sql("]");
+                Ok(())
+            }
+        }
+
+        impl_query_id!($struct_name<a>);
+
+        #[allow(non_camel_case_types)]
+        impl<a, QS> $crate::expression::SelectableExpression<QS> for $struct_name<a> where
+            a: $crate::expression::SelectableExpression<QS>,
+            $struct_name<a>: $crate::expression::AppearsOnTable<QS>,
+        {
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<a, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<a> where
+            a: $crate::expression::AppearsOnTable<QS>,
+            $struct_name<a>: $crate::expression::Expression,
+        {
+        }
+
+        #[allow(non_camel_case_types)]
+        impl<a> $crate::expression::NonAggregate for $struct_name<a> where
+            a: $crate::expression::NonAggregate,
+            $struct_name<a>: $crate::expression::Expression,
+        {
+        }
+    }
+}
+
+#[macro_export]
 /// Declare a sql function for use in your code. Useful if you have your own SQL functions that
 /// you'd like to use. You can optionally provide a doc string as well. `$struct_name` should just
 /// be any unique name. You will not need to reference it in your code, but it is required due to
