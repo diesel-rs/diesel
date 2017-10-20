@@ -57,8 +57,19 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   use associated constants where appropriate.
 
 * You will now need to invoke `allow_tables_to_appear_in_same_query!` any time two tables
-  appear together in the same query, even if there is a `joinable!` invocation
-  for those tables.
+  appear together in the same query, even if there is a `joinable!` invocationfor those tables.
+
+* The story about the custom derive annotation changed. All pure custom
+ derive procedural macro implementations (`Queryable`, `QueryableByName`,
+ `Identifiable`, `Insertable`, `AsChangeset` and `Associated`) are now
+ provided by `diesel_derives`. Furthermore those annotations are reexported
+ by `diesel` itself, so there is no need to depend on a second crate for
+ custom derives anymore. The `infer_schema!` and `infer_table_from_schema!`
+ macro is moved from diesel into the `diesel_infer_schema` crate. All
+ functionality related to migrations (The `diesel::migrations` module and the
+ `embed_migrations!` macro) is moved to the `diesel_migrations` crate. If you
+ are using any of those, simply depend on the new crates and your code will
+ continue to build.
 
 ### Deprecated
 
