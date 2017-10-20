@@ -73,6 +73,7 @@ macro_rules! sql_function_body {
 }
 
 #[doc(hidden)]
+#[cfg(feature = "postgres")]
 macro_rules! sql_array_function {
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident, $arg_struct_name:ident),*)) => {
         #[allow(non_camel_case_types)]
@@ -145,8 +146,22 @@ macro_rules! sql_array_function {
     }
 }
 
+#[cfg(feature = "postgres")]
+sql_array_function!(array1, array1_t, (a, ax));
+#[cfg(feature = "postgres")]
 sql_array_function!(array2, array2_t, (a, ax, b, bx));
+#[cfg(feature = "postgres")]
 sql_array_function!(array3, array3_t, (a, ax, b, bx, c, cx));
+#[cfg(feature = "postgres")]
+sql_array_function!(array4, array4_t, (a, ax, b, bx, c, cx, d, dx));
+#[cfg(feature = "postgres")]
+sql_array_function!(array5, array5_t, (a, ax, b, bx, c, cx, d, dx, e, ex));
+#[cfg(feature = "postgres")]
+sql_array_function!(array6, array6_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx));
+#[cfg(feature = "postgres")]
+sql_array_function!(array7, array7_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx, g, gx));
+#[cfg(feature = "postgres")]
+sql_array_function!(array8, array8_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx, g, gx, h, hx));
 
 #[macro_export]
 /// Declare a sql function for use in your code. Useful if you have your own SQL functions that

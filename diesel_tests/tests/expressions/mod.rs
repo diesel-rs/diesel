@@ -354,3 +354,10 @@ fn test_avg_for_numeric() {
     };
     assert_eq!(Ok(Some(expected_result)), result);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn test_arrays() {
+    let connection = connection();
+    
+}
