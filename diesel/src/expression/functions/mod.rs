@@ -72,85 +72,81 @@ macro_rules! sql_function_body {
     }
 }
 
-#[macro_export]
 #[doc(hidden)]
 macro_rules! sql_array_function {
-    ($fn_name:ident, $struct_name:ident, $arg_type:ty) => {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident, $arg_struct_name:ident),*)) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug, Clone)]
         #[doc(hidden)]
-        pub struct $struct_name<a> {
-            a: Vec<a>,
+        pub struct $struct_name<r, $($arg_name),*> {
+            $($arg_name: $arg_name),*,
+            marker: ::std::marker::PhantomData<r>,
         }
 
         #[allow(non_camel_case_types)]
-        pub type $fn_name<a> = $struct_name<
-            <a as $crate::expression::AsExpression<$arg_type>>::Expression
-        >;
+        pub type $fn_name<r, $($arg_name, $arg_struct_name),*> = $struct_name<r, $(
+            <$arg_name as $crate::expression::AsExpression<$arg_struct_name>>::Expression
+        ),*>;
 
         #[allow(non_camel_case_types)]
-        pub fn $fn_name<a>(a: Vec<a>)
-            -> $fn_name<a>
-            where a: $crate::expression::AsExpression<$arg_type>
+        pub fn $fn_name<r, $($arg_name, $arg_struct_name),*>($($arg_name: $arg_name),*)
+                        -> $fn_name<r, $($arg_name, $arg_struct_name),*>
+            where $($arg_name: $crate::expression::AsExpression<$arg_struct_name>),+
         {
             $struct_name {
-                a: a.into_iter().map(|a| a.as_expression()).collect(),
+                $($arg_name: $arg_name.as_expression()),+,
+                marker: ::std::marker::PhantomData,
             }
         }
 
         #[allow(non_camel_case_types)]
-        impl<a> $crate::expression::Expression for $struct_name<a> where
-            for <'a> (&'a a): $crate::expression::Expression,
+        impl<r, $($arg_name),*> $crate::expression::Expression for $struct_name<r, $($arg_name),*> where
+            for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
         {
-            type SqlType = Array<$arg_type>;
+            type SqlType = $crate::pg::types::sql_types::Array<r>;
         }
 
         #[allow(non_camel_case_types)]
-        impl<a, DB> $crate::query_builder::QueryFragment<DB> for $struct_name<a> where
+        impl<r, $($arg_name),*, DB> $crate::query_builder::QueryFragment<DB> for $struct_name<r, $($arg_name),*> where
             DB: $crate::backend::Backend,
-            for <'a> (&'a a): $crate::query_builder::QueryFragment<DB>,
+            for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
         {
             fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                 out.push_sql(concat!("ARRAY["));
-                let mut f = true;
-                for x in &self.a {
-                    if f {
-                        f = false;
-                    } else {
-                        out.push_sql(", ");
-                    }
-                    $crate::query_builder::QueryFragment::walk_ast(
-                        &(&x), out.reborrow())?;
-                }
+                $crate::query_builder::QueryFragment::walk_ast(
+                    &($(&self.$arg_name),*), out.reborrow())?;
                 out.push_sql("]");
                 Ok(())
             }
         }
 
-        impl_query_id!($struct_name<a>);
+        impl_query_id!($struct_name<r, $($arg_name),+>);
 
         #[allow(non_camel_case_types)]
-        impl<a, QS> $crate::expression::SelectableExpression<QS> for $struct_name<a> where
-            a: $crate::expression::SelectableExpression<QS>,
-            $struct_name<a>: $crate::expression::AppearsOnTable<QS>,
+        impl<r, $($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<r, $($arg_name),*> where
+            $($arg_name: $crate::expression::SelectableExpression<QS>,)*
+            $struct_name<r, $($arg_name),*>: $crate::expression::AppearsOnTable<QS>,
         {
         }
 
         #[allow(non_camel_case_types)]
-        impl<a, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<a> where
-            a: $crate::expression::AppearsOnTable<QS>,
-            $struct_name<a>: $crate::expression::Expression,
+        impl<r, $($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<r, $($arg_name),*> where
+            $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
+            $struct_name<r, $($arg_name),*>: $crate::expression::Expression,
         {
         }
 
         #[allow(non_camel_case_types)]
-        impl<a> $crate::expression::NonAggregate for $struct_name<a> where
-            a: $crate::expression::NonAggregate,
-            $struct_name<a>: $crate::expression::Expression,
+        impl<r, $($arg_name),*> $crate::expression::NonAggregate for $struct_name<r, $($arg_name),*> where
+            $($arg_name: $crate::expression::NonAggregate,)*
+            $struct_name<r, $($arg_name),*>: $crate::expression::Expression,
         {
         }
     }
 }
+
+sql_array_function!(array2, array2_t, (a, ax, b, bx));
+sql_array_function!(array3, array3_t, (a, ax, b, bx, c, cx));
 
 #[macro_export]
 /// Declare a sql function for use in your code. Useful if you have your own SQL functions that
