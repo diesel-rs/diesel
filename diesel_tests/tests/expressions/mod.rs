@@ -357,7 +357,35 @@ fn test_avg_for_numeric() {
 
 #[test]
 #[cfg(feature = "postgres")]
-fn test_arrays() {
+fn test_arrays_a() {
     let connection = connection();
-    
+
+    use ::diesel::types::Int4;
+    let value = select(array2::<Int4, _, Int4, _ ,Int4>(1, 2))
+        .get_result::<Vec<i32>>(&connection)
+        .unwrap();
+
+    assert_eq!(value, vec![1, 2]);
+}
+
+
+#[test]
+#[cfg(feature = "postgres")]
+fn test_arrays_b() {
+    use ::diesel::types::{Int4, Array};
+    sql_function!(unnest, unnest_t, (a: Array<Int4>) -> Int4);
+
+    use self::numbers::columns::*;
+    use self::numbers::table as numbers;
+
+    let connection = connection();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (7)")
+        .unwrap();
+
+    let value = numbers.select(unnest(array2(n, n + n)))
+        .load::<i32>(&connection)
+        .unwrap();
+
+    assert_eq!(value, vec![7, 14]);
 }
