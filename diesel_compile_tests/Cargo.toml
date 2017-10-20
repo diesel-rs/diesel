@@ -11,5 +11,5 @@ compiletest_rs = "0.3"
 
 [replace]
 "diesel:0.16.0" = { path = "../diesel" }
-"diesel_codegen:0.16.0" = { path = "../diesel_codegen" }
+"diesel_derive:0.16.0" = { path = "../diesel_derive" }
 "diesel_infer_schema:0.16.0" = { path = "../diesel_infer_schema" }

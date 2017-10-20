@@ -348,8 +348,8 @@ impl<'a, T: HasTable> HasTable for &'a T {
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_derives` by adding
-/// `#[derive(Identifiable)]` to your struct. The primary key will be assumed to be a field and
+/// This trait can be automatically derived by adding `#[derive(Identifiable)]`
+/// to your struct. The primary key will be assumed to be a field and
 /// column called `id`. If it's not, you can annotate your structure with `#[primary_key(your_id)]`
 /// or `#[primary_key(your_id, second_id)]`. By default the table will be assumed to be the plural
 /// form of the struct name (using *very* dumb pluralization -- it just adds an `s` at the end). If

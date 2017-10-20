@@ -1,10 +1,8 @@
 /// Implements the [`AsChangeset`][changeset] trait for a given struct. This
 /// macro should be called with the name of the table you wish to use the struct
-/// with, followed by the entire struct body. This macro mirrors
-/// `#[as_changeset]` from [`diesel_derives`][diesel_derives]
+/// with, followed by the entire struct body.
 ///
 /// [changeset]: query_builder/trait.AsChangeset.html
-/// [diesel_derives]: https://github.com/diesel-rs/diesel/tree/master/diesel_derives
 ///
 /// # Options
 ///

@@ -17,8 +17,8 @@ pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
 /// Trait indicating that a record can be queried from the database. This trait
-/// can be derived automatically using `diesel_derives`. This trait can only be derived for
-/// structs, not enums.
+/// can be derived automatically using `#[derive(Queryable)]`. This trait can
+/// only be derived for structs, not enums.
 pub trait Queryable<ST, DB>
 where
     DB: Backend + HasSqlType<ST>,
@@ -32,10 +32,9 @@ where
 ///
 /// # Deriving
 ///
-/// This trait can be automatically derived by `diesel_codegen`. To derive this
-/// trait, the struct must be associated with a single table. If the table name
-/// is different than `"struct_name" + "s"`, you can annotate your struct with
-/// `#[table_name = "some_table"]`.
+/// To derive this trait, the struct must be associated with a single table.
+/// If the table name is different than `"struct_name" + "s"`, you can
+/// annotate your struct with `#[table_name = "some_table"]`.
 ///
 /// The module for that table must be in scope. For example, to derive this for
 /// a struct called `User`, you will likely need a line such as `use

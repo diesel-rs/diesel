@@ -3,7 +3,7 @@ Schema in Depth
 
 In this guide we're going to look at what exactly `infer_schema!`, `infer_table_from_schema!`, and `table!` do. For `table!` we will show a simplified version of the actual code that gets generated, and explain how each piece is relevant to you. If you've ever been confused about what exactly is getting generated, or what `use schema::posts::dsl::*` means, this is the right place to be.
 
-`infer_schema!` is a macro provided by `diesel_codegen` when you have enabled the feature for one or more database backends. The macro will establish a database connection at compile time, query for a list of all the tables, and generate `infer_table_from_schema!` for each one. `infer_schema` will skip any table names which start with `__`.
+`infer_schema!` is a macro provided by `diesel_infer_schema` when you have enabled the feature for one or more database backends. The macro will establish a database connection at compile time, query for a list of all the tables, and generate `infer_table_from_schema!` for each one. `infer_schema` will skip any table names which start with `__`.
 
 `infer_table_from_schema!` has a similar role. It will establish a database connection at compile time, and query the database for the list of columns for the given table. It will then use this information to generate an invocation of `table!` for you.
 

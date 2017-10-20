@@ -9,7 +9,6 @@
 //! ## Crates
 //!
 //! * **Diesel**: core libary, documented here
-//! * [**Diesel Derives**](https://github.com/diesel-rs/diesel/tree/master/diesel_derives): library of custom derives
 //! * [**Diesel CLI**](https://github.com/diesel-rs/diesel/tree/master/diesel_cli): command line tool that aids in managing your database schema
 //!
 #![cfg_attr(feature = "unstable", feature(specialization))]
