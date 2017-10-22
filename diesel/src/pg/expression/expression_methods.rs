@@ -102,19 +102,12 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
+    /// # use schema::users;
     /// #
     /// # table! {
     /// #     posts {
     /// #         id -> Integer,
     /// #         tags -> Array<VarChar>,
-    /// #     }
-    /// # }
-    /// #
-    /// # // FIXME: We shouldn't need to define a users table here
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
     /// #     }
     /// # }
     /// #
@@ -162,19 +155,12 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
+    /// # use schema::users;
     /// #
     /// # table! {
     /// #     posts {
     /// #         id -> Integer,
     /// #         tags -> Array<VarChar>,
-    /// #     }
-    /// # }
-    /// #
-    /// # // FIXME: We shouldn't need to define a users table here
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
     /// #     }
     /// # }
     /// #
@@ -218,19 +204,12 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
+    /// # use schema::users;
     /// #
     /// # table! {
     /// #     posts {
     /// #         id -> Integer,
     /// #         tags -> Array<VarChar>,
-    /// #     }
-    /// # }
-    /// #
-    /// # // FIXME: We shouldn't need to define a users table here
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
     /// #     }
     /// # }
     /// #
