@@ -368,11 +368,59 @@ impl<T> SortExpressionMethods for Desc<T> {}
 
 pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// Returns a SQL `ILIKE` expression
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("../../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let like_sean = users
+    ///     .select(name)
+    ///     .filter(name.ilike("sean"))
+    ///     .get_results::<String>(&connection)
+    ///     .expect("Failed");
+    ///
+    /// let expected = vec!["Sean".to_string()];
+    ///
+    /// assert_eq!(expected, like_sean);
+    /// # }
+    /// ```
     fn ilike<T: AsExpression<Text>>(self, other: T) -> ILike<Self, T::Expression> {
         ILike::new(self.as_expression(), other.as_expression())
     }
 
     /// Returns a SQL `NOT ILIKE` expression
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # #[macro_use] extern crate diesel_codegen;
+    /// # include!("../../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let not_like_sean = users
+    ///     .select(name)
+    ///     .filter(name.not_ilike("sean"))
+    ///     .get_results::<String>(&connection)
+    ///     .expect("Failed");
+    ///
+    /// let expected = vec!["Tess".to_string()];
+    ///
+    /// assert_eq!(expected, not_like_sean);
+    /// # }
+    /// ```
     fn not_ilike<T: AsExpression<Text>>(self, other: T) -> NotILike<Self, T::Expression> {
         NotILike::new(self.as_expression(), other.as_expression())
     }
