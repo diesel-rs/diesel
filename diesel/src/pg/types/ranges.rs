@@ -12,14 +12,14 @@ use types::*;
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
 bitflags! {
     struct RangeFlags: u8 {
-        const RANGE_EMPTY = 0x01;
-        const RANGE_LB_INC = 0x02;
-        const RANGE_UB_INC = 0x04;
-        const RANGE_LB_INF = 0x08;
-        const RANGE_UB_INF = 0x10;
-        const RANGE_LB_NULL = 0x20;
-        const RANGE_UB_NULL = 0x40;
-        const RANGE_CONTAIN_EMPTY = 0x80;
+        const EMPTY = 0x01;
+        const LB_INC = 0x02;
+        const UB_INC = 0x04;
+        const LB_INF = 0x08;
+        const UB_INF = 0x10;
+        const LB_NULL = 0x20;
+        const UB_NULL = 0x40;
+        const CONTAIN_EMPTY = 0x80;
     }
 }
 
@@ -104,24 +104,24 @@ where
         let mut lower_bound = Bound::Unbounded;
         let mut upper_bound = Bound::Unbounded;
 
-        if !flags.contains(RANGE_LB_INF) {
+        if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
             let value = T::from_sql(Some(elem_bytes))?;
 
-            lower_bound = if flags.contains(RANGE_LB_INC) {
+            lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
             } else {
                 Bound::Excluded(value)
             };
         }
 
-        if !flags.contains(RANGE_UB_INF) {
+        if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
             let value = T::from_sql(Some(bytes))?;
 
-            upper_bound = if flags.contains(RANGE_UB_INC) {
+            upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
             } else {
                 Bound::Excluded(value)
@@ -142,15 +142,15 @@ where
         out: &mut ToSqlOutput<W, Pg>,
     ) -> Result<IsNull, Box<Error + Send + Sync>> {
         let mut flags = match self.0 {
-            Bound::Included(_) => RANGE_LB_INC,
+            Bound::Included(_) => RangeFlags::LB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
-            Bound::Unbounded => RANGE_LB_INF,
+            Bound::Unbounded => RangeFlags::LB_INF,
         };
 
         flags |= match self.1 {
-            Bound::Included(_) => RANGE_UB_INC,
+            Bound::Included(_) => RangeFlags::UB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
-            Bound::Unbounded => RANGE_UB_INF,
+            Bound::Unbounded => RangeFlags::UB_INF,
         };
 
         out.write_u8(flags.bits())?;
