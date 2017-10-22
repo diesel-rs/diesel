@@ -16,6 +16,9 @@ use sqlite::{Sqlite, SqliteConnection};
 use super::returning_clause::*;
 
 /// The structure returned by [`insert_into`](../../fn.insert_into.html).
+///
+/// The provided methods [`values()`] and [`default_values()`] will insert
+/// data into the targeted table.
 #[derive(Debug, Clone, Copy)]
 pub struct IncompleteInsertStatement<T, Op> {
     target: T,
@@ -82,7 +85,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 }
 
-/// The structure returned by [`insert`](/diesel/fn.insert.html). The only thing that can be done with it
+/// The structure returned by [`insert`](../../fn.insert.html). The only thing that can be done with it
 /// is call `into`.
 #[derive(Debug, Copy, Clone)]
 #[cfg(feature = "with-deprecated")]
