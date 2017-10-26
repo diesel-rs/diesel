@@ -1,3 +1,5 @@
+/// Types related to the construction of an `INSERT` statement.
+
 use std::any::*;
 
 use backend::Backend;
