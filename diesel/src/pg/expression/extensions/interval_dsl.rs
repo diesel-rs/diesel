@@ -2,13 +2,12 @@ use std::ops::Mul;
 
 use data_types::PgInterval;
 
-/// A DSL added to `i64` and `f64` to construct PostgreSQL intervals of less
-/// than 1 day.
+/// A DSL added to integers and `f64` to construct PostgreSQL intervals.
 ///
-/// The behavior of these methods when called on `NAN` or `Infinity` is
-/// undefined.
+/// The behavior of these methods when called on `NAN` or `Infinity`, or when
+/// overflow occurs is unspecified.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -41,65 +40,6 @@ use data_types::PgInterval;
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
-pub trait MicroIntervalDsl: Sized + Mul<Self, Output = Self> {
-    /// Returns a PgInterval representing `self` as microseconds
-    fn microseconds(self) -> PgInterval;
-    #[doc(hidden)]
-    fn times(self, x: i32) -> Self;
-
-    /// Returns a PgInterval representing `self` as milliseconds
-    fn milliseconds(self) -> PgInterval {
-        (self.times(1000)).microseconds()
-    }
-
-    /// Returns a PgInterval representing `self` as seconds
-    fn seconds(self) -> PgInterval {
-        (self.times(1000)).milliseconds()
-    }
-
-    /// Returns a PgInterval representing `self` as minutes
-    fn minutes(self) -> PgInterval {
-        (self.times(60)).seconds()
-    }
-
-    /// Returns a PgInterval representing `self` as hours
-    fn hours(self) -> PgInterval {
-        (self.times(60)).minutes()
-    }
-
-    /// Identical to `microseconds`
-    fn microsecond(self) -> PgInterval {
-        self.microseconds()
-    }
-
-    /// Identical to `milliseconds`
-    fn millisecond(self) -> PgInterval {
-        self.milliseconds()
-    }
-
-    /// Identical to `seconds`
-    fn second(self) -> PgInterval {
-        self.seconds()
-    }
-
-    /// Identical to `minutes`
-    fn minute(self) -> PgInterval {
-        self.minutes()
-    }
-
-    /// Identical to `hours`
-    fn hour(self) -> PgInterval {
-        self.hours()
-    }
-}
-
-/// A DSL added to `i32` and `f64` to construct PostgreSQL intervals of greater
-/// than 1 day.
-///
-/// The behavior of these methods when called on `NAN` or `Infinity` is
-/// undefined.
-///
-/// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -132,13 +72,33 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output = Self> {
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
-pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
+pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
+    /// Returns a PgInterval representing `self` as microseconds
+    fn microseconds(self) -> PgInterval;
     /// Returns a PgInterval representing `self` in days
     fn days(self) -> PgInterval;
     /// Returns a PgInterval representing `self` in months
     fn months(self) -> PgInterval;
-    #[doc(hidden)]
-    fn times(self, x: i32) -> Self;
+
+    /// Returns a PgInterval representing `self` as milliseconds
+    fn milliseconds(self) -> PgInterval {
+        (self * 1000.into()).microseconds()
+    }
+
+    /// Returns a PgInterval representing `self` as seconds
+    fn seconds(self) -> PgInterval {
+        (self * 1000.into()).milliseconds()
+    }
+
+    /// Returns a PgInterval representing `self` as minutes
+    fn minutes(self) -> PgInterval {
+        (self * 60.into()).seconds()
+    }
+
+    /// Returns a PgInterval representing `self` as hours
+    fn hours(self) -> PgInterval {
+        (self * 60.into()).minutes()
+    }
 
     /// Returns a PgInterval representing `self` in weeks
     ///
@@ -146,7 +106,7 @@ pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
     /// be 1 microsecond different than the equivalent string passed to
     /// PostgreSQL.
     fn weeks(self) -> PgInterval {
-        (self.times(7)).days()
+        (self * 7.into()).days()
     }
 
     /// Returns a PgInterval representing `self` in weeks
@@ -161,7 +121,32 @@ pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
     /// assert_eq!(1.09.years(), 1.year() + 1.month());
     /// ```
     fn years(self) -> PgInterval {
-        (self.times(12)).months()
+        (self * 12.into()).months()
+    }
+
+    /// Identical to `microseconds`
+    fn microsecond(self) -> PgInterval {
+        self.microseconds()
+    }
+
+    /// Identical to `milliseconds`
+    fn millisecond(self) -> PgInterval {
+        self.milliseconds()
+    }
+
+    /// Identical to `seconds`
+    fn second(self) -> PgInterval {
+        self.seconds()
+    }
+
+    /// Identical to `minutes`
+    fn minute(self) -> PgInterval {
+        self.minutes()
+    }
+
+    /// Identical to `hours`
+    fn hour(self) -> PgInterval {
+        self.hours()
     }
 
     /// Identical to `days`
@@ -185,27 +170,11 @@ pub trait DayAndMonthIntervalDsl: Sized + Mul<Self, Output = Self> {
     }
 }
 
-impl MicroIntervalDsl for i64 {
+impl IntervalDsl for i32 {
     fn microseconds(self) -> PgInterval {
-        PgInterval::from_microseconds(self)
+        i64::from(self).microseconds()
     }
 
-    fn times(self, x: i32) -> i64 {
-        self * i64::from(x)
-    }
-}
-
-impl MicroIntervalDsl for f64 {
-    fn microseconds(self) -> PgInterval {
-        (self.round() as i64).microseconds()
-    }
-
-    fn times(self, x: i32) -> f64 {
-        self * f64::from(x)
-    }
-}
-
-impl DayAndMonthIntervalDsl for i32 {
     fn days(self) -> PgInterval {
         PgInterval::from_days(self)
     }
@@ -214,12 +183,42 @@ impl DayAndMonthIntervalDsl for i32 {
         PgInterval::from_months(self)
     }
 
-    fn times(self, x: i32) -> i32 {
-        self * x as i32
+    fn milliseconds(self) -> PgInterval {
+        i64::from(self).milliseconds()
+    }
+
+    fn seconds(self) -> PgInterval {
+        i64::from(self).seconds()
+    }
+
+    fn minutes(self) -> PgInterval {
+        i64::from(self).minutes()
+    }
+
+    fn hours(self) -> PgInterval {
+        i64::from(self).hours()
     }
 }
 
-impl DayAndMonthIntervalDsl for f64 {
+impl IntervalDsl for i64 {
+    fn microseconds(self) -> PgInterval {
+        PgInterval::from_microseconds(self)
+    }
+
+    fn days(self) -> PgInterval {
+        (self as i32).days()
+    }
+
+    fn months(self) -> PgInterval {
+        (self as i32).months()
+    }
+}
+
+impl IntervalDsl for f64 {
+    fn microseconds(self) -> PgInterval {
+        (self.round() as i64).microseconds()
+    }
+
     fn days(self) -> PgInterval {
         let fractional_days = (self.fract() * 86_400.0).seconds();
         PgInterval::from_days(self.trunc() as i32) + fractional_days
@@ -232,10 +231,6 @@ impl DayAndMonthIntervalDsl for f64 {
 
     fn years(self) -> PgInterval {
         ((self * 12.0).trunc() as i32).months()
-    }
-
-    fn times(self, x: i32) -> f64 {
-        self * f64::from(x)
     }
 }
 
@@ -253,24 +248,30 @@ mod tests {
     use prelude::*;
     use super::*;
 
+    thread_local! {
+        static CONN: PgConnection = {
+            dotenv().ok();
+
+            let connection_url = ::std::env::var("PG_DATABASE_URL")
+                .or_else(|_| ::std::env::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests");
+            PgConnection::establish(&connection_url).unwrap()
+        }
+    }
+
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
             fn $test_name(val: $tpe) -> bool {
-                dotenv().ok();
-
-                let connection_url = ::std::env::var("PG_DATABASE_URL")
-                    .or_else(|_| ::std::env::var("DATABASE_URL"))
-                    .expect("DATABASE_URL must be set in order to run tests");
-                let connection = PgConnection::establish(&connection_url).unwrap();
-
-                let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
-                let query = select(sql::<types::Interval>(&sql_str));
-                let val = val.$units();
-                query.get_result::<PgInterval>(&connection).map(|res| {
-                    val.months == res.months &&
-                        val.days == res.days &&
-                        (val.microseconds - res.microseconds).abs() <= 1
-                }).unwrap_or(false)
+                CONN.with(|connection| {
+                    let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
+                    let query = select(sql::<types::Interval>(&sql_str));
+                    let val = val.$units();
+                    query.get_result::<PgInterval>(connection).map(|res| {
+                        val.months == res.months &&
+                            val.days == res.days &&
+                            val.microseconds - res.microseconds.abs() <= 1
+                    }).unwrap_or(false)
+                })
             }
 
             quickcheck($test_name as fn($tpe) -> bool);
@@ -278,25 +279,12 @@ mod tests {
     }
 
     #[test]
-    fn micro_intervals_match_pg_values_i64() {
-        test_fn!(i64, test_microseconds, microseconds);
-        test_fn!(i64, test_milliseconds, milliseconds);
-        test_fn!(i64, test_seconds, seconds);
-        test_fn!(i64, test_minutes, minutes);
-        test_fn!(i64, test_hours, hours);
-    }
-
-    #[test]
-    fn micro_intervals_match_pg_values_f64() {
-        test_fn!(f64, test_microseconds, microseconds);
-        test_fn!(f64, test_milliseconds, milliseconds);
-        test_fn!(f64, test_seconds, seconds);
-        test_fn!(f64, test_minutes, minutes);
-        test_fn!(f64, test_hours, hours);
-    }
-
-    #[test]
-    fn day_and_month_intervals_match_pg_values_i32() {
+    fn intervals_match_pg_values_i32() {
+        test_fn!(i32, test_microseconds, microseconds);
+        test_fn!(i32, test_milliseconds, milliseconds);
+        test_fn!(i32, test_seconds, seconds);
+        test_fn!(i32, test_minutes, minutes);
+        test_fn!(i32, test_hours, hours);
         test_fn!(i32, test_days, days);
         test_fn!(i32, test_weeks, weeks);
         test_fn!(i32, test_months, months);
@@ -304,7 +292,25 @@ mod tests {
     }
 
     #[test]
-    fn day_and_month_intervals_match_pg_values_f64() {
+    fn intervals_match_pg_values_i64() {
+        test_fn!(i64, test_microseconds, microseconds);
+        test_fn!(i64, test_milliseconds, milliseconds);
+        test_fn!(i64, test_seconds, seconds);
+        test_fn!(i64, test_minutes, minutes);
+        test_fn!(i64, test_hours, hours);
+        test_fn!(i64, test_days, days);
+        test_fn!(i64, test_weeks, weeks);
+        test_fn!(i64, test_months, months);
+        test_fn!(i64, test_years, years);
+    }
+
+    #[test]
+    fn intervals_match_pg_values_f64() {
+        test_fn!(f64, test_microseconds, microseconds);
+        test_fn!(f64, test_milliseconds, milliseconds);
+        test_fn!(f64, test_seconds, seconds);
+        test_fn!(f64, test_minutes, minutes);
+        test_fn!(f64, test_hours, hours);
         test_fn!(f64, test_days, days);
         test_fn!(f64, test_weeks, weeks);
         test_fn!(f64, test_months, months);

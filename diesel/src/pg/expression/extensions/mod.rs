@@ -3,4 +3,4 @@
 //! re-exported in `diesel::dsl`
 mod interval_dsl;
 
-pub use self::interval_dsl::{DayAndMonthIntervalDsl, MicroIntervalDsl};
+pub use self::interval_dsl::IntervalDsl;
