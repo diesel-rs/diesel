@@ -25,3 +25,7 @@ pub use self::eq_all::EqAll;
 #[cfg(feature = "postgres")]
 #[doc(inline)]
 pub use pg::expression::expression_methods::*;
+
+#[cfg(feature = "sqlite")]
+#[doc(inline)]
+pub use sqlite::expression::expression_methods::*;

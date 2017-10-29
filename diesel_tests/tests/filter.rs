@@ -460,3 +460,16 @@ fn filter_subselect_with_pg_any() {
         .load(&conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn filter_by_string_equality_case_insensitive() {
+    use schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    assert_eq!(Ok(sean), users.filter(name.eq("sean").collate_nocase()).first(&connection));
+    assert_eq!(Ok(tess), users.filter(name.eq("Tess ").collate_rtrim()).first(&connection));
+}
