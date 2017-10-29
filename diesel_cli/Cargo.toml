@@ -25,7 +25,7 @@ clippy = { optional = true, version = "=0.0.162" }
 [dev-dependencies]
 difference = "1.0"
 tempdir = "0.3.4"
-regex = "0.1.48"
+regex = "0.2"
 url = { version = "1.4.0" }
 
 [features]
