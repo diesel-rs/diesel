@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use query_source::Table;
 
 /// Adds the `DISTINCT` keyword to a query.
@@ -31,7 +32,10 @@ use query_source::Table;
 /// # }
 /// ```
 pub trait DistinctDsl {
+    /// Query with DISTINCT added
     type Output;
+
+    /// Should return query with DISTINCT added
     fn distinct(self) -> Self::Output;
 }
 
@@ -42,6 +46,7 @@ where
 {
     type Output = <T::Query as DistinctDsl>::Output;
 
+    /// Returns query with DISTINCT added
     fn distinct(self) -> Self::Output {
         self.as_query().distinct()
     }
