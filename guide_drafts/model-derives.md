@@ -12,6 +12,10 @@ Some of the example code will be implementing basic [CRUD] database operations.
 We'll be covering creating, reading, and updating data.
 The details of those operations will be not be covered beyond their relevance to the demonstrated trait.
 
+In general, it may be more helpful to think of Diesel as a `SQL` query builder.
+While Diesel does offer some standard ORM (Object Relation Mapper) features,
+Diesel's code generation derives are for database operations.
+
 [CRUD]: https://en.wikipedia.org/wiki/Create,_read,_update_and_delete
 
 - [Queryable](#queryable)
@@ -21,23 +25,28 @@ The details of those operations will be not be covered beyond their relevance to
 - [Associations](#associations)
 
 ## <a name="queryable"></a>Queryable
-Using the [`#[derive(Queryable)]`][queryable_doc] trait annotation on your model struct allows records to be queried from the database.
-This means that any time you are using the `load()`, `get_result()`, `get_results()`, and `first()` methods to execute your queries,
-you must have `Queryable` implemented on your model.
-Queryable doesn't directly provide these methods,
-but the traits these methods come from the `FirstDsl` and `LoadDsl` portions of the `diesel::prelude`,
-which require your type to implement `Queryable`.
+A `Queryable` struct is one that represents the 
+data structure returned from a database query.
+In many cases this may map exactly to the column structure of a single table,
+however there may be cases where you need to make a query that spans several tables and/or only uses
+a subset of columns. 
+For this reason, it may be helpful to view `Queryable` structs as the *result* of your query.
+It is acceptable and often desirable to have multiple `Queryable` structs for the same database table.
+
+Annotating your struct with [`#[derive(Queryable)]`][queryable_doc] enables you to use Diesel's 
+`LoadDsl` and `FirstDsl` to assist in retrieving data.
+A few of the methods you may use are `load()`, `get_result()`, `get_results()`, and `first()`.
+Should you make a query that doesn't return the same columns and values (in the order specified) on your `Queryable` struct,
+you will get a compile-time error.
+The only thing `Queryable` cares about is that the data returned from the query 
+maps exactly to your data structure.
 
 [queryable_doc]: http://docs.diesel.rs/diesel/query_source/trait.Queryable.html
-
-`Queryable` structs do not necessarily have to be 1:1 with the table in your database.
-You may have some queries where you only need to select a subset of columns.
-For these cases, creating another struct and annotating it with `Queryable` will be sufficient.
 
 The following example shows making two different queries into the `users` table.
 We get back a [`QueryResult`],
 which is basically a wrapper around the rust `Result` type.
-That means we'll get the same familar api and can use `expect()` to handle our error conditions.
+That means we'll be able to use `expect()` to handle our error conditions.
 
 [`QueryResult`]: http://docs.diesel.rs/diesel/result/type.QueryResult.html
 
@@ -104,9 +113,15 @@ When reading, take note of the values in the tuple[s].
 
 `FromSqlRow` is trying to convert those 4 types into the types on our `User` model struct.
 Our model struct has the three String fields commented out, so it doesn't know what those `Text` columns are supposed to be converted to.
-In other words,
+Remember, `Queryable` structs represent the exact columns, value, 
+and ordering of your query's returned result,
+which we are violating here.
 `FromSqlRow` is expecting a tuple that looks like `(i32, String, String, String)`,
-but we currently only have a tuple consisting of `(i32,)`. We need to add those `String` columns back for our code to compile again.
+but we currently only have a tuple consisting of `(i32,)`.
+We need to add those `String` columns back for our code to compile again.
+See Rust's [data type docs] if you're unfamiliar with tuples or their syntax.
+
+[data type docs]: https://doc.rust-lang.org/1.21.0/book/second-edition/ch03-02-data-types.html#grouping-values-into-tuples
 
 This trait bound is illustrated below in the "hand-written" derive example.
 
