@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 /// Constructs a query that finds record(s) based on directional association with other record(s).
 ///
 /// # Example
