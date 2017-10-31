@@ -7,4 +7,4 @@ authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 [dependencies]
 diesel = { version = "0.16.0", features = ["sqlite"] }
 diesel_codegen = { version = "0.16.0", features = ["sqlite"] }
-dotenv = "0.8"
+dotenv = "0.10"
