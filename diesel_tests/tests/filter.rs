@@ -470,6 +470,16 @@ fn filter_by_string_equality_case_insensitive() {
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
-    assert_eq!(Ok(sean), users.filter(name.eq("sean").collate_nocase()).first(&connection));
-    assert_eq!(Ok(tess), users.filter(name.eq("Tess ").collate_rtrim()).first(&connection));
+    assert_eq!(
+        Ok(sean),
+        users
+            .filter(name.eq("sean").collate_nocase())
+            .first(&connection)
+    );
+    assert_eq!(
+        Ok(tess),
+        users
+            .filter(name.eq("Tess ").collate_rtrim())
+            .first(&connection)
+    );
 }
