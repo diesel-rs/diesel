@@ -83,6 +83,7 @@ fn order_by_descending_column() {
 #[cfg(feature = "sqlite")]
 fn order_collate() {
     use schema::users::dsl::*;
+    use diesel::sqlite::expression::*;
 
     let conn = connection();
     let data = vec![
@@ -101,7 +102,10 @@ fn order_collate() {
         User::new(jim.id, "jim"),
         User::new(tess.id, "tess"),
     ];
-    let data: Vec<_> = users.order(name.collate_binary()).load(&conn).unwrap();
+    let data: Vec<_> = users
+        .order(name.collate(CollationBinary))
+        .load(&conn)
+        .unwrap();
     assert_eq!(expected_data_binary, data);
 
     let expected_data_nocase = vec![
@@ -109,6 +113,9 @@ fn order_collate() {
         User::new(sean.id, "SEAN"),
         User::new(tess.id, "tess"),
     ];
-    let data: Vec<_> = users.order(name.collate_nocase()).load(&conn).unwrap();
+    let data: Vec<_> = users
+        .order(name.collate(CollationNoCase))
+        .load(&conn)
+        .unwrap();
     assert_eq!(expected_data_nocase, data);
 }

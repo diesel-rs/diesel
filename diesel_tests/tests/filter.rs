@@ -465,6 +465,7 @@ fn filter_subselect_with_pg_any() {
 #[cfg(feature = "sqlite")]
 fn filter_by_string_equality_case_insensitive() {
     use schema::users::dsl::*;
+    use diesel::sqlite::expression::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
 
@@ -473,13 +474,13 @@ fn filter_by_string_equality_case_insensitive() {
     assert_eq!(
         Ok(sean),
         users
-            .filter(name.eq("sean").collate_nocase())
+            .filter(name.eq("sean").collate(CollationNoCase))
             .first(&connection)
     );
     assert_eq!(
         Ok(tess),
         users
-            .filter(name.eq("Tess ").collate_rtrim())
+            .filter(name.collate(CollationRTrim).eq("Tess "))
             .first(&connection)
     );
 }
