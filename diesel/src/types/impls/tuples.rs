@@ -66,7 +66,7 @@ macro_rules! tuple_impls {
                 DB: Backend,
                 $($T: QueryableByName<DB>,)+
             {
-                fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
+                fn build<RowT: NamedRow<DB>>(row: &RowT) -> Result<Self, Box<Error + Send + Sync>> {
                     Ok(($($T::build(row)?,)+))
                 }
             }
