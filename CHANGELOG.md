@@ -416,7 +416,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   when [boxed][boxed-0.11.0].
 
 [select-0.11.0]: https://docs.rs/diesel/0.11.0/diesel/fn.select.html
-[boxed-0.11.0]: http://docs.rs/diesel/0.11.0/prelude/trait.BoxedDsl.html
+[boxed-0.11.0]: https://docs.rs/diesel/0.11.0/prelude/trait.BoxedDsl.html
 
 * Arrays containing null are now supported. `infer_schema!` will never infer an
   array that contains null, but a `table!` definition which specifies a type of
