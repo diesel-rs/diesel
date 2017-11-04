@@ -5,8 +5,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Custom derive and procedural macros for Diesel"
 readme = "README.md"
-documentation = "http://docs.diesel.rs"
-homepage = "http://diesel.rs"
+documentation = "https://docs.diesel.rs"
+homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 

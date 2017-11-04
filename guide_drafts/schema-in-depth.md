@@ -52,7 +52,7 @@ pub struct hair_color;
 
 Each of these structs uniquely represents each column of the table for the purpose of constructing SQL queries. Each of these structs will implement a trait called [`Expression`][], which indicates the SQL type of the column.
 
-[`Expression`]: http://docs.diesel.rs/diesel/expression/trait.Expression.html
+[`Expression`]: https://docs.diesel.rs/diesel/expression/trait.Expression.html
 
 ```rust
 impl Expression for id {
@@ -70,8 +70,8 @@ impl Expression for hair_color {
 
 The `SqlType` type is at the core of how Diesel ensures that your queries are correct. This type will be used by [`ExpressionMethods`][] to determine what things can and cannot be passed to methods like `eq`. It will also be used by [`Queryable`][] to determine what types can be deserialized when this column appears in the select clause.
 
-[`ExpressionMethods`]: http://docs.diesel.rs/diesel/expression_methods/trait.ExpressionMethods.html
-[`Queryable`]: http://docs.diesel.rs/diesel/query_source/trait.Queryable.html
+[`ExpressionMethods`]: https://docs.diesel.rs/diesel/expression_methods/trait.ExpressionMethods.html
+[`Queryable`]: https://docs.diesel.rs/diesel/query_source/trait.Queryable.html
 
 In the columns module you'll also see a special column called `star`. Its definition looks like this:
 
@@ -120,7 +120,7 @@ impl table {
 
 Next, there are several traits that get implemented for `table`. You generally will never interact with these directly, but they are what enable most of the query builder functions found in [the `prelude` module][], as well as use with `insert`, `update`, and `delete`.
 
-[the `prelude` module]: http://docs.diesel.rs/diesel/prelude/index.html
+[the `prelude` module]: https://docs.diesel.rs/diesel/prelude/index.html
 
 ```rust
 impl AsQuery for table {
