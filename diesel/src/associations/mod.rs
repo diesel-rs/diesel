@@ -168,7 +168,7 @@
 //! bugs][load-your-entire-database-into-memory-lol], and runtime errors when accessing an
 //! association that isn't there.
 //!
-//! [load-your-entire-database-into-memory-lol]: http://stackoverflow.com/q/97197/1254484
+//! [load-your-entire-database-into-memory-lol]: https://stackoverflow.com/q/97197/1254484
 //!
 //! In Diesel, data and its associations are considered to be separate. If you want to pass around
 //! a user and all of its posts, that type is `(User, Vec<Post>)`.

@@ -30,7 +30,7 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
     /// Provides the `SET` clause of the `UPDATE` statement.
     ///
     /// See [`update`](../fn.update.html) for usage examples, or [the update
-    /// guide](http://diesel.rs/guides/all-about-updates/) for a more exhaustive
+    /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset, NoReturningClause>
     where
@@ -101,7 +101,7 @@ where
 /// Represents a complete `UPDATE` statement.
 ///
 /// See [`update`](../fn.update.html) for usage examples, or [the update
-/// guide](http://diesel.rs/guides/all-about-updates/) for a more exhaustive
+/// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
 /// set of examples.
 pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     table: T,

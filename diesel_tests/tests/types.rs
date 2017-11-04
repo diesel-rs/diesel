@@ -924,7 +924,7 @@ fn pg_json_from_sql() {
     );
 }
 
-// See http://stackoverflow.com/q/32843213/12089 for why we don't have a
+// See https://stackoverflow.com/q/32843213/12089 for why we don't have a
 // pg_json_to_sql_json test.  There's no `'true':json = 'true':json`
 // because JSON string representations are ambiguous.  We _do_ have this
 // test for `jsonb` values.

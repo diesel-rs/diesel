@@ -402,7 +402,7 @@ macro_rules! __diesel_table_impl {
         $($rest:tt)*
     ) => {
         compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-        `http://docs.diesel.rs/diesel/macro.table.html`");
+        `https://docs.diesel.rs/diesel/macro.table.html`");
     };
 
     // Put a parse annotation and empty fields for imports and documentation on top
@@ -664,7 +664,7 @@ macro_rules! table_body {
                             "\"]` to reference the table's `",
                             stringify!($column_name),
                             "` column. \n \
-                            Docs available at: `http://docs.diesel.rs/diesel/macro.table.html`\n"
+                            Docs available at: `https://docs.diesel.rs/diesel/macro.table.html`\n"
                         ));
                     } else {
                         pub use super::columns::{$column_name};
