@@ -47,6 +47,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you do not need to state the return type, and data is loaded from the query by
   name rather than by index.
 
+* Added a way to rename a table in the `table!` macro with `#[sql_name="the_table_name"]`
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to

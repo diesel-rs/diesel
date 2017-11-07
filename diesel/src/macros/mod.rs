@@ -272,12 +272,14 @@ macro_rules! __diesel_table_impl {
         @parse
         import = [$(use $($import:tt)::+;)*];
         table_doc = [];
+        table_sql_name = [];
         use $($new_import:tt)::+; $($rest:tt)+
     ) => {
         table! {
             @parse
             import = [$(use $($import)::+;)* use $($new_import)::+;];
             table_doc = [];
+            table_sql_name = [];
             $($rest)+
         }
     };
@@ -287,12 +289,31 @@ macro_rules! __diesel_table_impl {
         @parse
         import = [$(use $($import:tt)::+;)*];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         #[doc=$new_doc:expr] $($rest:tt)+
     ) => {
         table! {
             @parse
             import = [$(use $($import)::+;)*];
             table_doc = [$($doc,)*$new_doc,];
+            table_sql_name = [$($table_sql_name)*];
+            $($rest)+
+        }
+    };
+
+    // Parse the sql_name attribute if present
+    (
+        @parse
+        import = [$(use $($import:tt)::+;)*];
+        table_doc = [$($doc:expr,)*];
+        table_sql_name = [];
+        #[sql_name=$new_sql_name:expr] $($rest:tt)+
+    ) => {
+        table! {
+            @parse
+            import = [$(use $($import)::+;)*];
+            table_doc = [$($doc,)*];
+            table_sql_name = [$new_sql_name];
             $($rest)+
         }
     };
@@ -304,12 +325,14 @@ macro_rules! __diesel_table_impl {
         @parse
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         $($rest:tt)+
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)*];
             table_doc = [$($doc,)*];
+            table_sql_name = [$($table_sql_name)*];
             $($rest)+
         }
     };
@@ -322,12 +345,14 @@ macro_rules! __diesel_table_impl {
         @parse
         import = [];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         $($rest:tt)+
     ) => {
         table! {
             @parse_body
             import = [use $crate::types::*;];
             table_doc = [$($doc,)*];
+            table_sql_name = [$($table_sql_name)*];
             $($rest)+
         }
     };
@@ -337,12 +362,14 @@ macro_rules! __diesel_table_impl {
         @parse_body
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         $($table_name:ident).+ {$($body:tt)*}
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)+];
             table_doc = [$($doc,)*];
+            table_sql_name = [$($table_sql_name)*];
             $($table_name).+ (id) {$($body)*}
         }
     };
@@ -352,13 +379,32 @@ macro_rules! __diesel_table_impl {
         @parse_body
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         $name:ident $(($($pk:ident),+))* {$($body:tt)*}
     ) => {
         table! {
             @parse_body
             import = [$(use $($import)::+;)+];
             table_doc = [$($doc,)*];
+            table_sql_name = [$($table_sql_name)*];
             public . $name $(($($pk),+))* {$($body)*}
+        }
+    };
+
+    // Add a table name if it's not specified
+    (
+        @parse_body
+        import = [$(use $($import:tt)::+;)+];
+        table_doc = [$($doc:expr,)*];
+        table_sql_name = [];
+        $schema: ident . $name: ident $($rest:tt)+
+    ) => {
+        table! {
+            @parse_body
+            import = [$(use $($import)::+;)+];
+            table_doc = [$($doc,)*];
+            table_sql_name = [stringify!($name)];
+            $schema . $name $($rest)+
         }
     };
 
@@ -367,12 +413,14 @@ macro_rules! __diesel_table_impl {
         @parse_body
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$table_sql_name:expr];
         $schema_name:ident . $name:ident ($pk:ident) $body:tt
     ) => {
         table_body! {
             $schema_name . $name ($pk) $body
             import = [$(use $($import)::+;)+];
             table_doc = [$($doc)*];
+            table_sql_name = $table_sql_name;
         }
     };
 
@@ -381,12 +429,14 @@ macro_rules! __diesel_table_impl {
         @parse_body
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$table_sql_name:expr];
         $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
     ) => {
         table_body! {
             $schema_name . $name ($pk, $($composite_pk,)+) $body
             import = [$(use $($import)::+;)+];
             table_doc = [$($doc)*];
+            table_sql_name = $table_sql_name;
         }
     };
 
@@ -399,6 +449,7 @@ macro_rules! __diesel_table_impl {
         @parse_body
         import = [$(use $($import:tt)::+;)*];
         table_doc = [$($doc:expr,)*];
+        table_sql_name = [$($table_sql_name:expr)*];
         $($rest:tt)*
     ) => {
         compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
@@ -412,6 +463,7 @@ macro_rules! __diesel_table_impl {
             @parse
             import = [];
             table_doc = [];
+            table_sql_name = [];
             $($rest)+
         }
     }
@@ -425,6 +477,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
@@ -438,6 +491,7 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
@@ -454,6 +508,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
@@ -467,6 +522,7 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
@@ -488,6 +544,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
@@ -501,6 +558,7 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
@@ -520,6 +578,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
@@ -533,6 +592,7 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
@@ -554,10 +614,12 @@ macro_rules! table_body {
         }
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($table_doc:expr)*];
+        table_sql_name = $table_sql_name:expr;
     ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = columns::$pk,
             primary_key_expr = columns::$pk,
             columns = [],
@@ -573,6 +635,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
@@ -586,6 +649,7 @@ macro_rules! table_body {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = $primary_key_ty,
             primary_key_expr = $primary_key_expr,
             columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
@@ -603,10 +667,12 @@ macro_rules! table_body {
         }
         import = [$(use $($import:tt)::+;)+];
         table_doc = [$($table_doc:expr)*];
+        table_sql_name = $table_sql_name:expr;
     ) => {
         table_body! {
             schema_name = $schema_name,
             table_name = $name,
+            table_sql_name = $table_sql_name,
             primary_key_ty = ($(columns::$pk,)+),
             primary_key_expr = ($(columns::$pk,)+),
             columns = [],
@@ -623,6 +689,7 @@ macro_rules! table_body {
     (
         schema_name = $schema_name:ident,
         table_name = $table_name:ident,
+        table_sql_name = $table_sql_name:expr,
         primary_key_ty = $primary_key_ty:ty,
         primary_key_expr = $primary_key_expr:expr,
         columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)+],
@@ -701,7 +768,7 @@ macro_rules! table_body {
             /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
-            __diesel_table_query_source_impl!(table, $schema_name, $table_name);
+            __diesel_table_query_source_impl!(table, $schema_name, $table_sql_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
@@ -846,13 +913,13 @@ macro_rules! table_body {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_table_query_source_impl {
-    ($table_struct:ident, public, $table_name:ident) => {
+    ($table_struct:ident, public, $table_name:expr) => {
         impl QuerySource for $table_struct {
             type FromClause = Identifier<'static>;
             type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
-                Identifier(stringify!($table_name))
+                Identifier($table_name)
             }
 
             fn default_selection(&self) -> Self::DefaultSelection {
@@ -861,7 +928,7 @@ macro_rules! __diesel_table_query_source_impl {
         }
     };
 
-    ($table_struct:ident, $schema_name:ident, $table_name:ident) => {
+    ($table_struct:ident, $schema_name:ident, $table_name:expr) => {
         impl QuerySource for $table_struct {
             type FromClause = $crate::query_builder::nodes::
                 InfixNode<'static, Identifier<'static>, Identifier<'static>>;
@@ -870,7 +937,7 @@ macro_rules! __diesel_table_query_source_impl {
             fn from_clause(&self) -> Self::FromClause {
                 $crate::query_builder::nodes::InfixNode::new(
                     Identifier(stringify!($schema_name)),
-                    Identifier(stringify!($table_name)),
+                    Identifier($table_name),
                     ".",
                 )
             }
@@ -1242,6 +1309,50 @@ mod tests {
         assert_eq!(
             expected_sql,
             ::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+        );
+    }
+
+    table!(
+        use types::*;
+
+        /// Some documentation
+        #[sql_name="mod"]
+        /// Some more documentation
+        bar {
+            id -> Integer,
+        }
+    );
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn table_renaming_postgres() {
+        use pg::Pg;
+        let expected_sql = r#"SELECT "mod"."id" FROM "mod" -- binds: []"#;
+        assert_eq!(
+            expected_sql,
+            ::debug_query::<Pg, _>(&bar::table.select(bar::id)).to_string()
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "mysql")]
+    fn table_renaming_mysql() {
+        use mysql::Mysql;
+        let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
+        assert_eq!(
+            expected_sql,
+            ::debug_query::<Mysql, _>(&bar::table.select(bar::id)).to_string()
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "sqlite")]
+    fn table_renaming_sqlite() {
+        use sqlite::Sqlite;
+        let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
+        assert_eq!(
+            expected_sql,
+            ::debug_query::<Sqlite, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 }
