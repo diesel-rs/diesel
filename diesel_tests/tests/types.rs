@@ -697,6 +697,8 @@ fn pg_numeric_bigdecimal_from_sql() {
         "1.0",
         "141.0",
         "-1.0",
+        // With some more precision
+        "4.2000000",
         // Larger than u64
         "18446744073709551616",
         // Powers of 10k (numeric is represented in base 10k)
@@ -713,6 +715,10 @@ fn pg_numeric_bigdecimal_from_sql() {
         let query = format!("'{}'::numeric", value);
         let expected = value.parse::<BigDecimal>().unwrap();
         assert_eq!(expected, query_single_value::<Numeric, BigDecimal>(&query));
+        assert_eq!(
+            format!("{}", expected),
+            format!("{}", query_single_value::<Numeric, BigDecimal>(&query))
+        );
     }
 }
 

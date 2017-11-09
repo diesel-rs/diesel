@@ -105,7 +105,7 @@ mod bigdecimal {
 
     impl FromSql<types::Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
-            let (sign, weight, _, digits) = match PgNumeric::from_sql(numeric)? {
+            let (sign, weight, scale, digits) = match PgNumeric::from_sql(numeric)? {
                 PgNumeric::Positive {
                     weight,
                     scale,
@@ -126,9 +126,8 @@ mod bigdecimal {
             }
             // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
             let correction_exp = 4 * (i64::from(weight) - count + 1);
-            // FIXME: `scale` allows to drop some insignificant figures, which is currently unimplemented.
-            // This means that e.g. PostgreSQL 0.01 will be interpreted as 0.0100
-            let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp);
+            let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
+                .with_scale(scale as i64);
             Ok(result)
         }
     }
