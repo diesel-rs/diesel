@@ -64,7 +64,6 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # #[macro_use] extern crate diesel;
     /// # use diesel::insert_into;
     /// # include!("../doctest_setup.rs");

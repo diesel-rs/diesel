@@ -60,7 +60,6 @@ where
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
