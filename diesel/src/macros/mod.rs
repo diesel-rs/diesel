@@ -958,6 +958,8 @@ macro_rules! __diesel_table_query_source_impl {
 /// be able to use the resulting query, unless you are using `infer_schema!` or
 /// `diesel print-schema` which will generate it for you.
 ///
+/// [`.on`]: ./prelude/trait.JoinOnDsl.html#method.on
+///
 /// If you are using `infer_schema!` or `diesel print-schema`, an invocation of
 /// this macro will be generated for every foreign key in your database unless
 /// one of the following is true:

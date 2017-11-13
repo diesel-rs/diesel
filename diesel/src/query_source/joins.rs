@@ -154,8 +154,12 @@ where
 // }
 
 /// Indicates that two tables can be used together in a JOIN clause.
-/// Implementations of this trait will be generated for you automatically by
-/// the [association annotations](../associations/index.html) from codegen.
+/// Implementations of this trait will be generated for you when using
+/// the [`joinable!`](../macro.joinable.html) or
+/// [`allow_tables_to_appear_in_same_query!`](../macro.allow_tables_to_appear_in_same_query.html) macros.
+/// When using [`infer_schema!`](../macro.infer_schema.html),
+/// `joinable!` will automatically be generated if you have foreign key constraints
+/// on the child table.
 pub trait JoinTo<T> {
     #[doc(hidden)]
     type FromClause;
