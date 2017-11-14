@@ -16,7 +16,7 @@ path = "src/main.rs"
 
 [dependencies]
 chrono = "0.4"
-clap = "2.20.3"
+clap = ">=2.27.0"
 diesel = { version = "0.16.0", default-features = false }
 dotenv = ">=0.8, <0.11"
 diesel_infer_schema = "0.16.0"
