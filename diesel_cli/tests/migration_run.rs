@@ -254,7 +254,8 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
     // Make sure the project is setup
     p.command("setup").run();
 
-    p.create_migration_in_directory("custom_migrations",
+    p.create_migration_in_directory(
+        "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         "DROP TABLE users",
@@ -289,7 +290,8 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_2() {
     // Make sure the project is setup
     p.command("setup").run();
 
-    p.create_migration_in_directory("custom_migrations",
+    p.create_migration_in_directory(
+        "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         "DROP TABLE users",

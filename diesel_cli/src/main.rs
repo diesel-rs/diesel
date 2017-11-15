@@ -163,7 +163,6 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
                 .1
                 .and_then(|s| migrations_dir_from_cli(s))
         })
-
 }
 
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
