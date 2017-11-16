@@ -26,7 +26,6 @@ pub struct Array<T, ST> {
 /// #     }
 /// # }
 /// #
-/// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use diesel::types;
 /// #     use diesel::*;
@@ -43,8 +42,6 @@ pub struct Array<T, ST> {
 ///     .get_results::<Vec<i32>>(&connection);
 /// assert_eq!(Ok(vec![vec![1, 2], vec![2, 4]]), ids);
 /// # }
-/// # #[cfg(not(feature = "postgres"))]
-/// # fn main() {}
 /// ```
 pub fn array<ST, T>(elements: T) -> Array<T::Expression, ST>
 where
