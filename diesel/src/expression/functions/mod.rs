@@ -72,96 +72,61 @@ macro_rules! sql_function_body {
     }
 }
 
-#[doc(hidden)]
-#[cfg(feature = "postgres")]
-macro_rules! sql_array_function {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident, $arg_struct_name:ident),*)) => {
-        #[allow(non_camel_case_types)]
-        #[derive(Debug, Clone)]
-        #[doc(hidden)]
-        pub struct $struct_name<r, $($arg_name),*> {
-            $($arg_name: $arg_name),*,
-            marker: ::std::marker::PhantomData<r>,
-        }
+use std::marker::PhantomData;
+use expression::{Expression, SelectableExpression, AppearsOnTable, IntoSingleTypeExpressionList};
 
-        #[allow(non_camel_case_types)]
-        pub type $fn_name<r, $($arg_name, $arg_struct_name),*> = $struct_name<r, $(
-            <$arg_name as $crate::expression::AsExpression<$arg_struct_name>>::Expression
-        ),*>;
+#[derive(Debug)]
+pub struct Array<T, ST> {
+    elements: T,
+    _marker: PhantomData<ST>,
+}
 
-        #[allow(non_camel_case_types)]
-        pub fn $fn_name<r, $($arg_name, $arg_struct_name),*>($($arg_name: $arg_name),*)
-                        -> $fn_name<r, $($arg_name, $arg_struct_name),*>
-            where $($arg_name: $crate::expression::AsExpression<$arg_struct_name>),+
-        {
-            $struct_name {
-                $($arg_name: $arg_name.as_expression()),+,
-                marker: ::std::marker::PhantomData,
-            }
-        }
-
-        #[allow(non_camel_case_types)]
-        impl<r, $($arg_name),*> $crate::expression::Expression for $struct_name<r, $($arg_name),*> where
-            for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
-        {
-            type SqlType = $crate::pg::types::sql_types::Array<r>;
-        }
-
-        #[allow(non_camel_case_types)]
-        impl<r, $($arg_name),*, DB> $crate::query_builder::QueryFragment<DB> for $struct_name<r, $($arg_name),*> where
-            DB: $crate::backend::Backend,
-            for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
-        {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                out.push_sql(concat!("ARRAY["));
-                $crate::query_builder::QueryFragment::walk_ast(
-                    &($(&self.$arg_name),*), out.reborrow())?;
-                out.push_sql("]");
-                Ok(())
-            }
-        }
-
-        impl_query_id!($struct_name<r, $($arg_name),+>);
-
-        #[allow(non_camel_case_types)]
-        impl<r, $($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<r, $($arg_name),*> where
-            $($arg_name: $crate::expression::SelectableExpression<QS>,)*
-            $struct_name<r, $($arg_name),*>: $crate::expression::AppearsOnTable<QS>,
-        {
-        }
-
-        #[allow(non_camel_case_types)]
-        impl<r, $($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<r, $($arg_name),*> where
-            $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
-            $struct_name<r, $($arg_name),*>: $crate::expression::Expression,
-        {
-        }
-
-        #[allow(non_camel_case_types)]
-        impl<r, $($arg_name),*> $crate::expression::NonAggregate for $struct_name<r, $($arg_name),*> where
-            $($arg_name: $crate::expression::NonAggregate,)*
-            $struct_name<r, $($arg_name),*>: $crate::expression::Expression,
-        {
-        }
+pub fn array<ST, T>(elements: T) -> Array<T::Expression, ST> where
+    T : IntoSingleTypeExpressionList<ST>
+{
+    Array {
+        elements: elements.into_single_type_expression_list(),
+        _marker: PhantomData,
     }
 }
 
-#[cfg(feature = "postgres")]
-sql_array_function!(array1, array1_t, (a, ax));
-#[cfg(feature = "postgres")]
-sql_array_function!(array2, array2_t, (a, ax, b, bx));
-#[cfg(feature = "postgres")]
-sql_array_function!(array3, array3_t, (a, ax, b, bx, c, cx));
-#[cfg(feature = "postgres")]
-sql_array_function!(array4, array4_t, (a, ax, b, bx, c, cx, d, dx));
-#[cfg(feature = "postgres")]
-sql_array_function!(array5, array5_t, (a, ax, b, bx, c, cx, d, dx, e, ex));
-#[cfg(feature = "postgres")]
-sql_array_function!(array6, array6_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx));
-#[cfg(feature = "postgres")]
-sql_array_function!(array7, array7_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx, g, gx));
-#[cfg(feature = "postgres")]
-sql_array_function!(array8, array8_t, (a, ax, b, bx, c, cx, d, dx, e, ex, f, fx, g, gx, h, hx));
+impl<T, ST> Expression for Array<T, ST> where
+    T: Expression
+{
+    type SqlType = ::pg::types::sql_types::Array<ST>;
+}
+
+use ::query_builder::{AstPass, QueryFragment};
+use ::backend::Backend;
+
+impl<T, ST, DB> QueryFragment<DB> for Array<T, ST> where
+    DB: Backend,
+for <'a> (&'a T): QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> ::result::QueryResult<()> {
+        out.push_sql("ARRAY[");
+        QueryFragment::walk_ast(&(&self.elements,), out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
+
+impl_query_id!(Array<T, ST>);
+
+impl<T, ST, QS> SelectableExpression<QS> for Array<T, ST> where
+    T: SelectableExpression<QS>,
+Array<T, ST>: AppearsOnTable<QS>,
+{}
+
+impl<T, ST, QS> AppearsOnTable<QS> for Array<T, ST> where
+    T: AppearsOnTable<QS>,
+Array<T, ST>: Expression,
+{}
+
+impl<T, ST> ::expression::NonAggregate for Array<T, ST> where
+    T: ::expression::NonAggregate,
+Array<T, ST>: Expression,
+{}
 
 #[macro_export]
 /// Declare a sql function for use in your code. Useful if you have your own SQL functions that

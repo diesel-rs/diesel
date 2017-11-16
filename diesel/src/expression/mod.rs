@@ -64,7 +64,7 @@ pub mod dsl {
     pub use pg::expression::dsl::*;
 
     #[cfg(feature = "postgres")]
-    #[doc(inline)] pub use super::functions::{array1, array2, array3, array4, array5, array6, array7, array8};
+    #[doc(inline)] pub use super::functions::array;
 
 }
 
@@ -301,4 +301,10 @@ impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+pub trait IntoSingleTypeExpressionList<ST> {
+    type Expression;
+
+    fn into_single_type_expression_list(self) -> Self::Expression;
 }

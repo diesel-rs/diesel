@@ -2,7 +2,8 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, AsExpression, Expression, IntoSingleTypeExpressionList, IntoSql, NonAggregate, SelectableExpression};
+use expression::helper_types::AsExprOf;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_builder::insert_statement::UndecoratedInsertRecord;
@@ -248,6 +249,16 @@ macro_rules! tuple_impls {
                 fn tuple_append(self, next: Next) -> Self::Output {
                     let ($($T,)+) = self;
                     ($($T,)+ next)
+                }
+            }
+
+            impl<$($T,)+ ST> IntoSingleTypeExpressionList<ST> for ($($T,)+) where
+                $($T: AsExpression<ST>,)+
+            {
+                type Expression = ($(AsExprOf<$T, ST>,)+);
+
+                fn into_single_type_expression_list(self) -> Self::Expression {
+                    ($(self.$idx.into_sql::<ST>(),)+)
                 }
             }
         )+

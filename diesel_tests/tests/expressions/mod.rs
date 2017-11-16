@@ -361,7 +361,7 @@ fn test_arrays_a() {
     let connection = connection();
 
     use ::diesel::types::Int4;
-    let value = select(array2::<Int4, _, Int4, _ ,Int4>(1, 2))
+    let value = select(array::<Int4, _>((1, 2)))
         .get_result::<Vec<i32>>(&connection)
         .unwrap();
 
@@ -383,7 +383,7 @@ fn test_arrays_b() {
         .execute("INSERT INTO numbers (n) VALUES (7)")
         .unwrap();
 
-    let value = numbers.select(unnest(array2(n, n + n)))
+    let value = numbers.select(unnest(array((n, n + n))))
         .load::<i32>(&connection)
         .unwrap();
 
