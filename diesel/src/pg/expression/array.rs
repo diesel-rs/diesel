@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use expression::{AppearsOnTable, Expression, SelectableExpression};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 
 pub trait IntoSingleTypeExpressionList<ST> {
     type Expression;
@@ -76,7 +76,7 @@ where
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> ::result::QueryResult<()> {
         out.push_sql("ARRAY[");
-        QueryFragment::walk_ast(&(&self.elements,), out.reborrow())?;
+        QueryFragment::walk_ast(&&self.elements, out.reborrow())?;
         out.push_sql("]");
         Ok(())
     }
@@ -98,9 +98,9 @@ where
 {
 }
 
-impl<T, ST> ::expression::NonAggregate for Array<T, ST>
+impl<T, ST> NonAggregate for Array<T, ST>
 where
-    T: ::expression::NonAggregate,
+    T: NonAggregate,
     Array<T, ST>: Expression,
 {
 }
