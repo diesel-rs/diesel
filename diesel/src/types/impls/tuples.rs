@@ -2,7 +2,8 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpression, Expression, IntoSingleTypeExpressionList, IntoSql, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, AsExpression, Expression, IntoSingleTypeExpressionList, IntoSql,
+                 NonAggregate, SelectableExpression};
 use expression::helper_types::AsExprOf;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;

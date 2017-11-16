@@ -64,7 +64,8 @@ pub mod dsl {
     pub use pg::expression::dsl::*;
 
     #[cfg(feature = "postgres")]
-    #[doc(inline)] pub use super::functions::array;
+    #[doc(inline)]
+    pub use super::functions::array;
 
 }
 

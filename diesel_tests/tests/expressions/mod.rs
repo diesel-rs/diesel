@@ -360,7 +360,7 @@ fn test_avg_for_numeric() {
 fn test_arrays_a() {
     let connection = connection();
 
-    use ::diesel::types::Int4;
+    use diesel::types::Int4;
     let value = select(array::<Int4, _>((1, 2)))
         .get_result::<Vec<i32>>(&connection)
         .unwrap();
@@ -372,7 +372,7 @@ fn test_arrays_a() {
 #[test]
 #[cfg(feature = "postgres")]
 fn test_arrays_b() {
-    use ::diesel::types::{Int4, Array};
+    use diesel::types::{Array, Int4};
     sql_function!(unnest, unnest_t, (a: Array<Int4>) -> Int4);
 
     use self::numbers::columns::*;
@@ -383,7 +383,8 @@ fn test_arrays_b() {
         .execute("INSERT INTO numbers (n) VALUES (7)")
         .unwrap();
 
-    let value = numbers.select(unnest(array((n, n + n))))
+    let value = numbers
+        .select(unnest(array((n, n + n))))
         .load::<i32>(&connection)
         .unwrap();
 
