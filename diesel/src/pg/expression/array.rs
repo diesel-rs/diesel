@@ -7,6 +7,45 @@ pub struct Array<T, ST> {
     _marker: PhantomData<ST>,
 }
 
+/// Creates an `ARRAY[...]` expression.  The argument should be a tuple of
+/// expressions which can be represented by the same SQL type.
+///
+/// If the type can't be inferred, call `array::<SomeSqlType, _>((...))` to
+/// specify it.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # table! {
+/// #     users {
+/// #         id -> Integer,
+/// #         name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// #     use diesel::types;
+/// #     use diesel::*;
+/// #     use diesel::dsl::*;
+/// #     use users::dsl::*;
+/// #     let connection = establish_connection();
+/// let ints = select(array::<types::Int4, _>((1, 2)))
+///     .get_result::<Vec<i32>>(&connection);
+/// // An array is returned as a Vec.
+/// assert_eq!(Ok(vec![1, 2]), ints);
+///
+/// // The type of `id` is known so we don't have to specify the SQL type here.
+/// let ids = users.select(array((id, id * 2)))
+///     .get_results::<Vec<i32>>(&connection);
+/// assert_eq!(Ok(vec![vec![1, 2], vec![2, 4]]), ids);
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
 pub fn array<ST, T>(elements: T) -> Array<T::Expression, ST>
 where
     T: IntoSingleTypeExpressionList<ST>,
