@@ -6,6 +6,8 @@
 
 #[doc(hidden)]
 pub mod array_comparison;
+#[doc(hidden)]
+pub mod array;
 pub mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
@@ -21,6 +23,9 @@ mod date_and_time;
 pub mod dsl {
     #[doc(inline)]
     pub use super::array_comparison::{all, any};
+
+    #[doc(inline)]
+    pub use super::array::array;
 
     pub use super::extensions::*;
 }
