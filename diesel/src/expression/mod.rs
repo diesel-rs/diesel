@@ -298,9 +298,3 @@ impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> {
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
-
-pub trait IntoSingleTypeExpressionList<ST> {
-    type Expression;
-
-    fn into_single_type_expression_list(self) -> Self::Expression;
-}

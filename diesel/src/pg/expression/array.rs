@@ -1,5 +1,11 @@
 use std::marker::PhantomData;
-use expression::{AppearsOnTable, Expression, IntoSingleTypeExpressionList, SelectableExpression};
+use expression::{AppearsOnTable, Expression, SelectableExpression};
+
+pub trait IntoSingleTypeExpressionList<ST> {
+    type Expression;
+
+    fn into_single_type_expression_list(self) -> Self::Expression;
+}
 
 #[derive(Debug)]
 pub struct Array<T, ST> {

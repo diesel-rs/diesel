@@ -2,9 +2,7 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpression, Expression, IntoSingleTypeExpressionList, IntoSql,
-                 NonAggregate, SelectableExpression};
-use expression::helper_types::AsExprOf;
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_builder::insert_statement::UndecoratedInsertRecord;
@@ -253,12 +251,14 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T,)+ ST> IntoSingleTypeExpressionList<ST> for ($($T,)+) where
-                $($T: AsExpression<ST>,)+
+            #[cfg(feature = "postgres")]
+            impl<$($T,)+ ST> $crate::pg::expression::array::IntoSingleTypeExpressionList<ST> for ($($T,)+) where
+                $($T: $crate::expression::AsExpression<ST>,)+
             {
-                type Expression = ($(AsExprOf<$T, ST>,)+);
+                type Expression = ($($crate::expression::helper_types::AsExprOf<$T, ST>,)+);
 
                 fn into_single_type_expression_list(self) -> Self::Expression {
+                    use expression::IntoSql;
                     ($(self.$idx.into_sql::<ST>(),)+)
                 }
             }
