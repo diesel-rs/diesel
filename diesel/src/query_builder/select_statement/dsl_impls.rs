@@ -86,6 +86,36 @@ where
     }
 }
 
+#[cfg(feature = "postgres")]
+use query_dsl::DistinctOnDsl;
+#[cfg(feature = "postgres")]
+use query_builder::distinct_clause::DistinctOnClause;
+
+#[cfg(feature = "postgres")]
+impl<ST, F, S, D, W, O, L, Of, G, Selection> DistinctOnDsl<Selection, F>
+    for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    Selection: SelectableExpression<F>,
+    Self: Expression<SqlType = ST>,
+    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, L, Of, G>: Expression<SqlType = ST>,
+{
+    type Output = SelectStatement<F, S, DistinctOnClause<Selection>, W, O, L, Of, G>;
+
+    fn distinct_on(self, selection: Selection) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            DistinctOnClause(selection),
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.for_update,
+        )
+    }
+}
+
 impl<F, S, D, W, O, L, Of, G, FU, Predicate> FilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where

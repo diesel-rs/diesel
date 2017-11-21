@@ -22,6 +22,7 @@ mod custom_types;
 mod debug;
 mod delete;
 mod deserialization;
+mod distinct;
 mod errors;
 mod expressions;
 mod filter;
