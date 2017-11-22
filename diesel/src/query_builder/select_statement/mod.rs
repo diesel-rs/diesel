@@ -43,15 +43,15 @@ pub struct SelectStatement<
     GroupBy = NoGroupByClause,
     ForUpdate = NoForUpdateClause,
 > {
-    select: Select,
-    from: From,
-    distinct: Distinct,
-    where_clause: Where,
-    order: Order,
-    limit: Limit,
-    offset: Offset,
-    group_by: GroupBy,
-    for_update: ForUpdate,
+    pub(crate) select: Select,
+    pub(crate) from: From,
+    pub(crate) distinct: Distinct,
+    pub(crate) where_clause: Where,
+    pub(crate) order: Order,
+    pub(crate) limit: Limit,
+    pub(crate) offset: Offset,
+    pub(crate) group_by: GroupBy,
+    pub(crate) for_update: ForUpdate,
 }
 
 impl<F, S, D, W, O, L, Of, G, FU> SelectStatement<F, S, D, W, O, L, Of, G, FU> {

@@ -1,4 +1,5 @@
 use query_source::Table;
+#[cfg(feature = "postgres")]
 use expression::SelectableExpression;
 
 /// Adds the `DISTINCT` keyword to a query.
@@ -53,8 +54,8 @@ where
 /// # Example
 ///
 /// ```rust
-///
 /// # #[macro_use] extern crate diesel;
+/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
@@ -64,20 +65,39 @@ where
 /// #     }
 /// # }
 /// #
+/// # #[derive(Queryable, Debug, PartialEq)]
+/// # struct Animal {
+/// #     species: String,
+/// #     name: Option<String>,
+/// #     legs: i32,
+/// # }
+/// #
+/// # impl Animal {
+/// #     fn new<S: Into<String>>(species: S, name: Option<&str>, legs: i32) -> Self {
+/// #         Animal {
+/// #             species: species.into(),
+/// #             name: name.map(Into::into),
+/// #             legs
+/// #         }
+/// #     }
+/// # }
+/// #
 /// # fn main() {
 /// #     use self::animals::dsl::*;
 /// #     let connection = establish_connection();
 /// #     connection.execute("DELETE FROM animals").unwrap();
-/// connection.execute("INSERT INTO animals (species, name, legs) VALUES ('dog', 'Jack', 4), ('dog', Null, 4), ('spider', Null, 8)")
+/// connection.execute("INSERT INTO animals (species, name, legs)
+///                     VALUES ('dog', 'Jack', 4), ('dog', Null, 4),
+///                            ('spider', Null, 8)")
 ///     .unwrap();
 /// let all_animals = animals.select((species, name, legs)).load(&connection);
 /// let distinct_animals = animals.select((species, name, legs)).distinct_on(species).load(&connection);
 ///
-/// assert_eq!(Ok(vec![(String::from("dog"), Some(String::from("Jack")), 4),
-///                    (String::from("dog"), None, 4),
-///                    (String::from("spider"), None, 8)]), all_animals);
-/// assert_eq!(Ok(vec![(String::from("dog"), Some(String::from("Jack")), 4),
-///                    (String::from("spider"), None, 8)]), distinct_animals);
+/// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
+///                    Animal::new("dog", None, 4),
+///                    Animal::new("spider", None, 8)]), all_animals);
+/// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
+///                    Animal::new("spider", None, 8)]), distinct_animals);
 /// # }
 /// ```
 #[cfg(feature = "postgres")]
