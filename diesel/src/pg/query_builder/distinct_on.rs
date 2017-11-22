@@ -2,7 +2,7 @@ use pg::Pg;
 use query_dsl::DistinctOnDsl;
 use query_builder::{AstPass, QueryFragment, SelectStatement};
 use result::QueryResult;
-use expression::{SelectableExpression, Expression};
+use expression::{Expression, SelectableExpression};
 
 #[derive(Debug, Clone, Copy)]
 pub struct DistinctOnClause<T>(pub(crate) T);
