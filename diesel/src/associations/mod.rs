@@ -65,17 +65,17 @@
 //! custom one to `#[belongs_to]` by adding a `foreign_key` argument to the
 //! attribute like so `#[belongs_to(Foo, foreign_key="mykey")]`.
 //!
-//! `Associations` are separate from joins in Diesel. Please see docs on [`JoinDsl!`]
+//! `Associations` are separate from joins in Diesel. Please see docs on [`JoinDsl`]
 //! to learn more about joining tables.
 //!
-//! [`JoinDsl!`]: ../prelude/trait.JoinDsl.html
+//! [`JoinDsl`]: ../query_dsl/trait.JoinDsl.html
 //!
 //! You can load the children for a single parent or multiple parents (`Vec<ParentType>`) using the
 //! [`belonging_to()`][belonging-to] method.
 //! This amounts to the `SQL` statements `SELECT * FROM posts WHERE posts.user_id = $1`
 //! or `SELECT * FROM posts WHERE posts.user_id IN ($1, $2, etc...)`
 //!
-//! [belonging-to]: ../prelude/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [belonging-to]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;

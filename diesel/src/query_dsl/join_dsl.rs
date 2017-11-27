@@ -89,8 +89,8 @@ where
 pub trait JoinDsl: Sized {
     /// Join two tables using a SQL `INNER JOIN`.
     /// The implicit `ON` clause is defined
-    /// via the [JoinDsl](./trait.JoinOnDsl.html). 
-    /// Use [`.on`](./trait.JoinOnDsl.html#method.on) 
+    /// via the [JoinDsl](./trait.JoinOnDsl.html).
+    /// Use [`.on`](./trait.JoinOnDsl.html#method.on)
     /// to override the implicit `ON` clause.
     fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
     where
@@ -101,8 +101,8 @@ pub trait JoinDsl: Sized {
 
     /// Join two tables using a SQL `LEFT OUTER JOIN`.
     /// The implicit `ON` clause is defined
-    /// via the [JoinDsl](./trait.JoinOnDsl.html). 
-    /// Use [`.on`](./trait.JoinOnDsl.html#method.on) 
+    /// via the [JoinDsl](./trait.JoinOnDsl.html).
+    /// Use [`.on`](./trait.JoinOnDsl.html#method.on)
     /// to override the implicit `ON` clause.
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
     where

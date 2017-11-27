@@ -23,7 +23,7 @@ impl<T> MigrationConnection for T
 where
     T: Connection,
     String: FromSql<VarChar, T::Backend>,
-    // FIXME: HRTB is preventing projecting on any associated types here
+// FIXME: HRTB is preventing projecting on any associated types here
     for<'a> InsertStatement<__diesel_schema_migrations, ColumnInsertValue<version, &'a Bound<VarChar, &'a str>>>: ExecuteDsl<T>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
