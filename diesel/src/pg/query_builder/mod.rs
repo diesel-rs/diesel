@@ -3,6 +3,8 @@ use query_builder::QueryBuilder;
 use result::QueryResult;
 
 mod query_fragment_impls;
+mod distinct_on;
+pub use self::distinct_on::DistinctOnClause;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]

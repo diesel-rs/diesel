@@ -23,3 +23,6 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
 }
 
 impl_query_id!(DistinctClause);
+
+#[cfg(feature = "postgres")]
+pub use pg::DistinctOnClause;

@@ -8,6 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Implement `DISTINCT ON()`/`.distinct_on()` for postgresql
+
 * The `.for_update()` method has been added to select statements, allowing
   construction of `SELECT ... FOR UPDATE`.
 
