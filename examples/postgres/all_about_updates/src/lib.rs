@@ -42,7 +42,7 @@ fn examine_sql_from_publish_all_posts() {
 
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 -- binds: [false]",
-        debug_query::<Pg, _>(&diesel::update(posts).set(draft.eq(false))).to_string()
+        debug_query(&diesel::update(posts).set(draft.eq(false))).to_string()
     );
 }
 

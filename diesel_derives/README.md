@@ -1,4 +1,4 @@
-# Diesel Codegen
+# Diesel Derives
 
 This crate implements Diesel's procedural macros using the Macros 1.1 system.
 It depends on features introduced in Rust 1.15.
