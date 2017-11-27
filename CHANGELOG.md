@@ -70,6 +70,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
  `embed_migrations!` macro) is moved to the `diesel_migrations` crate. If you
  are using any of those, simply depend on the new crates and your code will
  continue to build.
+ This means the following:
+	* You are using `infer_schema!` or `infer_table_from_schema!` -> depend now on `diesel_infer_schema`
+	* You are using `embed_migrations!` or any other migration releated stuff -> depend now on `diesel_migrations`
+	* You are using custom derives from `diesel_codegen` -> remove that dependency and add `#[macro_use]` to `extern crate diesel`
+
 
 ### Deprecated
 
