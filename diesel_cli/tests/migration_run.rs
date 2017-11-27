@@ -173,3 +173,143 @@ fn any_pending_migrations_after_running_and_creating() {
 
     assert!(result.stdout().contains("true\n"));
 }
+
+#[test]
+fn migration_run_runs_pending_migrations_custom_database_url_1() {
+    let p = project("migration_run_custom_db_url_1")
+        .folder("migrations")
+        .build();
+    let db_url = p.database_url();
+    let db = database(&db_url);
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command_without_database_url("migration")
+        .arg("run")
+        .arg("--database-url")
+        .arg(db_url)
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+#[test]
+fn migration_run_runs_pending_migrations_custom_database_url_2() {
+    let p = project("migration_run_custom_db_url_2")
+        .folder("migrations")
+        .build();
+    let db_url = p.database_url();
+    let db = database(&db_url);
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command_without_database_url("migration")
+        .arg("--database-url")
+        .arg(db_url)
+        .arg("run")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+
+#[test]
+fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
+    let p = project("migration_run_custom_migration_dir_1")
+        .folder("custom_migrations")
+        .build();
+    let db_url = p.database_url();
+    let db = database(&db_url);
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration")
+        .arg("run")
+        .arg("--migration-dir")
+        .arg(p.migration_dir_in_directory("custom_migrations"))
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+
+#[test]
+fn migration_run_runs_pending_migrations_custom_migration_dir_2() {
+    let p = project("migration_run_custom_migration_dir_2")
+        .folder("custom_migrations")
+        .build();
+    let db_url = p.database_url();
+    let db = database(&db_url);
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration")
+        .arg("--migration-dir")
+        .arg(p.migration_dir_in_directory("custom_migrations"))
+        .arg("run")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}

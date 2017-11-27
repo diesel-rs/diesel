@@ -127,6 +127,11 @@ impl Project {
         fs::remove_dir_all(file).unwrap();
     }
 
+    pub fn migration_dir_in_directory(&self, directory: &str) -> String {
+        let migration_path = self.directory.path().join(directory);
+        migration_path.display().to_string()
+    }
+
     pub fn create_migration(&self, name: &str, up: &str, down: &str) {
         self.create_migration_in_directory("migrations", name, up, down);
     }

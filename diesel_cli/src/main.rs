@@ -54,32 +54,32 @@ fn main() {
 
 fn run_migration_command(matches: &ArgMatches) {
     match matches.subcommand() {
-        ("run", Some(args)) => {
+        ("run", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(args);
+            let dir = migrations_dir(matches);
             call_with_conn!(
                 database_url,
                 migrations::run_pending_migrations_in_directory(&dir, &mut stdout())
             ).unwrap_or_else(handle_error);
         }
-        ("revert", Some(args)) => {
+        ("revert", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(args);
+            let dir = migrations_dir(matches);
             call_with_conn!(
                 database_url,
                 migrations::revert_latest_migration_in_directory(&dir)
             ).unwrap_or_else(handle_error);
         }
-        ("redo", Some(args)) => {
+        ("redo", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(args);
+            let dir = migrations_dir(matches);
             call_with_conn!(database_url, redo_latest_migration(&dir));
         }
-        ("list", Some(args)) => {
+        ("list", Some(_)) => {
             use std::ffi::OsStr;
 
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(args);
+            let dir = migrations_dir(matches);
             let migrations =
                 call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))
                     .unwrap_or_else(handle_error);
@@ -118,7 +118,7 @@ fn run_migration_command(matches: &ArgMatches) {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
-            let migration_dir = migrations_dir(args).join(versioned_name);
+            let migration_dir = migrations_dir(matches).join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
             let migration_dir_relative =
@@ -153,10 +153,20 @@ fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
         .unwrap_or_else(|| Box::new(Utc::now().format(TIMESTAMP_FORMAT)))
 }
 
-fn migrations_dir(matches: &ArgMatches) -> PathBuf {
+fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
     matches
         .value_of("MIGRATION_DIRECTORY")
         .map(PathBuf::from)
+        .or_else(|| {
+            matches
+                .subcommand()
+                .1
+                .and_then(|s| migrations_dir_from_cli(s))
+        })
+}
+
+fn migrations_dir(matches: &ArgMatches) -> PathBuf {
+    migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
         .unwrap_or_else(|| {
             migrations::find_migrations_directory().unwrap_or_else(handle_error)
