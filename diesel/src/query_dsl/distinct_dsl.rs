@@ -107,7 +107,10 @@ where
 /// ```
 #[cfg(feature = "postgres")]
 pub trait DistinctOnDsl<Selection: SelectableExpression<T>, T> {
+    /// Query with `DISTINCT ON()` added
     type Output;
+
+    /// Should return query with `DISTINCT ON` added
     fn distinct_on(self, selection: Selection) -> Self::Output;
 }
 
