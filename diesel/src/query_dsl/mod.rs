@@ -1,3 +1,12 @@
+//! Traits that construct SELECT statements
+//!
+//! Traits in this module have methods that generally map to the keyword for the corresponding clause in SQL,
+//! unless it conflicts with a Rust keyword (such as `WHERE`/`where`).
+//!
+//! See also [`expression_methods`][expression_methods] and [`dsl`][dsl].
+//!
+//! [expression_methods]: ../expression_methods/index.html
+//! [dsl]: ../dsl/index.html
 mod belonging_to_dsl;
 #[doc(hidden)]
 pub mod boxed_dsl;

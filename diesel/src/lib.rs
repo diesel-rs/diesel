@@ -68,7 +68,7 @@ pub mod pg;
 pub mod sqlite;
 
 pub mod migrations;
-mod query_dsl;
+pub mod query_dsl;
 pub mod query_source;
 pub mod result;
 pub mod row;

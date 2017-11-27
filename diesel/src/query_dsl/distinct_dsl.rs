@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use query_source::Table;
 #[cfg(feature = "postgres")]
 use expression::SelectableExpression;
@@ -33,7 +34,10 @@ use expression::SelectableExpression;
 /// # }
 /// ```
 pub trait DistinctDsl {
+    /// Query with DISTINCT added
     type Output;
+
+    /// Should return query with DISTINCT added
     fn distinct(self) -> Self::Output;
 }
 
@@ -44,6 +48,7 @@ where
 {
     type Output = <T::Query as DistinctDsl>::Output;
 
+    /// Returns query with DISTINCT added
     fn distinct(self) -> Self::Output {
         self.as_query().distinct()
     }
