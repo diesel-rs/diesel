@@ -108,7 +108,7 @@ Runs the `down.sql` and then the `up.sql` for the most recent migration.
 ## `diesel print-schema`
 Prints table definitions for database schema.
 
-[pending-migrations]: http://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
+[pending-migrations]: https://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
 [rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
 
 

@@ -11,14 +11,14 @@ It also provides the macros [`infer_schema!`][infer-schema],
 [`infer_table_from_schema!`][infer-table-from-schema], and
 [`embed_migrations!`][embed-migrations].
 
-[queryable]: http://docs.diesel.rs/diesel/query_source/trait.Queryable.html
-[identifiable]: http://docs.diesel.rs/diesel/associations/trait.Identifiable.html
-[insertable]: http://docs.diesel.rs/diesel/prelude/trait.Insertable.html
-[as-changeset]: http://docs.diesel.rs/diesel/query_builder/trait.AsChangeset.html
-[associations]: http://docs.diesel.rs/diesel/associations/index.html
-[infer-schema]: http://docs.diesel.rs/diesel/macro.infer_schema!.html
-[infer-table-from-schema]: http://docs.diesel.rs/diesel/macro.infer_table_from_schema!.html
-[embed-migrations]: http://docs.diesel.rs/diesel/macro.embed_migrations!.html
+[queryable]: https://docs.diesel.rs/diesel/query_source/trait.Queryable.html
+[identifiable]: https://docs.diesel.rs/diesel/associations/trait.Identifiable.html
+[insertable]: https://docs.diesel.rs/diesel/prelude/trait.Insertable.html
+[as-changeset]: https://docs.diesel.rs/diesel/query_builder/trait.AsChangeset.html
+[associations]: https://docs.diesel.rs/diesel/associations/index.html
+[infer-schema]: https://docs.diesel.rs/diesel/macro.infer_schema!.html
+[infer-table-from-schema]: https://docs.diesel.rs/diesel/macro.infer_table_from_schema!.html
+[embed-migrations]: https://docs.diesel.rs/diesel/macro.embed_migrations!.html
 
 # Using this crate
 

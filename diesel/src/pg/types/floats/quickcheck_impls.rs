@@ -11,7 +11,7 @@ impl Arbitrary for PgNumeric {
         let mut variant = Option::<bool>::arbitrary(g);
         let mut weight = -1;
         while weight < 0 {
-            // Oh postgres... Don't ever change. http://bit.ly/lol-code-comments
+            // Oh postgres... Don't ever change. https://bit.ly/lol-code-comments
             weight = i16::arbitrary(g);
         }
         let scale = u16::arbitrary(g) & SCALE_MASK;

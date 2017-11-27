@@ -1,4 +1,4 @@
-[![](http://diesel.rs/assets/images/diesel_logo_stacked_black.png)](http://diesel.rs)
+[![](https://diesel.rs/assets/images/diesel_logo_stacked_black.png)](https://diesel.rs)
 
 A safe, extensible ORM and Query Builder for Rust
 ==========================================================
@@ -8,9 +8,9 @@ A safe, extensible ORM and Query Builder for Rust
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
-[Documentation](http://docs.diesel.rs)
+[Documentation](https://docs.diesel.rs)
 
-[Homepage](http://diesel.rs)
+[Homepage](https://diesel.rs)
 
 Diesel gets rid of the boilerplate for database interaction and eliminates
 runtime errors without sacrificing performance. It takes full advantage of
@@ -20,7 +20,7 @@ Rust."
 ## Getting Started
 
 Find our extensive Getting Started tutorial at
-[http://diesel.rs/guides/getting-started](http://diesel.rs/guides/getting-started).
+[https://diesel.rs/guides/getting-started](https://diesel.rs/guides/getting-started).
 Guides on more specific features are coming soon.
 
 ## Code of conduct
@@ -33,9 +33,9 @@ this GitHub repository, must follow our [code of conduct](https://github.com/die
 Licensed under either of these:
 
  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-   http://www.apache.org/licenses/LICENSE-2.0)
+   https://www.apache.org/licenses/LICENSE-2.0)
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or
-   http://opensource.org/licenses/MIT)
+   https://opensource.org/licenses/MIT)
 
 ### Contributing
 

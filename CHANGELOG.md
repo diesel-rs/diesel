@@ -183,7 +183,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `1`.
 
 [bigdecimal-0.16.0]: https://crates.io/crates/bigdecimal
-[range-0.16.0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Range.html
+[range-0.16.0]: https://docs.diesel.rs/diesel/pg/types/sql_types/struct.Range.html
 
 ## [0.15.2] - 2017-07-28
 
@@ -207,7 +207,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `ON` clause of a join can now be manually specified. See [the
   docs][join-on-dsl-0.15.0] for details.
 
-[join-on-dsl-0.15.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html#method.on
+[join-on-dsl-0.15.0]: https://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html#method.on
 
 ### Changed
 
@@ -239,7 +239,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   now be used to join between any number of tables in a single query. See the
   documentation for [`JoinDsl`][join-dsl-0.14.0] for details
 
-[join-dsl-0.14.0]: http://docs.diesel.rs/diesel/prelude/trait.JoinDsl.html
+[join-dsl-0.14.0]: https://docs.diesel.rs/diesel/prelude/trait.JoinDsl.html
 
 * Added support for the [PostgreSQL network types][pg-network-0.14.0] `MACADDR`.
 
@@ -251,8 +251,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added the [`insert_default_values`][insert-default-0.14.0] function.
 
 [pg-network-0.14.0]: https://www.postgresql.org/docs/9.6/static/datatype-net-types.html
-[not-0.14.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.not.html
-[insert-default-0.14.0]: http://docs.diesel.rs/diesel/fn.insert_default_values.html
+[not-0.14.0]: https://docs.diesel.rs/diesel/expression/dsl/fn.not.html
+[insert-default-0.14.0]: https://docs.diesel.rs/diesel/fn.insert_default_values.html
 [bigdecimal-0.14.0]: https://crates.io/crates/bigdecimal
 
 * Added `diesel_prefix_operator!` which behaves identically to
@@ -288,7 +288,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Bind values can now be supplied to queries constructed using raw SQL. See [the
   docs][sql-bind-0.13.0] for more details.
 
-[sql-bind-0.13.0]: http://docs.diesel.rs/diesel/expression/sql_literal/struct.SqlLiteral.html#method.bind
+[sql-bind-0.13.0]: https://docs.diesel.rs/diesel/expression/sql_literal/struct.SqlLiteral.html#method.bind
 
 * Added support for the [PostgreSQL network types][pg-network-0.13.0] `CIDR` and
   `INET`.
@@ -306,7 +306,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added [`migrations::any_pending_migrations`][pending-migrations-0.13.0].
 
-[pending-migrations-0.13.0]: http://docs.diesel.rs/diesel/migrations/fn.any_pending_migrations.html
+[pending-migrations-0.13.0]: https://docs.diesel.rs/diesel/migrations/fn.any_pending_migrations.html
 
 ### Fixed
 
@@ -332,12 +332,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   support specifying the constraint, as well as `DO UPDATE` in addition to `DO
   NOTHING`. See [the module docs][upsert-0.12.0] for details.
 
-[upsert-0.12.0]: http://docs.diesel.rs/diesel/pg/upsert/index.html
+[upsert-0.12.0]: https://docs.diesel.rs/diesel/pg/upsert/index.html
 
 * Added support for the SQL concatenation operator `||`. See [the docs for
   `.concat`][concat-0.12.0] for more details.
 
-[concat-0.12.0]: http://docs.diesel.rs/diesel/expression/expression_methods/text_expression_methods/trait.TextExpressionMethods.html#method.concat
+[concat-0.12.0]: https://docs.diesel.rs/diesel/expression/expression_methods/text_expression_methods/trait.TextExpressionMethods.html#method.concat
 
 * Added support for the PostgreSQL [`Money` type][pg-money-0.12.0].
 
@@ -409,18 +409,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   MySQL support by default. To enable it for Diesel and Diesel Codegen, add
   `features = ["mysql"]` to Cargo.toml. See [the docs][mysql-0.11.0] for details.
 
-[mysql-0.11.0]: http://docs.diesel.rs/diesel/mysql/index.html
+[mysql-0.11.0]: https://docs.diesel.rs/diesel/mysql/index.html
 
 * Added support for PG's `ON CONFLICT DO NOTHING` clause. See [the
   docs][on-conflict-0.11.0] for details.
 
-[on-conflict-0.11.0]: http://docs.diesel.rs/diesel/pg/upsert/trait.OnConflictExtension.html#method.on_conflict_do_nothing
+[on-conflict-0.11.0]: https://docs.diesel.rs/diesel/pg/upsert/trait.OnConflictExtension.html#method.on_conflict_do_nothing
 
 * Queries constructed using [`diesel::select`][select-0.11.0] now work properly
   when [boxed][boxed-0.11.0].
 
 [select-0.11.0]: https://docs.rs/diesel/0.11.0/diesel/fn.select.html
-[boxed-0.11.0]: http://docs.rs/diesel/0.11.0/prelude/trait.BoxedDsl.html
+[boxed-0.11.0]: https://docs.rs/diesel/0.11.0/prelude/trait.BoxedDsl.html
 
 * Arrays containing null are now supported. `infer_schema!` will never infer an
   array that contains null, but a `table!` definition which specifies a type of
@@ -447,18 +447,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * [`max`][max-0.11.0] and [`min`][min-0.11.0] are now always nullable. The database will
   return `NULL` when the table is empty.
 
-[max-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.max.html
-[min-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/fn.min.html
+[max-0.11.0]: https://docs.diesel.rs/diesel/expression/dsl/fn.max.html
+[min-0.11.0]: https://docs.diesel.rs/diesel/expression/dsl/fn.min.html
 
 * [`now`][now-0.11.0] can now be used as an expression of type `Timestamptz`.
 
-[now-0.11.0]: http://docs.diesel.rs/diesel/expression/dsl/struct.now.html
+[now-0.11.0]: https://docs.diesel.rs/diesel/expression/dsl/struct.now.html
 
 * [`Connection::transaction`][transaction-0.11.0] now returns your error
   directly instead of wrapping it in `TransactionError`. It requires that the
   error implement `From<diesel::result::Error>`
 
-[transaction-0.11.0]: http://docs.diesel.rs/diesel/connection/trait.Connection.html#method.transaction
+[transaction-0.11.0]: https://docs.diesel.rs/diesel/connection/trait.Connection.html#method.transaction
 
 * The way tuples of columns from the right side of left outer joins interact
   with `.select` has changed. If you are deserializing into an option of a tuple
@@ -569,12 +569,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for batch insert on SQLite. This means that you can now pass a
   slice or vector to [`diesel::insert`][insert] on all backends.
 
-[insert]: http://docs.diesel.rs/diesel/fn.insert.html
+[insert]: https://docs.diesel.rs/diesel/fn.insert.html
 
 * Added a function for SQL `EXISTS` expressions. See
   [`diesel::expression::dsl::exists`][exists] for details.
 
-[exists]: http://docs.diesel.rs/diesel/expression/dsl/fn.sql.html
+[exists]: https://docs.diesel.rs/diesel/expression/dsl/fn.sql.html
 
 * `#[derive(Identifiable)]` can be used with structs that have primary keys
   other than `id`, as well as structs with composite primary keys. You can now
@@ -639,7 +639,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added partial support for composite primary keys.
 
 * Added support for PostgreSQL `NULLS FIRST` and `NULLS LAST` when sorting.
-  See http://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html
+  See https://docs.diesel.rs/diesel/prelude/trait.SortExpressionMethods.html
   for details.
 
 * Added support for the `timestamp with time zone` type in PostgreSQL (referred
@@ -709,22 +709,22 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `Insertable!` macro can now be used instead of `#[insertable_into]` for
   those wishing to avoid syntax extensions from `diesel_codegen`. See
-  http://docs.diesel.rs/diesel/macro.Insertable!.html for details.
+  https://docs.diesel.rs/diesel/macro.Insertable!.html for details.
 
 * The `Queryable!` macro can now be used instead of `#[derive(Queryable)]` for
   those wishing to avoid syntax extensions from `diesel_codegen`. See
-  http://docs.diesel.rs/diesel/macro.Queryable!.html for details.
+  https://docs.diesel.rs/diesel/macro.Queryable!.html for details.
 
 * The `Identifiable!` macro can now be used instead of `#[derive(Identifiable)]` for
   those wishing to avoid syntax extensions from `diesel_codegen`. See
-  http://docs.diesel.rs/diesel/macro.Identifiable!.html for details.
+  https://docs.diesel.rs/diesel/macro.Identifiable!.html for details.
 
 * The `AsChangeset!` macro can now be used instead of `#[changeset_for(table)]`
   for those wishing to avoid syntax extensions from `diesel_codegen`. See
-  http://docs.diesel.rs/diesel/macro.AsChangeset!.html for details.
+  https://docs.diesel.rs/diesel/macro.AsChangeset!.html for details.
 
 * Added support for the PostgreSQL `ALL` operator. See
-  http://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
+  https://docs.diesel.rs/diesel/pg/expression/dsl/fn.all.html for details.
 
 * Added support for `RETURNING` expressions in `DELETE` statements. Implicitly
   these queries will use `RETURNING *`.
@@ -751,15 +751,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `#[column_name(name)]`.
 
 * The structure of `DatabaseError` has changed to hold more information. See
-  http://docs.diesel.rs/diesel/result/enum.Error.html and
-  http://docs.diesel.rs/diesel/result/trait.DatabaseErrorInformation.html for
+  https://docs.diesel.rs/diesel/result/enum.Error.html and
+  https://docs.diesel.rs/diesel/result/trait.DatabaseErrorInformation.html for
   more information
 
 * Structs which implement `Identifiable` can now be passed to `update` and
   `delete`. This means you can now write `delete(&user).execute(&connection)`
   instead of `delete(users.find(user.id)).execute(&connection)`
 
-[associations-module]: http://docs.diesel.rs/diesel/associations/index.html
+[associations-module]: https://docs.diesel.rs/diesel/associations/index.html
 [syntex-split]: https://github.com/diesel-rs/diesel/commit/36b8801bf5e9594443743e6a7c62e29d3dce36b7
 
 ### Fixed
@@ -775,7 +775,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   character used in the pattern. See [EscapeExpressionMethods][escape] for
   details.
 
-[escape]: http://docs.diesel.rs/diesel/expression/expression_methods/escape_expression_methods/trait.EscapeExpressionMethods.html
+[escape]: https://docs.diesel.rs/diesel/expression/expression_methods/escape_expression_methods/trait.EscapeExpressionMethods.html
 
 ### Fixed
 
@@ -804,7 +804,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `SqliteConnection` now implements `Send`
 
-[boxed_dsl]: http://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
+[boxed_dsl]: https://docs.diesel.rs/diesel/prelude/trait.BoxedDsl.html
 
 ### Changed
 
@@ -968,7 +968,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   for more information.
 
 * Add the ability for diesel to maintain your schema for you automatically. See
-  the [migrations](http://docs.diesel.rs/diesel/migrations/index.html)
+  the [migrations](https://docs.diesel.rs/diesel/migrations/index.html)
   module for individual methods.
 
 * Add DebugQueryBuilder to build sql without requiring a connection.
