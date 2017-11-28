@@ -185,7 +185,7 @@ where
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,
-    (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>
+    (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
     fn to_sql<W: Write>(
         &self,
