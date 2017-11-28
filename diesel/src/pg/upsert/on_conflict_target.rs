@@ -12,7 +12,6 @@ use result::QueryResult;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {

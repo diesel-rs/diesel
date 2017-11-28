@@ -8,11 +8,11 @@ use result::QueryResult;
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_codegen` by adding
-/// `#[derive(AsChangeset)]` to your struct.  Structs which derive this trait
-/// must be annotated with `#[table_name = "something"]`. If the field name of
-/// your struct differs from the name of the column, you can annotate the field
-/// with `#[column_name = "some_column_name"]`.
+/// This trait can be automatically derived using by adding `#[derive(AsChangeset)]`
+/// to your struct.  Structs which derive this trait must be annotated with
+/// `#[table_name = "something"]`. If the field name of your struct differs
+/// from the name of the column, you can annotate the field with
+/// `#[column_name = "some_column_name"]`.
 ///
 /// By default, any `Option` fields on the struct are skipped if their value is
 /// `None`. If you would like to assign `NULL` to the field instead, you can

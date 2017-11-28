@@ -238,7 +238,6 @@ use query_builder::{QueryFragment, QueryId};
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel_codegen;
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::types;
 /// # include!("../doctest_setup.rs");

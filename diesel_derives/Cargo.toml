@@ -1,5 +1,5 @@
 [package]
-name = "diesel_codegen"
+name = "diesel_derives"
 version = "0.16.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
@@ -7,30 +7,29 @@ description = "Custom derive and procedural macros for Diesel"
 readme = "README.md"
 documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
-repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_codegen"
+repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 keywords = ["orm", "database", "postgres", "sql", "codegen"]
 
 [dependencies]
 syn = { version = "0.11.4", features = ["aster"] }
 quote = "0.3.12"
-dotenv = { version = ">=0.8, <0.11", optional = true, default-features = false }
-diesel = { version = "0.16.0", default-features = false }
-diesel_infer_schema = { version = "0.16.0", default-features = false, optional = true }
 clippy = { optional = true, version = "=0.0.162" }
 
 [dev-dependencies]
+dotenv = { version = ">=0.8, <0.11", default-features = false }
 tempdir = "0.3.4"
+diesel = { version = "0.16", features = ["sqlite", "postgres", "mysql"] }
 cfg-if = "0.1.0"
 
 [lib]
 proc-macro = true
 
 [features]
-default = ["dotenv"]
+default = []
 lint = ["clippy"]
-postgres = ["diesel_infer_schema/postgres", "diesel/postgres"]
-sqlite = ["diesel_infer_schema/sqlite", "diesel/sqlite"]
-mysql = ["diesel_infer_schema/mysql", "diesel/mysql"]
+postgres = []
+sqlite = []
+mysql = []
 
 [[test]]
 name = "tests"

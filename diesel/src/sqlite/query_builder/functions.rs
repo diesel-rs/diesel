@@ -8,7 +8,6 @@ use query_builder::insert_statement::{DeprecatedIncompleteInsertStatement, Repla
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # table! {

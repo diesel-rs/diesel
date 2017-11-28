@@ -10,20 +10,18 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [dependencies]
-diesel = { version = "0.16.0", default-features = false }
+infer_schema_macros = { path = "./infer_schema_macros", version = "0.16.0" }
 clippy = { optional = true, version = "=0.0.162" }
 
 [dev-dependencies]
-dotenv = ">=0.8, <0.11"
+diesel = "0.16.0"
+dotenv = ">= 0.8, <0.11"
+cfg-if = "0.1.0"
 
 [features]
-default = []
-postgres = ["diesel/postgres", "uses_information_schema"]
-sqlite = ["diesel/sqlite"]
-mysql = ["diesel/mysql", "uses_information_schema"]
-uses_information_schema = []
+default = ["dotenv_macro"]
+dotenv_macro = ["infer_schema_macros/dotenv"]
 lint = ["clippy"]
-
-[badges]
-travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "sgrif/diesel" }
+postgres = ["infer_schema_macros/postgres"]
+sqlite = ["infer_schema_macros/sqlite"]
+mysql = ["infer_schema_macros/mysql"]

@@ -7,9 +7,6 @@
 //! [open-issue]: https://github.com/diesel-rs/diesel/issues/new
 //! [gitter]: https://gitter.im/diesel-rs/diesel
 //!
-//! Note: The derives in this guide are provided by `diesel_codegen`. Make sure you have
-//! `#[macro_use] extern crate diesel_codegen;` at the root of your crate.
-//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with
 //! `#[belongs_to]`.
@@ -18,7 +15,6 @@
 //! // You need to have the table definitions from `infer_schema!` or `table!` in scope to
 //! // derive Identifiable.
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!
@@ -72,7 +68,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -126,7 +121,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -181,7 +175,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -240,7 +233,6 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
-//! # #[macro_use] extern crate diesel_codegen;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -356,8 +348,8 @@ impl<'a, T: HasTable> HasTable for &'a T {
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_codegen` by adding
-/// `#[derive(Identifiable)]` to your struct. The primary key will be assumed to be a field and
+/// This trait can be automatically derived by adding `#[derive(Identifiable)]`
+/// to your struct. The primary key will be assumed to be a field and
 /// column called `id`. If it's not, you can annotate your structure with `#[primary_key(your_id)]`
 /// or `#[primary_key(your_id, second_id)]`. By default the table will be assumed to be the plural
 /// form of the struct name (using *very* dumb pluralization -- it just adds an `s` at the end). If

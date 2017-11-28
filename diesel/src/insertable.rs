@@ -13,11 +13,11 @@ use sqlite::Sqlite;
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived using `diesel_codegen` by adding
-/// `#[derive(Insertable)]` to your struct. Structs which derive this trait must
-/// also be annotated with `#[table_name = "some_table_name"]`. If the field
-/// name of your struct differs from the name of the column, you can annotate
-/// the field with `#[column_name = "some_column_name"]`.
+/// This trait can be automatically derived by adding  `#[derive(Insertable)]`
+/// to your struct. Structs which derive this trait must also be annotated
+/// with `#[table_name = "some_table_name"]`. If the field name of your
+/// struct differs from the name of the column, you can annotate the field
+/// with `#[column_name = "some_column_name"]`.
 pub trait Insertable<T> {
     type Values;
 

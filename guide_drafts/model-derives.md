@@ -2,10 +2,10 @@ Model Derives in Depth
 ===============
 
 Diesel lets you write safe queries by using traits that you can implement on your models.
-Writing these implementations by hand can be very laborious, so in addition to the `diesel` crate, the `diesel_codegen` crate offers custom derives.
+Writing these implementations by hand can be very laborious, so the `diesel` crate offers custom derives.
 In this section, we will cover each trait in detail in terms of its use cases, usage considerations,
 as well compare hand written implementations to its derive.
-To make use of these derives, `diesel_codegen` must be imported into the root of your project.
+To make use of these derives, `diesel` must be imported into the root of your project using the `#[macro_use]` annotation.
 
 Throughout this guide, we will be looking at examples for each trait and how they interact together.
 Some of the example code will be implementing basic [CRUD] database operations.
@@ -50,9 +50,9 @@ That means we'll be able to use `expect()` to handle our error conditions.
 
 [`QueryResult`]: https://docs.diesel.rs/diesel/result/type.QueryResult.html
 
-### Example 
+### Example
 
-*Note: src/lib.rs with #[macro_use] extern crate diesel_codegen; not shown*
+*Note: src/lib.rs with #[macro_use] extern crate diesel; not shown*
 
 *src/models.rs*
 ```rust
@@ -177,9 +177,9 @@ Diesel needs to know the corresponding table name,
 so the struct must also be annotated with the `#[table_name="some_table_name"]` attribute.
 If your new struct has different field names, each of them may be annotated with `#[column_name(some_column_name)]`.
 
-### Example 
+### Example
 
-*Note: src/lib.rs with #[macro_use] extern crate diesel_codegen; not shown*
+*Note: src/lib.rs with #[macro_use] extern crate diesel; not shown*
 
 *src/models.rs*
 ```rust
@@ -335,9 +335,9 @@ we will look at some of the behavior `Identifiable` provides for us.
 We will add the annotation to our `User` struct.
 We will then attempt to get the value of the first record's primary key by calling `id()` and also update the first and last name of our user.
 
-### Example 
+### Example
 
-*Note: src/lib.rs with #[macro_use] extern crate diesel_codegen; not shown*
+*Note: src/lib.rs with #[macro_use] extern crate diesel; not shown*
 
 *src/models.rs*
 ```rust
@@ -519,9 +519,9 @@ you may use `Option<Option<T>>`.
 When updating, a value of `None` will be ignored and a value of `Some(None)` will `NULL` that column.
 All three options are shown in the following example code.
 
-### Example 
+### Example
 
-*Note: src/lib.rs with #[macro_use] extern crate diesel_codegen; not shown*
+*Note: src/lib.rs with #[macro_use] extern crate diesel; not shown*
 
 *src/models.rs*
 ```rust
@@ -754,7 +754,7 @@ table! {
 }
 ```
 
-*Note: src/lib.rs with #[macro_use] extern crate diesel_codegen; not shown*
+*Note: src/lib.rs with #[macro_use] extern crate diesel; not shown*
 
 *src/models.rs*
 ```rust

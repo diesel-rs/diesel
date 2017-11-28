@@ -100,7 +100,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -153,7 +152,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -202,7 +200,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -262,7 +259,6 @@ pub trait SortExpressionMethods: Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -305,7 +301,6 @@ pub trait SortExpressionMethods: Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -352,7 +347,6 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -381,7 +375,6 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[macro_use] extern crate diesel_codegen;
     /// # include!("../../doctest_setup.rs");
     /// # use schema::users;
     /// #

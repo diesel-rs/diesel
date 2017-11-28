@@ -1,0 +1,24 @@
+[package]
+name = "migrations_macros"
+version = "0.16.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+description = "Codegeneration macros for diesels embedded migrations"
+documentation = "http://docs.diesel.rs"
+homepage = "http://diesel.rs"
+
+[dependencies]
+clippy = { optional = true, version = "=0.0.162" }
+migrations_internals = { version = "0.16.0", path = "../migrations_internals" }
+syn = { version = "0.11.4", features = ["aster"] }
+quote = "0.3.12"
+
+[dev-dependencies]
+tempdir = "0.3.4"
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+lint = ["clippy"]

@@ -2,11 +2,16 @@
 members = [
     "diesel",
     "diesel_cli",
-    "diesel_codegen",
+    "diesel_derives",
     # FIXME: getting "multiple matching crates for `diesel`" because of the shared build directory
     # "diesel_compile_tests",
     "diesel_tests",
     "diesel_infer_schema",
+    "diesel_infer_schema/infer_schema_internals",
+    "diesel_infer_schema/infer_schema_macros",
+    "diesel_migrations",
+    "diesel_migrations/migrations_internals",
+    "diesel_migrations/migrations_macros",
     "examples/mysql/getting_started_step_1",
     "examples/mysql/getting_started_step_2",
     "examples/mysql/getting_started_step_3",
@@ -21,5 +26,5 @@ members = [
 
 [replace]
 "diesel:0.16.0" = { path = "diesel" }
-"diesel_codegen:0.16.0" = { path = "diesel_codegen" }
+"diesel_derives:0.16.0" = { path = "diesel_derives" }
 "diesel_infer_schema:0.16.0" = { path = "diesel_infer_schema" }

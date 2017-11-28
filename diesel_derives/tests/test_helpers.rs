@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 
+
 cfg_if! {
     if #[cfg(feature = "sqlite")] {
         pub type TestConnection = SqliteConnection;
@@ -52,5 +53,5 @@ cfg_if! {
             'mysql', 'postgres', or 'sqlite'. \n\n \
             ex. cargo test --features \"mysql postgres sqlite\"\n"
         );
-    }
+     }
 }

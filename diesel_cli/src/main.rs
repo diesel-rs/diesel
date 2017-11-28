@@ -14,8 +14,9 @@ extern crate chrono;
 extern crate clap;
 #[cfg_attr(any(feature = "mysql", feature = "postgres"), macro_use)]
 extern crate diesel;
-extern crate diesel_infer_schema;
 extern crate dotenv;
+extern crate infer_schema_internals;
+extern crate migrations_internals;
 
 mod database_error;
 #[macro_use]
@@ -27,14 +28,14 @@ mod query_helper;
 
 use chrono::*;
 use clap::{ArgMatches, Shell};
-use diesel::migrations::{self, MigrationConnection};
+use migrations_internals::{self as migrations, MigrationConnection};
 use std::any::Any;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use self::database_error::{DatabaseError, DatabaseResult};
-use diesel::migrations::TIMESTAMP_FORMAT;
+use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
     use self::dotenv::dotenv;
@@ -303,7 +304,7 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 }
 
 fn run_infer_schema(matches: &ArgMatches) {
-    use diesel_infer_schema::TableName;
+    use infer_schema_internals::TableName;
     use print_schema::*;
 
     let database_url = database::database_url(matches);

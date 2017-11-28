@@ -1,3 +1,18 @@
+// Built-in Lints
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+// Clippy lints
+#![cfg_attr(feature = "clippy", allow(unstable_features))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy",
+           allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
+                   type_complexity))]
+#![cfg_attr(feature = "clippy",
+           warn(option_unwrap_used, result_unwrap_used, print_stdout,
+                  wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                  unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
+                  used_underscore_binding))]
+#![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 //! Provides functions for maintaining database schema.
 //!
 //! A database migration always provides procedures to update the schema, as well as to revert
@@ -59,6 +74,9 @@
 //! -- 20160107082941_create_posts/down.sql
 //! DROP TABLE posts;
 //! ```
+#[macro_use]
+extern crate diesel;
+
 mod migration;
 #[doc(hidden)]
 pub mod connection;
@@ -75,10 +93,10 @@ pub use self::migration_error::*;
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
-use expression_methods::*;
-use query_dsl::*;
+use diesel::expression_methods::*;
+use diesel::{ExecuteDsl, FilterDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
-use {Connection, QueryResult};
+use diesel::{Connection, QueryResult};
 
 use std::env;
 use std::path::{Path, PathBuf};
@@ -330,7 +348,7 @@ fn revert_migration<Conn: Connection>(
         ));
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
-        try!(::delete(target).execute(conn));
+        try!(::diesel::delete(target).execute(conn));
         Ok(())
     })
 }

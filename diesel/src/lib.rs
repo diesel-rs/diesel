@@ -9,7 +9,6 @@
 //! ## Crates
 //!
 //! * **Diesel**: core libary, documented here
-//! * [**Diesel Codegen**](https://github.com/diesel-rs/diesel/tree/master/diesel_codegen): library of procedural macros
 //! * [**Diesel CLI**](https://github.com/diesel-rs/diesel/tree/master/diesel_cli): command line tool that aids in managing your database schema
 //!
 #![cfg_attr(feature = "unstable", feature(specialization))]
@@ -33,6 +32,11 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
+#[allow(unused_imports)]
+#[macro_use]
+extern crate diesel_derives;
+#[doc(hidden)]
+pub use diesel_derives::*;
 
 #[macro_use]
 mod macros;
@@ -67,7 +71,6 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-pub mod migrations;
 pub mod query_dsl;
 pub mod query_source;
 pub mod result;

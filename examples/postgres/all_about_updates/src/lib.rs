@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate diesel_codegen;
 
 use std::time::SystemTime;
 
@@ -70,7 +68,7 @@ fn examine_sql_from_publish_pending_posts() {
         "UPDATE \"posts\" SET \"draft\" = $1 \
          WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
          -- binds: [false]",
-        debug_query(&query).to_string()
+        debug_query::<Pg, _>(&query).to_string()
     );
 }
 
@@ -93,7 +91,7 @@ fn examine_sql_from_publish_post() {
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2 \
          -- binds: [false, 1]",
-        debug_query(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
+        debug_query::<Pg, _>(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
     );
 }
 
@@ -176,7 +174,7 @@ fn examine_sql_from_update_post_fields() {
     );
     assert_eq!(
         sql,
-        debug_query(&diesel::update(posts::table).set(&post)).to_string()
+        debug_query::<Pg, _>(&diesel::update(posts::table).set(&post)).to_string()
     );
 }
 

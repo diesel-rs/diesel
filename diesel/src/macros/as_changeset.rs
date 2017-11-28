@@ -1,10 +1,8 @@
 /// Implements the [`AsChangeset`][changeset] trait for a given struct. This
 /// macro should be called with the name of the table you wish to use the struct
-/// with, followed by the entire struct body. This macro mirrors
-/// `#[as_changeset]` from [`diesel_codegen`][diesel_codegen]
+/// with, followed by the entire struct body.
 ///
 /// [changeset]: query_builder/trait.AsChangeset.html
-/// [diesel_codegen]: https://github.com/diesel-rs/diesel/tree/master/diesel_codegen
 ///
 /// # Options
 ///
@@ -16,7 +14,6 @@
 /// # Example
 ///
 /// ```
-/// # #[macro_use] extern crate diesel_codegen;
 /// # #[macro_use] extern crate diesel;
 /// # table! { users { id -> Integer, name -> VarChar, } }
 /// # include!("../doctest_setup.rs");

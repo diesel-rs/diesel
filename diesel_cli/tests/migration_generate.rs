@@ -2,7 +2,7 @@ use regex::Regex;
 use chrono::prelude::*;
 
 use support::project;
-use diesel::migrations::TIMESTAMP_FORMAT;
+use migrations_internals::TIMESTAMP_FORMAT;
 
 #[test]
 fn migration_generate_creates_a_migration_with_the_proper_name() {

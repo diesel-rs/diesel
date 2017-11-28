@@ -31,7 +31,6 @@ pub trait BelongsTo<Parent> {
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # #[macro_use] extern crate diesel_codegen;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// # use schema::posts;

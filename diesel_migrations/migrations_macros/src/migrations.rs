@@ -1,4 +1,4 @@
-use diesel::migrations::search_for_migrations_directory;
+use migrations_internals::search_for_migrations_directory;
 
 use std::path::{Path, PathBuf};
 use std::error::Error;

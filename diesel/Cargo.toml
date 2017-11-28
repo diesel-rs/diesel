@@ -13,6 +13,7 @@ categories = ["database"]
 
 [dependencies]
 byteorder = "1.0"
+diesel_derives = { version = "0.16.0", path = "../diesel_derives/" }
 chrono = { version = "0.4", optional = true }
 clippy = { optional = true, version = "=0.0.162" }
 libc = { version = "0.2.0", optional = true }
@@ -33,7 +34,6 @@ bitflags = { version = "1.0", optional = true }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-diesel_codegen = "0.16.0"
 dotenv = ">=0.8, <0.11"
 quickcheck = "0.4"
 tempdir = "^0.3.4"
