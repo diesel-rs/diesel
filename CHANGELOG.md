@@ -4,11 +4,9 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [0.99.0] - 2017-11-28
 
 ### Added
-
-* Implement `DISTINCT ON()`/`.distinct_on()` for postgresql
 
 * The `.for_update()` method has been added to select statements, allowing
   construction of `SELECT ... FOR UPDATE`.
@@ -51,6 +49,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added a way to rename a table in the `table!` macro with `#[sql_name="the_table_name"]`
 
+* Added support for PostgreSQL's `DISTINCT ON`. See
+  [`.distinct_on()`][0.99.0-distinct-on] for more details
+
 ### Changed
 
 * The signatures of `QueryId`, `Column`, and `FromSqlRow` have all changed to
@@ -68,7 +69,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `diesel_infer_schema` to `Cargo.toml`, and `#[macro_use] extern crate
   diesel_infer_schema` to `src/lib.rs`
 
-* Code using `embed_migraitons!` must now add `diesel_migrations` to `Cargo.toml`,
+* Code using `embed_migrations!` must now add `diesel_migrations` to `Cargo.toml`,
   and `#[macro_use] extern crate diesel_migrations` to `src/lib.rs`
 
 * The `migrations` module has been moved out of `diesel` and into
@@ -125,6 +126,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Deserializing a date/time/timestamp column into a chrono type on SQLite will
   now handle any value that is in a format documented as valid for SQLite's
   `strftime` function except for the string `'now'`.
+
+[0.99.0-distinct-on]: http://docs.diesel.rs/diesel/query_dsl/trait.DistinctOnDsl.html#tymethod.distinct_on
 
 ## [0.16.0] - 2017-08-24
 
@@ -1117,3 +1120,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.15.1]: https://github.com/diesel-rs/diesel/compare/v0.15.0...v0.15.1
 [0.15.2]: https://github.com/diesel-rs/diesel/compare/v0.15.1...v0.15.2
 [0.16.0]: https://github.com/diesel-rs/diesel/compare/v0.15.2...v0.16.0
+[0.99.0]: https://github.com/diesel-rs/diesel/compare/v0.16.0...v0.99.0

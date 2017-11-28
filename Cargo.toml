@@ -25,6 +25,6 @@ members = [
 ]
 
 [replace]
-"diesel:0.16.0" = { path = "diesel" }
-"diesel_derives:0.16.0" = { path = "diesel_derives" }
-"diesel_infer_schema:0.16.0" = { path = "diesel_infer_schema" }
+"diesel:0.99.0" = { path = "diesel" }
+"diesel_derives:0.99.0" = { path = "diesel_derives" }
+"diesel_infer_schema:0.99.0" = { path = "diesel_infer_schema" }
