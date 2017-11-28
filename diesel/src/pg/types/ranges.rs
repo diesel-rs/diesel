@@ -181,6 +181,20 @@ where
     }
 }
 
+
+impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
+where
+    Pg: HasSqlType<Range<ST>>,
+    (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>
+{
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+        ToSql::<Range<ST>, Pg>::to_sql(self, out)
+    }
+}
+
 primitive_impls!(Int4range -> (pg: (3904, 3905)));
 primitive_impls!(Numrange -> (pg: (3906, 3907)));
 primitive_impls!(Tsrange -> (pg: (3908, 3909)));

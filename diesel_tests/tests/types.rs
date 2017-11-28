@@ -1122,3 +1122,38 @@ fn test_range_to_sql() {
         (Bound<i32>, Bound<i32>),
     >(expected_value, value));
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn test_inserting_ranges() {
+    use std::collections::Bound;
+
+    let connection = connection();
+    connection
+        .execute(
+            "CREATE TABLE has_ranges (
+                        id SERIAL PRIMARY KEY,
+                        nul_range INT4RANGE,
+                        range INT4RANGE NOT NULL)",
+        )
+        .unwrap();
+    table!(
+        has_ranges(id) {
+            id -> Int4,
+            nul_range -> Nullable<Range<Int4>>,
+            range -> Range<Int4>,
+        }
+    );
+
+    let value = (Bound::Included(1), Bound::Excluded(3));
+
+    let (_, v1, v2): (i32, Option<(_, _)>, (_, _)) = insert_into(has_ranges::table)
+        .values((
+            has_ranges::nul_range.eq(value),
+            has_ranges::range.eq(value),
+        ))
+        .get_result(&connection)
+        .unwrap();
+    assert_eq!(v1, Some(value));
+    assert_eq!(v2, value);
+}
