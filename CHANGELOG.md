@@ -59,22 +59,20 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * You will now need to invoke `allow_tables_to_appear_in_same_query!` any time two tables
   appear together in the same query, even if there is a `joinable!` invocationfor those tables.
 
-* The story about the custom derive annotation changed. All pure custom
- derive procedural macro implementations (`Queryable`, `QueryableByName`,
- `Identifiable`, `Insertable`, `AsChangeset` and `Associated`) are now
- provided by `diesel_derives`. Furthermore those annotations are reexported
- by `diesel` itself, so there is no need to depend on a second crate for
- custom derives anymore. The `infer_schema!` and `infer_table_from_schema!`
- macro is moved from diesel into the `diesel_infer_schema` crate. All
- functionality related to migrations (The `diesel::migrations` module and the
- `embed_migrations!` macro) is moved to the `diesel_migrations` crate. If you
- are using any of those, simply depend on the new crates and your code will
- continue to build.
- This means the following:
-	* You are using `infer_schema!` or `infer_table_from_schema!` -> depend now on `diesel_infer_schema`
-	* You are using `embed_migrations!` or any other migration releated stuff -> depend now on `diesel_migrations`
-	* You are using custom derives from `diesel_codegen` -> remove that dependency and add `#[macro_use]` to `extern crate diesel`
+* `diesel_codegen` should no longer explicitly be used as a dependency. Unless
+  you are using `infer_schema!` or `embed_migrations!`, you can simply remove it
+  from your `Cargo.toml`. All other functionality is now provided by `diesel`
+  itself.
 
+* Code using `infer_schema!` or `infer_table_from_schema!` must now add
+  `diesel_infer_schema` to `Cargo.toml`, and `#[macro_use] extern crate
+  diesel_infer_schema` to `src/lib.rs`
+
+* Code using `embed_migraitons!` must now add `diesel_migrations` to `Cargo.toml`,
+  and `#[macro_use] extern crate diesel_migrations` to `src/lib.rs`
+
+* The `migrations` module has been moved out of `diesel` and into
+  `diesel_migrations`
 
 ### Deprecated
 
