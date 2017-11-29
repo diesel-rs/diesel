@@ -5,6 +5,6 @@ license = "MIT OR Apache-2.0"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 
 [dependencies]
-diesel = { version = "0.16.0", features = ["sqlite"] }
-diesel_codegen = { version = "0.16.0", features = ["sqlite"] }
+diesel = { version = "0.99", features = ["sqlite"] }
+diesel_infer_schema = { version = "0.99", features = ["sqlite"] }
 dotenv = "0.10"

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate diesel;
 #[macro_use]
-extern crate diesel_codegen;
+extern crate diesel_infer_schema;
 
 use std::time::SystemTime;
 
