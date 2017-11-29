@@ -127,7 +127,7 @@ mod bigdecimal {
             // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
             let correction_exp = 4 * (i64::from(weight) - count + 1);
             let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
-                .with_scale(scale as i64);
+                .with_scale(i64::from(scale));
             Ok(result)
         }
     }

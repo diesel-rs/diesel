@@ -10,6 +10,7 @@
                   unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 
 extern crate migrations_internals;
+#[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
 extern crate migrations_macros;
