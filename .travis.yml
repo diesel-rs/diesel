@@ -54,7 +54,6 @@ matrix:
     - (cd diesel_codegen && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
-  include:
   - rust: nightly-2017-09-20
     env: RUSTFMT=YESPLEASE
     script:
