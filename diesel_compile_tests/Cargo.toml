@@ -7,9 +7,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "0.99.0", features = ["extras", "sqlite", "postgres", "mysql"] }
-compiletest_rs = "0.3"
+compiletest_rs = "=0.3.1"
 
 [replace]
 "diesel:0.99.0" = { path = "../diesel" }
-"diesel_derive:0.99.0" = { path = "../diesel_derive" }
-"diesel_infer_schema:0.99.0" = { path = "../diesel_infer_schema" }
+"diesel_derives:0.99.0" = { path = "../diesel_derives" }
