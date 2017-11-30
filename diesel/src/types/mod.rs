@@ -432,6 +432,7 @@ impl<DB: TypeMetadata> ToSqlOutput<'static, Vec<u8>, DB> {
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
     pub fn test() -> Self {
         use std::mem;
+        #[cfg_attr(feature = "clippy", allow(invalid_ref))]
         Self::new(Vec::new(), unsafe { mem::uninitialized() })
     }
 }

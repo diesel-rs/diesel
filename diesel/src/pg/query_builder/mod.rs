@@ -6,6 +6,7 @@ mod query_fragment_impls;
 mod distinct_on;
 pub use self::distinct_on::DistinctOnClause;
 
+/// The PostgreSQL query builder
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct PgQueryBuilder {
@@ -14,6 +15,7 @@ pub struct PgQueryBuilder {
 }
 
 impl PgQueryBuilder {
+    /// Constructs a new query builder with an empty query
     pub fn new() -> Self {
         PgQueryBuilder::default()
     }

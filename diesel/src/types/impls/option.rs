@@ -6,7 +6,8 @@ use backend::Backend;
 use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
-use query_source::Queryable;
+use query_source::{Queryable, QueryableByName};
+use row::NamedRow;
 use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql, ToSqlOutput};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
@@ -57,6 +58,25 @@ where
 
     fn build(row: Self::Row) -> Self {
         row.map(T::build)
+    }
+}
+
+impl<T, DB> QueryableByName<DB> for Option<T>
+where
+    T: QueryableByName<DB>,
+    DB: Backend,
+{
+    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
+        match T::build(row) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => {
+                if e.is::<UnexpectedNullError>() {
+                    Ok(None)
+                } else {
+                    Err(e)
+                }
+            }
+        }
     }
 }
 

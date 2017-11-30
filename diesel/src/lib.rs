@@ -65,6 +65,7 @@ pub mod types;
 #[cfg(feature = "mysql")]
 pub mod mysql;
 #[cfg(feature = "postgres")]
+#[deny(missing_docs)]
 pub mod pg;
 #[cfg(feature = "sqlite")]
 #[deny(missing_docs)]

@@ -4,6 +4,7 @@ use query_builder::{AstPass, QueryFragment, SelectStatement};
 use result::QueryResult;
 use expression::{Expression, SelectableExpression};
 
+/// Represents `DISTINCT ON (...)`
 #[derive(Debug, Clone, Copy)]
 pub struct DistinctOnClause<T>(pub(crate) T);
 
@@ -12,7 +13,7 @@ where
     T: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        out.push_sql("DISTINCT ON(");
+        out.push_sql("DISTINCT ON (");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())

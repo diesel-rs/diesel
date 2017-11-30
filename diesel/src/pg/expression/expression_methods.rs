@@ -1,3 +1,5 @@
+//! PostgreSQL specific expression methods
+
 use expression::{AsExpression, Expression};
 use super::operators::*;
 use types::{Array, Text};

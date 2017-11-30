@@ -9,17 +9,28 @@ use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 mod quickcheck_impls;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Represents a NUMERIC value, closely mirroring the PG wire protocol
+/// representation
 pub enum PgNumeric {
+    /// A positive number
     Positive {
+        /// How many digits come before the decimal point?
         weight: i16,
+        /// How many significant digits are there?
         scale: u16,
+        /// The digits in this number, stored in base 10000
         digits: Vec<i16>,
     },
+    /// A negative number
     Negative {
+        /// How many digits come before the decimal point?
         weight: i16,
+        /// How many significant digits are there?
         scale: u16,
+        /// The digits in this number, stored in base 10000
         digits: Vec<i16>,
     },
+    /// Not a number
     NaN,
 }
 

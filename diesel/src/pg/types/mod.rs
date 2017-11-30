@@ -1,6 +1,10 @@
+//! PostgreSQL specific types
+
 mod array;
 mod ranges;
+#[doc(hidden)]
 pub mod date_and_time;
+#[doc(hidden)]
 pub mod floats;
 #[cfg(feature = "network-address")]
 mod network_address;
@@ -11,6 +15,7 @@ mod primitives;
 mod uuid;
 #[cfg(feature = "serde_json")]
 mod json;
+#[doc(hidden)]
 pub mod money;
 
 /// PostgreSQL specific SQL types

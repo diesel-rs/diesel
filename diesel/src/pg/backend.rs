@@ -1,3 +1,5 @@
+//! The PostgreSQL backend
+
 use byteorder::NetworkEndian;
 
 use backend::*;
@@ -7,12 +9,22 @@ use super::PgMetadataLookup;
 use super::query_builder::PgQueryBuilder;
 use types::Oid;
 
+/// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Pg;
 
+/// The [OIDs] for a SQL type
+///
+/// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub struct PgTypeMetadata {
+    /// The [OID] of `T`
+    ///
+    /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
     pub oid: u32,
+    /// The [OID] of `T[]`
+    ///
+    /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
     pub array_oid: u32,
 }
 
