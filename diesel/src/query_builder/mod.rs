@@ -260,38 +260,3 @@ impl<T: Query> AsQuery for T {
 pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
     DebugQuery::new(query)
 }
-
-#[doc(hidden)]
-#[cfg(all(feature = "with-deprecated", feature = "postgres"))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String
-where
-    T: QueryFragment<::pg::Pg>,
-{
-    debug_query(query).to_string()
-}
-
-#[doc(hidden)]
-#[cfg(all(feature = "with-deprecated", feature = "mysql", not(feature = "postgres")))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String
-where
-    T: QueryFragment<::mysql::Mysql>,
-{
-    debug_query(query).to_string()
-}
-
-#[doc(hidden)]
-#[cfg(all(feature = "with-deprecated", feature = "sqlite",
-            not(any(feature = "postgres", feature = "mysql"))))]
-pub fn deprecated_debug_sql<T>(query: &T) -> String
-where
-    T: QueryFragment<::sqlite::Sqlite>,
-{
-    debug_query(query).to_string()
-}
-
-#[doc(hidden)]
-#[cfg(all(feature = "with-deprecated",
-            not(any(feature = "postgres", feature = "mysql", feature = "sqlite"))))]
-pub fn deprecated_debug_sql<T>(_query: &T) -> String {
-    String::from("At least one backend must be enabled to generated debug SQL")
-}

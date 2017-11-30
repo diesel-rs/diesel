@@ -62,10 +62,6 @@ pub mod query_builder;
 #[macro_use]
 pub mod types;
 
-#[deprecated(since = "0.10.0", note = "use `insertable` instead")]
-#[cfg(feature = "with-deprecated")]
-pub use self::insertable as persistable;
-
 #[cfg(feature = "mysql")]
 pub mod mysql;
 #[cfg(feature = "postgres")]
@@ -179,13 +175,6 @@ pub use prelude::*;
 pub use query_builder::debug_query;
 #[doc(inline)]
 pub use query_builder::functions::{delete, insert_into, replace_into, select, sql_query, update};
-#[cfg(feature = "with-deprecated")]
-#[doc(inline)]
-#[allow(deprecated)]
-pub use query_builder::functions::{insert, insert_default_values};
-#[cfg(all(feature = "sqlite", feature = "with-deprecated"))]
-#[allow(deprecated)]
-pub use sqlite::query_builder::functions::*;
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;

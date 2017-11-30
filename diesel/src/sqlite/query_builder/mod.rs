@@ -2,8 +2,6 @@ use super::backend::Sqlite;
 use query_builder::QueryBuilder;
 use result::QueryResult;
 
-pub mod functions;
-
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct SqliteQueryBuilder {

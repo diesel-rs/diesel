@@ -42,7 +42,6 @@ pub mod nullable;
 pub mod operators;
 #[doc(hidden)]
 pub mod sql_literal;
-mod unchecked_bind;
 
 #[doc(hidden)]
 pub mod dsl {

@@ -273,41 +273,6 @@ fn upsert_empty_slice() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))]
-#[allow(deprecated)]
-fn insert_only_default_values_deprecated() {
-    use schema::users::table as users;
-    use schema_dsl::*;
-    let connection = connection();
-
-    drop_table_cascade(&connection, "users");
-    create_table(
-        "users",
-        (
-            integer("id").primary_key().auto_increment(),
-            string("name").not_null().default("'Sean'"),
-            string("hair_color").not_null().default("'Green'"),
-        ),
-    ).execute(&connection)
-        .unwrap();
-
-    insert_default_values()
-        .into(users)
-        .execute(&connection)
-        .unwrap();
-    assert_eq!(
-        users.load::<User>(&connection),
-        Ok(vec![
-            User {
-                id: 1,
-                name: "Sean".into(),
-                hair_color: Some("Green".into()),
-            },
-        ])
-    );
-}
-
-#[test]
 #[cfg(feature = "postgres")]
 fn insert_only_default_values_with_returning() {
     use schema::users::table as users;
@@ -528,7 +493,7 @@ fn batch_insert_is_atomic_on_sqlite() {
     let connection = connection();
 
     let new_users = vec![Some(name.eq("Sean")), None];
-    let result = insert(&new_users).into(users).execute(&connection);
+    let result = insert_into(users).values(&new_users).execute(&connection);
     assert!(result.is_err());
 
     assert_eq!(Ok(0), users.count().get_result(&connection));

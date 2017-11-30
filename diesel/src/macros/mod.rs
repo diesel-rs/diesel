@@ -1037,15 +1037,6 @@ macro_rules! joinable_inner {
 }
 
 
-#[deprecated(since = "0.16.0", note = "use `allow_tables_to_appear_in_same_query!` instead")]
-#[cfg(feature = "with-deprecated")]
-#[macro_export]
-macro_rules! enable_multi_table_joins {
-    ($left_mod:ident, $right_mod:ident) => {
-        allow_tables_to_appear_in_same_query!($left_mod, $right_mod);
-    }
-}
-
 /// Allow two or more tables which are otherwise unrelated to be used together
 /// in a query.
 ///
@@ -1093,83 +1084,6 @@ macro_rules! allow_tables_to_appear_in_same_query {
     };
 
     ($last_table:ident,) => {};
-}
-
-/// Takes a query `QueryFragment` expression as an argument and returns a string
-/// of SQL with placeholders for the dynamic values.
-///
-/// # Example
-///
-/// ### Returning SQL from a count statement:
-///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # table! {
-/// #     users {
-/// #         id -> Timestamp,
-/// #         n -> Integer,
-/// #     }
-/// # }
-/// # // example requires setup for users table
-/// # use self::users::dsl::*;
-/// # use diesel::*;
-/// #
-/// # fn main() {
-/// let sql = debug_sql!(users.count());
-/// if cfg!(feature = "postgres") {
-///     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
-/// } else {
-///     assert_eq!(sql, "SELECT COUNT(*) FROM `users` -- binds: []");
-/// }
-///
-/// let sql = debug_sql!(users.filter(n.eq(1)));
-/// if cfg!(feature = "postgres") {
-///     assert_eq!(sql, r#"SELECT "users"."id", "users"."n" FROM "users" WHERE "users"."n" = $1 -- binds: [1]"#);
-/// } else {
-///     assert_eq!(sql, "SELECT `users`.`id`, `users`.`n` FROM `users` WHERE \
-///         `users`.`n` = ? -- binds: [1]");
-/// }
-/// # }
-/// ```
-#[cfg(feature = "with-deprecated")]
-#[macro_export]
-#[deprecated(since = "0.16.0", note = "use `diesel::debug_query(...).to_string()` instead")]
-macro_rules! debug_sql {
-    ($query:expr) => {
-        $crate::query_builder::deprecated_debug_sql(&$query)
-    };
-}
-
-/// Takes takes a query `QueryFragment` expression as an argument and prints out
-/// the SQL with placeholders for the dynamic values.
-///
-/// # Example
-///
-/// ### Printing SQL from a count statement:
-///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # table! {
-/// #     users {
-/// #         id -> Timestamp,
-/// #         n -> Integer,
-/// #     }
-/// # }
-/// # // example requires setup for users table
-/// # use self::users::dsl::*;
-/// # use diesel::*;
-/// #
-/// # fn main() {
-/// print_sql!(users.count());
-/// # }
-/// ```
-#[macro_export]
-#[cfg(feature = "with-deprecated")]
-#[deprecated(since = "0.16.0", note = "use `println!(\"{}\", diesel::debug_query(...))` instead")]
-macro_rules! print_sql {
-    ($query:expr) => {
-        println!("{}", debug_sql!($query));
-    };
 }
 
 // The order of these modules is important (at least for those which have tests).

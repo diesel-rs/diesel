@@ -26,15 +26,8 @@ fn main() {
     use self::users::dsl::*;
     let connection = PgConnection::establish("postgres://localhost").unwrap();
 
-    // Valid update as sanity check w/ deprecated API
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update().set(name.eq("Sean")))).execute(&connection);
-
     // Valid update as sanity check
     insert_into(users).values(&NewUser("Sean")).on_conflict(id).do_update().set(name.eq("Sean")).execute(&connection);
-
-    // No set clause
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update())).execute(&connection);
-    //~^ ERROR E0277
 
     // No set clause
     insert_into(users)
@@ -43,10 +36,6 @@ fn main() {
         .do_update()
         .execute(&connection);
         //~^ ERROR no method named `execute`
-
-    // Update column from other table
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update().set(posts::title.eq("Sean")))).execute(&connection);
-    //~^ ERROR E0271
 
     // Update column from other table
     insert_into(users)
@@ -58,12 +47,6 @@ fn main() {
 
 
     // Update column with value that is not selectable
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update().set(name.eq(posts::title)))).execute(&connection);
-    //~^ ERROR E0277
-    //~| ERROR E0277
-    //~| ERROR no method named `execute`
-
-    // Update column with value that is not selectable
     insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(id)
@@ -72,22 +55,12 @@ fn main() {
         //~^ ERROR E0277
 
     // Update column with excluded value that is not selectable
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update().set(name.eq(excluded(posts::title))))).execute(&connection);
-    //~^ ERROR E0271
-    //~| ERROR no method named `execute`
-    //~| type mismatch resolving `<posts::columns::title as diesel::Column>::Table == users::table`
-
-    // Update column with excluded value that is not selectable
     insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(id)
         .do_update()
         .set(name.eq(excluded(posts::title)));
         //~^ ERROR type mismatch resolving `<posts::columns::title as diesel::Column>::Table == users::table`
-
-    // Update column with excluded value of wrong type
-    insert_into(users).values(&NewUser("Sean").on_conflict(id, do_update().set(name.eq(excluded(id))))).execute(&connection);
-    //~^ ERROR E0271
 
     // Update column with excluded value of wrong type
     insert_into(users)
