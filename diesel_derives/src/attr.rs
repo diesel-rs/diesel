@@ -8,6 +8,7 @@ pub struct Attr {
     column_name: Option<syn::Ident>,
     field_name: Option<syn::Ident>,
     sql_type: Option<syn::Ty>,
+    flags: Vec<syn::Ident>,
     pub ty: syn::Ty,
     pub field_position: syn::Ident,
 }
@@ -22,12 +23,18 @@ impl Attr {
         let sql_type = str_value_of_attr_with_name(&field.attrs, "sql_type").map(|st| {
             syn::parse::ty(st).expect("#[sql_type] did not contain a valid Rust type")
         });
+        let flags = list_value_of_attr_with_name(&field.attrs, "diesel")
+            .unwrap_or_else(Vec::new)
+            .into_iter()
+            .cloned()
+            .collect();
 
         Attr {
-            column_name: column_name,
-            field_name: field_name,
-            sql_type: sql_type,
-            ty: ty,
+            column_name,
+            field_name,
+            sql_type,
+            ty,
+            flags,
             field_position: index.to_string().into(),
         }
     }
@@ -47,6 +54,14 @@ impl Attr {
 
     pub fn sql_type(&self) -> Option<&syn::Ty> {
         self.sql_type.as_ref()
+    }
+
+    pub fn has_flag<T>(&self, flag: &T) -> bool
+    where
+        T: ?Sized,
+        syn::Ident: PartialEq<T>,
+    {
+        self.flags.iter().any(|f| f == flag)
     }
 
     fn field_kind(&self) -> &str {

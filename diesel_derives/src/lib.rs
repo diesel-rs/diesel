@@ -43,7 +43,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive_queryable)
 }
 
-#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type))]
+#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable_by_name::derive)
 }

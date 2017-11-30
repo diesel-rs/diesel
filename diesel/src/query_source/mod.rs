@@ -47,6 +47,9 @@ where
 /// you can annotate the field with `#[column_name = "some_column"]`. For tuple
 /// structs, all fields must have this annotation.
 ///
+/// If a field is another struct which implements `QueryableByName`, instead of
+/// a column, you can annotate that struct with `#[diesel(embed)]`
+///
 /// [`sql_query`]: ../fn.sql_query.html
 pub trait QueryableByName<DB>
 where

@@ -15,10 +15,14 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
 
     let attr_where_clause = model.attrs.iter().map(|attr| {
         let attr_ty = &attr.ty;
-        let st = sql_type(attr, &model);
-        quote! {
-            __DB: diesel::types::HasSqlType<#st>,
-            #attr_ty: diesel::types::FromSql<#st, __DB>,
+        if attr.has_flag("embed") {
+            quote!(#attr_ty: diesel::query_source::QueryableByName<__DB>,)
+        } else {
+            let st = sql_type(attr, &model);
+            quote!(
+                __DB: diesel::types::HasSqlType<#st>,
+                #attr_ty: diesel::types::FromSql<#st, __DB>,
+            )
         }
     });
 
@@ -45,9 +49,13 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
 fn build_expr_for_model(model: &Model) -> Tokens {
     let attr_exprs = model.attrs.iter().map(|attr| {
         let name = attr.field_name();
-        let column_name = attr.column_name();
-        let st = sql_type(attr, model);
-        quote!(#name: diesel::row::NamedRow::get::<#st, _>(row, stringify!(#column_name))?)
+        if attr.has_flag("embed") {
+            quote!(#name: diesel::query_source::QueryableByName::build(row)?)
+        } else {
+            let column_name = attr.column_name();
+            let st = sql_type(attr, model);
+            quote!(#name: diesel::row::NamedRow::get::<#st, _>(row, stringify!(#column_name))?)
+        }
     });
 
     quote!(Self {

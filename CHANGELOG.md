@@ -12,6 +12,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   table. If the `#[table_name]` annotation is left off, you must annotate each
   field with `#[sql_type = "Integer"]`
 
+* `#[derive(QueryableByName)]` can now handle embedding other structs. To have a
+  field whose type is a struct which implements `QueryableByName`, rather than a
+  single column in the query, add the annotation `#[diesel(embed)]`
+
 ### Changed
 
 * `#[derive(QueryableByName)]` now requires that the table name be explicitly
