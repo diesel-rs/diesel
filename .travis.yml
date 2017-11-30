@@ -1,60 +1,60 @@
 language: rust
 sudo: required
 dist: trusty
-rust:
-  - stable
-  - beta
-  - nightly
 cache: cargo
 addons:
   postgresql: '9.5'
 before_script:
-  - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
 script:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && travis-cargo test -- --no-default-features --features "unstable extras $BACKEND")
+    cargo test --no-default-features --features "unstable extras $BACKEND" --manifest-path=diesel/Cargo.toml
   else
-    (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
-  fi &&
-  (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
-  (cd diesel_derives && travis-cargo test -- --features "$BACKEND") &&
+    cargo test --no-default-features --features "extras $BACKEND" --manifest-path=diesel/Cargo.toml
+  fi
+- cargo test --no-default-features --features "extras with-deprecated $BACKEND" --manifest-path=diesel/Cargo.toml
+- cargo test --features "$BACKEND" --manifest-path=diesel_derives/Cargo.toml
+- |
   if [[ "$BACKEND" == postgres ]]; then
     (cd examples/postgres && ./test_all)
-  fi &&
+  fi
+- |
   if [[ "$BACKEND" == mysql ]]; then
     (cd examples/mysql && ./test_all)
-  fi &&
+  fi
+- |
   if [[ "$BACKEND" == sqlite ]]; then
     (cd examples/sqlite && ./test_all)
-  fi &&
-  (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema/infer_schema_internals && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema/infer_schema_macros && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "dotenv_macro $BACKEND") &&
-  (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
-  (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
-  (cd diesel_migrations/ && travis-cargo test -- --features "$BACKEND" ) &&
+  fi
+- cargo test --no-default-features --features "$BACKEND" --manifest-path=diesel_cli/Cargo.toml
+- cargo test --no-default-features --features "$BACKEND" --manifest-path=diesel_infer_schema/infer_schema_internals/Cargo.toml
+- cargo test --no-default-features --features "$BACKEND" --manifest-path=diesel_infer_schema/infer_schema_macros/Cargo.toml
+- cargo test --no-default-features --features "dotenv_macro $BACKEND" --manifest-path=diesel_infer_schema/Cargo.toml
+- cargo test --manifest-path=diesel_migrations/migrations_internals/Cargo.toml
+- cargo test --manifest-path=diesel_migrations/migrations_macros/Cargo.toml
+- cargo test --features "$BACKEND" --manifest-path=diesel_migrations/Cargo.toml
+- |
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
+    cargo test --no-default-features --features "unstable $BACKEND" --manifest-path=diesel_tests/Cargo.toml
   else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "$BACKEND")
+    cargo test --no-default-features --features "$BACKEND" --manifest-path=diesel_tests/Cargo.toml
   fi
 matrix:
+  fast_finish: true
   allow_failures:
     - rust: nightly
   include:
   - rust: nightly-2017-11-28
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
-    - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
-    - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_derives && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_compile_tests && travis-cargo test)
+    - cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" --manifest-path=diesel/Cargo.toml -- -Zno-trans
+    - cargo rustc --no-default-features --features "lint sqlite postgres mysql" --manifest-path=diesel_cli/Cargo.toml -- -Zno-trans
+    - cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" --manifest-path=diesel_derives/Cargo.toml -- -Zno-trans
+    - cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" --manifest-path=diesel_infer_schema/Cargo.toml -- -Zno-trans
+    - cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" --manifest-path=diesel_migrations/Cargo.toml -- -Zno-trans
+    - cargo test --manifest-path=diesel_compile_tests/Cargo.toml
   - rust: nightly-2017-11-29
     env: RUSTFMT=YESPLEASE
     script:
@@ -63,19 +63,72 @@ matrix:
         cargo install rustfmt-nightly --vers 0.2.16
       fi
     - cargo fmt --all -- --write-mode=diff
+
+  - rust: stable
+    env: BACKEND=sqlite
+         SQLITE_DATABASE_URL=/tmp/test.db
+  - rust: stable
+    env: BACKEND=postgres
+         PG_DATABASE_URL=postgres://postgres@localhost/
+         PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
+  - rust: stable
+    env: BACKEND=mysql
+         MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
+         MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
+         MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
+         RUST_TEST_THREADS=1
+
+  - if: branch IN (staging, trying)
+    rust: beta
+    env: BACKEND=sqlite
+         SQLITE_DATABASE_URL=/tmp/test.db
+  - if: branch IN (staging, trying)
+    rust: beta
+    env: BACKEND=postgres
+         PG_DATABASE_URL=postgres://postgres@localhost/
+         PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
+  - if: branch IN (staging, trying)
+    rust: beta
+    env: BACKEND=mysql
+         MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
+         MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
+         MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
+         RUST_TEST_THREADS=1
+
+  - if: branch IN (staging, trying)
+    rust: nightly
+    env: BACKEND=sqlite
+         SQLITE_DATABASE_URL=/tmp/test.db
+  - if: branch IN (staging, trying)
+    rust: nightly
+    env: BACKEND=postgres
+         PG_DATABASE_URL=postgres://postgres@localhost/
+         PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
+  - if: branch IN (staging, trying)
+    rust: nightly
+    env: BACKEND=mysql
+         MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
+         MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
+         MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
+         RUST_TEST_THREADS=1
+
+  - if: branch IN (staging, trying)
+    rust: 1.20.0
+    env: BACKEND=sqlite
+         SQLITE_DATABASE_URL=/tmp/test.db
+  - if: branch IN (staging, trying)
+    rust: 1.20.0
+    env: BACKEND=postgres
+         PG_DATABASE_URL=postgres://postgres@localhost/
+         PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
+  - if: branch IN (staging, trying)
+    rust: 1.20.0
+    env: BACKEND=mysql
+         MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
+         MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
+         MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
+         RUST_TEST_THREADS=1
 env:
-  # TODO: why is there no database specified for Postgres?
-  matrix:
-    - BACKEND=sqlite
-      SQLITE_DATABASE_URL=/tmp/test.db
-    - BACKEND=postgres
-      PG_DATABASE_URL=postgres://postgres@localhost/
-      PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
-    - BACKEND=mysql
-      MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
-      MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
-      MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
-      RUST_TEST_THREADS=1
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
     - secure: NmCM1VNEzid6bROA7tXV1R63n9S9KvY1etXsDzd1608cvjRnG3ZDAWXISbY1BxqrvleElreUJOvz/3TSQCHivpT2ezeyk2sntYtZpw0TWbz1SQMAPNWPTjP3bNQzpmNwfU4p6ui6qIOnQza4JxOu3SZSveNlehDBPkkS+52R7Zw/EPdwi9jTYJArV2+8pnEsQECAdRLttbtA2JBl3hZ4VHfGpHRZyeULn63UzyVbQVzQ3NVhqyQUKTPdpUciQTI3fZEkfaWuLV8QPPa5026/yJEEi2Fsl3r7fyY8ia67k4Zo9THlPVD0YOUlkWuZWwvkxNA8RQSVPv4FidEpwbxG8y6nAra4CjwiEChcpFhZJtrH7ZrXO/tJk7vtc5CFVWUsQtNX92QY1QFdPxwYNBSICLyUN+A+BQURwvQgxdcJsJyQmh5Ed7yuavcAinVq7fPeOyBWcPL5mt17no16aG1rzvXSUnD0aH7F3S3DHkoM9P9iHgJMLk+2YNmJtFescBxCeG8bA7t5bw0kQNH5KUWAD1uYpC9ikB3NVdlc+q17dKTAe4rcYA+sIO+UGudvpmLWT0lXtEMqDfxfCmyICDESs9bNfueCGJEAnfTBNunsJqR7rMUvjNndS2/Ssok6c/0Yfb9X8cM9nI4QLAj/+hClqdYphmpCjuC34bWxFSt/KJI=
@@ -91,7 +144,8 @@ after_success:
 branches:
   only:
     - master
-    - ಠ_ಠ
+    - staging
+    - trying
 notifications:
   webhooks:
     urls:

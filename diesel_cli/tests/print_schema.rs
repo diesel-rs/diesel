@@ -77,9 +77,8 @@ const BACKEND: &str = "postgres";
 const BACKEND: &str = "mysql";
 
 fn test_print_schema(test_name: &str, args: Vec<&str>) {
-    let test_path = Path::new(file!())
-        .parent()
-        .unwrap()
+    let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
         .join("print_schema")
         .join(test_name)
         .join(BACKEND);

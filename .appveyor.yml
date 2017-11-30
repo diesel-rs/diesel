@@ -5,8 +5,8 @@ image: Visual Studio 2013
 
 branches:
   only:
-    - master
-    - appveyor_nonsense
+    - staging
+    - trying
 
 services:
   - postgresql95
@@ -41,26 +41,16 @@ before_test:
   - mysql -e "create database diesel_test; create database diesel_unit_test;" -uroot
 
 test_script:
-  - cd diesel
-  - cargo test --no-default-features --features "%backend% extras"
-  - cd ../diesel_derives
-  - cargo test --no-default-features --features "%backend%"
-  - cd ../diesel_infer_schema/infer_schema_internals
-  - cargo test --no-default-features --features "%backend%"
-  - cd ../../diesel_infer_schema/infer_schema_macros
-  - cargo test --no-default-features --features "%backend% dotenv"
-  - cd ../../diesel_infer_schema
-  - cargo test --no-default-features --features "%backend% dotenv_macro"
-  - cd ../diesel_migrations/migrations_internals
-  - cargo test
-  - cd ../../diesel_migrations/migrations_macros
-  - cargo test
-  - cd ../../diesel_migrations/
-  - cargo test --no-default-features --features "%backend%"
-  - cd ../diesel_cli
-  - cargo test --no-default-features --features "%backend%"
-  - cd ../diesel_tests
-  - cargo test --no-default-features --features "%backend%"
+  - cargo test --no-default-features --features "%backend% extras" --manifest-path=diesel/Cargo.toml
+  - cargo test --no-default-features --features "%backend%" --manifest-path=diesel_derives/Cargo.toml
+  - cargo test --no-default-features --features "%backend%" --manifest-path=diesel_infer_schema/infer_schema_internals/Cargo.toml
+  - cargo test --no-default-features --features "%backend% dotenv" --manifest-path=diesel_infer_schema/infer_schema_macros/Cargo.toml
+  - cargo test --no-default-features --features "%backend% dotenv_macro" --manifest-path=diesel_infer_schema/Cargo.toml
+  - cargo test --manifest-path=diesel_migrations/migrations_internals/Cargo.toml
+  - cargo test --manifest-path=diesel_migrations/migrations_macros/Cargo.toml
+  - cargo test --no-default-features --features "%backend%" --manifest-path=diesel_migrations/Cargo.toml
+  - cargo test --no-default-features --features "%backend%" --manifest-path=diesel_cli/Cargo.toml
+  - cargo test --no-default-features --features "%backend%" --manifest-path=diesel_tests/Cargo.toml
 
 environment:
   global:
@@ -96,3 +86,6 @@ environment:
       MYSQL_EXAMPLE_DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_example
       MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:Password12!@localhost:3306/diesel_unit_test
       RUST_TEST_THREADS: 1
+
+matrix:
+  fast_finish: true
