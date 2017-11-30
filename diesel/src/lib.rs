@@ -19,13 +19,13 @@
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
 #![cfg_attr(feature = "clippy",
-           allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
-                   type_complexity))]
+            allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
+                  type_complexity))]
 #![cfg_attr(feature = "clippy",
-           warn(option_unwrap_used, result_unwrap_used, print_stdout,
-                  wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                  unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
-                  used_underscore_binding))]
+            warn(option_unwrap_used, result_unwrap_used, print_stdout,
+                 wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                 unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
+                 used_underscore_binding))]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
 #[cfg(feature = "postgres")]
@@ -128,16 +128,12 @@ pub mod helper_types {
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
     /// Represents the return type of `.inner_join(rhs)`
-    pub type InnerJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<
-        Rhs,
-        joins::Inner,
-    >>::Output;
+    pub type InnerJoin<Source, Rhs> =
+        <Source as JoinWithImplicitOnClause<Rhs, joins::Inner>>::Output;
 
     /// Represents the return type of `.left_join(rhs)`
-    pub type LeftJoin<Source, Rhs> = <Source as JoinWithImplicitOnClause<
-        Rhs,
-        joins::LeftOuter,
-    >>::Output;
+    pub type LeftJoin<Source, Rhs> =
+        <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
 
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};

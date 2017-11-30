@@ -24,7 +24,9 @@ fn distinct_on() {
 
     let connection = connection();
     connection
-        .execute("INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', NULL), ('Tess', NULL), ('Tess', NULL)")
+        .execute(
+            "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', NULL), ('Tess', NULL), ('Tess', NULL)",
+        )
         .unwrap();
 
     let source = users.select((name, hair_color)).distinct_on(name);

@@ -66,12 +66,16 @@ mod eager_loading_with_string_keys {
         drop_table_cascade(&connection, "users");
         drop_table_cascade(&connection, "posts");
         drop_table_cascade(&connection, "fk_doesnt_reference_pk");
-        connection.batch_execute(r#"
+        connection
+            .batch_execute(
+                r#"
             CREATE TABLE users (id TEXT PRIMARY KEY NOT NULL);
             CREATE TABLE posts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);
             INSERT INTO users (id) VALUES ('Sean'), ('Tess');
             INSERT INTO posts (id, user_id) VALUES ('Hello', 'Sean'), ('World', 'Sean'), ('Hello 2', 'Tess');
-        "#).unwrap();
+        "#,
+            )
+            .unwrap();
         let sean = User { id: "Sean".into() };
         let tess = User { id: "Tess".into() };
 

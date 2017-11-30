@@ -6,8 +6,8 @@
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
 #![cfg_attr(feature = "clippy",
-           warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+            warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
+                 unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 #![cfg_attr(all(test, feature = "clippy"), allow(result_unwrap_used))]
 
 extern crate chrono;
@@ -313,10 +313,12 @@ fn run_infer_schema(matches: &ArgMatches) {
     let filter = matches
         .values_of("table-name")
         .unwrap_or_default()
-        .map(|table_name| if let Some(schema) = schema_name {
-            TableName::new(table_name, schema)
-        } else {
-            table_name.parse().unwrap()
+        .map(|table_name| {
+            if let Some(schema) = schema_name {
+                TableName::new(table_name, schema)
+            } else {
+                table_name.parse().unwrap()
+            }
         })
         .collect();
 

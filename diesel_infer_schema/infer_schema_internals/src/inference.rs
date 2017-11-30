@@ -253,10 +253,12 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = get_primary_keys(&connection, &name)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| if RESERVED_NAMES.contains(&k.as_str()) {
-            format!("{}_", k)
-        } else {
-            k.clone()
+        .map(|k| {
+            if RESERVED_NAMES.contains(&k.as_str()) {
+                format!("{}_", k)
+            } else {
+                k.clone()
+            }
         })
         .collect();
 

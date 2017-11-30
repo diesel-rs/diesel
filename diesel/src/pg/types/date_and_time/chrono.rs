@@ -28,7 +28,7 @@ fn pg_epoch() -> NaiveDateTime {
 
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
-        let PgTimestamp(offset) = try!(FromSql::<Timestamp, Pg>::from_sql(bytes));
+        let PgTimestamp(offset) = FromSql::<Timestamp, Pg>::from_sql(bytes)?;
         match pg_epoch().checked_add_signed(Duration::microseconds(offset)) {
             Some(v) => Ok(v),
             None => {
@@ -73,10 +73,7 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
 
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
-        let naive_date_time = try!(<NaiveDateTime as FromSql<
-            Timestamptz,
-            Pg,
-        >>::from_sql(bytes));
+        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }

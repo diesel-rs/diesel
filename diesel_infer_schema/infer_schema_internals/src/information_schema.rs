@@ -301,7 +301,10 @@ mod tests {
     fn load_table_names_loads_from_public_schema_if_none_given() {
         let connection = connection();
 
-        connection.execute("CREATE TABLE load_table_names_loads_from_public_schema_if_none_given (id SERIAL PRIMARY KEY)")
+        connection
+            .execute(
+                "CREATE TABLE load_table_names_loads_from_public_schema_if_none_given (id SERIAL PRIMARY KEY)",
+            )
             .unwrap();
 
         let table_names = load_table_names(&connection, None).unwrap();
@@ -389,7 +392,11 @@ mod tests {
         connection
             .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)")
             .unwrap();
-        connection.execute("CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))",
+            )
+            .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");
         let table_2 = TableName::new("table_2", "test_schema");
@@ -408,7 +415,11 @@ mod tests {
         let connection = connection();
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection.execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
+            )
+            .unwrap();
         connection
             .execute("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)")
             .unwrap();
@@ -434,8 +445,16 @@ mod tests {
         connection
             .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
             .unwrap();
-        connection.execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)").unwrap();
-        connection.execute("CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)",
+            )
+            .unwrap();
+        connection
+            .execute(
+                "CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)",
+            )
+            .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");
         let table_2 = TableName::new("table_2", "test_schema");

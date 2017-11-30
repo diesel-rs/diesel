@@ -1195,7 +1195,8 @@ mod tests {
     #[cfg(feature = "postgres")]
     fn table_with_column_renaming_postgres() {
         use pg::Pg;
-        let expected_sql = r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1 -- binds: [1]"#;
+        let expected_sql =
+            r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1 -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             ::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
@@ -1206,7 +1207,8 @@ mod tests {
     #[cfg(feature = "mysql")]
     fn table_with_column_renaming_mysql() {
         use mysql::Mysql;
-        let expected_sql = r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+        let expected_sql =
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             ::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
@@ -1217,7 +1219,8 @@ mod tests {
     #[cfg(feature = "sqlite")]
     fn table_with_column_renaming_sqlite() {
         use sqlite::Sqlite;
-        let expected_sql = r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+        let expected_sql =
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             ::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()

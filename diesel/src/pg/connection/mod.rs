@@ -53,7 +53,8 @@ impl Connection for PgConnection {
                 transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
             };
-            conn.set_config_options().map_err(CouldntSetupConfiguration)?;
+            conn.set_config_options()
+                .map_err(CouldntSetupConfiguration)?;
             Ok(conn)
         })
     }

@@ -125,7 +125,9 @@ pub fn build_cli() -> App<'static, 'static> {
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
-        .after_help("You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")
+        .after_help(
+            "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
+        )
         .arg(database_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
