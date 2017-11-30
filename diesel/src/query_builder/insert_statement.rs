@@ -85,39 +85,6 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 }
 
-/// The structure returned by [`insert`](../../fn.insert.html). The only thing that can be done with it
-/// is call `into`.
-#[derive(Debug, Copy, Clone)]
-#[cfg(feature = "with-deprecated")]
-pub struct DeprecatedIncompleteInsertStatement<T, Op> {
-    records: T,
-    operator: Op,
-}
-
-#[cfg(feature = "with-deprecated")]
-impl<T, Op> DeprecatedIncompleteInsertStatement<T, Op> {
-    #[doc(hidden)]
-    pub fn new(records: T, operator: Op) -> Self {
-        DeprecatedIncompleteInsertStatement {
-            records: records,
-            operator: operator,
-        }
-    }
-
-    /// Specify which table the data passed to `insert` should be added to.
-    pub fn into<S>(self, target: S) -> InsertStatement<S, T::Values, Op>
-    where
-        T: Insertable<S>,
-    {
-        InsertStatement::new(
-            target,
-            self.records.values(),
-            self.operator,
-            NoReturningClause,
-        )
-    }
-}
-
 #[derive(Debug, Copy, Clone)]
 pub struct InsertStatement<T, U, Op = Insert, Ret = NoReturningClause> {
     operator: Op,

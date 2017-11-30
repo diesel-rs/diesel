@@ -2,79 +2,10 @@ use backend::Backend;
 use insertable::*;
 use pg::Pg;
 use query_builder::*;
-#[cfg(feature = "with-deprecated")]
-use query_builder::insert_statement::*;
 use query_source::Table;
 use result::QueryResult;
 use super::on_conflict_actions::*;
 use super::on_conflict_target::*;
-
-#[derive(Debug, Clone, Copy)]
-#[cfg(feature = "with-deprecated")]
-pub struct OnConflictDoNothing<T>(T);
-
-#[cfg(feature = "with-deprecated")]
-impl<T> OnConflictDoNothing<T> {
-    pub fn new(records: T) -> Self {
-        OnConflictDoNothing(records)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[cfg(feature = "with-deprecated")]
-pub struct OnConflict<Records, Target, Action> {
-    records: Records,
-    target: Target,
-    action: Action,
-}
-
-#[cfg(feature = "with-deprecated")]
-impl<Records, Target, Action> OnConflict<Records, Target, Action> {
-    pub fn new(records: Records, target: Target, action: Action) -> Self {
-        OnConflict {
-            records: records,
-            target: target,
-            action: action,
-        }
-    }
-}
-
-#[cfg(feature = "with-deprecated")]
-impl<'a, T, Tab> Insertable<Tab> for &'a OnConflictDoNothing<T>
-where
-    T: Insertable<Tab> + Copy,
-    T: UndecoratedInsertRecord<Tab>,
-{
-    type Values = OnConflictValues<T::Values, NoConflictTarget, DoNothing>;
-
-    fn values(self) -> Self::Values {
-        OnConflictValues {
-            values: self.0.values(),
-            target: NoConflictTarget,
-            action: DoNothing,
-        }
-    }
-}
-
-#[cfg(feature = "with-deprecated")]
-impl<'a, Records, Target, Action, Tab> Insertable<Tab> for &'a OnConflict<Records, Target, Action>
-where
-    Records: Insertable<Tab> + Copy,
-    Records: UndecoratedInsertRecord<Tab>,
-    Target: OnConflictTarget<Tab> + Clone,
-    Action: IntoConflictAction<Tab> + Copy,
-{
-    type Values = OnConflictValues<Records::Values, Target, Action::Action>;
-
-    fn values(self) -> Self::Values {
-        OnConflictValues {
-            values: self.records.values(),
-            target: self.target.clone(),
-            action: self.action.into_conflict_action(),
-        }
-    }
-}
-
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]

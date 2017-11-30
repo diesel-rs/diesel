@@ -135,9 +135,6 @@ macro_rules! tuple_impls {
                 }
             }
 
-            #[cfg(feature = "postgres")]
-            impl<$($T,)+> ::pg::upsert::OnConflictExtension for ($($T,)+) {}
-
             #[allow(unused_assignments)]
             impl<$($T,)+ Tab, DB> InsertValues<Tab, DB> for ($($T,)+)
             where

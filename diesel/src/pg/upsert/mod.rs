@@ -8,9 +8,6 @@ mod on_conflict_clause;
 mod on_conflict_extension;
 mod on_conflict_target;
 
-#[cfg(feature = "with-deprecated")]
-#[allow(deprecated)]
-pub use self::on_conflict_actions::{do_nothing, do_update};
 pub use self::on_conflict_actions::excluded;
 pub use self::on_conflict_extension::*;
 pub use self::on_conflict_target::on_constraint;
