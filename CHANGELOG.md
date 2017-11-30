@@ -6,6 +6,17 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* `#[derive(QueryableByName)]` can now handle structs that have no associated
+  table. If the `#[table_name]` annotation is left off, you must annotate each
+  field with `#[sql_type = "Integer"]`
+
+### Changed
+
+* `#[derive(QueryableByName)]` now requires that the table name be explicitly
+  stated.
+
 ### Removed
 
 * All deprecated items have been removed.

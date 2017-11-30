@@ -7,6 +7,7 @@ use util::*;
 pub struct Attr {
     column_name: Option<syn::Ident>,
     field_name: Option<syn::Ident>,
+    sql_type: Option<syn::Ty>,
     pub ty: syn::Ty,
     pub field_position: syn::Ident,
 }
@@ -18,10 +19,14 @@ impl Attr {
             .cloned()
             .or_else(|| field_name.clone());
         let ty = field.ty.clone();
+        let sql_type = str_value_of_attr_with_name(&field.attrs, "sql_type").map(|st| {
+            syn::parse::ty(st).expect("#[sql_type] did not contain a valid Rust type")
+        });
 
         Attr {
             column_name: column_name,
             field_name: field_name,
+            sql_type: sql_type,
             ty: ty,
             field_position: index.to_string().into(),
         }
@@ -38,6 +43,10 @@ impl Attr {
             .expect(
                 "All fields of tuple structs must be annotated with `#[column_name=\"something\"]`",
             )
+    }
+
+    pub fn sql_type(&self) -> Option<&syn::Ty> {
+        self.sql_type.as_ref()
     }
 
     fn field_kind(&self) -> &str {
