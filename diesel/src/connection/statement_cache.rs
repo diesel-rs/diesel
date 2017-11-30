@@ -239,6 +239,7 @@ where
 ///
 /// If we were in Haskell (and if `RefMut` were a functor), this would just be
 /// `sequenceA`.
+#[cfg_attr(feature = "clippy", allow(invalid_ref))]
 fn refmut_map_result<T, U, F>(refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
 where
     F: FnOnce(&mut T) -> QueryResult<&mut U>,
