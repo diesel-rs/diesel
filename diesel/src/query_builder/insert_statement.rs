@@ -1,4 +1,4 @@
-/// Types related to the construction of an `INSERT` statement.
+//! Types related to the construction of an `INSERT` statement.
 
 use std::any::*;
 
