@@ -7,7 +7,7 @@ use types::BigInt;
 /// Creates a SQL `COUNT` expression
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::expression::count`, or glob import
+/// it specifically as `diesel::dsl::count`, or glob import
 /// `diesel::dsl::*`
 ///
 /// # Examples
@@ -37,11 +37,11 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// Creates a SQL `COUNT(*)` expression
 ///
 /// For selecting the count of a query, and nothing else, you can just call
-/// [`count`](https://docs.diesel.rs/diesel/prelude/trait.CountDsl.html#method.count)
+/// [`count`](../query_dsl/trait.CountDsl.html#method.count)
 /// on the query instead.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::expression::count_star`, or glob import
+/// it specifically as `diesel::dsl::count_star`, or glob import
 /// `diesel::dsl::*`
 ///
 /// # Examples
