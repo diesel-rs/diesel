@@ -250,6 +250,7 @@ where
         Ok(x) => x,
         Err(e) => {
             error = Some(e);
+            #[cfg_attr(feature = "clippy", allow(invalid_ref))]
             unsafe { mem::uninitialized() }
         }
     });

@@ -13,7 +13,7 @@ keywords = ["orm", "database", "postgres", "sql", "codegen"]
 [dependencies]
 syn = { version = "0.11.4", features = ["aster"] }
 quote = "0.3.12"
-clippy = { optional = true, version = "=0.0.162" }
+clippy = { optional = true, version = "=0.0.174" }
 
 [dev-dependencies]
 dotenv = { version = ">=0.8, <0.11", default-features = false }

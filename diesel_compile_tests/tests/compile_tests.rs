@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::env::var;
 
 fn run_mode(mode: &'static str) {
-    let mut config = compiletest::default_config();
+    let mut config = compiletest::Config::default();
 
     let cfg_mode = mode.parse().expect("Invalid mode");
 

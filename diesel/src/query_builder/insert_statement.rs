@@ -64,7 +64,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # }
     /// ```
     pub fn default_values(self) -> InsertStatement<T, DefaultValues, Op> {
-        static STATIC_DEFAULT_VALUES: &'static DefaultValues = &DefaultValues;
+        static STATIC_DEFAULT_VALUES: &DefaultValues = &DefaultValues;
         self.values(STATIC_DEFAULT_VALUES)
     }
 

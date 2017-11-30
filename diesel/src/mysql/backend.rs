@@ -10,7 +10,7 @@ pub struct Mysql;
 #[allow(missing_debug_implementations)]
 /// Represents the possible forms a bind parameter can be transmitted as.
 /// Each variant represents one of the forms documented at
-/// https://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html
+/// <https://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html>
 ///
 /// The null variant is omitted, as we will never prepare a statement in which
 /// one of the bind parameters can always be NULL

@@ -7,7 +7,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "0.99.0", features = ["extras", "sqlite", "postgres", "mysql"] }
-compiletest_rs = "=0.3.1"
+compiletest_rs = "=0.3.3"
 
 [replace]
 "diesel:0.99.0" = { path = "../diesel" }

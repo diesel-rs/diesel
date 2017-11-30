@@ -8,7 +8,7 @@ use sqlite::Sqlite;
 use sqlite::connection::SqliteValue;
 use types::{Date, FromSql, IsNull, Text, Time, Timestamp, ToSql, ToSqlOutput};
 
-const SQLITE_DATE_FORMAT: &'static str = "%F";
+const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {

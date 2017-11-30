@@ -69,7 +69,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
         use self::diesel::connection::SimpleConnection;
         use std::io;
 
-        const ALL_MIGRATIONS: &'static [&'static Migration] = &[#(#migrations_expr),*];
+        const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
 
         #embedded_migration_def
 

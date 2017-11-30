@@ -20,7 +20,7 @@ clap = ">=2.27.0"
 diesel = { version = "0.99.0", default-features = false }
 dotenv = ">=0.8, <0.11"
 infer_schema_internals = { version = "0.99.0" }
-clippy = { optional = true, version = "=0.0.162" }
+clippy = { optional = true, version = "=0.0.174" }
 migrations_internals = { version = "0.99.0" }
 
 [dev-dependencies]

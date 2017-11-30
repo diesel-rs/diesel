@@ -24,7 +24,7 @@ fn main() {
 }
 
 #[cfg(not(windows))]
-const EOF: &'static str = "CTRL+D";
+const EOF: &str = "CTRL+D";
 
 #[cfg(windows)]
-const EOF: &'static str = "CTRL+Z";
+const EOF: &str = "CTRL+Z";

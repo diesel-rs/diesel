@@ -9,7 +9,7 @@ homepage = "http://diesel.rs"
 
 
 [dependencies]
-clippy = { optional = true, version = "=0.0.162" }
+clippy = { optional = true, version = "=0.0.174" }
 migrations_internals = { version = "0.99.0" }
 migrations_macros = { version = "0.99.0" }
 

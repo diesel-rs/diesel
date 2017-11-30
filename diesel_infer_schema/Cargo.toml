@@ -11,7 +11,7 @@ keywords = ["orm", "database", "postgres", "postgresql", "sql"]
 
 [dependencies]
 infer_schema_macros = { version = "0.99.0" }
-clippy = { optional = true, version = "=0.0.162" }
+clippy = { optional = true, version = "=0.0.174" }
 
 [dev-dependencies]
 diesel = "0.99.0"

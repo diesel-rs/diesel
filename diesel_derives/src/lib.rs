@@ -4,7 +4,7 @@
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
 #![cfg_attr(feature = "clippy",
             warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,

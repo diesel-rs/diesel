@@ -3,7 +3,7 @@
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../../clippy.toml")))]
 #![cfg_attr(feature = "clippy",
             allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
                   type_complexity))]
@@ -102,7 +102,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 
-pub static TIMESTAMP_FORMAT: &'static str = "%Y-%m-%d-%H%M%S";
+pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 /// Runs all migrations that have not yet been run. This function will print all progress to
 /// stdout. This function will return an `Err` if some error occurs reading the migrations, or if

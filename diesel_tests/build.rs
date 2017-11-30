@@ -32,13 +32,13 @@ fn connection() -> MysqlConnection {
 }
 
 #[cfg(feature = "postgres")]
-const MIGRATION_SUBDIR: &'static str = "postgresql";
+const MIGRATION_SUBDIR: &str = "postgresql";
 
 #[cfg(feature = "sqlite")]
-const MIGRATION_SUBDIR: &'static str = "sqlite";
+const MIGRATION_SUBDIR: &str = "sqlite";
 
 #[cfg(feature = "mysql")]
-const MIGRATION_SUBDIR: &'static str = "mysql";
+const MIGRATION_SUBDIR: &str = "mysql";
 
 fn database_url_from_env(backend_specific_env_var: &str) -> String {
     dotenv().ok();
