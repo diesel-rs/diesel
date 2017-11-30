@@ -3,12 +3,12 @@
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../clippy.toml")))]
+#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature = "clippy",
            allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
                    type_complexity))]
 #![cfg_attr(feature = "clippy",
-           warn(option_unwrap_used, result_unwrap_used, print_stdout,
+           warn(option_unwrap_used, print_stdout,
                   wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
                   unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
                   used_underscore_binding))]
@@ -29,7 +29,7 @@ use syn::parse_derive_input;
 #[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     let item = parse_derive_input(&input.to_string()).unwrap();
-    embed_migrations::derive_embed_migrations(item)
+    embed_migrations::derive_embed_migrations(&item)
         .to_string()
         .parse()
         .unwrap()
