@@ -6,12 +6,17 @@ use result::QueryResult;
 use super::*;
 use types::Bool;
 
+/// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
+/// applicable.
 pub trait WhereAnd<Predicate> {
+    /// What is the type of the resulting `WHERE` clause?
     type Output;
 
+    /// See the trait-level docs.
     fn and(self, predicate: Predicate) -> Self::Output;
 }
 
+/// Represents that a query has no `WHERE` clause.
 #[derive(Debug, Clone, Copy)]
 pub struct NoWhereClause;
 
@@ -40,6 +45,7 @@ impl<DB: Backend> Into<Option<Box<QueryFragment<DB>>>> for NoWhereClause {
     }
 }
 
+/// The `WHERE` clause of a query.
 #[derive(Debug, Clone, Copy)]
 pub struct WhereClause<Expr>(Expr);
 

@@ -2,6 +2,9 @@ use expression::{AsExpression, Expression};
 use super::operators::*;
 use types::{Array, Text};
 
+/// PostgreSQL expression methods which are not type specific.
+///
+/// This trait is implemented for all types that implement `Expression`.
 pub trait PgExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `IS NOT DISTINCT FROM` expression. This behaves
     /// identically to the `=` operator, except that `NULL` is treated as a
@@ -75,7 +78,10 @@ impl<T: Expression> PgExpressionMethods for T {}
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use types::VarChar;
 
-#[doc(hidden)]
+/// PostgreSQL expression methods related to timestamps.
+///
+/// This trait is implemented for all types that implement `Expression` where
+/// the `SqlType` is either `Timestamp` or `Timestamptz`
 pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// Returns a PostgreSQL "AT TIME ZONE" expression
     fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression>
@@ -92,6 +98,10 @@ where
 {
 }
 
+/// PostgreSQL expression methods related to arrays.
+///
+/// This trait is implemented for all types that implement `Expression` where
+/// the `SqlType` is `Array`.
 pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// Compares two arrays for common elements, using the `&&` operator in
     /// the final SQL
@@ -250,6 +260,11 @@ where
 
 use expression::operators::{Asc, Desc};
 
+/// PostgreSQL expression methods related to sorting.
+///
+/// This trait is only implemented for `Asc` and `Desc`. Although `.asc` is
+/// implicit if no order is given, you will need to call `.asc()` explicitly in
+/// order to call these methods.
 pub trait SortExpressionMethods: Sized {
     /// Specify that nulls should come before other values in this ordering.
     /// Normally, nulls come last when sorting in ascending order and first
@@ -340,6 +355,10 @@ impl<T> SortExpressionMethods for Asc<T> {}
 
 impl<T> SortExpressionMethods for Desc<T> {}
 
+/// PostgreSQL expression methods related to text.
+///
+/// This trait is implemented for all types that implement `Expression` where
+/// the `SqlType` is `Text`
 pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// Returns a SQL `ILIKE` expression
     ///

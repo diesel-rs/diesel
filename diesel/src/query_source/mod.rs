@@ -81,6 +81,17 @@ pub trait Table: QuerySource + AsQuery + Sized {
     fn all_columns() -> Self::AllColumns;
 }
 
+/// Determines how many times `Self` appears in `QS`
+///
+/// This trait is primarily used to determine whether or not a column is
+/// selectable from a given from clause. A column can be selected if its table
+/// appears in the from clause *exactly once*.
+///
+/// We do not allow the same table to appear in a query multiple times in any
+/// context where referencing that table would be ambiguous (depending on the
+/// context and backend being used, this may or may not be something that would
+/// otherwise result in a runtime error).
 pub trait AppearsInFromClause<QS> {
+    /// How many times does `Self` appear in `QS`?
     type Count;
 }
