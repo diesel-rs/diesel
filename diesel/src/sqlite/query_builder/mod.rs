@@ -1,7 +1,10 @@
+//! The SQLite query builder
+
 use super::backend::Sqlite;
 use query_builder::QueryBuilder;
 use result::QueryResult;
 
+/// Constructs SQL queries for use with the SQLite backend
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct SqliteQueryBuilder {
@@ -9,6 +12,7 @@ pub struct SqliteQueryBuilder {
 }
 
 impl SqliteQueryBuilder {
+    /// Construct a new query builder with an empty query
     pub fn new() -> Self {
         SqliteQueryBuilder::default()
     }

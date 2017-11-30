@@ -67,6 +67,7 @@ pub mod mysql;
 #[cfg(feature = "postgres")]
 pub mod pg;
 #[cfg(feature = "sqlite")]
+#[deny(missing_docs)]
 pub mod sqlite;
 
 pub mod query_dsl;
