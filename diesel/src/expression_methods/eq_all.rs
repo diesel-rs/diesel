@@ -33,10 +33,8 @@ where
     L2: EqAll<R2>,
     L3: EqAll<R3>,
 {
-    type Output = And<
-        <L1 as EqAll<R1>>::Output,
-        And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>,
-    >;
+    type Output =
+        And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>>;
 
     fn eq_all(self, rhs: (R1, R2, R3)) -> Self::Output {
         self.0

@@ -48,7 +48,9 @@ fn setup_creates_default_migration_file() {
     let result = p.command("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(p.has_file(Path::new("migrations").join("00000000000000_diesel_initial_setup")));
+    assert!(p.has_file(
+        Path::new("migrations").join("00000000000000_diesel_initial_setup")
+    ));
 }
 
 #[test]

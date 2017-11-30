@@ -229,10 +229,10 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         t::MYSQL_TYPE_YEAR | t::MYSQL_TYPE_SHORT => Some(2),
         t::MYSQL_TYPE_INT24 | t::MYSQL_TYPE_LONG | t::MYSQL_TYPE_FLOAT => Some(4),
         t::MYSQL_TYPE_LONGLONG | t::MYSQL_TYPE_DOUBLE => Some(8),
-        t::MYSQL_TYPE_TIME |
-        t::MYSQL_TYPE_DATE |
-        t::MYSQL_TYPE_DATETIME |
-        t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<ffi::MYSQL_TIME>()),
+        t::MYSQL_TYPE_TIME
+        | t::MYSQL_TYPE_DATE
+        | t::MYSQL_TYPE_DATETIME
+        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<ffi::MYSQL_TIME>()),
         _ => None,
     }
 }

@@ -228,17 +228,8 @@ where
 }
 
 impl<F, S, W, O, L, Of> ForUpdateDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
-    type Output = SelectStatement<
-        F,
-        S,
-        NoDistinctClause,
-        W,
-        O,
-        L,
-        Of,
-        NoGroupByClause,
-        ForUpdateClause,
-    >;
+    type Output =
+        SelectStatement<F, S, NoDistinctClause, W, O, L, Of, NoGroupByClause, ForUpdateClause>;
 
     fn for_update(self) -> Self::Output {
         SelectStatement::new(
