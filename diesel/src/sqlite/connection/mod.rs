@@ -22,6 +22,8 @@ use self::stmt::{Statement, StatementUse};
 use sqlite::Sqlite;
 use types::HasSqlType;
 
+/// Connections for the SQLite backend. Unlike other backends, "connection URLs"
+/// for SQLite are file paths or special identifiers like `:memory`.
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
