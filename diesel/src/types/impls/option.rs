@@ -69,13 +69,11 @@ where
     fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
         match T::build(row) {
             Ok(v) => Ok(Some(v)),
-            Err(e) => {
-                if e.is::<UnexpectedNullError>() {
-                    Ok(None)
-                } else {
-                    Err(e)
-                }
-            }
+            Err(e) => if e.is::<UnexpectedNullError>() {
+                Ok(None)
+            } else {
+                Err(e)
+            },
         }
     }
 }
