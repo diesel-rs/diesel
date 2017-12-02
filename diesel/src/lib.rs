@@ -63,6 +63,7 @@ pub mod query_builder;
 pub mod types;
 
 #[cfg(feature = "mysql")]
+#[deny(missing_docs)]
 pub mod mysql;
 #[cfg(feature = "postgres")]
 #[deny(missing_docs)]

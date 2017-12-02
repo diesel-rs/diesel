@@ -4,6 +4,7 @@ use result::QueryResult;
 
 mod query_fragment_impls;
 
+/// The MySQL query builder
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct MysqlQueryBuilder {
@@ -11,6 +12,7 @@ pub struct MysqlQueryBuilder {
 }
 
 impl MysqlQueryBuilder {
+    /// Constructs a new query builder with an empty query
     pub fn new() -> Self {
         MysqlQueryBuilder::default()
     }

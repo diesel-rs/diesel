@@ -1,3 +1,5 @@
+//! MySQL specific types
+
 #[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;

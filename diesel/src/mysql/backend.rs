@@ -1,9 +1,12 @@
+//! The MySQL backend
+
 use byteorder::NativeEndian;
 
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use super::query_builder::MysqlQueryBuilder;
 
+/// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Mysql;
 
@@ -16,17 +19,29 @@ pub struct Mysql;
 /// one of the bind parameters can always be NULL
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub enum MysqlType {
+    /// Sets `buffer_type` to `MYSQL_TYPE_TINY`
     Tiny,
+    /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
     Short,
+    /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
     Long,
+    /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
     LongLong,
+    /// Sets `buffer_type` to `MYSQL_TYPE_FLOAT`
     Float,
+    /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
     Double,
+    /// Sets `buffer_type` to `MYSQL_TYPE_TIME`
     Time,
+    /// Sets `buffer_type` to `MYSQL_TYPE_DATE`
     Date,
+    /// Sets `buffer_type` to `MYSQL_TYPE_DATETIME`
     DateTime,
+    /// Sets `buffer_type` to `MYSQL_TYPE_TIMESTAMP`
     Timestamp,
+    /// Sets `buffer_type` to `MYSQL_TYPE_STRING`
     String,
+    /// Sets `buffer_type` to `MYSQL_TYPE_BLOB`
     Blob,
 }
 
