@@ -21,6 +21,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * All deprecated items have been removed.
 
+## [0.99.1] - 2017-12-01
+
+### Changed
+
+* Diesel CLI now properly restricts its `clap` dependency. 0.99.0 mistakenly had
+  no upper bound on the version.
+
 ## [0.99.0] - 2017-11-28
 
 ### Added
