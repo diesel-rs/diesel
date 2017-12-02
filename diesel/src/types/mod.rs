@@ -43,7 +43,8 @@ use row::Row;
 use std::error::Error;
 use std::io::{self, Write};
 
-/// The boolean SQL type. On SQLite this is emulated with an integer.
+/// The boolean SQL type. On backends without a native boolean type this is
+/// emulated with the smallest supported integer.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -57,7 +58,8 @@ use std::io::{self, Write};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Bool;
 
-/// The tinyint SQL type. This is only available on MySQL.
+/// The tinyint SQL type. This is only available on MySQL. Keep in mind that
+/// schema inference will infer `TINYINT(1)` to be `Bool`, not `Tinyint`
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -155,24 +157,18 @@ pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
 
-/// The numeric SQL type.
+/// The numeric SQL type. This type is only supported on PostgreSQL and MySQL.
+/// On SQLite, [`Double`](struct.Double.html) should be used instead.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][bigdecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
-/// feature, which depends on the
-/// [`bigdecimal`][bigdecimal] crate)
+/// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
 /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
 ///
-/// - [`bigdecimal::BigDecimal`][BigDecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
-/// feature, which depends on the
-/// [`bigdecimal`][bigdecimal] crate)
+/// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
-/// On SQLite, [`Double`](struct.Double.html) should be used instead.
-///
-/// [BigDecimal]: /bigdecimal/struct.BigDecimal.html
-/// [bigdecimal]: /bigdecimal/index.html
+/// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Numeric;
 pub type Decimal = Numeric;
@@ -188,7 +184,8 @@ impl SingleValue for Numeric {}
 /// On all backends strings must be valid UTF-8.
 /// On PostgreSQL strings must not include nul bytes.
 ///
-/// On MySQL, it is also aliased by `Tinytext`, `Mediumtext`, `Longtext`, `Char` and `Varchar`.
+/// Schema inference will treat all variants of `TEXT` as this type (e.g.
+/// `VARCHAR`, `MEDIUMTEXT`, etc).
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -217,7 +214,8 @@ pub type Longtext = Text;
 
 /// The binary SQL type.
 ///
-/// On MySQL, it is also aliased by `Tinyblob`, `Blob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
+/// Schema inference will treat all variants of `BLOB` as this type (e.g.
+/// `VARBINARY`, `MEDIUMBLOB`, etc).
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -247,8 +245,6 @@ pub type Varbinary = Binary;
 pub type Bit = Binary;
 
 /// The date SQL type.
-///
-/// This type is currently only implemented for PostgreSQL and SQLite.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -286,8 +282,6 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 
 /// The time SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL and SQLite.
-///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
@@ -300,9 +294,7 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Time;
 
-/// The timestamp/datetime SQL type.
-///
-/// This type is currently only implemented for PostgreSQL and SQLite.
+/// The timestamp SQL type.
 ///
 /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
@@ -368,16 +360,39 @@ pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 
-/// How to deserialize a single field of a given type. The input will always be
-/// the binary representation, not the text.
+/// Deserialize a single field of a given SQL type.
+///
+/// When possible, implementations of this trait should prefer to use an
+/// existing implementation, rather than reading from `bytes`. (For example, if
+/// you are implementing this for an enum which is represented as an integer in
+/// the database, prefer `i32::from_sql(bytes)` over reading from `bytes`
+/// directly)
+///
+/// ### Backend specific details
+///
+/// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.
+/// - For SQLite, the actual type of `DB::RawValue` is private API. All
+///   implementations of this trait must be written in terms of an existing
+///   primitive.
+/// - For MySQL, the value of `bytes` will depend on the return value of
+///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
+/// - For third party backends, consult that backend's documentation.
+///
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
     fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
-/// How to deserialize multiple fields, with a known type. This type is
-/// implemented for tuples of various sizes.
+/// Deserialize one or more fields.
+///
+/// All types which implement `FromSql` should also implement this trait. This
+/// trait differs from `FromSql` in that it is also implemented by tuples.
+///
+/// In the future, we hope to be able to provide a blanket impl of this trait
+/// for all types which implement `FromSql`. However, as of Diesel 1.0, such an
+/// impl would conflict with our impl for tuples.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
-    /// The number of fields that this type will consume. Should be equal to
+    /// The number of fields that this type will consume. Must be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
     const FIELDS_NEEDED: usize = 1;
 
@@ -489,9 +504,27 @@ where
     }
 }
 
-/// Serializes a single value to be sent to the database. The output will be
-/// included as a bind parameter, and is expected to be the binary format, not
-/// text.
+/// Serializes a single value to be sent to the database.
+///
+/// The output is sent as a bind parameter, and the data must be written in the
+/// expected format for the given backend.
+///
+/// When possible, implementations of this trait should prefer using an existing
+/// implementation, rather than writing to `out` directly. (For example, if you
+/// are implementing this for an enum, which is represented as an integer in the
+/// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
+/// yourself.
+///
+/// ### Backend specific details
+///
+/// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.
+/// - For SQLite, all implementations should be written in terms of an existing
+///   `ToSql` implementation.
+/// - For MySQL, the expected bytes will depend on the return value of
+///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
+/// - For third party backends, consult that backend's documentation.
+///
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
     fn to_sql<W: Write>(
         &self,

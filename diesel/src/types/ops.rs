@@ -1,15 +1,37 @@
-//! Apps should not need to concern themselves with this module.
+//! Represents the output of numeric operators in SQL
 //!
-//! Crates which add new types which allow numeric operators should implement these traits to
-//! specify what the output is for a given right hand side
+//! Apps should not need to concern themselves with this module.
+//! If you are looking for where the actual implementation of `std::ops::Add`
+//! and friends are generated for columns, see
+//! [`numeric_expr!`](../../macro.numeric_expr.html).
+//!
+//! Crates which add new types which allow numeric operators should implement
+//! these traits to specify what the output is for a given right hand side.
+//!
+//! Unlike the traits in `std::ops`, the right hand side is an associated type
+//! rather than a type parameter. The biggest drawback of this is that any type
+//! can only have one right hand type which can be added/subtracted, etc. The
+//! most immediately noticable effect of this is that you cannot add a nullable
+//! number to one that is not nullable.
+//!
+//! The reason for this is because of the impl of `std::ops::Add` that we need
+//! to be able to write. We want the right hand side to allow Rust values which
+//! should be sent as bind parameters, not just other Diesel expressions. That
+//! means the impl would look like this:
+//!
+//! ```ignore
+//! impl<ST, T> std::ops::Add<T> for my_column
+//! where
+//!     T: AsExpression<ST>,
+//!     my_column::SqlType: diesel::ops::Add<ST>,
+//! ```
+//!
+//! This impl is not valid in Rust, as `ST` is not constrained by the trait or
+//! the implementing type. If there were two valid types for `ST` which
+//! satisfied all constraints, Rust would not know which one to use, and there
+//! would be no way for the user to specify which one should be used.
 
 /// Represents SQL types which can be added.
-///
-/// Similar to `std::ops::Add`, but this only includes information about the SQL types that will
-/// result from the operation. Unlike `std::ops::Add`, the right side is an associated type rather
-/// than a type parameter. This means that a given SQL type can only have one other SQL type added
-/// to it. The reason for this is that when the right side is a Rust value which would be sent as a
-/// bind parameter, we need to know which type to use.
 pub trait Add {
     /// The SQL type which can be added to this one
     type Rhs;
@@ -18,12 +40,6 @@ pub trait Add {
 }
 
 /// Represents SQL types which can be subtracted.
-///
-/// Similar to `std::ops::Sub`, but this only includes information about the SQL types that will
-/// result from the operation. Unlike `std::ops::Sub`, the right side is an associated type rather
-/// than a type parameter. This means that a given SQL type can only have one other SQL type
-/// subtracted from it. The reason for this is that when the right side is a Rust value which would
-/// be sent as a bind parameter, we need to know which type to use.
 pub trait Sub {
     /// The SQL type which can be subtracted from this one
     type Rhs;
@@ -32,12 +48,6 @@ pub trait Sub {
 }
 
 /// Represents SQL types which can be multiplied.
-///
-/// Similar to `std::ops::Mul`, but this only includes information about the SQL types that will
-/// result from the operation. Unlike `std::ops::Mul`, the right side is an associated type rather
-/// than a type parameter. This means that a given SQL type can only have one other SQL type
-/// multiplied with it. The reason for this is that when the right side is a Rust value which
-/// would be sent as a bind parameter, we need to know which type to use.
 pub trait Mul {
     /// The SQL type which this can be multiplied by
     type Rhs;
@@ -46,12 +56,6 @@ pub trait Mul {
 }
 
 /// Represents SQL types which can be divided.
-///
-/// Similar to `std::ops::Div`, but this only includes information about the SQL types that will
-/// result from the operation. Unlike `std::ops::Div`, the right side is an associated type rather
-/// than a type parameter. This means that a given SQL type can only be divided by one other SQL
-/// type. The reason for this is that when the right side is a Rust value which would be sent as a
-/// bind parameter, we need to know which type to use.
 pub trait Div {
     /// The SQL type which this one can be divided by
     type Rhs;
