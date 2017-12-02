@@ -23,6 +23,7 @@ table! {
 #[test]
 fn named_struct_definition() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[table_name = "my_structs"]
     struct MyStruct {
         foo: IntRust,
         bar: IntRust,
@@ -36,6 +37,7 @@ fn named_struct_definition() {
 #[test]
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[table_name = "my_structs"]
     struct MyStruct(#[column_name(foo)] IntRust, #[column_name(bar)] IntRust);
 
     let conn = connection();
@@ -44,3 +46,16 @@ fn tuple_struct() {
 }
 
 // FIXME: Test usage with renamed columns
+
+#[test]
+fn struct_with_no_table() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    struct MyStructNamedSoYouCantInferIt {
+        #[sql_type = "IntSql"] foo: IntRust,
+        #[sql_type = "IntSql"] bar: IntRust,
+    }
+
+    let conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
+}

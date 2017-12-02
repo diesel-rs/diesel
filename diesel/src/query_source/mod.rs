@@ -32,13 +32,15 @@ where
 ///
 /// # Deriving
 ///
-/// To derive this trait, the struct must be associated with a single table.
-/// If the table name is different than `"struct_name" + "s"`, you can
-/// annotate your struct with `#[table_name = "some_table"]`.
+/// To derive this trait, Diesel needs to know the SQL type of each field. You
+/// can do this by either annotating your struct with `#[table_name =
+/// "some_table"]` (in which case the SQL type will be
+/// `diesel::dsl::SqlTypeOf<table_name::column_name>`), or by annotating each
+/// field with `#[sql_type = "SomeType"]`.
 ///
-/// The module for that table must be in scope. For example, to derive this for
-/// a struct called `User`, you will likely need a line such as `use
-/// schema::users;`
+/// If you are using `#[table_name]`, the module for that table must be in
+/// scope. For example, to derive this for a struct called `User`, you will
+/// likely need a line such as `use schema::users;`
 ///
 /// If the name of a field on your struct is different than the column in your
 /// `table!` declaration, or if you are deriving this trait on a tuple struct,

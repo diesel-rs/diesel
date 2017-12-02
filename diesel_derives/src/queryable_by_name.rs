@@ -1,6 +1,7 @@
 use quote::Tokens;
 use syn;
 
+use attr::Attr;
 use model::Model;
 use util::wrap_item_in_const;
 
@@ -11,14 +12,13 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
         .ty_param_id("__DB")
         .build();
     let struct_ty = &model.ty;
-    let table_name = model.table_name();
 
     let attr_where_clause = model.attrs.iter().map(|attr| {
         let attr_ty = &attr.ty;
-        let column_name = attr.column_name();
+        let st = sql_type(attr, &model);
         quote! {
-            __DB: diesel::types::HasSqlType<diesel::dsl::SqlTypeOf<#table_name::#column_name>>,
-            #attr_ty: diesel::types::FromSql<diesel::dsl::SqlTypeOf<#table_name::#column_name>, __DB>,
+            __DB: diesel::types::HasSqlType<#st>,
+            #attr_ty: diesel::types::FromSql<#st, __DB>,
         }
     });
 
@@ -43,15 +43,30 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
 }
 
 fn build_expr_for_model(model: &Model) -> Tokens {
-    let table_name = model.table_name();
     let attr_exprs = model.attrs.iter().map(|attr| {
         let name = attr.field_name();
         let column_name = attr.column_name();
-        let st = quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>);
+        let st = sql_type(attr, model);
         quote!(#name: diesel::row::NamedRow::get::<#st, _>(row, stringify!(#column_name))?)
     });
 
     quote!(Self {
         #(#attr_exprs,)*
     })
+}
+
+fn sql_type(attr: &Attr, model: &Model) -> Tokens {
+    let table_name = model.table_name();
+    let column_name = attr.column_name();
+
+    match attr.sql_type() {
+        Some(st) => quote!(#st),
+        None => if model.has_table_name_annotation() {
+            quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
+        } else {
+            quote!(compile_error!(
+                "Your struct must either be annotated with `#[table_name = \"foo\"]` or have all of its fields annotated with `#[sql_type = \"Integer\"]`"
+            ))
+        },
+    }
 }
