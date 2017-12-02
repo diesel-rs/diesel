@@ -384,6 +384,42 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
+// Reasons we can't write this:
+//
+// impl<T, ST, DB> FromSqlRow<ST, DB> for T
+// where
+//     DB: Backend + HasSqlType<ST>,
+//     T: FromSql<ST, DB>,
+// {
+//     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
+//         Self::from_sql(row.take())
+//     }
+// }
+//
+// (this is mostly here so @sgrif has a better reference every time he thinks
+// he's somehow had a breakthrough on solving this problem):
+//
+// - It conflicts with our impl for tuples, because `DB` is a bare type
+//   parameter, it could in theory be a local type for some other impl.
+//   - This is fixed by replacing our impl with 3 impls, where `DB` is changed
+//     concrete backends. This would mean that any third party crates adding new
+//     backends would need to add the tuple impls, which sucks but is fine.
+// - It conflicts with our impl for `Option`
+//   - So we could in theory fix this by both splitting the generic impl into
+//     backend specific impls, and removing the `FromSql` impls. In theory there
+//     is no reason that it needs to implement `FromSql`, since everything
+//     requires `FromSqlRow`, but it really feels like it should.
+//   - Specialization might also fix this one. The impl isn't quite a strict
+//     subset (the `FromSql` impl has `T: FromSql`, and the `FromSqlRow` impl
+//     has `T: FromSqlRow`), but if `FromSql` implies `FromSqlRow`,
+//     specialization might consdier that a subset?
+// - I don't know that we really need it. `#[derive(FromSqlRow)]` is probably
+//   good enough. That won't improve our own codebase, since 99% of our
+//   `FromSqlRow` impls are for types from another crate, but it's almost
+//   certainly good enough for user types.
+//   - Still, it really feels like `FromSql` *should* be able to imply both
+//   `FromSqlRow` and `Queryable`
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Tiny enum to make the return type of `ToSql` more descriptive
 pub enum IsNull {
