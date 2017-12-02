@@ -322,11 +322,7 @@ where
 {
     conn.transaction(|| {
         if migration.version() != "00000000000000" {
-            try!(writeln!(
-                output,
-                "Running migration {}",
-                migration.version()
-            ));
+            try!(writeln!(output, "Running migration {}", name(&migration)));
         }
         try!(migration.run(conn));
         try!(conn.insert_new_migration(migration.version()));
@@ -343,7 +339,7 @@ fn revert_migration<Conn: Connection>(
         try!(writeln!(
             output,
             "Rolling back migration {}",
-            migration.version()
+            name(&migration)
         ));
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
