@@ -13,7 +13,8 @@ use query_builder::update_statement::*;
 use query_builder::where_clause::*;
 use query_builder::{AsQuery, Query, QueryFragment, SelectStatement};
 use query_dsl::*;
-use query_dsl::boxed_dsl::InternalBoxedDsl;
+use query_dsl::methods::*;
+use query_dsl::boxed_dsl::BoxedDsl;
 use query_source::QuerySource;
 use query_source::joins::{Join, JoinOn, JoinTo};
 use super::BoxedSelectStatement;
@@ -123,7 +124,7 @@ where
 
     fn find(self, id: PK) -> Self::Output {
         let primary_key = self.from.primary_key();
-        self.filter(primary_key.eq_all(id))
+        FilterDsl::filter(self, primary_key.eq_all(id))
     }
 }
 
@@ -246,7 +247,7 @@ impl<F, S, W, O, L, Of> ForUpdateDsl for SelectStatement<F, S, NoDistinctClause,
     }
 }
 
-impl<'a, F, S, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
+impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
     for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
 where
     DB: Backend,
@@ -274,7 +275,7 @@ where
     }
 }
 
-impl<'a, F, D, W, O, L, Of, G, DB> InternalBoxedDsl<'a, DB>
+impl<'a, F, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
 where
     DB: Backend,
@@ -343,3 +344,5 @@ where
         F::join_target(rhs)
     }
 }
+
+impl<F, S, D, W, O, L, Of, G, FU> QueryDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU> {}

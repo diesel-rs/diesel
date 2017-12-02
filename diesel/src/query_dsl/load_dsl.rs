@@ -4,7 +4,7 @@ use dsl::Limit;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::Queryable;
 use result::{first_or_not_found, QueryResult};
-use super::LimitDsl;
+use super::methods::LimitDsl;
 use types::HasSqlType;
 
 pub trait LoadQuery<Conn, U>: LoadDsl<Conn> {

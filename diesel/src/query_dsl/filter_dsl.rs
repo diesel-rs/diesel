@@ -2,34 +2,13 @@ use dsl::Filter;
 use expression_methods::*;
 use query_source::*;
 
-/// Adds to the `WHERE` clause of a query. If there is already a `WHERE` clause,
-/// the result will be `old AND new`. This is automatically implemented for the
-/// various query builder types.
+/// The `filter` method
 ///
-/// # Example:
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `filter` from generic code.
 ///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
-/// # fn main() {
-/// #     use self::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let seans_id = users.filter(name.eq("Sean")).select(id)
-///     .first(&connection);
-/// assert_eq!(Ok(1), seans_id);
-/// let tess_id = users.filter(name.eq("Tess")).select(id)
-///     .first(&connection);
-/// assert_eq!(Ok(2), tess_id);
-/// # }
-/// ```
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait FilterDsl<Predicate> {
     type Output;
 
@@ -48,32 +27,13 @@ where
     }
 }
 
-/// Attempts to find a single record from the given table by primary key.
+/// The `find` method
 ///
-/// # Example
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `find` from generic code.
 ///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
-/// # fn main() {
-/// #     use self::users::dsl::*;
-/// #     use diesel::result::Error::NotFound;
-/// #     let connection = establish_connection();
-/// let sean = (1, "Sean".to_string());
-/// let tess = (2, "Tess".to_string());
-/// assert_eq!(Ok(sean), users.find(1).first(&connection));
-/// assert_eq!(Ok(tess), users.find(2).first(&connection));
-/// assert_eq!(Err::<(i32, String), _>(NotFound), users.find(3).first(&connection));
-/// # }
-/// ```
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait FindDsl<PK> {
     type Output;
 

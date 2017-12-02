@@ -1,10 +1,16 @@
 use associations::HasTable;
-use dsl::*;
+use dsl::Update;
 use query_builder::{AsChangeset, IntoUpdateTarget};
-use query_dsl::*;
+use query_dsl::{LoadDsl, LoadQuery};
 use result::QueryResult;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use associations::Identifiable;
+#[cfg(any(feature = "sqlite", feature = "mysql"))]
+use dsl::Find;
+#[cfg(any(feature = "sqlite", feature = "mysql"))]
+use query_dsl::ExecuteDsl;
+#[cfg(any(feature = "sqlite", feature = "mysql"))]
+use query_dsl::methods::FindDsl;
 
 pub trait InternalSaveChangesDsl<Conn, T>: Sized {
     fn internal_save_changes(self, connection: &Conn) -> QueryResult<T>;

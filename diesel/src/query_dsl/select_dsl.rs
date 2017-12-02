@@ -1,10 +1,13 @@
 use expression::Expression;
 use query_source::Table;
 
-/// Sets the select clause of a query. If there was already a select clause, it
-/// will be overridden. The expression passed to `select` must actually be valid
-/// for the query (only contains columns from the target table, doesn't mix
-/// aggregate + non-aggregate expressions, etc).
+/// The `select` method
+///
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `select` from generic code.
+///
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait SelectDsl<Selection: Expression> {
     // FIXME: Once we've refactored the `impl Expression` on `SelectStatement`
     // to not conditionally be `types::Array`, it is probably worthwhile to

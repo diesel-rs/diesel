@@ -10,6 +10,7 @@ use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
 use query_dsl::*;
+use query_dsl::methods::*;
 use query_source::QuerySource;
 use query_source::joins::*;
 use result::QueryResult;
@@ -269,3 +270,5 @@ where
         QS::join_target(rhs)
     }
 }
+
+impl<'a, ST, QS, DB> QueryDsl for BoxedSelectStatement<'a, ST, QS, DB> {}

@@ -16,10 +16,20 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   field whose type is a struct which implements `QueryableByName`, rather than a
   single column in the query, add the annotation `#[diesel(embed)]`
 
+* The `QueryDsl` trait encompasses the majority of the traits that were
+  previously in the `query_dsl` module.
+
 ### Changed
 
 * `#[derive(QueryableByName)]` now requires that the table name be explicitly
   stated.
+
+* Most of the traits in `query_dsl` have been moved to `query_dsl::methods`.
+  These traits are no longer exported in `prelude`. This should not affect most
+  apps, as the behavior of these traits is provided by `QueryDsl`. However, if
+  you were using these traits in `where` clauses for generic code, you will need
+  to explicitly do `use diesel::query_dsl::methods::WhateverDsl`. You may also
+  need to use UFCS in these cases.
 
 ### Removed
 

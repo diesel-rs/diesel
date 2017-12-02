@@ -94,9 +94,8 @@ use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
 use diesel::expression_methods::*;
-use diesel::{ExecuteDsl, FilterDsl};
+use diesel::{Connection, ExecuteDsl, QueryDsl, QueryResult};
 use self::schema::__diesel_schema_migrations::dsl::*;
-use diesel::{Connection, QueryResult};
 
 use std::env;
 use std::path::{Path, PathBuf};

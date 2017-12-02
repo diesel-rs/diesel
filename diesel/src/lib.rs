@@ -101,6 +101,7 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_dsl::*;
+    use super::query_dsl::methods::*;
     use super::query_source::joins;
 
     #[doc(inline)]
@@ -146,6 +147,16 @@ pub mod helper_types {
         <Target as IntoUpdateTarget>::WhereClause,
         <Changes as AsChangeset>::Changeset,
     >;
+
+    /// Represents the return type of `.into_boxed::<'a, DB>()`
+    pub type IntoBoxed<'a, Source, DB> = <Source as BoxedDsl<'a, DB>>::Output;
+
+    /// Represents the return type of `.distinct()`
+    pub type Distinct<Source> = <Source as DistinctDsl>::Output;
+
+    /// Represents the return type of `.distinct_on(expr)`
+    #[cfg(feature = "postgres")]
+    pub type DistinctOn<Source, Expr> = <Source as DistinctOnDsl<Expr>>::Output;
 }
 
 pub mod prelude {
@@ -157,7 +168,9 @@ pub mod prelude {
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
-    pub use query_dsl::*;
+    pub use query_dsl::{BelongingToDsl, ExecuteDsl, FirstDsl, GroupByDsl, JoinOnDsl, LoadDsl,
+                        QueryDsl, SaveChangesDsl};
+
     pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
     pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 

@@ -5,8 +5,9 @@ pub use self::changeset::{AsChangeset, Changeset};
 pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
+use dsl::Filter;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use prelude::*;
+use query_dsl::methods::FilterDsl;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
@@ -45,14 +46,6 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
             returning: NoReturningClause,
         }
     }
-}
-
-impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = IncompleteUpdateStatement<T, U::Output>;
 
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
@@ -89,6 +82,21 @@ where
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
+    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
+    where
+        Self: FilterDsl<Predicate>,
+    {
+        FilterDsl::filter(self, predicate)
+    }
+}
+
+impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = IncompleteUpdateStatement<T, U::Output>;
+
     fn filter(self, predicate: Predicate) -> Self::Output {
         IncompleteUpdateStatement::new(UpdateTarget {
             table: self.0.table,
@@ -110,13 +118,7 @@ pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     returning: Ret,
 }
 
-impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = UpdateStatement<T, U::Output, V, Ret>;
-
+impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
     ///
@@ -152,6 +154,21 @@ where
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
+    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
+    where
+        Self: FilterDsl<Predicate>,
+    {
+        FilterDsl::filter(self, predicate)
+    }
+}
+
+impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = UpdateStatement<T, U::Output, V, Ret>;
+
     fn filter(self, predicate: Predicate) -> Self::Output {
         UpdateStatement {
             table: self.table,

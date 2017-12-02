@@ -1,6 +1,7 @@
 use dsl::{Eq, EqAny, Filter, FindBy};
 use expression::AsExpression;
 use expression::array_comparison::AsInExpression;
+use query_dsl::methods::FilterDsl;
 use prelude::*;
 use super::{HasTable, Identifiable};
 
@@ -118,7 +119,7 @@ where
     type Output = FindBy<Child::Table, Child::ForeignKeyColumn, Id<&'a Parent>>;
 
     fn belonging_to(parent: &'a Parent) -> Self::Output {
-        Child::table().filter(Child::foreign_key_column().eq(parent.id()))
+        FilterDsl::filter(Child::table(), Child::foreign_key_column().eq(parent.id()))
     }
 }
 
@@ -134,7 +135,7 @@ where
 
     fn belonging_to(parents: &'a [Parent]) -> Self::Output {
         let ids = parents.iter().map(Identifiable::id).collect::<Vec<_>>();
-        Child::table().filter(Child::foreign_key_column().eq_any(ids))
+        FilterDsl::filter(Child::table(), Child::foreign_key_column().eq_any(ids))
     }
 }
 

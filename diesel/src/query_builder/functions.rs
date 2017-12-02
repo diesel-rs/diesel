@@ -1,6 +1,6 @@
 use dsl::Select;
 use expression::Expression;
-use query_dsl::SelectDsl;
+use query_dsl::methods::SelectDsl;
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::{Insert, Replace};
 use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarget,

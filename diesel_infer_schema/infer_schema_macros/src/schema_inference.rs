@@ -154,6 +154,6 @@ fn to_doc_comment_tokens(docs: &str) -> Vec<syn::Token> {
         .map(|l| {
             format!("///{}{}", if l.is_empty() { "" } else { " " }, l)
         })
-        .map(|l| syn::Token::DocComment(l.into()))
+        .map(syn::Token::DocComment)
         .collect()
 }

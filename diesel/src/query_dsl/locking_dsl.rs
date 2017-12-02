@@ -1,20 +1,13 @@
 use query_builder::AsQuery;
 use query_source::Table;
 
-/// Adds `FOR UPDATE` to the end of the select statement. This method is only
-/// available for MySQL and PostgreSQL. SQLite does not provide any form of
-/// row locking.
+/// The `for_update` method
 ///
-/// Additionally, `.for_update` cannot be used on queries with a distinct
-/// clause, group by clause, having clause, or any unions. Queries with
-/// a `FOR UPDATE` clause cannot be boxed.
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `for_update` from generic code.
 ///
-/// # Example
-///
-/// ```ignore
-/// // Executes `SELECT * FROM users FOR UPDATE`
-/// users.for_update().load(&connection)
-/// ```
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait ForUpdateDsl {
     /// The query returned by `for_update`. See [`dsl::ForUpdate`] for
     /// convenient access to this type.
