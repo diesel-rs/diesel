@@ -121,8 +121,8 @@ mod bigdecimal {
             let mut result = BigUint::default();
             let count = digits.len() as i64;
             for digit in digits {
-                result = result * BigUint::from(10_000u64);
-                result = result + BigUint::from(digit as u64);
+                result *= BigUint::from(10_000u64);
+                result += BigUint::from(digit as u64);
             }
             // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
             let correction_exp = 4 * (i64::from(weight) - count + 1);
