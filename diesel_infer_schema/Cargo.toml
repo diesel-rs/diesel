@@ -7,7 +7,7 @@ description = "Provides functionality to infer the schema of a database"
 documentation = "https://docs.rs/diesel_infer_schema"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-keywords = ["orm", "database", "postgres", "postgresql", "sql"]
+keywords = ["diesel"]
 
 [dependencies]
 infer_schema_macros = { version = "0.99.0" }

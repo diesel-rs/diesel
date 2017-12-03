@@ -8,7 +8,7 @@ readme = "README.md"
 documentation = "https://diesel.rs/guides/getting-started"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-keywords = ["orm", "database", "postgres", "postgresql", "sql"]
+keywords = ["diesel", "migrations", "cli"]
 
 [[bin]]
 name = "diesel"
