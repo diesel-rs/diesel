@@ -1,5 +1,8 @@
 use std::marker::PhantomData;
+use backend::Backend;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use query_builder::{AstPass, QueryFragment};
+use types;
 
 pub trait IntoSingleTypeExpressionList<ST> {
     type Expression;
@@ -63,11 +66,8 @@ impl<T, ST> Expression for Array<T, ST>
 where
     T: Expression,
 {
-    type SqlType = ::pg::types::sql_types::Array<ST>;
+    type SqlType = types::Array<ST>;
 }
-
-use query_builder::{AstPass, QueryFragment};
-use backend::Backend;
 
 impl<T, ST, DB> QueryFragment<DB> for Array<T, ST>
 where
