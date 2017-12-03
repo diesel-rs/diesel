@@ -250,6 +250,7 @@ impl<F, S, W, O, L, Of> ForUpdateDsl for SelectStatement<F, S, NoDistinctClause,
 impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
     for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
 where
+    Self: AsQuery,
     DB: Backend,
     S: QueryFragment<DB> + SelectableExpression<F> + 'a,
     D: QueryFragment<DB> + 'a,
@@ -278,6 +279,7 @@ where
 impl<'a, F, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
 where
+    Self: AsQuery,
     DB: Backend,
     F: QuerySource,
     F::DefaultSelection: QueryFragment<DB> + 'a,
