@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require "fileutils"
+
+def main(token)
+  document_diesel
+  on_gh_pages_branch do |latest_commit|
+    copy_edge_docs
+    doc_commit_message = "Documentation for #{latest_commit}"
+    upload_docs(token, doc_commit_message)
+  end
+end
+
+def run_command(cmd)
+  result = `#{cmd}`
+  if $? != 0
+    raise "#{cmd} failed"
+  end
+  result
+end
+
+def document_diesel
+  Dir.chdir("diesel") do
+    run_command("cargo doc --no-default-features --features docs")
+  end
+  File.open("target/doc/index.html", "w") do |f|
+    f.write("<meta http-equiv=refresh content=0;url=diesel/index.html>")
+  end
+end
+
+def on_gh_pages_branch
+  latest_commit = run_command("git rev-parse --short HEAD").strip
+  run_command("git checkout gh-pages")
+  yield latest_commit
+ensure
+  run_command("git checkout -f #{latest_commit}") if latest_commit
+end
+
+def copy_edge_docs
+  FileUtils.mv("target/doc", "edge")
+end
+
+def upload_docs(token, commit_message)
+  run_command("git add edge")
+  run_command("git commit -m '#{commit_message}'")
+  run_command("git push -fq https://#{token}@github.com/diesel-rs/diesel.git gh-pages")
+end
+
+travis_pr_env_var = ENV.fetch("TRAVIS_PULL_REQUEST", "false")
+branch = ENV["TRAVIS_BRANCH"]
+is_pr = travis_pr_env_var != "false"
+
+if branch == "master" && !is_pr || ENV.key?("FORCE_DOC_UPLOAD")
+  main(ENV["GH_TOKEN"])
+end
