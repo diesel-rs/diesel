@@ -33,12 +33,12 @@ a subset of columns.
 For this reason, it may be helpful to view `Queryable` structs as the *result* of your query.
 It is acceptable and often desirable to have multiple `Queryable` structs for the same database table.
 
-Annotating your struct with [`#[derive(Queryable)]`][queryable_doc] enables you to use Diesel's 
-`LoadDsl` and `FirstDsl` to assist in retrieving data.
+Annotating your struct with [`#[derive(Queryable)]`][queryable_doc] enables you to use Diesel's
+`RunQueryDsl` to assist in retrieving data.
 A few of the methods you may use are `load()`, `get_result()`, `get_results()`, and `first()`.
 Should you make a query that doesn't return the same columns and values (in the order specified) on your `Queryable` struct,
 you will get a compile-time error.
-The only thing `Queryable` cares about is that the data returned from the query 
+The only thing `Queryable` cares about is that the data returned from the query
 maps exactly to your data structure.
 
 [queryable_doc]: https://docs.diesel.rs/diesel/query_source/trait.Queryable.html

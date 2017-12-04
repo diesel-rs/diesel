@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 use std::iter::FromIterator;
-
 use diesel::expression::bound::Bound;
-use diesel::prelude::*;
 use diesel::insertable::ColumnInsertValue;
+use diesel::prelude::*;
 use diesel::query_builder::insert_statement::InsertStatement;
-use super::schema::__diesel_schema_migrations::dsl::*;
+use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::types::{FromSql, VarChar};
+
+use super::schema::__diesel_schema_migrations::dsl::*;
 
 /// A connection which can be passed to the migration methods. This exists only
 /// to wrap up some constraints which are meant to hold for *all* connections.

@@ -31,9 +31,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   to explicitly do `use diesel::query_dsl::methods::WhateverDsl`. You may also
   need to use UFCS in these cases.
 
+* If you have a type which implemented `QueryFragment` or `Query`, which you
+  intended to be able to call `execute` or `load` on, you will need to manually
+  implement `RunQueryDsl` for that type. The trait should be unconditionally
+  implemented (no where clause beyond what your type requires), and the body
+  should be empty.
+
 ### Removed
 
 * All deprecated items have been removed.
+
+* `LoadDsl` and `FirstDsl` have been removed. Their functionality now lives in
+  `LoadQuery`.
 
 ## [0.99.1] - 2017-12-01
 

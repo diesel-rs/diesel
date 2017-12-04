@@ -1,27 +1,31 @@
 use associations::HasTable;
+#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
 use dsl::Update;
 use query_builder::{AsChangeset, IntoUpdateTarget};
-use query_dsl::{LoadDsl, LoadQuery};
+#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
+use query_dsl::{LoadQuery, RunQueryDsl};
 use result::QueryResult;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use associations::Identifiable;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use dsl::Find;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
-use query_dsl::ExecuteDsl;
-#[cfg(any(feature = "sqlite", feature = "mysql"))]
-use query_dsl::methods::FindDsl;
+use query_dsl::methods::{ExecuteDsl, FindDsl};
 
 pub trait InternalSaveChangesDsl<Conn, T>: Sized {
     fn internal_save_changes(self, connection: &Conn) -> QueryResult<T>;
 }
 
-impl<T, U, Conn> InternalSaveChangesDsl<Conn, U> for T
+#[cfg(feature = "postgres")]
+use pg::PgConnection;
+
+#[cfg(feature = "postgres")]
+impl<T, U> InternalSaveChangesDsl<PgConnection, U> for T
 where
     T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
-    Update<T, T>: LoadDsl<Conn> + LoadQuery<Conn, U>,
+    Update<T, T>: LoadQuery<PgConnection, U>,
 {
-    fn internal_save_changes(self, conn: &Conn) -> QueryResult<U> {
+    fn internal_save_changes(self, conn: &PgConnection) -> QueryResult<U> {
         ::update(self).set(self).get_result(conn)
     }
 }

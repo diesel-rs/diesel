@@ -10,7 +10,8 @@ use insertable::*;
 use mysql::Mysql;
 use query_builder::*;
 #[cfg(feature = "sqlite")]
-use query_dsl::ExecuteDsl;
+use query_dsl::methods::ExecuteDsl;
+use query_dsl::RunQueryDsl;
 use query_source::{Column, Table};
 use result::QueryResult;
 #[cfg(feature = "sqlite")]
@@ -165,16 +166,16 @@ where
     T: Copy,
     Op: Copy,
 {
-    fn execute(self, conn: &SqliteConnection) -> QueryResult<usize> {
+    fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
         use connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
-            for record in self.records {
+            for record in query.records {
                 result += InsertStatement::new(
-                    self.target,
+                    query.target,
                     record.values(),
-                    self.operator,
-                    self.returning,
+                    query.operator,
+                    query.returning,
                 ).execute(conn)?;
             }
             Ok(result)
@@ -203,6 +204,8 @@ where
 {
     type SqlType = Ret::SqlType;
 }
+
+impl<T, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
 
 impl<T, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.

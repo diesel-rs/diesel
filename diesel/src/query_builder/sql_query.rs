@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use connection::Connection;
 use query_builder::{AstPass, QueryFragment, QueryId};
-use query_dsl::{LoadDsl, LoadQuery};
+use query_dsl::{LoadQuery, RunQueryDsl};
 use query_source::QueryableByName;
 use result::QueryResult;
 use types::{HasSqlType, ToSql};
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<Conn> LoadDsl<Conn> for SqlQuery {}
+impl<Conn> RunQueryDsl<Conn> for SqlQuery {}
 
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -158,4 +158,4 @@ where
     }
 }
 
-impl<Conn, Query, Value, ST> LoadDsl<Conn> for UncheckedBind<Query, Value, ST> {}
+impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}

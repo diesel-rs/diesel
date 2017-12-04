@@ -348,3 +348,7 @@ where
 }
 
 impl<F, S, D, W, O, L, Of, G, FU> QueryDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU> {}
+
+impl<F, S, D, W, O, L, Of, G, FU, Conn> RunQueryDsl<Conn>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU> {
+}

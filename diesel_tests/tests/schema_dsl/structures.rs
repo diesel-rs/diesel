@@ -1,3 +1,4 @@
+use diesel::RunQueryDsl;
 use std::marker::PhantomData;
 
 pub struct CreateTable<'a, Cols> {
@@ -13,6 +14,8 @@ impl<'a, Cols> CreateTable<'a, Cols> {
         }
     }
 }
+
+impl<'a, Cols, Conn> RunQueryDsl<Conn> for CreateTable<'a, Cols> {}
 
 pub struct Column<'a, T> {
     name: &'a str,

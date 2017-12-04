@@ -106,10 +106,10 @@ impl<'a, T: Query> Query for &'a T {
 /// This may be a complete SQL command (such as an update statement without a
 /// `RETURNING` clause), or a subsection (such as our internal types used to
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
-/// [`LoadDsl`] will generally require that this trait be implemented.
+/// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: ../prelude/trait.ExecuteDsl.html
-/// [`LoadDsl`]: ../prelude/trait.LoadDsl.html
+/// [`ExecuteDsl`]: ../query_builder/methods/trait.ExecuteDsl.html
+/// [`LoadQuery`]: ../query_builder/trait.LoadQuery.html
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///

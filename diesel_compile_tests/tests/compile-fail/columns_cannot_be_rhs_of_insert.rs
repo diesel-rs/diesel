@@ -19,6 +19,6 @@ fn main() {
     insert_into(users)
         .values(&name.eq(hair_color))
         .execute(&conn)
-        //~^ ERROR E0599
+        //~^ ERROR ColumnInsertValue
         .unwrap();
 }
