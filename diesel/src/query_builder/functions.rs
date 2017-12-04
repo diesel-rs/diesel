@@ -171,8 +171,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// Backends that support the `RETURNING` clause, such as PostgreSQL,
 /// can return the inserted rows by calling [`.get_results`] instead of [`.execute`].
 ///
-/// [`.get_results`]: ../diesel/prelude/trait.LoadDsl.html#method.get_results
-/// [`.execute`]: ../diesel/prelude/trait.ExecuteDsl.html#tymethod.execute
+/// [`.get_results`]: ../diesel/prelude/trait.RunQueryDsl.html#method.get_results
+/// [`.execute`]: ../diesel/prelude/trait.RunQueryDsl.html#tymethod.execute
 ///
 /// # Examples
 ///

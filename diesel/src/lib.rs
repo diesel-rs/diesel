@@ -168,8 +168,8 @@ pub mod prelude {
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
-    pub use query_dsl::{BelongingToDsl, ExecuteDsl, FirstDsl, GroupByDsl, JoinOnDsl, LoadDsl,
-                        QueryDsl, SaveChangesDsl};
+    pub use query_dsl::{BelongingToDsl, GroupByDsl, JoinOnDsl, QueryDsl, RunQueryDsl,
+                        SaveChangesDsl};
 
     pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
     pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};

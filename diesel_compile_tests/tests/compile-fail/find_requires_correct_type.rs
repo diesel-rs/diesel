@@ -17,12 +17,12 @@ table! {
 
 fn main() {
     let connection = PgConnection::establish("").unwrap();
-    int_primary_key::table.find("1").first(&connection).unwrap();
-    //~^ ERROR no method named `first`
+    // FIXME: It'd be nice if this mentioned `AsExpression`
+    int_primary_key::table.find("1");
+    //~^ ERROR Expression
     //~| ERROR E0277
-    //~| ERROR E0277
-    string_primary_key::table.find(1).first(&connection).unwrap();
-    //~^ ERROR no method named `first`
-    //~| ERROR E0277
+    // FIXME: It'd be nice if this mentioned `AsExpression`
+    string_primary_key::table.find(1);
+    //~^ ERROR Expression
     //~| ERROR E0277
 }

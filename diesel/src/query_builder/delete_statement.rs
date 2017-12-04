@@ -4,6 +4,7 @@ use expression::{AppearsOnTable, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
+use query_dsl::RunQueryDsl;
 use query_dsl::methods::FilterDsl;
 use query_source::Table;
 use result::QueryResult;
@@ -123,6 +124,8 @@ where
 {
     type SqlType = Ret::SqlType;
 }
+
+impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> {}
 
 impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.

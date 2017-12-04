@@ -1,5 +1,5 @@
 use support::{database, project};
-use diesel::{select, LoadDsl};
+use diesel::{select, RunQueryDsl};
 use diesel::dsl::sql;
 use diesel::types::Bool;
 

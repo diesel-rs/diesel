@@ -94,7 +94,7 @@ use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
 use diesel::expression_methods::*;
-use diesel::{Connection, ExecuteDsl, QueryDsl, QueryResult};
+use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
 
 use std::env;
@@ -216,7 +216,7 @@ pub fn revert_migration_with_version<Conn: Connection>(
 ) -> Result<(), RunMigrationsError> {
     migration_with_version(migrations_dir, ver)
         .map_err(|e| e.into())
-        .and_then(|m| revert_migration(conn, m, output))
+        .and_then(|m| revert_migration(conn, &m, output))
 }
 
 #[doc(hidden)]
@@ -336,7 +336,7 @@ where
 
 fn revert_migration<Conn: Connection>(
     conn: &Conn,
-    migration: Box<Migration>,
+    migration: &Migration,
     output: &mut Write,
 ) -> Result<(), RunMigrationsError> {
     conn.transaction(|| {

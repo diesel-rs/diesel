@@ -30,9 +30,9 @@ pub enum Error {
     /// does not treat 0 rows as an error. If you would like to allow either 0
     /// or 1 rows, call [`optional`] on the result.
     ///
-    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
-    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
-    /// [`load`]: ../prelude/trait.LoadDsl.html#method.load
+    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
+    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
+    /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
     /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
     NotFound,
     /// The query could not be constructed
@@ -190,8 +190,8 @@ pub trait OptionalExtension<T> {
     /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
     /// handle that error, and give you back an `Option<T>` instead.
     ///
-    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
-    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
+    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
+    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
     ///
     /// # Example
     ///

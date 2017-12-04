@@ -8,11 +8,13 @@
 //! [expression_methods]: ../expression_methods/index.html
 //! [dsl]: ../dsl/index.html
 
-use helper_types::*;
 use backend::Backend;
+use connection::Connection;
 use expression::Expression;
-use query_source::{joins, Table};
 use expression::count::CountStar;
+use helper_types::*;
+use query_source::{joins, Table};
+use result::{first_or_not_found, QueryResult};
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -38,7 +40,7 @@ pub use self::boxed_dsl::BoxedDsl;
 #[doc(hidden)]
 pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
-pub use self::load_dsl::{ExecuteDsl, FirstDsl, LoadDsl, LoadQuery};
+pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::SaveChangesDsl;
 
 /// The traits used by `QueryDsl`.
@@ -52,6 +54,7 @@ pub mod methods {
     #[doc(inline)]
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
+    pub use super::load_dsl::ExecuteDsl;
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::OrderDsl;
@@ -589,3 +592,100 @@ pub trait QueryDsl: Sized {
 }
 
 impl<T: Table> QueryDsl for T {}
+
+pub trait RunQueryDsl<Conn>: Sized {
+    /// Executes the given command, returning the number of rows affected.
+    ///
+    /// Used in conjunction with [`insert_into`](../fn.insert_into.html),
+    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html)
+    fn execute(self, conn: &Conn) -> QueryResult<usize>
+    where
+        Conn: Connection,
+        Self: methods::ExecuteDsl<Conn>,
+    {
+        methods::ExecuteDsl::execute(self, conn)
+    }
+
+    /// Executes the given query, returning a `Vec` with the returned rows.
+    fn load<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+    where
+        Self: LoadQuery<Conn, U>,
+    {
+        self.internal_load(conn)
+    }
+
+    /// Runs the command, and returns the affected row.
+    ///
+    /// `Err(NotFound)` will be returned if the query affected 0 rows. You can
+    /// call `.optional()` on the result of this if the command was optional to
+    /// get back a `Result<Option<U>>`
+    fn get_result<U>(self, conn: &Conn) -> QueryResult<U>
+    where
+        Self: LoadQuery<Conn, U>,
+    {
+        first_or_not_found(self.load(conn))
+    }
+
+    /// Runs the command, returning an `Vec` with the affected rows.
+    fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+    where
+        Self: LoadQuery<Conn, U>,
+    {
+        self.load(conn)
+    }
+
+    /// Attempts to load a single record.
+    ///
+    /// Returns `Ok(record)` if found, and `Err(NotFound)` if no results are
+    /// returned. If the query truly is optional, you can call `.optional()` on
+    /// the result of this to get a `Result<Option<U>>`.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::NotFound;
+    /// table! {
+    ///     users {
+    ///         id -> Integer,
+    ///         name -> VarChar,
+    ///     }
+    /// }
+    ///
+    /// #[derive(Queryable, PartialEq, Debug)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # fn main() {
+    /// #   let connection = establish_connection();
+    /// let user1 = NewUser { name: "Sean".into() };
+    /// let user2 = NewUser { name: "Pascal".into() };
+    /// diesel::insert_into(users::table).values(&vec![user1, user2]).execute(&connection).unwrap();
+    ///
+    /// let user = users::table.order(users::id.asc()).first(&connection);
+    /// assert_eq!(Ok(User { id: 1, name: "Sean".into() }), user);
+    /// let user = users::table.filter(users::name.eq("Foo")).first::<User>(&connection);
+    /// assert_eq!(Err(NotFound), user);
+    /// # }
+    /// ```
+    fn first<U>(self, conn: &Conn) -> QueryResult<U>
+    where
+        Self: methods::LimitDsl,
+        Limit<Self>: LoadQuery<Conn, U>,
+    {
+        methods::LimitDsl::limit(self, 1).get_result(conn)
+    }
+}
+
+// Note: We could have a blanket `AsQuery` impl here, which would apply to
+// everything we want it to. However, the entire point of this trait is to have
+// trait resolution succeed, and the where clause on the methods fail when the
+// query is invalid. So we need things to unconditionally implement this trait.
+impl<T, Conn> RunQueryDsl<Conn> for T
+where
+    T: Table,
+{
+}

@@ -7,10 +7,11 @@ pub use self::target::{IntoUpdateTarget, UpdateTarget};
 use backend::Backend;
 use dsl::Filter;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use query_dsl::methods::FilterDsl;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
+use query_dsl::RunQueryDsl;
+use query_dsl::methods::FilterDsl;
 use query_source::Table;
 use result::Error::QueryBuilderError;
 use result::QueryResult;
@@ -228,6 +229,8 @@ where
 {
     type SqlType = Ret::SqlType;
 }
+
+impl<T, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
 
 impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.

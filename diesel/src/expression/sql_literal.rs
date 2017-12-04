@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::*;
 use query_builder::*;
+use query_dsl::RunQueryDsl;
 use result::QueryResult;
 use types::HasSqlType;
 
@@ -49,6 +50,8 @@ impl_query_id!(noop: SqlLiteral<ST>);
 impl<ST> Query for SqlLiteral<ST> {
     type SqlType = ST;
 }
+
+impl<ST, Conn> RunQueryDsl<Conn> for SqlLiteral<ST> {}
 
 impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {}
 
