@@ -1159,3 +1159,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.15.2]: https://github.com/diesel-rs/diesel/compare/v0.15.1...v0.15.2
 [0.16.0]: https://github.com/diesel-rs/diesel/compare/v0.15.2...v0.16.0
 [0.99.0]: https://github.com/diesel-rs/diesel/compare/v0.16.0...v0.99.0
+[0.99.1]: https://github.com/diesel-rs/diesel/compare/v0.99.0...v0.99.1
