@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use connection::Connection;
-use load_dsl::*;
 use query_builder::{AstPass, QueryFragment, QueryId};
+use query_dsl::{LoadDsl, LoadQuery};
 use query_source::QueryableByName;
 use result::QueryResult;
 use types::{HasSqlType, ToSql};

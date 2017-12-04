@@ -1,5 +1,5 @@
 use pg::Pg;
-use query_dsl::DistinctOnDsl;
+use query_dsl::methods::DistinctOnDsl;
 use query_builder::{AstPass, QueryFragment, SelectStatement};
 use result::QueryResult;
 use expression::{Expression, SelectableExpression};
@@ -22,7 +22,7 @@ where
 
 impl_query_id!(DistinctOnClause<T>);
 
-impl<ST, F, S, D, W, O, L, Of, G, Selection> DistinctOnDsl<Selection, F>
+impl<ST, F, S, D, W, O, L, Of, G, Selection> DistinctOnDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G>
 where
     Selection: SelectableExpression<F>,

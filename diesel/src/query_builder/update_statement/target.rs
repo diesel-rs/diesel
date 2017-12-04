@@ -1,6 +1,6 @@
 use associations::{HasTable, Identifiable};
 use dsl::Find;
-use query_dsl::FindDsl;
+use query_dsl::methods::FindDsl;
 use query_source::Table;
 
 #[doc(hidden)]

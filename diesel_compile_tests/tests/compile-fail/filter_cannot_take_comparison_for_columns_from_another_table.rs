@@ -39,10 +39,10 @@ fn main() {
         .filter(posts::id.eq(1));
         //~^ ERROR AppearsInFromClause
 
-    let _ = BoxedDsl::into_boxed::<Pg>(
-    //~^ ERROR AppearsInFromClause
-        users::table.filter(posts::id.eq(1))
-    );
+    let _ = users::table.filter(posts::id.eq(1))
+        .into_boxed::<Pg>();
+        //~^ ERROR BoxedDsl
+        // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 
     let _ = LoadDsl::load::<User>(
     //~^ ERROR AppearsInFromClause
@@ -54,9 +54,9 @@ fn main() {
         .filter(users::name.eq(posts::title));
         //~^ ERROR AppearsInFromClause
 
-    let _ = BoxedDsl::into_boxed::<Pg>(
-    //~^ ERROR AppearsInFromClause
-        users::table
-            .filter(users::name.eq(posts::title))
-    );
+    let _ = users::table
+        .filter(users::name.eq(posts::title))
+        .into_boxed::<Pg>();
+        //~^ ERROR BoxedDsl
+        // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 }

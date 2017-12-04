@@ -3,41 +3,18 @@ use query_source::Table;
 #[cfg(feature = "postgres")]
 use expression::SelectableExpression;
 
-/// Adds the `DISTINCT` keyword to a query.
+/// The `distinct` method
 ///
-/// # Example
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `distinct` from generic code.
 ///
-/// ```rust
-///
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
-/// # fn main() {
-/// #     use self::users::dsl::*;
-/// #     let connection = establish_connection();
-/// #     connection.execute("DELETE FROM users").unwrap();
-/// connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Sean')")
-///     .unwrap();
-/// let names = users.select(name).load(&connection);
-/// let distinct_names = users.select(name).distinct().load(&connection);
-///
-/// let sean = String::from("Sean");
-/// assert_eq!(Ok(vec![sean.clone(), sean.clone(), sean.clone()]), names);
-/// assert_eq!(Ok(vec![sean.clone()]), distinct_names);
-/// # }
-/// ```
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait DistinctDsl {
     /// Query with DISTINCT added
     type Output;
 
-    /// Should return query with DISTINCT added
+    /// Adds `DISTINCT` to to the query.
     fn distinct(self) -> Self::Output;
 }
 
@@ -54,58 +31,15 @@ where
     }
 }
 
-/// Adds the `DISTINCT ON` clause to a query.
+/// The `distinct_on` method
 ///
-/// # Example
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `distinct_on` from generic code.
 ///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
-/// # #[derive(Queryable, Debug, PartialEq)]
-/// # struct Animal {
-/// #     species: String,
-/// #     name: Option<String>,
-/// #     legs: i32,
-/// # }
-/// #
-/// # impl Animal {
-/// #     fn new<S: Into<String>>(species: S, name: Option<&str>, legs: i32) -> Self {
-/// #         Animal {
-/// #             species: species.into(),
-/// #             name: name.map(Into::into),
-/// #             legs
-/// #         }
-/// #     }
-/// # }
-/// #
-/// # fn main() {
-/// #     use self::animals::dsl::*;
-/// #     let connection = establish_connection();
-/// #     connection.execute("DELETE FROM animals").unwrap();
-/// connection.execute("INSERT INTO animals (species, name, legs)
-///                     VALUES ('dog', 'Jack', 4), ('dog', Null, 4),
-///                            ('spider', Null, 8)")
-///     .unwrap();
-/// let all_animals = animals.select((species, name, legs)).load(&connection);
-/// let distinct_animals = animals.select((species, name, legs)).distinct_on(species).load(&connection);
-///
-/// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
-///                    Animal::new("dog", None, 4),
-///                    Animal::new("spider", None, 8)]), all_animals);
-/// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
-///                    Animal::new("spider", None, 8)]), distinct_animals);
-/// # }
-/// ```
+/// [`QueryDsl`]: ../trait.QueryDsl.html
 #[cfg(feature = "postgres")]
-pub trait DistinctOnDsl<Selection: SelectableExpression<T>, T> {
+pub trait DistinctOnDsl<Selection> {
     /// Query with `DISTINCT ON()` added
     type Output;
 
@@ -114,13 +48,13 @@ pub trait DistinctOnDsl<Selection: SelectableExpression<T>, T> {
 }
 
 #[cfg(feature = "postgres")]
-impl<T, Selection> DistinctOnDsl<Selection, T> for T
+impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
     T: Table,
-    T::Query: DistinctOnDsl<Selection, T>,
+    T::Query: DistinctOnDsl<Selection>,
 {
-    type Output = <T::Query as DistinctOnDsl<Selection, T>>::Output;
+    type Output = <T::Query as DistinctOnDsl<Selection>>::Output;
 
     fn distinct_on(self, selection: Selection) -> Self::Output {
         self.as_query().distinct_on(selection)

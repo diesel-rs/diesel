@@ -1,6 +1,6 @@
 use query_builder::AsQuery;
 use query_source::{JoinTo, QuerySource, Table};
-use query_source::joins::{self, OnClauseWrapper};
+use query_source::joins::OnClauseWrapper;
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
@@ -43,78 +43,6 @@ where
         self.join(from, kind, on)
     }
 }
-
-/// Methods allowing various joins between two or more tables.
-///
-/// If you have invoked [`joinable!`] for the two tables, you can pass that
-/// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
-/// clause.
-///
-/// [`joinable!`]: ../macro.joinable.html
-/// [`.on`]: trait.JoinOnDsl.html#method.on
-///
-/// You can join to as many tables as you'd like in a query, with the
-/// restriction that no table can appear in the query more than once. The reason
-/// for this restriction is that one of the appearances would require aliasing,
-/// and we do not currently have a fleshed out story for dealing with table
-/// aliases.
-///
-/// You may also need to call [`allow_tables_to_appear_in_same_query!`][] (particularly if
-/// you see an unexpected error about `AppearsInFromClause`). See the
-/// documentation for [`allow_tables_to_appear_in_same_query!`][] for details.
-///
-/// Diesel expects multi-table joins to be semantically grouped based on the
-/// relationships. For example, `users.inner_join(posts.inner_join(comments))`
-/// is not the same as `users.inner_join(posts).inner_join(comments)`. The first
-/// would deserialize into `(User, (Post, Comment))` and generate the following
-/// SQL:
-///
-/// ```sql
-/// SELECT * FROM users
-///     INNER JOIN posts ON posts.user_id = users.id
-///     INNER JOIN comments ON comments.post_id = posts.id
-/// ```
-///
-/// While the second query would deserialize into `(User, Post, Comment)` and
-/// generate the following SQL:
-///
-/// ```sql
-/// SELECT * FROM users
-///     INNER JOIN posts ON posts.user_id = users.id
-///     INNER JOIN comments ON comments.user_id = users.id
-/// ```
-///
-/// [associations]: ../associations/index.html
-/// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
-pub trait JoinDsl: Sized {
-    /// Join two tables using a SQL `INNER JOIN`. The `ON` clause is defined
-    /// via the [associations API](../associations/index.html).
-    fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
-    where
-        Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
-    {
-        self.join_with_implicit_on_clause(rhs, joins::Inner)
-    }
-
-    /// Join two tables using a SQL `LEFT OUTER JOIN`. The `ON` clause is defined
-    /// via the [associations API](../associations/index.html).
-    fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
-    where
-        Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
-    {
-        self.join_with_implicit_on_clause(rhs, joins::LeftOuter)
-    }
-
-    /// Alias for `left_outer_join`
-    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output
-    where
-        Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
-    {
-        self.left_outer_join(rhs)
-    }
-}
-
-impl<T: AsQuery> JoinDsl for T {}
 
 pub trait JoinOnDsl: Sized {
     /// Specify the `ON` clause for a join statement. This will override
