@@ -1,6 +1,6 @@
 [package]
 name = "migrations_internals"
-version = "0.99.0"
+version = "1.0.0.beta1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
@@ -8,7 +8,7 @@ homepage = "http://diesel.rs"
 
 [dependencies]
 clippy = { optional = true, version = "=0.0.174" }
-diesel = "0.99.0"
+diesel = "1.0.0.beta1"
 
 [dev-dependencies]
 tempdir = "0.3.4"

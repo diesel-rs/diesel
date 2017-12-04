@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "0.99.1"
+version = "1.0.0.beta1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
@@ -17,11 +17,11 @@ path = "src/main.rs"
 [dependencies]
 chrono = "0.4"
 clap = "2.27"
-diesel = { version = "0.99.0", default-features = false }
+diesel = { version = "1.0.0.beta1", default-features = false }
 dotenv = ">=0.8, <0.11"
-infer_schema_internals = { version = "0.99.0" }
+infer_schema_internals = { version = "1.0.0.beta1" }
 clippy = { optional = true, version = "=0.0.174" }
-migrations_internals = { version = "0.99.0" }
+migrations_internals = { version = "1.0.0.beta1" }
 
 [dev-dependencies]
 difference = "1.0"
