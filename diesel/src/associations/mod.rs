@@ -1,12 +1,5 @@
 //! Traits related to relationships between multiple tables.
 //!
-//! **Note: This feature is under active development, and we are seeking feedback on the APIs that
-//! have been released. Please feel free to [open issues][open-issue], or join [our chat][gitter]
-//! to provide feedback.**
-//!
-//! [open-issue]: https://github.com/diesel-rs/diesel/issues/new
-//! [gitter]: https://gitter.im/diesel-rs/diesel
-//!
 //! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
 //! relationship. You can declare an association between two records with
 //! `#[belongs_to]`.
