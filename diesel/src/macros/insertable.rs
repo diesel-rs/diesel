@@ -60,6 +60,7 @@
 /// # fn main() {}
 /// ```
 #[macro_export]
+#[doc(hidden)]
 macro_rules! impl_Insertable {
     // Strip meta items, pub (if present) and struct from definition
     (

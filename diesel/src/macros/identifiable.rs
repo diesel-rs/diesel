@@ -27,6 +27,7 @@
 /// # fn main() {}
 /// ```
 #[macro_export]
+#[doc(hidden)]
 macro_rules! impl_Identifiable {
     // Find table name in options
     (
