@@ -62,6 +62,7 @@
 /// # }
 /// ```
 #[macro_export]
+#[doc(hidden)]
 macro_rules! impl_AsChangeset {
     // Provide a default value for treat_none_as_null if not provided
     (
