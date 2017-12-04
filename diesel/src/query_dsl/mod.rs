@@ -3,10 +3,15 @@
 //! Traits in this module have methods that generally map to the keyword for the corresponding clause in SQL,
 //! unless it conflicts with a Rust keyword (such as `WHERE`/`where`).
 //!
+//! Methods for constructing queries lives on the [`QueryDsl`] trait.
+//! Methods for executing queries live on [`RunQueryDsl`].
+//!
 //! See also [`expression_methods`][expression_methods] and [`dsl`][dsl].
 //!
 //! [expression_methods]: ../expression_methods/index.html
 //! [dsl]: ../dsl/index.html
+//! [`QueryDsl`]: trait.QueryDsl.html
+//! [`RunQueryDsl`]: trait.RunQueryDsl.html
 
 use backend::Backend;
 use connection::Connection;
