@@ -69,10 +69,13 @@ pub mod methods {
 pub trait QueryDsl: Sized {
     /// Adds the `DISTINCT` keyword to a query.
     ///
+    /// This method will override any previous distinct clause that was present.
+    /// For example, on PostgreSQL, `foo.distinct_on(bar).distinct()` will
+    /// create the same query as `foo.distinct()`.
+    ///
     /// # Example
     ///
     /// ```rust
-    ///
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
@@ -84,17 +87,22 @@ pub trait QueryDsl: Sized {
     /// # }
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("DELETE FROM users").unwrap();
-    /// connection.execute("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Sean')")
-    ///     .unwrap();
-    /// let names = users.select(name).load(&connection);
-    /// let distinct_names = users.select(name).distinct().load(&connection);
+    /// diesel::insert_into(users)
+    ///     .values(&vec![name.eq("Sean"); 3])
+    ///     .execute(&connection)?;
+    /// let names = users.select(name).load::<String>(&connection)?;
+    /// let distinct_names = users.select(name).distinct().load::<String>(&connection)?;
     ///
-    /// let sean = String::from("Sean");
-    /// assert_eq!(Ok(vec![sean.clone(), sean.clone(), sean.clone()]), names);
-    /// assert_eq!(Ok(vec![sean.clone()]), distinct_names);
+    /// assert_eq!(vec!["Sean"; 3], names);
+    /// assert_eq!(vec!["Sean"; 1], distinct_names);
+    /// #     Ok(())
     /// # }
     /// ```
     fn distinct(self) -> Distinct<Self>

@@ -11,10 +11,10 @@ use expression::SelectableExpression;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait DistinctDsl {
-    /// Query with DISTINCT added
+    /// The type returned by `.distinct`
     type Output;
 
-    /// Adds `DISTINCT` to to the query.
+    /// See the trait documentation.
     fn distinct(self) -> Self::Output;
 }
 
@@ -25,7 +25,6 @@ where
 {
     type Output = <T::Query as DistinctDsl>::Output;
 
-    /// Returns query with DISTINCT added
     fn distinct(self) -> Self::Output {
         self.as_query().distinct()
     }
@@ -40,10 +39,10 @@ where
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 #[cfg(feature = "postgres")]
 pub trait DistinctOnDsl<Selection> {
-    /// Query with `DISTINCT ON()` added
+    /// The type returned by `.distinct_on`
     type Output;
 
-    /// Should return query with `DISTINCT ON` added
+    /// See the trait documentation
     fn distinct_on(self, selection: Selection) -> Self::Output;
 }
 
