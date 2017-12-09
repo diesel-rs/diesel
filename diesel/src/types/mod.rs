@@ -171,6 +171,10 @@ pub type Float8 = Double;
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Numeric;
+
+/// The `DECIMAL` SQL type
+///
+/// This type is always an alias for `NUMERIC` on all backends.
 pub type Decimal = Numeric;
 
 #[cfg(not(feature = "postgres"))]
@@ -200,6 +204,16 @@ impl SingleValue for Numeric {}
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Text;
+
+/// The SQL `VARCHAR` type
+///
+/// This type is generally interchangeable with `TEXT`, so Diesel has this as an
+/// alias rather than a separate type (Diesel does not currently support
+/// implicit coercions).
+///
+/// One notable exception to this is with arrays on PG. `TEXT[]` cannot be
+/// coerced to `VARCHAR[]`.  It is recommended that you always use `TEXT[]` if
+/// you need a string array on PG.
 pub type VarChar = Text;
 #[doc(hidden)]
 pub type Varchar = VarChar;
@@ -334,17 +348,38 @@ pub use pg::types::sql_types::*;
 #[cfg(feature = "mysql")]
 pub use mysql::types::*;
 
+/// Indicates that a SQL type exists for a backend.
 pub trait HasSqlType<ST>: TypeMetadata {
+    /// Fetch the metadata for the given type
+    ///
+    /// This method may use `lookup` to do dynamic runtime lookup. Implementors
+    /// of this method should not do dynamic lookup unless absolutely necessary
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
+    /// Fetch the metadata for a tuple representing an entire row
+    ///
+    /// The default implementation of this method simply calls `Self::metadata`.
+    /// You generally should not need to override this method.
+    ///
+    /// However, if you are writing an implementation of `HasSqlType` that
+    /// simply delegates to an inner type (for example, `Nullable` does this),
+    /// then you should ensure that you delegate this method as well.
     fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
         out.push(Self::metadata(lookup))
     }
 }
 
+/// A marker trait indicating that a SQL type is not null.
+///
+/// All SQL types must implement this trait.
 pub trait NotNull {}
 
+/// Converts a type which may or may not be nullable into its nullable
+/// representation.
 pub trait IntoNullable {
+    /// The nullable representation of this type.
+    ///
+    /// For all types except `Nullable`, this will be `Nullable<Self>`.
     type Nullable;
 }
 
@@ -356,6 +391,12 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
     type Nullable = Nullable<T>;
 }
 
+/// A marker trait indicating that a SQL type represents a single value, as
+/// opposed to a list of values.
+///
+/// This trait should generally be implemented for all SQL types with the
+/// exception of Rust tuples. If a column could have this as its type, this
+/// trait should be implemented.
 pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
@@ -380,6 +421,7 @@ impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
+    /// See the trait documentation.
     fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
@@ -396,6 +438,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     /// the number of times you would call `row.take()` in `build_from_row`
     const FIELDS_NEEDED: usize = 1;
 
+    /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
@@ -438,12 +481,19 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Tiny enum to make the return type of `ToSql` more descriptive
 pub enum IsNull {
+    /// No data was written, as this type is null
     Yes,
+    /// The value is not null
+    ///
+    /// This does not necessarily mean that any data was written to the buffer.
+    /// For example, an empty string has no data to be sent over the wire, but
+    /// also is not null.
     No,
 }
 
+/// Wraps a buffer to be written by `ToSql` with additional backend specific
+/// utilities.
 #[derive(Clone, Copy)]
-#[doc(hidden)]
 pub struct ToSqlOutput<'a, T, DB>
 where
     DB: TypeMetadata,
@@ -454,6 +504,7 @@ where
 }
 
 impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
+    /// Construct a new `ToSqlOutput`
     pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
         ToSqlOutput {
             out,
@@ -461,6 +512,7 @@ impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
         }
     }
 
+    /// Create a new `ToSqlOutput` with the given buffer
     pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
         ToSqlOutput {
             out: new_out,
@@ -468,10 +520,13 @@ impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
         }
     }
 
+    /// Return the raw buffer this type is wrapping
     pub fn into_inner(self) -> T {
         self.out
     }
 
+    /// Returns the backend's mechanism for dynamically looking up type
+    /// metadata at runtime, if relevant for the given backend.
     pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
         self.metadata_lookup
     }
@@ -562,6 +617,7 @@ where
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
+    /// See the trait documentation.
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, DB>,

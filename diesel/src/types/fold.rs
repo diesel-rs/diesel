@@ -2,7 +2,9 @@ use types::{self, NotNull};
 
 /// Represents SQL types which can be used with `SUM` and `AVG`
 pub trait Foldable {
+    /// The SQL type of `sum(this_type)`
     type Sum;
+    /// The SQL type of `avg(this_type)`
     type Avg;
 }
 
