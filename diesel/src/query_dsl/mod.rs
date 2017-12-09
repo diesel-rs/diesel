@@ -223,9 +223,11 @@ pub trait QueryDsl: Sized {
     /// and we do not currently have a fleshed out story for dealing with table
     /// aliases.
     ///
-    /// You may also need to call [`allow_tables_to_appear_in_same_query!`][] (particularly if
-    /// you see an unexpected error about `AppearsInFromClause`). See the
-    /// documentation for [`allow_tables_to_appear_in_same_query!`][] for details.
+    /// You will also need to call [`allow_tables_to_appear_in_same_query!`].
+    /// If you are using `infer_schema!` or `diesel print-schema`, this will
+    /// have been generated for you.
+    /// See the documentation for [`allow_tables_to_appear_in_same_query!`] for
+    /// details.
     ///
     /// Diesel expects multi-table joins to be semantically grouped based on the
     /// relationships. For example, `users.inner_join(posts.inner_join(comments))`
@@ -250,6 +252,71 @@ pub trait QueryDsl: Sized {
     ///
     /// [associations]: ../associations/index.html
     /// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
+    ///
+    /// # Examples
+    ///
+    /// ### With implicit `ON` clause
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// # /*
+    /// joinable!(posts -> users (user_id));
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    /// # */
+    ///
+    /// # fn main() {
+    /// #     use self::users::dsl::{users, name};
+    /// #     use self::posts::dsl::{posts, user_id, title};
+    /// #     let connection = establish_connection();
+    /// let data = users.inner_join(posts)
+    ///     .select((name, title))
+    ///     .load(&connection);
+    ///
+    /// let expected_data = vec![
+    ///     (String::from("Sean"), String::from("My first post")),
+    ///     (String::from("Sean"), String::from("About Rust")),
+    ///     (String::from("Tess"), String::from("My first post too")),
+    /// ];
+    /// assert_eq!(Ok(expected_data), data);
+    /// # }
+    /// ```
+    ///
+    /// ### With explicit `ON` clause
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # /*
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    /// # */
+    ///
+    /// # fn main() {
+    /// #     use self::users::dsl::{users, name};
+    /// #     use self::posts::dsl::{posts, user_id, title};
+    /// #     let connection = establish_connection();
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         (user_id.eq(1), title.eq("Sean's post")),
+    ///         (user_id.eq(2), title.eq("Sean is a jerk")),
+    ///     ])
+    ///     .execute(&connection)
+    ///     .unwrap();
+    ///
+    /// let data = users
+    ///     .inner_join(posts.on(title.like(name.concat("%"))))
+    ///     .select((name, title))
+    ///     .load(&connection);
+    /// let expected_data = vec![
+    ///     (String::from("Sean"), String::from("Sean's post")),
+    ///     (String::from("Sean"), String::from("Sean is a jerk")),
+    /// ];
+    /// assert_eq!(Ok(expected_data), data);
+    /// # }
+    /// ```
     fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
