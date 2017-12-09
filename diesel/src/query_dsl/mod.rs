@@ -158,12 +158,120 @@ pub trait QueryDsl: Sized {
     }
 
     // FIXME: Needs usage example and doc rewrite
-    /// Sets the select clause of a query.
+    /// Adds a `SELECT` clause to the query.
     ///
-    /// If there was already a select clause, it will be overridden. The
-    /// expression passed to `select` must actually be valid for the query (only
-    /// contains columns from the target table, doesn't mix aggregate +
-    /// non-aggregate expressions, etc).
+    /// If there was already a select clause present, it will be overridden.
+    /// For example, `foo.select(bar).select(baz)` will produce the same
+    /// query as `foo.select(baz)`.
+    ///
+    /// By default, the select clause will be roughly equivalent to `SELECT *`
+    /// (however, Diesel will list all columns to ensure that they are in the
+    /// order we expect).
+    ///
+    /// `select` has slightly stricter bounds on its arguments than other
+    /// methods. In particular, when used with a left outer join, `.nullable`
+    /// must be called on columns that come from the right side of a join. It
+    /// can be called on the column itself, or on an expression containing that
+    /// column. `title.nullable()`, `lower(title).nullable()`, and `(id,
+    /// title).nullable()` would all be valid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// // By default, all columns will be selected
+    /// let all_users = users.load::<(i32, String)>(&connection)?;
+    /// assert_eq!(vec![(1, String::from("Sean")), (2, String::from("Tess"))], all_users);
+    ///
+    /// let all_names = users.select(name).load::<String>(&connection)?;
+    /// assert_eq!(vec!["Sean", "Tess"], all_names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ### When used with a left join
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # impl User {
+    /// #     fn new(id: i32, name: &str) -> Self {
+    /// #         User {
+    /// #             id,
+    /// #             name: name.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     title: String,
+    /// # }
+    /// #
+    /// # impl Post {
+    /// #     fn new(id: i32, user_id: i32, title: &str) -> Self {
+    /// #         Post {
+    /// #             id,
+    /// #             user_id,
+    /// #             title: title.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::insert_into(posts::table)
+    /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
+    /// #         .execute(&connection)?;
+    /// #     let post_id = posts::table.select(posts::id)
+    /// #         .first::<i32>(&connection)?;
+    /// let join = users::table.left_join(posts::table);
+    ///
+    /// // By default, all columns from both tables are selected
+    /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
+    /// let expected_data = vec![
+    ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
+    ///     (User::new(2, "Tess"), None),
+    /// ];
+    /// assert_eq!(expected_data, all_data);
+    ///
+    /// // Since `posts` is on the right side of a left join, `.nullable` is
+    /// // needed.
+    /// let names_and_titles = join.select((users::name, posts::title.nullable()))
+    ///     .load::<(String, Option<String>)>(&connection)?;
+    /// let expected_data = vec![
+    ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
+    ///     (String::from("Tess"), None),
+    /// ];
+    /// assert_eq!(expected_data, names_and_titles);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
     where
         Selection: Expression,
