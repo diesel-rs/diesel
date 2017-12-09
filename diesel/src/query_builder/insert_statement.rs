@@ -217,24 +217,12 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let new_users = vec![
-    ///     NewUser { name: "Timmy".to_string(), },
-    ///     NewUser { name: "Jimmy".to_string(), },
-    /// ];
-    ///
     /// let inserted_names = diesel::insert_into(users)
-    ///     .values(&new_users)
+    ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])
     ///     .returning(name)
     ///     .get_results(&connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);

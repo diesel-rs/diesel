@@ -18,15 +18,8 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
@@ -51,15 +44,8 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
@@ -122,10 +108,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
-    /// # #[derive(Insertable)]
-    /// # #[table_name="posts"]
-    /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
@@ -134,9 +116,9 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #
     /// diesel::insert_into(posts)
     ///     .values(&vec![
-    ///         NewPost { tags: vec!["cool", "awesome"] },
-    ///         NewPost { tags: vec!["awesome", "great"] },
-    ///         NewPost { tags: vec!["cool", "great"] },
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["awesome", "great"]),
+    ///         tags.eq(vec!["cool", "great"]),
     ///     ])
     ///     .execute(&conn)
     ///     .unwrap();
@@ -174,10 +156,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
-    /// # #[derive(Insertable)]
-    /// # #[table_name="posts"]
-    /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
@@ -185,9 +163,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
     /// #
     /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         NewPost { tags: vec!["cool", "awesome"] },
-    ///     ])
+    ///     .values(tags.eq(vec!["cool", "awesome"]))
     ///     .execute(&conn)
     ///     .unwrap();
     ///
@@ -222,10 +198,6 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #     }
     /// # }
     /// #
-    /// # #[derive(Insertable)]
-    /// # #[table_name="posts"]
-    /// # struct NewPost<'a> { tags: Vec<&'a str> }
-    /// #
     /// # fn main() {
     /// #     use self::posts::dsl::*;
     /// #     let conn = establish_connection();
@@ -233,9 +205,7 @@ pub trait ArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
     /// #
     /// diesel::insert_into(posts)
-    ///     .values(&vec![
-    ///         NewPost { tags: vec!["cool", "awesome"] },
-    ///     ])
+    ///     .values(tags.eq(vec!["cool", "awesome"]))
     ///     .execute(&conn)
     ///     .unwrap();
     ///
@@ -279,13 +249,6 @@ pub trait SortExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// # table! {
     /// #     foos {
     /// #         id -> Integer,
     /// #         foo -> Nullable<Integer>,
@@ -319,13 +282,6 @@ pub trait SortExpressionMethods: Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
     /// #
     /// # table! {
     /// #     foos {

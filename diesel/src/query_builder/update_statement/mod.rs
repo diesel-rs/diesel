@@ -61,15 +61,8 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .filter(name.eq("Sean"))
@@ -133,15 +126,8 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .set(name.eq("Jim"))
@@ -242,16 +228,9 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_name = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))

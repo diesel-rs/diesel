@@ -59,15 +59,8 @@ ordered.
 # include!(\"../../doctest_setup.rs\");
 # use diesel::dsl::*;
 #
-# table! {
-#     users {
-#         id -> Integer,
-#         name -> VarChar,
-#     }
-# }
-#
 # fn main() {
-#     use self::animals::dsl::*;
+#     use schema::animals::dsl::*;
 #     let connection = establish_connection();
 assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
 # }
@@ -88,15 +81,8 @@ ordered.
 # include!(\"../../doctest_setup.rs\");
 # use diesel::dsl::*;
 #
-# table! {
-#     users {
-#         id -> Integer,
-#         name -> VarChar,
-#     }
-# }
-#
 # fn main() {
-#     use self::animals::dsl::*;
+#     use schema::animals::dsl::*;
 #     let connection = establish_connection();
 assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
 # }

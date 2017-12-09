@@ -11,15 +11,8 @@ use types::Bool;
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// use diesel::dsl::not;
 ///

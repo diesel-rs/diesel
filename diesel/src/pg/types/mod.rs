@@ -192,27 +192,6 @@ pub mod sql_types {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// #[derive(Queryable)]
-    /// struct Contact {
-    ///     id: i32,
-    ///     name: String,
-    ///     address: serde_json::Value,
-    /// }
-    ///
-    /// #[derive(Insertable)]
-    /// #[table_name="contacts"]
-    /// struct NewContact {
-    ///     name: String,
-    ///     address: serde_json::Value,
-    /// }
-    ///
     /// table! {
     ///     contacts {
     ///         id -> Integer,
@@ -236,13 +215,11 @@ pub mod sql_types {
     ///     "postcode": "99705",
     ///     "state": "Alaska"
     /// }"#).unwrap();
-    /// let new_contact = NewContact {
-    ///     name: "Claus".into(),
-    ///     address: santas_address.clone()
-    /// };
-    /// let inserted_contact = insert_into(contacts).values(&new_contact)
-    ///     .get_result::<Contact>(&connection).unwrap();
-    /// assert_eq!(santas_address, inserted_contact.address);
+    /// let inserted_address = insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .returning(address)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(santas_address), inserted_address);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]
@@ -266,30 +243,7 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    ///
     /// use diesel::data_types::Cents;
-    ///
-    /// #[derive(Queryable)]
-    /// struct Item {
-    ///     id: i32,
-    ///     name: String,
-    ///     price: Cents,
-    /// }
-    ///
-    /// #[derive(Insertable)]
-    /// #[table_name="items"]
-    /// struct NewItem {
-    ///     name: String,
-    ///     price: Cents,
-    /// }
     ///
     /// table! {
     ///     items {
@@ -308,13 +262,11 @@ pub mod sql_types {
     /// #         name VARCHAR NOT NULL,
     /// #         price MONEY NOT NULL
     /// #     )").unwrap();
-    /// let new_item = NewItem {
-    ///     name: "Shiny Thing".into(),
-    ///     price: Cents(123_456),
-    /// };
-    /// let inserted_item = insert_into(items).values(&new_item)
-    ///     .get_result::<Item>(&connection).unwrap();
-    /// assert_eq!(Cents(123_456), inserted_item.price);
+    /// let inserted_price = insert_into(items)
+    ///     .values((name.eq("Shiny Thing"), price.eq(Cents(123_456))))
+    ///     .returning(price)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(Cents(123_456)), inserted_price);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]
@@ -337,28 +289,6 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// # use diesel::types::MacAddr;
-    ///
-    /// #[derive(Queryable)]
-    /// struct Device {
-    ///     id: i32,
-    ///     macaddr: [u8; 6],
-    /// }
-    ///
-    /// #[derive(Insertable)]
-    /// #[table_name="devices"]
-    /// struct NewDevice {
-    ///     macaddr: [u8;6],
-    /// }
-    ///
     /// table! {
     ///     devices {
     ///         id -> Integer,
@@ -374,12 +304,11 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         macaddr MACADDR NOT NULL
     /// #     )").unwrap();
-    /// let new_device = NewDevice {
-    ///     macaddr: [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03],
-    /// };
-    /// let inserted_device = insert_into(devices).values(&new_device)
-    ///     .get_result::<Device>(&connection).unwrap();
-    /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_device.macaddr);
+    /// let inserted_macaddr = insert_into(devices)
+    ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]))
+    ///     .returning(macaddr)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]), inserted_macaddr);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]
@@ -410,28 +339,8 @@ pub mod sql_types {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// extern crate ipnetwork;
-    /// # use diesel::types::Inet;
     /// use ipnetwork::IpNetwork;
-    ///
-    /// #[derive(Queryable)]
-    /// struct Client {
-    ///     id: i32,
-    ///     ip_address: IpNetwork,
-    /// }
-    ///
-    /// #[derive(Insertable)]
-    /// #[table_name="clients"]
-    /// struct NewClient {
-    ///     ip_address: IpNetwork,
-    /// }
     ///
     /// table! {
     ///     clients {
@@ -449,12 +358,12 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
     /// #     )").unwrap();
-    /// let new_client = NewClient {
-    ///     ip_address: "10.1.9.32/32".parse().unwrap(),
-    /// };
-    /// let inserted_client = insert_into(clients).values(&new_client)
-    ///     .get_result::<Client>(&connection).unwrap();
-    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
+    /// let addr = IpNetwork::from_str("10.1.9.32/32").unwrap();
+    /// let inserted_address = insert_into(clients)
+    ///     .values(ip_address.eq(&addr))
+    ///     .returning(ip_address)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(addr), inserted_address);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]
@@ -479,29 +388,8 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Serial,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// extern crate ipnetwork;
-    /// # use diesel::types::Cidr;
     /// use ipnetwork::IpNetwork;
-    ///
-    /// #[derive(Queryable)]
-    /// struct Client {
-    ///     id: i32,
-    ///     ip_address: IpNetwork,
-    /// }
-    ///
-    /// #[derive(Insertable)]
-    /// #[table_name="clients"]
-    /// struct NewClient {
-    ///     ip_address: IpNetwork,
-    /// }
     ///
     /// table! {
     ///     clients {
@@ -519,12 +407,12 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
     /// #     )").unwrap();
-    /// let new_client = NewClient {
-    ///     ip_address: "10.1.9.32/32".parse().unwrap(),
-    /// };
-    /// let inserted_client = insert_into(clients).values(&new_client)
-    ///     .get_result::<Client>(&connection).unwrap();
-    /// assert_eq!(IpNetwork::from_str("10.1.9.32/32").unwrap(), inserted_client.ip_address);
+    /// let addr = IpNetwork::from_str("10.1.9.32/32").unwrap();
+    /// let inserted_addr = insert_into(clients)
+    ///     .values(ip_address.eq(&addr))
+    ///     .returning(ip_address)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(addr), inserted_addr);
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default)]

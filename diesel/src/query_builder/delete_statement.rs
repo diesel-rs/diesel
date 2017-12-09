@@ -39,15 +39,8 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_rows = diesel::delete(users)
     ///     .filter(name.eq("Sean"))
@@ -138,16 +131,9 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_name = diesel::delete(users.filter(name.eq("Sean")))
     ///     .returning(name)

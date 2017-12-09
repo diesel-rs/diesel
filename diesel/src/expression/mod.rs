@@ -125,13 +125,7 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
+/// # use schema::users;
 /// #
 /// # fn main() {
 /// use diesel::types::Text;
@@ -240,14 +234,8 @@ use query_builder::{QueryFragment, QueryId};
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::types;
 /// # include!("../doctest_setup.rs");
+/// # use schema::users;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-///
 /// # #[derive(PartialEq, Eq, Debug)]
 /// #[derive(Queryable)]
 /// struct User {

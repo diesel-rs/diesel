@@ -40,13 +40,6 @@ expression, and the return value will be an expression of type Date.
 # include!(\"../../doctest_setup.rs\");
 # use diesel::dsl::*;
 #
-# table! {
-#     users {
-#         id -> Integer,
-#         name -> VarChar,
-#     }
-# }
-#
 # fn main() {
 #     let connection = establish_connection();
 let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();

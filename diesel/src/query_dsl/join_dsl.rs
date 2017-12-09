@@ -55,23 +55,7 @@ pub trait JoinOnDsl: Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
-    /// # table! {
-    /// #     posts {
-    /// #         id -> Integer,
-    /// #         user_id -> Integer,
-    /// #         title -> Text,
-    /// #     }
-    /// # }
-    /// #
-    /// # allow_tables_to_appear_in_same_query!(users, posts);
+    /// # use schema::{users, posts};
     /// #
     /// # fn main() {
     /// #     let connection = establish_connection();

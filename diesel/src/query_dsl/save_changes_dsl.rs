@@ -77,7 +77,7 @@ pub trait SaveChangesDsl<Conn> {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
+    /// # use schema::animals;
     /// #
     /// # #[derive(AsChangeset, Debug, PartialEq, Identifiable, Queryable)]
     /// # struct Animal {

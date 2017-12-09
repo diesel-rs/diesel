@@ -44,12 +44,8 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # table!(
-    /// #    users(id) {
-    /// #        id -> Integer,
-    /// #        name -> Varchar,
-    /// #    }
-    /// # );
+    /// # use schema::users;
+    /// #
     /// # #[derive(Queryable, Debug, PartialEq)]
     /// # struct User {
     /// #     id: i32,
@@ -60,8 +56,9 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// fn main() {
     ///     let conn = establish_connection();
     ///     let _ = conn.transaction::<_, Error, _>(|| {
-    ///         let new_user = NewUser { name: "Ruby".into() };
-    ///         diesel::insert_into(users::table).values(&new_user).execute(&conn)?;
+    ///         diesel::insert_into(users::table)
+    ///             .values(users::name.eq("Ruby"))
+    ///             .execute(&conn)?;
     ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
     ///             User { id: 1, name: "Sean".into() },
     ///             User { id: 2, name: "Tess".into() },
@@ -72,8 +69,9 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///     });
     ///
     ///     let _ = conn.transaction::<(), Error, _>(|| {
-    ///         let new_user = NewUser { name: "Pascal".into() };
-    ///         diesel::insert_into(users::table).values(&new_user).execute(&conn)?;
+    ///         diesel::insert_into(users::table)
+    ///             .values(users::name.eq("Pascal"))
+    ///             .execute(&conn)?;
     ///
     ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
     ///             User { id: 1, name: "Sean".into() },

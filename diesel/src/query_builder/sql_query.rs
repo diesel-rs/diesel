@@ -55,7 +55,7 @@ impl SqlQuery {
     /// #
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users::table)
-    /// #         .values(&NewUser::new("Jim"))
+    /// #         .values(users::name.eq("Jim"))
     /// #         .execute(&connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");

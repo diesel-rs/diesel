@@ -1,11 +1,5 @@
 include!("../../doctest_setup.rs");
-
-table! {
-    users {
-        id -> Integer,
-        name -> VarChar,
-    }
-}
+use schema::users;
 
 #[derive(Clone, Copy, Insertable, AsChangeset)]
 #[table_name="users"]

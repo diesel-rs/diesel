@@ -82,13 +82,7 @@ impl<ST> NonAggregate for SqlLiteral<ST> {}
 /// use diesel::dsl::sql;
 /// use diesel::types::{Bool, Integer, Text};
 /// # include!("../doctest_setup.rs");
-/// # table! {
-/// #   users {
-/// #       id -> Integer,
-/// #       name -> VarChar,
-/// #   }
-/// # }
-///
+/// # use schema::users;
 /// #[derive(PartialEq, Debug, Queryable)]
 /// struct User {
 ///     id: i32,

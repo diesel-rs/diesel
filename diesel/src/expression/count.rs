@@ -17,15 +17,8 @@ use types::BigInt;
 /// # include!("../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::animals::dsl::*;
+/// #     use schema::animals::dsl::*;
 /// #     let connection = establish_connection();
 /// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
 /// # }
@@ -51,15 +44,8 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 /// # include!("../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// assert_eq!(Ok(2), users.select(count_star()).first(&connection));
 /// # }

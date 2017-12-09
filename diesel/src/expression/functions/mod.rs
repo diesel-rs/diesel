@@ -100,6 +100,7 @@ macro_rules! sql_function_body {
 /// // This will generate the following SQL
 /// // SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)
 /// # }
+/// ```
 macro_rules! sql_function {
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
         sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, "");

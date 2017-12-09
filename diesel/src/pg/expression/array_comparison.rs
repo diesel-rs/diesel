@@ -17,15 +17,8 @@ use types::Array;
 /// # include!("../../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Serial,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let sean = (1, "Sean".to_string());
@@ -53,15 +46,8 @@ where
 /// # include!("../../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Serial,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let tess = (2, "Tess".to_string());

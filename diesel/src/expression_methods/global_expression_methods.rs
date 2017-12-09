@@ -12,15 +12,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
     /// assert_eq!(Ok(1), data.first(&connection));
@@ -38,15 +31,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
     /// assert_eq!(Ok(2), data.first(&connection));
@@ -69,15 +55,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -109,15 +88,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -146,7 +118,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
+    /// # use schema::animals;
     /// #
     /// # fn main() {
     /// #     use animals::dsl::*;
@@ -170,7 +142,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
+    /// # use schema::animals;
     /// #
     /// # fn main() {
     /// #     use animals::dsl::*;
@@ -195,15 +167,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.gt(1));
     /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
@@ -221,15 +186,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.ge(2));
     /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
@@ -247,15 +205,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.lt(2));
     /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
@@ -273,15 +224,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(name).filter(id.le(2));
     /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
@@ -298,7 +242,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
+    /// # use schema::animals;
     /// #
     /// # fn main() {
     /// #     use animals::dsl::*;
@@ -328,7 +272,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
+    /// # use schema::animals;
     /// #
     /// # fn main() {
     /// #     use animals::dsl::*;
@@ -372,15 +316,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let order = "name";
     /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
     ///     if order == "name" {
@@ -413,14 +350,8 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::types::*;
+    /// # use schema::users;
     /// #
-    /// table! {
-    ///     users {
-    ///         id -> Integer,
-    ///         name -> VarChar,
-    ///     }
-    /// }
-    ///
     /// table! {
     ///     posts {
     ///         id -> Integer,
@@ -429,23 +360,12 @@ pub trait NullableExpressionMethods: Expression + Sized {
     ///     }
     /// }
     /// #
-    /// # pub struct User {
-    /// #     id: i32,
-    /// #     name: VarChar,
-    /// # }
-    /// #
-    /// # pub struct Post {
-    /// #     id: i32,
-    /// #     user_id: i32,
-    /// #     author_name: Option<VarChar>,
-    /// # }
-    /// #
     /// # joinable!(posts -> users (user_id));
     /// # allow_tables_to_appear_in_same_query!(posts, users);
     ///
     /// fn main() {
-    ///     use users::dsl::*;
-    ///     use posts::dsl::{posts, author_name};
+    ///     use self::users::dsl::*;
+    ///     use self::posts::dsl::{posts, author_name};
     ///     let connection = establish_connection();
     ///
     ///     let data = users.inner_join(posts)

@@ -11,18 +11,11 @@ use types::VarChar;
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     use diesel::insert_into;
 /// #     let connection = establish_connection();
-/// #     insert_into(users).values(&NewUser { name: "Ha%%0r".into() })
+/// #     insert_into(users).values(name.eq("Ha%%0r"))
 /// #         .execute(&connection).unwrap();
 /// let users_with_percent = users.select(name)
 ///     .filter(name.like("%😀%%").escape('😀'))

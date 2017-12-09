@@ -191,64 +191,17 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
         .expect("DATABASE_URL must be set in order to run tests")
 }
 
-#[derive(Clone)]
-#[allow(dead_code)]
-struct NewUser {
-    name: String,
-}
-
-impl NewUser {
-    pub fn new(name: &str) -> Self {
-        NewUser {
-            name: name.into(),
-        }
-    }
-}
-
-impl_Insertable! {
-    (users)
-    struct NewUser {
-        name: String,
-    }
-}
-
-table! {
-    animals {
-        id -> Integer,
-        species -> VarChar,
-        legs -> Integer,
-        name -> Nullable<VarChar>,
-    }
-}
-
-#[derive(Clone)]
-#[allow(dead_code)]
-struct NewAnimal {
-    species: String,
-    legs: i32,
-    name: Option<String>,
-}
-
-impl NewAnimal {
-    pub fn new(species: &str, legs: i32, name: Option<&str>) -> Self {
-        NewAnimal {
-            species: species.into(),
-            legs: legs,
-            name: name.map(|n| n.into()),
-        }
-    }
-}
-
-impl_Insertable! {
-    (animals)
-    struct NewAnimal {
-        species: String,
-        legs: i32,
-        name: Option<String>,
-    }
-}
 
 mod schema {
+    table! {
+        animals {
+            id -> Integer,
+            species -> VarChar,
+            legs -> Integer,
+            name -> Nullable<VarChar>,
+        }
+    }
+
     table! {
         comments {
             id -> Integer,
@@ -273,5 +226,5 @@ mod schema {
     }
 
     joinable!(posts -> users (user_id));
-    allow_tables_to_appear_in_same_query!(comments, posts, users);
+    allow_tables_to_appear_in_same_query!(animals, comments, posts, users);
 }

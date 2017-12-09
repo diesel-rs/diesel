@@ -24,16 +24,9 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
@@ -107,19 +100,12 @@ pub fn update<T: IntoUpdateTarget>(
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
 /// #     delete();
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// let old_count = get_count();
@@ -135,19 +121,12 @@ pub fn update<T: IntoUpdateTarget>(
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
 /// #     delete();
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// try!(diesel::delete(users).execute(&connection));
@@ -180,15 +159,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> Text,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&name.eq("Sean"))
@@ -215,15 +187,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> Text,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     diesel::delete(users).execute(&connection).unwrap();
 /// let new_user = (id.eq(1), name.eq("Sean"));
@@ -251,20 +216,20 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
+/// # use schema::users;
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> Text,
-/// #     }
-/// # }
-/// #
+/// #[derive(Insertable)]
+/// #[table_name = "users"]
+/// struct NewUser<'a> {
+///     name: &'a str,
+/// }
+///
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// // Insert one record at a time
 ///
-/// let new_user = NewUser { name: "Ruby Rhod".to_string() };
+/// let new_user = NewUser { name: "Ruby Rhod" };
 ///
 /// diesel::insert_into(users)
 ///     .values(&new_user)
@@ -274,8 +239,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// // Insert many records
 ///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo Multipass".to_string(), },
-///     NewUser { name: "Korben Dallas".to_string(), },
+///     NewUser { name: "Leeloo Multipass", },
+///     NewUser { name: "Korben Dallas", },
 /// ];
 ///
 /// let inserted_names = diesel::insert_into(users)
@@ -291,25 +256,15 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> Text,
-/// #     }
-/// # }
-/// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// // postgres only
-/// let new_users = vec![
-///     NewUser { name: "Diva Plavalaguna".to_string(), },
-///     NewUser { name: "Father Vito Cornelius".to_string(), },
-/// ];
-///
 /// let inserted_names = diesel::insert_into(users)
-///     .values(&new_users)
+///     .values(&vec![
+///         name.eq("Diva Plavalaguna"),
+///         name.eq("Father Vito Cornelius"),
+///     ])
 ///     .returning(name)
 ///     .get_results(&connection);
 /// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
@@ -344,44 +299,23 @@ where
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
-/// # #[derive(Insertable)]
-/// # #[table_name="users"]
-/// # struct User<'a> {
-/// #     id: i32,
-/// #     name: &'a str,
-/// # }
-/// #
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     use diesel::{insert_into, replace_into};
 /// #
 /// #     let conn = establish_connection();
 /// #     conn.execute("DELETE FROM users").unwrap();
 /// replace_into(users)
 ///     .values(&vec![
-///         User {
-///             id: 1,
-///             name: "Sean",
-///         },
-///         User {
-///             id: 2,
-///             name: "Tess",
-///         },
+///         (id.eq(1), name.eq("Sean")),
+///         (id.eq(2), name.eq("Tess")),
 ///     ])
 ///     .execute(&conn)
 ///     .unwrap();
 ///
-/// let new_user = User { id: 1, name: "Jim" };
 /// replace_into(users)
-///     .values(&new_user)
+///     .values((id.eq(1), name.eq("Jim")))
 ///     .execute(&conn)
 ///     .unwrap();
 ///
