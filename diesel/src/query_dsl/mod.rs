@@ -135,9 +135,13 @@ pub trait QueryDsl: Sized {
     /// #     use self::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("DELETE FROM animals").unwrap();
-    /// connection.execute("INSERT INTO animals (species, name, legs)
-    ///                     VALUES ('dog', 'Jack', 4), ('dog', Null, 4),
-    ///                            ('spider', Null, 8)")
+    /// diesel::insert_into(animals)
+    ///     .values(&vec![
+    ///         (species.eq("dog"), name.eq(Some("Jack")), legs.eq(4)),
+    ///         (species.eq("dog"), name.eq(None), legs.eq(4)),
+    ///         (species.eq("spider"), name.eq(None), legs.eq(8)),
+    ///     ])
+    ///     .execute(&connection)
     ///     .unwrap();
     /// let all_animals = animals.select((species, name, legs)).load(&connection);
     /// let distinct_animals = animals.select((species, name, legs)).distinct_on(species).load(&connection);
