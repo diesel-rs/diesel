@@ -1,14 +1,34 @@
 //! Traits related to relationships between multiple tables.
 //!
-//! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
-//! relationship. You can declare an association between two records with
-//! `#[belongs_to]`.
+//! **Note: This feature is under active development, and we are seeking feedback on the APIs that
+//! have been released. Please feel free to [open issues][open-issue], or join [our chat][gitter]
+//! to provide feedback.**
+//!
+//! [open-issue]: https://github.com/diesel-rs/diesel/issues/new
+//! [gitter]: https://gitter.im/diesel-rs/diesel
+//!
+//! Associations in Diesel are unidirectional and focus on the child-to-parent
+//! relationship.
+//!
+//! **Child** refers to the *many* part of a *one to many* relationship and has *one parent*.
+//! **Parent** refers to the *one* part of a *one to many* relationship and can *have many
+//! children*.
+//! In the following relationship for our code examples, User has many Posts,
+//! so User is the parent and Posts are children.
+//!
+//! In order to declare this relationship, you must annotate your child struct
+//! with `#[derive(Associations)]` and `#[belongs_to(ParentStructName)]`.
+//! `#[belongs_to]` is given the name of the struct that represents the parent. Both parent and
+//! child types must implement the [`Identifiable`][identifiable] trait.
+//! The struct or table referenced in your association has to be in scope,
+//! so you'll need `use schema::posts` or similar to bring the
+//! table into scope.
 //!
 //! ```rust
-//! // You need to have the table definitions from `infer_schema!` or `table!` in scope to
-//! // derive Identifiable.
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
+//! // Brings User and Post tables into scope.
+//! // Otherwise `table!` definitions would need to be here.
 //! use schema::{posts, users};
 //!
 //! #[derive(Identifiable, Queryable)]
@@ -39,78 +59,23 @@
 //! # }
 //! ```
 //!
-//! Note that in addition to the `#[belongs_to]` annotation, we also need to
-//! `#[derive(Associations)]`
-//!
-//! `#[belongs_to]` is given the name of the struct that represents the parent. Both types
-//! must implement the [`Identifiable`][identifiable] trait. The struct or table referenced in your
-//! association has to be in scope, so you'll need `use schema::posts` or similar to bring the
-//! table into scope, and `use some_module::User` if `User` were in a different module.
-//!
 //! [Identifiable]: trait.Identifiable.html
 //!
 //! If the name of your foreign key doesn't follow the convention `tablename_id`, you can specify a
 //! custom one to `#[belongs_to]` by adding a `foreign_key` argument to the
 //! attribute like so `#[belongs_to(Foo, foreign_key="mykey")]`.
 //!
-//! Once the associations are defined, you can join between the two tables using the
-//! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
+//! `Associations` are separate from joins in Diesel. Please see docs on [`JoinDsl`]
+//! to learn more about joining tables.
 //!
-//! [inner-join]: ../prelude/trait.JoinDsl.html#method.inner_join
-//! [left-outer-join]: ../prelude/trait.JoinDsl.html#method.left_outer_join
+//! [`JoinDsl`]: ../query_dsl/trait.JoinDsl.html
 //!
-//! ```rust
-//! # #[macro_use] extern crate diesel;
-//! # include!("../doctest_setup.rs");
-//! # use schema::users;
-//! # use schema::posts;
-//! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
-//! # pub struct User {
-//! #     id: i32,
-//! #     name: String,
-//! # }
-//! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
-//! # pub struct Post {
-//! #     id: i32,
-//! #     user_id: i32,
-//! #     title: String,
-//! # }
-//! #
-//! # fn main() {
-//! #   use users::dsl::*;
-//! #   use posts::dsl::*;
-//! #   let connection = establish_connection();
-//! #
-//! let data: Vec<(User, Post)> = users.inner_join(posts)
-//!     .load(&connection)
-//!     .expect("Couldn't load query");
-//! let expected = vec![
-//!     (
-//!         User { id: 1, name: "Sean".to_string() },
-//!         Post { id: 1, user_id: 1, title: "My first post".to_string() }
-//!     ),
-//!     (
-//!         User { id: 1, name: "Sean".to_string() },
-//!         Post { id: 2, user_id: 1, title: "About Rust".to_string() }
-//!     ),
-//!     (
-//!         User { id: 2, name: "Tess".to_string() },
-//!         Post { id: 3, user_id: 2, title: "My first post too".to_string() }
-//!     ),
-//! ];
+//! You can load the children for a single parent or multiple parents (`Vec<ParentType>`) using the
+//! [`belonging_to()`][belonging-to] method.
+//! This amounts to the `SQL` statements `SELECT * FROM posts WHERE posts.user_id = $1`
+//! or `SELECT * FROM posts WHERE posts.user_id IN ($1, $2, etc...)`
 //!
-//! assert_eq!(data, expected);
-//! # }
-//! ```
-//! Typically however, queries are loaded in multiple queries. For most datasets, the reduced
-//! amount of duplicated information sent over the wire saves more time than the extra round trip
-//! costs us. You can load the children for a single parent using the
-//! [`belonging_to`][belonging-to]
-//!
-//! [belonging-to]: ../prelude/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [belonging-to]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
@@ -136,13 +101,15 @@
 //! #   use users::dsl::*;
 //! #   let connection = establish_connection();
 //! #
-//! let user = users.find(1).first::<User>(&connection).expect("Error loading user");
+//! // Loading the posts for a single parent user.
+//! let user = users.load::<User>(&connection).expect("Error loading user");
 //! let post_list = Post::belonging_to(&user)
 //!     .load::<Post>(&connection)
 //!     .expect("Error loading posts");
 //! let expected = vec![
 //!     Post { id: 1, user_id: 1, title: "My first post".to_string() },
 //!     Post { id: 2, user_id: 1, title: "About Rust".to_string() },
+//!     Post { id: 3, user_id: 2, title: "My first post too".to_string() }
 //! ];
 //!
 //! assert_eq!(post_list, expected);
@@ -161,8 +128,9 @@
 //! a user and all of its posts, that type is `(User, Vec<Post>)`.
 //!
 //! Next lets look at how to load the children for more than one parent record.
-//! [`belonging_to`][belonging-to] can be used to load the data, but we'll also need to group it
-//! with its parents. For this we use an additional method [`grouped_by`][grouped-by]
+//! [`belonging_to`][belonging-to] can be used to load all of the child data, but we'll also need to group the
+//! child records with their parents.
+//! For this we use an additional method [`grouped_by`][grouped-by]
 //!
 //! [grouped-by]: trait.GroupedBy.html#tymethod.grouped_by
 //!
@@ -307,11 +275,6 @@
 //!
 //!
 //! ```
-//!
-//! And that's it. This module will be expanded in the future with more complex joins, and the
-//! ability to define "through" associations (e.g. load all the comments left on any posts written
-//! by a user in a single query). However, the goal is to provide simple building blocks which can
-//! be used to construct the complex behavior applications need.
 mod belongs_to;
 
 use std::hash::Hash;
