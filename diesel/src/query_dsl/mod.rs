@@ -424,8 +424,12 @@ pub trait QueryDsl: Sized {
         self.join_with_implicit_on_clause(rhs, joins::Inner)
     }
 
-    /// Join two tables using a SQL `LEFT OUTER JOIN`. The `ON` clause is defined
-    /// via the [associations API](../associations/index.html).
+    /// Join two tables using a SQL `LEFT OUTER JOIN`.
+    ///
+    /// Behaves similarly to [`inner_join`], but will produce a left join
+    /// instead. See [`inner_join`] for usage examples.
+    ///
+    /// [`inner_join`]: #method.inner_join
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -433,7 +437,9 @@ pub trait QueryDsl: Sized {
         self.join_with_implicit_on_clause(rhs, joins::LeftOuter)
     }
 
-    /// Alias for `left_outer_join`
+    /// Alias for [`left_outer_join`].
+    ///
+    /// [`left_outer_join`]: #method.left_outer_join
     fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -497,8 +503,7 @@ pub trait QueryDsl: Sized {
 
     /// Sets the order clause of a query.
     ///
-    /// If there was already a order clause, it will be overridden. The
-    /// expression passed to `order` must actually be valid for the query. See
+    /// If there was already a order clause, it will be overridden. See
     /// also:
     /// [`.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
     /// and
@@ -514,18 +519,39 @@ pub trait QueryDsl: Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// use schema::users::dsl::{users, id, name};
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("DELETE FROM users")?;
+    /// diesel::insert_into(users)
+    ///     .values(&vec![
+    ///         name.eq("Saul"),
+    ///         name.eq("Steve"),
+    ///         name.eq("Stan"),
+    ///     ])
+    ///     .execute(&connection)?;
     ///
-    /// let connection = establish_connection();
-    /// # connection.execute("DELETE FROM users").unwrap();
-    /// connection.execute("INSERT INTO users (name) VALUES ('Saul'), ('Steve'), ('Stan')").unwrap();
-    /// // load all users' names, ordered by their name descending
-    /// let ordered_names: Vec<String> = users.select(name).order(name.desc()).load(&connection).unwrap();
-    /// assert_eq!(vec![String::from("Steve"), String::from("Stan"), String::from("Saul")], ordered_names);
+    /// let ordered_names = users.select(name)
+    ///     .order(name.desc())
+    ///     .load::<String>(&connection)?;
+    /// assert_eq!(vec!["Steve", "Stan", "Saul"], ordered_names);
     ///
-    /// connection.execute("INSERT INTO users (name) VALUES ('Stan')").unwrap();
-    /// let ordered_name_id_pairs = users.select((name, id)).order((name.asc(), id.desc())).load(&connection).unwrap();
-    /// assert_eq!(vec![(String::from("Saul"), 3), (String::from("Stan"), 6), (String::from("Stan"), 5), (String::from("Steve"), 4)], ordered_name_id_pairs);
+    /// diesel::insert_into(users).values(name.eq("Stan")).execute(&connection)?;
+    ///
+    /// let data = users.select((name, id))
+    ///     .order((name.asc(), id.desc()))
+    ///     .load(&connection)?;
+    /// let expected_data = vec![
+    ///     (String::from("Saul"), 3),
+    ///     (String::from("Stan"), 6),
+    ///     (String::from("Stan"), 5),
+    ///     (String::from("Steve"), 4),
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #    Ok(())
     /// # }
     /// ```
     fn order<Expr>(self, expr: Expr) -> Order<Self, Expr>
@@ -548,33 +574,35 @@ pub trait QueryDsl: Sized {
     /// # use schema::users;
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
-    /// #     diesel::delete(users).execute(&connection).unwrap();
+    /// #     diesel::delete(users).execute(&connection)?;
     /// #     diesel::insert_into(users)
     /// #        .values(&vec![
     /// #            name.eq("Sean"),
     /// #            name.eq("Bastien"),
     /// #            name.eq("Pascal"),
     /// #        ])
-    /// #        .execute(&connection)
-    /// #        .unwrap();
+    /// #        .execute(&connection)?;
     /// #
     /// // Using a limit
     /// let limited = users.select(name)
     ///     .order(id)
     ///     .limit(1)
-    ///     .load::<String>(&connection)
-    ///     .unwrap();
+    ///     .load::<String>(&connection)?;
     ///
     /// // Without a limit
     /// let no_limit = users.select(name)
     ///     .order(id)
-    ///     .load::<String>(&connection)
-    ///     .unwrap();
+    ///     .load::<String>(&connection)?;
     ///
-    /// assert_eq!(vec!["Sean".to_string()], limited);
-    /// assert_eq!(vec!["Sean".to_string(), "Bastien".to_string(), "Pascal".to_string()], no_limit);
+    /// assert_eq!(vec!["Sean"], limited);
+    /// assert_eq!(vec!["Sean", "Bastien", "Pascal"], no_limit);
+    /// #    Ok(())
     /// # }
     /// ```
     fn limit(self, limit: i64) -> Limit<Self>
@@ -596,35 +624,37 @@ pub trait QueryDsl: Sized {
     /// # use schema::users;
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use users::dsl::*;
     /// #     let connection = establish_connection();
-    /// #     diesel::delete(users).execute(&connection).unwrap();
+    /// #     diesel::delete(users).execute(&connection)?;
     /// #     diesel::insert_into(users)
     /// #        .values(&vec![
     /// #            name.eq("Sean"),
     /// #            name.eq("Bastien"),
     /// #            name.eq("Pascal"),
     /// #        ])
-    /// #        .execute(&connection)
-    /// #        .unwrap();
+    /// #        .execute(&connection)?;
     /// #
     /// // Using an offset
     /// let offset = users.select(name)
     ///     .order(id)
     ///     .limit(2)
     ///     .offset(1)
-    ///     .load::<String>(&connection)
-    ///     .unwrap();
+    ///     .load::<String>(&connection)?;
     ///
     /// // No Offset
     /// let no_offset = users.select(name)
     ///     .order(id)
     ///     .limit(2)
-    ///     .load::<String>(&connection)
-    ///     .unwrap();
+    ///     .load::<String>(&connection)?;
     ///
-    /// assert_eq!(vec!["Bastien".to_string(), "Pascal".to_string()], offset);
-    /// assert_eq!(vec!["Sean".to_string(), "Bastien".to_string()], no_offset);
+    /// assert_eq!(vec!["Bastien", "Pascal"], offset);
+    /// assert_eq!(vec!["Sean", "Bastien"], no_offset);
+    /// #     Ok(())
     /// # }
     /// ```
     fn offset(self, offset: i64) -> Offset<Self>
