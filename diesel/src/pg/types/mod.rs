@@ -128,6 +128,7 @@ pub mod sql_types {
     pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
+    #[doc(hidden)]
     pub type Bytea = ::types::Binary;
 
     #[doc(hidden)]
@@ -142,13 +143,13 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///
-    /// - [`serde_json::Value`][Value]
+    /// - [`serde_json::Value`]
     ///
     /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
     ///
-    /// - [`serde_json`][Value]
+    /// - [`serde_json::Value`]
     ///
-    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Json;
 
@@ -176,13 +177,13 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
     ///
-    /// - [`serde_json::Value`][Value]
+    /// - [`serde_json::Value`]
     ///
     /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
     ///
-    /// - [`serde_json`][Value]
+    /// - [`serde_json::Value`]
     ///
-    /// [Value]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
     ///
     /// # Examples
     ///
