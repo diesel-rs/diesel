@@ -30,7 +30,11 @@ where
     type Item = QueryResult<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.stmt.step().map(|mut row| {
+        let row = match self.stmt.step() {
+            Ok(row) => row,
+            Err(e) => return Some(Err(e)),
+        };
+        row.map(|mut row| {
             T::Row::build_from_row(&mut row)
                 .map(T::build)
                 .map_err(DeserializationError)
@@ -69,7 +73,11 @@ where
     type Item = QueryResult<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.stmt.step().map(|row| {
+        let row = match self.stmt.step() {
+            Ok(row) => row,
+            Err(e) => return Some(Err(e)),
+        };
+        row.map(|row| {
             let row = row.into_named(&self.column_indices);
             T::build(&row).map_err(DeserializationError)
         })

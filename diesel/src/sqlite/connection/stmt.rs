@@ -41,11 +41,8 @@ impl Statement {
         })
     }
 
-    fn run(&self) -> QueryResult<()> {
-        match unsafe { ffi::sqlite3_step(self.inner_statement) } {
-            ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
-            _ => Err(last_error(&self.raw_connection)),
-        }
+    fn run(&mut self) -> QueryResult<()> {
+        self.step().map(|_| ())
     }
 
     pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
@@ -130,11 +127,11 @@ impl Statement {
         }
     }
 
-    fn step(&mut self) -> Option<SqliteRow> {
+    fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
         match unsafe { ffi::sqlite3_step(self.inner_statement) } {
-            ffi::SQLITE_DONE => None,
-            ffi::SQLITE_ROW => Some(SqliteRow::new(self.inner_statement)),
-            error => panic!("{}", super::error_message(error)),
+            ffi::SQLITE_DONE => Ok(None),
+            ffi::SQLITE_ROW => Ok(Some(SqliteRow::new(self.inner_statement))),
+            _ => Err(last_error(&self.raw_connection)),
         }
     }
 
@@ -195,11 +192,11 @@ impl<'a> StatementUse<'a> {
         }
     }
 
-    pub fn run(&self) -> QueryResult<()> {
+    pub fn run(&mut self) -> QueryResult<()> {
         self.statement.run()
     }
 
-    pub fn step(&mut self) -> Option<SqliteRow> {
+    pub fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
         self.statement.step()
     }
 
