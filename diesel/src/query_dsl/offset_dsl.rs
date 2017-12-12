@@ -8,6 +8,7 @@ use query_source::Table;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait OffsetDsl {
+    /// The type returned by `.offset`.
     type Output;
 
     /// See the trait documentation

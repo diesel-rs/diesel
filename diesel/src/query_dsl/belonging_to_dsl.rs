@@ -1,5 +1,4 @@
-#![deny(missing_docs)]
-/// Find record(s) belonging to the given parent(s).
+/// Constructs a query that finds record(s) based on directional association with other record(s).
 ///
 /// # Example
 ///

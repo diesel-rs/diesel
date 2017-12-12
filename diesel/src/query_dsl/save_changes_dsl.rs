@@ -66,55 +66,56 @@ where
     }
 }
 
+/// Sugar for types which implement both `AsChangeset` and `Identifiable`
+///
+/// On backends which support the `RETURNING` keyword,
+/// `foo.save_changes(&conn)` is equivalent to
+/// `update(&foo).set(&foo).get_result(&conn)`.
+/// On other backends, two queries will be executed.
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// # use schema::animals;
+/// #
+/// #[derive(Queryable, Debug, PartialEq)]
+/// struct Animal {
+///    id: i32,
+///    species: String,
+///    legs: i32,
+///    name: Option<String>,
+/// }
+///
+/// #[derive(AsChangeset, Identifiable)]
+/// #[table_name = "animals"]
+/// struct AnimalForm<'a> {
+///     id: i32,
+///     name: &'a str,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use animals::dsl::*;
+/// #     let connection = establish_connection();
+/// let form = AnimalForm { id: 2, name: "Super scary" };
+/// let changed_animal = form.save_changes(&connection)?;
+/// let expected_animal = Animal {
+///     id: 2,
+///     species: String::from("spider"),
+///     legs: 8,
+///     name: Some(String::from("Super scary")),
+/// };
+/// assert_eq!(expected_animal, changed_animal);
+/// #     Ok(())
+/// # }
+/// ```
 pub trait SaveChangesDsl<Conn> {
-    /// Sugar for types which implement both `AsChangeset` and `Identifiable`
-    ///
-    /// On backends which support the `RETURNING` keyword,
-    /// `foo.save_changes(&conn)` is equivalent to
-    /// `update(&foo).set(&foo).get_result(&conn)`.
-    /// On other backends, two queries will be executed.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
-    /// # use schema::animals;
-    /// #
-    /// #[derive(Queryable, Debug, PartialEq)]
-    /// struct Animal {
-    ///    id: i32,
-    ///    species: String,
-    ///    legs: i32,
-    ///    name: Option<String>,
-    /// }
-    ///
-    /// #[derive(AsChangeset, Identifiable)]
-    /// #[table_name = "animals"]
-    /// struct AnimalForm<'a> {
-    ///     id: i32,
-    ///     name: &'a str,
-    /// }
-    ///
-    /// # fn main() {
-    /// #     run_test();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let form = AnimalForm { id: 2, name: "Super scary" };
-    /// let changed_animal = form.save_changes(&connection)?;
-    /// let expected_animal = Animal {
-    ///     id: 2,
-    ///     species: String::from("spider"),
-    ///     legs: 8,
-    ///     name: Some(String::from("Super scary")),
-    /// };
-    /// assert_eq!(expected_animal, changed_animal);
-    /// #     Ok(())
-    /// # }
-    /// ```
+    /// See the trait documentation.
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
     where
         Self: InternalSaveChangesDsl<Conn, T>,

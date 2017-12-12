@@ -73,6 +73,7 @@ pub mod pg;
 #[deny(missing_docs)]
 pub mod sqlite;
 
+#[deny(missing_docs)]
 pub mod query_dsl;
 pub mod query_source;
 pub mod result;
@@ -169,8 +170,9 @@ pub mod prelude {
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
-    pub use query_dsl::{BelongingToDsl, GroupByDsl, JoinOnDsl, QueryDsl, RunQueryDsl,
-                        SaveChangesDsl};
+    #[doc(hidden)]
+    pub use query_dsl::GroupByDsl;
+    pub use query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
     pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
     pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};

@@ -9,8 +9,10 @@ use query_source::Table;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait OrderDsl<Expr: Expression> {
+    /// The type returned by `.order`.
     type Output;
 
+    /// See the trait documentation.
     fn order(self, expr: Expr) -> Self::Output;
 }
 

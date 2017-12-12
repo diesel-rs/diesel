@@ -44,34 +44,35 @@ where
     }
 }
 
+/// Specify the `ON` clause for a join statement. This will override
+/// any implicit `ON` clause that would come from [`joinable!`]
+///
+/// [`joinable!`]: ../macro.joinable.html
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// # use schema::{users, posts};
+/// #
+/// # fn main() {
+/// #     let connection = establish_connection();
+/// let data = users::table
+///     .left_join(posts::table.on(
+///         users::id.eq(posts::user_id).and(
+///             posts::title.eq("My first post"))
+///     ))
+///     .select((users::name, posts::title.nullable()))
+///     .load(&connection);
+/// let expected = vec![
+///     ("Sean".to_string(), Some("My first post".to_string())),
+///     ("Tess".to_string(), None),
+/// ];
+/// assert_eq!(Ok(expected), data);
+/// # }
 pub trait JoinOnDsl: Sized {
-    /// Specify the `ON` clause for a join statement. This will override
-    /// any implicit `ON` clause that would come from [`joinable!`]
-    ///
-    /// [`joinable!`]: ../macro.joinable.html
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
-    /// # use schema::{users, posts};
-    /// #
-    /// # fn main() {
-    /// #     let connection = establish_connection();
-    /// let data = users::table
-    ///     .left_join(posts::table.on(
-    ///         users::id.eq(posts::user_id).and(
-    ///             posts::title.eq("My first post"))
-    ///     ))
-    ///     .select((users::name, posts::title.nullable()))
-    ///     .load(&connection);
-    /// let expected = vec![
-    ///     ("Sean".to_string(), Some("My first post".to_string())),
-    ///     ("Tess".to_string(), None),
-    /// ];
-    /// assert_eq!(Ok(expected), data);
-    /// # }
+    /// See the trait documentation.
     fn on<On>(self, on: On) -> OnClauseWrapper<Self, On> {
         OnClauseWrapper::new(self, on)
     }
