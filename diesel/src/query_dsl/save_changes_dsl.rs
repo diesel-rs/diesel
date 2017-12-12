@@ -69,8 +69,10 @@ where
 pub trait SaveChangesDsl<Conn> {
     /// Sugar for types which implement both `AsChangeset` and `Identifiable`
     ///
+    /// On backends which support the `RETURNING` keyword,
     /// `foo.save_changes(&conn)` is equivalent to
-    /// `update(foo::table().find(foo.id())).set(&foo).get_result(&conn)`
+    /// `update(&foo).set(&foo).get_result(&conn)`.
+    /// On other backends, two queries will be executed.
     ///
     /// # Example
     ///
@@ -79,30 +81,38 @@ pub trait SaveChangesDsl<Conn> {
     /// # include!("../doctest_setup.rs");
     /// # use schema::animals;
     /// #
-    /// # #[derive(AsChangeset, Debug, PartialEq, Identifiable, Queryable)]
-    /// # struct Animal {
-    /// #    id: i32,
-    /// #    species: String,
-    /// #    legs: i32,
-    /// #    name: Option<String>,
+    /// #[derive(Queryable, Debug, PartialEq)]
+    /// struct Animal {
+    ///    id: i32,
+    ///    species: String,
+    ///    legs: i32,
+    ///    name: Option<String>,
+    /// }
+    ///
+    /// #[derive(AsChangeset, Identifiable)]
+    /// #[table_name = "animals"]
+    /// struct AnimalForm<'a> {
+    ///     id: i32,
+    ///     name: &'a str,
+    /// }
+    ///
+    /// # fn main() {
+    /// #     run_test();
     /// # }
     /// #
-    /// # fn main() {
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use animals::dsl::*;
     /// #     let connection = establish_connection();
-    /// let mut spider = animals.filter(species.eq("spider"))
-    ///     .first::<Animal>(&connection)
-    ///     .expect("Too scary to load");
-    ///
-    /// spider.species = String::from("solifuge");
-    /// spider.legs = 10;
-    ///
-    /// spider.save_changes::<Animal>(&connection).expect("Error saving changes");
-    ///
-    /// let changed_animal = animals.find(spider.id())
-    ///     .first::<Animal>(&connection);
-    ///
-    /// assert_eq!(Ok(Animal { id: 2, species: "solifuge".to_string(), legs: 10, name: None }), changed_animal);
+    /// let form = AnimalForm { id: 2, name: "Super scary" };
+    /// let changed_animal = form.save_changes(&connection)?;
+    /// let expected_animal = Animal {
+    ///     id: 2,
+    ///     species: String::from("spider"),
+    ///     legs: 8,
+    ///     name: Some(String::from("Super scary")),
+    /// };
+    /// assert_eq!(expected_animal, changed_animal);
+    /// #     Ok(())
     /// # }
     /// ```
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
