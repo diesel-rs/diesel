@@ -1,4 +1,3 @@
-#![deny(missing_docs)]
 use query_source::Table;
 #[cfg(feature = "postgres")]
 use expression::SelectableExpression;

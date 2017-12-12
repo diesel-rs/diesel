@@ -66,6 +66,7 @@ pub mod methods {
     pub use super::select_dsl::SelectDsl;
 }
 
+/// Methods used to construct select statements.
 pub trait QueryDsl: Sized {
     /// Adds the `DISTINCT` keyword to a query.
     ///
@@ -756,6 +757,7 @@ pub trait QueryDsl: Sized {
 
 impl<T: Table> QueryDsl for T {}
 
+/// Methods used to execute queries.
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
