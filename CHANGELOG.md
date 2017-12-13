@@ -11,6 +11,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Executing select statements on SQLite will no longer panic when the database
   returns `SQLITE_BUSY`
 
+* `table!`s which use the `Datetime` type with MySQL will now compile correctly,
+  even without the `chrono` feature enabled.
+
 ## [1.0.0-beta1] - 2017-12-04
 
 ### Added
