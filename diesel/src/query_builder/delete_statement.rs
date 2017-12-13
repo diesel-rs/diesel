@@ -10,6 +10,16 @@ use query_source::Table;
 use result::QueryResult;
 
 #[derive(Debug)]
+/// Represents a SQL `DELETE` statement.
+///
+/// The type parameters on this struct represent:
+///
+/// - `T`: The table we are deleting from.
+/// - `U`: The `WHERE` clause of this query. The exact types used to represent
+///   this are private, and you should not make any assumptions about them.
+/// - `Ret`: The `RETURNING` clause of this query. The exact types used to
+///   represent this are private. You can safely rely on the default type
+///   representing the lack of a `RETURNING` clause.
 pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
     table: T,
     where_clause: U,

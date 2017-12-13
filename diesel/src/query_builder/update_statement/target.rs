@@ -10,17 +10,21 @@ pub struct UpdateTarget<Table, WhereClause> {
     pub where_clause: WhereClause,
 }
 
-/// A type which can be passed to `update` or `delete`.
+/// A type which can be passed to [`update`] or [`delete`].
 ///
 /// Apps will never need to implement this type directly. There are three kinds
 /// which implement this trait. Tables, queries which have only had `filter`
 /// called on them, and types which implement `Identifiable`.
 ///
 /// When a table is passed to `update`, every row in the table will be updated.
-/// You can scope this down by calling `filter` before passing it, which will
+/// You can scope this down by calling [`filter`] which will
 /// result in `UPDATE your_table SET ... WHERE args_to_filter`. Passing a type
 /// which implements `Identifiable` is the same as passing
 /// `SomeStruct::table().find(some_struct)`.
+///
+/// [`update`]: ../fn.update.html
+/// [`delete`]: ../fn.delete.html
+/// [`filter`]: struct.IncompleteUpdateStatement.html#method.filter
 pub trait IntoUpdateTarget: HasTable {
     /// What is the `WHERE` clause of this target?
     type WhereClause;

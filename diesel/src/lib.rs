@@ -58,6 +58,7 @@ pub mod expression;
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
+#[deny(missing_docs)]
 pub mod query_builder;
 #[deny(missing_docs)]
 #[macro_use]

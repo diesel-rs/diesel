@@ -29,7 +29,7 @@ pub trait AsChangeset {
     fn as_changeset(self) -> Self::Changeset;
 }
 
-/// Apps should not need to concern themselves with this trait.
+#[doc(hidden)]
 pub trait Changeset<DB: Backend> {
     /// Does this changeset actually include any changes?
     fn is_noop(&self) -> bool;
