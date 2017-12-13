@@ -10,6 +10,7 @@ mod query_id;
 mod clause_macro;
 
 mod ast_pass;
+#[deny(missing_docs)]
 pub mod bind_collector;
 mod debug_query;
 mod delete_statement;
