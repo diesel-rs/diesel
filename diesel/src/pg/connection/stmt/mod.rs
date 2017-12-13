@@ -32,9 +32,7 @@ impl Statement {
             .collect::<Vec<_>>();
         let param_lengths = param_data
             .iter()
-            .map(|data| {
-                data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0)
-            })
+            .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))
             .collect::<Vec<_>>();
         let internal_res = unsafe {
             conn.exec_prepared(

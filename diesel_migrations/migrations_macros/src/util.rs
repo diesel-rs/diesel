@@ -5,8 +5,7 @@ pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
         MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
         _ => panic!(
             r#"`{}` must be in the form `#[{}="something"]`"#,
-            name,
-            name
+            name, name
         ),
     }
 }

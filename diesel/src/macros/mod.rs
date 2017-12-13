@@ -1036,7 +1036,6 @@ macro_rules! joinable_inner {
     }
 }
 
-
 /// Allow two or more tables which are otherwise unrelated to be used together
 /// in a query.
 ///

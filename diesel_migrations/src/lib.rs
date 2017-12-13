@@ -19,7 +19,6 @@ pub use migrations_macros::*;
 #[doc(inline)]
 pub use migrations_internals::*;
 
-
 #[macro_export]
 /// This macro will read your migrations at compile time, and embed a module you can use to execute
 /// them at runtime without the migration files being present on the file system. This is useful if

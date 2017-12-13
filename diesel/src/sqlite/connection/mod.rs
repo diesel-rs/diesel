@@ -47,12 +47,10 @@ impl Connection for SqliteConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        RawConnection::establish(database_url).map(|conn| {
-            SqliteConnection {
-                statement_cache: StatementCache::new(),
-                raw_connection: Rc::new(conn),
-                transaction_manager: AnsiTransactionManager::new(),
-            }
+        RawConnection::establish(database_url).map(|conn| SqliteConnection {
+            statement_cache: StatementCache::new(),
+            raw_connection: Rc::new(conn),
+            transaction_manager: AnsiTransactionManager::new(),
         })
     }
 
@@ -127,11 +125,9 @@ impl SqliteConnection {
         &self,
         source: &T,
     ) -> QueryResult<MaybeCached<Statement>> {
-        self.statement_cache.cached_statement(
-            source,
-            &[],
-            |sql| Statement::prepare(&self.raw_connection, sql),
-        )
+        self.statement_cache.cached_statement(source, &[], |sql| {
+            Statement::prepare(&self.raw_connection, sql)
+        })
     }
 }
 

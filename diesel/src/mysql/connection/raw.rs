@@ -204,7 +204,8 @@ fn perform_thread_unsafe_library_initialization() {
     MYSQL_THREAD_UNSAFE_INIT.call_once(|| {
         // mysql_library_init is defined by `#define mysql_library_init mysql_server_init`
         // which isn't picked up by bindgen
-        let error_code = unsafe { ffi::mysql_server_init(0, ptr::null_mut(), ptr::null_mut()) };
+        let error_code =
+            unsafe { ffi::mysql_server_init(0, ptr::null_mut(), ptr::null_mut()) };
         if error_code != 0 {
             // FIXME: This is documented as Nonzero if an error occurred.
             // Presumably the value has some sort of meaning that we should

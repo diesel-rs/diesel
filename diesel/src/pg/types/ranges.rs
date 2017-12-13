@@ -181,7 +181,6 @@ where
     }
 }
 
-
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,

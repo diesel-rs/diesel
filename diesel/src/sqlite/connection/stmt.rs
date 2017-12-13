@@ -32,12 +32,10 @@ impl Statement {
             )
         };
 
-        ensure_sqlite_ok(prepare_result, raw_connection).map(|_| {
-            Statement {
-                raw_connection: Rc::clone(raw_connection),
-                inner_statement: stmt,
-                bind_index: 0,
-            }
+        ensure_sqlite_ok(prepare_result, raw_connection).map(|_| Statement {
+            raw_connection: Rc::clone(raw_connection),
+            inner_statement: stmt,
+            bind_index: 0,
         })
     }
 

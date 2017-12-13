@@ -50,8 +50,7 @@ fn build_association_options(
 ) -> Result<AssociationOptions, String> {
     let usage_error = Err(format!(
         "`#[{}]` must be in the form `#[{}(table_name, option=value)]`",
-        association_kind,
-        association_kind
+        association_kind, association_kind
     ));
     match attr.value {
         syn::MetaItem::List(_, ref options) if options.len() >= 1 => {

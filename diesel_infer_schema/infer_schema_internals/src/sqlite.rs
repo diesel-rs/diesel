@@ -44,25 +44,21 @@ pub fn load_table_names(
     use self::sqlite_master::dsl::*;
 
     if !schema_name.is_none() {
-        return Err(
-            "sqlite cannot infer schema for databases other than the \
-             main database"
-                .into(),
-        );
+        return Err("sqlite cannot infer schema for databases other than the \
+                    main database"
+            .into());
     }
 
-    Ok(
-        sqlite_master
-            .select(name)
-            .filter(name.not_like("\\_\\_%").escape('\\'))
-            .filter(name.not_like("sqlite%"))
-            .filter(sql("type='table'"))
-            .order(name)
-            .load::<String>(connection)?
-            .into_iter()
-            .map(TableName::from_name)
-            .collect(),
-    )
+    Ok(sqlite_master
+        .select(name)
+        .filter(name.not_like("\\_\\_%").escape('\\'))
+        .filter(name.not_like("sqlite%"))
+        .filter(sql("type='table'"))
+        .order(name)
+        .load::<String>(connection)?
+        .into_iter()
+        .map(TableName::from_name)
+        .collect())
 }
 
 pub fn load_foreign_key_constraints(
@@ -74,21 +70,19 @@ pub fn load_foreign_key_constraints(
         .into_iter()
         .map(|child_table| {
             let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.name);
-            Ok(
-                sql::<pragma_foreign_key_list::SqlType>(&query)
-                    .load::<ForeignKeyListRow>(connection)?
-                    .into_iter()
-                    .map(|row| {
-                        let parent_table = TableName::from_name(row.parent_table);
-                        ForeignKeyConstraint {
-                            child_table: child_table.clone(),
-                            parent_table,
-                            foreign_key: row.foreign_key,
-                            primary_key: row.primary_key,
-                        }
-                    })
-                    .collect(),
-            )
+            Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
+                .load::<ForeignKeyListRow>(connection)?
+                .into_iter()
+                .map(|row| {
+                    let parent_table = TableName::from_name(row.parent_table);
+                    ForeignKeyConstraint {
+                        child_table: child_table.clone(),
+                        parent_table,
+                        foreign_key: row.foreign_key,
+                        primary_key: row.primary_key,
+                    }
+                })
+                .collect())
         })
         .collect::<QueryResult<Vec<Vec<_>>>>()?;
     Ok(rows.into_iter().flat_map(|x| x).collect())
@@ -157,12 +151,10 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
     let results = try!(sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn));
-    Ok(
-        results
-            .into_iter()
-            .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
-            .collect(),
-    )
+    Ok(results
+        .into_iter()
+        .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
+        .collect())
 }
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
@@ -248,8 +240,7 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
     let table_names = load_table_names(&conn, None).unwrap();
-    assert!(!table_names
-        .contains(&TableName::from_name("__diesel_metadata")));
+    assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
 }
 
 #[test]

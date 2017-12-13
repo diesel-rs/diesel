@@ -100,7 +100,6 @@ use self::schema::__diesel_schema_migrations::dsl::*;
 use std::env;
 use std::path::{Path, PathBuf};
 
-
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 /// Runs all migrations that have not yet been run. This function will print all progress to
@@ -200,9 +199,8 @@ where
     Conn: MigrationConnection,
 {
     try!(setup_database(conn));
-    let latest_migration_version = conn.latest_run_migration_version()?.ok_or_else(|| {
-        RunMigrationsError::MigrationError(MigrationError::NoMigrationRun)
-    })?;
+    let latest_migration_version = conn.latest_run_migration_version()?
+        .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
     revert_migration_with_version(conn, path, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }

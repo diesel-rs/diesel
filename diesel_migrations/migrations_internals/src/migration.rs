@@ -85,9 +85,7 @@ impl<'a> Migration for &'a Migration {
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
     file_names(path)
-        .map(|files| {
-            files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
-        })
+        .map(|files| files.contains(&"down.sql".into()) && files.contains(&"up.sql".into()))
         .unwrap_or(false)
 }
 
@@ -120,9 +118,7 @@ pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .split('_')
         .nth(0)
         .map(|s| Ok(s.replace('-', "")))
-        .unwrap_or_else(|| {
-            Err(MigrationError::UnknownMigrationFormat(path.to_path_buf()))
-        })
+        .unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
 }
 
 use std::fs::File;

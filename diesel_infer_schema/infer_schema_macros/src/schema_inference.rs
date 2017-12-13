@@ -20,8 +20,11 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
     let schema_name = get_optional_option(&options, "schema_name");
     let schema_name = schema_name.as_ref().map(|s| &**s);
 
-    let table_names = load_table_names(&database_url, schema_name)
-        .expect(&error_message("table names", &database_url, schema_name));
+    let table_names = load_table_names(&database_url, schema_name).expect(&error_message(
+        "table names",
+        &database_url,
+        schema_name,
+    ));
     let foreign_keys = load_foreign_key_constraints(&database_url, schema_name)
         .expect(&error_message("foreign keys", &database_url, schema_name));
     let foreign_keys =
@@ -46,7 +49,6 @@ pub fn derive_infer_schema(input: syn::DeriveInput) -> quote::Tokens {
 
     let table_idents = table_names.iter().map(|t| syn::Ident::from(&*t.name));
     let multi_table_joins = quote!(allow_tables_to_appear_in_same_query!(#(#table_idents,)*););
-
 
     let tokens = quote!(#(#tables)* #(#joinables)* #multi_table_joins);
     if let Some(schema_name) = schema_name {
@@ -78,8 +80,7 @@ pub fn derive_infer_table_from_schema(input: syn::DeriveInput) -> quote::Tokens 
 fn error_message(attempted_to_load: &str, database_url: &str, schema_name: Option<&str>) -> String {
     let mut message = format!(
         "Could not load {} from database `{}`",
-        attempted_to_load,
-        database_url
+        attempted_to_load, database_url
     );
     if let Some(name) = schema_name {
         message += &format!(" with schema `{}`", name);
@@ -151,9 +152,7 @@ fn column_ty_to_tokens(column_ty: ColumnType) -> quote::Tokens {
 
 fn to_doc_comment_tokens(docs: &str) -> Vec<syn::Token> {
     docs.lines()
-        .map(|l| {
-            format!("///{}{}", if l.is_empty() { "" } else { " " }, l)
-        })
+        .map(|l| format!("///{}{}", if l.is_empty() { "" } else { " " }, l))
         .map(syn::Token::DocComment)
         .collect()
 }

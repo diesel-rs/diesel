@@ -82,7 +82,6 @@ impl Statement {
         NamedStatementIterator::new(self)
     }
 
-
     fn last_error_message(&self) -> String {
         unsafe { CStr::from_ptr(ffi::mysql_stmt_error(self.stmt)) }
             .to_string_lossy()

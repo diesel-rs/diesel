@@ -77,7 +77,7 @@ fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
     let decoded = try!(
         percent_decode(s.as_bytes())
             .decode_utf8()
-            .map_err(|_| { connection_url_error() })
+            .map_err(|_| connection_url_error())
     );
     CString::new(decoded.as_bytes()).map_err(Into::into)
 }
@@ -139,8 +139,7 @@ fn userinfo_should_be_percent_decode() {
 
     let db_url = format!(
         "mysql://{}:{}@localhost/bar",
-        encoded_username,
-        encoded_password
+        encoded_username, encoded_password
     );
     let db_url = Url::parse(&db_url).unwrap();
 

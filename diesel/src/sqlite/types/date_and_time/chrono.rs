@@ -113,7 +113,6 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     extern crate chrono;
