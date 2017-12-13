@@ -97,3 +97,5 @@ impl QueryId for ::types::Numeric {
 /// [NaiveDateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/naive/datetime/struct.NaiveDateTime.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Datetime;
+
+primitive_impls!(Datetime);
