@@ -8,6 +8,7 @@ use query_source::Table;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait LimitDsl {
+    /// The type returned by `.limit`
     type Output;
 
     /// See the trait documenation

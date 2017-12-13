@@ -41,11 +41,11 @@ mod offset_dsl;
 mod order_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
-pub use self::boxed_dsl::BoxedDsl;
+#[doc(hidden)]
+pub use self::load_dsl::LoadQuery;
 #[doc(hidden)]
 pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
-pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::SaveChangesDsl;
 
 /// The traits used by `QueryDsl`.
@@ -55,11 +55,12 @@ pub use self::save_changes_dsl::SaveChangesDsl;
 /// However, generic code may need to include a where clause that references
 /// these traits.
 pub mod methods {
+    pub use super::boxed_dsl::BoxedDsl;
     pub use super::distinct_dsl::*;
     #[doc(inline)]
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
-    pub use super::load_dsl::ExecuteDsl;
+    pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::OrderDsl;
@@ -749,9 +750,9 @@ pub trait QueryDsl: Sized {
     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
     where
         DB: Backend,
-        Self: BoxedDsl<'a, DB>,
+        Self: methods::BoxedDsl<'a, DB>,
     {
-        self.internal_into_boxed()
+        methods::BoxedDsl::internal_into_boxed(self)
     }
 }
 

@@ -6,7 +6,15 @@ use result::QueryResult;
 use super::RunQueryDsl;
 use types::HasSqlType;
 
+/// The `load` method
+///
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`RunQueryDsl`]. However, you may need a where clause on this trait
+/// to call `load` from generic code.
+///
+/// [`RunQueryDsl`]: ../trait.RunQueryDsl.html
 pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn> {
+    /// Load this query
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>>;
 }
 
@@ -23,8 +31,16 @@ where
     }
 }
 
+/// The `execute` method
+///
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`RunQueryDsl`]. However, you may need a where clause on this trait
+/// to call `execute` from generic code.
+///
+/// [`RunQueryDsl`]: ../trait.RunQueryDsl.html
 pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Connection>::Backend>
     : Sized {
+    /// Execute this command
     fn execute(query: Self, conn: &Conn) -> QueryResult<usize>;
 }
 
