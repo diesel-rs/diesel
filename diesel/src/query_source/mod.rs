@@ -16,15 +16,104 @@ use types::{FromSqlRow, HasSqlType};
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
-/// Trait indicating that a record can be queried from the database. This trait
-/// can be derived automatically using `#[derive(Queryable)]`. This trait can
-/// only be derived for structs, not enums.
+/// Trait indicating that a record can be queried from the database.
+///
+/// Types which implement `Queryable` represent the result of a SQL query. This
+/// does not necessarily mean they represent a single database table.
+///
+/// This trait can be derived automatically using `#[derive(Queryable)]`. This
+/// trait can only be derived for structs, not enums.
+///
+/// Diesel represents the return type of a query as a tuple. The purpose of this
+/// trait is to convert from a tuple of Rust values that have been deserialized
+/// into your struct.
+///
+/// When this trait is derived, it will assume that the order of fields on your
+/// struct match the order of the fields in the query. This means that field
+/// order is significant if you are using `#[derive(Queryable)]`. Field name has
+/// no affect.
+///
+/// # Examples
+///
+/// If we just want to map a query to our struct, we can use `derive`.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If we want to do additional work during deserializaiton, we can implement
+/// the trait ourselves.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::query_source::Queryable;
+///
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
+///
+/// #[derive(PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl Queryable<users::SqlType, DB> for User {
+///     type Row = (i32, String);
+///
+///     fn build(row: Self::Row) -> Self {
+///         User {
+///             id: row.0,
+///             name: row.1.to_lowercase(),
+///         }
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
 pub trait Queryable<ST, DB>
 where
     DB: Backend + HasSqlType<ST>,
 {
+    /// The Rust type you'd like to map from.
+    ///
+    /// This is typically a tuple of all of your struct's fields.
     type Row: FromSqlRow<ST, DB>;
 
+    /// Construct an instance of this type
     fn build(row: Self::Row) -> Self;
 }
 
