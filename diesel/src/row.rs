@@ -5,8 +5,10 @@ use std::error::Error;
 use backend::Backend;
 use types::{FromSql, HasSqlType};
 
-/// The row trait which is used for [`FromSqlRow`][]. Apps should not need to
-/// concern themselves with this trait.
+/// Represents a single database row.
+/// Apps should not need to concern themselves with this trait.
+///
+/// This trait is only used as an argument to [`FromSqlRow`].
 ///
 /// [`FromSqlRow`]: ../types/trait.FromSqlRow.html
 pub trait Row<DB: Backend> {
