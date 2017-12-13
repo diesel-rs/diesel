@@ -28,6 +28,7 @@ mod select_clause;
 mod select_statement;
 mod sql_query;
 pub mod where_clause;
+#[deny(missing_docs)]
 pub mod insert_statement;
 mod update_statement;
 
