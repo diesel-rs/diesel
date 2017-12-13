@@ -18,10 +18,14 @@ use result::QueryResult;
 use sqlite::{Sqlite, SqliteConnection};
 use super::returning_clause::*;
 
-/// The structure returned by [`insert_into`](../../fn.insert_into.html).
+/// The structure returned by [`insert_into`].
 ///
-/// The provided methods [`values()`] and [`default_values()`] will insert
+/// The provided methods [`values`] and [`default_values`] will insert
 /// data into the targeted table.
+///
+/// [`insert_into`]: ../../fn.insert_into.html
+/// [`values`]: #method.values
+/// [`default_values`]: #method.default_values
 #[derive(Debug, Clone, Copy)]
 pub struct IncompleteInsertStatement<T, Op> {
     target: T,
@@ -47,23 +51,27 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # }
     /// #
     /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use users::dsl::*;
     /// #     let connection = connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
-    /// )").unwrap();
+    /// )")?;
     ///
     /// insert_into(users)
     ///     .default_values()
     ///     .execute(&connection)
     ///     .unwrap();
+    /// let inserted_user = users.first(&connection)?;
+    /// let expected_data = (String::from("Sean"), String::from("Green"));
     ///
-    /// let expected_data = vec![
-    ///     ("Sean".to_string(), "Green".to_string()),
-    /// ];
-    /// assert_eq!(Ok(expected_data), users.load(&connection));
+    /// assert_eq!(expected_data, inserted_user);
+    /// #     Ok(())
     /// # }
     /// ```
     pub fn default_values(self) -> InsertStatement<T, DefaultValues, Op> {
@@ -73,8 +81,15 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
 
     /// Inserts the given values into the table passed to `insert_into`.
     ///
-    /// See the documentation of [`insert_into`](../fn.insert_into.html) for
+    /// See the documentation of [`insert_into`] for
     /// usage examples.
+    ///
+    /// This method can sometimes produce extremely opaque error messages due to
+    /// limitations of the Rust language. If you receive an error about
+    /// "overflow evaluating requirement" as a result of calling this method,
+    /// you may need an `&` in front of the argument to this method.
+    ///
+    /// [`insert_into`]: ../../fn.insert_into.html
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
         U: Insertable<T>,
@@ -89,6 +104,18 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
 }
 
 #[derive(Debug, Copy, Clone)]
+/// A fully constructed insert statement.
+///
+/// The parameters of this struct represent:
+///
+/// - `T`: The table we are inserting into
+/// - `U`: The data being inserted
+/// - `Op`: The operation being performed. The specific types used to represent
+///   this are private, but correspond to SQL such as `INSERT` or `REPLACE`.
+///   You can safely rely on the default type representing `INSERT`
+/// - `Ret`: The `RETURNING` clause of the query. The specific types used to
+///   represent this are private. You can safely rely on the default type
+///   representing a query without a `RETURNING` clause.
 pub struct InsertStatement<T, U, Op = Insert, Ret = NoReturningClause> {
     operator: Op,
     target: T,
@@ -279,8 +306,10 @@ impl QueryFragment<Mysql> for Replace {
 impl_query_id!(Replace);
 
 /// Marker trait to indicate that no additional operations have been added
-/// to a record for insert. Used to prevent things like
-/// `insert(&vec![user.on_conflict_do_nothing(), user2.on_conflict_do_nothing()])`
+/// to a record for insert.
+///
+/// This is used to prevent things like
+/// `.on_conflict_do_nothing().on_conflict_do_nothing()`
 /// from compiling.
 pub trait UndecoratedInsertRecord<Table> {}
 
