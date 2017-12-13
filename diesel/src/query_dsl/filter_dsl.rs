@@ -10,8 +10,10 @@ use query_source::*;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait FilterDsl<Predicate> {
+    /// The type returned by `.filter`.
     type Output;
 
+    /// See the trait documentation.
     fn filter(self, predicate: Predicate) -> Self::Output;
 }
 
@@ -35,8 +37,10 @@ where
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait FindDsl<PK> {
+    /// The type returned by `.find`.
     type Output;
 
+    /// See the trait documentation.
     fn find(self, id: PK) -> Self::Output;
 }
 

@@ -12,8 +12,10 @@ pub trait SelectDsl<Selection: Expression> {
     // FIXME: Once we've refactored the `impl Expression` on `SelectStatement`
     // to not conditionally be `types::Array`, it is probably worthwhile to
     // add a `: Expression<SqlType = Selection::SqlType>` bound here.
+    /// The type returned by `.select`
     type Output;
 
+    /// See the trait documentation
     fn select(self, selection: Selection) -> Self::Output;
 }
 
