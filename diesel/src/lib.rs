@@ -76,6 +76,7 @@ pub mod sqlite;
 #[deny(missing_docs)]
 pub mod query_dsl;
 pub mod query_source;
+#[deny(missing_docs)]
 pub mod result;
 pub mod row;
 mod util;
