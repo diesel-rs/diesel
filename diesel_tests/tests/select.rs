@@ -167,8 +167,7 @@ fn selection_using_subselect() {
     let ids: Vec<i32> = users::table.select(users::id).load(&connection).unwrap();
     let query = format!(
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
-        ids[0],
-        ids[1]
+        ids[0], ids[1]
     );
     connection.execute(&query).unwrap();
 

@@ -73,7 +73,6 @@ fn simple_belongs_to() {
     );
 }
 
-
 #[test]
 fn custom_foreign_key() {
     use diesel::*;
@@ -110,7 +109,6 @@ fn custom_foreign_key() {
     }
 
     joinable!(posts -> users(belongs_to_user));
-
 
     let _can_join_tables = posts::table
         .inner_join(users::table)

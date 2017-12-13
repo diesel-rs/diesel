@@ -6,7 +6,6 @@ use migrations_internals as migrations;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 use super::query_helper;
 
-
 use database_error::{DatabaseError, DatabaseResult};
 
 use std::error::Error;

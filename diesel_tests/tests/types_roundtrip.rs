@@ -199,7 +199,6 @@ mod pg_types {
         mk_tstz_bounds
     );
 
-
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];

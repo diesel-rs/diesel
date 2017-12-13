@@ -451,11 +451,9 @@ fn filter_subselect_with_pg_any() {
 
     let users_with_published_posts = users::table
         .filter(
-            users::id.eq(any(
-                posts::table
-                    .select(posts::user_id)
-                    .filter(posts::user_id.eq(users::id)),
-            )),
+            users::id.eq(any(posts::table
+                .select(posts::user_id)
+                .filter(posts::user_id.eq(users::id)))),
         )
         .load(&conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);

@@ -242,7 +242,6 @@ fn migration_run_runs_pending_migrations_custom_database_url_2() {
     assert!(db.table_exists("users"));
 }
 
-
 #[test]
 fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
     let p = project("migration_run_custom_migration_dir_1")
@@ -277,7 +276,6 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
     );
     assert!(db.table_exists("users"));
 }
-
 
 #[test]
 fn migration_run_runs_pending_migrations_custom_migration_dir_2() {

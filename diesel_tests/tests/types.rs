@@ -818,7 +818,6 @@ fn pg_macaddress_to_sql_macaddress() {
     ));
 }
 
-
 #[test]
 #[cfg(feature = "postgres")]
 fn pg_v4address_from_sql() {
@@ -915,7 +914,6 @@ fn pg_v6address_to_sql_v6address() {
         value
     ));
 }
-
 
 #[test]
 #[cfg(feature = "postgres")]
@@ -1148,10 +1146,7 @@ fn test_inserting_ranges() {
     let value = (Bound::Included(1), Bound::Excluded(3));
 
     let (_, v1, v2): (i32, Option<(_, _)>, (_, _)) = insert_into(has_ranges::table)
-        .values((
-            has_ranges::nul_range.eq(value),
-            has_ranges::range.eq(value),
-        ))
+        .values((has_ranges::nul_range.eq(value), has_ranges::range.eq(value)))
         .get_result(&connection)
         .unwrap();
     assert_eq!(v1, Some(value));

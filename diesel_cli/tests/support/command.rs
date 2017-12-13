@@ -91,7 +91,6 @@ fn path_to_diesel_cli() -> PathBuf {
         .join("diesel")
 }
 
-
 impl Debug for CommandResult {
     fn fmt(&self, out: &mut Formatter) -> Result<(), Error> {
         write!(out, "stdout: {}\nstderr: {}", self.stdout(), self.stderr())

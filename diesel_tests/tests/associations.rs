@@ -260,7 +260,6 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
     (connection, sean, tess, jim)
 }
 
-
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn custom_foreign_key() {
