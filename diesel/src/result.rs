@@ -120,6 +120,15 @@ pub trait DatabaseErrorInformation {
     /// Currently this method will return `None` for all backends other than
     /// PostgreSQL.
     fn constraint_name(&self) -> Option<&str>;
+
+    /// The numeric error code that was returned by the database if the backend
+    /// supports retrieving that information.
+    ///
+    /// Currently this method will return `None` for all backends other than
+    /// PostgreSQL.
+    fn code(&self) -> Option<i64> {
+        None
+    }
 }
 
 impl fmt::Debug for DatabaseErrorInformation + Send + Sync {
@@ -146,6 +155,9 @@ impl DatabaseErrorInformation for String {
         None
     }
     fn constraint_name(&self) -> Option<&str> {
+        None
+    }
+    fn code(&self) -> Option<i64> {
         None
     }
 }

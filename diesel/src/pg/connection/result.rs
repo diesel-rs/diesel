@@ -129,6 +129,10 @@ impl DatabaseErrorInformation for PgErrorInformation {
     fn constraint_name(&self) -> Option<&str> {
         get_result_field(self.0.as_ptr(), ResultField::ConstraintName)
     }
+
+    fn code(&self) -> Option<i64> {
+        get_result_field(self.0.as_ptr(), ResultField::SqlState).and_then(|code| code.parse().ok())
+    }
 }
 
 /// Represents valid options to
