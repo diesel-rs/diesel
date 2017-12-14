@@ -3,6 +3,7 @@ use expression::array_comparison::{AsInExpression, In, NotIn};
 use expression::operators::*;
 use types::SingleValue;
 
+/// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `=` expression.
     ///
@@ -118,18 +119,21 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::animals;
     /// #
     /// # fn main() {
-    /// #     use animals::dsl::*;
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_null())
-    ///     .first(&connection);
-    /// #
-    /// assert_eq!(Ok("spider".to_string()), data);
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("spider", data);
+    /// #     Ok(())
     /// # }
     fn is_null(self) -> IsNull<Self> {
         IsNull::new(self)
@@ -142,18 +146,21 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::animals;
     /// #
     /// # fn main() {
-    /// #     use animals::dsl::*;
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_not_null())
-    ///     .first(&connection);
-    /// #
-    /// assert_eq!(Ok("dog".to_string()), data);
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("dog", data);
+    /// #     Ok(())
     /// # }
     fn is_not_null(self) -> IsNotNull<Self> {
         IsNotNull::new(self)
@@ -168,10 +175,18 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let data = users.select(name).filter(id.gt(1));
-    /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
+    /// let data = users
+    ///     .select(name)
+    ///     .filter(id.gt(1))
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("Tess", data);
+    /// #     Ok(())
     /// # }
     /// ```
     fn gt<T: AsExpression<Self::SqlType>>(self, other: T) -> Gt<Self, T::Expression> {
@@ -187,10 +202,18 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let data = users.select(name).filter(id.ge(2));
-    /// assert_eq!(Ok("Tess".to_string()), data.first(&connection));
+    /// let data = users
+    ///     .select(name)
+    ///     .filter(id.ge(2))
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("Tess", data);
+    /// #     Ok(())
     /// # }
     /// ```
     fn ge<T: AsExpression<Self::SqlType>>(self, other: T) -> GtEq<Self, T::Expression> {
@@ -206,10 +229,18 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let data = users.select(name).filter(id.lt(2));
-    /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
+    /// let data = users
+    ///     .select(name)
+    ///     .filter(id.lt(2))
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("Sean", data);
+    /// #     Ok(())
     /// # }
     /// ```
     fn lt<T: AsExpression<Self::SqlType>>(self, other: T) -> Lt<Self, T::Expression> {
@@ -225,10 +256,18 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let data = users.select(name).filter(id.le(2));
-    /// assert_eq!(Ok("Sean".to_string()), data.first(&connection));
+    /// let data = users
+    ///     .select(name)
+    ///     .filter(id.le(2))
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("Sean", data);
+    /// #     Ok(())
     /// # }
     fn le<T: AsExpression<Self::SqlType>>(self, other: T) -> LtEq<Self, T::Expression> {
         LtEq::new(self, other.as_expression())
@@ -242,10 +281,9 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::animals;
     /// #
     /// # fn main() {
-    /// #     use animals::dsl::*;
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
@@ -272,18 +310,21 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::animals;
     /// #
     /// # fn main() {
-    /// #     use animals::dsl::*;
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(legs.not_between(2, 6))
-    ///     .first(&connection);
-    /// #
-    /// assert_eq!(Ok("spider".to_string()), data);
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("spider", data);
+    /// #     Ok(())
     /// # }
     fn not_between<T, U>(
         self,
@@ -299,6 +340,29 @@ pub trait ExpressionMethods: Expression + Sized {
 
     /// Creates a SQL `DESC` expression, representing this expression in
     /// descending order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #
+    /// let names = users
+    ///     .select(name)
+    ///     .order(name.desc())
+    ///     .load::<String>(&connection)?;
+    /// assert_eq!(vec!["Tess", "Sean"], names);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn desc(self) -> Desc<Self> {
         Desc::new(self)
     }
@@ -339,6 +403,7 @@ where
 {
 }
 
+/// Methods present on all expressions
 pub trait NullableExpressionMethods: Expression + Sized {
     /// Converts this potentially non-null expression into one which is treated
     /// as nullable. This method has no impact on the generated SQL, and is only
@@ -374,6 +439,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     ///         .load::<String>(&connection);
     ///     println!("{:?}", data);
     /// }
+    /// ```
     fn nullable(self) -> nullable::Nullable<Self> {
         nullable::Nullable::new(self)
     }

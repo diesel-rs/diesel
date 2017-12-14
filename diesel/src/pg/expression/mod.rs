@@ -6,7 +6,7 @@
 
 #[doc(hidden)]
 pub mod array_comparison;
-pub mod expression_methods;
+pub(crate) mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
 pub mod operators;

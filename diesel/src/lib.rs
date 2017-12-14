@@ -55,6 +55,7 @@ pub mod backend;
 pub mod connection;
 #[macro_use]
 pub mod expression;
+#[deny(missing_docs)]
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
