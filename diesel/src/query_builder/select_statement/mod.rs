@@ -9,6 +9,8 @@
 //! Of: Offset Clause
 //! G: Group By Clause
 //! FU: For Update Clause
+#![allow(missing_docs)] // The missing_docs lint triggers even though this is hidden
+
 mod dsl_impls;
 mod boxed;
 

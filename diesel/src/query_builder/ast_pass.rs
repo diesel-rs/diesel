@@ -129,20 +129,26 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,ignore
-    /// impl<DB> QueryFragment<DB> for And<Left, Right>
+    /// ```rust
+    /// # extern crate diesel;
+    /// # use diesel::query_builder::{QueryFragment, AstPass};
+    /// # use diesel::backend::Backend;
+    /// # use diesel::QueryResult;
+    /// # struct And<Left, Right> { left: Left, right: Right }
+    /// impl<Left, Right, DB> QueryFragment<DB> for And<Left, Right>
     /// where
     ///     DB: Backend,
     ///     Left: QueryFragment<DB>,
     ///     Right: QueryFragment<DB>,
     /// {
-    ///     pub fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    ///     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
     ///         self.left.walk_ast(out.reborrow())?;
     ///         out.push_sql(" AND ");
     ///         self.right.walk_ast(out.reborrow())?;
     ///         Ok(())
     ///     }
     /// }
+    /// # fn main() {}
     /// ```
     pub fn push_sql(&mut self, sql: &str) {
         if let AstPassInternals::ToSql(ref mut builder) = self.internals {

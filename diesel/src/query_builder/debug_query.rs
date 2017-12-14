@@ -11,6 +11,10 @@ use super::{AstPass, QueryBuilder, QueryFragment};
 /// The `Display` implementation will be the exact query sent to the server,
 /// plus a comment with the values of the bind parameters. The `Debug`
 /// implementation is more structured, and able to be pretty printed.
+///
+/// See [`debug_query`] for usage examples.
+///
+/// [`debug_query`]: ../fn.debug_query.html
 pub struct DebugQuery<'a, T: 'a, DB> {
     query: &'a T,
     _marker: PhantomData<DB>,
