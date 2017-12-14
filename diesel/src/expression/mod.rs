@@ -1,14 +1,13 @@
-//! AST types representing various typed SQL expressions. Almost all types
-//! implement either [`Expression`](/diesel/expression/trait.Expression.html) or
-//! [`AsExpression`](/diesel/expression/trait.AsExpression.html).
+//! AST types representing various typed SQL expressions.
+//!
+//! Almost all types implement either [`Expression`](trait.Expression.html) or
+//! [`AsExpression`](trait.AsExpression.html).
 //!
 //! The most common expression to work with is a
 //! [`Column`](../query_source/trait.Column.html). There are various methods
 //! that you can call on these, found in
 //! [`expression_methods`](expression_methods/index.html). You can also call
-//! numeric operators on types which have been passed to
-//! [`operator_allowed!`](../macro.operator_allowed.html) or
-//! [`numeric_expr!`](../macro.numeric_expr.html).
+//! numeric operators on expressions of the appropriate type.
 //!
 //! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
@@ -78,6 +77,7 @@ use dsl::AsExprOf;
 /// [`diesel_postfix_operator!`](../macro.diesel_postfix_operator.html) instead of
 /// implementing this directly.
 pub trait Expression {
+    /// The type that this expression represents in SQL
     type SqlType;
 }
 
@@ -91,6 +91,8 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 
 /// Converts a type to its representation for use in Diesel's query builder.
 ///
+/// This trait is used directly. Apps should typically use [`IntoSql`] instead.
+///
 /// Implementations of this trait will generally do one of 3 things:
 ///
 /// - Return `self` for types which are already parts of Diesel's query builder
@@ -99,9 +101,17 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 /// - Indicate that the type has data which will be sent separately from the
 ///   query. This is generally referred as a "bind parameter". Types which
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
+///
+///   [`IntoSql`]: trait.IntoSql.html
+///   [`now`]: ../dsl/fn.now.html
+///   [`Timestamp`]: ../types/struct.Timestamp.html
+///   [`Timestamptz`]: ../types/struct.Timestamptz.html
+///   [`ToSql`]: ../types/trait.ToSql.html
 pub trait AsExpression<T> {
+    /// The expression being returned
     type Expression: Expression<SqlType = T>;
 
+    /// Perform the conversion
     fn as_expression(self) -> Self::Expression;
 }
 
@@ -167,6 +177,7 @@ pub trait IntoSql {
 impl<T> IntoSql for T {}
 
 /// Indicates that all elements of an expression are valid given a from clause.
+///
 /// This is used to ensure that `users.filter(posts::id.eq(1))` fails to
 /// compile. This constraint is only used in places where the nullability of a
 /// SQL type doesn't matter (everything except `select` and `returning`). For
@@ -188,10 +199,11 @@ where
 {
 }
 
-/// Indicates that an expression can be selected from a source. Columns will
-/// implement this for their table. Certain special types, like `CountStar` and
-/// `Bound` will implement this for all sources. Most compound expressions will
-/// implement this if each of their parts implement it.
+/// Indicates that an expression can be selected from a source.
+///
+/// Columns will implement this for their table. Certain special types, like
+/// `CountStar` and `Bound` will implement this for all sources. Most compound
+/// expressions will implement this if each of their parts implement it.
 ///
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
@@ -213,7 +225,9 @@ where
 }
 
 /// Marker trait to indicate that an expression does not include any aggregate
-/// functions. Used to ensure that aggregate expressions aren't mixed with
+/// functions.
+///
+/// Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
 pub trait NonAggregate {}
@@ -224,42 +238,59 @@ impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
 
 use query_builder::{QueryFragment, QueryId};
 
-/// Helper trait used when boxing expressions. This exists to work around the
-/// fact that Rust will not let us use non-core types as bounds on a trait
-/// object (you could not return `Box<Expression+NonAggregate>`)
+/// Helper trait used when boxing expressions.
+///
+/// In Rust you cannot create a trait object with more than one trait.
+/// This type has all of the additional traits you would want when using
+/// `Box<Expression>` as a single trait object.
+///
+/// This is typically used as the return type of a function.
+/// For cases where you want to dynamically construct a query,
+/// [boxing the query] is usually more ergonomic.
+///
+/// [boxing the query]: ../query_dsl/trait.QueryDsl.html#method.into_boxed
 ///
 /// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # use diesel::types;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
+/// use diesel::types::Bool;
+///
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
 /// #
-/// # #[derive(PartialEq, Eq, Debug)]
-/// #[derive(Queryable)]
-/// struct User {
-///     id: i32,
-///     name: String,
+/// # fn run_test() -> QueryResult<()> {
+/// #     let conn = establish_connection();
+/// enum Search {
+///     Id(i32),
+///     Name(String),
 /// }
 ///
-/// fn main() {
-///     let conn = establish_connection();
-///     let where_clause: Box<BoxableExpression<users::table, _, SqlType=types::Bool>>;
-///     let search_by_id = true;
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
 ///
-///     if search_by_id {
-///         where_clause = Box::new(users::id.eq(1))
-///     } else {
-///         where_clause = Box::new(users::name.eq("Tess".to_string()))
+/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool>> {
+///     match search {
+///         Search::Id(id) => Box::new(users::id.eq(id)),
+///         Search::Name(name) => Box::new(users::name.eq(name)),
 ///     }
-///
-///     // BoxableExpression can be chained
-///     let where_clause = where_clause.and(Box::new(users::id.ne(10)));
-///
-///     let result = users::table.filter(where_clause).load::<User>(&conn);
-///     assert_eq!(result, Ok(vec![User { id: 1, name: "Sean".into() }]));
 /// }
+///
+/// let user_one = users::table
+///     .filter(find_user(Search::Id(1)))
+///     .first(&conn)?;
+/// assert_eq!((1, String::from("Sean")), user_one);
+///
+/// let tess = users::table
+///     .filter(find_user(Search::Name("Tess".into())))
+///     .first(&conn)?;
+/// assert_eq!((2, String::from("Tess")), tess);
+/// #     Ok(())
+/// # }
 /// ```
 pub trait BoxableExpression<QS, DB>
 where
