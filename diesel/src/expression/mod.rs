@@ -6,10 +6,10 @@
 //! The most common expression to work with is a
 //! [`Column`](../query_source/trait.Column.html). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`]. You can also call
-//! numeric operators on expressions of the appropriate type.
+//! [`expression_methods`](../expression_methods).
 //!
-//! [`expression_methods`]: ../expression_methods
+//! You can also use numeric operators such as `+` on expressions of the
+//! appropriate type.
 //!
 //! Any primitive which implements [`ToSql`](../serialize/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
@@ -33,7 +33,7 @@ pub mod exists;
 pub mod functions;
 #[doc(hidden)]
 pub mod grouped;
-#[macro_use]
+#[doc(hidden)]
 pub mod helper_types;
 mod not;
 #[doc(hidden)]

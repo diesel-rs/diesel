@@ -27,7 +27,7 @@ impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
-sql_function!(date, date_t, (x: Timestamp) -> Date,
+sql_function!(date, date_t, (expr: Timestamp) -> Date,
 "Represents the SQL `DATE` function. The argument should be a Timestamp
 expression, and the return value will be an expression of type Date.
 
@@ -43,7 +43,8 @@ expression, and the return value will be an expression of type Date.
 #     let connection = establish_connection();
 let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
 # }
-");
+",
+"The return type of [`date(expr)`](../dsl/fn.date.html)");
 
 #[cfg(feature = "postgres")]
 use expression::AsExpression;

@@ -1,4 +1,4 @@
-use dsl::Not;
+use helper_types::not;
 use expression::AsExpression;
 use expression::grouped::Grouped;
 use sql_types::Bool;
@@ -24,6 +24,6 @@ use sql_types::Bool;
 /// assert_eq!(Ok(2), users_not_with_name.first(&connection));
 /// # }
 /// ```
-pub fn not<T: AsExpression<Bool>>(expr: T) -> Not<T> {
+pub fn not<T: AsExpression<Bool>>(expr: T) -> not<T> {
     super::operators::Not::new(Grouped(expr.as_expression()))
 }
