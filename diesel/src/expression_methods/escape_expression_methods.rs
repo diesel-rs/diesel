@@ -5,6 +5,9 @@ use types::VarChar;
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify
 /// the escape character for the pattern.
 ///
+/// By default, the escape character is `\` on most backends. On SQLite,
+/// there is no default escape character.
+///
 /// # Example
 ///
 /// ```rust
@@ -28,6 +31,7 @@ use types::VarChar;
 /// # }
 /// ```
 pub trait EscapeExpressionMethods: Sized {
+    /// See the trait documentation.
     fn escape(self, character: char) -> Escape<Self, AsExprOf<String, VarChar>> {
         Escape::new(self, character.to_string().into_sql::<VarChar>())
     }
