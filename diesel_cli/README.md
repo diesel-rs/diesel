@@ -14,7 +14,7 @@ and [`mysql`][mysql]. Once these dependencies are installed, you can run
 To install the cli without these dependencies, omit the unneeded dependencies from
 the following command:
 
-```
+```sh
 cargo install diesel_cli --no-default-features --features "postgres sqlite mysql"
 ```
 
@@ -25,7 +25,7 @@ cargo install diesel_cli --no-default-features --features "postgres sqlite mysql
 Getting Started
 ---------------
 
-```shell
+```sh
 cargo install diesel_cli
 diesel setup --database-url='postgres://localhost/my_db'
 diesel migration generate create_users_table
@@ -108,7 +108,7 @@ Runs the `down.sql` and then the `up.sql` for the most recent migration.
 ## `diesel print-schema`
 Prints table definitions for database schema.
 
-[pending-migrations]: https://docs.diesel.rs/diesel/migrations/fn.run_pending_migrations.html
+[pending-migrations]: https://docs.rs/migrations_internals/*/migrations_internals/fn.run_pending_migrations.html
 [rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
 
 
@@ -119,14 +119,14 @@ Diesel can generate a bash completion script for itself:
 
 #### linux
 
-```shell
+```sh
 $ diesel bash-completion > /etc/bash_completion.d/diesel
 ```
 
 
 #### os x (homebrew)
 
-```shell
+```sh
 $ brew install bash-completion  # you may already have this installed
 $ diesel bash-completion > $(brew --prefix)/etc/bash_completion.d/diesel
 ```
