@@ -52,6 +52,7 @@ pub mod test_helpers;
 
 pub mod associations;
 pub mod backend;
+#[doc(hidden)]
 pub mod connection;
 #[macro_use]
 pub mod expression;

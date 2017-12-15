@@ -2,34 +2,36 @@ use backend::UsesAnsiSavepointSyntax;
 use connection::Connection;
 use result::QueryResult;
 
-/// Manages the internal transaction state for a connection. You should not
-/// interface with this trait unless you are implementing a new connection
-/// adapter. You should use [`Connection::transaction`][transaction],
-/// [`Connection::test_transaction`][test_transaction], or
-/// [`Connection::begin_test_transaction`][begin_test_transaction] instead.
+/// Manages the internal transaction state for a connection.
 ///
-/// [transaction]: trait.Connection.html#method.transaction
-/// [test_transaction]: trait.Connection.html#method.test_transaction
-/// [begin_test_transaction]: trait.Connection.html#method.begin_test_transaction
+/// You will not need to interact with this trait, unless you are writing an
+/// implementation of [`Connection`](trait.Connection.html).
 pub trait TransactionManager<Conn: Connection> {
-    /// Begin a new transaction. If the transaction depth is greater than 0,
-    /// this should create a savepoint instead. This function is expected to
-    /// increment the transaction depth by 1.
+    /// Begin a new transaction or savepoint
+    ///
+    /// If the transaction depth is greater than 0,
+    /// this should create a savepoint instead.
+    /// This function is expected to increment the transaction depth by 1.
     fn begin_transaction(&self, conn: &Conn) -> QueryResult<()>;
 
-    /// Rollback the inner-most transaction. If the transaction depth is greater
-    /// than 1, this should rollback to the most recent savepoint. This function
-    /// is expected to decrement the transaction depth by 1.
+    /// Rollback the inner-most transaction or savepoint
+    ///
+    /// If the transaction depth is greater than 1,
+    /// this should rollback to the most recent savepoint.
+    /// This function is expected to decrement the transaction depth by 1.
     fn rollback_transaction(&self, conn: &Conn) -> QueryResult<()>;
 
-    /// Commit the inner-most transaction. If the transaction depth is greater
-    /// than 1, this should release the most recent savepoint. This function is
-    /// expected to decrement the transaction depth by 1.
+    /// Commit the inner-most transaction or savepoint
+    ///
+    /// If the transaction depth is greater than 1,
+    /// this should release the most recent savepoint.
+    /// This function is expected to decrement the transaction depth by 1.
     fn commit_transaction(&self, conn: &Conn) -> QueryResult<()>;
 
-    /// Fetch the current transaction depth. Used to ensure that
-    /// `begin_test_transaction` is not called when already inside of a
-    /// transaction.
+    /// Fetch the current transaction depth
+    ///
+    /// Used to ensure that `begin_test_transaction` is not called when already
+    /// inside of a transaction.
     fn get_transaction_depth(&self) -> u32;
 }
 
@@ -44,6 +46,7 @@ pub struct AnsiTransactionManager {
 }
 
 impl AnsiTransactionManager {
+    /// Create a new transaction manager
     pub fn new() -> Self {
         AnsiTransactionManager::default()
     }

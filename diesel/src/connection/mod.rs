@@ -1,3 +1,5 @@
+///! Types related to database connections
+
 mod statement_cache;
 mod transaction_manager;
 
@@ -12,83 +14,77 @@ pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
 
 /// Perform simple operations on a backend.
+///
+/// You should likely use [`Connection`](trait.Connection.html) instead.
 pub trait SimpleConnection {
     /// Execute multiple SQL statements within the same string.
     ///
-    /// This function is typically used in migrations where the statements to upgrade or
-    /// downgrade the database are stored in SQL batch files.
+    /// This function is used to execute migrations,
+    /// which may contain more than one SQL statement.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
 }
 
-/// Perform connections to a backend.
+/// A connection to a database
 pub trait Connection: SimpleConnection + Sized + Send {
-    /// The backend this connection represents.
+    /// The backend this type connects to
     type Backend: Backend;
     #[doc(hidden)]
     type TransactionManager: TransactionManager<Self>;
 
-    /// Establishes a new connection to the database at the given URL. The URL
-    /// should be a valid connection string for a given backend. See the
-    /// documentation for the specific backend for specifics.
+    /// Establishes a new connection to the database
+    ///
+    /// The argument to this method varies by backend.
+    /// See the documentation for that backend's connection class
+    /// for details about what it accepts.
     fn establish(database_url: &str) -> ConnectionResult<Self>;
 
-    /// Executes the given function inside of a database transaction. When
-    /// a transaction is already occurring, savepoints will be used to emulate a nested
-    /// transaction.
+    /// Executes the given function inside of a database transaction
     ///
-    /// The error returned from the function must implement
-    /// `From<diesel::result::Error>`.
+    /// If there is already an open transaction,
+    /// savepoints will be used instead.
     ///
-    /// # Examples:
+    /// # Example
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use schema::users;
-    /// #
-    /// # #[derive(Queryable, Debug, PartialEq)]
-    /// # struct User {
-    /// #     id: i32,
-    /// #     name: String,
-    /// # }
     /// use diesel::result::Error;
     ///
-    /// fn main() {
-    ///     let conn = establish_connection();
-    ///     let _ = conn.transaction::<_, Error, _>(|| {
-    ///         diesel::insert_into(users::table)
-    ///             .values(users::name.eq("Ruby"))
-    ///             .execute(&conn)?;
-    ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
-    ///             User { id: 1, name: "Sean".into() },
-    ///             User { id: 2, name: "Tess".into() },
-    ///             User { id: 3, name: "Ruby".into() },
-    ///         ]));
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let conn = establish_connection();
+    /// conn.transaction::<_, Error, _>(|| {
+    ///     diesel::insert_into(users)
+    ///         .values(name.eq("Ruby"))
+    ///         .execute(&conn)?;
     ///
-    ///         Ok(())
-    ///     });
+    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
     ///
-    ///     let _ = conn.transaction::<(), Error, _>(|| {
-    ///         diesel::insert_into(users::table)
-    ///             .values(users::name.eq("Pascal"))
-    ///             .execute(&conn)?;
+    ///     Ok(())
+    /// })?;
     ///
-    ///         assert_eq!(users::table.load::<User>(&conn), Ok(vec![
-    ///             User { id: 1, name: "Sean".into() },
-    ///             User { id: 2, name: "Tess".into() },
-    ///             User { id: 3, name: "Ruby".into() },
-    ///             User { id: 4, name: "Pascal".into() },
-    ///         ]));
+    /// conn.transaction::<(), _, _>(|| {
+    ///     diesel::insert_into(users)
+    ///         .values(name.eq("Pascal"))
+    ///         .execute(&conn)?;
     ///
-    ///         Err(Error::RollbackTransaction) // Oh noeees, something bad happened :(
-    ///     });
+    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     assert_eq!(vec!["Sean", "Tess", "Ruby", "Pascal"], all_names);
     ///
-    ///     assert_eq!(users::table.load::<User>(&conn), Ok(vec![
-    ///         User { id: 1, name: "Sean".into() },
-    ///         User { id: 2, name: "Tess".into() },
-    ///         User { id: 3, name: "Ruby".into() },
-    ///     ]));
-    /// }
+    ///     // If we want to roll back the transaction, but don't have an
+    ///     // actual error to return, we can return `RollbackTransaction`.
+    ///     Err(Error::RollbackTransaction)
+    /// });
+    ///
+    /// let all_names = users.select(name).load::<String>(&conn)?;
+    /// assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
+    /// #     Ok(())
+    /// # }
     /// ```
     fn transaction<T, E, F>(&self, f: F) -> Result<T, E>
     where
@@ -118,7 +114,39 @@ pub trait Connection: SimpleConnection + Sized + Send {
     }
 
     /// Executes the given function inside a transaction, but does not commit
-    /// it. Panics if the given function returns an `Err`.
+    /// it. Panics if the given function returns an error.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// use diesel::result::Error;
+    ///
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let conn = establish_connection();
+    /// conn.test_transaction::<_, Error, _>(|| {
+    ///     diesel::insert_into(users)
+    ///         .values(name.eq("Ruby"))
+    ///         .execute(&conn)?;
+    ///
+    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
+    ///
+    ///     Ok(())
+    /// });
+    ///
+    /// // Even though we returned `Ok`, the transaction wasn't committed.
+    /// let all_names = users.select(name).load::<String>(&conn)?;
+    /// assert_eq!(vec!["Sean", "Tess"], all_names);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn test_transaction<T, E, F>(&self, f: F) -> T
     where
         F: FnOnce() -> Result<T, E>,
