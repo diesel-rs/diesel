@@ -64,7 +64,6 @@ matrix:
       fi
     - cargo fmt --all -- --write-mode=diff
 env:
-  # TODO: why is there no database specified for Postgres?
   matrix:
     - BACKEND=sqlite
       SQLITE_DATABASE_URL=/tmp/test.db
