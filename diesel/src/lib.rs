@@ -51,6 +51,7 @@ extern crate cfg_if;
 pub mod test_helpers;
 
 pub mod associations;
+#[deny(missing_docs)]
 pub mod backend;
 pub mod connection;
 #[macro_use]
