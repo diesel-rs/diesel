@@ -24,68 +24,79 @@ pub mod money;
 pub mod sql_types {
     /// The `OID` SQL type. This is a PostgreSQL specific type.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
-    /// - [`u32`][u32]
+    /// - [`u32`]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
-    /// - [`u32`][u32]
+    /// - [`u32`]
     ///
-    /// [u32]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Oid;
 
     /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
     /// to `timestamptz`.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
-    /// - [`PgTimestamp`][PgTimestamp]
-    /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-    /// - [`chrono::DateTime`][DateTime] with `feature = "chrono"`
+    /// - [`PgTimestamp`]
+    /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+    /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
-    /// - [`PgTimestamp`][PgTimestamp]
-    /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-    /// - [`chrono::DateTime`][DateTime] with `feature = "chrono"`
+    /// - [`PgTimestamp`]
+    /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+    /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// [PgTimestamp]: /diesel/pg/data_types/struct.PgTimestamp.html
-    /// [NaiveDateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/naive/datetime/struct.NaiveDateTime.html
-    /// [DateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/datetime/struct.DateTime.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
+    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
+    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Timestamptz;
 
-    /// The `Array` SQL type. This wraps another type to represent a SQL array of
-    /// that type. Multidimensional arrays are not supported, nor are arrays
-    /// containing null.
+    /// The `Array` SQL type.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// This wraps another type to represent a SQL array of that type.
+    /// Multidimensional arrays are not supported,
+    /// nor are arrays containing null.
+    ///
+    /// ### [`ToSql`] impls
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     /// - [`&[T]`][slice] for any `T` which implements `ToSql<ST>`
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Array<ST>(ST);
 
-    /// The `Range` SQL type. This wraps another type to represent a SQL range of
-    /// that type.
+    /// The `Range` SQL type.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// This wraps another type to represent a SQL range of that type.
+    ///
+    /// ### [`ToSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `ToSql<ST>`.
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Range<ST>(ST);
@@ -115,14 +126,16 @@ pub mod sql_types {
     #[cfg(feature = "uuid")]
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Uuid;
@@ -141,15 +154,17 @@ pub mod sql_types {
     /// Normally you should prefer [`Jsonb`](struct.Jsonb.html) instead, for the reasons
     /// discussed there.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`serde_json::Value`]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
     #[derive(Debug, Clone, Copy, Default)]
     pub struct Json;
 
@@ -175,15 +190,17 @@ pub mod sql_types {
     ///
     /// [adv]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`serde_json::Value`]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
     ///
     /// # Examples
     ///
@@ -228,15 +245,17 @@ pub mod sql_types {
 
     /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [PgMoney]: /diesel/pg/data_types/struct.PgMoney.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [PgMoney]: ../../data_types/struct.PgMoney.html
     ///
     /// # Examples
     ///
@@ -276,13 +295,16 @@ pub mod sql_types {
     #[cfg(feature = "network-address")]
     /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - `[u8; 6]`
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - `[u8; 6]`
+    ///
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
     ///
     /// # Examples
     ///
@@ -323,15 +345,17 @@ pub mod sql_types {
     #[cfg(feature = "network-address")]
     /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples
     ///
@@ -373,15 +397,17 @@ pub mod sql_types {
     #[cfg(feature = "network-address")]
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
-    /// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+    /// ### [`ToSql`] impls
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+    /// ### [`FromSql`] impls
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [IpNetwork]: https://docs.rs/ipnetwork/0.12.2/ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: ../../../types/trait.ToSql.html
+    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples
     ///

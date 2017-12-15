@@ -1,6 +1,6 @@
 //! Types in this module are mostly internal and automatically generated. You
 //! shouldn't need to interact with these types during normal usage, other than
-//! the methods on [`Table`](/diesel/query_source/trait.Table.html)
+//! the methods on [`Table`](trait.Table.html)
 #[doc(hidden)]
 pub mod joins;
 mod peano_numbers;

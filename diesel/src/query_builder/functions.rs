@@ -16,7 +16,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// Passing a type which implements `Identifiable` is the same as passing
 /// `some_table.find(some_struct.id())`.
 ///
-/// [`filter`]: ../diesel/query_builder/update_statement/struct.IncompleteUpdateStatement.html#method.filter
+/// [`filter`]: query_builder/update_statement/struct.IncompleteUpdateStatement.html#method.filter
 ///
 /// # Examples
 ///
@@ -43,7 +43,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 ///
 /// To update multiple columns, give [`set`] a tuple argument:
 ///
-/// [`set`]: ../diesel/query_builder/struct.IncompleteUpdateStatement.html#method.set
+/// [`set`]: query_builder/struct.IncompleteUpdateStatement.html#method.set
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -90,7 +90,7 @@ pub fn update<T: IntoUpdateTarget>(
 /// This scope can be narrowed by calling [`filter`]
 /// on the table before it is passed in.
 ///
-/// [`filter`]: ../diesel/query_builder/struct.DeleteStatement.html#method.filter
+/// [`filter`]: query_builder/struct.DeleteStatement.html#method.filter
 ///
 /// # Examples
 ///
@@ -144,14 +144,14 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// You may add data by calling [`values()`] or [`default_values()`]
 /// as shown in the examples.
 ///
-/// [`values()`]: ../diesel/query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.values
-/// [`default_values()`]: ../diesel/query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.default_values
+/// [`values()`]: query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.values
+/// [`default_values()`]: query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.default_values
 ///
 /// Backends that support the `RETURNING` clause, such as PostgreSQL,
 /// can return the inserted rows by calling [`.get_results`] instead of [`.execute`].
 ///
-/// [`.get_results`]: ../diesel/prelude/trait.RunQueryDsl.html#method.get_results
-/// [`.execute`]: ../diesel/prelude/trait.RunQueryDsl.html#tymethod.execute
+/// [`.get_results`]: query_dsl/trait.RunQueryDsl.html#method.get_results
+/// [`.execute`]: query_dsl/trait.RunQueryDsl.html#tymethod.execute
 ///
 /// # Examples
 ///
