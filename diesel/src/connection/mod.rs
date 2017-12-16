@@ -1,6 +1,8 @@
 mod statement_cache;
 mod transaction_manager;
 
+use std::fmt::Debug;
+
 use backend::Backend;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use query_source::{Queryable, QueryableByName};
@@ -122,6 +124,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     fn test_transaction<T, E, F>(&self, f: F) -> T
     where
         F: FnOnce() -> Result<T, E>,
+        E: Debug,
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|| {
