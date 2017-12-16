@@ -1,16 +1,98 @@
 //! # Diesel
 //!
 //! Diesel is an ORM and query builder designed to reduce the boilerplate for database interactions.
+//! If this is your first time reading this documentation,
+//! we recommend you start with the [getting started guide].
+//! We also have [many other long form guides].
 //!
-//! * [Homepage](https://diesel.rs/)
-//! * [Getting Started Guide](https://diesel.rs/guides/getting-started/)
-//! * [Source Code](https://github.com/diesel-rs/diesel/)
+//! [getting started guide]: https://diesel.rs/guides/getting-started/
+//! [many other long form guides]: https://diesel.rs/guides
 //!
-//! ## Crates
+//! # Where to find things
 //!
-//! * **Diesel**: core libary, documented here
-//! * [**Diesel CLI**](https://github.com/diesel-rs/diesel/tree/master/diesel_cli): command line tool that aids in managing your database schema
+//! ## Declaring your schema
 //!
+//! So Diesel is able to validate your queries at compile time,
+//! it requires you to specify your schema in your code,
+//! which you can do with [the `table!` macro][`table!`].
+//! `diesel print-schema` or `infer_schema!` can be used
+//! to automatically generate these macro calls
+//! (by connecting to your database and querying its schema).
+//!
+//! [`table!`]: macro.table.html
+//!
+//! ## Getting started
+//!
+//! Queries usually start from either a table, or a function like [`update`].
+//! Those functions can be found [here](#functions).
+//!
+//! Diesel provides a [`prelude` module](prelude),
+//! which exports most of the typically used traits and types.
+//! We are conservative about what goes in this module,
+//! and avoid anything which has a generic name.
+//! Files which use Diesel are expected to have `use diesel::prelude::*;`.
+//!
+//! [`update`]: fn.update.html
+//!
+//! ## Constructing a query
+//!
+//! The tools the query builder gives you can be put into these three categories:
+//!
+//! - "Query builder methods" are things that map to portions of a whole query
+//!   (such as `ORDER` and `WHERE`). These methods usually have the same name
+//!   as the SQL they map to, except for `WHERE` which is called `filter` in Diesel
+//!   (To not conflict with the Rust keyword).
+//!   These methods live in [the `query_dsl` module](query_dsl).
+//! - "Expression methods" are things you would call on columns
+//!   or other individual values.
+//!   These methods live in [the `expression_methods` module](expression_methods)
+//!   You can often find these by thinking "what would this be called"
+//!   if it were a method
+//!   and typing that into the search bar
+//!   (e.g. `LIKE` is called `like` in Diesel).
+//!   Most operators are named based on the Rust function which maps to that
+//!   operator in [`std::ops`]
+//!   (For example `==` is called `.eq`, and `!=` is called `.ne`).
+//! - "Bare functions" are normal SQL functions
+//!   such as `sum`.
+//!   They live in [the `dsl` module](dsl).
+//!   Diesel only supports a very small number of these functions.
+//!   You can declare additional functions you want to use
+//!   with [the `sql_function!` macro][`sql_function!`].
+//!
+//! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
+//! [`sql_function!`]: macro.sql_function.html
+//!
+//! ## Serializing and Deserializing
+//!
+//! Types which represent the result of a SQL query implement
+//! a trait called [`Queryable`].
+//!
+//! Diesel maps "Rust types" (e.g. `i32`) to and from "SQL types"
+//! (e.g. [`diesel::types::Integer`]).
+//! You can find all the types supported by Diesel in [the `types` module](types).
+//! These types are only used to represent a SQL type.
+//! You should never put them on your `Queryable` structs.
+//!
+//! To find all the Rust types which can be used with a given SQL type,
+//! see the documentation for that SQL type.
+//!
+//! To find all the SQL types which can be used with a Rust type,
+//! go to the docs for either [`ToSql`] or [`FromSql`],
+//! go to the "Implementors" section,
+//! and find the Rust type you want to use.
+//!
+//! [`Queryable`]: query_source/trait.Queryable.html
+//! [`diesel::types::Integer`]: types/struct.Integer.html
+//! [`ToSql`]: types/trait.ToSql.html
+//! [`FromSql`]: types/trait.FromSql.html
+//!
+//! ## Getting help
+//!
+//! If you run into problems, Diesel has a very active Gitter room.
+//! You can come ask for help at
+//! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
