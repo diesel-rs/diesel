@@ -8,6 +8,67 @@
 #![cfg_attr(feature = "clippy",
             warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+//! Provides functions for maintaining database schema.
+//!
+//! A database migration always provides procedures to update the schema, as well as to revert
+//! itself. Diesel's migrations are versioned, and run in order. Diesel also takes care of tracking
+//! which migrations have already been run automatically. Your migrations don't need to be
+//! idempotent, as Diesel will ensure no migration is run twice unless it has been reverted.
+//!
+//! Migrations should be placed in a `/migrations` directory at the root of your project (the same
+//! directory as `Cargo.toml`). When any of these functions are run, Diesel will search for the
+//! migrations directory in the current directory and its parents, stopping when it finds the
+//! directory containing `Cargo.toml`.
+//!
+//! Individual migrations should be a folder containing exactly two files, `up.sql` and `down.sql`.
+//! `up.sql` will be used to run the migration, while `down.sql` will be used for reverting it. The
+//! folder itself should have the structure `{version}_{migration_name}`. It is recommended that
+//! you use the timestamp of creation for the version.
+//!
+//! Migrations can either be run with the CLI or embedded into the compiled application
+//! and executed with code, for example right after establishing a database connection.
+//! For more information, consult the [`embed_migrations!`](macro.embed_migrations.html) macro.
+//!
+//! ## Example
+//!
+//! ```text
+//! # Directory Structure
+//! - 20151219180527_create_users
+//!     - up.sql
+//!     - down.sql
+//! - 20160107082941_create_posts
+//!     - up.sql
+//!     - down.sql
+//! ```
+//!
+//! ```sql
+//! -- 20151219180527_create_users/up.sql
+//! CREATE TABLE users (
+//!   id SERIAL PRIMARY KEY,
+//!   name VARCHAR NOT NULL,
+//!   hair_color VARCHAR
+//! );
+//! ```
+//!
+//! ```sql
+//! -- 20151219180527_create_users/down.sql
+//! DROP TABLE users;
+//! ```
+//!
+//! ```sql
+//! -- 20160107082941_create_posts/up.sql
+//! CREATE TABLE posts (
+//!   id SERIAL PRIMARY KEY,
+//!   user_id INTEGER NOT NULL,
+//!   title VARCHAR NOT NULL,
+//!   body TEXT
+//! );
+//! ```
+//!
+//! ```sql
+//! -- 20160107082941_create_posts/down.sql
+//! DROP TABLE posts;
+//! ```
 
 extern crate migrations_internals;
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
@@ -17,7 +78,52 @@ extern crate migrations_macros;
 #[doc(hidden)]
 pub use migrations_macros::*;
 #[doc(inline)]
-pub use migrations_internals::*;
+pub use migrations_internals::Migration;
+#[doc(inline)]
+pub use migrations_internals::MigrationName;
+#[doc(inline)]
+pub use migrations_internals::MigrationConnection;
+#[doc(inline)]
+pub use migrations_internals::MigrationError;
+#[doc(inline)]
+pub use migrations_internals::RunMigrationsError;
+#[doc(inline)]
+pub use migrations_internals::run_migration_with_version;
+#[doc(inline)]
+pub use migrations_internals::run_migrations;
+#[doc(inline)]
+pub use migrations_internals::run_pending_migrations;
+#[doc(inline)]
+pub use migrations_internals::run_pending_migrations_in_directory;
+#[doc(inline)]
+pub use migrations_internals::revert_latest_migration;
+#[doc(inline)]
+pub use migrations_internals::revert_latest_migration_in_directory;
+#[doc(inline)]
+pub use migrations_internals::revert_migration_with_version;
+#[doc(inline)]
+pub use migrations_internals::mark_migrations_in_directory;
+#[doc(inline)]
+pub use migrations_internals::any_pending_migrations;
+#[doc(inline)]
+pub use migrations_internals::setup_database;
+#[doc(inline)]
+pub use migrations_internals::migration_paths_in_directory;
+#[doc(inline)]
+pub use migrations_internals::migration_from;
+#[doc(inline)]
+pub use migrations_internals::find_migrations_directory;
+#[doc(inline)]
+pub use migrations_internals::search_for_migrations_directory;
+#[doc(inline)]
+pub use migrations_internals::version_from_path;
+#[doc(inline)]
+pub use migrations_internals::name;
+
+pub mod connection {
+    #[doc(inline)]
+    pub use migrations_internals::connection::MigrationConnection;
+}
 
 #[macro_export]
 /// This macro will read your migrations at compile time, and embed a module you can use to execute
