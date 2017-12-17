@@ -72,23 +72,48 @@ fold_function!(
     avg,
     Avg,
     "AVG",
-    "Represents a SQL `AVG` function. This function can only take types which are
+    r#"Represents a SQL `AVG` function. This function can only take types which are
 Foldable.
 
 # Examples
 
 ```rust
 # #[macro_use] extern crate diesel;
-# include!(\"../../doctest_setup.rs\");
+# include!("../../doctest_setup.rs");
 # use diesel::dsl::*;
+# #[cfg(feature = "bigdecimal")]
+# extern crate bigdecimal;
 #
 # fn main() {
-#     use schema::animals::dsl::*;
-#     let connection = establish_connection();
-// assert_eq!(Ok(Some(6f64)), animals.select(avg(legs)).first(&connection));
-// TODO: There doesn't currently seem to be a way to use avg with integers, since
-// they return a `Numeric` which doesn't have a corresponding Rust type.
+#     run_test().unwrap();
+# }
+#
+# table! {
+#     numbers (number) {
+#         number -> Integer,
+#     }
+# }
+#
+# #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite"))))]
+# fn run_test() -> QueryResult<()> {
+#     use bigdecimal::BigDecimal;
+#     use numbers::dsl::*;
+#     let conn = establish_connection();
+#     conn.execute("DROP TABLE IF EXISTS numbers")?;
+#     conn.execute("CREATE TABLE numbers (number INTEGER)")?;
+diesel::insert_into(numbers)
+    .values(&vec![number.eq(1), number.eq(2)])
+    .execute(&conn)?;
+let average = numbers.select(avg(number)).get_result(&conn)?;
+let expected = "1.5".parse::<BigDecimal>().unwrap();
+assert_eq!(Some(expected), average);
+#     Ok(())
+# }
+#
+# #[cfg(not(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite")))))]
+# fn run_test() -> QueryResult<()> {
+#     Ok(())
 # }
 ```
-"
+"#
 );
