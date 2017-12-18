@@ -25,3 +25,7 @@ lint = ["clippy"]
 postgres = ["infer_schema_macros/postgres"]
 sqlite = ["infer_schema_macros/sqlite"]
 mysql = ["infer_schema_macros/mysql"]
+
+[package.metadata.docs.rs]
+features = ["postgres", "mysql", "sqlite"]
+no-default-features = true
