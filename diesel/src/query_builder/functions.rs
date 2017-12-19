@@ -2,7 +2,7 @@ use dsl::Select;
 use expression::Expression;
 use query_dsl::methods::SelectDsl;
 use super::delete_statement::DeleteStatement;
-use super::insert_statement::{Insert, Replace};
+use super::insert_statement::{Insert, InsertOrIgnore, Replace};
 use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarget,
             SelectStatement, SqlQuery};
 
@@ -273,6 +273,58 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ```
 pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
     IncompleteInsertStatement::new(target, Insert)
+}
+
+/// Creates an `INSERT [OR] IGNORE` statement.
+///
+/// If a constraint violation fails, the database will ignore the offending
+/// row and continue processing any subsequent rows. This function is only
+/// available with MySQL and SQLite.
+///
+/// With PostgreSQL, similar functionality is provided by [`on_conflict_do_nothing`].
+///
+/// [`on_conflict_do_nothing`]: query_builder/insert_statement/struct.InsertStatement.html#method.on_conflict_do_nothing
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     use diesel::{delete, insert_or_ignore_into};
+/// #
+/// #     let connection = establish_connection();
+/// #     diesel::delete(users).execute(&connection)?;
+/// insert_or_ignore_into(users)
+///     .values((id.eq(1), name.eq("Jim")))
+///     .execute(&connection)?;
+///
+/// insert_or_ignore_into(users)
+///     .values(&vec![
+///         (id.eq(1), name.eq("Sean")),
+///         (id.eq(2), name.eq("Tess")),
+///     ])
+///     .execute(&connection)?;
+///
+/// let names = users.select(name).order(id).load::<String>(&connection)?;
+/// assert_eq!(vec![String::from("Jim"), String::from("Tess")], names);
+/// #     Ok(())
+/// # }
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn run_test() -> QueryResult<()> {
+/// #     Ok(())
+/// # }
+/// ```
+pub fn insert_or_ignore_into<T>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
+    IncompleteInsertStatement::new(target, InsertOrIgnore)
 }
 
 /// Creates a bare select statement, with no from clause. Primarily used for
