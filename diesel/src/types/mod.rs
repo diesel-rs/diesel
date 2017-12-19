@@ -1,17 +1,18 @@
-//! Types which represent a native SQL data type, and the conversions between
-//! them and Rust primitives. The structs in this module are *only* used as
-//! markers to represent a SQL type, and shouldn't be used in your structs. See
-//! the documentation for each type to see the Rust types that can be used with
-//! a corresponding SQL type. Additional types can be added by other crates.
+//! Types which represent a SQL data type.
 //!
-//! To see which Rust types can be used with a given SQL type, see the
-//! "Implementors" section of the [`ToSql`][ToSql] and [`FromSql`][FromSql]
-//! traits, or see the documentation for that SQL type.
+//! The structs in this module are *only* used as markers to represent a SQL type.
+//! They should never be used in your structs.
+//! If you'd like to know the rust types which can be used for a given SQL type,
+//! see the documentation for that SQL type.
+//! Additional types may be provided by other crates.
 //!
-//! [ToSql]: /diesel/types/trait.ToSql.html
-//! [FromSql]: /diesel/types/trait.FromSql.html
+//! To see which SQL type can be used with a given Rust type,
+//! see the "Implementors" section of [`FromSql`].
+//!
+//! [`FromSql`]: trait.FromSql.html
 //!
 //! Any backend specific types are re-exported through this module
+
 pub mod ops;
 mod ord;
 #[macro_use]
@@ -43,14 +44,16 @@ use row::Row;
 use std::error::Error;
 use std::io::{self, Write};
 
-/// The boolean SQL type. On backends without a native boolean type this is
-/// emulated with the smallest supported integer.
+/// The boolean SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// On backends without a native boolean type,
+/// this is emulated with the smallest supported integer.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`bool`][bool]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`bool`][bool]
 ///
@@ -58,14 +61,17 @@ use std::io::{self, Write};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Bool;
 
-/// The tinyint SQL type. This is only available on MySQL. Keep in mind that
-/// schema inference will infer `TINYINT(1)` to be `Bool`, not `Tinyint`
+/// The tiny integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// This is only available on MySQL.
+/// Keep in mind that `infer_schema!` will see `TINYINT(1)` as `Bool`,
+/// not `Tinyint`.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i8`][i8]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i8`][i8]
 ///
@@ -75,11 +81,11 @@ pub struct Tinyint;
 
 /// The small integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i16`][i16]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i16`][i16]
 ///
@@ -93,11 +99,11 @@ pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i32`][i32]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i32`][i32]
 ///
@@ -109,11 +115,11 @@ pub type Int4 = Integer;
 
 /// The big integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i64`][i64]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i64`][i64]
 ///
@@ -127,11 +133,11 @@ pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`f32`][f32]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`f32`][f32]
 ///
@@ -143,11 +149,11 @@ pub type Float4 = Float;
 
 /// The double precision float SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`f64`][f64]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`f64`][f64]
 ///
@@ -157,14 +163,16 @@ pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
 
-/// The numeric SQL type. This type is only supported on PostgreSQL and MySQL.
+/// The arbitrary presicion numeric SQL type.
+///
+/// This type is only supported on PostgreSQL and MySQL.
 /// On SQLite, [`Double`](struct.Double.html) should be used instead.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
@@ -172,9 +180,7 @@ pub type Float8 = Double;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Numeric;
 
-/// The `DECIMAL` SQL type
-///
-/// This type is always an alias for `NUMERIC` on all backends.
+/// Alias for `Numeric`
 pub type Decimal = Numeric;
 
 #[cfg(not(feature = "postgres"))]
@@ -191,12 +197,12 @@ impl SingleValue for Numeric {}
 /// Schema inference will treat all variants of `TEXT` as this type (e.g.
 /// `VARCHAR`, `MEDIUMTEXT`, etc).
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`String`][String]
 /// - [`&str`][str]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`String`][String]
 ///
@@ -231,12 +237,12 @@ pub type Longtext = Text;
 /// Schema inference will treat all variants of `BLOB` as this type (e.g.
 /// `VARBINARY`, `MEDIUMBLOB`, etc).
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`Vec<u8>`][Vec]
 /// - [`&[u8]`][slice]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`Vec<u8>`][Vec]
 ///
@@ -260,11 +266,11 @@ pub type Bit = Binary;
 
 /// The date SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
@@ -276,18 +282,16 @@ pub struct Date;
 ///
 /// This type is currently only implemented for PostgreSQL.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
-/// - [`PgInterval`][PgInterval] which can be constructed using the [interval
-///   DSLs][interval dsls]
+/// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
-/// - [`PgInterval`][PgInterval] which can be constructed using the [interval
-///   DSLs][interval dsls]
+/// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// [PgInterval]: /diesel/pg/data_types/struct.PgInterval.html
-/// [interval dsls]: /diesel/pg/expression/extensions/index.html
+/// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
+/// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Interval;
 
@@ -296,11 +300,11 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 
 /// The time SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
@@ -310,13 +314,13 @@ pub struct Time;
 
 /// The timestamp SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
@@ -328,15 +332,17 @@ pub struct Time;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Timestamp;
 
-/// The nullable SQL type. This wraps another SQL type to indicate that it can
-/// be null. By default all values are assumed to be `NOT NULL`.
+/// The nullable SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// This wraps another SQL type to indicate that it can be null.
+/// By default all values are assumed to be `NOT NULL`.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - Any `T` which implements `ToSql<ST>`
 /// - `Option<T>` for any `T` which implements `ToSql<ST>`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)]
