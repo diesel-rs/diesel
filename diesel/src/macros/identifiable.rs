@@ -1,31 +1,3 @@
-/// Implements the [`Identifiable`][identifiable] trait for a reference to a
-/// given struct. This macro should be called by copy/pasting the definition of
-/// the struct into it.
-///
-/// The struct must have a field called `id`, and the type of that field must be
-/// `Copy`. This macro does not work with tuple structs.
-///
-/// [identifiable]: /diesel/associations/trait.Identifiable.html
-///
-/// # Example
-///
-/// ```no_run
-/// # #[macro_use] extern crate diesel;
-/// # table! { users { id -> Integer, } }
-/// struct User {
-///     id: i32,
-///     name: String,
-/// }
-///
-/// impl_Identifiable! {
-///     #[table_name(users)]
-///     struct User {
-///         id: i32,
-///         name: String,
-///     }
-/// }
-/// # fn main() {}
-/// ```
 #[macro_export]
 #[doc(hidden)]
 macro_rules! impl_Identifiable {

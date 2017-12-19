@@ -4,7 +4,7 @@ use query_source::QuerySource;
 use result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](/diesel/query_builder/struct.IncompleteUpdateStatement.html#method.set).
+/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set).
 ///
 /// ### Deriving
 ///

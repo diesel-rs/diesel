@@ -86,15 +86,18 @@ impl QueryId for ::types::Numeric {
 }
 
 /// Represents the MySQL datetime type.
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
 ///
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// ### [`ToSql`] impls
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 ///
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
+/// ### [`FromSql`] impls
 ///
-/// [NaiveDateTime]: https://lifthrasiir.github.io/rust-chrono/chrono/naive/datetime/struct.NaiveDateTime.html
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+///
+/// [`ToSql`]: ../../types/trait.ToSql.html
+/// [`FromSql`]: ../../types/trait.FromSql.html
+/// [`chrono::NaiveDateTime`]: ../../../chrono/naive/struct.NaiveDateTime.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Datetime;
 
