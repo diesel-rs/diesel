@@ -8,13 +8,9 @@ use result::QueryResult;
 use types::HasSqlType;
 
 #[derive(Debug, Clone)]
-/// Available for when you truly cannot represent something using the expression
-/// DSL. You will need to provide the type of the expression, in addition to the
-/// SQL. The compiler will be unable to verify the correctness of this type.
+/// Returned by the [`sql()`] function.
 ///
-/// To get a SQL literal, use the [`sql()`] function.
-///
-/// [`sql()`]: fn.sql.html
+/// [`sql()`]: ../dsl/fn.sql.html
 pub struct SqlLiteral<ST> {
     sql: String,
     _marker: PhantomData<ST>,
@@ -72,36 +68,26 @@ impl<ST> NonAggregate for SqlLiteral<ST> {}
 /// # Safety
 ///
 /// The compiler will be unable to verify the correctness of the annotated type.
-/// If you give the wrong type, it'll either crash at runtime when deserializing
-/// the query result or produce invalid values.
+/// If you give the wrong type, it'll either return an error when deserializing
+/// the query result or produce unexpected values.
 ///
 /// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// use diesel::dsl::sql;
-/// use diesel::types::{Bool, Integer, Text};
 /// # include!("../doctest_setup.rs");
-/// # use schema::users;
-/// #[derive(PartialEq, Debug, Queryable)]
-/// struct User {
-///     id: i32,
-///     name: String,
-/// }
-///
 /// # fn main() {
-/// # let connection = establish_connection();
+/// #     run_test().unwrap();
+/// # }
 /// #
-/// let setup = sql::<Bool>("INSERT INTO users(name) VALUES('Ruby')");
-/// setup.execute(&connection).expect("Can't insert in users");
-///
-/// let query = sql::<(Integer, Text)>("SELECT id, name FROM users WHERE name='Ruby';");
-/// let users = query.load::<User>(&connection).expect("Can't query users");
-/// assert_eq!(users, vec![User{id: 3, name: "Ruby".to_owned()}]);
-///
-/// let query = users::table.filter(sql::<Bool>("name='Ruby'")); // Same query as above
-/// let users = query.load::<User>(&connection).expect("Can't query users");
-/// assert_eq!(users, vec![User{id: 3, name: "Ruby".to_owned()}]);
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// use diesel::dsl::sql;
+/// #     let connection = establish_connection();
+/// let user = users.filter(sql("name = 'Sean'")).first(&connection)?;
+/// let expected = (1, String::from("Sean"));
+/// assert_eq!(expected, user);
+/// #     Ok(())
 /// # }
 /// ```
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
