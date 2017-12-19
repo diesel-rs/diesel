@@ -1,25 +1,24 @@
 //! Traits related to relationships between multiple tables.
 //!
-//! Associations in Diesel are bidirectional, but primarily focus on the child-to-parent
-//! relationship. You can declare an association between two records with
-//! `#[belongs_to]`.
+//! Associations in Diesel are always child-to-parent.
+//! You can declare an association between two records with `#[belongs_to]`.
+//! Unlike other ORMs, Diesel has no concept of `#[has_many`]
 //!
 //! ```rust
-//! // You need to have the table definitions from `infer_schema!` or `table!` in scope to
-//! // derive Identifiable.
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!
-//! #[derive(Identifiable, Queryable)]
+//! #[derive(Identifiable, Queryable, PartialEq, Debug)]
+//! #[table_name = "users"]
 //! pub struct User {
 //!     id: i32,
 //!     name: String,
 //! }
 //!
-//! # #[derive(Debug, PartialEq)]
-//! #[derive(Identifiable, Queryable, Associations)]
+//! #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
 //! #[belongs_to(User)]
+//! #[table_name = "posts"]
 //! pub struct Post {
 //!     id: i32,
 //!     user_id: i32,
@@ -27,90 +26,47 @@
 //! }
 //!
 //! # fn main() {
-//! # let connection = establish_connection();
-//! # use users::dsl::*;
-//! let user = users.find(2).get_result::<User>(&connection).unwrap();
-//! let posts = Post::belonging_to(&user)
-//!     .load::<Post>(&connection);
-//!
-//! assert_eq!(posts,
-//!     Ok(vec![Post { id: 3, user_id: 2, title: "My first post too".to_owned() }])
-//! );
+//! #     run_test().unwrap();
+//! # }
+//! #
+//! # fn run_test() -> QueryResult<()> {
+//! #     let connection = establish_connection();
+//! #     use users::dsl::*;
+//! let user = users.find(2).get_result::<User>(&connection)?;
+//! let users_post = Post::belonging_to(&user)
+//!     .first(&connection)?;
+//! let expected = Post { id: 3, user_id: 2, title: "My first post too".into() };
+//! assert_eq!(expected, users_post);
+//! #     Ok(())
 //! # }
 //! ```
 //!
 //! Note that in addition to the `#[belongs_to]` annotation, we also need to
 //! `#[derive(Associations)]`
 //!
-//! `#[belongs_to]` is given the name of the struct that represents the parent. Both types
-//! must implement the [`Identifiable`][identifiable] trait. The struct or table referenced in your
-//! association has to be in scope, so you'll need `use schema::posts` or similar to bring the
-//! table into scope, and `use some_module::User` if `User` were in a different module.
+//! `#[belongs_to]` is given the name of the struct that represents the parent.
+//! Both the parent and child must implement [`Identifiable`].
+//! The struct given to `#[belongs_to]` must be in scope,
+//! so you will need `use some_module::User` if `User` is defined in another module.
 //!
-//! [Identifiable]: trait.Identifiable.html
+//! [`Identifiable`]: trait.Identifiable.html
 //!
-//! If the name of your foreign key doesn't follow the convention `tablename_id`, you can specify a
-//! custom one to `#[belongs_to]` by adding a `foreign_key` argument to the
-//! attribute like so `#[belongs_to(Foo, foreign_key="mykey")]`.
+//! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.
+//! If your foreign key has a different name,
+//! you can provide the `foreign_key` argument to `#[belongs_to]`.
+//! For example, `#[belongs_to(Foo, foreign_key = "mykey")]`.
 //!
-//! Once the associations are defined, you can join between the two tables using the
-//! [`inner_join`][inner-join] or [`left_outer_join`][left-outer-join].
+//! Associated data is typically loaded in multiple queries (one query per table).
+//! This is usually more efficient than using a join,
+//! especially if 3 or more tables are involved.
+//! For most datasets,
+//! using a join to load in a single query transmits so much duplicate data
+//! that it costs more time than the extra round trip would have.
 //!
-//! [inner-join]: ../prelude/trait.JoinDsl.html#method.inner_join
-//! [left-outer-join]: ../prelude/trait.JoinDsl.html#method.left_outer_join
+//! You can load the children for one or more parents using
+//! [`belonging_to`]
 //!
-//! ```rust
-//! # #[macro_use] extern crate diesel;
-//! # include!("../doctest_setup.rs");
-//! # use schema::users;
-//! # use schema::posts;
-//! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
-//! # pub struct User {
-//! #     id: i32,
-//! #     name: String,
-//! # }
-//! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
-//! # pub struct Post {
-//! #     id: i32,
-//! #     user_id: i32,
-//! #     title: String,
-//! # }
-//! #
-//! # fn main() {
-//! #   use users::dsl::*;
-//! #   use posts::dsl::*;
-//! #   let connection = establish_connection();
-//! #
-//! let data: Vec<(User, Post)> = users.inner_join(posts)
-//!     .load(&connection)
-//!     .expect("Couldn't load query");
-//! let expected = vec![
-//!     (
-//!         User { id: 1, name: "Sean".to_string() },
-//!         Post { id: 1, user_id: 1, title: "My first post".to_string() }
-//!     ),
-//!     (
-//!         User { id: 1, name: "Sean".to_string() },
-//!         Post { id: 2, user_id: 1, title: "About Rust".to_string() }
-//!     ),
-//!     (
-//!         User { id: 2, name: "Tess".to_string() },
-//!         Post { id: 3, user_id: 2, title: "My first post too".to_string() }
-//!     ),
-//! ];
-//!
-//! assert_eq!(data, expected);
-//! # }
-//! ```
-//! Typically however, queries are loaded in multiple queries. For most datasets, the reduced
-//! amount of duplicated information sent over the wire saves more time than the extra round trip
-//! costs us. You can load the children for a single parent using the
-//! [`belonging_to`][belonging-to]
-//!
-//! [belonging-to]: ../prelude/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
@@ -169,16 +125,16 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::users;
-//! # use schema::posts;
+//! # use schema::{posts, users};
 //! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
+//! # #[derive(Identifiable, Queryable)]
 //! # pub struct User {
 //! #     id: i32,
 //! #     name: String,
 //! # }
 //! #
-//! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+//! # #[derive(Debug, PartialEq)]
+//! # #[derive(Identifiable, Queryable, Associations)]
 //! # #[belongs_to(User)]
 //! # pub struct Post {
 //! #     id: i32,
@@ -187,49 +143,106 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   use users::dsl::*;
-//! #   let connection = establish_connection();
+//! #     run_test();
+//! # }
 //! #
-//! let users_vec = users
-//!     .load::<User>(&connection)
-//!     .expect("Error loading user");
-//! let posts_vec = Post::belonging_to(&users_vec)
-//!     .load::<Post>(&connection)
-//!     .expect("Error loading posts");
-//! let grouped_posts = posts_vec.grouped_by(&users_vec);
-//! let result: Vec<(User, Vec<Post>)> = users_vec.into_iter().zip(grouped_posts).collect();
-//! let expected = vec![
-//!     (
-//!         User { id: 1, name: "Sean".to_string() },
-//!         vec![
-//!             Post { id: 1, user_id: 1, title: "My first post".to_string() },
-//!             Post { id: 2, user_id: 1, title: "About Rust".to_string() },
-//!         ]
-//!     ),
-//!     (
-//!         User { id: 2, name: "Tess".to_string() },
-//!         vec![
-//!             Post { id: 3, user_id: 2, title: "My first post too".to_string() }
-//!         ]
-//!     )
-//! ];
+//! # fn run_test() -> QueryResult<()> {
+//! #     let connection = establish_connection();
+//! #     use users::dsl::*;
+//! #     use posts::dsl::{posts, title};
+//! let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
+//! let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
 //!
-//! assert_eq!(result, expected);
+//! let seans_posts = Post::belonging_to(&sean)
+//!     .select(title)
+//!     .load::<String>(&connection)?;
+//! assert_eq!(vec!["My first post", "About Rust"], seans_posts);
+//!
+//! // A vec or slice can be passed as well
+//! let more_posts = Post::belonging_to(&vec![sean, tess])
+//!     .select(title)
+//!     .load::<String>(&connection)?;
+//! assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
+//! #     Ok(())
 //! # }
 //! ```
-//! [`grouped_by`][grouped-by] is called on a `Vec<Child>` with their `&Vec<Parent>` and returns a
-//! `Vec<Vec<Child>>` where the index of the children matches the index of the parent they belong
-//! to. Or to put it another way, it returns them in an order ready to be `zip`ed with the parents. You
-//! can do this multiple times. For example, if you wanted to load the comments for all the posts
-//! as well, you could do this: (explicit type annotations have been added for documentation
-//! purposes)
+//!
+//! Typically you will want to group up the children with their parents.
+//! In other ORMs, this is often called a `has_many` relationship.
+//! Diesel provides support for doing this grouping, once the data has been
+//! loaded.
+//!
+//! [`grouped_by`] is called on a `Vec<Child>` with a `&[Parent]`.
+//! The return value will be `Vec<Vec<Child>>` indexed to match their parent.
+//! Or to put it another way, the returned data can be passed to `zip`,
+//! and it will be combined with its parent.
 //!
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::users;
-//! # use schema::posts;
-//! # use schema::comments;
+//! # use schema::{posts, users};
+//! #
+//! # #[derive(Identifiable, Queryable, PartialEq, Debug)]
+//! # pub struct User {
+//! #     id: i32,
+//! #     name: String,
+//! # }
+//! #
+//! # #[derive(Debug, PartialEq)]
+//! # #[derive(Identifiable, Queryable, Associations)]
+//! # #[belongs_to(User)]
+//! # pub struct Post {
+//! #     id: i32,
+//! #     user_id: i32,
+//! #     title: String,
+//! # }
+//! #
+//! # fn main() {
+//! #     run_test();
+//! # }
+//! #
+//! # fn run_test() -> QueryResult<()> {
+//! #     let connection = establish_connection();
+//! let users = users::table.load::<User>(&connection)?;
+//! let posts = Post::belonging_to(&users)
+//!     .load::<Post>(&connection)?
+//!     .grouped_by(&users);
+//! let data = users.into_iter().zip(posts).collect::<Vec<_>>();
+//!
+//! let expected_data = vec![
+//!     (
+//!         User { id: 1, name: "Sean".into() },
+//!         vec![
+//!             Post { id: 1, user_id: 1, title: "My first post".into() },
+//!             Post { id: 2, user_id: 1, title: "About Rust".into() },
+//!         ],
+//!     ),
+//!     (
+//!         User { id: 2, name: "Tess".into() },
+//!         vec![
+//!             Post { id: 3, user_id: 2, title: "My first post too".into() },
+//!         ],
+//!     ),
+//! ];
+//!
+//! assert_eq!(expected_data, data);
+//! #     Ok(())
+//! # }
+//! ```
+//!
+//! `grouped_by` can be called multiple times
+//! if you have multiple children or grandchildren.
+//!
+//! For example, this code will load some users,
+//! all of their posts,
+//! and all of the comments on those posts.
+//! Explicit type annotations have been added
+//! to make each line a bit more clear.
+//!
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # include!("../doctest_setup.rs");
+//! # use schema::{users, posts, comments};
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
 //! # pub struct User {
@@ -254,23 +267,22 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   use users::dsl::*;
 //! #   let connection = establish_connection();
 //! #
-//! let users_vec: Vec<User> = users.load::<User>(&connection)
+//! let users: Vec<User> = users::table.load::<User>(&connection)
 //!     .expect("error loading users");
-//! let posts_vec: Vec<Post> = Post::belonging_to(&users_vec)
+//! let posts: Vec<Post> = Post::belonging_to(&users)
 //!     .load::<Post>(&connection)
 //!     .expect("error loading posts");
-//! let comments_vec: Vec<Comment> = Comment::belonging_to(&posts_vec)
+//! let comments: Vec<Comment> = Comment::belonging_to(&posts)
 //!     .load::<Comment>(&connection)
 //!     .expect("Error loading comments");
-//! let grouped_comments: Vec<Vec<Comment>> = comments_vec.grouped_by(&posts_vec);
-//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts_vec
+//! let grouped_comments: Vec<Vec<Comment>> = comments.grouped_by(&posts);
+//! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts
 //!     .into_iter()
 //!     .zip(grouped_comments)
-//!     .grouped_by(&users_vec);
-//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users_vec
+//!     .grouped_by(&users);
+//! let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> = users
 //!     .into_iter()
 //!     .zip(posts_and_comments)
 //!     .collect();
@@ -304,13 +316,12 @@
 //!
 //! assert_eq!(result, expected);
 //! # }
-//!
-//!
 //! ```
 //!
-//! And that's it. This module will be expanded in the future with more complex joins, and the
-//! ability to define "through" associations (e.g. load all the comments left on any posts written
-//! by a user in a single query). However, the goal is to provide simple building blocks which can
+//! And that's it.
+//! It may seem odd to have load, group, and zip be explicit separate steps
+//! if you are coming from another ORM.
+//! However, the goal is to provide simple building blocks which can
 //! be used to construct the complex behavior applications need.
 mod belongs_to;
 
@@ -320,9 +331,15 @@ use query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 
+/// This trait indicates that a struct is associated with a single database table.
+///
+/// This trait is implemented by structs which implement `Identifiable`,
+/// as well as database tables themselves.
 pub trait HasTable {
+    /// The table this type is associated with.
     type Table: Table;
 
+    /// Returns the table this type is associated with.
     fn table() -> Self::Table;
 }
 
@@ -334,23 +351,50 @@ impl<'a, T: HasTable> HasTable for &'a T {
     }
 }
 
-/// Represents a struct which can be identified on a single table in the
-/// database. This must be implemented to use associations, and some features of
-/// updating. This trait is usually implemented on a reference to a struct, not
-/// the struct itself.
+/// This trait indicates that a struct represents a signle row in a database table.
+///
+/// This must be implemented to use associations.
+/// Additionally, implementing this trait allows you to pass your struct to `update`
+/// (`update(&your_struct)` is equivalent to
+/// `update(YourStruct::table().find(&your_struct.primary_key())`).
+///
+/// This trait is usually implemented on a reference to a struct,
+/// not the struct itself.
 ///
 /// ### Deriving
 ///
 /// This trait can be automatically derived by adding `#[derive(Identifiable)]`
-/// to your struct. The primary key will be assumed to be a field and
-/// column called `id`. If it's not, you can annotate your structure with `#[primary_key(your_id)]`
-/// or `#[primary_key(your_id, second_id)]`. By default the table will be assumed to be the plural
-/// form of the struct name (using *very* dumb pluralization -- it just adds an `s` at the end). If
-/// your table name differs from that convention, or requires complex pluralization, it can be
-/// specified using `#[table_name = "some_table_name"]`. The inferred table name is considered
-/// public API and will never change without a major version bump.
+/// to your struct.
+/// By default, the "id" field is assumed to be a single field called `id`.
+/// If it's not, you can put `#[primary_key(your_id)]` on your struct.
+/// If you have a composite primary key, the syntax is `#[primary_key(id1, id2)]`.
+///
+/// By default, `#[derive(Identifiable)]` will assume that your table
+/// name is the plural form of your struct name.
+/// Diesel uses very simple pluralization rules.
+/// It only adds an `s` to the end, and converts `CamelCase` to `snake_case`.
+/// If your table name does not follow this convention
+/// or the plural form isn't just an `s`,
+/// you can specify the table name with `#[table_name = "some_table_name"]`.
+/// Our rules for inferring table names is considered public API.
+/// It will never change without a major version bump.
 pub trait Identifiable: HasTable {
+    /// The type of this struct's identifier.
+    ///
+    /// For single-field primary keys, this is typically `&'a i32`, or `&'a String`
+    /// For composite primary keys, this is typically `(&'a i32, &'a i32)`
+    /// or `(&'a String, &'a String)`, etc.
     type Id: Hash + Eq;
 
+    /// Returns the identifier for this record.
+    ///
+    /// This takes `self` by value, not reference.
+    /// This is because composite primary keys
+    /// are typically stored as multiple fields.
+    /// We could not return `&(String, String)` if each string is a separate field.
+    ///
+    /// Because of Rust's rules about specifying lifetimes,
+    /// this means that `Identifiable` is usually implemented on references
+    /// so that we have a lifetime to use for `Id`.
     fn id(self) -> Self::Id;
 }

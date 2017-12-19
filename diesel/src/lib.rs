@@ -50,6 +50,7 @@ extern crate cfg_if;
 #[cfg(test)]
 pub mod test_helpers;
 
+#[deny(missing_docs)]
 pub mod associations;
 #[deny(missing_docs)]
 pub mod backend;

@@ -8,23 +8,38 @@ use super::{HasTable, Identifiable};
 use std::borrow::Borrow;
 use std::hash::Hash;
 
+/// Indicates that a type belongs to `Parent`
+///
+/// Specifically, this means that this struct has fields
+/// which correspond to the primary key of `Parent`.
+/// This implies that a foreign key relationship exists on the tables.
+///
+/// This trait is not capable of supporting composite foreign keys
 pub trait BelongsTo<Parent> {
+    /// The foreign key of this struct
     type ForeignKey: Hash + ::std::cmp::Eq;
+    /// The database column representing the foreign key
+    /// of the table this struct represents
     type ForeignKeyColumn: Column;
 
+    /// Returns the foreign key for `self`
     fn foreign_key(&self) -> Option<&Self::ForeignKey>;
+    /// Returns the foreign key column of this struct's table
     fn foreign_key_column() -> Self::ForeignKeyColumn;
 }
 
 /// The `grouped_by` function groups records by their parent.
 ///
-/// `grouped_by` is called on a `Vec<Child>` with a `&Vec<Parent>` and returns a `Vec<Vec<Child>>`
-/// where the index of the children matches the index of the parent they belong to. This function
-/// does not generate a `GROUP BY` SQL statement, as it operates on data structures already loaded
-/// from the database backend.
+/// `grouped_by` is called on a `Vec<Child>` with a `&[Parent]`.
+/// The return value will be `Vec<Vec<Child>>` indexed to match their parent.
+/// Or to put it another way, the returned data can be passed to `zip`,
+/// and it will be combined with its parent.
+/// This function does not generate a `GROUP BY` SQL statement,
+/// as it operates on data structures already loaded from the database
 ///
-/// **Child** refers to the *many* part of a *one to many* relationship and has *one parent*.
-/// **Parent** refers to the *one* part of a *one to many* relationship and can *have many children*.
+/// **Child** refers to the "many" part of a "one to many" relationship. It "belongs to" its parent
+/// **Parent** refers to the "one" part of a "one to many" relationship and can "have many" children.
+/// The child always has a foreign key, which refers to its parent's primary key.
 /// In the following relationship, User has many Posts,
 /// so User is the parent and Posts are children.
 ///
@@ -33,16 +48,16 @@ pub trait BelongsTo<Parent> {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::users;
-/// # use schema::posts;
+/// # use schema::{posts, users};
 /// #
-/// # #[derive(Debug, Identifiable, Queryable)]
+/// # #[derive(Identifiable, Queryable, PartialEq, Debug)]
 /// # pub struct User {
 /// #     id: i32,
 /// #     name: String,
 /// # }
 /// #
-/// # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
+/// # #[derive(Debug, PartialEq)]
+/// # #[derive(Identifiable, Queryable, Associations)]
 /// # #[belongs_to(User)]
 /// # pub struct Post {
 /// #     id: i32,
@@ -51,33 +66,43 @@ pub trait BelongsTo<Parent> {
 /// # }
 /// #
 /// # fn main() {
-/// #   use users::dsl::*;
-/// #   use posts::dsl::*;
-/// #   let connection = establish_connection();
+/// #     run_test();
+/// # }
 /// #
-/// let user_list = users.load::<User>(&connection).expect("Couldn't load users");
-/// let post_list = posts.load::<Post>(&connection).expect("Couldn't load posts");
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let users = users::table.load::<User>(&connection)?;
+/// let posts = Post::belonging_to(&users)
+///     .load::<Post>(&connection)?
+///     .grouped_by(&users);
+/// let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 ///
-/// // Group Posts by Users
-/// let posts_grouped_by_user: Vec<Vec<Post>> = post_list.grouped_by(&user_list);
-/// let expected = vec![
-///     vec![
-///         Post { id: 1, user_id: 1, title: "My first post".to_string() },
-///         Post { id: 2, user_id: 1, title: "About Rust".to_string() }
-///     ],
-///     vec![
-///         Post { id: 3, user_id: 2, title: "My first post too".to_string() }
-///     ]
+/// let expected_data = vec![
+///     (
+///         User { id: 1, name: "Sean".into() },
+///         vec![
+///             Post { id: 1, user_id: 1, title: "My first post".into() },
+///             Post { id: 2, user_id: 1, title: "About Rust".into() },
+///         ],
+///     ),
+///     (
+///         User { id: 2, name: "Tess".into() },
+///         vec![
+///             Post { id: 3, user_id: 2, title: "My first post too".into() },
+///         ],
+///     ),
 /// ];
 ///
-/// assert_eq!(posts_grouped_by_user, expected);
+/// assert_eq!(expected_data, data);
+/// #     Ok(())
 /// # }
 /// ```
 ///
-/// View the [associations] doc for more `grouped_by()` code examples
+/// See [the module documentation] for more examples
 ///
-/// [associations]: ../associations/index.html
+/// [the module documentation]: index.html
 pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
+    /// See the trait documentation.
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;
 }
 

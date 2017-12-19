@@ -60,32 +60,15 @@ impl Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable)]
 #[belongs_to(User)]
 #[belongs_to(Post)]
 #[table_name = "followings"]
+#[primary_key(user_id, post_id)]
 pub struct Following {
     pub user_id: i32,
     pub post_id: i32,
     pub email_notifications: bool,
-}
-
-impl ::diesel::associations::HasTable for Following {
-    type Table = followings::table;
-
-    fn table() -> Self::Table {
-        followings::table
-    }
-}
-
-// Test to ensure a proper implementation of `Identifiable` can be written for composite types.
-// This will eventually be replaced with a derive.
-impl<'a> ::diesel::associations::Identifiable for &'a Following {
-    type Id = (&'a i32, &'a i32);
-
-    fn id(self) -> Self::Id {
-        (&self.user_id, &self.post_id)
-    }
 }
 
 #[cfg_attr(feature = "postgres", path = "postgres_specific_schema.rs")]
