@@ -989,6 +989,17 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
+///
+/// In the example above, in line `joinable!(posts -> users (user_id));` specifies the relation of
+/// the tables and the ON clause in the following way:
+///
+/// `table_with_foreighn_key -> table_that_foreign_key_points_to (foreign_key)`
+/// and the Sql generated is:
+/// # I am not sure to the exact sql that would be generated, Please correct me.
+/// ```sql
+/// posts JOIN users ON posts.user_id = users.id
+/// ```
+///
 /// ```
 #[macro_export]
 macro_rules! joinable {
