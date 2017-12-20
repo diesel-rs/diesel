@@ -95,7 +95,7 @@
 
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
@@ -132,42 +132,29 @@ extern crate cfg_if;
 #[cfg(test)]
 pub mod test_helpers;
 
-#[deny(missing_docs)]
 pub mod associations;
-#[deny(missing_docs)]
 pub mod backend;
 #[doc(hidden)]
 pub mod connection;
 #[macro_use]
-#[deny(missing_docs)]
 pub mod expression;
-#[deny(missing_docs)]
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
-#[deny(missing_docs)]
 pub mod query_builder;
-#[deny(missing_docs)]
 #[macro_use]
 pub mod types;
 
 #[cfg(feature = "mysql")]
-#[deny(missing_docs)]
 pub mod mysql;
 #[cfg(feature = "postgres")]
-#[deny(missing_docs)]
 pub mod pg;
 #[cfg(feature = "sqlite")]
-#[deny(missing_docs)]
 pub mod sqlite;
 
-#[deny(missing_docs)]
 pub mod query_dsl;
-#[deny(missing_docs)]
 pub mod query_source;
-#[deny(missing_docs)]
 pub mod result;
-#[deny(missing_docs)]
 pub mod row;
 mod util;
 
