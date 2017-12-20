@@ -14,6 +14,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `table!`s which use the `Datetime` type with MySQL will now compile correctly,
   even without the `chrono` feature enabled.
 
+* `#[derive(QueryableByName)]` will now compile correctly when there is a shadowed `Result` type in scope.
+
 ### Changed
 
 * `Connection::test_transaction` now requires that the error returned implement

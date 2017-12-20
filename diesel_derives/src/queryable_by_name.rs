@@ -38,7 +38,7 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
                 __DB: diesel::backend::Backend,
                 #(#attr_where_clause)*
             {
-               fn build<__R: diesel::row::NamedRow<__DB>>(row: &__R) -> Result<Self, Box<::std::error::Error + Send + Sync>> {
+               fn build<__R: diesel::row::NamedRow<__DB>>(row: &__R) -> ::std::result::Result<Self, Box<::std::error::Error + Send + Sync>> {
                    Ok(#build_expr)
                }
             }
