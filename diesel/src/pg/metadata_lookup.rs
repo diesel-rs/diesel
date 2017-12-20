@@ -1,5 +1,3 @@
-use std::mem;
-
 use prelude::*;
 use super::{PgConnection, PgTypeMetadata};
 
@@ -11,7 +9,7 @@ pub struct PgMetadataLookup {
 
 impl PgMetadataLookup {
     pub(crate) fn new(conn: &PgConnection) -> &Self {
-        unsafe { mem::transmute(conn) }
+        unsafe { &*(conn as *const PgConnection as *const PgMetadataLookup) }
     }
 
     /// Determine the type metadata for the given `type_name`
