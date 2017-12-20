@@ -5,7 +5,6 @@ use backend::Backend;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
-use query_builder::insert_statement::UndecoratedInsertRecord;
 use query_source::*;
 use result::QueryResult;
 use row::*;

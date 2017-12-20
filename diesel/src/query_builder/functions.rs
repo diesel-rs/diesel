@@ -144,8 +144,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// You may add data by calling [`values()`] or [`default_values()`]
 /// as shown in the examples.
 ///
-/// [`values()`]: query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.values
-/// [`default_values()`]: query_builder/insert_statement/struct.IncompleteInsertStatement.html#method.default_values
+/// [`values()`]: query_builder/struct.IncompleteInsertStatement.html#method.values
+/// [`default_values()`]: query_builder/struct.IncompleteInsertStatement.html#method.default_values
 ///
 /// Backends that support the `RETURNING` clause, such as PostgreSQL,
 /// can return the inserted rows by calling [`.get_results`] instead of [`.execute`].

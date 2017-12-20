@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 use diesel::expression::bound::Bound;
 use diesel::insertable::ColumnInsertValue;
 use diesel::prelude::*;
-use diesel::query_builder::insert_statement::InsertStatement;
+use diesel::query_builder::InsertStatement;
 use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::types::{FromSql, VarChar};
 

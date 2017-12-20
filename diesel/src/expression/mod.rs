@@ -6,8 +6,10 @@
 //! The most common expression to work with is a
 //! [`Column`](../query_source/trait.Column.html). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`](expression_methods/index.html). You can also call
+//! [`expression_methods`]. You can also call
 //! numeric operators on expressions of the appropriate type.
+//!
+//! [`expression_methods`]: ../expression_methods
 //!
 //! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
@@ -103,9 +105,9 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
 ///
 ///   [`IntoSql`]: trait.IntoSql.html
-///   [`now`]: ../dsl/fn.now.html
+///   [`now`]: ../dsl/struct.now.html
 ///   [`Timestamp`]: ../types/struct.Timestamp.html
-///   [`Timestamptz`]: ../types/struct.Timestamptz.html
+///   [`Timestamptz`]: ../../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: ../types/trait.ToSql.html
 pub trait AsExpression<T> {
     /// The expression being returned

@@ -1,8 +1,7 @@
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression};
 use result::QueryResult;
-use query_builder::{AstPass, QueryBuilder, QueryFragment};
-use query_builder::insert_statement::UndecoratedInsertRecord;
+use query_builder::{AstPass, QueryBuilder, QueryFragment, UndecoratedInsertRecord};
 use query_source::{Column, Table};
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;

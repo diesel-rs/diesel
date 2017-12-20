@@ -1,5 +1,3 @@
-//! Types related to the construction of an `INSERT` statement.
-
 use std::any::*;
 
 use backend::Backend;
@@ -23,7 +21,7 @@ use super::returning_clause::*;
 /// The provided methods [`values`] and [`default_values`] will insert
 /// data into the targeted table.
 ///
-/// [`insert_into`]: ../../fn.insert_into.html
+/// [`insert_into`]: ../fn.insert_into.html
 /// [`values`]: #method.values
 /// [`default_values`]: #method.default_values
 #[derive(Debug, Clone, Copy)]
@@ -89,7 +87,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
     ///
-    /// [`insert_into`]: ../../fn.insert_into.html
+    /// [`insert_into`]: ../fn.insert_into.html
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
         U: Insertable<T>,
