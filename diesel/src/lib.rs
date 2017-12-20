@@ -51,7 +51,7 @@
 //!   and typing that into the search bar
 //!   (e.g. `LIKE` is called `like` in Diesel).
 //!   Most operators are named based on the Rust function which maps to that
-//!   operator in [`std::ops`]
+//!   operator in [`std::ops`][]
 //!   (For example `==` is called `.eq`, and `!=` is called `.ne`).
 //! - "Bare functions" are normal SQL functions
 //!   such as `sum`.
