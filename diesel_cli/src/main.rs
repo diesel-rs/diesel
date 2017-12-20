@@ -222,7 +222,7 @@ fn generate_bash_completion_command(_: &ArgMatches) {
 fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir(path)?;
-    fs::File::create(path.join(".gitkeep"))?;
+    fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
