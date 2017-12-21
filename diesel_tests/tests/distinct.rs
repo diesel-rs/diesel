@@ -29,7 +29,10 @@ fn distinct_on() {
         )
         .unwrap();
 
-    let source = users.select((name, hair_color)).order(name).distinct_on(name);
+    let source = users
+        .select((name, hair_color))
+        .order(name)
+        .distinct_on(name);
     let expected_data = vec![
         ("Sean".to_string(), Some("black".to_string())),
         ("Tess".to_string(), None),
