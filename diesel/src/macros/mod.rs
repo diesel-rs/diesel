@@ -990,16 +990,20 @@ macro_rules! __diesel_table_query_source_impl {
 /// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
 ///
-/// In the example above, in line `joinable!(posts -> users (user_id));` specifies the relation of
-/// the tables and the ON clause in the following way:
-///
-/// `table_with_foreighn_key -> table_that_foreign_key_points_to (foreign_key)`
-/// and the Sql generated is:
-/// # I am not sure to the exact sql that would be generated, Please correct me.
-/// ```sql
-/// posts JOIN users ON posts.user_id = users.id
 /// ```
 ///
+/// In the example above, in line `joinable!(posts -> users (user_id));` specifies the relation of
+/// the tables and the ON clause in the following way:
+/// `parent_table -> child_table (foreign_key)`
+/// Where `parent_table` is the Table with the Primary key,
+/// `child_table` is the Table with the Foreighn key,
+/// So for the Table decaration in [Associations docs](http://docs.diesel.rs/diesel/associations/index.html),
+/// The parent table would be `User`, the child table would be `Post` and the Foreighn key would be `Post.user_id`
+///
+/// For joins that do not explicitly use on clauses via [JoinOnDsl](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
+/// the following on clause is generated implicitly:
+/// ```sql
+/// post JOIN users ON posts.user_id = users.id
 /// ```
 #[macro_export]
 macro_rules! joinable {
