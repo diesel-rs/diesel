@@ -2,8 +2,9 @@
 
 extern crate bcrypt;
 extern crate chrono;
+extern crate structopt;
 #[macro_use]
-extern crate clap;
+extern crate structopt_derive;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
@@ -26,30 +27,31 @@ mod schema;
 #[cfg(test)]
 mod test_helpers;
 
-use clap::ArgMatches;
 use diesel::prelude::*;
 use std::error::Error;
 
+use self::cli::Cli;
 use self::schema::*;
 use self::post::*;
 use self::pagination::*;
 
 fn main() {
-    let matches = cli::build_cli().get_matches();
+    use structopt::StructOpt;
+    let matches = Cli::from_args();
+
     let database_url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    handle_error(run_cli(&database_url, &matches));
+    handle_error(run_cli(&database_url, matches));
 }
 
-fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
+fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
     let conn = PgConnection::establish(database_url)?;
 
-    match matches.subcommand() {
-        ("all_posts", Some(args)) => {
+    match cli {
+        Cli::AllPosts { page, per_page } => {
             use comment::*;
             use auth::User;
 
-            let (page, per_page) = pagination_args(args)?;
             let mut query = posts::table
                 .order(posts::published_at.desc())
                 .filter(posts::published_at.is_not_null())
@@ -58,7 +60,8 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
                 .paginate(page);
 
             if let Some(per_page) = per_page {
-                query = query.per_page(per_page);
+                use std::cmp::min;
+                query = query.per_page(min(per_page, 25));
             }
 
             let (posts_with_user, total_pages) = query.load_and_count_pages::<(Post, User)>(&conn)?;
@@ -77,9 +80,7 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
 
             println!("Page {} of {}", page, total_pages);
         }
-
-        ("create_post", Some(args)) => {
-            let title = args.value_of("TITLE").unwrap();
+        Cli::CreatePost { title } => {
             let user = current_user(&conn)?;
             let body = editor::edit_string("")?;
             let id = diesel::insert_into(posts::table)
@@ -92,13 +93,11 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
                 .get_result::<i32>(&conn)?;
             println!("Successfully created post with id {}", id);
         }
-
-        ("edit_post", Some(args)) => {
+        Cli::EditPost { post_id, publish } => {
             use schema::posts::dsl::*;
             use post::Status::*;
             use diesel::dsl::now;
 
-            let post_id = value_t!(args, "POST_ID", i32)?;
             let user = current_user(&conn)?;
             let post = Post::belonging_to(&user)
                 .find(post_id)
@@ -106,7 +105,7 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
             let new_body = editor::edit_string(&post.body)?;
 
             let updated_status = match post.status {
-                Draft if args.is_present("PUBLISH") => Some(published_at.eq(now.nullable())),
+                Draft if publish => Some(published_at.eq(now.nullable())),
                 _ => None,
             };
 
@@ -114,40 +113,36 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
                 .set((body.eq(new_body), updated_status))
                 .execute(&conn)?;
         }
-
-        ("add_comment", Some(args)) => {
+        Cli::AddComment { post_id: given_post_id } => {
             use schema::comments::dsl::*;
 
             let inserted = diesel::insert_into(comments)
                 .values((
                     user_id.eq(current_user(&conn)?.id),
-                    post_id.eq(value_t!(args, "POST_ID", i32)?),
+                    post_id.eq(given_post_id),
                     body.eq(editor::edit_string("")?),
                 ))
                 .returning(id)
                 .get_result::<i32>(&conn)?;
             println!("Created comment with ID {}", inserted);
         }
-
-        ("edit_comment", Some(args)) => {
+        Cli::EditComment { comment_id } => {
             use schema::comments::dsl::*;
             use comment::Comment;
 
             let user = current_user(&conn)?;
 
             let comment = Comment::belonging_to(&user)
-                .find(value_t!(args, "COMMENT_ID", i32)?)
+                .find(comment_id)
                 .first::<Comment>(&conn)?;
 
             diesel::update(comments)
                 .set(body.eq(editor::edit_string(&comment.body)?))
                 .execute(&conn)?;
         }
-
-        ("my_comments", Some(args)) => {
+        Cli::MyComments { page, per_page } => {
             use comment::Comment;
 
-            let (page, per_page) = pagination_args(args)?;
             let user = current_user(&conn)?;
 
             let mut query = Comment::belonging_to(&user)
@@ -157,7 +152,8 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
                 .paginate(page);
 
             if let Some(per_page) = per_page {
-                query = query.per_page(per_page);
+                use std::cmp::min;
+                query = query.per_page(min(per_page, 25));
             }
 
             let (comments_and_post_title, total_pages) =
@@ -165,25 +161,11 @@ fn run_cli(database_url: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
             comment::render(&comments_and_post_title);
             println!("Page {} of {}", page, total_pages);
         }
-
-        ("register", Some(_)) => register_user(&conn)?,
-
-        _ => unreachable!(),
+        Cli::Register => {
+            register_user(&conn)?;
+        }
     }
     Ok(())
-}
-
-fn pagination_args(args: &ArgMatches) -> Result<(i64, Option<i64>), Box<Error>> {
-    use std::cmp::min;
-
-    let page = args.value_of("PAGE").unwrap_or("1").parse()?;
-
-    if let Some(per_page) = args.value_of("PER_PAGE") {
-        let per_page = min(per_page.parse()?, 25);
-        Ok((page, Some(per_page)))
-    } else {
-        Ok((page, None))
-    }
 }
 
 fn current_user(conn: &PgConnection) -> Result<auth::User, Box<Error>> {
