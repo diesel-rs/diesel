@@ -12,6 +12,7 @@
                  non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
                  items_after_statements, used_underscore_binding))]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![recursion_limit="128"]
 extern crate migrations_internals;
 extern crate proc_macro;
 #[macro_use]
