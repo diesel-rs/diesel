@@ -88,6 +88,8 @@ pub use migrations_internals::MigrationError;
 #[doc(inline)]
 pub use migrations_internals::RunMigrationsError;
 #[doc(inline)]
+pub use migrations_internals::RunMigrationCallback;
+#[doc(inline)]
 pub use migrations_internals::run_migration_with_version;
 #[doc(inline)]
 pub use migrations_internals::run_migrations;
@@ -166,6 +168,12 @@ pub mod connection {
 ///     // By default the output is thrown out. If you want to redirect it to stdout, you
 ///     // should call embedded_migrations::run_with_output.
 ///     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+///
+///     // You can do something in the callback after each migration runs successfully
+///     let c = |migration: &Migration| {
+///         println!("Run migration {} success", migration.version());
+///     }
+///     embedded_migrations::run_with_callback(&conn, Box::new(c));
 /// }
 /// ```
 macro_rules! embed_migrations {
