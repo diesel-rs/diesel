@@ -6,10 +6,11 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 bcrypt = "0.1.0"
 chrono = "0.4.0"
-clap = "2.29.0"
 diesel = { version = "1.0.0-beta1", features = ["postgres", "chrono"] }
 dotenv = "0.10.0"
 tempfile = "2.2.0"
+structopt = "0.1.6"
+structopt-derive = "0.1.6"
 
 [dev-dependencies]
 assert_matches = "1.1"
