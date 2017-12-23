@@ -2,12 +2,12 @@
 
 extern crate bcrypt;
 extern crate chrono;
-extern crate structopt;
-#[macro_use]
-extern crate structopt_derive;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+extern crate structopt;
+#[macro_use]
+extern crate structopt_derive;
 
 #[cfg(test)]
 #[macro_use]
@@ -113,7 +113,9 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                 .set((body.eq(new_body), updated_status))
                 .execute(&conn)?;
         }
-        Cli::AddComment { post_id: given_post_id } => {
+        Cli::AddComment {
+            post_id: given_post_id,
+        } => {
             use schema::comments::dsl::*;
 
             let inserted = diesel::insert_into(comments)

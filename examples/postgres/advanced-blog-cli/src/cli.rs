@@ -16,6 +16,7 @@ pub enum Cli {
     EditPost {
         /// The id of the post to edit
         post_id: i32,
+        /// Announce this piece of literary perfectionims to the world?
         #[structopt(short = "i", default_value = "false")]
         publish: bool,
     },
