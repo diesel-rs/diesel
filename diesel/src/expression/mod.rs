@@ -312,7 +312,7 @@ where
 {
 }
 
-impl<QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> {
+impl<'a, QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> + 'a {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;

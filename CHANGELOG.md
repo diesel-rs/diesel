@@ -16,6 +16,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `#[derive(QueryableByName)]` will now compile correctly when there is a shadowed `Result` type in scope.
 
+* `BoxableExpression` can now be used with types that are not `'static`
+
 ### Changed
 
 * `Connection::test_transaction` now requires that the error returned implement
