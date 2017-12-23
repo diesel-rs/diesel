@@ -23,6 +23,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `Connection::test_transaction` now requires that the error returned implement
   `Debug`.
 
+* `query_builder::insert_statement::InsertStatement` is now accessed as
+  `query_builder::InsertStatement`
+
+* `query_builder::insert_statement::UndecoratedInsertRecord` is now accessed as
+  `query_builder::UndecoratedInsertRecord`
+
 ## [1.0.0-beta1] - 2017-12-04
 
 ### Added
