@@ -249,7 +249,7 @@ macro_rules! __diesel_column {
 /// `all_columns`. The SQL type is needed for things like [returning boxed
 /// queries][boxed_queries].
 ///
-/// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
+/// [boxed_queries]: query_dsl/trait.QueryDsl.html#method.into_boxed
 ///
 /// `BoxedQuery`
 /// ----------

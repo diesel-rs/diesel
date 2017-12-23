@@ -28,7 +28,7 @@ mod select_clause;
 mod select_statement;
 mod sql_query;
 mod where_clause;
-pub mod insert_statement;
+mod insert_statement;
 mod update_statement;
 
 pub use self::ast_pass::AstPass;
@@ -36,7 +36,8 @@ pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::DeleteStatement;
 #[doc(inline)]
-pub use self::insert_statement::IncompleteInsertStatement;
+pub use self::insert_statement::{IncompleteInsertStatement, InsertStatement,
+                                 UndecoratedInsertRecord};
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
@@ -111,7 +112,7 @@ impl<'a, T: Query> Query for &'a T {
 /// [`LoadQuery`] will generally require that this trait be implemented.
 ///
 /// [`ExecuteDsl`]: ../query_dsl/methods/trait.ExecuteDsl.html
-/// [`LoadQuery`]: ../query_dsl/trait.LoadQuery.html
+/// [`LoadQuery`]: ../query_dsl/methods/trait.LoadQuery.html
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///

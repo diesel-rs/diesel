@@ -1,5 +1,4 @@
-use query_builder::AsChangeset;
-use query_builder::insert_statement::{InsertStatement, UndecoratedInsertRecord};
+use query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use query_source::QuerySource;
 use super::on_conflict_actions::*;
 use super::on_conflict_clause::*;
@@ -194,8 +193,8 @@ impl<T, U, Op, Ret, Target> IncompleteOnConflict<InsertStatement<T, U, Op, Ret>,
     /// [`on_conflict_do_nothing`] instead. See [`on_conflict`] for usage
     /// examples.
     ///
-    /// [`on_conflict_do_nothing`]: ../../query_builder/insert_statement/struct.InsertStatement.html#method.on_conflict_do_nothing
-    /// [`on_conflict`]: ../../query_builder/insert_statement/struct.InsertStatement.html#method.on_conflict
+    /// [`on_conflict_do_nothing`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict_do_nothing
+    /// [`on_conflict`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
         self.stmt

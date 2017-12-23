@@ -9,10 +9,10 @@ use query_source::Table;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait ForUpdateDsl {
-    /// The query returned by `for_update`. See [`dsl::ForUpdate`] for
+    /// The type returned by `for_update`. See [`dsl::ForUpdate`] for
     /// convenient access to this type.
     ///
-    /// [`dsl::ForUpdate`]: ../dsl/type.ForUpdate.html
+    /// [`dsl::ForUpdate`]: ../../dsl/type.ForUpdate.html
     type Output;
 
     /// See the trait level documentation

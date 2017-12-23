@@ -118,7 +118,7 @@ macro_rules! impl_Insertable {
             }
         }
 
-        impl<$($lifetime,)*> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
+        impl<$($lifetime,)*> $crate::query_builder::UndecoratedInsertRecord<$table_name::table>
             for $struct_ty
         {
         }
