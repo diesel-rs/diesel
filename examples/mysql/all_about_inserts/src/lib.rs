@@ -278,7 +278,8 @@ fn insert_get_results_batch() {
                 ])
                 .execute(&conn)?;
 
-            Ok(users.order(id.desc())
+            Ok(users
+                .order(id.desc())
                 .limit(inserted_count as i64)
                 .load(&conn)?
                 .into_iter()
@@ -315,15 +316,18 @@ fn examine_sql_from_insert_get_results_batch() {
     let values = vec![(id.eq(1), name.eq("Sean")), (id.eq(2), name.eq("Tess"))];
     let insert_query = insert_into(users).values(&values);
     let insert_sql = "INSERT INTO `users` (`id`, `name`) VALUES (?, ?), (?, ?) \
-               -- binds: [1, \"Sean\", 2, \"Tess\"]";
-    assert_eq!(insert_sql, debug_query::<Mysql, _>(&insert_query).to_string());
+                      -- binds: [1, \"Sean\", 2, \"Tess\"]";
+    assert_eq!(
+        insert_sql,
+        debug_query::<Mysql, _>(&insert_query).to_string()
+    );
     let load_query = users.order(id.desc());
     let load_sql = "SELECT `users`.`id`, `users`.`name`, \
-                   `users`.`hair_color`, `users`.`created_at`, \
-                   `users`.`updated_at` \
-                   FROM `users` \
-                   ORDER BY `users`.`id` DESC \
-                   -- binds: []";
+                    `users`.`hair_color`, `users`.`created_at`, \
+                    `users`.`updated_at` \
+                    FROM `users` \
+                    ORDER BY `users`.`id` DESC \
+                    -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
 
@@ -363,17 +367,19 @@ fn insert_get_result() {
 fn examine_sql_from_insert_get_result() {
     use schema::users::dsl::*;
 
-    let insert_query = insert_into(users)
-        .values((id.eq(3), name.eq("Ruby")));
+    let insert_query = insert_into(users).values((id.eq(3), name.eq("Ruby")));
     let insert_sql = "INSERT INTO `users` (`id`, `name`) VALUES (?, ?) -- binds: [3, \"Ruby\"]";
-    assert_eq!(insert_sql, debug_query::<Mysql, _>(&insert_query).to_string());
+    assert_eq!(
+        insert_sql,
+        debug_query::<Mysql, _>(&insert_query).to_string()
+    );
     let load_query = users.order(id.desc());
     let load_sql = "SELECT `users`.`id`, `users`.`name`, \
-                   `users`.`hair_color`, `users`.`created_at`, \
-                   `users`.`updated_at` \
-                   FROM `users` \
-                   ORDER BY `users`.`id` DESC \
-                   -- binds: []";
+                    `users`.`hair_color`, `users`.`created_at`, \
+                    `users`.`updated_at` \
+                    FROM `users` \
+                    ORDER BY `users`.`id` DESC \
+                    -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
 
@@ -382,13 +388,9 @@ pub fn explicit_returning(conn: &MysqlConnection) -> QueryResult<i32> {
     use diesel::result::Error;
 
     conn.transaction::<_, Error, _>(|| {
-        insert_into(users)
-            .values(name.eq("Ruby"))
-            .execute(conn)?;
+        insert_into(users).values(name.eq("Ruby")).execute(conn)?;
 
-        users.select(id)
-            .order(id.desc())
-            .first(conn)
+        users.select(id).order(id.desc()).first(conn)
     })
 }
 
@@ -398,7 +400,10 @@ fn examine_sql_from_explicit_returning() {
 
     let insert_query = insert_into(users).values(name.eq("Ruby"));
     let insert_sql = "INSERT INTO `users` (`name`) VALUES (?) -- binds: [\"Ruby\"]";
-    assert_eq!(insert_sql, debug_query::<Mysql, _>(&insert_query).to_string());
+    assert_eq!(
+        insert_sql,
+        debug_query::<Mysql, _>(&insert_query).to_string()
+    );
     let load_query = users.select(id).order(id.desc());
     let load_sql = "SELECT `users`.`id` FROM `users` ORDER BY `users`.`id` DESC -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
