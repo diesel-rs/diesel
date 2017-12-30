@@ -351,7 +351,7 @@ impl<'a, T: HasTable> HasTable for &'a T {
     }
 }
 
-/// This trait indicates that a struct represents a signle row in a database table.
+/// This trait indicates that a struct represents a single row in a database table.
 ///
 /// This must be implemented to use associations.
 /// Additionally, implementing this trait allows you to pass your struct to `update`
