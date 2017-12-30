@@ -37,7 +37,7 @@ pub trait Row<DB: Backend> {
 /// This trait is used by implementations of
 /// [`QueryableByName`](../query_source/trait.QueryableByName.html)
 pub trait NamedRow<DB: Backend> {
-    /// Retreive and deserialize a single value from the query
+    /// Retrieve and deserialize a single value from the query
     ///
     /// Note that `ST` *must* be the exact type of the value with that name in
     /// the query. The compiler will not be able to verify that you have

@@ -63,7 +63,7 @@ pub use self::peano_numbers::*;
 /// # }
 /// ```
 ///
-/// If we want to do additional work during deserializaiton, we can implement
+/// If we want to do additional work during deserialization, we can implement
 /// the trait ourselves.
 ///
 /// ```rust

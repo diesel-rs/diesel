@@ -11,7 +11,7 @@
 //! Unlike the traits in `std::ops`, the right hand side is an associated type
 //! rather than a type parameter. The biggest drawback of this is that any type
 //! can only have one right hand type which can be added/subtracted, etc. The
-//! most immediately noticable effect of this is that you cannot add a nullable
+//! most immediately noticeable effect of this is that you cannot add a nullable
 //! number to one that is not nullable.
 //!
 //! The reason for this is because of the impl of `std::ops::Add` that we need

@@ -163,7 +163,7 @@ pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
 
-/// The arbitrary presicion numeric SQL type.
+/// The arbitrary precision numeric SQL type.
 ///
 /// This type is only supported on PostgreSQL and MySQL.
 /// On SQLite, [`Double`](struct.Double.html) should be used instead.
