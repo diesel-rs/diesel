@@ -11,7 +11,7 @@ pub trait LimitDsl {
     /// The type returned by `.limit`
     type Output;
 
-    /// See the trait documenation
+    /// See the trait documentation
     fn limit(self, limit: i64) -> Self::Output;
 }
 
