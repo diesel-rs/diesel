@@ -110,7 +110,7 @@ pub struct Context<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
 
-use types::{FromSql, ToSql};
+use types::FromSql;
 
 impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
@@ -159,6 +159,18 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut ::std::os::raw::c_void) {
     let _: Box<T> = Box::from_raw(::std::mem::transmute(p));
 }
 
+pub trait IntoSqliteResult {
+    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context);
+}
+
+impl IntoSqliteResult for i32 {
+    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
+        unsafe {
+            ffi::sqlite3_result_int(ctx, self);
+        }
+    }
+}
+
 impl SqliteConnection {
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
         &self,
@@ -187,7 +199,7 @@ impl SqliteConnection {
     }
 
     /// Expose a function to SQL
-    pub fn create_scalar_function<F, T, A>(
+    pub fn create_scalar_function<F, T>(
         &mut self,
         fn_name: &str,
         n_arg: libc::c_int,
@@ -195,19 +207,17 @@ impl SqliteConnection {
         x_func: F
     ) -> QueryResult<()>
     where
-        F: FnMut(&Context) -> QueryResult<T>,
-        Sqlite: HasSqlType<A>,
-        T: ToSql<A, Sqlite>
+        F: FnMut(&Context) -> T,
+        T: IntoSqliteResult
     {
-        unsafe extern "C" fn call_boxed_closure<F, T, A>(
+        unsafe extern "C" fn call_boxed_closure<F, T>(
             ctx: *mut ffi::sqlite3_context,
             argc: libc::c_int,
             argv: *mut *mut ffi::sqlite3_value
         )
         where
-            F: FnMut(&Context) -> QueryResult<T>,
-            Sqlite: HasSqlType<A>,
-            T: ToSql<A, Sqlite>
+            F: FnMut(&Context) -> T,
+            T: IntoSqliteResult
         {
             use std::{slice, mem};
 
@@ -219,17 +229,9 @@ impl SqliteConnection {
             let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
             assert!(!boxed_f.is_null(), "Internal error - null function pointer");
 
-            let _t = (*boxed_f)(&ctx);
-            /*
-            let t = t.as_ref().map(|t| ToSql::to_sql(t));
+            let t = (*boxed_f)(&ctx);
 
-            match t {
-                Ok(Ok(ref value)) => set_result(ctx.ctx, value),
-                Ok(Err(err)) => report_error(ctx.ctx, &err),
-                Err(err) => report_error(ctx.ctx, err),
-            }
-            */
-            unimplemented!()
+            t.into_sqlite_result(ctx.ctx);
         }
 
         let boxed_f: *mut F = Box::into_raw(Box::new(x_func));
@@ -245,7 +247,7 @@ impl SqliteConnection {
                 n_arg,
                 flags,
                 ::std::mem::transmute(boxed_f),
-                Some(call_boxed_closure::<F, T, A>),
+                Some(call_boxed_closure::<F, T>),
                 None,
                 None,
                 Some(free_boxed_value::<F>)
@@ -324,11 +326,26 @@ mod tests {
 
     #[test]
     fn create_scalar_function() {
-        fn f(ctx: &Context) -> QueryResult<i32> { panic!(); }
+        fn f(_: &Context) -> i32 { panic!(); }
 
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
-        let result = connection.create_scalar_function::<_, _, Integer>("f", 0, true, f);
+        let result = connection.create_scalar_function("f", 0, true, f);
         assert_eq!(Ok(()), result);
+    }
+
+    #[test]
+    fn create_scalar_function_call() {
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> i32 {
+            42
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        let query = sql("SELECT f()");
+        assert_eq!(Ok(42), query.get_result(&connection));
     }
 }
