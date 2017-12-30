@@ -114,6 +114,7 @@ pub struct Context<'a> {
 
 use types::FromSql;
 
+// Context is translated from rusqlite
 impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
@@ -200,6 +201,8 @@ impl SqliteConnection {
         F: FnMut(&Context) -> T,
         T: IntoSqliteResult
     {
+        // create_scalar_function is translated from rusqlite
+
         unsafe extern "C" fn call_boxed_closure<F, T>(
             ctx: *mut ffi::sqlite3_context,
             argc: libc::c_int,
@@ -325,7 +328,7 @@ mod tests {
     }
 
     #[test]
-    fn create_scalar_function_call() {
+    fn create_scalar_function_return_i32() {
         use expression::sql_literal::sql;
 
         fn f(_: &Context) -> i32 {
@@ -337,5 +340,37 @@ mod tests {
 
         let query = sql("SELECT f()");
         assert_eq!(Ok(42), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_string() {
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> String {
+            "Meaning of life".into()
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Text>("SELECT f()");
+        assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_str() {
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> &'static str {
+            "Meaning of life"
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Text>("SELECT f()");
+        assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
     }
 }
