@@ -103,6 +103,62 @@ impl Connection for SqliteConnection {
     }
 }
 
+/// Context is a wrapper for the SQLite function evaluation context.
+#[derive(Debug)]
+pub struct Context<'a> {
+    ctx: *mut ffi::sqlite3_context,
+    args: &'a [*mut ffi::sqlite3_value],
+}
+
+use types::{FromSql, ToSql};
+
+impl<'a> Context<'a> {
+    /// Returns the number of arguments to the function.
+    pub fn len(&self) -> usize {
+        self.args.len()
+    }
+
+    /// Returns `true` when there is no argument.
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
+    }
+
+    /// Returns the `idx`th argument as a `T`.
+    ///
+    /// # Failure
+    ///
+    /// Will panic if `idx` is greater than or equal to `self.len()`.
+    ///
+    /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
+    pub fn get<A, T>(&self, idx: usize) -> QueryResult<T>
+    where
+        Sqlite: HasSqlType<A>,
+        T: FromSql<A, Sqlite>
+    {
+        let _arg = self.args[idx];
+/*
+        let value = unsafe { ValueRef::from_value(arg) };
+        FromSql::column_result(value).map_err(|err| match err {
+                                                  FromSqlError::InvalidType => {
+                Error::InvalidFunctionParameterType(idx, value.data_type())
+            }
+                                                  FromSqlError::OutOfRange(i) => {
+                                                      Error::IntegralValueOutOfRange(idx as c_int,
+                                                                                     i)
+                                                  }
+                                                  FromSqlError::Other(err) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), err)
+            }
+        })
+*/
+        unimplemented!()
+    }
+}
+
+unsafe extern "C" fn free_boxed_value<T>(p: *mut ::std::os::raw::c_void) {
+    let _: Box<T> = Box::from_raw(::std::mem::transmute(p));
+}
+
 impl SqliteConnection {
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
         &self,
@@ -128,6 +184,81 @@ impl SqliteConnection {
         self.statement_cache.cached_statement(source, &[], |sql| {
             Statement::prepare(&self.raw_connection, sql)
         })
+    }
+
+    /// Expose a function to SQL
+    pub fn create_scalar_function<F, T, A>(
+        &mut self,
+        fn_name: &str,
+        n_arg: libc::c_int,
+        deterministic: bool,
+        x_func: F
+    ) -> QueryResult<()>
+    where
+        F: FnMut(&Context) -> QueryResult<T>,
+        Sqlite: HasSqlType<A>,
+        T: ToSql<A, Sqlite>
+    {
+        unsafe extern "C" fn call_boxed_closure<F, T, A>(
+            ctx: *mut ffi::sqlite3_context,
+            argc: libc::c_int,
+            argv: *mut *mut ffi::sqlite3_value
+        )
+        where
+            F: FnMut(&Context) -> QueryResult<T>,
+            Sqlite: HasSqlType<A>,
+            T: ToSql<A, Sqlite>
+        {
+            use std::{slice, mem};
+
+            let ctx = Context {
+                ctx: ctx,
+                args: slice::from_raw_parts(argv, argc as usize),
+            };
+
+            let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
+            assert!(!boxed_f.is_null(), "Internal error - null function pointer");
+
+            let _t = (*boxed_f)(&ctx);
+            /*
+            let t = t.as_ref().map(|t| ToSql::to_sql(t));
+
+            match t {
+                Ok(Ok(ref value)) => set_result(ctx.ctx, value),
+                Ok(Err(err)) => report_error(ctx.ctx, &err),
+                Err(err) => report_error(ctx.ctx, err),
+            }
+            */
+            unimplemented!()
+        }
+
+        let boxed_f: *mut F = Box::into_raw(Box::new(x_func));
+        let c_name = ::std::ffi::CString::new(fn_name)?;
+        let mut flags = ffi::SQLITE_UTF8;
+        if deterministic {
+            flags |= ffi::SQLITE_DETERMINISTIC;
+        }
+        let result = unsafe {
+            ffi::sqlite3_create_function_v2(
+                self.raw_connection.internal_connection,
+                c_name.as_ptr(),
+                n_arg,
+                flags,
+                ::std::mem::transmute(boxed_f),
+                Some(call_boxed_closure::<F, T, A>),
+                None,
+                None,
+                Some(free_boxed_value::<F>)
+            )
+        };
+
+        match result {
+            ffi::SQLITE_OK => Ok(()),
+            err_code => {
+                let _message = error_message(err_code);
+                unimplemented!("Return appropriate Err(..)");
+            }
+        }
     }
 }
 
@@ -189,5 +320,15 @@ mod tests {
 
         assert_eq!(Ok(true), query.get_result(&connection));
         assert_eq!(1, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn create_scalar_function() {
+        fn f(ctx: &Context) -> QueryResult<i32> { panic!(); }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+
+        let result = connection.create_scalar_function::<_, _, Integer>("f", 0, true, f);
+        assert_eq!(Ok(()), result);
     }
 }
