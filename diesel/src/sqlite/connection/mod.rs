@@ -2,9 +2,10 @@ extern crate libsqlite3_sys as ffi;
 
 #[doc(hidden)]
 pub mod raw;
-mod stmt;
-mod statement_iterator;
+mod into_sqlite_result;
 mod sqlite_value;
+mod statement_iterator;
+mod stmt;
 
 pub use self::sqlite_value::SqliteValue;
 
@@ -16,6 +17,7 @@ use deserialize::{Queryable, QueryableByName};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use result::*;
+use self::into_sqlite_result::IntoSqliteResult;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
@@ -157,18 +159,6 @@ impl<'a> Context<'a> {
 
 unsafe extern "C" fn free_boxed_value<T>(p: *mut ::std::os::raw::c_void) {
     let _: Box<T> = Box::from_raw(::std::mem::transmute(p));
-}
-
-pub trait IntoSqliteResult {
-    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context);
-}
-
-impl IntoSqliteResult for i32 {
-    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
-        unsafe {
-            ffi::sqlite3_result_int(ctx, self);
-        }
-    }
 }
 
 impl SqliteConnection {
