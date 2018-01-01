@@ -3,7 +3,7 @@ Deriving Traits in Depth
 
 Part of what makes Diesel's query builder so powerful is
 its ability to assist writing safe SQL queries in Rust.
-Diesel enables this level of safety through implementing 
+It enables this level of safety through implementing 
 a series of traits on your structs.
 Writing these implementations by hand can be very laborious,
 so Diesel offers custom derives.
@@ -15,15 +15,16 @@ To be able to use these derives,
 make sure you have `#[macro_use] extern crate diesel;` at the root of your project.
 
 Throughout this guide,
-we will be looking at examples for each trait and how they interact with each other.
+we will be looking at examples for each trait individually and how they interact with each other.
 Some of the example code will be implementing basic [CRUD] database operations.
 We'll be covering creating, reading, and updating data.
 The details of those operations will be not be covered beyond their relevance to the demonstrated trait.
 
 In general, it may be more helpful to think of Diesel as a SQL query builder.
-While Diesel does offer some standard ORM (Object Relation Mapper) features,
+While Diesel does offer some standard [ORM] (Object Relation Mapper) features,
 Diesel's code generation derives are for safely building SQL queries.
 
+[ORM]: https://en.wikipedia.org/wiki/Object-relational_mapping
 [CRUD]: https://en.wikipedia.org/wiki/Create,_read,_update_and_delete
 
 - [Queryable](#queryable)
@@ -35,7 +36,7 @@ Diesel's code generation derives are for safely building SQL queries.
 
 ## Queryable
 A `Queryable` struct is one that represents the 
-data structure returned from a database query.
+data returned from a database query.
 In many cases this may map exactly to the column structure of a single table,
 however there may be cases where you need to make a query that spans several tables and/or only uses
 a subset of columns. 
@@ -55,7 +56,7 @@ maps exactly to your data structure.
 
 The following example shows making two different queries into the `users` table.
 We get back a [`QueryResult`],
-which is basically a wrapper around the rust `Result` type.
+which is basically a wrapper around Rust's `Result` type.
 That means we'll be able to use `expect()` to handle our error conditions.
 
 [`QueryResult`]: https://docs.diesel.rs/diesel/result/type.QueryResult.html
@@ -89,21 +90,21 @@ pub struct EmailUser {
 use diesel::prelude::*;
 
 fn main() {
-    // The following will return all Users as a QueryResult<Vec<User>>
+    // The following will return all users as a `QueryResult<Vec<User>>`
     let users_result: QueryResult<Vec<User>> = users.load(&db_connection);
 
-    // Here we are getting the value (or error) out of the QueryResult
-    // A successful value will be of type Vec<User>
+    // Here we are getting the value (or error) out of the `QueryResult`
+    // A successful value will be of type `Vec<User>`
     let users = users_result.expect("Error loading users");
 
-    // Here, a successful value will be type Vec<EmailUser> 
+    // Here, a successful value will be type `Vec<EmailUser>`
     let email_users = users.select((users::id, users::email))
         .load::<EmailUser>(&db_connection)
         .expect("Error loading the email only query");
 }
 ```
 
-If we were to comment out all the three `String` fields on our `User` struct, we would see the following error.
+If we were to comment out all three `String` fields on our `User` struct, we would see the following error.
 
 ```rust
 error[E0277]: the trait bound `(i32,): diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>` is not satisfied
@@ -119,22 +120,23 @@ error[E0277]: the trait bound `(i32,): diesel::Queryable<(diesel::types::Integer
 ```
 
 Notice the compiler is indicating a trait is not implmented for calling the `.load()` method.
-When reading, take note of the values in the tuple[s].
+When reading, take note of the values in the tuple(s).
+(See Rust's [data type docs] if you're unfamiliar with tuples or their syntax.)
+
+[data type docs]: https://doc.rust-lang.org/1.21.0/book/second-edition/ch03-02-data-types.html#grouping-values-into-tuples
 
 > `diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>`
 
 
-`Queryable` is trying to convert those 4 types into the types on our `User` model struct.
-Our model struct has the three String fields commented out, so it doesn't know what those `Text` columns are supposed to be converted to.
+`Queryable` is trying to convert those four types into the types on our `User` struct.
+Our struct has the three String fields commented out,
+so it doesn't know what those `Text` columns are supposed to be converted to.
 Remember, `Queryable` structs represent the exact columns, value, 
 and ordering of your query's returned result,
 which we are violating here.
 `Queryable` is expecting a tuple that looks like `(i32, String, String, String)`,
 but we currently only have a tuple consisting of `(i32,)`.
 We need to add those `String` columns back for our code to compile again.
-See Rust's [data type docs] if you're unfamiliar with tuples or their syntax.
-
-[data type docs]: https://doc.rust-lang.org/1.21.0/book/second-edition/ch03-02-data-types.html#grouping-values-into-tuples
 
 ## QueryableByName
 `Queryable` is the trait you normally use with Diesel's query builder.
@@ -143,10 +145,10 @@ you will instead need to implement the `QueryableByName` trait.
 
 Diesel provides some escape hatches to execute raw SQL queries.
 The problem with this is that Diesel can't ensure type safety
-and it's accessing fields by name instead of by index,
-which means that you can't deserialize the raw query result into tuples or a struct.
+and it's accessing fields by name instead of by index.
+This means that you can't deserialize the raw query result into a tuple or a regular struct.
 Adding [`#[derive(QueryableByName)]`][queryable_by_name_doc] to your struct means 
-that struct will be the result of a raw SQL query using the [`sql_query`] function.
+that it will be able to be built from the result of a raw SQL query using the [`sql_query`] function.
 
 [`sql_query`]: https://docs.diesel.rs/diesel/fn.sql_query.html
 [queryable_by_name_doc]: https://docs.diesel.rs/diesel/query_source/trait.QueryableByName.html
@@ -259,7 +261,7 @@ fn main() {
           (
             users::first_name.eq("Gordon"),
             users::last_name.eq("Freeman"),
-            users::email.eq("gordon.freeman@blackmesa.co")
+            users::email.eq("gordon.freeman@blackmesa.co"),
           )
         )
         .execute(&db_connection)
@@ -274,7 +276,7 @@ fn main() {
           (
             posts::user_id.eq(first_user.id),
             posts::title.eq("Thoughts on Tomorrow's Experiment"),
-            posts::body.eq("What could possibly go wrong?")
+            posts::body.eq("What could possibly go wrong?"),
           )
         )
         .execute(&db_connection)
@@ -282,6 +284,7 @@ fn main() {
 
     let users_emails = sql_query("SELECT users.id, users.email FROM users ORDER BY id")
       .load::<UserEmail>(&connection);
+
     println!("{:?}", users_emails); 
     //=> User { id: 1, email: "gordon.freeman@blackmesa.co" }
     
@@ -296,7 +299,15 @@ fn main() {
     ")
       .load::<PostsWithUserName>(&connection);
     println!("{:?}", joined); 
-    //=> [PostsWithUserName { user_name: UserName { first_name: "Gordon", last_name: "Freeman", full_name: "GordonFreeman" }, title: "Thoughts on Tomorrow's Experiment", content: "What could possibly go wrong? }]
+    /* Output =>
+        [
+            PostsWithUserName { 
+                user_name: UserName { first_name: "Gordon", last_name: "Freeman", full_name: "GordonFreeman" }, 
+                title: "Thoughts on Tomorrow's Experiment",
+                body: "What could possibly go wrong? 
+            }
+        ]
+    */
 }
 ```
 
@@ -324,7 +335,7 @@ error[E0412]: cannot find type `full_name` in module `users`
 
 ## Insertable
 
-The typical way to insert data in Diesel is by working with tuples.
+The simplest way to insert data in Diesel is by working with tuples.
 However, this can become tedious when inserting a lot of data,
 for example if it were a large web form deserialized by a library like Serde.
 The `Insertable` trait is meant to be implemented on structs
@@ -332,7 +343,7 @@ whose data you want to easily insert into your database.
 To implement `Insertable` on your struct,
 add the [`#[derive(Insertable)]`][insertable_doc] annotation.
 
-As with typical Diesel inserts, 
+As with usual Diesel inserts, 
 you will still be using the [`.insert_into()`]
 method to generate a SQL `INSERT` statement for that table.
 You may chain [`.values()`] or [`.default_values()`]
@@ -364,9 +375,12 @@ Thinking of web forms again, a new record wouldn't have such fields as
 ```rust
 // File: src/models.rs
 
-// Add serde_derive and serde_json to simulate 
+// Add serde, serde_derive, and serde_json to simulate 
 // deserializing a web form.
-extern crate serde{,_derive,_json}
+extern crate serde;
+extern crate serde_derive;
+extern crate serde_json;
+
 
 use schema::users;
 
@@ -450,9 +464,9 @@ The `Identifiable` trait gives us the `id()` method on our models,
 which returns the value of our record's primary key.
 
 In the following example,
-we will look at some of the behavior `Identifiable` gives us.
-We will add the annotation to our `User` struct.
-We will then attempt to get the value of the first record's primary key by calling `id()` and also update the first and last name of our user.
+First, we'll look at some of the behavior `Identifiable` gives us.
+After that, let's add the annotation to our `User` struct.
+Finally, we will then attempt to get the value of the first record's primary key by calling `id()` and also update the first and last name of our user.
 
 ### Example
 
@@ -488,7 +502,7 @@ fn main() {
     let new_user = NewUser { 
         first_name: "Gordon", 
         last_name: "Freeman", 
-        electronic_mail: "gordon.freeman@blackmesa.co" 
+        electronic_mail: "gordon.freeman@blackmesa.co",
     };
 
     diesel::insert_into(users::table)
@@ -502,18 +516,18 @@ fn main() {
     println!("User count: {}", all_users.len());
     //=> User count: 1
 
-    let hero = users.first(&db_connection)::<Users>
+    let hero = users.first::<Users>(&db_connection)
         .expect("Error loading first user");
 
     println!("Our Hero's ID: {}", hero.id());
-    //=> Our Hero's Id: 1
+    //=> Our Hero's ID: 1
 
     diesel::update(&hero).set((
         first_name.eq("Alyx"),
         last_name.eq("Vance"),
     )).execute(&db_connection);
     
-    let updated_hero = users.first(&db_connection)::<Users>
+    let updated_hero = users.first::<Users>(&db_connection)
         .expect("Error loading first user");
     
     println!("Our Hero's updated name: {} {}", updated_hero.first_name, updated_hero.last_name);
@@ -608,11 +622,11 @@ Be careful, as when you are setting your `Option<T>` fields to `None`,
 they will be `NULL` in the database instead of ignored.
 
 However, there is a way to have both `AsChangeset` behaviors on a single struct.
-Instead of using the field type: `Option<T>`,
+Instead of using the field type `Option<T>`,
 you may use `Option<Option<T>>`.
 When updating, a value of `None` will be ignored and a value of `Some(None)` will `NULL` that column.
 All three options are shown in the following example code.
-Notice some of the code uses `unwrap_or()`.
+Notice some of the code uses `unwrap_or()`:
 The values being returned are `None`,
 but we want to see output on the screen.
 Passing in a `String` will let us print out something to the screen
@@ -641,8 +655,8 @@ pub struct NewUser<'a> {
     pub email: Option<&'a str>,
  }
 
-// This struct will ignore any fields set to None
-// and NULL any set to Some(None) - all behaviors we need.
+// This struct will ignore any fields with the value None
+// and NULL any fields with the value Some(None) - all the behaviors we need.
 #[derive(AsChangeset)]
 #[table_name="users"]
 pub struct IgnoreNoneFieldsUpdateUser<'a> {
@@ -695,7 +709,7 @@ fn main() {
     let ignore_fields_update = IgnoreNoneFieldsUpdateUser {
         first_name: "Issac",
         last_name: "Kleiner",
-        email: None // Field to be ignored when updating
+        email: None, // Field to be ignored when updating
     }
 
     diesel::update(&hero).set(&ignore_fields_update)
@@ -706,7 +720,7 @@ fn main() {
 
     println!("Name: {} {} Email: {}", updated_hero.first_name, 
         updated_hero.last_name, 
-        updated_hero.email.unwrap()
+        updated_hero.email.unwrap(),
     );
 
     // Output
@@ -716,7 +730,7 @@ fn main() {
     let null_a_field_update = IgnoreNoneFieldsUpdateUser {
         first_name: "Issac",
         last_name: "Kleiner",
-        email: Some(None) // Nulls the column in the DB
+        email: Some(None), // Nulls the column in the DB
     }
 
     diesel::update(&hero).set(&null_a_field_update)
@@ -727,7 +741,7 @@ fn main() {
 
     println!("Name: {} {} Email: {}", updated_hero.first_name, 
         updated_hero.last_name, 
-        updated_hero.email.unwrap_or("This field is now Nulled".to_string())
+        updated_hero.email.unwrap_or("This field is now Nulled".to_string()),
     );
 
     // Output
@@ -737,7 +751,7 @@ fn main() {
     let null_fields_update = NullNoneFieldsUpdateUser {
         first_name: "Eli",
         last_name: "Vance",
-        email: None // with option treat_none_as_null=true
+        email: None, // with option treat_none_as_null=true
     }
 
     diesel::update(&hero).set(&null_fields_update)
@@ -748,7 +762,7 @@ fn main() {
 
     println!("Name: {} {} Email: {:?}", updated_hero.first_name, 
         updated_hero.last_name, 
-        updated_hero.email.unwrap_or("This is a Null value".to_string())
+        updated_hero.email.unwrap_or("This is a Null value".to_string()),
     );
 
     // Output
@@ -766,7 +780,7 @@ error[E0277]: the trait bound `&diesel_demo_cli::models::IgnoreFieldsUpdateUser<
    |                                 ^^^ the trait `diesel::query_builder::AsChangeset` is not implemented for `&diesel_demo_cli::models::IgnoreFieldsUpdateUser<'_>`
 ```
 
-Here we get a clear message from Diesel indicating that we're trying to use this 
+Here we get a clear message from Rust indicating that we're trying to use this 
 struct without an implementation of `AsChangeset`.
 
 ## Associations
@@ -894,7 +908,7 @@ fn main() {
             user_id: issac_kleiner.id().to_owned(),
             title: "Top Secret #002",
             content: "Finished making special pet for Gordon. I hope he likes it!",
-        }
+        },
     ];
 
     // Insert the new posts vector
