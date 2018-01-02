@@ -169,7 +169,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         String::from("Integer")
     } else if is_text(&type_name) {
         String::from("Text")
-    } else if type_name.contains("blob") || type_name.is_empty() {
+    } else if is_binary(&type_name) {
         String::from("Binary")
     } else if is_float(&type_name) {
         String::from("Float")
@@ -194,6 +194,10 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
 
 fn is_text(type_name: &str) -> bool {
     type_name.contains("char") || type_name.contains("clob") || type_name.contains("text")
+}
+
+fn is_binary(type_name: &str) -> bool {
+    type_name.contains("blob") || type_name.contains("binary") || type_name.is_empty()
 }
 
 fn is_bool(type_name: &str) -> bool {
