@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
-diesel = { version = "1.0.0-rc1", features = ["mysql"] }
+diesel = { version = "1.0.0", features = ["mysql"] }
 dotenv = "0.10"

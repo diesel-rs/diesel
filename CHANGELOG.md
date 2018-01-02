@@ -4,7 +4,20 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## [1.0.0-rc1] - 2017-12-23
+## [1.0.0] - 2018-01-02
+
+### Added
+
+* `#[derive(QueryableByName)]` can now handle structs that have no associated
+  table. If the `#[table_name]` annotation is left off, you must annotate each
+  field with `#[sql_type = "Integer"]`
+
+* `#[derive(QueryableByName)]` can now handle embedding other structs. To have a
+  field whose type is a struct which implements `QueryableByName`, rather than a
+  single column in the query, add the annotation `#[diesel(embed)]`
+
+* The `QueryDsl` trait encompasses the majority of the traits that were
+  previously in the `query_dsl` module.
 
 ### Fixed
 
@@ -28,23 +41,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `query_builder::insert_statement::UndecoratedInsertRecord` is now accessed as
   `query_builder::UndecoratedInsertRecord`
-
-## [1.0.0-beta1] - 2017-12-04
-
-### Added
-
-* `#[derive(QueryableByName)]` can now handle structs that have no associated
-  table. If the `#[table_name]` annotation is left off, you must annotate each
-  field with `#[sql_type = "Integer"]`
-
-* `#[derive(QueryableByName)]` can now handle embedding other structs. To have a
-  field whose type is a struct which implements `QueryableByName`, rather than a
-  single column in the query, add the annotation `#[diesel(embed)]`
-
-* The `QueryDsl` trait encompasses the majority of the traits that were
-  previously in the `query_dsl` module.
-
-### Changed
 
 * `#[derive(QueryableByName)]` now requires that the table name be explicitly
   stated.
@@ -1194,5 +1190,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.16.0]: https://github.com/diesel-rs/diesel/compare/v0.15.2...v0.16.0
 [0.99.0]: https://github.com/diesel-rs/diesel/compare/v0.16.0...v0.99.0
 [0.99.1]: https://github.com/diesel-rs/diesel/compare/v0.99.0...v0.99.1
-[1.0.0-beta1]: https://github.com/diesel-rs/diesel/compare/v0.99.1...v1.0.0-beta1
-[1.0.0-rc1]: https://github.com/diesel-rs/diesel/compare/v1.0.0-beta1...v1.0.0-rc1
+[1.0.0]: https://github.com/diesel-rs/diesel/compare/v0.99.1...v1.0.0
