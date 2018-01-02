@@ -1,0 +1,18 @@
+[package]
+name = "advanced-blog-cli"
+version = "0.1.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[dependencies]
+bcrypt = "0.1.0"
+chrono = "0.4.0"
+diesel = { version = "1.0.0-beta1", features = ["postgres", "chrono"] }
+dotenv = "0.10.0"
+structopt = "0.1.6"
+structopt-derive = "0.1.6"
+tempfile = "2.2.0"
+
+[dev-dependencies]
+assert_matches = "1.1"
+diesel_migrations = { version = "1.0.0-beta1", features = ["postgres"] }
+lazy_static = "1.0"
