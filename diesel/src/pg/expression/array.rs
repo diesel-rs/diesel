@@ -10,17 +10,16 @@ pub trait IntoSingleTypeExpressionList<ST> {
     fn into_single_type_expression_list(self) -> Self::Expression;
 }
 
-#[derive(Debug)]
-pub struct Array<T, ST> {
+#[derive(Debug, Clone, Copy)]
+pub struct ArrayLiteral<T, ST> {
     elements: T,
     _marker: PhantomData<ST>,
 }
 
-/// Creates an `ARRAY[...]` expression.  The argument should be a tuple of
-/// expressions which can be represented by the same SQL type.
+/// Creates an `ARRAY[...]` expression.
 ///
-/// If the type can't be inferred, call `array::<SomeSqlType, _>((...))` to
-/// specify it.
+/// The argument should be a tuple of expressions which can be represented by the
+/// same SQL type.
 ///
 /// # Examples
 ///
@@ -46,30 +45,29 @@ pub struct Array<T, ST> {
 /// // An array is returned as a Vec.
 /// assert_eq!(Ok(vec![1, 2]), ints);
 ///
-/// // The type of `id` is known so we don't have to specify the SQL type here.
 /// let ids = users.select(array((id, id * 2)))
 ///     .get_results::<Vec<i32>>(&connection);
 /// assert_eq!(Ok(vec![vec![1, 2], vec![2, 4]]), ids);
 /// # }
 /// ```
-pub fn array<ST, T>(elements: T) -> Array<T::Expression, ST>
+pub fn array<ST, T>(elements: T) -> ArrayLiteral<T::Expression, ST>
 where
     T: IntoSingleTypeExpressionList<ST>,
 {
-    Array {
+    ArrayLiteral {
         elements: elements.into_single_type_expression_list(),
         _marker: PhantomData,
     }
 }
 
-impl<T, ST> Expression for Array<T, ST>
+impl<T, ST> Expression for ArrayLiteral<T, ST>
 where
     T: Expression,
 {
     type SqlType = types::Array<ST>;
 }
 
-impl<T, ST, DB> QueryFragment<DB> for Array<T, ST>
+impl<T, ST, DB> QueryFragment<DB> for ArrayLiteral<T, ST>
 where
     DB: Backend,
     for<'a> (&'a T): QueryFragment<DB>,
@@ -82,25 +80,25 @@ where
     }
 }
 
-impl_query_id!(Array<T, ST>);
+impl_query_id!(ArrayLiteral<T, ST>);
 
-impl<T, ST, QS> SelectableExpression<QS> for Array<T, ST>
+impl<T, ST, QS> SelectableExpression<QS> for ArrayLiteral<T, ST>
 where
     T: SelectableExpression<QS>,
-    Array<T, ST>: AppearsOnTable<QS>,
+    ArrayLiteral<T, ST>: AppearsOnTable<QS>,
 {
 }
 
-impl<T, ST, QS> AppearsOnTable<QS> for Array<T, ST>
+impl<T, ST, QS> AppearsOnTable<QS> for ArrayLiteral<T, ST>
 where
     T: AppearsOnTable<QS>,
-    Array<T, ST>: Expression,
+    ArrayLiteral<T, ST>: Expression,
 {
 }
 
-impl<T, ST> NonAggregate for Array<T, ST>
+impl<T, ST> NonAggregate for ArrayLiteral<T, ST>
 where
     T: NonAggregate,
-    Array<T, ST>: Expression,
+    ArrayLiteral<T, ST>: Expression,
 {
 }
