@@ -45,6 +45,7 @@ script:
 matrix:
   allow_failures:
     - rust: nightly
+    - rust: beta
   include:
   - rust: nightly-2017-11-28
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
