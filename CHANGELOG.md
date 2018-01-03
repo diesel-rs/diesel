@@ -131,7 +131,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   use associated constants where appropriate.
 
 * You will now need to invoke `allow_tables_to_appear_in_same_query!` any time two tables
-  appear together in the same query, even if there is a `joinable!` invocationfor those tables.
+  appear together in the same query, even if there is a `joinable!` invocation for those tables.
 
 * `diesel_codegen` should no longer explicitly be used as a dependency. Unless
   you are using `infer_schema!` or `embed_migrations!`, you can simply remove it
@@ -742,7 +742,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   instead of `env!("foo")` and `"dotenv:foo"` instead of `dotenv!("foo")`. The
   use of `dotenv` requires the `dotenv` feature on `diesel_codegen`, which is
   included by default. Using `env!` and `dotenv!` will no longer work with
-  `diesel_codegen`. They continue to work with `diesel_codgen_syntex`, but that
+  `diesel_codegen`. They continue to work with `diesel_codegen_syntex`, but that
   crate will be deprecated when Macros 1.1 is in the beta channel for Rust.
 
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
@@ -1148,7 +1148,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `query_one`, `find`, and `first` now assume a single row is returned. For
   cases where you actually expect 0 or 1 rows to be returned, the `optional`
   method has been added to the result, in case having a `Result<Option<T>>` is
-  more ideomatic than checking for `Err(NotFound)`.
+  more idiomatic than checking for `Err(NotFound)`.
 
 ### Deprecated
 

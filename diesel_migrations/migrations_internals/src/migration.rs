@@ -203,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    fn files_begining_with_dot_are_allowed() {
+    fn files_beginning_with_dot_are_allowed() {
         let tempdir = TempDir::new("diesel").unwrap();
         let folder = tempdir.path().join("12345");
 

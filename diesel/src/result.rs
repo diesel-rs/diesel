@@ -69,7 +69,7 @@ pub enum Error {
 /// The kind of database error that occurred.
 ///
 /// This is not meant to exhaustively cover all possible errors, but is used to
-/// identify errors which are commonly recovered from programatically. This enum
+/// identify errors which are commonly recovered from programmatically. This enum
 /// is not intended to be exhaustively matched, and new variants may be added in
 /// the future without a major version bump.
 pub enum DatabaseErrorKind {

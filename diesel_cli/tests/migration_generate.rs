@@ -43,7 +43,7 @@ Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
 }
 
 #[test]
-fn migration_generate_creates_a_migration_with_initital_contents() {
+fn migration_generate_creates_a_migration_with_initial_contents() {
     let p = project("migration_name").folder("migrations").build();
     let result = p.command("migration").arg("generate").arg("hello").run();
     assert!(result.is_success(), "Command failed: {:?}", result);

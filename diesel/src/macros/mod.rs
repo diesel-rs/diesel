@@ -1086,7 +1086,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
 }
 
 // The order of these modules is important (at least for those which have tests).
-// Utililty macros which don't call any others need to come first.
+// Utility macros which don't call any others need to come first.
 #[macro_use]
 mod internal;
 #[macro_use]

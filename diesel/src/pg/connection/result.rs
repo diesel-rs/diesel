@@ -160,7 +160,7 @@ mod error_codes {
     //! These error codes are documented at
     //! <https://www.postgresql.org/docs/9.5/static/errcodes-appendix.html>
     //!
-    //! They are not exposed programatically through libpq.
+    //! They are not exposed programmatically through libpq.
     pub const UNIQUE_VIOLATION: &str = "23505";
     pub const FOREIGN_KEY_VIOLATION: &str = "23503";
 }

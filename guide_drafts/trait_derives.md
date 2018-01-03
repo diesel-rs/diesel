@@ -119,7 +119,7 @@ error[E0277]: the trait bound `(i32,): diesel::Queryable<(diesel::types::Integer
    = note: required because of the requirements on the impl of `diesel::LoadQuery<_, diesel_demo::models::User>` for `diesel_demo::schema::users::table`
 ```
 
-Notice the compiler is indicating a trait is not implmented for calling the `.load()` method.
+Notice the compiler is indicating a trait is not implemented for calling the `.load()` method.
 When reading, take note of the values in the tuple(s).
 (See Rust's [data type docs] if you're unfamiliar with tuples or their syntax.)
 
@@ -157,7 +157,7 @@ The implementation of `QueryableByName` assumes that each field on your struct
 has a certain SQL type.
 It makes these assumptions based on the annotations you add to your struct.
 If your `QueryableByName` struct references a single table,
-you may annontate that struct with `#[table_name="my_table"]`.
+you may annotate that struct with `#[table_name="my_table"]`.
 `QueryableByName` will bind the struct fields to the SQL types it finds in your table's schema.
 
 You may also individually annotate each field on your struct
@@ -323,7 +323,7 @@ error: Your struct must either be annotated with `#[table_name = "foo"]` or have
 ```
 
 If we were to comment out the `sql_type` annotation for `UserName`'s `full_name` field,
-we would see the folliwing error.
+we would see the following error.
 
 ```rust
 error[E0412]: cannot find type `full_name` in module `users`

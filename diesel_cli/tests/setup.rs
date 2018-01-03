@@ -33,7 +33,7 @@ fn setup_creates_migrations_directory() {
 #[test]
 #[cfg(feature = "postgres")]
 fn setup_initial_migration_returns_nothing_to_console() {
-    let p = project("setup_intial_migration_returns_nothing_to_console").build();
+    let p = project("setup_initial_migration_returns_nothing_to_console").build();
 
     let result = p.command("setup").run();
 
