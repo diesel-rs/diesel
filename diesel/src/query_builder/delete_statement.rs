@@ -9,7 +9,7 @@ use query_dsl::methods::FilterDsl;
 use query_source::Table;
 use result::QueryResult;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, QueryId)]
 /// Represents a SQL `DELETE` statement.
 ///
 /// The type parameters on this struct represent:
@@ -103,8 +103,6 @@ where
         Ok(())
     }
 }
-
-impl_query_id!(DeleteStatement<T, U, Ret>);
 
 impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where

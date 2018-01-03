@@ -5,13 +5,13 @@ use query_builder::*;
 use result::QueryResult;
 use types::Bool;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct In<T, U> {
     left: T,
     values: U,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct NotIn<T, U> {
     left: T,
     values: U,
@@ -106,8 +106,6 @@ where
     }
 }
 
-impl_query_id!(In<T, U>);
-impl_query_id!(NotIn<T, U>);
 impl_selectable_expression!(In<T, U>);
 impl_selectable_expression!(NotIn<T, U>);
 
@@ -212,9 +210,13 @@ where
     }
 }
 
-impl_query_id!(noop: Many<T>);
+impl<T> QueryId for Many<T> {
+    type QueryId = ();
 
-#[derive(Debug, Copy, Clone)]
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {
     values: T,
     _sql_type: PhantomData<ST>,
@@ -253,5 +255,3 @@ where
         self.values.walk_ast(pass)
     }
 }
-
-impl_query_id!(Subselect<T, ST>);

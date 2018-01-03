@@ -9,7 +9,7 @@ use super::{AppearsInFromClause, Plus, QuerySource};
 use types::Bool;
 use util::TupleAppend;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 /// A query source representing the join between two tables
 pub struct Join<Left, Right, Kind> {
     left: Left,
@@ -17,7 +17,7 @@ pub struct Join<Left, Right, Kind> {
     kind: Kind,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
 /// A query source representing the join between two tables with an explicit
 /// `ON` given. `Join` should usually be referenced instead, as all "type
@@ -41,9 +41,6 @@ impl<Left, Right, Kind> Join<Left, Right, Kind> {
         JoinOn { join: self, on: on }
     }
 }
-
-impl_query_id!(Join<Left, Right, Kind>);
-impl_query_id!(JoinOn<Join, On>);
 
 impl<Left, Right> QuerySource for Join<Left, Right, Inner>
 where
@@ -218,9 +215,8 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Inner;
-impl_query_id!(Inner);
 
 impl<DB: Backend> QueryFragment<DB> for Inner {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -230,9 +226,8 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 }
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct LeftOuter;
-impl_query_id!(LeftOuter);
 
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {

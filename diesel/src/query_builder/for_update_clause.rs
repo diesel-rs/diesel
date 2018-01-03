@@ -2,7 +2,7 @@ use backend::Backend;
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoForUpdateClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoForUpdateClause {
@@ -11,9 +11,5 @@ impl<DB: Backend> QueryFragment<DB> for NoForUpdateClause {
     }
 }
 
-impl_query_id!(NoForUpdateClause);
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct ForUpdateClause;
-
-impl_query_id!(ForUpdateClause);

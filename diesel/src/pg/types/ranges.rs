@@ -23,7 +23,6 @@ bitflags! {
     }
 }
 
-impl_query_id!(Range<T>);
 impl<T> NotNull for Range<T> {}
 impl<T> SingleValue for Range<T> {}
 impl<T> NonAggregate for Range<T> {}

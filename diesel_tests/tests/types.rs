@@ -983,6 +983,7 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
 
+    #[derive(Debug, Clone, Copy, QueryId)]
     struct MyInt;
 
     impl SingleValue for MyInt {}
@@ -1014,8 +1015,6 @@ fn third_party_crates_can_add_new_types() {
             row
         }
     }
-
-    impl_query_id!(MyInt);
 
     assert_eq!(0, query_single_value::<MyInt, i32>("0"));
     assert_eq!(-1, query_single_value::<MyInt, i32>("-1"));

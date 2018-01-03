@@ -5,7 +5,7 @@ use expression::*;
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 /// Coerces an expression to be another type. No checks are performed to ensure
 /// that the new type is valid in all positions that the previous type was.
@@ -59,12 +59,6 @@ where
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }
-}
-
-impl<T: QueryId, ST: 'static> QueryId for Coerce<T, ST> {
-    type QueryId = Coerce<T::QueryId, ST>;
-
-    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 impl<T, ST> NonAggregate for Coerce<T, ST>

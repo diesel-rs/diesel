@@ -132,7 +132,11 @@ where
     }
 }
 
-impl_query_id!(noop: PrimaryKey<Col>);
+impl<Col> QueryId for PrimaryKey<Col> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 #[cfg(feature = "sqlite")]
 impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col>
@@ -160,7 +164,11 @@ where
     }
 }
 
-impl_query_id!(noop: AutoIncrement<Col>);
+impl<Col> QueryId for AutoIncrement<Col> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 #[cfg(feature = "postgres")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
@@ -185,7 +193,11 @@ where
     }
 }
 
-impl_query_id!(noop: NotNull<Col>);
+impl<Col> QueryId for NotNull<Col> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 impl<'a, DB, Col> QueryFragment<DB> for Default<'a, Col>
 where

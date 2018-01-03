@@ -115,7 +115,9 @@ pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
 pub fn wrap_item_in_const(const_name: Ident, item: Tokens) -> Tokens {
     quote! {
         const #const_name: () = {
-            extern crate diesel;
+            mod diesel {
+                __diesel_use_everything!();
+            }
             #item
         };
     }

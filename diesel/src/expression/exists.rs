@@ -33,7 +33,7 @@ pub fn exists<T>(query: T) -> Exists<T> {
     Exists(query)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Exists<T>(T);
 
 impl<T> Expression for Exists<T>
@@ -58,5 +58,4 @@ where
     }
 }
 
-impl_query_id!(Exists<T>);
 impl_selectable_expression!(Exists<T>);

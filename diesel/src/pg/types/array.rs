@@ -19,8 +19,6 @@ where
     }
 }
 
-impl_query_id!(Array<T>);
-
 impl<T> NotNull for Array<T> {}
 
 impl<T> SingleValue for Array<T> {}

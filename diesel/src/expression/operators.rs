@@ -61,7 +61,7 @@ macro_rules! __diesel_operator_body {
         expression_ty_params = ($($expression_ty_params:ident,)*),
         expression_bounds = ($($expression_bounds:tt)*),
     ) => {
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
             $($field_name: $ty_param,)+
@@ -73,7 +73,6 @@ macro_rules! __diesel_operator_body {
             }
         }
 
-        impl_query_id!($name<$($ty_param),+>);
         impl_selectable_expression!($name<$($ty_param),+>);
 
         impl<$($ty_param,)+ $($expression_ty_params,)*> $crate::expression::Expression for $name<$($ty_param,)+> where

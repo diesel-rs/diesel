@@ -31,6 +31,8 @@
 /// }
 /// ```
 #[macro_export]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "1.1.0", note = "Use `#[derive(QueryId)]` instead")]
 macro_rules! impl_query_id {
     ($name: ident) => {
         impl $crate::query_builder::QueryId for $name {

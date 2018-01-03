@@ -78,13 +78,6 @@ impl HasSqlType<::types::Numeric> for Mysql {
     }
 }
 
-#[cfg(not(feature = "postgres"))]
-impl QueryId for ::types::Numeric {
-    type QueryId = Self;
-
-    const HAS_STATIC_QUERY_ID: bool = true;
-}
-
 /// Represents the MySQL datetime type.
 ///
 /// ### [`ToSql`] impls
@@ -98,7 +91,7 @@ impl QueryId for ::types::Numeric {
 /// [`ToSql`]: ../../types/trait.ToSql.html
 /// [`FromSql`]: ../../types/trait.FromSql.html
 /// [`chrono::NaiveDateTime`]: ../../../chrono/naive/struct.NaiveDateTime.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Datetime;
 
 primitive_impls!(Datetime);

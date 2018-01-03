@@ -193,7 +193,11 @@ where
     }
 }
 
-impl_query_id!(noop: UpdateStatement<T, U, V, Ret>);
+impl<T, U, V, Ret> QueryId for UpdateStatement<T, U, V, Ret> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where

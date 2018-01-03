@@ -10,6 +10,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `BINARY` column type name is now supported for SQLite.
 
+* The `QueryId` trait can now be derived.
+
+### Deprecated
+
+* Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
+
 ## [1.0.0] - 2018-01-02
 
 ### Added

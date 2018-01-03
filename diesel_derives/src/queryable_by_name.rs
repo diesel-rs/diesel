@@ -28,11 +28,8 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
 
     let build_expr = build_expr_for_model(&model);
 
-    let model_name_uppercase = model.name.as_ref().to_uppercase();
-    let dummy_const = format!("_IMPL_QUERYABLE_BY_NAME_FOR_{}", model_name_uppercase).into();
-
     wrap_item_in_const(
-        dummy_const,
+        model.dummy_const_name("QUERYABLE_BY_NAME"),
         quote!(
             impl#generics diesel::query_source::QueryableByName<__DB> for #struct_ty where
                 __DB: diesel::backend::Backend,

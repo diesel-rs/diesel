@@ -3,13 +3,10 @@ use expression::{Expression, SelectableExpression};
 use query_builder::*;
 use query_source::QuerySource;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct DefaultSelectClause;
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct SelectClause<T>(pub T);
-
-impl_query_id!(DefaultSelectClause);
-impl_query_id!(SelectClause<T>);
 
 pub trait SelectClauseExpression<QS> {
     type SelectClauseSqlType;

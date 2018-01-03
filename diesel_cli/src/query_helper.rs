@@ -38,7 +38,11 @@ impl<DB: Backend> QueryFragment<DB> for DropDatabaseStatement {
 
 impl<Conn> RunQueryDsl<Conn> for DropDatabaseStatement {}
 
-impl_query_id!(noop: DropDatabaseStatement);
+impl QueryId for DropDatabaseStatement {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 #[derive(Debug, Clone)]
 pub struct CreateDatabaseStatement {
@@ -63,7 +67,11 @@ impl<DB: Backend> QueryFragment<DB> for CreateDatabaseStatement {
 
 impl<Conn> RunQueryDsl<Conn> for CreateDatabaseStatement {}
 
-impl_query_id!(noop: CreateDatabaseStatement);
+impl QueryId for CreateDatabaseStatement {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 pub fn drop_database(db_name: &str) -> DropDatabaseStatement {
     DropDatabaseStatement::new(db_name)

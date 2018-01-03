@@ -5,7 +5,7 @@ use result::QueryResult;
 use expression::{Expression, SelectableExpression};
 
 /// Represents `DISTINCT ON (...)`
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct DistinctOnClause<T>(pub(crate) T);
 
 impl<T> QueryFragment<Pg> for DistinctOnClause<T>
@@ -19,8 +19,6 @@ where
         Ok(())
     }
 }
-
-impl_query_id!(DistinctOnClause<T>);
 
 impl<ST, F, S, D, W, O, L, Of, G, Selection> DistinctOnDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G>

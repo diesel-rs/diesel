@@ -6,7 +6,7 @@ macro_rules! __diesel_column {
             #[doc=$doc]
         )*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -23,8 +23,6 @@ macro_rules! __diesel_column {
                 out.push_identifier($sql_name)
             }
         }
-
-        impl_query_id!($column_name);
 
         impl SelectableExpression<$($table)::*> for $column_name {
         }
@@ -745,7 +743,7 @@ macro_rules! table_body {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy)]
+            #[derive(Debug, Clone, Copy, QueryId)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query
@@ -862,8 +860,6 @@ macro_rules! table_body {
                     (rhs, on_clause)
                 }
             }
-
-            impl_query_id!(table);
 
             /// Contains all of the columns of this table
             pub mod columns {
@@ -1083,6 +1079,15 @@ macro_rules! allow_tables_to_appear_in_same_query {
     };
 
     ($last_table:ident,) => {};
+}
+
+#[macro_export]
+#[doc(hidden)]
+/// Used by `diesel_derives`, which can't access `$crate`
+macro_rules! __diesel_use_everything {
+    () => {
+        pub use $crate::*;
+    }
 }
 
 // The order of these modules is important (at least for those which have tests).

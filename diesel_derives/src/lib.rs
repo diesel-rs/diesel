@@ -31,6 +31,7 @@ mod attr;
 mod identifiable;
 mod insertable;
 mod model;
+mod query_id;
 mod queryable;
 mod queryable_by_name;
 mod util;
@@ -68,6 +69,12 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive_associations)
 }
+
+#[proc_macro_derive(QueryId)]
+pub fn derive_query_id(input: TokenStream) -> TokenStream {
+    expand_derive(input, query_id::derive)
+}
+
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
     let item = parse_derive_input(&input.to_string()).unwrap();

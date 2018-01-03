@@ -58,7 +58,7 @@ use std::io::{self, Write};
 /// - [`bool`][bool]
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Bool;
 
 /// The tiny integer SQL type.
@@ -76,7 +76,7 @@ pub struct Bool;
 /// - [`i8`][i8]
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Tinyint;
 
 /// The small integer SQL type.
@@ -90,7 +90,7 @@ pub struct Tinyint;
 /// - [`i16`][i16]
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct SmallInt;
 #[doc(hidden)]
 pub type Int2 = SmallInt;
@@ -108,7 +108,7 @@ pub type Smallint = SmallInt;
 /// - [`i32`][i32]
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Integer;
 #[doc(hidden)]
 pub type Int4 = Integer;
@@ -124,7 +124,7 @@ pub type Int4 = Integer;
 /// - [`i64`][i64]
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct BigInt;
 #[doc(hidden)]
 pub type Int8 = BigInt;
@@ -142,7 +142,7 @@ pub type Bigint = BigInt;
 /// - [`f32`][f32]
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Float;
 #[doc(hidden)]
 pub type Float4 = Float;
@@ -158,7 +158,7 @@ pub type Float4 = Float;
 /// - [`f64`][f64]
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
@@ -177,7 +177,7 @@ pub type Float8 = Double;
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Numeric;
 
 /// Alias for `Numeric`
@@ -208,7 +208,7 @@ impl SingleValue for Numeric {}
 ///
 /// [String]: https://doc.rust-lang.org/nightly/std/string/struct.String.html
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Text;
 
 /// The SQL `VARCHAR` type
@@ -248,7 +248,7 @@ pub type Longtext = Text;
 ///
 /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Binary;
 
 #[doc(hidden)]
@@ -275,7 +275,7 @@ pub type Bit = Binary;
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
 /// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Date;
 
 /// The interval SQL type.
@@ -292,7 +292,7 @@ pub struct Date;
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Interval;
 
 #[cfg(not(feature = "postgres"))]
@@ -309,7 +309,7 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Time;
 
 /// The timestamp SQL type.
@@ -329,7 +329,7 @@ pub struct Time;
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
 /// [Timespec]: /time/struct.Timespec.html
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Timestamp;
 
 /// The nullable SQL type.

@@ -208,7 +208,11 @@ where
     }
 }
 
-impl_query_id!(noop: InsertStatement<T, U, Op, Ret>);
+impl<T, U, Op, Ret> QueryId for InsertStatement<T, U, Op, Ret> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
 where
@@ -268,7 +272,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct Insert;
 
@@ -279,9 +283,7 @@ impl<DB: Backend> QueryFragment<DB> for Insert {
     }
 }
 
-impl_query_id!(Insert);
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct Replace;
 
@@ -300,8 +302,6 @@ impl QueryFragment<Mysql> for Replace {
         Ok(())
     }
 }
-
-impl_query_id!(Replace);
 
 /// Marker trait to indicate that no additional operations have been added
 /// to a record for insert.

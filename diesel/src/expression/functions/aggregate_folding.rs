@@ -16,7 +16,7 @@ macro_rules! fold_function {
             }
         }
 
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
         pub struct $type_name<T> {
             target: T,
@@ -41,7 +41,6 @@ macro_rules! fold_function {
             }
         }
 
-        impl_query_id!($type_name<T>);
         impl_selectable_expression!($type_name<T>);
     }
 }

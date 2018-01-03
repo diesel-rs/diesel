@@ -2,9 +2,9 @@ use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoDistinctClause;
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct DistinctClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoDistinctClause {
@@ -13,16 +13,12 @@ impl<DB: Backend> QueryFragment<DB> for NoDistinctClause {
     }
 }
 
-impl_query_id!(NoDistinctClause);
-
 impl<DB: Backend> QueryFragment<DB> for DistinctClause {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("DISTINCT ");
         Ok(())
     }
 }
-
-impl_query_id!(DistinctClause);
 
 #[cfg(feature = "postgres")]
 pub use pg::DistinctOnClause;

@@ -17,10 +17,8 @@ pub trait WhereAnd<Predicate> {
 }
 
 /// Represents that a query has no `WHERE` clause.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoWhereClause;
-
-impl_query_id!(NoWhereClause);
 
 impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
@@ -46,7 +44,7 @@ impl<DB: Backend> Into<Option<Box<QueryFragment<DB>>>> for NoWhereClause {
 }
 
 /// The `WHERE` clause of a query.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct WhereClause<Expr>(Expr);
 
 impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr>
@@ -60,8 +58,6 @@ where
         Ok(())
     }
 }
-
-impl_query_id!(WhereClause<T>);
 
 impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr>
 where

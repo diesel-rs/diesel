@@ -31,7 +31,7 @@ use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
@@ -180,8 +180,6 @@ where
         Ok(())
     }
 }
-
-impl_query_id!(SelectStatement<F, S, D, W, O, L, Of, G, FU>);
 
 impl<F, S, D, W, O, L, Of, G, FU, QS> SelectableExpression<QS>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>

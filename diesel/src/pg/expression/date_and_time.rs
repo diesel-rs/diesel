@@ -10,7 +10,7 @@ impl DateTimeLike for Date {}
 impl DateTimeLike for Timestamp {}
 impl DateTimeLike for Timestamptz {}
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,
@@ -53,5 +53,4 @@ where
     }
 }
 
-impl_query_id!(AtTimeZone<Ts, Tz>);
 impl_selectable_expression!(AtTimeZone<Ts, Tz>);

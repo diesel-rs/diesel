@@ -7,7 +7,7 @@ use types::*;
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct now;
 
 impl Expression for now {
@@ -23,7 +23,6 @@ impl<DB: Backend> QueryFragment<DB> for now {
     }
 }
 
-impl_query_id!(now);
 impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);

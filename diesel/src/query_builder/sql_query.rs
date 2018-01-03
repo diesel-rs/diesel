@@ -77,8 +77,6 @@ impl SqlQuery {
     }
 }
 
-impl_query_id!(noop: SqlQuery);
-
 impl<DB> QueryFragment<DB> for SqlQuery
 where
     DB: Backend,
@@ -88,6 +86,12 @@ where
         out.push_sql(&self.query);
         Ok(())
     }
+}
+
+impl QueryId for SqlQuery {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<Conn, T> LoadQuery<Conn, T> for SqlQuery

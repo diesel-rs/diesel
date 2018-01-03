@@ -41,7 +41,11 @@ where
     }
 }
 
-impl_query_id!(noop: SqlLiteral<ST>);
+impl<ST> QueryId for SqlLiteral<ST> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 impl<ST> Query for SqlLiteral<ST> {
     type SqlType = ST;

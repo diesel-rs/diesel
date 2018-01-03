@@ -3,7 +3,7 @@ use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {
@@ -19,7 +19,6 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
     }
 }
 
-impl_query_id!(Grouped<T>);
 impl_selectable_expression!(Grouped<T>);
 
 impl<T: NonAggregate> NonAggregate for Grouped<T>

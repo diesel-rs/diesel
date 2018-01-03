@@ -63,7 +63,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct Any<Expr> {
     expr: Expr,
 }
@@ -93,7 +93,6 @@ where
     }
 }
 
-impl_query_id!(Any<Expr>);
 impl_selectable_expression!(Any<Expr>);
 
 impl<Expr> NonAggregate for Any<Expr>
@@ -103,7 +102,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct All<Expr> {
     expr: Expr,
 }
@@ -133,7 +132,6 @@ where
     }
 }
 
-impl_query_id!(All<Expr>);
 impl_selectable_expression!(All<Expr>);
 
 impl<Expr> NonAggregate for All<Expr>

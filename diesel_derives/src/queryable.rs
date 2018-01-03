@@ -18,11 +18,8 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
 
     let build_expr = build_expr_for_model(&model);
 
-    let model_name_uppercase = model.name.as_ref().to_uppercase();
-    let dummy_const = format!("_IMPL_QUERYABLE_FOR_{}", model_name_uppercase).into();
-
     wrap_item_in_const(
-        dummy_const,
+        model.dummy_const_name("QUERYABLE"),
         quote!(
             impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
                 __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,

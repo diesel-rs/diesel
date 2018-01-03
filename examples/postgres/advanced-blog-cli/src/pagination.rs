@@ -20,6 +20,7 @@ impl<T> Paginate for T {
 
 const DEFAULT_PER_PAGE: i64 = 10;
 
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Paginated<T> {
     query: T,
     page: i64,
@@ -43,8 +44,6 @@ impl<T> Paginated<T> {
         Ok((records, total_pages))
     }
 }
-
-impl_query_id!(Paginated<T>);
 
 impl<T: Query> Query for Paginated<T> {
     type SqlType = (T::SqlType, BigInt);

@@ -4,7 +4,7 @@ macro_rules! sql_function_body {
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
     $docs: expr) => {
         #[allow(non_camel_case_types)]
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
         pub struct $struct_name<$($arg_name),*> {
             $($arg_name: $arg_name),*
@@ -46,8 +46,6 @@ macro_rules! sql_function_body {
                 Ok(())
             }
         }
-
-        impl_query_id!($struct_name<$($arg_name),+>);
 
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $struct_name<$($arg_name),*> where
@@ -122,6 +120,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
+        #[derive(Debug, Clone, Copy, QueryId)]
         pub struct $type_name;
 
         impl $crate::expression::Expression for $type_name {
@@ -136,8 +135,6 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 
         impl $crate::expression::NonAggregate for $type_name {
         }
-
-        impl_query_id!($type_name);
     }
 }
 
