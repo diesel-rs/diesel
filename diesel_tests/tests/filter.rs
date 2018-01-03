@@ -315,7 +315,7 @@ fn filter_with_or() {
 }
 
 #[test]
-fn or_doesnt_mess_with_precidence_of_previous_statements() {
+fn or_doesnt_mess_with_precedence_of_previous_statements() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();

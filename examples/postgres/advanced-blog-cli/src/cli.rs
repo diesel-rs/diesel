@@ -16,7 +16,7 @@ pub enum Cli {
     EditPost {
         /// The id of the post to edit
         post_id: i32,
-        /// Announce this piece of literary perfectionims to the world?
+        /// Announce this piece of literary perfectionisms to the world?
         #[structopt(short = "i", default_value = "false")]
         publish: bool,
     },
@@ -36,7 +36,7 @@ pub enum Cli {
         /// The id of the post to comment on
         post_id: i32,
     },
-    /// Edit a comment, e.g. to citate the sources of your facts
+    /// Edit a comment, e.g. to cite the sources of your facts
     #[structopt(name = "edit_comment")]
     EditComment {
         /// The id of the comment to edit

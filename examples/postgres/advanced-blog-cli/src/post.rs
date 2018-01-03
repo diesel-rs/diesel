@@ -47,7 +47,7 @@ pub fn render(post: &Post, user: &User, comments: &[(Comment, User)]) {
         Published { at } if at != post.updated_at => {
             let published_at = at.format("%F %T");
             println!(
-                "Published at {} (lasted edited at {})",
+                "Published at {} (last edited at {})",
                 published_at, edited_at
             );
         }

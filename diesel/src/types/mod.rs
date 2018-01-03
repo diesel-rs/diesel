@@ -476,7 +476,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
 //   - Specialization might also fix this one. The impl isn't quite a strict
 //     subset (the `FromSql` impl has `T: FromSql`, and the `FromSqlRow` impl
 //     has `T: FromSqlRow`), but if `FromSql` implies `FromSqlRow`,
-//     specialization might consdier that a subset?
+//     specialization might consider that a subset?
 // - I don't know that we really need it. `#[derive(FromSqlRow)]` is probably
 //   good enough. That won't improve our own codebase, since 99% of our
 //   `FromSqlRow` impls are for types from another crate, but it's almost

@@ -163,7 +163,7 @@ bench_medium_complex_query!(
 
 #[bench]
 fn loading_associations_sequentially(b: &mut Bencher) {
-    // SETUP A FUCK TON OF DATA
+    // SETUP A TON OF DATA
     let conn = connection();
     let data: Vec<_> = (0..100)
         .map(|i| {
