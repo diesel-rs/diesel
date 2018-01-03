@@ -130,7 +130,7 @@ fn grouping_associations_maintains_ordering() {
 
 #[test]
 fn associations_can_be_grouped_multiple_levels_deep() {
-    // I'm manually defining the data rather than loding from the database here,
+    // I'm manually defining the data rather than loading from the database here,
     // as it makes the tests *way* more readable if I omit setup here. This is
     // the equivalent to.
     //
@@ -259,7 +259,6 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 
     (connection, sean, tess, jim)
 }
-
 
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema

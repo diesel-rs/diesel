@@ -4,12 +4,11 @@
 //! You can rely on the methods provided by this trait existing on any
 //! `Expression` of the appropriate type. You should not rely on the specific
 //! traits existing, their names, or their organization.
-pub mod bool_expression_methods;
-pub mod escape_expression_methods;
-pub mod global_expression_methods;
-pub mod text_expression_methods;
-#[doc(hidden)]
-pub mod eq_all;
+mod bool_expression_methods;
+mod escape_expression_methods;
+mod global_expression_methods;
+mod text_expression_methods;
+mod eq_all;
 
 #[doc(inline)]
 pub use self::bool_expression_methods::BoolExpressionMethods;

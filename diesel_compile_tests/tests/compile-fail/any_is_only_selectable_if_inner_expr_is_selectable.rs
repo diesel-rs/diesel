@@ -27,9 +27,7 @@ fn main() {
 
     let conn = PgConnection::establish("").unwrap();
 
-    let _ = LoadDsl::load::<Stuff>(
-    //~^ ERROR E0277
-        stuff.filter(name.eq(any(more_stuff::names))),
-        &conn,
-    );
+    let _ = stuff.filter(name.eq(any(more_stuff::names)))
+        .load(&conn);
+        //~^ ERROR AppearsInFromClause
 }

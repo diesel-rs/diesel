@@ -1,46 +1,5 @@
-/// Defines a one-to-one association for the child table. This macro should be
-/// called with the name of the parent struct, followed by any options, followed
-/// by the entire struct body. The struct *must* be annotated with
-/// `#[table_name = "something"]`. Both the parent and child structs must
-/// implement [`Identifiable`][identifiable].
-///
-/// [identifiable]: associations/trait.Identifiable.html
-///
-/// # Options
-///
-/// ## `foreign_key`
-///
-/// Required. The name of the foreign key column for this association.
-///
-/// # Examples
-///
-/// ```no_run
-/// # #[macro_use] extern crate diesel;
-/// # table! { users { id -> Integer, } }
-/// # table! { posts { id -> Integer, user_id -> Integer, } }
-/// pub struct User {
-///     id: i32,
-/// }
-/// # impl_Identifiable! { #[table_name(users)] struct User { id: i32, } }
-///
-/// pub struct Post {
-///     id: i32,
-///     user_id: i32,
-/// }
-/// # impl_Identifiable! { #[table_name(posts)] struct Post { id: i32, user_id: i32, } }
-///
-/// BelongsTo! {
-///     (User, foreign_key = user_id)
-///     #[table_name(posts)]
-///     struct Post {
-///         id: i32,
-///         user_id: i32,
-///     }
-/// }
-/// # fn main() {}
-/// ```
-/// This macro cannot be used with tuple structs.
 #[macro_export]
+#[doc(hidden)]
 macro_rules! BelongsTo {
     // Format arguments
     (

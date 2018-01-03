@@ -94,13 +94,11 @@ use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
 use diesel::expression_methods::*;
-use diesel::{ExecuteDsl, FilterDsl};
+use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
-use diesel::{Connection, QueryResult};
 
 use std::env;
 use std::path::{Path, PathBuf};
-
 
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
@@ -201,9 +199,8 @@ where
     Conn: MigrationConnection,
 {
     try!(setup_database(conn));
-    let latest_migration_version = conn.latest_run_migration_version()?.ok_or_else(|| {
-        RunMigrationsError::MigrationError(MigrationError::NoMigrationRun)
-    })?;
+    let latest_migration_version = conn.latest_run_migration_version()?
+        .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
     revert_migration_with_version(conn, path, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
 }
@@ -217,7 +214,7 @@ pub fn revert_migration_with_version<Conn: Connection>(
 ) -> Result<(), RunMigrationsError> {
     migration_with_version(migrations_dir, ver)
         .map_err(|e| e.into())
-        .and_then(|m| revert_migration(conn, m, output))
+        .and_then(|m| revert_migration(conn, &m, output))
 }
 
 #[doc(hidden)]
@@ -323,11 +320,7 @@ where
 {
     conn.transaction(|| {
         if migration.version() != "00000000000000" {
-            try!(writeln!(
-                output,
-                "Running migration {}",
-                migration.version()
-            ));
+            try!(writeln!(output, "Running migration {}", name(&migration)));
         }
         try!(migration.run(conn));
         try!(conn.insert_new_migration(migration.version()));
@@ -337,14 +330,14 @@ where
 
 fn revert_migration<Conn: Connection>(
     conn: &Conn,
-    migration: Box<Migration>,
+    migration: &Migration,
     output: &mut Write,
 ) -> Result<(), RunMigrationsError> {
     conn.transaction(|| {
         try!(writeln!(
             output,
             "Rolling back migration {}",
-            migration.version()
+            name(&migration)
         ));
         try!(migration.revert(conn));
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));

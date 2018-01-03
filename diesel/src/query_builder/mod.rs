@@ -27,8 +27,8 @@ mod returning_clause;
 mod select_clause;
 mod select_statement;
 mod sql_query;
-pub mod where_clause;
-pub mod insert_statement;
+mod where_clause;
+mod insert_statement;
 mod update_statement;
 
 pub use self::ast_pass::AstPass;
@@ -36,7 +36,8 @@ pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::DeleteStatement;
 #[doc(inline)]
-pub use self::insert_statement::IncompleteInsertStatement;
+pub use self::insert_statement::{IncompleteInsertStatement, InsertStatement,
+                                 UndecoratedInsertRecord};
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
@@ -55,11 +56,14 @@ pub type Binds = Vec<Option<Vec<u8>>>;
 /// A specialized Result type used with the query builder.
 pub type BuildQueryResult = Result<(), Box<Error + Send + Sync>>;
 
-/// Apps should not need to concern themselves with this trait.
+/// Constructs a SQL query from a Diesel AST.
 ///
-/// This is the trait used to actually construct a SQL query. You will take one
-/// of these as an argument if you're implementing
-/// [`QueryFragment`](trait.QueryFragment.html) manually.
+/// The only reason you should ever need to interact with this trait is if you
+/// are extending Diesel with support for a new backend. Plugins which extend
+/// the query builder with new capabilities will interact with [`AstPass`]
+/// instead.
+///
+/// [`AstPass`]: struct.AstPass.html
 pub trait QueryBuilder<DB: Backend> {
     /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
@@ -82,9 +86,8 @@ pub trait QueryBuilder<DB: Backend> {
 /// with a `RETURNING` clause. Unlike [`Expression`], types implementing this
 /// trait are guaranteed to be executable on their own.
 ///
-/// Just because a type doesn't implement this trait doesn't mean that it
-/// doesn't represent a complete SQL query, just that it doesn't have a return
-/// type. For example, an `INSERT` statement without a `RETURNING` clause will
+/// A type which doesn't implement this trait may still represent a complete SQL
+/// query. For example, an `INSERT` statement without a `RETURNING` clause will
 /// not implement this trait, but can still be executed.
 ///
 /// [`Expression`]: ../expression/trait.Expression.html
@@ -106,21 +109,23 @@ impl<'a, T: Query> Query for &'a T {
 /// This may be a complete SQL command (such as an update statement without a
 /// `RETURNING` clause), or a subsection (such as our internal types used to
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
-/// [`LoadDsl`] will generally require that this trait be implemented.
+/// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: ../prelude/trait.ExecuteDsl.html
-/// [`LoadDsl`]: ../prelude/trait.LoadDsl.html
+/// [`ExecuteDsl`]: ../query_dsl/methods/trait.ExecuteDsl.html
+/// [`LoadQuery`]: ../query_dsl/methods/trait.LoadQuery.html
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///
     /// This method is where the actual behavior of an AST node is implemented.
     /// This method will contain the behavior required for all possible AST
-    /// passes. See the documentation of [`AstPass`] for more details.
+    /// passes. See [`AstPass`] for more details.
     ///
     /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 
-    /// Converts this `QueryFragment` to its SQL representation
+    /// Converts this `QueryFragment` to its SQL representation.
+    ///
+    /// This method should only be called by implementations of `Connection`.
     fn to_sql(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
         self.walk_ast(AstPass::to_sql(out))
     }
@@ -129,6 +134,8 @@ pub trait QueryFragment<DB: Backend> {
     ///
     /// A bind parameter is a value which is sent separately from the query
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
+    ///
+    /// This method should only be called by implementations of `Connection`.
     fn collect_binds(
         &self,
         out: &mut DB::BindCollector,
@@ -150,6 +157,8 @@ pub trait QueryFragment<DB: Backend> {
     ///   we must assume that it was)
     /// - `In` and `NotIn` (Each value requires a separate bind param
     ///   placeholder)
+    ///
+    /// This method should only be called by implementations of `Connection`.
     fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
         let mut result = true;
         self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
@@ -186,7 +195,9 @@ impl<DB: Backend> QueryFragment<DB> for () {
 /// Types that can be converted into a complete, typed SQL query.
 ///
 /// This is used internally to automatically add the right select clause when
-/// none is specified, or to automatically add `RETURNING *` in certain contexts
+/// none is specified, or to automatically add `RETURNING *` in certain contexts.
+///
+/// A type which implements this trait is guaranteed to be valid for execution.
 pub trait AsQuery {
     /// The SQL type of `Self::Query`
     type SqlType;

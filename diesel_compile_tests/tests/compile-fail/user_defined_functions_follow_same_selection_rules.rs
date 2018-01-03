@@ -35,9 +35,7 @@ fn main() {
     let _ = users::table.filter(name.eq(foo(1)));
     //~^ ERROR type mismatch
 
-    let _ = LoadDsl::load::<User>(
-    //~^ ERROR E0277
-        users::table.filter(name.eq(bar(title))),
-        &conn,
-    );
+    let _ = users::table.filter(name.eq(bar(title)))
+        .load::<User>(&conn);
+        //~^ ERROR AppearsInFromClause
 }

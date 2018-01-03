@@ -172,9 +172,9 @@ impl FromSql<types::Interval, Pg> for PgInterval {
         Ok(PgInterval {
             microseconds: try!(FromSql::<types::BigInt, Pg>::from_sql(Some(&bytes[..8]))),
             days: try!(FromSql::<types::Integer, Pg>::from_sql(Some(&bytes[8..12]))),
-            months: try!(FromSql::<types::Integer, Pg>::from_sql(
-                Some(&bytes[12..16])
-            )),
+            months: try!(FromSql::<types::Integer, Pg>::from_sql(Some(
+                &bytes[12..16]
+            ))),
         })
     }
 }

@@ -6,7 +6,6 @@ use migrations_internals as migrations;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 use super::query_helper;
 
-
 use database_error::{DatabaseError, DatabaseResult};
 
 use std::error::Error;
@@ -256,7 +255,7 @@ table! {
 fn pg_database_exists(conn: &PgConnection, database_name: &str) -> QueryResult<bool> {
     use self::pg_database::dsl::*;
 
-    pg_database.select(datname) // here come dat name!!!! o shit waddup!!!!
+    pg_database.select(datname)
         .filter(datname.eq(database_name))
         .filter(datistemplate.eq(false))
         .get_result::<String>(conn)

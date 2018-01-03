@@ -189,12 +189,12 @@ impl Drop for RawConnection {
     }
 }
 
-/// > In a nonmulti-threaded environment, `mysql_init()` invokes
+/// > In a non-multi-threaded environment, `mysql_init()` invokes
 /// > `mysql_library_init()` automatically as necessary. However,
 /// > `mysql_library_init()` is not thread-safe in a multi-threaded environment,
 /// > and thus neither is `mysql_init()`. Before calling `mysql_init()`, either
 /// > call `mysql_library_init()` prior to spawning any threads, or use a mutex
-/// > ot protect the `mysql_library_init()` call. This should be done prior to
+/// > to protect the `mysql_library_init()` call. This should be done prior to
 /// > any other client library call.
 ///
 /// <https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html>
@@ -204,7 +204,8 @@ fn perform_thread_unsafe_library_initialization() {
     MYSQL_THREAD_UNSAFE_INIT.call_once(|| {
         // mysql_library_init is defined by `#define mysql_library_init mysql_server_init`
         // which isn't picked up by bindgen
-        let error_code = unsafe { ffi::mysql_server_init(0, ptr::null_mut(), ptr::null_mut()) };
+        let error_code =
+            unsafe { ffi::mysql_server_init(0, ptr::null_mut(), ptr::null_mut()) };
         if error_code != 0 {
             // FIXME: This is documented as Nonzero if an error occurred.
             // Presumably the value has some sort of meaning that we should

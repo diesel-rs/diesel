@@ -7,12 +7,14 @@ use std::ffi::NulError;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
-/// The generic "things can fail in a myriad of ways" enum.
+/// Represents all the ways that a query can fail.
 ///
 /// This type is not intended to be exhaustively matched, and new variants may
 /// be added in the future without a major version bump.
 pub enum Error {
     /// The query contained a nul byte.
+    ///
+    /// This should never occur in normal usage.
     InvalidCString(NulError),
     /// The database returned an error.
     ///
@@ -30,9 +32,9 @@ pub enum Error {
     /// does not treat 0 rows as an error. If you would like to allow either 0
     /// or 1 rows, call [`optional`] on the result.
     ///
-    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
-    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
-    /// [`load`]: ../prelude/trait.LoadDsl.html#method.load
+    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
+    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
+    /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
     /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
     NotFound,
     /// The query could not be constructed
@@ -67,7 +69,7 @@ pub enum Error {
 /// The kind of database error that occurred.
 ///
 /// This is not meant to exhaustively cover all possible errors, but is used to
-/// identify errors which are commonly recovered from programatically. This enum
+/// identify errors which are commonly recovered from programmatically. This enum
 /// is not intended to be exhaustively matched, and new variants may be added in
 /// the future without a major version bump.
 pub enum DatabaseErrorKind {
@@ -150,7 +152,7 @@ impl DatabaseErrorInformation for String {
 
 /// Errors which can occur during [`Connection::establish`]
 ///
-/// [`Connection::establish`]: ../connection/trait.Connection.html?search=#tymethod.establish
+/// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
 #[derive(Debug)]
 pub enum ConnectionError {
     /// The connection URL contained a `NUL` byte.
@@ -190,19 +192,18 @@ pub trait OptionalExtension<T> {
     /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
     /// handle that error, and give you back an `Option<T>` instead.
     ///
-    /// [`get_result`]: ../prelude/trait.LoadDsl.html#method.get_result
-    /// [`first`]: ../prelude/trait.FirstDsl.html#method.first
+    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
+    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
     ///
     /// # Example
     ///
     /// ```rust
-    /// use diesel::result::{QueryResult, Error};
-    /// use diesel::OptionalExtension;
+    /// use diesel::{QueryResult, NotFound, OptionalExtension};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
     ///
-    /// let result: QueryResult<i32> = Err(Error::NotFound);
+    /// let result: QueryResult<i32> = Err(NotFound);
     /// assert_eq!(Ok(None), result.optional());
     /// ```
     fn optional(self) -> Result<Option<T>, Error>;

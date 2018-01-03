@@ -1,13 +1,25 @@
 use backend::Backend;
+use dsl::Filter;
 use expression::{AppearsOnTable, SelectableExpression};
-use prelude::*;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
+use query_dsl::RunQueryDsl;
+use query_dsl::methods::FilterDsl;
 use query_source::Table;
 use result::QueryResult;
 
 #[derive(Debug)]
+/// Represents a SQL `DELETE` statement.
+///
+/// The type parameters on this struct represent:
+///
+/// - `T`: The table we are deleting from.
+/// - `U`: The `WHERE` clause of this query. The exact types used to represent
+///   this are private, and you should not make any assumptions about them.
+/// - `Ret`: The `RETURNING` clause of this query. The exact types used to
+///   represent this are private. You can safely rely on the default type
+///   representing the lack of a `RETURNING` clause.
 pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
     table: T,
     where_clause: U,
@@ -23,14 +35,6 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
             returning: NoReturningClause,
         }
     }
-}
-
-impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = DeleteStatement<T, U::Output, Ret>;
 
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
@@ -45,15 +49,8 @@ where
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_rows = diesel::delete(users)
     ///     .filter(name.eq("Sean"))
@@ -66,6 +63,21 @@ where
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
+    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
+    where
+        Self: FilterDsl<Predicate>,
+    {
+        FilterDsl::filter(self, predicate)
+    }
+}
+
+impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = DeleteStatement<T, U::Output, Ret>;
+
     fn filter(self, predicate: Predicate) -> Self::Output {
         DeleteStatement {
             table: self.table,
@@ -116,6 +128,8 @@ where
     type SqlType = Ret::SqlType;
 }
 
+impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> {}
+
 impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.
     ///
@@ -127,16 +141,9 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_name = diesel::delete(users.filter(name.eq("Sean")))
     ///     .returning(name)

@@ -116,7 +116,7 @@ fn test_adding_nullables() {
 }
 
 #[test]
-fn test_substracting_nullables() {
+fn test_subtracting_nullables() {
     use schema::nullable_table::dsl::*;
     let connection = connection_with_nullable_table_data();
 

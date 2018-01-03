@@ -7,58 +7,11 @@ use table_data::*;
 use data_structures::*;
 
 static RESERVED_NAMES: &[&str] = &[
-    "abstract",
-    "alignof",
-    "as",
-    "become",
-    "box",
-    "break",
-    "const",
-    "continue",
-    "crate",
-    "do",
-    "else",
-    "enum",
-    "extern",
-    "false",
-    "final",
-    "fn",
-    "for",
-    "if",
-    "impl",
-    "in",
-    "let",
-    "loop",
-    "macro",
-    "match",
-    "mod",
-    "move",
-    "mut",
-    "offsetof",
-    "override",
-    "priv",
-    "proc",
-    "pub",
-    "pure",
-    "ref",
-    "return",
-    "Self",
-    "self",
-    "sizeof",
-    "static",
-    "struct",
-    "super",
-    "trait",
-    "true",
-    "type",
-    "typeof",
-    "unsafe",
-    "unsized",
-    "use",
-    "virtual",
-    "where",
-    "while",
-    "yield",
+    "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
+    "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl", "in", "let", "loop",
+    "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc", "pub", "pure",
+    "ref", "return", "Self", "self", "sizeof", "static", "struct", "super", "trait", "true",
+    "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
 pub(crate) enum InferConnection {
@@ -99,21 +52,17 @@ pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection
         #[cfg(feature = "sqlite")]
         _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
         #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-        _ => Err(
-            format!(
-                "{} is not a valid PG database URL. \
-                 It must start with postgres:// or postgresql://",
-                database_url,
-            ).into(),
-        ),
+        _ => Err(format!(
+            "{} is not a valid PG database URL. \
+             It must start with postgres:// or postgresql://",
+            database_url,
+        ).into()),
         #[cfg(all(feature = "mysql", not(any(feature = "sqlite", feature = "postgres"))))]
-        _ => Err(
-            format!(
-                "{} is not a valid MySQL database URL. \
-                 It must start with mysql://",
-                database_url,
-            ).into(),
-        ),
+        _ => Err(format!(
+            "{} is not a valid MySQL database URL. \
+             It must start with mysql://",
+            database_url,
+        ).into()),
         #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
         _ => compile_error!(
             "At least one backend must be specified for use with this crate.\n \
@@ -131,8 +80,7 @@ where
     Conn::establish(database_url).map_err(|error| {
         format!(
             "Failed to establish a database connection at {}. Error: {:?}",
-            database_url,
-            error,
+            database_url, error,
         ).into()
     })
 }
@@ -183,25 +131,21 @@ pub(crate) fn get_primary_keys(
         InferConnection::Mysql(ref c) => ::information_schema::get_primary_keys(c, table),
     });
     if primary_keys.is_empty() {
-        Err(
-            format!(
-                "Diesel only supports tables with primary keys. \
-                 Table {} has no primary key",
-                table.to_string()
-            ).into(),
-        )
+        Err(format!(
+            "Diesel only supports tables with primary keys. \
+             Table {} has no primary key",
+            table.to_string()
+        ).into())
     } else if primary_keys.len() > 5 {
-        Err(
-            format!(
-                "Diesel does not currently support tables with \
-                 primary keys consisting of more than 5 columns. \
-                 Table {} has {} columns in its primary key. \
-                 Please open an issue and we will increase the \
-                 limit.",
-                table.to_string(),
-                primary_keys.len()
-            ).into(),
-        )
+        Err(format!(
+            "Diesel does not currently support tables with \
+             primary keys consisting of more than 5 columns. \
+             Table {} has {} columns in its primary key. \
+             Please open an issue and we will increase the \
+             limit.",
+            table.to_string(),
+            primary_keys.len()
+        ).into())
     } else {
         Ok(primary_keys)
     }

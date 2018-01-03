@@ -1,4 +1,3 @@
-#![deny(missing_docs)]
 /// Constructs a query that finds record(s) based on directional association with other record(s).
 ///
 /// # Example
@@ -24,15 +23,27 @@
 /// # }
 /// #
 /// # fn main() {
-/// # let connection = establish_connection();
-/// # use users::dsl::*;
-/// # let user = users.find(2).get_result::<User>(&connection).unwrap();
-/// let posts = Post::belonging_to(&user)
-/// #    .load::<Post>(&connection);
+/// #     run_test();
+/// # }
 /// #
-/// # assert_eq!(posts,
-/// #     Ok(vec![Post { id: 3, user_id: 2, title: "My first post too".to_owned() }])
-/// # );
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// #     use users::dsl::*;
+/// #     use posts::dsl::{posts, title};
+/// let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
+/// let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
+///
+/// let seans_posts = Post::belonging_to(&sean)
+///     .select(title)
+///     .load::<String>(&connection)?;
+/// assert_eq!(vec!["My first post", "About Rust"], seans_posts);
+///
+/// // A vec or slice can be passed as well
+/// let more_posts = Post::belonging_to(&vec![sean, tess])
+///     .select(title)
+///     .load::<String>(&connection)?;
+/// assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
+/// #     Ok(())
 /// # }
 /// ```
 pub trait BelongingToDsl<T> {

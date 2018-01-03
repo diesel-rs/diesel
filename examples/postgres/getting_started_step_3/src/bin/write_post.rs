@@ -16,8 +16,7 @@ fn main() {
 
     println!(
         "\nOk! Let's write {} (Press {} when finished)\n",
-        title,
-        EOF
+        title, EOF
     );
     stdin().read_to_string(&mut body).unwrap();
 

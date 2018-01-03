@@ -169,9 +169,7 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
     migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .unwrap_or_else(|| {
-            migrations::find_migrations_directory().unwrap_or_else(handle_error)
-        })
+        .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error))
 }
 
 fn run_setup_command(matches: &ArgMatches) {

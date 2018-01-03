@@ -1,7 +1,7 @@
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::types::Bool;
-use diesel::{select, Connection, LoadDsl, PgConnection};
+use diesel::{select, Connection, PgConnection, RunQueryDsl};
 
 pub struct Database {
     url: String,

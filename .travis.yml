@@ -45,6 +45,7 @@ script:
 matrix:
   allow_failures:
     - rust: nightly
+    - rust: beta
   include:
   - rust: nightly-2017-11-28
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
@@ -55,16 +56,15 @@ matrix:
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
-  - rust: nightly-2017-11-29
+  - rust: nightly-2017-12-12
     env: RUSTFMT=YESPLEASE
     script:
     - |
       if ! [ -x "$(command -v rustfmt)" ]; then
-        cargo install rustfmt-nightly --vers 0.2.16
+        cargo install rustfmt-nightly --vers 0.3.1
       fi
     - cargo fmt --all -- --write-mode=diff
 env:
-  # TODO: why is there no database specified for Postgres?
   matrix:
     - BACKEND=sqlite
       SQLITE_DATABASE_URL=/tmp/test.db
@@ -91,6 +91,7 @@ after_success:
 branches:
   only:
     - master
+    - 0.99.x
     - ಠ_ಠ
 notifications:
   webhooks:

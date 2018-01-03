@@ -17,7 +17,6 @@ const AF_INET: u8 = 1;
 #[cfg(not(any(windows, redox)))]
 const AF_INET: u8 = libc::AF_INET as u8;
 
-
 const PGSQL_AF_INET: u8 = AF_INET;
 const PGSQL_AF_INET6: u8 = AF_INET + 1;
 
@@ -133,7 +132,6 @@ macro_rules! impl_Sql {
 
 impl_Sql!(types::Inet, 0);
 impl_Sql!(types::Cidr, 1);
-
 
 #[test]
 fn macaddr_roundtrip() {

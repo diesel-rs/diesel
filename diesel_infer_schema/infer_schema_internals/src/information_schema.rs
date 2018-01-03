@@ -220,11 +220,9 @@ where
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
         .inner_join(
-            rc::table.on(
-                tc::constraint_schema
-                    .eq(rc::constraint_schema)
-                    .and(tc::constraint_name.eq(rc::constraint_name)),
-            ),
+            rc::table.on(tc::constraint_schema
+                .eq(rc::constraint_schema)
+                .and(tc::constraint_name.eq(rc::constraint_name))),
         )
         .select((
             rc::constraint_schema,

@@ -36,7 +36,7 @@ impl<DB: Backend<RawValue = [u8]>> FromSql<types::Double, DB> for f64 {
         debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes while decoding \
-             an f64. Was a numeric accidentally marked as dobule?"
+             an f64. Was a numeric accidentally marked as double?"
         );
         bytes
             .read_f64::<DB::ByteOrder>()

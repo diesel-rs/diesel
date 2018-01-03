@@ -52,7 +52,7 @@ DROP TABLE USERS;
 ```
 
 You can then run your new migration by running `diesel migration run`. Your
-DATABASE_URL must be set in order to run this command, and there are serveral
+DATABASE_URL must be set in order to run this command, and there are several
 ways that you can set it:
 
 * Set it as an environment variable manually

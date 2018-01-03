@@ -15,8 +15,8 @@ fn migration_redo_runs_the_last_migration_down_and_up() {
     let result = p.command("migration").arg("redo").run();
 
     let expected_stdout = "\
-Rolling back migration 12345
-Running migration 12345
+Rolling back migration 12345_create_users_table
+Running migration 12345_create_users_table
 ";
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -47,8 +47,8 @@ fn migration_redo_respects_migration_dir_var() {
         .run();
 
     let expected_stdout = "\
-Rolling back migration 12345
-Running migration 12345
+Rolling back migration 12345_create_users_table
+Running migration 12345_create_users_table
 ";
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -79,8 +79,8 @@ fn migration_redo_respects_migration_dir_env() {
         .run();
 
     let expected_stdout = "\
-Rolling back migration 12345
-Running migration 12345
+Rolling back migration 12345_create_users_table
+Running migration 12345_create_users_table
 ";
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);

@@ -62,9 +62,10 @@ fn treat_none_as_null(attrs: &[syn::Attribute]) -> bool {
                 usage_err();
             }
             match values[0] {
-                syn::NestedMetaItem::MetaItem(
-                    syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, _)),
-                ) if name == "treat_none_as_null" =>
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(
+                    ref name,
+                    syn::Lit::Str(ref value, _),
+                )) if name == "treat_none_as_null" =>
                 {
                     value == "true"
                 }

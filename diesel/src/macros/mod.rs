@@ -249,7 +249,7 @@ macro_rules! __diesel_column {
 /// `all_columns`. The SQL type is needed for things like [returning boxed
 /// queries][boxed_queries].
 ///
-/// [boxed_queries]: prelude/trait.BoxedDsl.html#example-1
+/// [boxed_queries]: query_dsl/trait.QueryDsl.html#method.into_boxed
 ///
 /// `BoxedQuery`
 /// ----------
@@ -1036,7 +1036,6 @@ macro_rules! joinable_inner {
     }
 }
 
-
 /// Allow two or more tables which are otherwise unrelated to be used together
 /// in a query.
 ///
@@ -1087,7 +1086,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
 }
 
 // The order of these modules is important (at least for those which have tests).
-// Utililty macros which don't call any others need to come first.
+// Utility macros which don't call any others need to come first.
 #[macro_use]
 mod internal;
 #[macro_use]

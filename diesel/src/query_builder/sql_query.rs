@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use connection::Connection;
-use load_dsl::*;
 use query_builder::{AstPass, QueryFragment, QueryId};
+use query_dsl::{LoadQuery, RunQueryDsl};
 use query_source::QueryableByName;
 use result::QueryResult;
 use types::{HasSqlType, ToSql};
@@ -55,7 +55,7 @@ impl SqlQuery {
     /// #
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users::table)
-    /// #         .values(&NewUser::new("Jim"))
+    /// #         .values(users::name.eq("Jim"))
     /// #         .execute(&connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<Conn> LoadDsl<Conn> for SqlQuery {}
+impl<Conn> RunQueryDsl<Conn> for SqlQuery {}
 
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -158,4 +158,4 @@ where
     }
 }
 
-impl<Conn, Query, Value, ST> LoadDsl<Conn> for UncheckedBind<Query, Value, ST> {}
+impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}

@@ -1,65 +1,5 @@
-/// Implements the [`Insertable`][insertable] trait for a given struct. This
-/// macro should be called with the name of the table you wish to use the struct
-/// with, followed by the entire struct body.
-///
-/// [insertable]: prelude/trait.Insertable.html
-///
-/// # Example
-///
-/// ```no_run
-/// # #[macro_use] extern crate diesel;
-/// # table! { users { id -> Integer, name -> VarChar, hair_color -> Nullable<VarChar>, } }
-/// struct NewUser<'a> {
-///     name: &'a str,
-///     hair_color: Option<&'a str>,
-/// }
-///
-/// impl_Insertable! {
-///     (users)
-///     struct NewUser<'a> {
-///         name: &'a str,
-///         hair_color: Option<&'a str>,
-///     }
-/// }
-/// # fn main() {}
-/// ```
-///
-/// To avoid copying your struct definition, you can use the
-/// [`custom_derive` crate][custom_derive].
-///
-/// [custom_derive]: https://crates.io/crates/custom_derive
-///
-/// ```ignore
-/// custom_derive! {
-///     #[derive(Insertable(users))]
-///     struct NewUser<'a> {
-///         name: &'a str,
-///         hair_color: Option<&'a str>,
-///     }
-/// }
-/// ```
-///
-/// You can also use this macro with tuple structs, but *all* fields must be
-/// annotated with `#[column_name(name)]`. Additionally, a trailing comma after
-/// the last field is required.
-///
-/// ```no_run
-/// # #[macro_use] extern crate diesel;
-/// # table! { users { id -> Integer, name -> VarChar, hair_color -> Nullable<VarChar>, } }
-/// struct NewUser<'a>(&'a str, Option<&'a str>);
-///
-/// impl_Insertable! {
-///     (users)
-///     struct NewUser<'a>(
-///         #[column_name(name)]
-///         &'a str,
-///         #[column_name(hair_color)]
-///         Option<&'a str>,
-///     );
-/// }
-/// # fn main() {}
-/// ```
 #[macro_export]
+#[doc(hidden)]
 macro_rules! impl_Insertable {
     // Strip meta items, pub (if present) and struct from definition
     (
@@ -178,7 +118,7 @@ macro_rules! impl_Insertable {
             }
         }
 
-        impl<$($lifetime,)*> $crate::query_builder::insert_statement::UndecoratedInsertRecord<$table_name::table>
+        impl<$($lifetime,)*> $crate::query_builder::UndecoratedInsertRecord<$table_name::table>
             for $struct_ty
         {
         }

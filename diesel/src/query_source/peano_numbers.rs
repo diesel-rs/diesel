@@ -20,6 +20,7 @@ pub struct MoreThanOnce;
 /// This is used to determine the number of times a table appears in a from
 /// clause when the from clause contains a join.
 pub trait Plus<T> {
+    /// The result of adding these numbers together
     type Output;
 }
 

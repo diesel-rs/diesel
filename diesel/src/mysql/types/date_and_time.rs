@@ -42,7 +42,8 @@ macro_rules! mysql_time_impls {
 }
 
 mysql_time_impls!(Datetime);
-primitive_impls!(Datetime -> NaiveDateTime);
+queryable_impls!(Datetime -> NaiveDateTime);
+expression_impls!(Datetime -> NaiveDateTime);
 mysql_time_impls!(Timestamp);
 mysql_time_impls!(Time);
 mysql_time_impls!(Date);
@@ -97,9 +98,7 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
                 mysql_time.second_part as u32,
             )
         })
-            .ok_or_else(|| {
-                format!("Cannot parse this date: {:?}", mysql_time).into()
-            })
+            .ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
     }
 }
 
@@ -125,9 +124,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
             mysql_time.hour as u32,
             mysql_time.minute as u32,
             mysql_time.second as u32,
-        ).ok_or_else(|| {
-            format!("Unable to convert {:?} to chrono", mysql_time).into()
-        })
+        ).ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
     }
 }
 
@@ -153,9 +150,7 @@ impl FromSql<Date, Mysql> for NaiveDate {
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ).ok_or_else(|| {
-            format!("Unable to convert {:?} to chrono", mysql_time).into()
-        })
+        ).ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
     }
 }
 

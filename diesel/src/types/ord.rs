@@ -1,6 +1,6 @@
 use types::{self, NotNull};
 
-/// Marker trait for types which can be compared for ordering.
+/// Marker trait for types which can be used with `MAX` and `MIN`
 pub trait SqlOrd {}
 
 impl SqlOrd for types::SmallInt {}

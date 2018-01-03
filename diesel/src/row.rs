@@ -5,8 +5,10 @@ use std::error::Error;
 use backend::Backend;
 use types::{FromSql, HasSqlType};
 
-/// The row trait which is used for [`FromSqlRow`][]. Apps should not need to
-/// concern themselves with this trait.
+/// Represents a single database row.
+/// Apps should not need to concern themselves with this trait.
+///
+/// This trait is only used as an argument to [`FromSqlRow`].
 ///
 /// [`FromSqlRow`]: ../types/trait.FromSqlRow.html
 pub trait Row<DB: Backend> {
@@ -35,7 +37,7 @@ pub trait Row<DB: Backend> {
 /// This trait is used by implementations of
 /// [`QueryableByName`](../query_source/trait.QueryableByName.html)
 pub trait NamedRow<DB: Backend> {
-    /// Retreive and deserialize a single value from the query
+    /// Retrieve and deserialize a single value from the query
     ///
     /// Note that `ST` *must* be the exact type of the value with that name in
     /// the query. The compiler will not be able to verify that you have
@@ -49,9 +51,8 @@ pub trait NamedRow<DB: Backend> {
         DB: HasSqlType<ST>,
         T: FromSql<ST, DB>,
     {
-        let idx = self.index_of(column_name).ok_or_else(|| {
-            format!("Column `{}` was not present in query", column_name).into()
-        });
+        let idx = self.index_of(column_name)
+            .ok_or_else(|| format!("Column `{}` was not present in query", column_name).into());
         let idx = match idx {
             Ok(x) => x,
             Err(e) => return Err(e),

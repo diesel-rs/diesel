@@ -8,18 +8,67 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* The `BINARY` column type name is now supported for SQLite.
+
+## [1.0.0] - 2018-01-02
+
+### Added
+
 * `#[derive(QueryableByName)]` can now handle structs that have no associated
   table. If the `#[table_name]` annotation is left off, you must annotate each
   field with `#[sql_type = "Integer"]`
 
+* `#[derive(QueryableByName)]` can now handle embedding other structs. To have a
+  field whose type is a struct which implements `QueryableByName`, rather than a
+  single column in the query, add the annotation `#[diesel(embed)]`
+
+* The `QueryDsl` trait encompasses the majority of the traits that were
+  previously in the `query_dsl` module.
+
+### Fixed
+
+* Executing select statements on SQLite will no longer panic when the database
+  returns `SQLITE_BUSY`
+
+* `table!`s which use the `Datetime` type with MySQL will now compile correctly,
+  even without the `chrono` feature enabled.
+
+* `#[derive(QueryableByName)]` will now compile correctly when there is a shadowed `Result` type in scope.
+
+* `BoxableExpression` can now be used with types that are not `'static`
+
 ### Changed
+
+* `Connection::test_transaction` now requires that the error returned implement `Debug`.
+
+* `query_builder::insert_statement::InsertStatement` is now accessed as
+  `query_builder::InsertStatement`
+
+* `query_builder::insert_statement::UndecoratedInsertRecord` is now accessed as
+  `query_builder::UndecoratedInsertRecord`
 
 * `#[derive(QueryableByName)]` now requires that the table name be explicitly
   stated.
 
+* Most of the traits in `query_dsl` have been moved to `query_dsl::methods`.
+  These traits are no longer exported in `prelude`. This should not affect most
+  apps, as the behavior of these traits is provided by `QueryDsl`. However, if
+  you were using these traits in `where` clauses for generic code, you will need
+  to explicitly do `use diesel::query_dsl::methods::WhateverDsl`. You may also
+  need to use UFCS in these cases.
+
+* If you have a type which implemented `QueryFragment` or `Query`, which you
+  intended to be able to call `execute` or `load` on, you will need to manually
+  implement `RunQueryDsl` for that type. The trait should be unconditionally
+  implemented (no where clause beyond what your type requires), and the body
+  should be empty.
+
 ### Removed
 
 * All deprecated items have been removed.
+
+* `LoadDsl` and `FirstDsl` have been removed. Their functionality now lives in
+  `LoadQuery`.
 
 ## [0.99.1] - 2017-12-01
 
@@ -82,7 +131,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   use associated constants where appropriate.
 
 * You will now need to invoke `allow_tables_to_appear_in_same_query!` any time two tables
-  appear together in the same query, even if there is a `joinable!` invocationfor those tables.
+  appear together in the same query, even if there is a `joinable!` invocation for those tables.
 
 * `diesel_codegen` should no longer explicitly be used as a dependency. Unless
   you are using `infer_schema!` or `embed_migrations!`, you can simply remove it
@@ -693,7 +742,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   instead of `env!("foo")` and `"dotenv:foo"` instead of `dotenv!("foo")`. The
   use of `dotenv` requires the `dotenv` feature on `diesel_codegen`, which is
   included by default. Using `env!` and `dotenv!` will no longer work with
-  `diesel_codegen`. They continue to work with `diesel_codgen_syntex`, but that
+  `diesel_codegen`. They continue to work with `diesel_codegen_syntex`, but that
   crate will be deprecated when Macros 1.1 is in the beta channel for Rust.
 
 [bash completion]: https://github.com/diesel-rs/diesel/blob/b1a0d9901f0f2a8c8d530ccba8173b57f332b891/diesel_cli/README.md#bash-completion
@@ -1099,7 +1148,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `query_one`, `find`, and `first` now assume a single row is returned. For
   cases where you actually expect 0 or 1 rows to be returned, the `optional`
   method has been added to the result, in case having a `Result<Option<T>>` is
-  more ideomatic than checking for `Err(NotFound)`.
+  more idiomatic than checking for `Err(NotFound)`.
 
 ### Deprecated
 
@@ -1145,3 +1194,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.15.2]: https://github.com/diesel-rs/diesel/compare/v0.15.1...v0.15.2
 [0.16.0]: https://github.com/diesel-rs/diesel/compare/v0.15.2...v0.16.0
 [0.99.0]: https://github.com/diesel-rs/diesel/compare/v0.16.0...v0.99.0
+[0.99.1]: https://github.com/diesel-rs/diesel/compare/v0.99.0...v0.99.1
+[1.0.0]: https://github.com/diesel-rs/diesel/compare/v0.99.1...v1.0.0

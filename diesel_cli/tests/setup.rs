@@ -33,7 +33,7 @@ fn setup_creates_migrations_directory() {
 #[test]
 #[cfg(feature = "postgres")]
 fn setup_initial_migration_returns_nothing_to_console() {
-    let p = project("setup_intial_migration_returns_nothing_to_console").build();
+    let p = project("setup_initial_migration_returns_nothing_to_console").build();
 
     let result = p.command("setup").run();
 
@@ -48,9 +48,7 @@ fn setup_creates_default_migration_file() {
     let result = p.command("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(p.has_file(
-        Path::new("migrations").join("00000000000000_diesel_initial_setup")
-    ));
+    assert!(p.has_file(Path::new("migrations").join("00000000000000_diesel_initial_setup")));
 }
 
 #[test]

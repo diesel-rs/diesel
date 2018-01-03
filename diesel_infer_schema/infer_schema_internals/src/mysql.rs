@@ -51,11 +51,9 @@ pub fn load_foreign_key_constraints(
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
         .inner_join(
-            kcu::table.on(
-                tc::constraint_schema
-                    .eq(kcu::constraint_schema)
-                    .and(tc::constraint_name.eq(kcu::constraint_name)),
-            ),
+            kcu::table.on(tc::constraint_schema
+                .eq(kcu::constraint_schema)
+                .and(tc::constraint_name.eq(kcu::constraint_name))),
         )
         .select((
             (kcu::table_name, kcu::table_schema),

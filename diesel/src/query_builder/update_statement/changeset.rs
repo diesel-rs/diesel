@@ -4,7 +4,7 @@ use query_source::QuerySource;
 use result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](/diesel/query_builder/struct.IncompleteUpdateStatement.html#method.set).
+/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set).
 ///
 /// ### Deriving
 ///
@@ -29,7 +29,7 @@ pub trait AsChangeset {
     fn as_changeset(self) -> Self::Changeset;
 }
 
-/// Apps should not need to concern themselves with this trait.
+#[doc(hidden)]
 pub trait Changeset<DB: Backend> {
     /// Does this changeset actually include any changes?
     fn is_noop(&self) -> bool;

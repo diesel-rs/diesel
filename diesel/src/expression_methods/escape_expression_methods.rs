@@ -5,24 +5,20 @@ use types::VarChar;
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify
 /// the escape character for the pattern.
 ///
+/// By default, the escape character is `\` on most backends. On SQLite,
+/// there is no default escape character.
+///
 /// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # table! {
-/// #     users {
-/// #         id -> Integer,
-/// #         name -> VarChar,
-/// #     }
-/// # }
-/// #
 /// # fn main() {
-/// #     use self::users::dsl::*;
+/// #     use schema::users::dsl::*;
 /// #     use diesel::insert_into;
 /// #     let connection = establish_connection();
-/// #     insert_into(users).values(&NewUser { name: "Ha%%0r".into() })
+/// #     insert_into(users).values(name.eq("Ha%%0r"))
 /// #         .execute(&connection).unwrap();
 /// let users_with_percent = users.select(name)
 ///     .filter(name.like("%😀%%").escape('😀'))
@@ -35,6 +31,7 @@ use types::VarChar;
 /// # }
 /// ```
 pub trait EscapeExpressionMethods: Sized {
+    /// See the trait documentation.
     fn escape(self, character: char) -> Escape<Self, AsExprOf<String, VarChar>> {
         Escape::new(self, character.to_string().into_sql::<VarChar>())
     }

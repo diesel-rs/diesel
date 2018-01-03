@@ -1,6 +1,6 @@
 //! Types and functions related to PG's `ON CONFLICT` clause
 //!
-//! See [the methods on `InsertStatement`](../../query_builder/insert_statement/struct.InsertStatement.html#impl-1)
+//! See [the methods on `InsertStatement`](../../query_builder/struct.InsertStatement.html#impl-1)
 //! for usage examples.
 
 mod on_conflict_actions;

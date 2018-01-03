@@ -44,7 +44,7 @@ with various package managers.
 
 ### MySQL
 
-1. Install the folowing to add the MySQL APT repository. 
+1. Install the following to add the MySQL APT repository. 
 
     ```
     wget https://dev.mysql.com/get/mysql-apt-config_0.8.7-1_all.deb

@@ -68,10 +68,8 @@ impl Project {
             .join("migrations")
             .read_dir()
             .expect("Error reading directory")
-            .map(|e| {
-                Migration {
-                    path: e.expect("error reading entry").path().into(),
-                }
+            .map(|e| Migration {
+                path: e.expect("error reading entry").path().into(),
             })
             .collect()
     }
@@ -87,7 +85,6 @@ impl Project {
         db_url.set_path(&format!("diesel_{}", &self.name));
         db_url
     }
-
 
     #[cfg(feature = "postgres")]
     pub fn database_url(&self) -> String {

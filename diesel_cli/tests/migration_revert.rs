@@ -28,7 +28,7 @@ fn migration_revert_runs_the_last_migration_down() {
 }
 
 #[test]
-fn migration_revert_respectes_migration_dir_var() {
+fn migration_revert_respects_migration_dir_var() {
     let p = project("migration_revert_var").folder("foo").build();
     let db = database(&p.database_url());
 
@@ -59,7 +59,7 @@ fn migration_revert_respectes_migration_dir_var() {
 }
 
 #[test]
-fn migration_revert_respectes_migration_dir_env() {
+fn migration_revert_respects_migration_dir_env() {
     let p = project("migration_revert_env").folder("bar").build();
     let db = database(&p.database_url());
 

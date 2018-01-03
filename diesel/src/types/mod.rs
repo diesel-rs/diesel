@@ -1,17 +1,18 @@
-//! Types which represent a native SQL data type, and the conversions between
-//! them and Rust primitives. The structs in this module are *only* used as
-//! markers to represent a SQL type, and shouldn't be used in your structs. See
-//! the documentation for each type to see the Rust types that can be used with
-//! a corresponding SQL type. Additional types can be added by other crates.
+//! Types which represent a SQL data type.
 //!
-//! To see which Rust types can be used with a given SQL type, see the
-//! "Implementors" section of the [`ToSql`][ToSql] and [`FromSql`][FromSql]
-//! traits, or see the documentation for that SQL type.
+//! The structs in this module are *only* used as markers to represent a SQL type.
+//! They should never be used in your structs.
+//! If you'd like to know the rust types which can be used for a given SQL type,
+//! see the documentation for that SQL type.
+//! Additional types may be provided by other crates.
 //!
-//! [ToSql]: /diesel/types/trait.ToSql.html
-//! [FromSql]: /diesel/types/trait.FromSql.html
+//! To see which SQL type can be used with a given Rust type,
+//! see the "Implementors" section of [`FromSql`].
+//!
+//! [`FromSql`]: trait.FromSql.html
 //!
 //! Any backend specific types are re-exported through this module
+
 pub mod ops;
 mod ord;
 #[macro_use]
@@ -43,13 +44,16 @@ use row::Row;
 use std::error::Error;
 use std::io::{self, Write};
 
-/// The boolean SQL type. On SQLite this is emulated with an integer.
+/// The boolean SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// On backends without a native boolean type,
+/// this is emulated with the smallest supported integer.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`bool`][bool]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`bool`][bool]
 ///
@@ -57,13 +61,17 @@ use std::io::{self, Write};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Bool;
 
-/// The tinyint SQL type. This is only available on MySQL.
+/// The tiny integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// This is only available on MySQL.
+/// Keep in mind that `infer_schema!` will see `TINYINT(1)` as `Bool`,
+/// not `Tinyint`.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i8`][i8]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i8`][i8]
 ///
@@ -73,11 +81,11 @@ pub struct Tinyint;
 
 /// The small integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i16`][i16]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i16`][i16]
 ///
@@ -91,11 +99,11 @@ pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i32`][i32]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i32`][i32]
 ///
@@ -107,11 +115,11 @@ pub type Int4 = Integer;
 
 /// The big integer SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`i64`][i64]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`i64`][i64]
 ///
@@ -125,11 +133,11 @@ pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`f32`][f32]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`f32`][f32]
 ///
@@ -141,11 +149,11 @@ pub type Float4 = Float;
 
 /// The double precision float SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`f64`][f64]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`f64`][f64]
 ///
@@ -155,26 +163,24 @@ pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
 
-/// The numeric SQL type.
+/// The arbitrary precision numeric SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
-///
-/// - [`bigdecimal::BigDecimal`][bigdecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
-/// feature, which depends on the
-/// [`bigdecimal`][bigdecimal] crate)
-///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
-///
-/// - [`bigdecimal::BigDecimal`][BigDecimal] (currently PostgreSQL and MySQL only, requires the `numeric`
-/// feature, which depends on the
-/// [`bigdecimal`][bigdecimal] crate)
-///
+/// This type is only supported on PostgreSQL and MySQL.
 /// On SQLite, [`Double`](struct.Double.html) should be used instead.
 ///
-/// [BigDecimal]: /bigdecimal/struct.BigDecimal.html
-/// [bigdecimal]: /bigdecimal/index.html
+/// ### [`ToSql`](trait.ToSql.html) impls
+///
+/// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
+///
+/// ### [`FromSql`](trait.FromSql.html) impls
+///
+/// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
+///
+/// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Numeric;
+
+/// Alias for `Numeric`
 pub type Decimal = Numeric;
 
 #[cfg(not(feature = "postgres"))]
@@ -188,14 +194,15 @@ impl SingleValue for Numeric {}
 /// On all backends strings must be valid UTF-8.
 /// On PostgreSQL strings must not include nul bytes.
 ///
-/// On MySQL, it is also aliased by `Tinytext`, `Mediumtext`, `Longtext`, `Char` and `Varchar`.
+/// Schema inference will treat all variants of `TEXT` as this type (e.g.
+/// `VARCHAR`, `MEDIUMTEXT`, etc).
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`String`][String]
 /// - [`&str`][str]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`String`][String]
 ///
@@ -203,6 +210,16 @@ impl SingleValue for Numeric {}
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Text;
+
+/// The SQL `VARCHAR` type
+///
+/// This type is generally interchangeable with `TEXT`, so Diesel has this as an
+/// alias rather than a separate type (Diesel does not currently support
+/// implicit coercions).
+///
+/// One notable exception to this is with arrays on PG. `TEXT[]` cannot be
+/// coerced to `VARCHAR[]`.  It is recommended that you always use `TEXT[]` if
+/// you need a string array on PG.
 pub type VarChar = Text;
 #[doc(hidden)]
 pub type Varchar = VarChar;
@@ -217,14 +234,15 @@ pub type Longtext = Text;
 
 /// The binary SQL type.
 ///
-/// On MySQL, it is also aliased by `Tinyblob`, `Blob`, `Mediumblob`, `Longblob`, `Bit` and `Varbinary`.
+/// Schema inference will treat all variants of `BLOB` as this type (e.g.
+/// `VARBINARY`, `MEDIUMBLOB`, etc).
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`Vec<u8>`][Vec]
 /// - [`&[u8]`][slice]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`Vec<u8>`][Vec]
 ///
@@ -248,13 +266,11 @@ pub type Bit = Binary;
 
 /// The date SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL and SQLite.
-///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
@@ -266,18 +282,16 @@ pub struct Date;
 ///
 /// This type is currently only implemented for PostgreSQL.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
-/// - [`PgInterval`][PgInterval] which can be constructed using the [interval
-///   DSLs][interval dsls]
+/// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
-/// - [`PgInterval`][PgInterval] which can be constructed using the [interval
-///   DSLs][interval dsls]
+/// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// [PgInterval]: /diesel/pg/data_types/struct.PgInterval.html
-/// [interval dsls]: /diesel/pg/expression/extensions/index.html
+/// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
+/// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Interval;
 
@@ -286,13 +300,11 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 
 /// The time SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL and SQLite.
-///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
@@ -300,17 +312,15 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Time;
 
-/// The timestamp/datetime SQL type.
+/// The timestamp SQL type.
 ///
-/// This type is currently only implemented for PostgreSQL and SQLite.
-///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
@@ -322,15 +332,17 @@ pub struct Time;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Timestamp;
 
-/// The nullable SQL type. This wraps another SQL type to indicate that it can
-/// be null. By default all values are assumed to be `NOT NULL`.
+/// The nullable SQL type.
 ///
-/// ### [`ToSql`](/diesel/types/trait.ToSql.html) impls
+/// This wraps another SQL type to indicate that it can be null.
+/// By default all values are assumed to be `NOT NULL`.
+///
+/// ### [`ToSql`](trait.ToSql.html) impls
 ///
 /// - Any `T` which implements `ToSql<ST>`
 /// - `Option<T>` for any `T` which implements `ToSql<ST>`
 ///
-/// ### [`FromSql`](/diesel/types/trait.FromSql.html) impls
+/// ### [`FromSql`](trait.FromSql.html) impls
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)]
@@ -342,17 +354,38 @@ pub use pg::types::sql_types::*;
 #[cfg(feature = "mysql")]
 pub use mysql::types::*;
 
+/// Indicates that a SQL type exists for a backend.
 pub trait HasSqlType<ST>: TypeMetadata {
+    /// Fetch the metadata for the given type
+    ///
+    /// This method may use `lookup` to do dynamic runtime lookup. Implementors
+    /// of this method should not do dynamic lookup unless absolutely necessary
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
+    /// Fetch the metadata for a tuple representing an entire row
+    ///
+    /// The default implementation of this method simply calls `Self::metadata`.
+    /// You generally should not need to override this method.
+    ///
+    /// However, if you are writing an implementation of `HasSqlType` that
+    /// simply delegates to an inner type (for example, `Nullable` does this),
+    /// then you should ensure that you delegate this method as well.
     fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
         out.push(Self::metadata(lookup))
     }
 }
 
+/// A marker trait indicating that a SQL type is not null.
+///
+/// All SQL types must implement this trait.
 pub trait NotNull {}
 
+/// Converts a type which may or may not be nullable into its nullable
+/// representation.
 pub trait IntoNullable {
+    /// The nullable representation of this type.
+    ///
+    /// For all types except `Nullable`, this will be `Nullable<Self>`.
     type Nullable;
 }
 
@@ -364,35 +397,109 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
     type Nullable = Nullable<T>;
 }
 
+/// A marker trait indicating that a SQL type represents a single value, as
+/// opposed to a list of values.
+///
+/// This trait should generally be implemented for all SQL types with the
+/// exception of Rust tuples. If a column could have this as its type, this
+/// trait should be implemented.
 pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 
-/// How to deserialize a single field of a given type. The input will always be
-/// the binary representation, not the text.
+/// Deserialize a single field of a given SQL type.
+///
+/// When possible, implementations of this trait should prefer to use an
+/// existing implementation, rather than reading from `bytes`. (For example, if
+/// you are implementing this for an enum which is represented as an integer in
+/// the database, prefer `i32::from_sql(bytes)` over reading from `bytes`
+/// directly)
+///
+/// ### Backend specific details
+///
+/// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.
+/// - For SQLite, the actual type of `DB::RawValue` is private API. All
+///   implementations of this trait must be written in terms of an existing
+///   primitive.
+/// - For MySQL, the value of `bytes` will depend on the return value of
+///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
+/// - For third party backends, consult that backend's documentation.
+///
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
+    /// See the trait documentation.
     fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
 }
 
-/// How to deserialize multiple fields, with a known type. This type is
-/// implemented for tuples of various sizes.
+/// Deserialize one or more fields.
+///
+/// All types which implement `FromSql` should also implement this trait. This
+/// trait differs from `FromSql` in that it is also implemented by tuples.
+///
+/// In the future, we hope to be able to provide a blanket impl of this trait
+/// for all types which implement `FromSql`. However, as of Diesel 1.0, such an
+/// impl would conflict with our impl for tuples.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
-    /// The number of fields that this type will consume. Should be equal to
+    /// The number of fields that this type will consume. Must be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
     const FIELDS_NEEDED: usize = 1;
 
+    /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
 }
+
+// Reasons we can't write this:
+//
+// impl<T, ST, DB> FromSqlRow<ST, DB> for T
+// where
+//     DB: Backend + HasSqlType<ST>,
+//     T: FromSql<ST, DB>,
+// {
+//     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
+//         Self::from_sql(row.take())
+//     }
+// }
+//
+// (this is mostly here so @sgrif has a better reference every time he thinks
+// he's somehow had a breakthrough on solving this problem):
+//
+// - It conflicts with our impl for tuples, because `DB` is a bare type
+//   parameter, it could in theory be a local type for some other impl.
+//   - This is fixed by replacing our impl with 3 impls, where `DB` is changed
+//     concrete backends. This would mean that any third party crates adding new
+//     backends would need to add the tuple impls, which sucks but is fine.
+// - It conflicts with our impl for `Option`
+//   - So we could in theory fix this by both splitting the generic impl into
+//     backend specific impls, and removing the `FromSql` impls. In theory there
+//     is no reason that it needs to implement `FromSql`, since everything
+//     requires `FromSqlRow`, but it really feels like it should.
+//   - Specialization might also fix this one. The impl isn't quite a strict
+//     subset (the `FromSql` impl has `T: FromSql`, and the `FromSqlRow` impl
+//     has `T: FromSqlRow`), but if `FromSql` implies `FromSqlRow`,
+//     specialization might consider that a subset?
+// - I don't know that we really need it. `#[derive(FromSqlRow)]` is probably
+//   good enough. That won't improve our own codebase, since 99% of our
+//   `FromSqlRow` impls are for types from another crate, but it's almost
+//   certainly good enough for user types.
+//   - Still, it really feels like `FromSql` *should* be able to imply both
+//   `FromSqlRow` and `Queryable`
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Tiny enum to make the return type of `ToSql` more descriptive
 pub enum IsNull {
+    /// No data was written, as this type is null
     Yes,
+    /// The value is not null
+    ///
+    /// This does not necessarily mean that any data was written to the buffer.
+    /// For example, an empty string has no data to be sent over the wire, but
+    /// also is not null.
     No,
 }
 
+/// Wraps a buffer to be written by `ToSql` with additional backend specific
+/// utilities.
 #[derive(Clone, Copy)]
-#[doc(hidden)]
 pub struct ToSqlOutput<'a, T, DB>
 where
     DB: TypeMetadata,
@@ -403,6 +510,7 @@ where
 }
 
 impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
+    /// Construct a new `ToSqlOutput`
     pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
         ToSqlOutput {
             out,
@@ -410,6 +518,7 @@ impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
         }
     }
 
+    /// Create a new `ToSqlOutput` with the given buffer
     pub fn with_buffer<U>(&self, new_out: U) -> ToSqlOutput<'a, U, DB> {
         ToSqlOutput {
             out: new_out,
@@ -417,10 +526,13 @@ impl<'a, T, DB: TypeMetadata> ToSqlOutput<'a, T, DB> {
         }
     }
 
+    /// Return the raw buffer this type is wrapping
     pub fn into_inner(self) -> T {
         self.out
     }
 
+    /// Returns the backend's mechanism for dynamically looking up type
+    /// metadata at runtime, if relevant for the given backend.
     pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
         self.metadata_lookup
     }
@@ -489,10 +601,29 @@ where
     }
 }
 
-/// Serializes a single value to be sent to the database. The output will be
-/// included as a bind parameter, and is expected to be the binary format, not
-/// text.
+/// Serializes a single value to be sent to the database.
+///
+/// The output is sent as a bind parameter, and the data must be written in the
+/// expected format for the given backend.
+///
+/// When possible, implementations of this trait should prefer using an existing
+/// implementation, rather than writing to `out` directly. (For example, if you
+/// are implementing this for an enum, which is represented as an integer in the
+/// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
+/// yourself.
+///
+/// ### Backend specific details
+///
+/// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.
+/// - For SQLite, all implementations should be written in terms of an existing
+///   `ToSql` implementation.
+/// - For MySQL, the expected bytes will depend on the return value of
+///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
+/// - For third party backends, consult that backend's documentation.
+///
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
+    /// See the trait documentation.
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, DB>,

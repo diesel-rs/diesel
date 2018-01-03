@@ -96,7 +96,7 @@ Thank you! We'll try to respond as quickly as possible.
    docker run -d --name diesel.mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
    while
      sleep 1;
-     ! echo 'CREATE DATABASE diesel_test;' | docker exec -i diesel.mysql mysql
+     ! echo 'CREATE DATABASE diesel_test; CREATE DATABASE diesel_unit_test;' | docker exec -i diesel.mysql mysql
    do sleep 1; done
 
    docker run -d --name diesel.postgres -p 5432:5432 postgres

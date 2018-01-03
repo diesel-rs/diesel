@@ -12,24 +12,28 @@ members = [
     "diesel_migrations",
     "diesel_migrations/migrations_internals",
     "diesel_migrations/migrations_macros",
+    "examples/mysql/all_about_inserts",
     "examples/mysql/getting_started_step_1",
     "examples/mysql/getting_started_step_2",
     "examples/mysql/getting_started_step_3",
+    "examples/postgres/advanced-blog-cli",
+    "examples/postgres/all_about_inserts",
     "examples/postgres/all_about_updates",
     "examples/postgres/getting_started_step_1",
     "examples/postgres/getting_started_step_2",
     "examples/postgres/getting_started_step_3",
+    "examples/sqlite/all_about_inserts",
     "examples/sqlite/getting_started_step_1",
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
 ]
 
 [replace]
-"diesel:0.99.0" = { path = "diesel" }
-"diesel_derives:0.99.0" = { path = "diesel_derives" }
-"diesel_infer_schema:0.99.0" = { path = "diesel_infer_schema" }
-"infer_schema_macros:0.99.0" = { path = "diesel_infer_schema/infer_schema_macros" }
-"infer_schema_internals:0.99.0" = { path = "diesel_infer_schema/infer_schema_internals" }
-"diesel_migrations:0.99.0" = { path = "diesel_migrations" }
-"migrations_internals:0.99.0" = { path = "diesel_migrations/migrations_internals" }
-"migrations_macros:0.99.0" = { path = "diesel_migrations/migrations_macros" }
+"diesel:1.0.0" = { path = "diesel" }
+"diesel_derives:1.0.0" = { path = "diesel_derives" }
+"diesel_infer_schema:1.0.0" = { path = "diesel_infer_schema" }
+"infer_schema_macros:1.0.0" = { path = "diesel_infer_schema/infer_schema_macros" }
+"infer_schema_internals:1.0.0" = { path = "diesel_infer_schema/infer_schema_internals" }
+"diesel_migrations:1.0.0" = { path = "diesel_migrations" }
+"migrations_internals:1.0.0" = { path = "diesel_migrations/migrations_internals" }
+"migrations_macros:1.0.0" = { path = "diesel_migrations/migrations_macros" }

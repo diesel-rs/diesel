@@ -1,8 +1,10 @@
 use types::{self, NotNull};
 
-/// Marker trait for types which can be folded for a sum.
+/// Represents SQL types which can be used with `SUM` and `AVG`
 pub trait Foldable {
+    /// The SQL type of `sum(this_type)`
     type Sum;
+    /// The SQL type of `avg(this_type)`
     type Avg;
 }
 

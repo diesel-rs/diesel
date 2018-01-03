@@ -128,7 +128,6 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 
-
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {

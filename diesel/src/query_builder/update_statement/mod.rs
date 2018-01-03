@@ -5,11 +5,13 @@ pub use self::changeset::{AsChangeset, Changeset};
 pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
+use dsl::Filter;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use prelude::*;
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
+use query_dsl::RunQueryDsl;
+use query_dsl::methods::FilterDsl;
 use query_source::Table;
 use result::Error::QueryBuilderError;
 use result::QueryResult;
@@ -45,14 +47,6 @@ impl<T, U> IncompleteUpdateStatement<T, U> {
             returning: NoReturningClause,
         }
     }
-}
-
-impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = IncompleteUpdateStatement<T, U::Output>;
 
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
@@ -67,15 +61,8 @@ where
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .filter(name.eq("Sean"))
@@ -89,6 +76,21 @@ where
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
+    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
+    where
+        Self: FilterDsl<Predicate>,
+    {
+        FilterDsl::filter(self, predicate)
+    }
+}
+
+impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = IncompleteUpdateStatement<T, U::Output>;
+
     fn filter(self, predicate: Predicate) -> Self::Output {
         IncompleteUpdateStatement::new(UpdateTarget {
             table: self.0.table,
@@ -110,13 +112,7 @@ pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
     returning: Ret,
 }
 
-impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = UpdateStatement<T, U::Output, V, Ret>;
-
+impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
     ///
@@ -130,15 +126,8 @@ where
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .set(name.eq("Jim"))
@@ -152,6 +141,21 @@ where
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
+    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
+    where
+        Self: FilterDsl<Predicate>,
+    {
+        FilterDsl::filter(self, predicate)
+    }
+}
+
+impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
+where
+    U: WhereAnd<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = UpdateStatement<T, U::Output, V, Ret>;
+
     fn filter(self, predicate: Predicate) -> Self::Output {
         UpdateStatement {
             table: self.table,
@@ -212,6 +216,8 @@ where
     type SqlType = Ret::SqlType;
 }
 
+impl<T, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
+
 impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.
     /// # Examples
@@ -222,16 +228,9 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// # table! {
-    /// #     users {
-    /// #         id -> Integer,
-    /// #         name -> VarChar,
-    /// #     }
-    /// # }
-    /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use self::users::dsl::*;
+    /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_name = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))

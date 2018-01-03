@@ -2,6 +2,7 @@ use diesel::connection::SimpleConnection;
 use super::{MigrationError, RunMigrationsError};
 
 use std::path::{Path, PathBuf};
+use std::fmt;
 
 pub trait Migration {
     fn version(&self) -> &str;
@@ -9,6 +10,33 @@ pub trait Migration {
     fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
     fn file_path(&self) -> Option<&Path> {
         None
+    }
+}
+
+#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy)]
+pub struct MigrationName<'a> {
+    pub migration: &'a Migration,
+}
+
+pub fn name(migration: &Migration) -> MigrationName {
+    MigrationName {
+        migration: migration,
+    }
+}
+
+impl<'a> fmt::Display for MigrationName<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let file_name = self.migration
+            .file_path()
+            .and_then(|file_path| file_path.file_name())
+            .and_then(|file| file.to_str());
+        if let Some(name) = file_name {
+            f.write_str(name)?;
+        } else {
+            f.write_str(self.migration.version())?;
+        }
+        Ok(())
     }
 }
 
@@ -57,9 +85,7 @@ impl<'a> Migration for &'a Migration {
 
 fn valid_sql_migration_directory(path: &Path) -> bool {
     file_names(path)
-        .map(|files| {
-            files.contains(&"down.sql".into()) && files.contains(&"up.sql".into())
-        })
+        .map(|files| files.contains(&"down.sql".into()) && files.contains(&"up.sql".into()))
         .unwrap_or(false)
 }
 
@@ -92,9 +118,7 @@ pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .split('_')
         .nth(0)
         .map(|s| Ok(s.replace('-', "")))
-        .unwrap_or_else(|| {
-            Err(MigrationError::UnknownMigrationFormat(path.to_path_buf()))
-        })
+        .unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
 }
 
 use std::fs::File;
@@ -179,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    fn files_begining_with_dot_are_allowed() {
+    fn files_beginning_with_dot_are_allowed() {
         let tempdir = TempDir::new("diesel").unwrap();
         let folder = tempdir.path().join("12345");
 
