@@ -4,12 +4,16 @@ use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression}
 use query_builder::{AstPass, QueryFragment};
 use types;
 
+/// An expression list which can be converted into a single Expression type.
 pub trait IntoSingleTypeExpressionList<ST> {
+    /// The Expression type the list of expressions can be converted into.
     type Expression;
 
+    /// Convert the expression list into a single Expression.
     fn into_single_type_expression_list(self) -> Self::Expression;
 }
 
+/// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy)]
 pub struct ArrayLiteral<T, ST> {
     elements: T,

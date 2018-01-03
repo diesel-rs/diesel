@@ -7,8 +7,7 @@
 #[doc(hidden)]
 pub mod array_comparison;
 pub(crate) mod expression_methods;
-#[doc(hidden)]
-pub mod array;
+mod array;
 pub mod extensions;
 #[doc(hidden)]
 pub mod operators;
@@ -29,3 +28,5 @@ pub mod dsl {
 
     pub use super::extensions::*;
 }
+
+pub use self::array::{ArrayLiteral, IntoSingleTypeExpressionList};

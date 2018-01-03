@@ -3,9 +3,10 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use expression::{AppearsOnTable, AsExpression, Expression, IntoSql, NonAggregate, SelectableExpression};
+#[cfg(feature = "postgres")]
+use expression::IntoSingleTypeExpressionList;
 use expression::helper_types::AsExprOf;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
-use pg::expression::array::IntoSingleTypeExpressionList;
 use query_builder::*;
 use query_source::*;
 use result::QueryResult;
