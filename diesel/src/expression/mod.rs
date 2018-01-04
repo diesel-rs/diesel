@@ -20,7 +20,7 @@ pub mod ops;
 
 #[cfg(feature = "postgres")]
 #[doc(hidden)]
-pub use pg::expression::{IntoSingleTypeExpressionList};
+pub use pg::expression::IntoSingleTypeExpressionList;
 #[doc(hidden)]
 pub mod array_comparison;
 #[doc(hidden)]

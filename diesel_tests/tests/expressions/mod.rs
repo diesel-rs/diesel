@@ -368,7 +368,6 @@ fn test_arrays_a() {
     assert_eq!(value, vec![1, 2]);
 }
 
-
 #[test]
 #[cfg(feature = "postgres")]
 fn test_arrays_b() {
