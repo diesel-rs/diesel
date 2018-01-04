@@ -2,9 +2,12 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpression, Expression, IntoSql, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+#[cfg(feature = "postgres")]
+use expression::{AsExpression, IntoSql};
 #[cfg(feature = "postgres")]
 use expression::IntoSingleTypeExpressionList;
+#[cfg(feature = "postgres")]
 use expression::helper_types::AsExprOf;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
