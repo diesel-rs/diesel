@@ -18,9 +18,6 @@ expression_impls!(Timestamptz -> DateTime<Utc>);
 expression_impls!(Timestamptz -> DateTime<FixedOffset>);
 expression_impls!(Timestamptz -> DateTime<Local>);
 
-queryable_impls!(Timestamptz -> NaiveDateTime);
-queryable_impls!(Timestamptz -> DateTime<Utc>);
-
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
     NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0)

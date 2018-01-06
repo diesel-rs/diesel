@@ -8,6 +8,11 @@ use types::{self, FromSql, IsNull, ToSql, ToSqlOutput, Uuid};
 
 primitive_impls!(Uuid -> (uuid::Uuid, pg: (2950, 2951)));
 
+#[derive(FromSqlRow)]
+#[diesel(foreign_derive)]
+#[allow(dead_code)]
+struct UuidProxy(uuid::Uuid);
+
 impl FromSql<types::Uuid, Pg> for uuid::Uuid {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let bytes = not_none!(bytes);

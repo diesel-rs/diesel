@@ -28,6 +28,7 @@ mod as_changeset;
 mod associations;
 mod ast_builder;
 mod attr;
+mod from_sql_row;
 mod identifiable;
 mod insertable;
 mod model;
@@ -73,6 +74,11 @@ pub fn derive_associations(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryId)]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_derive(input, query_id::derive)
+}
+
+#[proc_macro_derive(FromSqlRow, attributes(diesel))]
+pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
+    expand_derive(input, from_sql_row::derive)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {

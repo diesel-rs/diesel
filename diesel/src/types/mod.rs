@@ -415,6 +415,8 @@ impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 /// the database, prefer `i32::from_sql(bytes)` over reading from `bytes`
 /// directly)
 ///
+/// Types which implement this trait should also have `#[derive(FromSqlRow)]`
+///
 /// ### Backend specific details
 ///
 /// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.
@@ -435,10 +437,18 @@ pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
 ///
 /// All types which implement `FromSql` should also implement this trait. This
 /// trait differs from `FromSql` in that it is also implemented by tuples.
+/// Implementations of this trait are usually derived.
 ///
 /// In the future, we hope to be able to provide a blanket impl of this trait
 /// for all types which implement `FromSql`. However, as of Diesel 1.0, such an
 /// impl would conflict with our impl for tuples.
+///
+/// ## Deriving
+///
+/// This trait can be automatically derived by Diesel
+/// for any type which implements `FromSql`.
+/// There are no options or special considerations needed for this derive.
+/// Note that `#[derive(FromSqlRow)]` will also generate a `Queryable` implementation.
 pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
     /// The number of fields that this type will consume. Must be equal to
     /// the number of times you would call `row.take()` in `build_from_row`

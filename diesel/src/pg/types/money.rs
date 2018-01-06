@@ -16,7 +16,7 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 /// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
 /// use diesel::data_types::PgMoney as Fils;  // 1/1000th unit of Dinar
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow)]
 pub struct PgMoney(pub i64);
 
 use pg::Pg;
