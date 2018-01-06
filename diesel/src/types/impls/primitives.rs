@@ -30,6 +30,10 @@ mod foreign_impls {
 
     #[derive(FromSqlRow)]
     #[diesel(foreign_derive)]
+    struct I8Proxy(i8);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
     struct I16Proxy(i16);
 
     #[derive(FromSqlRow)]

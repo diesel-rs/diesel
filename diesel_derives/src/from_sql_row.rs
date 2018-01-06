@@ -45,6 +45,6 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
                     row
                 }
             }
-        )
+        ),
     )
 }
