@@ -75,7 +75,6 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_derive(input, query_id::derive)
 }
 
-
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
     let item = parse_derive_input(&input.to_string()).unwrap();
     f(item).to_string().parse().unwrap()

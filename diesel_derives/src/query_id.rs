@@ -20,11 +20,15 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
     let struct_name = &model.name;
     let lifetimes = &generics.lifetimes;
 
-    let query_id_ty_params = generics.ty_params.iter()
+    let query_id_ty_params = generics
+        .ty_params
+        .iter()
         .map(|ty_param| &ty_param.ident)
         .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::QueryId))
         .collect::<Vec<_>>();
-    let has_static_query_id = generics.ty_params.iter()
+    let has_static_query_id = generics
+        .ty_params
+        .iter()
         .map(|ty_param| &ty_param.ident)
         .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID))
         .collect::<Vec<_>>();
@@ -38,6 +42,6 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
 
                 const HAS_STATIC_QUERY_ID: bool = #(#has_static_query_id &&)* true;
             }
-        )
+        ),
     )
 }
