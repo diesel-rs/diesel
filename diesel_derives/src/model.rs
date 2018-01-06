@@ -30,7 +30,7 @@ impl Model {
             .map(|v| v.into_iter().cloned().collect())
             .unwrap_or_else(|| vec![syn::Ident::new("id")]);
         let table_name_from_annotation =
-            str_value_of_attr_with_name(&item.attrs, "table_name").map(syn::Ident::new);
+            ident_value_of_attr_with_name(&item.attrs, "table_name");
 
         Ok(Model {
             ty: ty,

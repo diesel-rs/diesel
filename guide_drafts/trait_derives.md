@@ -364,7 +364,7 @@ On SQLite, one query will be performed per row.
 For `Insertable` structs, Diesel needs to know the corresponding table name.
 You must add the `#[table_name="some_table_name"]` attribute to your `Insertable` struct.
 If your struct has different field names than the columns they reference,
-they may be annotated with `#[column_name(some_column_name)]`.
+they may be annotated with `#[column_name = "some_column_name"]`.
 
 Typically, you will not use `Queryable` and `Insertable` together.
 Thinking of web forms again, a new record wouldn't have such fields as
@@ -397,7 +397,7 @@ pub struct User {
 pub struct NewUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
-    #[column_name(email)]
+    #[column_name = "email"]
     pub electronic_mail: &'a str,
  }
 ```

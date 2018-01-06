@@ -16,6 +16,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
 
+* Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
+  "foo"]` should be used instead.
+
 ## [1.0.0] - 2018-01-02
 
 ### Added

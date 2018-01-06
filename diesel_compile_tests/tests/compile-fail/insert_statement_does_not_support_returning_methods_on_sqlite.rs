@@ -33,12 +33,9 @@ impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
     }
 }
 
-pub struct NewUser(String);
-
-impl_Insertable! {
-    (users)
-    pub struct NewUser(#[column_name(name)] String,);
-}
+#[derive(Insertable)]
+#[table_name = "users"]
+pub struct NewUser(#[column_name = "name"] String);
 
 fn main() {
     let connection = SqliteConnection::establish(":memory:").unwrap();
