@@ -13,18 +13,16 @@ table! {
 
 pub struct MyType;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, FromSqlRow)]
 pub enum MyEnum {
     Foo,
     Bar,
 }
 
 mod impls_for_insert_and_query {
-    use diesel::Queryable;
     use diesel::expression::AsExpression;
     use diesel::expression::bound::Bound;
     use diesel::pg::Pg;
-    use diesel::row::Row;
     use diesel::types::*;
     use std::error::Error;
     use std::io::Write;
@@ -61,22 +59,13 @@ mod impls_for_insert_and_query {
         }
     }
 
-    impl FromSqlRow<MyType, Pg> for MyEnum {
-        fn build_from_row<T: Row<Pg>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
-            match row.take() {
-                Some(b"foo") => Ok(MyEnum::Foo),
-                Some(b"bar") => Ok(MyEnum::Bar),
-                Some(_) => Err("Unrecognized enum variant".into()),
-                None => Err("Unexpected null for non-null column".into()),
+    impl FromSql<MyType, Pg> for MyEnum {
+        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+            match not_none!(bytes) {
+                b"foo" => Ok(MyEnum::Foo),
+                b"bar" => Ok(MyEnum::Bar),
+                _ => Err("Unrecognized enum variant".into()),
             }
-        }
-    }
-
-    impl Queryable<MyType, Pg> for MyEnum {
-        type Row = Self;
-
-        fn build(row: Self::Row) -> Self {
-            row
         }
     }
 }

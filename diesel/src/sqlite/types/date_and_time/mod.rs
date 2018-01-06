@@ -26,10 +26,6 @@ impl HasSqlType<types::Timestamp> for Sqlite {
     }
 }
 
-queryable_impls!(Date -> String);
-queryable_impls!(Time -> String);
-queryable_impls!(Timestamp -> String);
-
 expression_impls!(Date -> String);
 expression_impls!(Date -> str, unsized);
 expression_impls!(Time -> String);

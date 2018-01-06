@@ -17,6 +17,15 @@ use types::{self, FromSql, IsNull, Json, Jsonb, ToSql, ToSqlOutput};
 primitive_impls!(Json -> (serde_json::Value, pg: (114, 199)));
 primitive_impls!(Jsonb -> (serde_json::Value, pg: (3802, 3807)));
 
+#[allow(dead_code)]
+mod foreign_derives {
+    use super::serde_json;
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct SerdeJsonValueProxy(serde_json::Value);
+}
+
 impl FromSql<types::Json, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let bytes = not_none!(bytes);

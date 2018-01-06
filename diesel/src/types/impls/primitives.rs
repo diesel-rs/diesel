@@ -22,6 +22,49 @@ primitive_impls!(Date);
 primitive_impls!(Time);
 primitive_impls!(Timestamp);
 
+#[allow(dead_code)]
+mod foreign_impls {
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct BoolProxy(bool);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct I8Proxy(i8);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct I16Proxy(i16);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct I32Proxy(i32);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct I64Proxy(i64);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct U32Proxy(u32);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct F32Proxy(f32);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct F64Proxy(f64);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct StringProxy(String);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct VecProxy<T>(Vec<T>);
+}
+
 expression_impls!(Text -> str, unsized);
 expression_impls!(Binary -> [u8], unsized);
 

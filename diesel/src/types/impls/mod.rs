@@ -1,3 +1,7 @@
+/// Gets the value out of an option, or returns an error.
+///
+/// This is used by `FromSql` implementations.
+#[macro_export]
 macro_rules! not_none {
     ($bytes:expr) => {
         match $bytes {
@@ -78,32 +82,6 @@ macro_rules! expression_impls {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! queryable_impls {
-    ($Source:ident -> $Target:ty) => {
-        impl<DB> $crate::types::FromSqlRow<$Source, DB> for $Target where
-            DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
-            $Target: $crate::types::FromSql<$Source, DB>,
-        {
-            fn build_from_row<R: $crate::row::Row<DB>>(row: &mut R) -> ::std::result::Result<Self, Box<::std::error::Error+Send+Sync>> {
-                $crate::types::FromSql::<$Source, DB>::from_sql(row.take())
-            }
-        }
-
-        impl<DB> $crate::query_source::Queryable<$Source, DB> for $Target where
-            DB: $crate::backend::Backend + $crate::types::HasSqlType<$Source>,
-            $Target: $crate::types::FromSqlRow<$Source, DB>,
-        {
-            type Row = Self;
-
-            fn build(row: Self::Row) -> Self {
-                row
-            }
-        }
-    }
-}
-
-#[doc(hidden)]
-#[macro_export]
 macro_rules! primitive_impls {
     ($Source:ident -> (, $($rest:tt)*)) => {
         primitive_impls!($Source -> ($($rest)*));
@@ -156,7 +134,6 @@ macro_rules! primitive_impls {
 
     ($Source:ident -> $Target:ty) => {
         primitive_impls!($Source);
-        queryable_impls!($Source -> $Target);
         expression_impls!($Source -> $Target);
     };
 

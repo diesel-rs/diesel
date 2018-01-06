@@ -6,7 +6,6 @@ use pg::Pg;
 use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
 
 expression_impls!(Timestamp -> SystemTime);
-queryable_impls!(Timestamp -> SystemTime);
 
 fn pg_epoch() -> SystemTime {
     let thirty_years = Duration::from_secs(946_684_800);

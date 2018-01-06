@@ -9,7 +9,11 @@ use pg::Pg;
 use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
 
 expression_impls!(Timestamp -> Timespec);
-queryable_impls!(Timestamp -> Timespec);
+
+#[derive(FromSqlRow)]
+#[diesel(foreign_derive)]
+#[allow(dead_code)]
+struct TimespecProxy(Timespec);
 
 const TIME_SEC_CONV: i64 = 946_684_800;
 

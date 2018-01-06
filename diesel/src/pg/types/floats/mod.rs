@@ -8,7 +8,7 @@ use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, FromSqlRow)]
 /// Represents a NUMERIC value, closely mirroring the PG wire protocol
 /// representation
 pub enum PgNumeric {

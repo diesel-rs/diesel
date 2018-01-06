@@ -25,6 +25,19 @@ primitive_impls!(MacAddr -> ([u8; 6], pg: (829, 1040)));
 primitive_impls!(Inet -> (IpNetwork, pg: (869, 1041)));
 primitive_impls!(Cidr -> (IpNetwork, pg: (650, 651)));
 
+#[allow(dead_code)]
+mod foreign_derives {
+    use super::IpNetwork;
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct ByteArrayProxy([u8; 6]);
+
+    #[derive(FromSqlRow)]
+    #[diesel(foreign_derive)]
+    struct IpNetworkProxy(IpNetwork);
+}
+
 macro_rules! err {
     () => (Err("invalid network address format".into()));
     ($msg: expr) => (Err(format!("invalid network address format. {}", $msg).into()));

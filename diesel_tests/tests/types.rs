@@ -1000,22 +1000,6 @@ fn third_party_crates_can_add_new_types() {
         }
     }
 
-    impl FromSqlRow<MyInt, Pg> for i32 {
-        fn build_from_row<R: ::diesel::row::Row<Pg>>(
-            row: &mut R,
-        ) -> Result<Self, Box<Error + Send + Sync>> {
-            FromSql::<MyInt, Pg>::from_sql(row.take())
-        }
-    }
-
-    impl Queryable<MyInt, Pg> for i32 {
-        type Row = Self;
-
-        fn build(row: Self) -> Self {
-            row
-        }
-    }
-
     assert_eq!(0, query_single_value::<MyInt, i32>("0"));
     assert_eq!(-1, query_single_value::<MyInt, i32>("-1"));
     assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));

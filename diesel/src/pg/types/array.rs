@@ -4,7 +4,6 @@ use std::fmt;
 use std::io::Write;
 
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
-use query_source::Queryable;
 use types::*;
 
 impl<T> HasSqlType<Array<T>> for Pg
@@ -60,27 +59,6 @@ where
                 }
             })
             .collect()
-    }
-}
-
-impl<T, ST> FromSqlRow<Array<ST>, Pg> for Vec<T>
-where
-    Pg: HasSqlType<ST>,
-    Vec<T>: FromSql<Array<ST>, Pg>,
-{
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
-        FromSql::<Array<ST>, Pg>::from_sql(row.take())
-    }
-}
-
-impl<T, ST> Queryable<Array<ST>, Pg> for Vec<T>
-where
-    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
-    Pg: HasSqlType<ST>,
-{
-    type Row = Self;
-    fn build(row: Self) -> Self {
-        row
     }
 }
 
