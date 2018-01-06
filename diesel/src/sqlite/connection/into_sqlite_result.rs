@@ -55,14 +55,6 @@ impl IntoSqliteResult for CString {
     }
 }
 
-impl IntoSqliteResult for String {
-    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
-        CString::new(self)
-            .expect("TODO Missing error propagation")
-            .into_sqlite_result(ctx)
-    }
-}
-
 impl IntoSqliteResult for &'static CStr {
     fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
         // See note in CString-implementation above about cast
