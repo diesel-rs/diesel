@@ -8,6 +8,7 @@ mod statement_iterator;
 mod stmt;
 
 pub use self::sqlite_value::SqliteValue;
+pub use self::into_sqlite_result::error;
 
 use std::os::raw as libc;
 use std::rc::Rc;
@@ -374,5 +375,99 @@ mod tests {
         use types;
         let query = sql::<types::Text>("SELECT f()");
         assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_option_some() {
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> Option<i32> {
+            Some(42)
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Nullable<types::Integer>>("SELECT f()");
+        assert_eq!(Ok(Some(42)), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_option_none() {
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> Option<i32> {
+            None
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Nullable<types::Integer>>("SELECT f()");
+        assert_eq!(Ok(None as Option<i32>), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_result_ok() {
+        use super::error::TooBig;
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> Result<i32, TooBig> {
+            Ok(42)
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Integer>("SELECT f()");
+        assert_eq!(Ok(42), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_return_result_err() {
+        use super::error::TooBig;
+        use expression::sql_literal::sql;
+        use result::Error::DatabaseError;
+
+        fn f(_: &Context) -> Result<i32, TooBig> {
+            Err(TooBig)
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Integer>("SELECT f()");
+        match query.get_result::<i32>(&connection) {
+            Err(DatabaseError(..)) => (),
+            _ => panic!("Expected Err result"),
+        }
+    }
+
+    #[test]
+    fn create_scalar_function_return_result_err_text() {
+        use std::ffi::CString;
+        use super::error::Text;
+        use expression::sql_literal::sql;
+        use result::Error::DatabaseError;
+
+        fn f(_: &Context) -> Result<i32, Text> {
+            Err(Text(CString::new("My custom error").unwrap()))
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Integer>("SELECT f()");
+        match query.get_result::<i32>(&connection) {
+            Err(DatabaseError(_kind, info)) => {
+                assert_eq!("My custom error", info.message());
+            },
+            _ => panic!("Expected Err result"),
+        }
     }
 }

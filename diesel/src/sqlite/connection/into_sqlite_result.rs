@@ -3,9 +3,15 @@ extern crate libsqlite3_sys as ffi;
 use std::ffi::{CString, CStr};
 use std::os::raw as libc;
 
+
 pub trait IntoSqliteResult {
     fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context);
 }
+
+pub trait IntoSqliteResultError {
+    fn into_sqlite_result_error(self, ctx: *mut ffi::sqlite3_context);
+}
+
 
 impl IntoSqliteResult for i32 {
     fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
@@ -67,6 +73,66 @@ impl IntoSqliteResult for &'static CStr {
                 len,
                 ffi::SQLITE_STATIC(),
             )
+        }
+    }
+}
+
+impl<T: IntoSqliteResult> IntoSqliteResult for Option<T> {
+    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
+        match self {
+            Some(t) => t.into_sqlite_result(ctx),
+            None => unsafe {
+                ffi::sqlite3_result_null(ctx)
+            },
+        }
+    }
+}
+
+#[warn(missing_docs)] //FIXME
+pub mod error {
+    use super::ffi;
+    use super::IntoSqliteResultError;
+
+    #[derive(Debug, Copy, Clone)]
+    pub struct TooBig;
+    impl IntoSqliteResultError for TooBig {
+        fn into_sqlite_result_error(self, ctx: *mut ffi::sqlite3_context) {
+            unsafe {
+                ffi::sqlite3_result_error_toobig(ctx)
+            }
+        }
+    }
+
+    #[derive(Debug, Copy, Clone)]
+    pub struct NoMem;
+    impl IntoSqliteResultError for NoMem {
+        fn into_sqlite_result_error(self, ctx: *mut ffi::sqlite3_context) {
+            unsafe {
+                ffi::sqlite3_result_error_nomem(ctx)
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct Text(pub ::std::ffi::CString);
+    impl IntoSqliteResultError for Text {
+        fn into_sqlite_result_error(self, ctx: *mut ffi::sqlite3_context) {
+            unsafe {
+                ffi::sqlite3_result_error(ctx, self.0.as_ptr(), -1)
+            }
+        }
+    }
+}
+
+impl<T, E> IntoSqliteResult for Result<T, E>
+where
+    T: IntoSqliteResult,
+    E: IntoSqliteResultError,
+{
+    fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
+        match self {
+            Ok(t) => t.into_sqlite_result(ctx),
+            Err(e) => e.into_sqlite_result_error(ctx),
         }
     }
 }

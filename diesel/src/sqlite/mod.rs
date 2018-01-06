@@ -4,6 +4,8 @@
 //! However, if you are writing code specifically to extend Diesel on
 //! SQLite, you may need to work with this module directly.
 
+#![warn(warnings)] //FIXME
+
 mod backend;
 mod connection;
 mod types;
@@ -11,5 +13,5 @@ mod types;
 pub mod query_builder;
 
 pub use self::backend::{Sqlite, SqliteType};
-pub use self::connection::SqliteConnection;
+pub use self::connection::{SqliteConnection, error};
 pub use self::query_builder::SqliteQueryBuilder;
