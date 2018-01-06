@@ -39,14 +39,22 @@ pub fn str_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Op
 }
 
 pub fn ident_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<Ident> {
-    let error = || panic!(r#"`{}` must be in the form `#[{} = "something"]`"#, name, name);
+    let error = || {
+        panic!(
+            r#"`{}` must be in the form `#[{} = "something"]`"#,
+            name, name
+        )
+    };
     attr_with_name(attrs, name).map(|attr| match attr.value {
         MetaItem::NameValue(_, Lit::Str(ref value, _)) => Ident::from(&**value),
         MetaItem::List(_, ref list) => {
             if list.len() != 1 {
                 error();
             }
-            println!(r#"The form `#[{}(something)]` is deprecated. Use `#[{} = "something"]` instead"#, name, name);
+            println!(
+                r#"The form `#[{}(something)]` is deprecated. Use `#[{} = "something"]` instead"#,
+                name, name
+            );
             if let NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) = list[0] {
                 ident.clone()
             } else {
