@@ -359,11 +359,12 @@ mod tests {
     }
 
     #[test]
-    fn create_scalar_function_return_str() {
+    fn create_scalar_function_return_cstring() {
+        use std::ffi::CString;
         use expression::sql_literal::sql;
 
-        fn f(_: &Context) -> &'static str {
-            "Meaning of life"
+        fn f(_: &Context) -> CString {
+            CString::new("Meaning of life").unwrap()
         }
 
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
@@ -375,12 +376,12 @@ mod tests {
     }
 
     #[test]
-    fn create_scalar_function_return_cstring() {
-        use std::ffi::CString;
+    fn create_scalar_function_return_cstr() {
+        use std::ffi::CStr;
         use expression::sql_literal::sql;
 
-        fn f(_: &Context) -> CString {
-            CString::new("Meaning of life").unwrap()
+        fn f(_: &Context) -> &'static CStr {
+            CStr::from_bytes_with_nul(b"Meaning of life\0").unwrap()
         }
 
         let mut connection = SqliteConnection::establish(":memory:").unwrap();

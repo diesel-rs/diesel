@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::os::raw as libc;
 
 pub trait IntoSqliteResult {
@@ -41,7 +41,8 @@ impl IntoSqliteResult for CString {
         //  * sqlite3_result_text64 accepts 64 bit len, but is not exposed
         //    by ffi library
         //  * Never the less, the cast should be checked for overflow
-        let len = self.as_bytes().len() as i32;
+        // See also CStr-implementation below
+        let len = self.as_bytes().len() as libc::c_int;
 
         unsafe {
             ffi::sqlite3_result_text(
@@ -62,16 +63,16 @@ impl IntoSqliteResult for String {
     }
 }
 
-impl IntoSqliteResult for &'static str {
+impl IntoSqliteResult for &'static CStr {
     fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context) {
-        // BUG: Will allow sending strings with embedded NUL characters into
-        // SQLite. Working with strings with embedded NUL characters causes
-        // undefined behavior in SQLite.
+        // See note in CString-implementation above about cast
+        let len = self.to_bytes().len() as libc::c_int;
+
         unsafe {
             ffi::sqlite3_result_text(
                 ctx,
-                self.as_ptr() as *const libc::c_char,
-                self.len() as libc::c_int,
+                self.as_ptr(),
+                len,
                 ffi::SQLITE_STATIC(),
             )
         }
