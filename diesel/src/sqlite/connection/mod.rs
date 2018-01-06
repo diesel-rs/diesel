@@ -373,4 +373,21 @@ mod tests {
         let query = sql::<types::Text>("SELECT f()");
         assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
     }
+
+    #[test]
+    fn create_scalar_function_return_cstring() {
+        use std::ffi::CString;
+        use expression::sql_literal::sql;
+
+        fn f(_: &Context) -> CString {
+            CString::new("Meaning of life").unwrap()
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 0, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Text>("SELECT f()");
+        assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
+    }
 }
