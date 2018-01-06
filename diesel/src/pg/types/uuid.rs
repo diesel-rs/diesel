@@ -6,10 +6,11 @@ use std::error::Error;
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput, Uuid};
 
-primitive_impls!(Uuid -> (uuid::Uuid, pg: (2950, 2951)));
+primitive_impls!(Uuid -> (pg: (2950, 2951)));
 
-#[derive(FromSqlRow)]
+#[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
+#[sql_type = "Uuid"]
 #[allow(dead_code)]
 struct UuidProxy(uuid::Uuid);
 

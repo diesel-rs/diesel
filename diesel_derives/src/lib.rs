@@ -25,6 +25,7 @@ extern crate quote;
 extern crate syn;
 
 mod as_changeset;
+mod as_expression;
 mod associations;
 mod ast_builder;
 mod attr;
@@ -79,6 +80,11 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(FromSqlRow, attributes(diesel))]
 pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     expand_derive(input, from_sql_row::derive)
+}
+
+#[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
+pub fn derive_from_as_expression(input: TokenStream) -> TokenStream {
+    expand_derive(input, as_expression::derive)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {

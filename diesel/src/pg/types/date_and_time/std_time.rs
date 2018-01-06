@@ -3,9 +3,7 @@ use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
-
-expression_impls!(Timestamp -> SystemTime);
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 fn pg_epoch() -> SystemTime {
     let thirty_years = Duration::from_secs(946_684_800);

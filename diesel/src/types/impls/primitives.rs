@@ -5,68 +5,97 @@ use backend::Backend;
 use types::{self, BigInt, Binary, Bool, Date, Double, Float, FromSql, HasSqlType, Integer, IsNull,
             NotNull, SmallInt, Text, Time, Timestamp, ToSql, ToSqlOutput};
 
-primitive_impls!(Bool -> (bool, pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)));
+primitive_impls!(Bool -> (pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)));
 
-primitive_impls!(SmallInt -> (i16, pg: (21, 1005), sqlite: (SmallInt), mysql: (Short)));
-primitive_impls!(Integer -> (i32, pg: (23, 1007), sqlite: (Integer), mysql: (Long)));
-primitive_impls!(BigInt -> (i64, pg: (20, 1016), sqlite: (Long), mysql: (LongLong)));
+primitive_impls!(SmallInt -> (pg: (21, 1005), sqlite: (SmallInt), mysql: (Short)));
+primitive_impls!(Integer -> (pg: (23, 1007), sqlite: (Integer), mysql: (Long)));
+primitive_impls!(BigInt -> (pg: (20, 1016), sqlite: (Long), mysql: (LongLong)));
 
-primitive_impls!(Float -> (f32, pg: (700, 1021), sqlite: (Float), mysql: (Float)));
-primitive_impls!(Double -> (f64, pg: (701, 1022), sqlite: (Double), mysql: (Double)));
+primitive_impls!(Float -> (pg: (700, 1021), sqlite: (Float), mysql: (Float)));
+primitive_impls!(Double -> (pg: (701, 1022), sqlite: (Double), mysql: (Double)));
 
-primitive_impls!(Text -> (String, pg: (25, 1009), sqlite: (Text), mysql: (String)));
+primitive_impls!(Text -> (pg: (25, 1009), sqlite: (Text), mysql: (String)));
 
-primitive_impls!(Binary -> (Vec<u8>, pg: (17, 1001), sqlite: (Binary), mysql: (Blob)));
+primitive_impls!(Binary -> (pg: (17, 1001), sqlite: (Binary), mysql: (Blob)));
 
-primitive_impls!(Date);
-primitive_impls!(Time);
-primitive_impls!(Timestamp);
+primitive_impls!(Date -> (pg: (1082, 1182)));
+primitive_impls!(Time -> (pg: (1083, 1183)));
+primitive_impls!(Timestamp -> (pg: (1114, 1115)));
 
 #[allow(dead_code)]
 mod foreign_impls {
-    #[derive(FromSqlRow)]
+    use super::*;
+
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Bool"]
     struct BoolProxy(bool);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "mysql", sql_type = "types::Tinyint")]
     struct I8Proxy(i8);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "SmallInt"]
     struct I16Proxy(i16);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Integer"]
     struct I32Proxy(i32);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "BigInt"]
     struct I64Proxy(i64);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "postgres", sql_type = "::types::Oid")]
     struct U32Proxy(u32);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Float"]
     struct F32Proxy(f32);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Double"]
     struct F64Proxy(f64);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Text"]
+    #[cfg_attr(feature = "sqlite", sql_type = "Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "Timestamp")]
     struct StringProxy(String);
+
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive, not_sized)]
+    #[sql_type = "Text"]
+    #[cfg_attr(feature = "sqlite", sql_type = "Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "Timestamp")]
+    struct StrProxy(str);
 
     #[derive(FromSqlRow)]
     #[diesel(foreign_derive)]
     struct VecProxy<T>(Vec<T>);
-}
 
-expression_impls!(Text -> str, unsized);
-expression_impls!(Binary -> [u8], unsized);
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive)]
+    #[sql_type = "Binary"]
+    struct BinaryVecProxy(Vec<u8>);
+
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive, not_sized)]
+    #[sql_type = "Binary"]
+    struct BinarySliceProxy([u8]);
+}
 
 impl NotNull for () {}
 

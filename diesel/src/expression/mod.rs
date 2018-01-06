@@ -109,6 +109,26 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///   [`Timestamp`]: ../types/struct.Timestamp.html
 ///   [`Timestamptz`]: ../../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: ../types/trait.ToSql.html
+///
+/// ## Deriving
+///
+/// This trait can be automatically derived for any type which implements `ToSql`.
+/// The type must be annotated with `#[sql_type = "SomeType"]`.
+/// If that annotation appears multiple times,
+/// implementations will be generated for each one of them.
+///
+/// This will generate the following impls:
+///
+/// - `impl AsExpression<SqlType> for YourType`
+/// - `impl AsExpression<Nullable<SqlType>> for YourType`
+/// - `impl AsExpression<SqlType> for &'a YourType`
+/// - `impl AsExpression<Nullable<SqlType>> for &'a YourType`
+/// - `impl AsExpression<SqlType> for &'a &'b YourType`
+/// - `impl AsExpression<Nullable<SqlType>> for &'a &'b YourType`
+///
+/// If your type is unsized,
+/// you can specify this by adding the annotation `#[diesel(not_sized)]`.
+/// This will skip the impls for non-reference types.
 pub trait AsExpression<T> {
     /// The expression being returned
     type Expression: Expression<SqlType = T>;

@@ -16,14 +16,15 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 /// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
 /// use diesel::data_types::PgMoney as Fils;  // 1/1000th unit of Dinar
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
+#[sql_type = "Money"]
 pub struct PgMoney(pub i64);
 
 use pg::Pg;
 use types::{self, FromSql, IsNull, Money, ToSql, ToSqlOutput};
 
 // https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L429-L432
-primitive_impls!(Money -> (PgMoney, pg: (790, 791)));
+primitive_impls!(Money -> (pg: (790, 791)));
 
 impl FromSql<types::Money, Pg> for PgMoney {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {

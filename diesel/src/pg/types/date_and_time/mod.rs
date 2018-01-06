@@ -6,11 +6,7 @@ use pg::Pg;
 use types::{self, Date, FromSql, Interval, IsNull, Time, Timestamp, Timestamptz, ToSql,
             ToSqlOutput};
 
-primitive_impls!(Date -> (pg: (1082, 1182)));
-primitive_impls!(Time -> (pg: (1083, 1183)));
-primitive_impls!(Timestamp -> (pg: (1114, 1115)));
 primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
-primitive_impls!(Timestamptz);
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -20,13 +16,16 @@ mod chrono;
 #[cfg(feature = "deprecated-time")]
 mod deprecated_time;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
+#[sql_type = "Timestamp"]
+#[sql_type = "Timestamptz"]
 /// Timestamps are represented in Postgres as a 64 bit signed integer representing the number of
 /// microseconds since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate
 /// the integer's meaning.
 pub struct PgTimestamp(pub i64);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
+#[sql_type = "Date"]
 /// Dates are represented in Postgres as a 32 bit signed integer representing the number of julian
 /// days since January 1st 2000. This struct is a dumb wrapper type, meant only to indicate the
 /// integer's meaning.
@@ -35,14 +34,16 @@ pub struct PgDate(pub i32);
 /// Time is represented in Postgres as a 64 bit signed integer representing the number of
 /// microseconds since midnight. This struct is a dumb wrapper type, meant only to indicate the
 /// integer's meaning.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
+#[sql_type = "Time"]
 pub struct PgTime(pub i64);
 
 /// Intervals in Postgres are separated into 3 parts. A 64 bit integer representing time in
 /// microseconds, a 32 bit integer representing number of days, and a 32 bit integer
 /// representing number of months. This struct is a dumb wrapper type, meant only to indicate the
 /// meaning of these parts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromSqlRow, AsExpression)]
+#[sql_type = "Interval"]
 pub struct PgInterval {
     /// The number of whole microseconds
     pub microseconds: i64,
@@ -83,12 +84,7 @@ impl PgInterval {
     }
 }
 
-expression_impls!(Date -> PgDate);
-expression_impls!(Time -> PgTime);
-expression_impls!(Timestamp -> PgTimestamp);
-expression_impls!(Timestamptz -> PgTimestamp);
-
-primitive_impls!(Interval -> (PgInterval, pg: (1186, 1187)));
+primitive_impls!(Interval -> (pg: (1186, 1187)));
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
     fn to_sql<W: Write>(

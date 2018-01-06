@@ -13,15 +13,14 @@ table! {
 
 pub struct MyType;
 
-#[derive(Debug, PartialEq, FromSqlRow)]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
+#[sql_type = "MyType"]
 pub enum MyEnum {
     Foo,
     Bar,
 }
 
 mod impls_for_insert_and_query {
-    use diesel::expression::AsExpression;
-    use diesel::expression::bound::Bound;
     use diesel::pg::Pg;
     use diesel::types::*;
     use std::error::Error;
@@ -37,14 +36,6 @@ mod impls_for_insert_and_query {
 
     impl NotNull for MyType {}
     impl SingleValue for MyType {}
-
-    impl<'a> AsExpression<MyType> for &'a MyEnum {
-        type Expression = Bound<MyType, &'a MyEnum>;
-
-        fn as_expression(self) -> Self::Expression {
-            Bound::new(self)
-        }
-    }
 
     impl ToSql<MyType, Pg> for MyEnum {
         fn to_sql<W: Write>(

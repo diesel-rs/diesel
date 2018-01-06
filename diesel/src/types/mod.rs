@@ -622,6 +622,8 @@ where
 /// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
 /// yourself.
 ///
+/// Any types which implement this trait should also `#[derive(AsExpression)]`.
+///
 /// ### Backend specific details
 ///
 /// - For PostgreSQL, the bytes will be sent using the binary protocol, not text.

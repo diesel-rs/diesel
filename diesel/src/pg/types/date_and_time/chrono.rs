@@ -5,18 +5,12 @@ extern crate chrono;
 
 use std::error::Error;
 use std::io::Write;
-use self::chrono::{DateTime, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime,
-                   TimeZone, Utc};
+use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use self::chrono::naive::MAX_DATE;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
 use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
-
-expression_impls!(Timestamptz -> NaiveDateTime);
-expression_impls!(Timestamptz -> DateTime<Utc>);
-expression_impls!(Timestamptz -> DateTime<FixedOffset>);
-expression_impls!(Timestamptz -> DateTime<Local>);
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {

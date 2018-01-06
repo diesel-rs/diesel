@@ -14,15 +14,18 @@ use types::{self, FromSql, IsNull, Json, Jsonb, ToSql, ToSqlOutput};
 //
 // https://www.postgresql.org/message-id/CA+mi_8Yv2SVOdhAtx-4CbpzoDtaJGkf8QvnushdF8bMgySAbYg@mail.gmail.com
 // https://www.postgresql.org/message-id/CA+mi_8bd_g-MDPMwa88w0HXfjysaLFcrCza90+KL9zpRGbxKWg@mail.gmail.com
-primitive_impls!(Json -> (serde_json::Value, pg: (114, 199)));
-primitive_impls!(Jsonb -> (serde_json::Value, pg: (3802, 3807)));
+primitive_impls!(Json -> (pg: (114, 199)));
+primitive_impls!(Jsonb -> (pg: (3802, 3807)));
 
 #[allow(dead_code)]
 mod foreign_derives {
     use super::serde_json;
+    use types::{Json, Jsonb};
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Json"]
+    #[sql_type = "Jsonb"]
     struct SerdeJsonValueProxy(serde_json::Value);
 }
 

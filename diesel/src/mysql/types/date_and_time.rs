@@ -42,7 +42,6 @@ macro_rules! mysql_time_impls {
 }
 
 mysql_time_impls!(Datetime);
-expression_impls!(Datetime -> NaiveDateTime);
 mysql_time_impls!(Timestamp);
 mysql_time_impls!(Time);
 mysql_time_impls!(Date);

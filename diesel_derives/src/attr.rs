@@ -19,8 +19,7 @@ impl Attr {
         let column_name = ident_value_of_attr_with_name(&field.attrs, "column_name")
             .or_else(|| field_name.clone());
         let ty = field.ty.clone();
-        let sql_type = str_value_of_attr_with_name(&field.attrs, "sql_type")
-            .map(|st| syn::parse::ty(st).expect("#[sql_type] did not contain a valid Rust type"));
+        let sql_type = ty_value_of_attr_with_name(&field.attrs, "sql_type");
         let flags = list_value_of_attr_with_name(&field.attrs, "diesel")
             .unwrap_or_else(Vec::new)
             .into_iter()

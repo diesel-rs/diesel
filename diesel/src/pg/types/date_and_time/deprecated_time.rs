@@ -8,10 +8,9 @@ use self::time::{Duration, Timespec};
 use pg::Pg;
 use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
 
-expression_impls!(Timestamp -> Timespec);
-
-#[derive(FromSqlRow)]
+#[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
+#[sql_type = "Timestamp"]
 #[allow(dead_code)]
 struct TimespecProxy(Timespec);
 

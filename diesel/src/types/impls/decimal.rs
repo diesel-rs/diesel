@@ -6,9 +6,8 @@ mod bigdecimal {
     use self::bigdecimal::BigDecimal;
     use types::Numeric;
 
-    expression_impls!(Numeric -> BigDecimal);
-
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Numeric"]
     struct BigDecimalProxy(BigDecimal);
 }

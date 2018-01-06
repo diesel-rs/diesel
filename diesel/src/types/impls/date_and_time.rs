@@ -2,8 +2,9 @@
 
 use std::time::SystemTime;
 
-#[derive(FromSqlRow)]
+#[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
+#[sql_type = "::types::Timestamp"]
 struct SystemTimeProxy(SystemTime);
 
 #[cfg(feature = "chrono")]
@@ -12,23 +13,25 @@ mod chrono {
     use self::chrono::*;
     use types::{Date, Time, Timestamp};
 
-    expression_impls!(Date -> NaiveDate);
-    expression_impls!(Time -> NaiveTime);
-    expression_impls!(Timestamp -> NaiveDateTime);
-
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Date"]
     struct NaiveDateProxy(NaiveDate);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Time"]
     struct NaiveTimeProxy(NaiveTime);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[sql_type = "Timestamp"]
+    #[cfg_attr(feature = "postgres", sql_type = "::types::Timestamptz")]
+    #[cfg_attr(feature = "mysql", sql_type = "::types::Datetime")]
     struct NaiveDateTimeProxy(NaiveDateTime);
 
-    #[derive(FromSqlRow)]
+    #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "postgres", sql_type = "::types::Timestamptz")]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
 }

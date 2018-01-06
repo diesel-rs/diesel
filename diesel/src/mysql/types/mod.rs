@@ -10,7 +10,7 @@ use std::error::Error as StdError;
 use std::io::Write;
 use types::{FromSql, HasSqlType, IsNull, Tinyint, ToSql, ToSqlOutput};
 
-primitive_impls!(Tinyint -> (i8, mysql: (Tiny)));
+primitive_impls!(Tinyint -> (mysql: (Tiny)));
 
 impl ToSql<::types::Tinyint, Mysql> for i8 {
     fn to_sql<W: Write>(

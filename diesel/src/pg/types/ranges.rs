@@ -3,7 +3,7 @@ use std::collections::Bound;
 use std::error::Error;
 use std::io::Write;
 
-use expression::{AsExpression, NonAggregate};
+use expression::AsExpression;
 use expression::bound::Bound as SqlBound;
 use pg::Pg;
 use query_source::Queryable;
@@ -22,10 +22,6 @@ bitflags! {
         const CONTAIN_EMPTY = 0x80;
     }
 }
-
-impl<T> NotNull for Range<T> {}
-impl<T> SingleValue for Range<T> {}
-impl<T> NonAggregate for Range<T> {}
 
 impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
@@ -51,7 +47,7 @@ where
 
 impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>)
 where
-    Pg: HasSqlType<ST> + HasSqlType<Range<ST>>,
+    Pg: HasSqlType<Range<ST>>,
 {
     type Expression = SqlBound<Range<ST>, Self>;
 
@@ -62,7 +58,8 @@ where
 
 impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>)
 where
-    Pg: HasSqlType<ST> + HasSqlType<Range<ST>>,
+    Pg: HasSqlType<Range<ST>>,
+    Range<ST>: NotNull,
 {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -73,7 +70,8 @@ where
 
 impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>)
 where
-    Pg: HasSqlType<ST> + HasSqlType<Range<ST>>,
+    Pg: HasSqlType<Range<ST>>,
+    Range<ST>: NotNull,
 {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -184,6 +182,7 @@ impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
+    Range<ST>: NotNull,
 {
     fn to_sql<W: Write>(
         &self,

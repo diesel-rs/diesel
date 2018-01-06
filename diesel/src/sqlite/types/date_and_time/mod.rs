@@ -3,7 +3,7 @@ use std::io::Write;
 
 use sqlite::{Sqlite, SqliteType};
 use sqlite::connection::SqliteValue;
-use types::{self, Date, FromSql, HasSqlType, IsNull, Time, Timestamp, ToSql, ToSqlOutput};
+use types::{self, FromSql, HasSqlType, IsNull, ToSql, ToSqlOutput};
 
 #[cfg(feature = "chrono")]
 mod chrono;
@@ -25,13 +25,6 @@ impl HasSqlType<types::Timestamp> for Sqlite {
         SqliteType::Text
     }
 }
-
-expression_impls!(Date -> String);
-expression_impls!(Date -> str, unsized);
-expression_impls!(Time -> String);
-expression_impls!(Time -> str, unsized);
-expression_impls!(Timestamp -> String);
-expression_impls!(Timestamp -> str, unsized);
 
 impl FromSql<types::Date, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {

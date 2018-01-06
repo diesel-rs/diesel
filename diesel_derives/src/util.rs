@@ -34,8 +34,8 @@ pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
     )
 }
 
-pub fn str_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<&'a str> {
-    attr_with_name(attrs, name).map(|attr| str_value_of_attr(attr, name))
+pub fn ty_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<Ty> {
+    attr_with_name(attrs, name).map(|attr| ty_value_of_attr(attr, name))
 }
 
 pub fn ident_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<Ident> {
@@ -78,6 +78,11 @@ pub fn attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<&'a Attr
 
 fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
     str_value_of_meta_item(&attr.value, name)
+}
+
+pub fn ty_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Ty {
+    parse::ty(str_value_of_attr(attr, name))
+        .expect(&format!("#[{}] did not contain a valid Rust type", name))
 }
 
 pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
