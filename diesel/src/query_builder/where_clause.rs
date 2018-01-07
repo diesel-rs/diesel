@@ -1,4 +1,5 @@
 use backend::Backend;
+use dsl::Or;
 use expression::*;
 use expression::operators::And;
 use expression_methods::*;
@@ -14,6 +15,16 @@ pub trait WhereAnd<Predicate> {
 
     /// See the trait-level docs.
     fn and(self, predicate: Predicate) -> Self::Output;
+}
+
+/// Add `Predicate` to the current `WHERE` clause, joining with `OR` if
+/// applicable.
+pub trait WhereOr<Predicate> {
+    /// What is the type of the resulting `WHERE` clause?
+    type Output;
+
+    /// See the trait-level docs.
+    fn or(self, predicate: Predicate) -> Self::Output;
 }
 
 /// Represents that a query has no `WHERE` clause.
@@ -33,6 +44,17 @@ where
     type Output = WhereClause<Predicate>;
 
     fn and(self, predicate: Predicate) -> Self::Output {
+        WhereClause(predicate)
+    }
+}
+
+impl<Predicate> WhereOr<Predicate> for NoWhereClause
+where
+    Predicate: Expression<SqlType = Bool>,
+{
+    type Output = WhereClause<Predicate>;
+
+    fn or(self, predicate: Predicate) -> Self::Output {
         WhereClause(predicate)
     }
 }
@@ -68,6 +90,18 @@ where
 
     fn and(self, predicate: Predicate) -> Self::Output {
         WhereClause(self.0.and(predicate))
+    }
+}
+
+impl<Expr, Predicate> WhereOr<Predicate> for WhereClause<Expr>
+where
+    Expr: Expression<SqlType = Bool>,
+    Predicate: Expression<SqlType = Bool>,
+{
+    type Output = WhereClause<Or<Expr, Predicate>>;
+
+    fn or(self, predicate: Predicate) -> Self::Output {
+        WhereClause(self.0.or(predicate))
     }
 }
 

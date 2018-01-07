@@ -1,4 +1,4 @@
-use dsl::Filter;
+use dsl::{Filter, OrFilter};
 use expression_methods::*;
 use query_source::*;
 
@@ -54,5 +54,32 @@ where
     fn find(self, id: PK) -> Self::Output {
         let primary_key = self.primary_key();
         self.filter(primary_key.eq_all(id))
+    }
+}
+
+/// The `or_filter` method
+///
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `or_filter` from generic code.
+///
+/// [`QueryDsl`]: ../trait.QueryDsl.html
+pub trait OrFilterDsl<Predicate> {
+    /// The type returned by `.filter`.
+    type Output;
+
+    /// See the trait documentation.
+    fn or_filter(self, predicate: Predicate) -> Self::Output;
+}
+
+impl<T, Predicate> OrFilterDsl<Predicate> for T
+where
+    T: Table,
+    T::Query: OrFilterDsl<Predicate>,
+{
+    type Output = OrFilter<T::Query, Predicate>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        self.as_query().or_filter(predicate)
     }
 }

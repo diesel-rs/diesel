@@ -209,6 +209,9 @@ pub mod helper_types {
     /// Represents the return type of `.find(pk)`
     pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
 
+    /// Represents the return type of `.or_filter(predicate)`
+    pub type OrFilter<Source, Predicate> = <Source as OrFilterDsl<Predicate>>::Output;
+
     /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
 

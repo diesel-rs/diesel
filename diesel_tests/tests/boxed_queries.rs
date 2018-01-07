@@ -144,3 +144,18 @@ fn queries_with_borrowed_data_can_be_boxed() {
     let expected_data = vec![find_user_by_name("Tess", &connection)];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+fn boxed_queries_implement_or_filter() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let data = users::table
+        .into_boxed()
+        .filter(users::name.eq("Sean"))
+        .or_filter(users::name.eq("Tess"))
+        .load(&connection);
+    let expected = vec![
+        find_user_by_name("Sean", &connection),
+        find_user_by_name("Tess", &connection),
+    ];
+    assert_eq!(Ok(expected), data);
+}

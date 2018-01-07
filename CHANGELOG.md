@@ -34,8 +34,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for SQLite's `INSERT OR IGNORE` and MySQL's `INSERT IGNORE`
   via the `insert_or_ignore` function.
 
-* Trait `SqlOrd` is now implemented for `Array`, meaning min/max functions can be used
-  on Array columns (PostgreSQL only).
+* `min` and `max` can now be used with array expressions.
 
 * Added `diesel::dsl::array`, which corresponds to a PG `ARRAY[]` literal.
 
@@ -44,6 +43,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added `result::UnexpectedNullError`, an `Error` type indicating that an
   unexpected `NULL` was received during deserialization.
+
+* Added `.or_filter`, which behaves identically to `.filter`, but using `OR`
+  instead of `AND`.
 
 ### Deprecated
 

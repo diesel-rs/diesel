@@ -477,6 +477,55 @@ pub trait QueryDsl: Sized {
         methods::FilterDsl::filter(self, predicate)
     }
 
+    /// Adds to the `WHERE` clause of a query using `OR`
+    ///
+    /// If there is already a `WHERE` clause, the result will be `(old OR new)`.
+    /// Calling `foo.filter(bar).or_filter(baz)`
+    /// is identical to `foo.filter(bar.or(baz))`.
+    /// However, the second form is much harder to do dynamically.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     diesel::delete(animals).execute(&connection)?;
+    /// diesel::insert_into(animals)
+    ///     .values(&vec![
+    ///         (species.eq("cat"), legs.eq(4), name.eq("Sinatra")),
+    ///         (species.eq("dog"), legs.eq(3), name.eq("Fido")),
+    ///         (species.eq("spider"), legs.eq(8), name.eq("Charlotte")),
+    ///     ])
+    ///     .execute(&connection)?;
+    ///
+    /// let good_animals = animals
+    ///     .filter(name.eq("Fido"))
+    ///     .or_filter(legs.eq(4))
+    ///     .select(name)
+    ///     .get_results::<Option<String>>(&connection)?;
+    /// let expected = vec![
+    ///     Some(String::from("Sinatra")),
+    ///     Some(String::from("Fido")),
+    /// ];
+    /// assert_eq!(expected, good_animals);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn or_filter<Predicate>(self, predicate: Predicate) -> OrFilter<Self, Predicate>
+    where
+        Self: methods::OrFilterDsl<Predicate>,
+    {
+        methods::OrFilterDsl::or_filter(self, predicate)
+    }
+
     /// Attempts to find a single record from the given table by primary key.
     ///
     /// # Example

@@ -202,6 +202,25 @@ where
     }
 }
 
+impl<'a, ST, QS, DB, Predicate> OrFilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend + HasSqlType<ST> + 'a,
+    Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
+    Predicate: QueryFragment<DB> + 'a,
+{
+    type Output = Self;
+
+    fn or_filter(mut self, predicate: Predicate) -> Self::Output {
+        use expression::operators::Or;
+        use expression::grouped::Grouped;
+        self.where_clause = Some(match self.where_clause {
+            Some(where_clause) => Box::new(Grouped(Or::new(where_clause, predicate))),
+            None => Box::new(predicate),
+        });
+        self
+    }
+}
+
 impl<'a, ST, QS, DB> LimitDsl for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend,

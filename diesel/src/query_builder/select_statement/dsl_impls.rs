@@ -110,6 +110,29 @@ where
     }
 }
 
+impl<F, S, D, W, O, L, Of, G, FU, Predicate> OrFilterDsl<Predicate>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
+where
+    Predicate: Expression<SqlType = Bool> + NonAggregate,
+    W: WhereOr<Predicate>,
+{
+    type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause.or(predicate),
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.for_update,
+        )
+    }
+}
+
 use dsl::Filter;
 use expression_methods::EqAll;
 use query_source::Table;

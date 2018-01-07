@@ -35,6 +35,9 @@ pub type LtEq<Lhs, Rhs> = super::operators::LtEq<Lhs, AsExpr<Rhs, Lhs>>;
 /// The return type of `lhs.and(rhs)`
 pub type And<Lhs, Rhs> = super::operators::And<Lhs, AsExprOf<Rhs, sql_types::Bool>>;
 
+/// The return type of `lhs.or(rhs)`
+pub type Or<Lhs, Rhs> = Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, types::Bool>>>;
+
 /// The return type of `lhs.like(rhs)`
 pub type Like<Lhs, Rhs> = super::operators::Like<Lhs, AsExprOf<Rhs, sql_types::VarChar>>;
 
