@@ -5,6 +5,7 @@ use byteorder::NativeEndian;
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use super::query_builder::MysqlQueryBuilder;
+use super::MysqlValue;
 
 /// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -31,6 +32,8 @@ pub enum MysqlType {
     Float,
     /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
     Double,
+    /// Sets `buffer_type` to `MYSQL_TYPE_NEWDECIMAL`
+    Numeric,
     /// Sets `buffer_type` to `MYSQL_TYPE_TIME`
     Time,
     /// Sets `buffer_type` to `MYSQL_TYPE_DATE`
@@ -48,7 +51,7 @@ pub enum MysqlType {
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
     type BindCollector = RawBytesBindCollector<Mysql>;
-    type RawValue = [u8];
+    type RawValue = MysqlValue;
     type ByteOrder = NativeEndian;
 }
 

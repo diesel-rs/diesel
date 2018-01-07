@@ -1,3 +1,5 @@
+#![cfg(feature = "chrono")]
+
 extern crate chrono;
 extern crate mysqlclient_sys as ffi;
 
@@ -5,9 +7,10 @@ use self::chrono::*;
 use std::error::Error;
 use std::io::Write;
 use std::os::raw as libc;
-use std::{mem, ptr, slice};
+use std::{mem, slice};
 
-use mysql::Mysql;
+use backend::Backend;
+use mysql::{Mysql, MysqlValue};
 use types::{Date, Datetime, FromSql, IsNull, Time, Timestamp, ToSql, ToSqlOutput};
 
 macro_rules! mysql_time_impls {
@@ -24,17 +27,12 @@ macro_rules! mysql_time_impls {
         }
 
         impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error+Send+Sync>> {
-                let bytes = not_none!(bytes);
-                let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
-                unsafe {
-                    let mut result = mem::uninitialized();
-                    ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
-                    if result.neg == 0 {
-                        Ok(result)
-                    } else {
-                        Err("Negative dates/times are not yet supported".into())
-                    }
+            fn from_sql(value: Option<&MysqlValue>) -> Result<Self, Box<Error+Send+Sync>> {
+                let result = not_none!(value).time_value()?;
+                if result.neg == 0 {
+                    Ok(result)
+                } else {
+                    Err("Negative dates/times are not yet supported".into())
                 }
             }
         }
@@ -57,7 +55,9 @@ impl ToSql<Datetime, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Datetime, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(
+        bytes: Option<&<Mysql as Backend>::RawValue>,
+    ) -> Result<Self, Box<Error + Send + Sync>> {
         <NaiveDateTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)
     }
 }
@@ -82,7 +82,9 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(
+        bytes: Option<&<Mysql as Backend>::RawValue>,
+    ) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
         NaiveDate::from_ymd_opt(
@@ -117,7 +119,9 @@ impl ToSql<Time, Mysql> for NaiveTime {
 }
 
 impl FromSql<Time, Mysql> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(
+        bytes: Option<&<Mysql as Backend>::RawValue>,
+    ) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
         NaiveTime::from_hms_opt(
             mysql_time.hour as u32,
@@ -143,7 +147,9 @@ impl ToSql<Date, Mysql> for NaiveDate {
 }
 
 impl FromSql<Date, Mysql> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(
+        bytes: Option<&<Mysql as Backend>::RawValue>,
+    ) -> Result<Self, Box<Error + Send + Sync>> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
