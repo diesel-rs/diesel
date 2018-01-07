@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
 use result::QueryResult;
 use row::*;
-use mysql::{Mysql, MysqlType};
+use mysql::{Mysql, MysqlType, MysqlValue};
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
@@ -39,6 +39,7 @@ impl<'a> StatementIterator<'a> {
             Ok(Some(())) => Some(Ok(MysqlRow {
                 col_idx: 0,
                 binds: &mut self.output_binds,
+                value: MysqlValue::default(),
             })),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -49,13 +50,14 @@ impl<'a> StatementIterator<'a> {
 pub struct MysqlRow<'a> {
     col_idx: usize,
     binds: &'a Binds,
+    value: MysqlValue,
 }
 
 impl<'a> Row<Mysql> for MysqlRow<'a> {
-    fn take(&mut self) -> Option<&[u8]> {
+    fn take(&mut self) -> Option<&MysqlValue> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
-        self.binds.field_data(current_idx)
+        self.binds.update_value(&self.value, current_idx)
     }
 
     fn next_is_null(&self, count: usize) -> bool {
@@ -100,6 +102,7 @@ impl<'a> NamedStatementIterator<'a> {
             Ok(Some(())) => Some(Ok(NamedMysqlRow {
                 binds: &self.output_binds,
                 column_indices: self.metadata.column_indices(),
+                value: MysqlValue::default(),
             })),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -110,6 +113,7 @@ impl<'a> NamedStatementIterator<'a> {
 pub struct NamedMysqlRow<'a> {
     binds: &'a Binds,
     column_indices: &'a HashMap<&'a str, usize>,
+    value: MysqlValue,
 }
 
 impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
@@ -117,8 +121,8 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value(&self, idx: usize) -> Option<&[u8]> {
-        self.binds.field_data(idx)
+    fn get_raw_value(&self, idx: usize) -> Option<&MysqlValue> {
+        self.binds.update_value(&self.value, idx)
     }
 }
 

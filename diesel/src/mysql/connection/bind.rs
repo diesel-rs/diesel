@@ -3,7 +3,7 @@ extern crate mysqlclient_sys as ffi;
 use std::mem;
 use std::os::raw as libc;
 
-use mysql::MysqlType;
+use mysql::{MysqlType, MysqlValue};
 use result::QueryResult;
 use super::stmt::Statement;
 
@@ -80,6 +80,12 @@ impl Binds {
 
     pub fn field_data(&self, idx: usize) -> Option<&[u8]> {
         self.data[idx].bytes()
+    }
+
+    pub fn update_value<'a>(&self, value: &'a MysqlValue, idx: usize) -> Option<&'a MysqlValue> {
+        let bytes = self.data[idx].bytes();
+        let tpe = self.data[idx].tpe;
+        bytes.map(|bytes| value.update(bytes, tpe))
     }
 }
 
@@ -211,6 +217,7 @@ fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
         MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
         MysqlType::Float => MYSQL_TYPE_FLOAT,
         MysqlType::Double => MYSQL_TYPE_DOUBLE,
+        MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
         MysqlType::Time => MYSQL_TYPE_TIME,
         MysqlType::Date => MYSQL_TYPE_DATE,
         MysqlType::DateTime => MYSQL_TYPE_DATETIME,

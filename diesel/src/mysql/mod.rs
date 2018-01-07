@@ -6,10 +6,12 @@
 
 mod backend;
 mod connection;
-
 mod query_builder;
+mod value;
+
 pub mod types;
 
 pub use self::backend::{Mysql, MysqlType};
 pub use self::connection::MysqlConnection;
 pub use self::query_builder::MysqlQueryBuilder;
+pub use self::value::{MysqlValue, NumericRepresentation};

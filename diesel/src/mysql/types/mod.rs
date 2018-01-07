@@ -1,11 +1,11 @@
 //! MySQL specific types
 
-#[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;
+mod primitives;
 
 use byteorder::WriteBytesExt;
-use mysql::{Mysql, MysqlType};
+use mysql::{Mysql, MysqlType, MysqlValue};
 use std::error::Error as StdError;
 use std::io::Write;
 use types::{FromSql, HasSqlType, IsNull, Tinyint, ToSql, ToSqlOutput};
@@ -24,8 +24,8 @@ impl ToSql<::types::Tinyint, Mysql> for i8 {
 }
 
 impl FromSql<::types::Tinyint, Mysql> for i8 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
-        let bytes = not_none!(bytes);
+    fn from_sql(value: Option<&MysqlValue>) -> Result<Self, Box<StdError + Send + Sync>> {
+        let bytes = not_none!(value).bytes()?;
         Ok(bytes[0] as i8)
     }
 }
@@ -41,8 +41,9 @@ impl ToSql<::types::Bool, Mysql> for bool {
 }
 
 impl FromSql<::types::Bool, Mysql> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
-        Ok(not_none!(bytes).iter().any(|x| *x != 0))
+    fn from_sql(value: Option<&MysqlValue>) -> Result<Self, Box<StdError + Send + Sync>> {
+        let bytes = not_none!(value).bytes()?;
+        Ok(bytes.iter().any(|x| *x != 0))
     }
 }
 
@@ -72,7 +73,7 @@ impl HasSqlType<Datetime> for Mysql {
 
 impl HasSqlType<::types::Numeric> for Mysql {
     fn metadata(_: &()) -> MysqlType {
-        MysqlType::String
+        MysqlType::Numeric
     }
 }
 

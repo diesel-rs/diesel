@@ -21,6 +21,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
   "foo"]` should be used instead.
 
+### Changed
+
+* The structure used by MySQL for deserialization has changed. Existing
+  `FromSql` implementations may need to ensure they are using `<Mysql as
+  Backend>::RawValue` in their signature.
+
 ## [1.0.0] - 2018-01-02
 
 ### Added
