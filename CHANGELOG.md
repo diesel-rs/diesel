@@ -6,6 +6,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Added
+
+* Added support for specifying `ISOLATION LEVEL`, `DEFERRABLE`, and `READ ONLY`
+  on PG transactions. See [`PgConnection::build_transaction`] for details.
+
+[`PgConnection::build_transaction`]: http://docs.diesel.rs/diesel/pg/struct.PgConnection.html#method.build_transaction
+
 ### Deprecated
 
 * `ne_any` has been renamed to `ne_all`.
