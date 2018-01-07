@@ -2,9 +2,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, Numeric, ToSql, ToSqlOutput};
-
-primitive_impls!(Numeric -> (pg: (1700, 1231)));
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 impl FromSql<types::Bool, Pg> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {

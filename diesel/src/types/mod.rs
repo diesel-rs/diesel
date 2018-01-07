@@ -58,7 +58,10 @@ use std::io::{self, Write};
 /// - [`bool`][bool]
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "16", array_oid = "1000")]
+#[sqlite_type = "Integer"]
+#[mysql_type = "Tiny"]
 pub struct Bool;
 
 /// The tiny integer SQL type.
@@ -76,7 +79,8 @@ pub struct Bool;
 /// - [`i8`][i8]
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[mysql_type = "Tiny"]
 pub struct Tinyint;
 
 /// The small integer SQL type.
@@ -90,7 +94,10 @@ pub struct Tinyint;
 /// - [`i16`][i16]
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "21", array_oid = "1005")]
+#[sqlite_type = "SmallInt"]
+#[mysql_type = "Short"]
 pub struct SmallInt;
 #[doc(hidden)]
 pub type Int2 = SmallInt;
@@ -108,7 +115,10 @@ pub type Smallint = SmallInt;
 /// - [`i32`][i32]
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "23", array_oid = "1007")]
+#[sqlite_type = "Integer"]
+#[mysql_type = "Long"]
 pub struct Integer;
 #[doc(hidden)]
 pub type Int4 = Integer;
@@ -124,7 +134,10 @@ pub type Int4 = Integer;
 /// - [`i64`][i64]
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "20", array_oid = "1016")]
+#[sqlite_type = "Long"]
+#[mysql_type = "LongLong"]
 pub struct BigInt;
 #[doc(hidden)]
 pub type Int8 = BigInt;
@@ -142,7 +155,10 @@ pub type Bigint = BigInt;
 /// - [`f32`][f32]
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "700", array_oid = "1021")]
+#[sqlite_type = "Float"]
+#[mysql_type = "Float"]
 pub struct Float;
 #[doc(hidden)]
 pub type Float4 = Float;
@@ -158,7 +174,10 @@ pub type Float4 = Float;
 /// - [`f64`][f64]
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "701", array_oid = "1022")]
+#[sqlite_type = "Double"]
+#[mysql_type = "Double"]
 pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
@@ -177,17 +196,13 @@ pub type Float8 = Double;
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "1700", array_oid = "1231")]
+#[mysql_type = "String"]
 pub struct Numeric;
 
 /// Alias for `Numeric`
 pub type Decimal = Numeric;
-
-#[cfg(not(feature = "postgres"))]
-impl NotNull for Numeric {}
-
-#[cfg(not(feature = "postgres"))]
-impl SingleValue for Numeric {}
 
 /// The text SQL type.
 ///
@@ -208,7 +223,10 @@ impl SingleValue for Numeric {}
 ///
 /// [String]: https://doc.rust-lang.org/nightly/std/string/struct.String.html
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "25", array_oid = "1009")]
+#[sqlite_type = "Text"]
+#[mysql_type = "String"]
 pub struct Text;
 
 /// The SQL `VARCHAR` type
@@ -248,7 +266,10 @@ pub type Longtext = Text;
 ///
 /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "17", array_oid = "1001")]
+#[sqlite_type = "Binary"]
+#[mysql_type = "Blob"]
 pub struct Binary;
 
 #[doc(hidden)]
@@ -275,7 +296,10 @@ pub type Bit = Binary;
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
 /// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "1082", array_oid = "1182")]
+#[sqlite_type = "Text"]
+#[mysql_type = "Date"]
 pub struct Date;
 
 /// The interval SQL type.
@@ -292,11 +316,9 @@ pub struct Date;
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "1186", array_oid = "1187")]
 pub struct Interval;
-
-#[cfg(not(feature = "postgres"))]
-impl NotNull for Interval {} // FIXME: Interval should not be in this file
 
 /// The time SQL type.
 ///
@@ -309,7 +331,10 @@ impl NotNull for Interval {} // FIXME: Interval should not be in this file
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "1083", array_oid = "1183")]
+#[sqlite_type = "Text"]
+#[mysql_type = "Time"]
 pub struct Time;
 
 /// The timestamp SQL type.
@@ -329,7 +354,10 @@ pub struct Time;
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
 /// [Timespec]: /time/struct.Timespec.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "1114", array_oid = "1115")]
+#[sqlite_type = "Text"]
+#[mysql_type = "Timestamp"]
 pub struct Timestamp;
 
 /// The nullable SQL type.
@@ -355,6 +383,40 @@ pub use pg::types::sql_types::*;
 pub use mysql::types::*;
 
 /// Indicates that a SQL type exists for a backend.
+///
+/// # Deriving
+///
+/// This trait can be automatically derived by `#[derive(SqlType)]`.
+/// This derive will also implement [`NotNull`] and [`SingleValue`].
+/// When deriving this trait,
+/// you need to specify how the type is represented on various backends.
+/// You don't need to specify every backend,
+/// only the ones supported by your type.
+///
+/// For PostgreSQL, add `#[postgres(oid = "some_oid", array_oid = "some_oid")]`
+/// or `#[postgres(type_name = "pg_type_name")]` if the OID is not stable.
+/// For MySQL, specify which variant of [`MysqlType`] should be used
+/// by adding `#[mysql_type = "Variant"]`.
+/// For SQLite, specify which variant of [`SqliteType`] should be used
+/// by adding `#[sqlite_type = "Variant"]`.
+///
+/// [`NotNull`]: trait.NotNull.html
+/// [`SingleValue`]: trait.SingleValue.html
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
+/// [`SqliteType`]: ../sqlite/enum.SqliteType.html
+///
+/// # Example
+///
+/// ```rust
+/// # #[macro_use]
+/// # extern crate diesel;
+/// #[derive(SqlType)]
+/// #[postgres(oid = "23", array_oid = "1007")]
+/// #[sqlite_type = "Integer"]
+/// #[mysql_type = "Long"]
+/// pub struct Integer;
+/// # fn main() {}
+/// ```
 pub trait HasSqlType<ST>: TypeMetadata {
     /// Fetch the metadata for the given type
     ///
@@ -378,6 +440,10 @@ pub trait HasSqlType<ST>: TypeMetadata {
 /// A marker trait indicating that a SQL type is not null.
 ///
 /// All SQL types must implement this trait.
+///
+/// # Deriving
+///
+/// This trait is automatically implemented by `#[derive(SqlType)]`
 pub trait NotNull {}
 
 /// Converts a type which may or may not be nullable into its nullable
@@ -403,6 +469,10 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 /// This trait should generally be implemented for all SQL types with the
 /// exception of Rust tuples. If a column could have this as its type, this
 /// trait should be implemented.
+///
+/// # Deriving
+///
+/// This trait is automatically implemented by `#[derive(SqlType)]`
 pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}

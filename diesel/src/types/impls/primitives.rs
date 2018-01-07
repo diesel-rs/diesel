@@ -2,25 +2,8 @@ use std::error::Error;
 use std::io::Write;
 
 use backend::Backend;
-use types::{self, BigInt, Binary, Bool, Date, Double, Float, FromSql, HasSqlType, Integer, IsNull,
-            NotNull, SmallInt, Text, Time, Timestamp, ToSql, ToSqlOutput};
-
-primitive_impls!(Bool -> (pg: (16, 1000), sqlite: (Integer), mysql: (Tiny)));
-
-primitive_impls!(SmallInt -> (pg: (21, 1005), sqlite: (SmallInt), mysql: (Short)));
-primitive_impls!(Integer -> (pg: (23, 1007), sqlite: (Integer), mysql: (Long)));
-primitive_impls!(BigInt -> (pg: (20, 1016), sqlite: (Long), mysql: (LongLong)));
-
-primitive_impls!(Float -> (pg: (700, 1021), sqlite: (Float), mysql: (Float)));
-primitive_impls!(Double -> (pg: (701, 1022), sqlite: (Double), mysql: (Double)));
-
-primitive_impls!(Text -> (pg: (25, 1009), sqlite: (Text), mysql: (String)));
-
-primitive_impls!(Binary -> (pg: (17, 1001), sqlite: (Binary), mysql: (Blob)));
-
-primitive_impls!(Date -> (pg: (1082, 1182)));
-primitive_impls!(Time -> (pg: (1083, 1183)));
-primitive_impls!(Timestamp -> (pg: (1114, 1115)));
+use types::{self, BigInt, Binary, Bool, Double, Float, FromSql, HasSqlType, Integer, IsNull,
+            NotNull, SmallInt, Text, ToSql, ToSqlOutput};
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -69,17 +52,17 @@ mod foreign_impls {
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
     #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "Timestamp")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Timestamp")]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive, not_sized)]
     #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "Timestamp")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::types::Timestamp")]
     struct StrProxy(str);
 
     #[derive(FromSqlRow)]

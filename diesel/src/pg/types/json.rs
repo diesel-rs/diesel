@@ -6,16 +6,7 @@ use std::io::prelude::*;
 use std::error::Error;
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, Json, Jsonb, ToSql, ToSqlOutput};
-
-// The OIDs used to identify `json` and `jsonb` are not documented anywhere
-// obvious, but they are discussed on various PostgreSQL mailing lists,
-// including:
-//
-// https://www.postgresql.org/message-id/CA+mi_8Yv2SVOdhAtx-4CbpzoDtaJGkf8QvnushdF8bMgySAbYg@mail.gmail.com
-// https://www.postgresql.org/message-id/CA+mi_8bd_g-MDPMwa88w0HXfjysaLFcrCza90+KL9zpRGbxKWg@mail.gmail.com
-primitive_impls!(Json -> (pg: (114, 199)));
-primitive_impls!(Jsonb -> (pg: (3802, 3807)));
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 #[allow(dead_code)]
 mod foreign_derives {

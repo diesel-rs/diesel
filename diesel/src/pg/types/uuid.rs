@@ -6,8 +6,6 @@ use std::error::Error;
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput, Uuid};
 
-primitive_impls!(Uuid -> (pg: (2950, 2951)));
-
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
 #[sql_type = "Uuid"]

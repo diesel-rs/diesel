@@ -36,6 +36,7 @@ mod model;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
+mod sql_type;
 mod util;
 
 use proc_macro::TokenStream;
@@ -83,8 +84,13 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
-pub fn derive_from_as_expression(input: TokenStream) -> TokenStream {
+pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     expand_derive(input, as_expression::derive)
+}
+
+#[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
+pub fn derive_sql_type(input: TokenStream) -> TokenStream {
+    expand_derive(input, sql_type::derive)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {

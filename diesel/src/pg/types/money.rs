@@ -23,9 +23,6 @@ pub struct PgMoney(pub i64);
 use pg::Pg;
 use types::{self, FromSql, IsNull, Money, ToSql, ToSqlOutput};
 
-// https://github.com/postgres/postgres/blob/502a3832cc54c7115dacb8a2dae06f0620995ac6/src/include/catalog/pg_type.h#L429-L432
-primitive_impls!(Money -> (pg: (790, 791)));
-
 impl FromSql<types::Money, Pg> for PgMoney {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mut bytes = not_none!(bytes);

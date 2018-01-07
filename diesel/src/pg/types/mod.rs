@@ -35,7 +35,8 @@ pub mod sql_types {
     /// [`ToSql`]: ../../../types/trait.ToSql.html
     /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "26", array_oid = "1018")]
     pub struct Oid;
 
     /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
@@ -58,7 +59,8 @@ pub mod sql_types {
     /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
     /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
     /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
 
     /// The `Array` SQL type.
@@ -98,7 +100,7 @@ pub mod sql_types {
     /// [`ToSql`]: ../../../types/trait.ToSql.html
     /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Range<ST>(ST);
 
     #[doc(hidden)]
@@ -137,7 +139,8 @@ pub mod sql_types {
     /// [`ToSql`]: ../../../types/trait.ToSql.html
     /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "2950", array_oid = "2951")]
     pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
@@ -165,7 +168,8 @@ pub mod sql_types {
     /// [`ToSql`]: ../../../types/trait.ToSql.html
     /// [`FromSql`]: ../../../types/trait.FromSql.html
     /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "114", array_oid = "199")]
     pub struct Json;
 
     #[cfg(feature = "serde_json")]
@@ -240,7 +244,8 @@ pub mod sql_types {
     /// assert_eq!(Ok(santas_address), inserted_address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "3802", array_oid = "3807")]
     pub struct Jsonb;
 
     /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
@@ -289,7 +294,8 @@ pub mod sql_types {
     /// assert_eq!(Ok(Cents(123_456)), inserted_price);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "790", array_oid = "791")]
     pub struct Money;
 
     #[cfg(feature = "network-address")]
@@ -334,7 +340,8 @@ pub mod sql_types {
     /// assert_eq!(Ok([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]), inserted_macaddr);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "829", array_oid = "1040")]
     pub struct MacAddr;
 
     #[cfg(feature = "network-address")]
@@ -391,7 +398,8 @@ pub mod sql_types {
     /// assert_eq!(Ok(addr), inserted_address);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "869", array_oid = "1041")]
     pub struct Inet;
 
     #[cfg(feature = "network-address")]
@@ -442,6 +450,7 @@ pub mod sql_types {
     /// assert_eq!(Ok(addr), inserted_addr);
     /// # }
     /// ```
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "650", array_oid = "651")]
     pub struct Cidr;
 }

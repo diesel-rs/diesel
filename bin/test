@@ -26,14 +26,14 @@ else
   (cd diesel_infer_schema/infer_schema_macros && cargo test --features "$CLIPPY sqlite" $*)
   (cd diesel_infer_schema && cargo test --features "$CLIPPY sqlite" $*)
   (cd diesel_migrations && cargo test --features "$CLIPPY sqlite" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY sqlite" $*)
+  (cd diesel_derives && cargo test --features "$CLIPPY diesel/sqlite" $*)
   (cd diesel_tests && cargo test --features "$CLIPPY sqlite" --no-default-features $*)
 
   (cd diesel_infer_schema/infer_schema_internals && cargo test --features "$CLIPPY postgres" $*)
   (cd diesel_infer_schema/infer_schema_macros && cargo test --features "$CLIPPY postgres" $*)
   (cd diesel_infer_schema && cargo test --features "$CLIPPY postgres" $*)
   (cd diesel_migrations && cargo test --features "$CLIPPY postgres" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY postgres" $*)
+  (cd diesel_derives && cargo test --features "$CLIPPY diesel/postgres" $*)
   (cd diesel_cli && cargo test --features "$CLIPPY postgres" --no-default-features $*)
   (cd diesel_tests && cargo test --features "$CLIPPY postgres" --no-default-features $*)
 
@@ -42,7 +42,7 @@ else
   (cd diesel_infer_schema/infer_schema_macros && cargo test --features "$CLIPPY mysql" $*)
   (cd diesel_infer_schema && cargo test --features "$CLIPPY mysql" $*)
   (cd diesel_migrations && cargo test --features "$CLIPPY mysql" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY mysql" $*)
+  (cd diesel_derives && cargo test --features "$CLIPPY diesel/mysql" $*)
   (cd diesel_cli && cargo test --features "$CLIPPY mysql" --no-default-features $*)
   (cd diesel_tests && cargo test --features "$CLIPPY mysql" --no-default-features $*)
   unset RUST_TEST_THREADS

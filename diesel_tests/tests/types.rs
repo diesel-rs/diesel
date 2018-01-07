@@ -983,10 +983,8 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 fn third_party_crates_can_add_new_types() {
     use std::error::Error;
 
-    #[derive(Debug, Clone, Copy, QueryId)]
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
     struct MyInt;
-
-    impl SingleValue for MyInt {}
 
     impl HasSqlType<MyInt> for Pg {
         fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
