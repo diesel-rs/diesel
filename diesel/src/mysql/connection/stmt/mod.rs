@@ -56,11 +56,26 @@ impl Statement {
     /// have no return value. It should never be called on a statement on
     /// which `results` has previously been called?
     pub unsafe fn execute(&self) -> QueryResult<()> {
-        ffi::mysql_stmt_execute(self.stmt);
-        self.did_an_error_occur()?;
-        ffi::mysql_stmt_store_result(self.stmt);
-        self.did_an_error_occur()?;
+        self.execute_without_store()?;
+        self.store_results()?;
         Ok(())
+    }
+
+    /// This function should only be called internally by other functions which
+    /// will later call `store_results`. Failure to do so will poison the
+    /// connection.
+    unsafe fn execute_without_store(&self) -> QueryResult<()> {
+        ffi::mysql_stmt_execute(self.stmt);
+        self.did_an_error_occur()
+    }
+
+    /// This method should only be called by the structs in `stmt::iterator`. It
+    /// is only valid if `execute_without_store` was previously called. Calling
+    /// this method any number of times other than exactly once per call to
+    /// `execute_without_store` will poison the connection.
+    pub unsafe fn store_results(&self) -> QueryResult<()> {
+        ffi::mysql_stmt_store_result(self.stmt);
+        self.did_an_error_occur()
     }
 
     pub fn affected_rows(&self) -> usize {
@@ -72,6 +87,7 @@ impl Statement {
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
     pub unsafe fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
+        self.execute_without_store()?;
         StatementIterator::new(self, types)
     }
 
@@ -79,6 +95,7 @@ impl Statement {
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
     pub unsafe fn named_results(&mut self) -> QueryResult<NamedStatementIterator> {
+        self.execute_without_store()?;
         NamedStatementIterator::new(self)
     }
 

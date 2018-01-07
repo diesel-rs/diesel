@@ -52,3 +52,22 @@ fn sql_query_can_take_bind_params() {
 
     assert_eq!(Ok(expected), users);
 }
+
+#[test]
+fn sql_query_can_deal_with_bind_params_in_select_clause() {
+    use diesel::types::{Integer, Text};
+    let conn = connection();
+
+    let query = if cfg!(feature = "postgres") {
+        sql_query("SELECT $1 as id, $2 as name, $3 as hair_color")
+    } else {
+        sql_query("SELECT ? as id, ? as name, ? as hair_color")
+    };
+    let user = query.bind::<Integer, _>(1)
+        .bind::<Text, _>("Sean")
+        .bind::<Text, _>("black")
+        .get_result(&conn);
+    let expected = User::with_hair_color(1, "Sean", "black");
+
+    assert_eq!(Ok(expected), user);
+}

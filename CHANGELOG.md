@@ -19,6 +19,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
   "foo"]` should be used instead.
 
+### Fixed
+
+* `sql_query` now works properly on MySQL with queries where bind parameters
+  appear in the select clause. Previously, attempting to do `SELECT ? AS id`
+  would error if the bind parameter was any type other than a string.
+
 ## [1.0.0] - 2018-01-02
 
 ### Added
