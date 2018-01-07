@@ -15,7 +15,7 @@ sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[derive(Insertable)]
 #[table_name="users"]
-struct NewUser(#[column_name(name)] &'static str);
+struct NewUser(#[column_name = "name"] &'static str);
 
 // NOTE: This test is meant to be comprehensive, but not exhaustive.
 fn main() {

@@ -17,7 +17,6 @@ impl Attr {
     pub fn from_struct_field((index, field): (usize, &syn::Field)) -> Self {
         let field_name = field.ident.clone();
         let column_name = ident_value_of_attr_with_name(&field.attrs, "column_name")
-            .cloned()
             .or_else(|| field_name.clone());
         let ty = field.ty.clone();
         let sql_type = str_value_of_attr_with_name(&field.attrs, "sql_type")

@@ -18,8 +18,8 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
-struct NewUser(#[column_name(name)] &'static str);
+#[table_name = "users"]
+pub struct NewUser(#[column_name = "name"] &'static str);
 
 #[allow(deprecated)]
 fn main() {
