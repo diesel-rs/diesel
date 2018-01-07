@@ -37,8 +37,6 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, DB> FromSqlRow<($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: FromSqlRow<$ST, DB>),+,
-                $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
             {
                 const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
 
@@ -50,8 +48,6 @@ macro_rules! tuple_impls {
             impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
                 DB: Backend,
                 $($T: Queryable<$ST, DB>),+,
-                $(DB: HasSqlType<$ST>),+,
-                DB: HasSqlType<($($ST,)+)>,
             {
                 type Row = ($($T::Row,)+);
 

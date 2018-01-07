@@ -36,7 +36,7 @@ where
 impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
 where
     T: FromSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
     fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
@@ -50,7 +50,7 @@ where
 impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T>
 where
     T: Queryable<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
     ST: NotNull,
 {
@@ -81,7 +81,7 @@ where
 impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T>
 where
     T: FromSqlRow<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
@@ -100,7 +100,7 @@ where
 impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>
 where
     T: ToSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
     fn to_sql<W: Write>(

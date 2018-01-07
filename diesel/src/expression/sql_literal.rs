@@ -5,7 +5,6 @@ use expression::*;
 use query_builder::*;
 use query_dsl::RunQueryDsl;
 use result::QueryResult;
-use types::HasSqlType;
 
 #[derive(Debug, Clone)]
 /// Returned by the [`sql()`] function.
@@ -32,7 +31,7 @@ impl<ST> Expression for SqlLiteral<ST> {
 
 impl<ST, DB> QueryFragment<DB> for SqlLiteral<ST>
 where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();

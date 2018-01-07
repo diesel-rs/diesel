@@ -1019,7 +1019,6 @@ use diesel::query_builder::{QueryFragment, QueryId};
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
-    TestBackend: HasSqlType<T>,
     U: AsExpression<T> + Debug + Clone,
     U::Expression: SelectableExpression<(), SqlType = T>,
     U::Expression: QueryFragment<TestBackend> + QueryId,

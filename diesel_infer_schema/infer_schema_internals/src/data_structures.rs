@@ -3,7 +3,7 @@ use diesel::*;
 use diesel::backend::Backend;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
-use diesel::types::{FromSqlRow, HasSqlType};
+use diesel::types::FromSqlRow;
 
 #[cfg(feature = "uses_information_schema")]
 use super::information_schema::UsesInformationSchema;
@@ -69,7 +69,7 @@ impl ColumnInformation {
 #[cfg(feature = "uses_information_schema")]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation
 where
-    DB: Backend + UsesInformationSchema + HasSqlType<ST>,
+    DB: Backend + UsesInformationSchema,
     (String, String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String, String);
@@ -82,7 +82,6 @@ where
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation
 where
-    Sqlite: HasSqlType<ST>,
     (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
 {
     type Row = (i32, String, String, bool, Option<String>, bool);

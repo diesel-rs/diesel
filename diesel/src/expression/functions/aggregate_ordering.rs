@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
-use types::{HasSqlType, IntoNullable, SqlOrd};
+use types::{IntoNullable, SqlOrd};
 
 macro_rules! ord_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {
@@ -30,7 +30,7 @@ macro_rules! ord_function {
 
         impl<T, DB> QueryFragment<DB> for $type_name<T> where
             T: Expression + QueryFragment<DB>,
-            DB: Backend + HasSqlType<T::SqlType>,
+            DB: Backend,
         {
             fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                 out.push_sql(concat!($operator, "("));
