@@ -20,7 +20,6 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
         } else {
             let st = sql_type(attr, &model);
             quote!(
-                __DB: diesel::types::HasSqlType<#st>,
                 #attr_ty: diesel::types::FromSql<#st, __DB>,
             )
         }

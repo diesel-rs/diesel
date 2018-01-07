@@ -3,7 +3,7 @@
 use std::error::Error;
 
 use backend::Backend;
-use types::{FromSql, HasSqlType};
+use types::FromSql;
 
 /// Represents a single database row.
 /// Apps should not need to concern themselves with this trait.
@@ -48,7 +48,6 @@ pub trait NamedRow<DB: Backend> {
     /// this function is undefined.
     fn get<ST, T>(&self, column_name: &str) -> Result<T, Box<Error + Send + Sync>>
     where
-        DB: HasSqlType<ST>,
         T: FromSql<ST, DB>,
     {
         let idx = self.index_of(column_name)

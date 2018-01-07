@@ -5,11 +5,11 @@ pub mod bigdecimal {
     use std::error::Error;
     use std::io::prelude::*;
 
-    use mysql::{Mysql, MysqlType};
+    use mysql::Mysql;
 
     use self::bigdecimal::BigDecimal;
 
-    use types::{self, FromSql, HasSqlType, IsNull, ToSql, ToSqlOutput};
+    use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
     impl ToSql<types::Numeric, Mysql> for BigDecimal {
         fn to_sql<W: Write>(
@@ -27,12 +27,6 @@ pub mod bigdecimal {
             let bytes = not_none!(bytes);
             BigDecimal::parse_bytes(bytes, 10)
                 .ok_or_else(|| Box::from(format!("{:?} is not valid decimal number ", bytes)))
-        }
-    }
-
-    impl HasSqlType<BigDecimal> for Mysql {
-        fn metadata(_: &()) -> MysqlType {
-            MysqlType::String
         }
     }
 }

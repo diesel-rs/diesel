@@ -22,7 +22,7 @@ pub fn derive_queryable(item: syn::DeriveInput) -> Tokens {
         model.dummy_const_name("QUERYABLE"),
         quote!(
             impl#generics diesel::Queryable<__ST, __DB> for #struct_ty where
-                __DB: diesel::backend::Backend + diesel::types::HasSqlType<__ST>,
+                __DB: diesel::backend::Backend,
                 #row_ty: diesel::Queryable<__ST, __DB>,
             {
                type Row = <#row_ty as diesel::Queryable<__ST, __DB>>::Row;

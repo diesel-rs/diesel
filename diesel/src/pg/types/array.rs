@@ -25,7 +25,6 @@ impl<T> SingleValue for Array<T> {}
 impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
-    Pg: HasSqlType<ST>,
 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
         let mut bytes = not_none!(bytes);
@@ -67,9 +66,7 @@ use expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
-        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty where
-            Pg: HasSqlType<ST>,
-        {
+        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty {
             type Expression = Bound<$sql_type, Self>;
 
             fn as_expression(self) -> Self::Expression {
@@ -128,7 +125,6 @@ where
 
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
-    Pg: HasSqlType<ST>,
     [T]: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(
@@ -141,7 +137,6 @@ where
 
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
 where
-    Pg: HasSqlType<ST>,
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
@@ -155,7 +150,6 @@ where
 
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
-    Pg: HasSqlType<ST>,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(
