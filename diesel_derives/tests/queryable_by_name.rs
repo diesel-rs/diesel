@@ -1,22 +1,12 @@
+use diesel::sql_types::Integer;
 use diesel::*;
 
 use helpers::connection;
 
-#[cfg(feature = "mysql")]
-type IntSql = ::diesel::sql_types::BigInt;
-#[cfg(feature = "mysql")]
-type IntRust = i64;
-
-#[cfg(not(feature = "mysql"))]
-type IntSql = ::diesel::sql_types::Integer;
-#[cfg(not(feature = "mysql"))]
-type IntRust = i32;
-
 table! {
-    use super::IntSql;
     my_structs (foo) {
-        foo -> IntSql,
-        bar -> IntSql,
+        foo -> Integer,
+        bar -> Integer,
     }
 }
 
@@ -25,8 +15,8 @@ fn named_struct_definition() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
     struct MyStruct {
-        foo: IntRust,
-        bar: IntRust,
+        foo: i32,
+        bar: i32,
     }
 
     let conn = connection();
@@ -38,10 +28,7 @@ fn named_struct_definition() {
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
-    struct MyStruct(
-        #[column_name = "foo"] IntRust,
-        #[column_name = "bar"] IntRust,
-    );
+    struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
 
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
@@ -54,10 +41,10 @@ fn tuple_struct() {
 fn struct_with_no_table() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     struct MyStructNamedSoYouCantInferIt {
-        #[sql_type = "IntSql"]
-        foo: IntRust,
-        #[sql_type = "IntSql"]
-        bar: IntRust,
+        #[sql_type = "Integer"]
+        foo: i32,
+        #[sql_type = "Integer"]
+        bar: i32,
     }
 
     let conn = connection();
@@ -70,7 +57,7 @@ fn embedded_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
     struct A {
-        foo: IntRust,
+        foo: i32,
         #[diesel(embed)]
         b: B,
     }
@@ -78,7 +65,7 @@ fn embedded_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
     struct B {
-        bar: IntRust,
+        bar: i32,
     }
 
     let conn = connection();
@@ -97,7 +84,7 @@ fn embedded_option() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
     struct A {
-        foo: IntRust,
+        foo: i32,
         #[diesel(embed)]
         b: Option<B>,
     }
@@ -105,7 +92,7 @@ fn embedded_option() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
     struct B {
-        bar: IntRust,
+        bar: i32,
     }
 
     let conn = connection();

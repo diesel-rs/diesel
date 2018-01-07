@@ -29,12 +29,7 @@ impl Binds {
     pub fn from_output_types(types: Vec<MysqlTypeMetadata>) -> Self {
         let data = types
             .into_iter()
-            .map(|metadata| {
-                (
-                    mysql_type_to_ffi_type(metadata.data_type),
-                    metadata.is_unsigned as _,
-                )
-            })
+            .map(|metadata| (metadata.data_type.into(), metadata.is_unsigned as _))
             .map(BindData::for_output)
             .collect();
 
@@ -87,7 +82,17 @@ impl Binds {
     }
 
     pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
-        self.data[idx].bytes().map(MysqlValue::new)
+        let data = &self.data[idx];
+        let tpe = data.tpe.into();
+        self.data[idx].bytes().map(|bytes| {
+            MysqlValue::new(
+                bytes,
+                MysqlTypeMetadata {
+                    data_type: tpe,
+                    is_unsigned: data.is_unsigned != 0,
+                },
+            )
+        })
     }
 }
 
@@ -107,10 +112,10 @@ impl BindData {
         let length = bytes.len() as libc::c_ulong;
 
         BindData {
-            tpe: mysql_type_to_ffi_type(tpe),
-            bytes: bytes,
-            length: length,
-            is_null: is_null,
+            tpe: tpe.into(),
+            bytes,
+            length,
+            is_null,
             is_truncated: None,
             is_unsigned,
         }
@@ -123,9 +128,9 @@ impl BindData {
         let length = bytes.len() as libc::c_ulong;
 
         BindData {
-            tpe: tpe,
-            bytes: bytes,
-            length: length,
+            tpe,
+            bytes,
+            length,
             is_null: 0,
             is_truncated: Some(0),
             is_unsigned,
@@ -213,22 +218,63 @@ impl BindData {
     }
 }
 
-fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
-    use self::ffi::enum_field_types::*;
+impl From<MysqlType> for ffi::enum_field_types {
+    fn from(tpe: MysqlType) -> Self {
+        use self::ffi::enum_field_types::*;
 
-    match tpe {
-        MysqlType::Tiny => MYSQL_TYPE_TINY,
-        MysqlType::Short => MYSQL_TYPE_SHORT,
-        MysqlType::Long => MYSQL_TYPE_LONG,
-        MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
-        MysqlType::Float => MYSQL_TYPE_FLOAT,
-        MysqlType::Double => MYSQL_TYPE_DOUBLE,
-        MysqlType::Time => MYSQL_TYPE_TIME,
-        MysqlType::Date => MYSQL_TYPE_DATE,
-        MysqlType::DateTime => MYSQL_TYPE_DATETIME,
-        MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
-        MysqlType::String => MYSQL_TYPE_STRING,
-        MysqlType::Blob => MYSQL_TYPE_BLOB,
+        match tpe {
+            MysqlType::Tiny => MYSQL_TYPE_TINY,
+            MysqlType::Short => MYSQL_TYPE_SHORT,
+            MysqlType::Long => MYSQL_TYPE_LONG,
+            MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
+            MysqlType::Float => MYSQL_TYPE_FLOAT,
+            MysqlType::Double => MYSQL_TYPE_DOUBLE,
+            MysqlType::Time => MYSQL_TYPE_TIME,
+            MysqlType::Date => MYSQL_TYPE_DATE,
+            MysqlType::DateTime => MYSQL_TYPE_DATETIME,
+            MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
+            MysqlType::String => MYSQL_TYPE_STRING,
+            MysqlType::Blob => MYSQL_TYPE_BLOB,
+            MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
+        }
+    }
+}
+
+impl From<ffi::enum_field_types> for MysqlType {
+    fn from(tpe: ffi::enum_field_types) -> Self {
+        use self::ffi::enum_field_types::*;
+
+        match tpe {
+            MYSQL_TYPE_TINY => MysqlType::Tiny,
+            MYSQL_TYPE_SHORT => MysqlType::Short,
+            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG => MysqlType::Long,
+            MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
+            MYSQL_TYPE_FLOAT => MysqlType::Float,
+            MYSQL_TYPE_DOUBLE => MysqlType::Double,
+            MYSQL_TYPE_TIME => MysqlType::Time,
+            MYSQL_TYPE_DATE => MysqlType::Date,
+            MYSQL_TYPE_DATETIME => MysqlType::DateTime,
+            MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
+            MYSQL_TYPE_STRING => MysqlType::String,
+            MYSQL_TYPE_BLOB => MysqlType::Blob,
+            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
+            MYSQL_TYPE_NULL
+            | MYSQL_TYPE_YEAR
+            | MYSQL_TYPE_NEWDATE
+            | MYSQL_TYPE_VARCHAR
+            | MYSQL_TYPE_BIT
+            | MYSQL_TYPE_TIMESTAMP2
+            | MYSQL_TYPE_DATETIME2
+            | MYSQL_TYPE_TIME2
+            | MYSQL_TYPE_JSON
+            | MYSQL_TYPE_ENUM
+            | MYSQL_TYPE_SET
+            | MYSQL_TYPE_TINY_BLOB
+            | MYSQL_TYPE_MEDIUM_BLOB
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_GEOMETRY => unimplemented!(),
+        }
     }
 }
 

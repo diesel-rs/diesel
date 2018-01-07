@@ -4,7 +4,7 @@ extern crate mysqlclient_sys as ffi;
 use self::chrono::*;
 use std::io::Write;
 use std::os::raw as libc;
-use std::{mem, ptr, slice};
+use std::{mem, slice};
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue};
@@ -26,18 +26,8 @@ macro_rules! mysql_time_impls {
 
         impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
             fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-                let value = not_none!(value);
-                let bytes_ptr = value.as_bytes().as_ptr() as *const ffi::MYSQL_TIME;
-                unsafe {
-                    let mut result = mem::MaybeUninit::uninit();
-                    ptr::copy_nonoverlapping(bytes_ptr, result.as_mut_ptr(), 1);
-                    let result = result.assume_init();
-                    if result.neg == 0 {
-                        Ok(result)
-                    } else {
-                        Err("Negative dates/times are not yet supported".into())
-                    }
-                }
+                let data = not_none!(value);
+                data.time_value()
             }
         }
     };
@@ -62,15 +52,17 @@ impl FromSql<Datetime, Mysql> for NaiveDateTime {
 
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
-
-        mysql_time.year = self.year() as libc::c_uint;
-        mysql_time.month = self.month() as libc::c_uint;
-        mysql_time.day = self.day() as libc::c_uint;
-        mysql_time.hour = self.hour() as libc::c_uint;
-        mysql_time.minute = self.minute() as libc::c_uint;
-        mysql_time.second = self.second() as libc::c_uint;
-        mysql_time.second_part = libc::c_ulong::from(self.timestamp_subsec_micros());
+        let mysql_time = ffi::MYSQL_TIME {
+            year: self.year() as libc::c_uint,
+            month: self.month() as libc::c_uint,
+            day: self.day() as libc::c_uint,
+            hour: self.hour() as libc::c_uint,
+            minute: self.minute() as libc::c_uint,
+            second: self.second() as libc::c_uint,
+            second_part: libc::c_ulong::from(self.timestamp_subsec_micros()),
+            neg: 0,
+            time_type: ffi::enum_mysql_timestamp_type::MYSQL_TIMESTAMP_DATETIME,
+        };
 
         <ffi::MYSQL_TIME as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, out)
     }
@@ -98,12 +90,18 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl ToSql<Time, Mysql> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
-
-        mysql_time.hour = self.hour() as libc::c_uint;
-        mysql_time.minute = self.minute() as libc::c_uint;
-        mysql_time.second = self.second() as libc::c_uint;
+    fn to_sql<W: Write>(&self, out: &mut serialize::Output<W, Mysql>) -> serialize::Result {
+        let mysql_time = ffi::MYSQL_TIME {
+            hour: self.hour() as libc::c_uint,
+            minute: self.minute() as libc::c_uint,
+            second: self.second() as libc::c_uint,
+            day: 0,
+            month: 0,
+            second_part: 0,
+            year: 0,
+            neg: 0,
+            time_type: ffi::enum_mysql_timestamp_type::MYSQL_TIMESTAMP_TIME,
+        };
 
         <ffi::MYSQL_TIME as ToSql<Time, Mysql>>::to_sql(&mysql_time, out)
     }
@@ -123,11 +121,17 @@ impl FromSql<Time, Mysql> for NaiveTime {
 
 impl ToSql<Date, Mysql> for NaiveDate {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
-
-        mysql_time.year = self.year() as libc::c_uint;
-        mysql_time.month = self.month() as libc::c_uint;
-        mysql_time.day = self.day() as libc::c_uint;
+        let mysql_time = ffi::MYSQL_TIME {
+            year: self.year() as libc::c_uint,
+            month: self.month() as libc::c_uint,
+            day: self.day() as libc::c_uint,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            second_part: 0,
+            neg: 0,
+            time_type: ffi::enum_mysql_timestamp_type::MYSQL_TIMESTAMP_DATE,
+        };
 
         <ffi::MYSQL_TIME as ToSql<Date, Mysql>>::to_sql(&mysql_time, out)
     }

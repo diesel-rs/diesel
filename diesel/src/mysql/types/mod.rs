@@ -3,6 +3,7 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;
+mod primitives;
 
 use byteorder::WriteBytesExt;
 use std::io::Write;

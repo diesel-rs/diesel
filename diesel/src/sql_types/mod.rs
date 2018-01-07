@@ -178,7 +178,7 @@ pub type Float8 = Double;
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1700", array_oid = "1231")]
-#[mysql_type = "String"]
+#[mysql_type = "Numeric"]
 #[sqlite_type = "Double"]
 pub struct Numeric;
 

@@ -50,6 +50,8 @@ pub enum MysqlType {
     Float,
     /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
     Double,
+    /// Sets `buffer_type` to `MYSQL_TYPE_NEWDECIMAL`
+    Numeric,
     /// Sets `buffer_type` to `MYSQL_TYPE_TIME`
     Time,
     /// Sets `buffer_type` to `MYSQL_TYPE_DATE`
