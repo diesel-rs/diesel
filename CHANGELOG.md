@@ -50,6 +50,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `helper_types` now contains a type for every method defined in
   `expression_methods`, and every function in `dsl`.
 
+* Added `FromSql` impls for `*const str` and `*const [u8]` everywhere that
+  `String` and `Vec` are supported. These impls do not allocate, and are
+  intended for use by other impls which need to parse a string or bytes, and
+  don't want to allocate. These impls should never be used outside of another
+  `FromSql` impl.
+
 ### Deprecated
 
 * *IMPORTANT NOTE* Do to [several][rust-deprecation-bug-1]

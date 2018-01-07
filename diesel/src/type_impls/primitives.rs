@@ -83,10 +83,29 @@ mod foreign_impls {
 
 impl NotNull for () {}
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for String {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
-        String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+impl<ST, DB> FromSql<ST, DB> for String
+where
+    DB: Backend,
+    *const str: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+        let str_ptr = <*const str as FromSql<ST, DB>>::from_sql(bytes)?;
+        // We know that the pointer impl will never return null
+        let string = unsafe { &*str_ptr };
+        Ok(string.to_owned())
+    }
+}
+
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for *const str {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+        use std::str;
+        let string = str::from_utf8(not_none!(bytes))?;
+        Ok(string as *const _)
     }
 }
 
@@ -108,9 +127,27 @@ where
     }
 }
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Binary, DB> for Vec<u8> {
+impl<ST, DB> FromSql<ST, DB> for Vec<u8>
+where
+    DB: Backend,
+    *const [u8]: FromSql<ST, DB>,
+{
     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
-        Ok(not_none!(bytes).into())
+        let slice_ptr = <*const [u8] as FromSql<ST, DB>>::from_sql(bytes)?;
+        // We know that the pointer impl will never return null
+        let bytes = unsafe { &*slice_ptr };
+        Ok(bytes.to_owned())
+    }
+}
+
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Binary, DB> for *const [u8] {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+        Ok(not_none!(bytes) as *const _)
     }
 }
 

@@ -20,5 +20,5 @@ fn main() {
     let ids = select_name.load::<i32>(&connection);
     //~^ ERROR the trait bound `i32: diesel::deserialize::FromSql<diesel::sql_types::Text, _>` is not satisfied
     let names = select_id.load::<String>(&connection);
-    //~^ ERROR the trait bound `std::string::String: diesel::deserialize::FromSql<diesel::sql_types::Integer, _>` is not satisfied
+    //~^ ERROR the trait bound `*const str: diesel::deserialize::FromSql<diesel::sql_types::Integer, _>` is not satisfied
 }

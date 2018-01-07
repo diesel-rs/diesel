@@ -8,17 +8,27 @@ use super::Sqlite;
 use super::connection::SqliteValue;
 use sql_types;
 
-impl FromSql<sql_types::VarChar, Sqlite> for String {
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<sql_types::VarChar, Sqlite> for *const str {
     fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
         let text = not_none!(value).read_text();
-        Ok(text.into())
+        Ok(text as *const _)
     }
 }
 
-impl FromSql<sql_types::Binary, Sqlite> for Vec<u8> {
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
     fn from_sql(bytes: Option<&SqliteValue>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes).read_blob();
-        Ok(bytes.into())
+        Ok(bytes as *const _)
     }
 }
 

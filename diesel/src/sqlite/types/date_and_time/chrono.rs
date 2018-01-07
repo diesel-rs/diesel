@@ -3,17 +3,18 @@ extern crate chrono;
 use std::io::Write;
 use self::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
+use backend::Backend;
 use deserialize::{self, FromSql};
 use serialize::{self, Output, ToSql};
 use sqlite::Sqlite;
-use sqlite::connection::SqliteValue;
 use sql_types::{Date, Text, Time, Timestamp};
 
 const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
-        let text = not_none!(value).read_text();
+    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
+        let text = unsafe { &*text_ptr };
         Self::parse_from_str(text, SQLITE_DATE_FORMAT).map_err(Into::into)
     }
 }
@@ -26,8 +27,9 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 }
 
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
-        let text = not_none!(value).read_text();
+    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
+        let text = unsafe { &*text_ptr };
         let valid_time_formats = &[
             // Most likely
             "%T%.f",
@@ -57,8 +59,9 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 }
 
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
-        let text = not_none!(value).read_text();
+    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
+        let text = unsafe { &*text_ptr };
 
         let sqlite_datetime_formats = &[
             // Most likely format
