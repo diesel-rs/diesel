@@ -1,10 +1,10 @@
 extern crate uuid;
 
 use std::io::prelude::*;
-use std::error::Error;
 
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput, Uuid};
+use {deserialize, serialize};
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
@@ -13,20 +13,17 @@ use types::{self, FromSql, IsNull, ToSql, ToSqlOutput, Uuid};
 struct UuidProxy(uuid::Uuid);
 
 impl FromSql<types::Uuid, Pg> for uuid::Uuid {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         uuid::Uuid::from_bytes(bytes).map_err(|e| e.into())
     }
 }
 
 impl ToSql<types::Uuid, Pg> for uuid::Uuid {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(Into::into)
     }
 }
 
@@ -47,15 +44,13 @@ fn some_uuid_from_sql() {
 
 #[test]
 fn bad_uuid_from_sql() {
-    let uuid: Result<uuid::Uuid, Box<Error + Send + Sync>> =
-        FromSql::<types::Uuid, Pg>::from_sql(Some(b"boom"));
+    let uuid = uuid::Uuid::from_sql(Some(b"boom"));
     assert_eq!(uuid.unwrap_err().description(), "UUID parse error");
 }
 
 #[test]
 fn no_uuid_from_sql() {
-    let uuid: Result<uuid::Uuid, Box<Error + Send + Sync>> =
-        FromSql::<types::Uuid, Pg>::from_sql(None);
+    let uuid = uuid::Uuid::from_sql(None);
     assert_eq!(
         uuid.unwrap_err().description(),
         "Unexpected null for non-null column"

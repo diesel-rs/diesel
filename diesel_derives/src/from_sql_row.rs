@@ -28,7 +28,7 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
                 Self: diesel::types::FromSql<__ST, __DB>,
             {
                 fn build_from_row<R: diesel::row::Row<__DB>>(row: &mut R)
-                    -> Result<Self, Box<::std::error::Error + Send + Sync>>
+                    -> diesel::deserialize::Result<Self>
                 {
                     diesel::types::FromSql::<__ST, __DB>::from_sql(row.take())
                 }

@@ -3,7 +3,6 @@ use diesel::connection::SimpleConnection;
 use diesel::pg::Pg;
 use diesel::types::*;
 use schema::*;
-use std::error::Error;
 use std::io::Write;
 
 table! {
@@ -27,10 +26,7 @@ pub enum MyEnum {
 }
 
 impl ToSql<MyType, Pg> for MyEnum {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         match *self {
             MyEnum::Foo => out.write_all(b"foo")?,
             MyEnum::Bar => out.write_all(b"bar")?,
@@ -40,7 +36,7 @@ impl ToSql<MyType, Pg> for MyEnum {
 }
 
 impl FromSql<MyType, Pg> for MyEnum {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         match not_none!(bytes) {
             b"foo" => Ok(MyEnum::Foo),
             b"bar" => Ok(MyEnum::Bar),

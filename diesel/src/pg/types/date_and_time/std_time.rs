@@ -1,9 +1,9 @@
-use std::error::Error;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+use types::{self, FromSql, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 fn pg_epoch() -> SystemTime {
     let thirty_years = Duration::from_secs(946_684_800);
@@ -11,10 +11,7 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -29,7 +26,7 @@ impl ToSql<types::Timestamp, Pg> for SystemTime {
 }
 
 impl FromSql<types::Timestamp, Pg> for SystemTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let usecs_passed = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);

@@ -9,6 +9,7 @@ use query_builder::QueryId;
 use query_source::{Queryable, QueryableByName};
 use row::NamedRow;
 use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -39,7 +40,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None),
@@ -66,7 +67,7 @@ where
     T: QueryableByName<DB>,
     DB: Backend,
 {
-    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
+    fn build<R: NamedRow<DB>>(row: &R) -> deserialize::Result<Self> {
         match T::build(row) {
             Ok(v) => Ok(Some(v)),
             Err(e) => if e.is::<UnexpectedNullError>() {
@@ -86,7 +87,7 @@ where
 {
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 
-    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
         let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
@@ -103,10 +104,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {

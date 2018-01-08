@@ -2,6 +2,7 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
+use deserialize;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
@@ -61,7 +62,7 @@ macro_rules! tuple_impls {
                 DB: Backend,
                 $($T: QueryableByName<DB>,)+
             {
-                fn build<RowT: NamedRow<DB>>(row: &RowT) -> Result<Self, Box<Error + Send + Sync>> {
+                fn build<RowT: NamedRow<DB>>(row: &RowT) -> deserialize::Result<Self> {
                     Ok(($($T::build(row)?,)+))
                 }
             }

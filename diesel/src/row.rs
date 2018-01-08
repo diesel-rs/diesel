@@ -1,8 +1,7 @@
 //! Contains the `Row` trait
 
-use std::error::Error;
-
 use backend::Backend;
+use deserialize;
 use types::FromSql;
 
 /// Represents a single database row.
@@ -46,7 +45,7 @@ pub trait NamedRow<DB: Backend> {
     ///
     /// If two or more fields in the query have the given name, the result of
     /// this function is undefined.
-    fn get<ST, T>(&self, column_name: &str) -> Result<T, Box<Error + Send + Sync>>
+    fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
     where
         T: FromSql<ST, DB>,
     {
