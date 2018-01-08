@@ -12,7 +12,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `QueryId` trait can now be derived.
 
-* `AsExpression` can now be derived for types which implement `FromSql`.
+* `FromSqlRow` can now be derived for types which implement `FromSql`.
+
+* `AsExpression` can now be derived for types which implement `ToSql`.
 
 * `HasSqlType`, `NotNull`, and `SingleValue` can now be derived with
   `#[derive(SqlType)]`. See the docs for those traits for more information.
