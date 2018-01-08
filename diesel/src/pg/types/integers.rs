@@ -1,22 +1,19 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 impl FromSql<types::Oid, Pg> for u32 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         bytes.read_u32::<NetworkEndian>().map_err(|e| e.into())
     }
 }
 
 impl ToSql<types::Oid, Pg> for u32 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())

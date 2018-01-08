@@ -1,10 +1,10 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use types::*;
+use {deserialize, serialize};
 
 impl<T> HasSqlType<Array<T>> for Pg
 where
@@ -26,7 +26,7 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
         let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
@@ -92,10 +92,7 @@ where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
@@ -127,10 +124,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
     [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
@@ -140,10 +134,7 @@ where
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         (self as &[T]).to_sql(out)
     }
 }
@@ -152,10 +143,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }

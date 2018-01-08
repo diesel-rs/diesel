@@ -41,8 +41,8 @@ pub use self::fold::Foldable;
 
 use backend::{Backend, TypeMetadata};
 use row::Row;
-use std::error::Error;
 use std::io::{self, Write};
+use {deserialize, serialize};
 
 /// The boolean SQL type.
 ///
@@ -500,7 +500,7 @@ impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self>;
 }
 
 /// Deserialize one or more fields.
@@ -525,7 +525,7 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
     const FIELDS_NEEDED: usize = 1;
 
     /// See the trait documentation.
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> deserialize::Result<Self>;
 }
 
 // Reasons we can't write this:
@@ -535,7 +535,7 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
 //     DB: Backend + HasSqlType<ST>,
 //     T: FromSql<ST, DB>,
 // {
-//     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
+//     fn build_from_row<T: Row<DB>>(row: &mut T) -> deserialize::Result<Self> {
 //         Self::from_sql(row.take())
 //     }
 // }
@@ -706,10 +706,7 @@ where
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>>;
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T
@@ -717,10 +714,7 @@ where
     DB: Backend,
     T: ToSql<A, DB> + ?Sized,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         (*self).to_sql(out)
     }
 }

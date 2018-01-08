@@ -7,9 +7,8 @@
 pub mod joins;
 mod peano_numbers;
 
-use std::error::Error;
-
 use backend::Backend;
+use deserialize;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use row::NamedRow;
@@ -177,7 +176,7 @@ where
     DB: Backend,
 {
     /// Construct an instance of `Self` from the database row
-    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>>;
+    fn build<R: NamedRow<DB>>(row: &R) -> deserialize::Result<Self>;
 }
 
 /// Represents a type which can appear in the `FROM` clause. Apps should not

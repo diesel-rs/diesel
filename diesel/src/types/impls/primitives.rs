@@ -4,6 +4,7 @@ use std::io::Write;
 use backend::Backend;
 use types::{self, BigInt, Binary, Bool, Double, Float, FromSql, Integer, IsNull, NotNull,
             SmallInt, Text, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -83,17 +84,14 @@ mod foreign_impls {
 impl NotNull for () {}
 
 impl<DB: Backend<RawValue = [u8]>> FromSql<types::Text, DB> for String {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
 
 impl<DB: Backend> ToSql<types::Text, DB> for str {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
@@ -105,16 +103,13 @@ where
     DB: Backend,
     str: ToSql<types::Text, DB>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         (self as &str).to_sql(out)
     }
 }
 
 impl<DB: Backend<RawValue = [u8]>> FromSql<types::Binary, DB> for Vec<u8> {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
         Ok(not_none!(bytes).into())
     }
 }
@@ -124,19 +119,13 @@ where
     DB: Backend,
     [u8]: ToSql<types::Binary, DB>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         (self as &[u8]).to_sql(out)
     }
 }
 
 impl<DB: Backend> ToSql<types::Binary, DB> for [u8] {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         out.write_all(self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
@@ -150,10 +139,7 @@ where
     DB: Backend,
     T::Owned: ToSql<ST, DB>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         match *self {
             Cow::Borrowed(t) => t.to_sql(out),
             Cow::Owned(ref t) => t.to_sql(out),
@@ -167,7 +153,7 @@ where
     DB: Backend,
     T::Owned: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }
@@ -178,7 +164,7 @@ where
     DB: Backend,
     Cow<'a, T>: FromSql<ST, DB>,
 {
-    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
         FromSql::<ST, DB>::from_sql(row.take())
     }
 }

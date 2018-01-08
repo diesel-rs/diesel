@@ -136,12 +136,14 @@ pub mod associations;
 pub mod backend;
 #[doc(hidden)]
 pub mod connection;
+pub mod deserialize;
 #[macro_use]
 pub mod expression;
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
 pub mod query_builder;
+pub mod serialize;
 #[macro_use]
 pub mod types;
 

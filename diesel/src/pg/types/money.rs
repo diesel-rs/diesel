@@ -1,9 +1,11 @@
 //! Support for Money values under PostgreSQL.
-use std::error::Error;
+
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
 
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use pg::Pg;
+use types::{self, FromSql, Money, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 /// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
 /// type, meant only to indicate the integer's meaning.  The fractional precision of the value is
@@ -20,27 +22,15 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 #[sql_type = "Money"]
 pub struct PgMoney(pub i64);
 
-use pg::Pg;
-use types::{self, FromSql, IsNull, Money, ToSql, ToSqlOutput};
-
 impl FromSql<types::Money, Pg> for PgMoney {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
-        let mut bytes = not_none!(bytes);
-        bytes
-            .read_i64::<NetworkEndian>()
-            .map(PgMoney)
-            .map_err(|e| e.into())
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }
 
 impl ToSql<types::Money, Pg> for PgMoney {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
-        out.write_i64::<NetworkEndian>(self.0)
-            .map(|_| IsNull::No)
-            .map_err(|e| e.into())
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 

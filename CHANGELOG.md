@@ -19,6 +19,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `HasSqlType`, `NotNull`, and `SingleValue` can now be derived with
   `#[derive(SqlType)]`. See the docs for those traits for more information.
 
+* The return type of `FromSql`, `FromSqlRow`, and `QueryableByName` can now be
+  written as `deserialize::Result<Self>`.
+
+* The return type of `ToSql` can now be written as `serialize::Result`.
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`

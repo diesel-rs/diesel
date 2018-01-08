@@ -2,12 +2,12 @@ extern crate ipnetwork;
 extern crate libc;
 
 use std::io::prelude::*;
-use std::error::Error;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use pg::Pg;
 use types::{self, Cidr, FromSql, Inet, IsNull, MacAddr, ToSql, ToSqlOutput};
 use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
+use {deserialize, serialize};
 
 #[cfg(windows)]
 const AF_INET: u8 = 2;
@@ -52,7 +52,7 @@ macro_rules! assert_or_error {
 }
 
 impl FromSql<types::MacAddr, Pg> for [u8; 6] {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
         Ok([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]])
@@ -60,19 +60,16 @@ impl FromSql<types::MacAddr, Pg> for [u8; 6] {
 }
 
 impl ToSql<types::MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(Into::into)
     }
 }
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
         impl FromSql<$ty, Pg> for IpNetwork {
-            fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 // https://github.com/postgres/postgres/blob/55c3391d1e6a201b5b891781d21fe682a8c64fe6/src/include/utils/inet.h#L23-L28
                 let bytes = not_none!(bytes);
                 assert_or_error!(4 <= bytes.len(), "input is too short.");
@@ -105,7 +102,7 @@ macro_rules! impl_Sql {
         }
 
         impl ToSql<$ty, Pg> for IpNetwork {
-            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error + Send + Sync>> {
+            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
                 match *self {
@@ -119,7 +116,7 @@ macro_rules! impl_Sql {
                         data[4..].copy_from_slice(&addr);
                         out.write_all(&data)
                             .map(|_| IsNull::No)
-                            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+                            .map_err(Into::into)
                     },
                     V6(ref net) => {
                         let mut data = [0u8;20];
@@ -131,7 +128,7 @@ macro_rules! impl_Sql {
                         data[4..].copy_from_slice(&addr);
                         out.write_all(&data)
                             .map(|_| IsNull::No)
-                            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+                            .map_err(Into::into)
 
                     },
                 }
@@ -219,7 +216,7 @@ fn some_v6address_from_sql() {
 fn bad_address_from_sql() {
     macro_rules! bad_address_from_sql {
         ($ty: ty) => {
-            let address: Result<IpNetwork, Box<Error + Send + Sync>> =
+            let address: Result<IpNetwork, _> =
                 FromSql::<$ty, Pg>::from_sql(Some(&[7, PGSQL_AF_INET, 0]));
             assert_eq!(address.unwrap_err().description(), "invalid network address format. input is too short.");
         }
@@ -233,7 +230,7 @@ fn bad_address_from_sql() {
 fn no_address_from_sql() {
     macro_rules! test_no_address_from_sql {
         ($ty: ty) => {
-            let address: Result<IpNetwork, Box<Error + Send + Sync>> =
+            let address: Result<IpNetwork, _> =
                 FromSql::<$ty, Pg>::from_sql(None);
             assert_eq!(address.unwrap_err().description(),
                        "Unexpected null for non-null column");
