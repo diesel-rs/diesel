@@ -44,7 +44,7 @@ test_script:
   - cd diesel
   - cargo test --no-default-features --features "%backend% extras"
   - cd ../diesel_derives
-  - cargo test --no-default-features --features "%backend%"
+  - cargo test --no-default-features --features "diesel/%backend%"
   - cd ../diesel_infer_schema/infer_schema_internals
   - cargo test --no-default-features --features "%backend%"
   - cd ../../diesel_infer_schema/infer_schema_macros
