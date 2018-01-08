@@ -6,8 +6,6 @@ use pg::Pg;
 use types::{self, Date, FromSql, Interval, IsNull, Time, Timestamp, Timestamptz, ToSql,
             ToSqlOutput};
 
-primitive_impls!(Timestamptz -> (pg: (1184, 1185)));
-
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 mod std_time;
@@ -83,8 +81,6 @@ impl PgInterval {
         Self::new(0, 0, months)
     }
 }
-
-primitive_impls!(Interval -> (pg: (1186, 1187)));
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
     fn to_sql<W: Write>(

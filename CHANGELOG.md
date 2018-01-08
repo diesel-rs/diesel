@@ -14,6 +14,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `AsExpression` can now be derived for types which implement `FromSql`.
 
+* `HasSqlType`, `NotNull`, and `SingleValue` can now be derived with
+  `#[derive(SqlType)]`. See the docs for those traits for more information.
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`

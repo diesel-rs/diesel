@@ -5,14 +5,12 @@ mod date_and_time;
 mod numeric;
 
 use byteorder::WriteBytesExt;
-use mysql::{Mysql, MysqlType};
+use mysql::Mysql;
 use std::error::Error as StdError;
 use std::io::Write;
-use types::{FromSql, HasSqlType, IsNull, Tinyint, ToSql, ToSqlOutput};
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
-primitive_impls!(Tinyint -> (mysql: (Tiny)));
-
-impl ToSql<::types::Tinyint, Mysql> for i8 {
+impl ToSql<types::Tinyint, Mysql> for i8 {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, Mysql>,
@@ -23,56 +21,26 @@ impl ToSql<::types::Tinyint, Mysql> for i8 {
     }
 }
 
-impl FromSql<::types::Tinyint, Mysql> for i8 {
+impl FromSql<types::Tinyint, Mysql> for i8 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
     }
 }
 
-impl ToSql<::types::Bool, Mysql> for bool {
+impl ToSql<types::Bool, Mysql> for bool {
     fn to_sql<W: Write>(
         &self,
         out: &mut ToSqlOutput<W, Mysql>,
     ) -> Result<IsNull, Box<StdError + Send + Sync>> {
         let int_value = if *self { 1 } else { 0 };
-        <i32 as ToSql<::types::Integer, Mysql>>::to_sql(&int_value, out)
+        <i32 as ToSql<types::Integer, Mysql>>::to_sql(&int_value, out)
     }
 }
 
-impl FromSql<::types::Bool, Mysql> for bool {
+impl FromSql<types::Bool, Mysql> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
         Ok(not_none!(bytes).iter().any(|x| *x != 0))
-    }
-}
-
-impl HasSqlType<::types::Date> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
-        MysqlType::Date
-    }
-}
-
-impl HasSqlType<::types::Time> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
-        MysqlType::Time
-    }
-}
-
-impl HasSqlType<::types::Timestamp> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
-        MysqlType::Timestamp
-    }
-}
-
-impl HasSqlType<Datetime> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
-        MysqlType::DateTime
-    }
-}
-
-impl HasSqlType<::types::Numeric> for Mysql {
-    fn metadata(_: &()) -> MysqlType {
-        MysqlType::String
     }
 }
 
@@ -89,7 +57,6 @@ impl HasSqlType<::types::Numeric> for Mysql {
 /// [`ToSql`]: ../../types/trait.ToSql.html
 /// [`FromSql`]: ../../types/trait.FromSql.html
 /// [`chrono::NaiveDateTime`]: ../../../chrono/naive/struct.NaiveDateTime.html
-#[derive(Debug, Clone, Copy, Default, QueryId)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[mysql_type = "DateTime"]
 pub struct Datetime;
-
-primitive_impls!(Datetime);

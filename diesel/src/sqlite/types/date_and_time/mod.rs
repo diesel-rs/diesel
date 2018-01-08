@@ -1,30 +1,12 @@
 use std::error::Error;
 use std::io::Write;
 
-use sqlite::{Sqlite, SqliteType};
+use sqlite::Sqlite;
 use sqlite::connection::SqliteValue;
-use types::{self, FromSql, HasSqlType, IsNull, ToSql, ToSqlOutput};
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 #[cfg(feature = "chrono")]
 mod chrono;
-
-impl HasSqlType<types::Date> for Sqlite {
-    fn metadata(_: &()) -> SqliteType {
-        SqliteType::Text
-    }
-}
-
-impl HasSqlType<types::Time> for Sqlite {
-    fn metadata(_: &()) -> SqliteType {
-        SqliteType::Text
-    }
-}
-
-impl HasSqlType<types::Timestamp> for Sqlite {
-    fn metadata(_: &()) -> SqliteType {
-        SqliteType::Text
-    }
-}
 
 impl FromSql<types::Date, Sqlite> for String {
     fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {

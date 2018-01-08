@@ -3,9 +3,7 @@ use std::error::Error;
 use std::io::prelude::*;
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, Oid, ToSql, ToSqlOutput};
-
-primitive_impls!(Oid -> (pg: (26, 1018)));
+use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
 
 impl FromSql<types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {

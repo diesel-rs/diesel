@@ -5,7 +5,7 @@ use std::io::Write;
 
 use expression::AsExpression;
 use expression::bound::Bound as SqlBound;
-use pg::Pg;
+use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use query_source::Queryable;
 use types::*;
 
@@ -59,7 +59,6 @@ where
 impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,
-    Range<ST>: NotNull,
 {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -71,7 +70,6 @@ where
 impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,
-    Range<ST>: NotNull,
 {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -182,7 +180,6 @@ impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     Pg: HasSqlType<Range<ST>>,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
-    Range<ST>: NotNull,
 {
     fn to_sql<W: Write>(
         &self,
@@ -192,9 +189,56 @@ where
     }
 }
 
-primitive_impls!(Int4range -> (pg: (3904, 3905)));
-primitive_impls!(Numrange -> (pg: (3906, 3907)));
-primitive_impls!(Tsrange -> (pg: (3908, 3909)));
-primitive_impls!(Tstzrange -> (pg: (3910, 3911)));
-primitive_impls!(Daterange -> (pg: (3912, 3913)));
-primitive_impls!(Int8range -> (pg: (3926, 3927)));
+impl HasSqlType<Int4range> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3904,
+            array_oid: 3905,
+        }
+    }
+}
+
+impl HasSqlType<Numrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3906,
+            array_oid: 3907,
+        }
+    }
+}
+
+impl HasSqlType<Tsrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3908,
+            array_oid: 3909,
+        }
+    }
+}
+
+impl HasSqlType<Tstzrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3910,
+            array_oid: 3911,
+        }
+    }
+}
+
+impl HasSqlType<Daterange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3912,
+            array_oid: 3913,
+        }
+    }
+}
+
+impl HasSqlType<Int8range> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3926,
+            array_oid: 3927,
+        }
+    }
+}

@@ -72,7 +72,10 @@ pub fn list_value_of_attr_with_name<'a>(
     attr_with_name(attrs, name).map(|attr| list_value_of_attr(attr, name))
 }
 
-pub fn attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<&'a Attribute> {
+pub fn attr_with_name<'a, T>(attrs: T, name: &str) -> Option<&'a Attribute>
+where
+    T: IntoIterator<Item = &'a Attribute>,
+{
     attrs.into_iter().find(|attr| attr.name() == name)
 }
 

@@ -1,6 +1,10 @@
 use diesel::*;
 use diesel::connection::SimpleConnection;
+use diesel::pg::Pg;
+use diesel::types::*;
 use schema::*;
+use std::error::Error;
+use std::io::Write;
 
 table! {
     use diesel::types::*;
@@ -11,6 +15,8 @@ table! {
     }
 }
 
+#[derive(SqlType)]
+#[postgres(type_name = "my_type")]
 pub struct MyType;
 
 #[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
@@ -20,43 +26,25 @@ pub enum MyEnum {
     Bar,
 }
 
-mod impls_for_insert_and_query {
-    use diesel::pg::Pg;
-    use diesel::types::*;
-    use std::error::Error;
-    use std::io::Write;
-
-    use super::{MyEnum, MyType};
-
-    impl HasSqlType<MyType> for Pg {
-        fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
-            lookup.lookup_type("my_type")
+impl ToSql<MyType, Pg> for MyEnum {
+    fn to_sql<W: Write>(
+        &self,
+        out: &mut ToSqlOutput<W, Pg>,
+    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+        match *self {
+            MyEnum::Foo => out.write_all(b"foo")?,
+            MyEnum::Bar => out.write_all(b"bar")?,
         }
+        Ok(IsNull::No)
     }
+}
 
-    impl NotNull for MyType {}
-    impl SingleValue for MyType {}
-
-    impl ToSql<MyType, Pg> for MyEnum {
-        fn to_sql<W: Write>(
-            &self,
-            out: &mut ToSqlOutput<W, Pg>,
-        ) -> Result<IsNull, Box<Error + Send + Sync>> {
-            match *self {
-                MyEnum::Foo => out.write_all(b"foo")?,
-                MyEnum::Bar => out.write_all(b"bar")?,
-            }
-            Ok(IsNull::No)
-        }
-    }
-
-    impl FromSql<MyType, Pg> for MyEnum {
-        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
-            match not_none!(bytes) {
-                b"foo" => Ok(MyEnum::Foo),
-                b"bar" => Ok(MyEnum::Bar),
-                _ => Err("Unrecognized enum variant".into()),
-            }
+impl FromSql<MyType, Pg> for MyEnum {
+    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+        match not_none!(bytes) {
+            b"foo" => Ok(MyEnum::Foo),
+            b"bar" => Ok(MyEnum::Bar),
+            _ => Err("Unrecognized enum variant".into()),
         }
     }
 }
