@@ -146,6 +146,8 @@ pub mod insertable;
 pub mod query_builder;
 pub mod query_dsl;
 pub mod query_source;
+#[cfg(feature = "r2d2")]
+pub mod r2d2;
 pub mod result;
 pub mod serialize;
 #[macro_use]
