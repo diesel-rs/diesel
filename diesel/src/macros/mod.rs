@@ -1079,6 +1079,8 @@ macro_rules! allow_tables_to_appear_in_same_query {
     };
 
     ($last_table:ident,) => {};
+
+    () => {};
 }
 
 #[macro_export]

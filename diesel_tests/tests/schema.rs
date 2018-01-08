@@ -11,6 +11,11 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
+#[cfg(feature = "sqlite")]
+mod test_infer_schema_works_on_empty_database {
+    infer_schema!(":memory:");
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
          Associations, QueryableByName)]
 #[table_name = "users"]

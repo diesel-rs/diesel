@@ -26,6 +26,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
   "foo"]` should be used instead.
 
+### Fixed
+
+* `infer_schema!` generates valid code when run against a database with no
+  tables.
+
 ## [1.0.0] - 2018-01-02
 
 ### Added
