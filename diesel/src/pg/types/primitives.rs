@@ -18,12 +18,7 @@ impl ToSql<types::Bool, Pg> for bool {
         &self,
         out: &mut ToSqlOutput<W, Pg>,
     ) -> Result<IsNull, Box<Error + Send + Sync>> {
-        let write_result = if *self {
-            out.write_all(&[1])
-        } else {
-            out.write_all(&[0])
-        };
-        write_result
+        out.write_all(&[*self as u8])
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
