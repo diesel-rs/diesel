@@ -269,7 +269,8 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{delete, insert_into, replace_into, select, sql_query, update};
+pub use query_builder::functions::{delete, insert_into, insert_or_ignore_into, replace_into,
+                                   select, sql_query, update};
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;
