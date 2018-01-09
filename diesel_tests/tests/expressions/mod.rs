@@ -173,23 +173,23 @@ fn arbitrary<T>() -> Arbitrary<T> {
 
 #[test]
 fn max_accepts_all_numeric_string_and_date_types() {
-    let _ = users.select(max(arbitrary::<types::SmallInt>()));
-    let _ = users.select(max(arbitrary::<types::Integer>()));
-    let _ = users.select(max(arbitrary::<types::BigInt>()));
-    let _ = users.select(max(arbitrary::<types::Float>()));
-    let _ = users.select(max(arbitrary::<types::Double>()));
+    let _ = users.select(max(arbitrary::<sql_types::SmallInt>()));
+    let _ = users.select(max(arbitrary::<sql_types::Integer>()));
+    let _ = users.select(max(arbitrary::<sql_types::BigInt>()));
+    let _ = users.select(max(arbitrary::<sql_types::Float>()));
+    let _ = users.select(max(arbitrary::<sql_types::Double>()));
 
-    let _ = users.select(max(arbitrary::<types::VarChar>()));
-    let _ = users.select(max(arbitrary::<types::Text>()));
+    let _ = users.select(max(arbitrary::<sql_types::VarChar>()));
+    let _ = users.select(max(arbitrary::<sql_types::Text>()));
 
-    let _ = users.select(max(arbitrary::<types::Nullable<types::SmallInt>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::Integer>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::BigInt>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::Float>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::Double>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::SmallInt>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::Integer>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::BigInt>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::Float>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::Double>>()));
 
-    let _ = users.select(max(arbitrary::<types::Nullable<types::VarChar>>()));
-    let _ = users.select(max(arbitrary::<types::Nullable<types::Text>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::VarChar>>()));
+    let _ = users.select(max(arbitrary::<sql_types::Nullable<sql_types::Text>>()));
 }
 
 #[test]
@@ -212,7 +212,7 @@ fn test_min() {
     assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
-sql_function!(coalesce, coalesce_t, (x: types::Nullable<types::VarChar>, y: types::VarChar) -> types::VarChar);
+sql_function!(coalesce, coalesce_t, (x: sql_types::Nullable<sql_types::VarChar>, y: sql_types::VarChar) -> sql_types::VarChar);
 
 #[test]
 fn function_with_multiple_arguments() {

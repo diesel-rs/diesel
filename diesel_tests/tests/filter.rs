@@ -319,7 +319,7 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
     use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let f = false.into_sql::<types::Bool>();
+    let f = false.into_sql::<sql_types::Bool>();
     let count = users
         .filter(f)
         .filter(f.or(true))
@@ -365,14 +365,14 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     assert_eq!(Ok(2), count);
 }
 
-use diesel::types::VarChar;
+use diesel::sql_types::VarChar;
 sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {
     fn by_name(
         name: &str,
-    ) -> Box<BoxableExpression<users::table, TestBackend, SqlType = types::Bool>> {
+    ) -> Box<BoxableExpression<users::table, TestBackend, SqlType = sql_types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

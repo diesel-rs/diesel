@@ -809,8 +809,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
     ///
-    /// [`Queryable`]: ../query_source/trait.Queryable.html
-    /// [`QueryableByName`]: ../query_source/trait.QueryableByName.html
+    /// [`Queryable`]: ../deserialize/trait.Queryable.html
+    /// [`QueryableByName`]: ../deserialize/trait.QueryableByName.html
     /// [`sql_query`]: ../fn.sql_query.html
     ///
     /// # Examples

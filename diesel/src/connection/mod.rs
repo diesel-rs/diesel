@@ -6,10 +6,10 @@ mod transaction_manager;
 use std::fmt::Debug;
 
 use backend::Backend;
+use deserialize::{Queryable, QueryableByName};
 use query_builder::{AsQuery, QueryFragment, QueryId};
-use query_source::{Queryable, QueryableByName};
 use result::*;
-use types::HasSqlType;
+use sql_types::HasSqlType;
 
 pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 #[doc(hidden)]

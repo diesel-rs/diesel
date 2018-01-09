@@ -32,12 +32,39 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added `diesel::dsl::array`, which corresponds to a PG `ARRAY[]` literal.
 
+* Added the `not_none!` macro, used by implementations of `FromSql` which do not
+  expect `NULL`.
+
+* Added `result::UnexpectedNullError`, an `Error` type indicating that an
+  unexpected `NULL` was received during deserialization.
+
 ### Deprecated
+
+* *IMPORTANT NOTE* Do to [several][rust-deprecation-bug-1]
+  [bugs][rust-deprecation-bug-2] in Rust, many of the deprecations in this
+  release may not show a warning. If you want to ensure you are not using any
+  deprecated items, we recommend attempting to compile your code without the
+  `with-deprecated` feature by adding `default-features = false` to
+  `Cargo.toml`.
+
+[rust-deprecation-bug-1]: https://github.com/rust-lang/rust/issues/47236
+[rust-deprecation-bug-2]: https://github.com/rust-lang/rust/issues/47237
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
 
 * Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
   "foo"]` should be used instead.
+
+* The `types` module has been deprecated. It has been split into `sql_types`,
+  `serialize`, and `deserialize`.
+
+* `query_source::Queryable` and `query_source::QueryableByName` have been
+  deprecated. These traits have been moved to `deserialize`.
+
+* `backend::TypeMetadata` has been deprecated. It has been moved to `sql_types`.
+
+* `types::ToSqlOutput` has been deprecated. It has been renamed to
+  `serialize::Output`.
 
 ### Fixed
 

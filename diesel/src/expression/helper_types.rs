@@ -3,7 +3,7 @@
 //! a boxed trait object, these can be useful for writing concise return types.
 use super::{AsExpression, Expression};
 use super::grouped::Grouped;
-use types;
+use sql_types;
 
 /// The SQL type of an expression
 pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;
@@ -33,13 +33,13 @@ pub type Lt<Lhs, Rhs> = super::operators::Lt<Lhs, AsExpr<Rhs, Lhs>>;
 pub type LtEq<Lhs, Rhs> = super::operators::LtEq<Lhs, AsExpr<Rhs, Lhs>>;
 
 /// The return type of `lhs.and(rhs)`
-pub type And<Lhs, Rhs> = super::operators::And<Lhs, AsExprOf<Rhs, types::Bool>>;
+pub type And<Lhs, Rhs> = super::operators::And<Lhs, AsExprOf<Rhs, sql_types::Bool>>;
 
 /// The return type of `lhs.like(rhs)`
-pub type Like<Lhs, Rhs> = super::operators::Like<Lhs, AsExprOf<Rhs, types::VarChar>>;
+pub type Like<Lhs, Rhs> = super::operators::Like<Lhs, AsExprOf<Rhs, sql_types::VarChar>>;
 
 /// The return type of `lhs.not_like(rhs)`
-pub type NotLike<Lhs, Rhs> = super::operators::NotLike<Lhs, AsExprOf<Rhs, types::VarChar>>;
+pub type NotLike<Lhs, Rhs> = super::operators::NotLike<Lhs, AsExprOf<Rhs, sql_types::VarChar>>;
 
 /// The return type of `lhs.between(lower, upper)`
 pub type Between<Lhs, Lower, Upper> = super::operators::Between<
@@ -52,7 +52,7 @@ pub type NotBetween<Lhs, Lower, Upper> = super::operators::NotBetween<
     super::operators::And<AsExpr<Lower, Lhs>, AsExpr<Upper, Lhs>>,
 >;
 /// The return type of `not(expr)`
-pub type Not<Expr> = super::operators::Not<Grouped<AsExprOf<Expr, types::Bool>>>;
+pub type Not<Expr> = super::operators::Not<Grouped<AsExprOf<Expr, sql_types::Bool>>>;
 
 #[doc(inline)]
 pub use super::operators::{Asc, Desc, IsNotNull, IsNull};

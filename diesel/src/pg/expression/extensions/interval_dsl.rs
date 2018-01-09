@@ -242,7 +242,7 @@ mod tests {
     use self::quickcheck::quickcheck;
     use self::dotenv::dotenv;
 
-    use {select, types};
+    use {select, sql_types};
     use data_types::PgInterval;
     use dsl::sql;
     use prelude::*;
@@ -264,7 +264,7 @@ mod tests {
             fn $test_name(val: $tpe) -> bool {
                 CONN.with(|connection| {
                     let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
-                    let query = select(sql::<types::Interval>(&sql_str));
+                    let query = select(sql::<sql_types::Interval>(&sql_str));
                     let val = val.$units();
                     query.get_result::<PgInterval>(connection).map(|res| {
                         val.months == res.months &&

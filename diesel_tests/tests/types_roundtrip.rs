@@ -9,7 +9,8 @@ pub use schema::{connection_without_transaction, TestConnection};
 pub use diesel::*;
 pub use diesel::result::Error;
 pub use diesel::data_types::*;
-pub use diesel::types::{HasSqlType, ToSql};
+pub use diesel::serialize::ToSql;
+pub use diesel::sql_types::HasSqlType;
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
@@ -64,7 +65,7 @@ macro_rules! test_round_trip {
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident) => {
         #[test]
         fn $test_name() {
-            use diesel::types::*;
+            use diesel::sql_types::*;
 
             fn round_trip(val: $tpe) -> bool {
                 test_type_round_trips::<$sql_type, _>($map_fn(val))

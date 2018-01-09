@@ -353,7 +353,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
 fn upsert_with_sql_literal_for_target() {
     use diesel::dsl::sql;
     use diesel::pg::upsert::*;
-    use diesel::types::Text;
+    use diesel::sql_types::Text;
     use schema::users::dsl::*;
 
     let connection = connection();

@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
-use types::Foldable;
+use sql_types::Foldable;
 
 macro_rules! fold_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {

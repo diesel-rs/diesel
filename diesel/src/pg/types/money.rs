@@ -3,9 +3,10 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, FromSql, Money, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, Output, ToSql};
+use sql_types::{BigInt, Money};
 
 /// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
 /// type, meant only to indicate the integer's meaning.  The fractional precision of the value is
@@ -22,15 +23,15 @@ use {deserialize, serialize};
 #[sql_type = "Money"]
 pub struct PgMoney(pub i64);
 
-impl FromSql<types::Money, Pg> for PgMoney {
+impl FromSql<Money, Pg> for PgMoney {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgMoney)
+        FromSql::<BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }
 
-impl ToSql<types::Money, Pg> for PgMoney {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
-        ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
+impl ToSql<Money, Pg> for PgMoney {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        ToSql::<BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 

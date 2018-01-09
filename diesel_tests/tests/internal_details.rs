@@ -1,5 +1,5 @@
 use schema::*;
-use diesel::types::*;
+use diesel::sql_types::*;
 use diesel::dsl::sql;
 use diesel::*;
 

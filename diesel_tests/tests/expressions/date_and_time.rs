@@ -2,7 +2,7 @@ use schema::{connection, TestConnection};
 use diesel::*;
 use diesel::data_types::*;
 use diesel::dsl::*;
-use diesel::types::Nullable;
+use diesel::sql_types::Nullable;
 
 table! {
     has_timestamps {
@@ -59,7 +59,7 @@ fn now_executes_sql_function_now() {
 // FIXME: Replace this with an actual timestamptz expression
 fn now_can_be_used_as_timestamptz() {
     use self::has_timestamps::dsl::*;
-    use diesel::types::Timestamptz;
+    use diesel::sql_types::Timestamptz;
 
     let connection = connection();
     setup_test_table(&connection);
@@ -83,7 +83,7 @@ fn now_can_be_used_as_timestamptz() {
 // FIXME: Replace this with an actual timestamptz expression
 fn now_can_be_used_as_nullable_timestamptz() {
     use self::has_timestamps::dsl::*;
-    use diesel::types::Timestamptz;
+    use diesel::sql_types::Timestamptz;
 
     let connection = connection();
     setup_test_table(&connection);
@@ -184,10 +184,10 @@ fn interval_is_deserialized_properly() {
 
     let data = select(sql::<
         (
-            types::Interval,
-            types::Interval,
-            types::Interval,
-            types::Interval,
+            sql_types::Interval,
+            sql_types::Interval,
+            sql_types::Interval,
+            sql_types::Interval,
         ),
     >(
         "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
@@ -217,8 +217,9 @@ fn adding_interval_to_timestamp() {
         )
         .unwrap();
 
-    let expected_data = select(sql::<types::Timestamp>("'2015-11-16 06:07:41'::timestamp"))
-        .get_result::<PgTimestamp>(&connection);
+    let expected_data = select(sql::<sql_types::Timestamp>(
+        "'2015-11-16 06:07:41'::timestamp",
+    )).get_result::<PgTimestamp>(&connection);
     let actual_data = has_timestamps
         .select(created_at + 1.day())
         .first::<PgTimestamp>(&connection);
@@ -240,7 +241,7 @@ fn adding_interval_to_nullable_things() {
         )
         .unwrap();
 
-    let expected_data = select(sql::<Nullable<types::Timestamp>>(
+    let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
         "'2017-08-21 18:13:37'::timestamp",
     )).get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
@@ -248,14 +249,15 @@ fn adding_interval_to_nullable_things() {
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
-    let expected_data = select(sql::<Nullable<types::Timestamp>>("'2017-08-21'::timestamp"))
-        .get_result::<Option<PgTimestamp>>(&connection);
+    let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
+        "'2017-08-21'::timestamp",
+    )).get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(date + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
-    let expected_data = select(sql::<Nullable<types::Time>>("'19:13:37'::time"))
+    let expected_data = select(sql::<Nullable<sql_types::Time>>("'19:13:37'::time"))
         .get_result::<Option<PgTime>>(&connection);
     let actual_data = nullable_date_and_time
         .select(time + 1.hour())

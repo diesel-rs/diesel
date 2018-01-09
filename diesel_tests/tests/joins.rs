@@ -323,7 +323,7 @@ fn select_then_join() {
 
 #[test]
 fn selecting_complex_expression_from_right_side_of_left_join() {
-    use diesel::types::Text;
+    use diesel::sql_types::Text;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let new_posts = vec![

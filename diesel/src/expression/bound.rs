@@ -3,8 +3,9 @@ use std::marker::PhantomData;
 use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
+use serialize::ToSql;
 use super::*;
-use types::{HasSqlType, ToSql};
+use sql_types::HasSqlType;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Bound<T, U> {

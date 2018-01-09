@@ -37,7 +37,7 @@ fn sql_query_deserializes_by_name_not_index() {
 
 #[test]
 fn sql_query_can_take_bind_params() {
-    use diesel::types::Text;
+    use diesel::sql_types::Text;
 
     let conn = connection_with_sean_and_tess_in_users_table();
     let tess = find_user_by_name("Tess", &conn);

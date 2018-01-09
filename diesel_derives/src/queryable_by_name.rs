@@ -16,11 +16,11 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
     let attr_where_clause = model.attrs.iter().map(|attr| {
         let attr_ty = &attr.ty;
         if attr.has_flag("embed") {
-            quote!(#attr_ty: diesel::query_source::QueryableByName<__DB>,)
+            quote!(#attr_ty: diesel::deserialize::QueryableByName<__DB>,)
         } else {
             let st = sql_type(attr, &model);
             quote!(
-                #attr_ty: diesel::types::FromSql<#st, __DB>,
+                #attr_ty: diesel::deserialize::FromSql<#st, __DB>,
             )
         }
     });
@@ -30,7 +30,7 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
     wrap_item_in_const(
         model.dummy_const_name("QUERYABLE_BY_NAME"),
         quote!(
-            impl#generics diesel::query_source::QueryableByName<__DB> for #struct_ty where
+            impl#generics diesel::deserialize::QueryableByName<__DB> for #struct_ty where
                 __DB: diesel::backend::Backend,
                 #(#attr_where_clause)*
             {
@@ -46,7 +46,7 @@ fn build_expr_for_model(model: &Model) -> Tokens {
     let attr_exprs = model.attrs.iter().map(|attr| {
         let name = attr.field_name();
         if attr.has_flag("embed") {
-            quote!(#name: diesel::query_source::QueryableByName::build(row)?)
+            quote!(#name: diesel::deserialize::QueryableByName::build(row)?)
         } else {
             let column_name = attr.column_name();
             let st = sql_type(attr, model);

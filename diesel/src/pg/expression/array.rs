@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use expression::{AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression};
 use query_builder::{AstPass, QueryFragment};
-use types;
+use sql_types;
 
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -29,7 +29,7 @@ pub struct ArrayLiteral<T, ST> {
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::dsl::array;
-/// #     use diesel::types::Integer;
+/// #     use diesel::sql_types::Integer;
 /// #     let connection = establish_connection();
 /// let ints = diesel::select(array::<Integer, _>((1, 2)))
 ///     .get_result::<Vec<i32>>(&connection)?;
@@ -59,7 +59,7 @@ impl<T, ST> Expression for ArrayLiteral<T, ST>
 where
     T: Expression,
 {
-    type SqlType = types::Array<ST>;
+    type SqlType = sql_types::Array<ST>;
 }
 
 impl<T, ST, DB> QueryFragment<DB> for ArrayLiteral<T, ST>

@@ -1,19 +1,20 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::io::prelude::*;
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types;
 
-impl FromSql<types::Oid, Pg> for u32 {
+impl FromSql<sql_types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         bytes.read_u32::<NetworkEndian>().map_err(|e| e.into())
     }
 }
 
-impl ToSql<types::Oid, Pg> for u32 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<sql_types::Oid, Pg> for u32 {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| e.into())
@@ -22,28 +23,28 @@ impl ToSql<types::Oid, Pg> for u32 {
 
 #[test]
 fn i16_to_sql() {
-    let mut bytes = ToSqlOutput::test();
-    ToSql::<types::SmallInt, Pg>::to_sql(&1i16, &mut bytes).unwrap();
-    ToSql::<types::SmallInt, Pg>::to_sql(&0i16, &mut bytes).unwrap();
-    ToSql::<types::SmallInt, Pg>::to_sql(&-1i16, &mut bytes).unwrap();
+    let mut bytes = Output::test();
+    ToSql::<sql_types::SmallInt, Pg>::to_sql(&1i16, &mut bytes).unwrap();
+    ToSql::<sql_types::SmallInt, Pg>::to_sql(&0i16, &mut bytes).unwrap();
+    ToSql::<sql_types::SmallInt, Pg>::to_sql(&-1i16, &mut bytes).unwrap();
     assert_eq!(bytes, vec![0, 1, 0, 0, 255, 255]);
 }
 
 #[test]
 fn i32_to_sql() {
-    let mut bytes = ToSqlOutput::test();
-    ToSql::<types::Integer, Pg>::to_sql(&1i32, &mut bytes).unwrap();
-    ToSql::<types::Integer, Pg>::to_sql(&0i32, &mut bytes).unwrap();
-    ToSql::<types::Integer, Pg>::to_sql(&-1i32, &mut bytes).unwrap();
+    let mut bytes = Output::test();
+    ToSql::<sql_types::Integer, Pg>::to_sql(&1i32, &mut bytes).unwrap();
+    ToSql::<sql_types::Integer, Pg>::to_sql(&0i32, &mut bytes).unwrap();
+    ToSql::<sql_types::Integer, Pg>::to_sql(&-1i32, &mut bytes).unwrap();
     assert_eq!(bytes, vec![0, 0, 0, 1, 0, 0, 0, 0, 255, 255, 255, 255]);
 }
 
 #[test]
 fn i64_to_sql() {
-    let mut bytes = ToSqlOutput::test();
-    ToSql::<types::BigInt, Pg>::to_sql(&1i64, &mut bytes).unwrap();
-    ToSql::<types::BigInt, Pg>::to_sql(&0i64, &mut bytes).unwrap();
-    ToSql::<types::BigInt, Pg>::to_sql(&-1i64, &mut bytes).unwrap();
+    let mut bytes = Output::test();
+    ToSql::<sql_types::BigInt, Pg>::to_sql(&1i64, &mut bytes).unwrap();
+    ToSql::<sql_types::BigInt, Pg>::to_sql(&0i64, &mut bytes).unwrap();
+    ToSql::<sql_types::BigInt, Pg>::to_sql(&-1i64, &mut bytes).unwrap();
     assert_eq!(
         bytes,
         vec![

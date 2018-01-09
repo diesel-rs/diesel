@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
-use types;
+use sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
@@ -23,10 +23,10 @@ macro_rules! numeric_operation {
 
         impl<Lhs, Rhs> Expression for $name<Lhs, Rhs> where
             Lhs: Expression,
-            Lhs::SqlType: types::ops::$name,
+            Lhs::SqlType: sql_types::ops::$name,
             Rhs: Expression,
         {
-            type SqlType = <Lhs::SqlType as types::ops::$name>::Output;
+            type SqlType = <Lhs::SqlType as sql_types::ops::$name>::Output;
         }
 
         impl<Lhs, Rhs, DB> QueryFragment<DB> for $name<Lhs, Rhs> where

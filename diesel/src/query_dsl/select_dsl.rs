@@ -10,7 +10,7 @@ use query_source::Table;
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 pub trait SelectDsl<Selection: Expression> {
     // FIXME: Once we've refactored the `impl Expression` on `SelectStatement`
-    // to not conditionally be `types::Array`, it is probably worthwhile to
+    // to not conditionally be `sql_types::Array`, it is probably worthwhile to
     // add a `: Expression<SqlType = Selection::SqlType>` bound here.
     /// The type returned by `.select`
     type Output;

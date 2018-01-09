@@ -127,7 +127,7 @@ fn drop_test_table(connection: &TestConnection, table_name: &str) {
 
 fn count_test_table(connection: &TestConnection, table_name: &str) -> i64 {
     use diesel::dsl::sql;
-    select(sql::<types::BigInt>(&format!(
+    select(sql::<sql_types::BigInt>(&format!(
         "COUNT(*) FROM {}",
         table_name
     ))).first(connection)

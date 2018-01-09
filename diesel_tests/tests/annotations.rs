@@ -291,7 +291,7 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
 #[test]
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
-    use diesel::types::{Serial, Text};
+    use diesel::sql_types::{Serial, Text};
     sql_function!(nextval, nextval_t, (a: Text) -> Serial);
     #[derive(Insertable)]
     #[table_name = "users"]

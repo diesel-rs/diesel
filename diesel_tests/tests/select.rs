@@ -57,7 +57,7 @@ fn with_select_sql() {
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
-    let select_count = users::table.select(sql::<types::BigInt>("COUNT(*)"));
+    let select_count = users::table.select(sql::<sql_types::BigInt>("COUNT(*)"));
     let get_count = || select_count.clone().first::<i64>(&connection);
 
     assert_eq!(Ok(2), get_count());

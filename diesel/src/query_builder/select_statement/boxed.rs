@@ -14,7 +14,7 @@ use query_dsl::methods::*;
 use query_source::QuerySource;
 use query_source::joins::*;
 use result::QueryResult;
-use types::{BigInt, Bool};
+use sql_types::{BigInt, Bool};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {

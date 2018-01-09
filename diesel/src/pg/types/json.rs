@@ -4,14 +4,15 @@ extern crate serde_json;
 
 use std::io::prelude::*;
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types;
 
 #[allow(dead_code)]
 mod foreign_derives {
     use super::serde_json;
-    use types::{Json, Jsonb};
+    use sql_types::{Json, Jsonb};
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
@@ -20,22 +21,22 @@ mod foreign_derives {
     struct SerdeJsonValueProxy(serde_json::Value);
 }
 
-impl FromSql<types::Json, Pg> for serde_json::Value {
+impl FromSql<sql_types::Json, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         serde_json::from_slice(bytes).map_err(Into::into)
     }
 }
 
-impl ToSql<types::Json, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<sql_types::Json, Pg> for serde_json::Value {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
             .map_err(Into::into)
     }
 }
 
-impl FromSql<types::Jsonb, Pg> for serde_json::Value {
+impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         if bytes[0] != 1 {
@@ -45,8 +46,8 @@ impl FromSql<types::Jsonb, Pg> for serde_json::Value {
     }
 }
 
-impl ToSql<types::Jsonb, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         try!(out.write_all(&[1]));
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
@@ -56,9 +57,9 @@ impl ToSql<types::Jsonb, Pg> for serde_json::Value {
 
 #[test]
 fn json_to_sql() {
-    let mut bytes = ToSqlOutput::test();
+    let mut bytes = Output::test();
     let test_json = serde_json::Value::Bool(true);
-    ToSql::<types::Json, Pg>::to_sql(&test_json, &mut bytes).unwrap();
+    ToSql::<sql_types::Json, Pg>::to_sql(&test_json, &mut bytes).unwrap();
     assert_eq!(bytes, b"true");
 }
 
@@ -66,19 +67,20 @@ fn json_to_sql() {
 fn some_json_from_sql() {
     let input_json = b"true";
     let output_json: serde_json::Value =
-        FromSql::<types::Json, Pg>::from_sql(Some(input_json)).unwrap();
+        FromSql::<sql_types::Json, Pg>::from_sql(Some(input_json)).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
 }
 
 #[test]
 fn bad_json_from_sql() {
-    let uuid: Result<serde_json::Value, _> = FromSql::<types::Json, Pg>::from_sql(Some(b"boom"));
+    let uuid: Result<serde_json::Value, _> =
+        FromSql::<sql_types::Json, Pg>::from_sql(Some(b"boom"));
     assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
 fn no_json_from_sql() {
-    let uuid: Result<serde_json::Value, _> = FromSql::<types::Json, Pg>::from_sql(None);
+    let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Json, Pg>::from_sql(None);
     assert_eq!(
         uuid.unwrap_err().description(),
         "Unexpected null for non-null column"
@@ -87,9 +89,9 @@ fn no_json_from_sql() {
 
 #[test]
 fn jsonb_to_sql() {
-    let mut bytes = ToSqlOutput::test();
+    let mut bytes = Output::test();
     let test_json = serde_json::Value::Bool(true);
-    ToSql::<types::Jsonb, Pg>::to_sql(&test_json, &mut bytes).unwrap();
+    ToSql::<sql_types::Jsonb, Pg>::to_sql(&test_json, &mut bytes).unwrap();
     assert_eq!(bytes, b"\x01true");
 }
 
@@ -97,21 +99,21 @@ fn jsonb_to_sql() {
 fn some_jsonb_from_sql() {
     let input_json = b"\x01true";
     let output_json: serde_json::Value =
-        FromSql::<types::Jsonb, Pg>::from_sql(Some(input_json)).unwrap();
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(input_json)).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
 }
 
 #[test]
 fn bad_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, _> =
-        FromSql::<types::Jsonb, Pg>::from_sql(Some(b"\x01boom"));
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(b"\x01boom"));
     assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
 fn bad_jsonb_version_from_sql() {
     let uuid: Result<serde_json::Value, _> =
-        FromSql::<types::Jsonb, Pg>::from_sql(Some(b"\x02true"));
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(b"\x02true"));
     assert_eq!(
         uuid.unwrap_err().description(),
         "Unsupported JSONB encoding version"
@@ -120,7 +122,7 @@ fn bad_jsonb_version_from_sql() {
 
 #[test]
 fn no_jsonb_from_sql() {
-    let uuid: Result<serde_json::Value, _> = FromSql::<types::Jsonb, Pg>::from_sql(None);
+    let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(None);
     assert_eq!(
         uuid.unwrap_err().description(),
         "Unexpected null for non-null column"

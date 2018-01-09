@@ -3,7 +3,7 @@ use dsl::SqlTypeOf;
 use expression::*;
 use query_builder::*;
 use result::QueryResult;
-use types::Bool;
+use sql_types::Bool;
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct In<T, U> {

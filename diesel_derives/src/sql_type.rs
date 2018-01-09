@@ -14,8 +14,8 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
     wrap_item_in_const(
         format!("_IMPL_SQL_TYPE_FOR_{}", item_name).into(),
         quote!(
-            impl #generics diesel::types::NotNull for #struct_ty {}
-            impl #generics diesel::types::SingleValue for #struct_ty {}
+            impl #generics diesel::sql_types::NotNull for #struct_ty {}
+            impl #generics diesel::sql_types::SingleValue for #struct_ty {}
             #pg_tokens
             #sqlite_tokens
             #mysql_tokens
@@ -71,7 +71,7 @@ fn pg_tokens(
 
         match (oid, array_oid, type_name) {
             (Some(oid), Some(array_oid), None) => quote!(
-                impl #generics diesel::types::HasSqlType<#struct_ty> for diesel::pg::Pg {
+                impl #generics diesel::sql_types::HasSqlType<#struct_ty> for diesel::pg::Pg {
                     fn metadata(_: &diesel::pg::PgMetadataLookup) -> diesel::pg::PgTypeMetadata {
                         diesel::pg::PgTypeMetadata {
                             oid: #oid,
@@ -81,7 +81,7 @@ fn pg_tokens(
                 }
             ),
             (None, None, Some(type_name)) => quote!(
-                impl #generics diesel::types::HasSqlType<#struct_ty> for diesel::pg::Pg {
+                impl #generics diesel::sql_types::HasSqlType<#struct_ty> for diesel::pg::Pg {
                     fn metadata(lookup: &diesel::pg::PgMetadataLookup) -> diesel::pg::PgTypeMetadata {
                         lookup.lookup_type(#type_name)
                     }
@@ -103,7 +103,7 @@ fn sqlite_tokens(
 
     ident_value_of_attr_with_name(attrs, "sqlite_type").map(|ty| {
         quote!(
-            impl #generics diesel::types::HasSqlType<#struct_ty> for diesel::sqlite::Sqlite {
+            impl #generics diesel::sql_types::HasSqlType<#struct_ty> for diesel::sqlite::Sqlite {
                 fn metadata(_: &()) -> diesel::sqlite::SqliteType {
                     diesel::sqlite::SqliteType::#ty
                 }
@@ -123,7 +123,7 @@ fn mysql_tokens(
 
     ident_value_of_attr_with_name(attrs, "mysql_type").map(|ty| {
         quote!(
-            impl #generics diesel::types::HasSqlType<#struct_ty> for diesel::mysql::Mysql {
+            impl #generics diesel::sql_types::HasSqlType<#struct_ty> for diesel::mysql::Mysql {
                 fn metadata(_: &()) -> diesel::mysql::MysqlType {
                     diesel::mysql::MysqlType::#ty
                 }

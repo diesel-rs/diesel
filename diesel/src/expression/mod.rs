@@ -11,7 +11,7 @@
 //!
 //! [`expression_methods`]: ../expression_methods
 //!
-//! Any primitive which implements [`ToSql`](../types/trait.ToSql.html) will
+//! Any primitive which implements [`ToSql`](../serialize/trait.ToSql.html) will
 //! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
@@ -106,9 +106,9 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///
 ///   [`IntoSql`]: trait.IntoSql.html
 ///   [`now`]: ../dsl/struct.now.html
-///   [`Timestamp`]: ../types/struct.Timestamp.html
+///   [`Timestamp`]: ../sql_types/struct.Timestamp.html
 ///   [`Timestamptz`]: ../../pg/types/sql_types/struct.Timestamptz.html
-///   [`ToSql`]: ../types/trait.ToSql.html
+///   [`ToSql`]: ../serialize/trait.ToSql.html
 ///
 /// ## Deriving
 ///
@@ -160,7 +160,7 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// # use schema::users;
 /// #
 /// # fn main() {
-/// use diesel::types::Text;
+/// use diesel::sql_types::Text;
 /// #   let conn = establish_connection();
 /// let names = users::table
 ///     .select("The Amazing ".into_sql::<Text>().concat(users::name))
@@ -278,7 +278,7 @@ use query_builder::{QueryFragment, QueryId};
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
-/// use diesel::types::Bool;
+/// use diesel::sql_types::Bool;
 ///
 /// # fn main() {
 /// #     run_test().unwrap();

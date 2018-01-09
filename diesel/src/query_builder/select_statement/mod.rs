@@ -112,7 +112,7 @@ impl<F, S, D, W, O, L, Of, G, FU> Expression for SelectStatement<F, S, D, W, O, 
 where
     S: SelectClauseExpression<F>,
 {
-    type SqlType = ::types::Array<S::SelectClauseSqlType>;
+    type SqlType = ::sql_types::Array<S::SelectClauseSqlType>;
 }
 
 #[cfg(not(feature = "postgres"))]

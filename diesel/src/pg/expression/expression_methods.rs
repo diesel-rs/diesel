@@ -2,7 +2,7 @@
 
 use expression::{AsExpression, Expression};
 use super::operators::*;
-use types::{Array, Text};
+use sql_types::{Array, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -64,7 +64,7 @@ pub trait PgExpressionMethods: Expression + Sized {
 impl<T: Expression> PgExpressionMethods for T {}
 
 use super::date_and_time::{AtTimeZone, DateTimeLike};
-use types::VarChar;
+use sql_types::VarChar;
 
 /// PostgreSQL specific methods present on timestamp expressions.
 pub trait PgTimestampExpressionMethods: Expression + Sized {

@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::*;
 use query_builder::*;
 use result::QueryResult;
-use types::IntoNullable;
+use sql_types::IntoNullable;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Nullable<T>(T);

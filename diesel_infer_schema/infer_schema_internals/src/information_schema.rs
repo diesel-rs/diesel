@@ -2,9 +2,9 @@ use std::error::Error;
 
 use diesel::*;
 use diesel::backend::Backend;
+use diesel::deserialize::FromSql;
 use diesel::expression::NonAggregate;
 use diesel::query_builder::{QueryFragment, QueryId};
-use diesel::types::FromSql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 #[cfg(feature = "mysql")]
@@ -16,7 +16,7 @@ use super::data_structures::*;
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
         self::information_schema::columns::table,
-        SqlType = types::Text,
+        SqlType = sql_types::Text,
     >
         + NonAggregate
         + QueryId
@@ -26,7 +26,7 @@ pub trait UsesInformationSchema: Backend {
     fn default_schema<C>(conn: &C) -> QueryResult<String>
     where
         C: Connection,
-        String: FromSql<types::Text, C::Backend>;
+        String: FromSql<sql_types::Text, C::Backend>;
 }
 
 #[cfg(feature = "postgres")]
@@ -53,9 +53,9 @@ impl UsesInformationSchema for Mysql {
     fn default_schema<C>(conn: &C) -> QueryResult<String>
     where
         C: Connection,
-        String: FromSql<types::Text, C::Backend>,
+        String: FromSql<sql_types::Text, C::Backend>,
     {
-        no_arg_sql_function!(database, types::VarChar);
+        no_arg_sql_function!(database, sql_types::VarChar);
         select(database).get_result(conn)
     }
 }
@@ -120,7 +120,7 @@ pub fn get_table_data<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<C
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
-    String: FromSql<types::Text, Conn::Backend>,
+    String: FromSql<sql_types::Text, Conn::Backend>,
 {
     use self::information_schema::columns::dsl::*;
 
@@ -142,7 +142,7 @@ pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
-    String: FromSql<types::Text, Conn::Backend>,
+    String: FromSql<sql_types::Text, Conn::Backend>,
 {
     use self::information_schema::table_constraints::{self, constraint_type};
     use self::information_schema::key_column_usage::dsl::*;
@@ -172,7 +172,7 @@ pub fn load_table_names<Conn>(
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
-    String: FromSql<types::Text, Conn::Backend>,
+    String: FromSql<sql_types::Text, Conn::Backend>,
 {
     use self::information_schema::tables::dsl::*;
 
@@ -204,7 +204,7 @@ pub fn load_foreign_key_constraints<Conn>(
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
-    String: FromSql<types::Text, Conn::Backend>,
+    String: FromSql<sql_types::Text, Conn::Backend>,
 {
     use self::information_schema::table_constraints as tc;
     use self::information_schema::referential_constraints as rc;

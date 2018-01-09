@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use query_source::{Queryable, QueryableByName};
+use deserialize::{FromSqlRow, Queryable, QueryableByName};
 use result::Error::DeserializationError;
 use result::QueryResult;
 use sqlite::Sqlite;
 use super::stmt::StatementUse;
-use types::FromSqlRow;
 
 pub struct StatementIterator<'a, ST, T> {
     stmt: StatementUse<'a>,

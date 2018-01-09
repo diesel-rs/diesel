@@ -22,7 +22,7 @@ pub enum Status {
 }
 
 use diesel::query_source::Queryable;
-use diesel::types::{Nullable, Timestamp};
+use diesel::sql_types::{Nullable, Timestamp};
 use diesel::pg::Pg;
 
 impl Queryable<Nullable<Timestamp>, Pg> for Status {

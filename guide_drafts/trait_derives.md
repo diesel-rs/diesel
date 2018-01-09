@@ -52,7 +52,7 @@ The only thing `Queryable` cares about is that the data returned from the query
 maps exactly to your data structure.
 
 [`RunQueryDsl`]: https://docs.diesel.rs/diesel/query_dsl/trait.RunQueryDsl.html
-[queryable_doc]: https://docs.diesel.rs/diesel/query_source/trait.Queryable.html
+[queryable_doc]: https://docs.diesel.rs/diesel/deserialize/trait.Queryable.html
 
 The following example shows making two different queries into the `users` table.
 We get back a [`QueryResult`],
@@ -107,15 +107,15 @@ fn main() {
 If we were to comment out all three `String` fields on our `User` struct, we would see the following error.
 
 ```rust
-error[E0277]: the trait bound `(i32,): diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>` is not satisfied
+error[E0277]: the trait bound `(i32,): diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text, diesel::sql_types::Text), _>` is not satisfied
   --> src/bin/main.rs:34:10
    |
 34 |         .load::<User>(&db_conn)
-   |          ^^^^ the trait `diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>` is not implemented for `(i32,)`
+   |          ^^^^ the trait `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text, diesel::sql_types::Text), _>` is not implemented for `(i32,)`
    |
    = help: the following implementations were found:
              <(A,) as diesel::Queryable<(SA,), DB>>
-   = note: required because of the requirements on the impl of `diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>` for `diesel_demo::models::User`
+   = note: required because of the requirements on the impl of `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text, diesel::sql_types::Text), _>` for `diesel_demo::models::User`
    = note: required because of the requirements on the impl of `diesel::LoadQuery<_, diesel_demo::models::User>` for `diesel_demo::schema::users::table`
 ```
 
@@ -125,7 +125,7 @@ When reading, take note of the values in the tuple(s).
 
 [data type docs]: https://doc.rust-lang.org/1.21.0/book/second-edition/ch03-02-data-types.html#grouping-values-into-tuples
 
-> `diesel::Queryable<(diesel::types::Integer, diesel::types::Text, diesel::types::Text, diesel::types::Text), _>`
+> `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Text, diesel::sql_types::Text), _>`
 
 
 `Queryable` is trying to convert those four types into the types on our `User` struct.
@@ -151,7 +151,7 @@ Adding [`#[derive(QueryableByName)]`][queryable_by_name_doc] to your struct mean
 that it will be able to be built from the result of a raw SQL query using the [`sql_query`] function.
 
 [`sql_query`]: https://docs.diesel.rs/diesel/fn.sql_query.html
-[queryable_by_name_doc]: https://docs.diesel.rs/diesel/query_source/trait.QueryableByName.html
+[queryable_by_name_doc]: https://docs.diesel.rs/diesel/deserialize/trait.QueryableByName.html
 
 The implementation of `QueryableByName` assumes that each field on your struct
 has a certain SQL type.
@@ -206,7 +206,7 @@ pub struct User {
 
 
 // Here we bring the Diesel types into scope
-use diesel::types::{Integer, Text};
+use diesel::sql_types::{Integer, Text};
 
 // When not using the `table_name` annotation,
 // we must tell `QueryableByName` the type of

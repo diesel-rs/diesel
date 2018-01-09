@@ -4,7 +4,7 @@
 mod bigdecimal {
     extern crate bigdecimal;
     use self::bigdecimal::BigDecimal;
-    use types::Numeric;
+    use sql_types::Numeric;
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]

@@ -12,15 +12,15 @@ use std::os::raw as libc;
 use std::rc::Rc;
 
 use connection::*;
+use deserialize::{Queryable, QueryableByName};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
-use query_source::*;
 use result::*;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+use sql_types::HasSqlType;
 use sqlite::Sqlite;
-use types::HasSqlType;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
 /// for SQLite are file paths or special identifiers like `:memory`.
@@ -140,7 +140,7 @@ mod tests {
     use dsl::sql;
     use prelude::*;
     use super::*;
-    use types::Integer;
+    use sql_types::Integer;
 
     #[test]
     fn prepared_statements_are_cached_when_run() {

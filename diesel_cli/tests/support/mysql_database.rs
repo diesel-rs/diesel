@@ -1,6 +1,6 @@
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
-use diesel::types::Bool;
+use diesel::sql_types::Bool;
 use diesel::*;
 
 pub struct Database {

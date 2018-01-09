@@ -4,7 +4,7 @@ extern crate diesel;
 use diesel::*;
 use diesel::sqlite::SqliteConnection;
 use diesel::backend::Backend;
-use diesel::types::{Integer, VarChar};
+use diesel::sql_types::{Integer, VarChar};
 
 table! {
     users {
@@ -18,7 +18,7 @@ pub struct User {
     name: String,
 }
 
-use diesel::types::FromSqlRow;
+use diesel::deserialize::FromSqlRow;
 
 impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
     (i32, String): FromSqlRow<(Integer, VarChar), DB>,

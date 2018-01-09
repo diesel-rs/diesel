@@ -69,8 +69,8 @@
 //! a trait called [`Queryable`].
 //!
 //! Diesel maps "Rust types" (e.g. `i32`) to and from "SQL types"
-//! (e.g. [`diesel::types::Integer`]).
-//! You can find all the types supported by Diesel in [the `types` module](types).
+//! (e.g. [`diesel::sql_types::Integer`]).
+//! You can find all the types supported by Diesel in [the `sql_types` module](sql_types).
 //! These types are only used to represent a SQL type.
 //! You should never put them on your `Queryable` structs.
 //!
@@ -82,10 +82,10 @@
 //! go to the "Implementors" section,
 //! and find the Rust type you want to use.
 //!
-//! [`Queryable`]: query_source/trait.Queryable.html
-//! [`diesel::types::Integer`]: types/struct.Integer.html
-//! [`ToSql`]: types/trait.ToSql.html
-//! [`FromSql`]: types/trait.FromSql.html
+//! [`Queryable`]: deserialize/trait.Queryable.html
+//! [`diesel::sql_types::Integer`]: sql_types/struct.Integer.html
+//! [`ToSql`]: serialize/trait.ToSql.html
+//! [`FromSql`]: deserialize/trait.FromSql.html
 //!
 //! ## Getting help
 //!
@@ -136,6 +136,7 @@ pub mod associations;
 pub mod backend;
 #[doc(hidden)]
 pub mod connection;
+pub mod data_types;
 pub mod deserialize;
 #[macro_use]
 pub mod expression;
@@ -143,9 +144,14 @@ pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
 pub mod query_builder;
+pub mod query_dsl;
+pub mod query_source;
+pub mod result;
 pub mod serialize;
 #[macro_use]
+pub mod sql_types;
 pub mod types;
+pub mod row;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
@@ -154,10 +160,7 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-pub mod query_dsl;
-pub mod query_source;
-pub mod result;
-pub mod row;
+mod type_impls;
 mod util;
 
 pub mod dsl {
@@ -245,6 +248,8 @@ pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
+    #[deprecated(since = "1.1.0", note = "Explicitly `use diesel::deserialize::Queryable")]
+    pub use deserialize::Queryable;
     pub use expression::{AppearsOnTable, BoxableExpression, Expression, IntoSql,
                          SelectableExpression};
     pub use expression_methods::*;
@@ -254,7 +259,7 @@ pub mod prelude {
     pub use query_dsl::GroupByDsl;
     pub use query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
-    pub use query_source::{Column, JoinTo, QuerySource, Queryable, Table};
+    pub use query_source::{Column, JoinTo, QuerySource, Table};
     pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "postgres")]
@@ -272,5 +277,3 @@ pub use query_builder::debug_query;
 pub use query_builder::functions::{delete, insert_into, insert_or_ignore_into, replace_into,
                                    select, sql_query, update};
 pub use result::Error::NotFound;
-#[doc(inline)]
-pub use types::structs::data_types;

@@ -3,12 +3,12 @@ use diesel::*;
 use test_helpers::connection;
 
 #[cfg(feature = "mysql")]
-type IntSql = ::diesel::types::BigInt;
+type IntSql = ::diesel::sql_types::BigInt;
 #[cfg(feature = "mysql")]
 type IntRust = i64;
 
 #[cfg(not(feature = "mysql"))]
-type IntSql = ::diesel::types::Integer;
+type IntSql = ::diesel::sql_types::Integer;
 #[cfg(not(feature = "mysql"))]
 type IntRust = i32;
 

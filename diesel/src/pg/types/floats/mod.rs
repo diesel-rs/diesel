@@ -2,15 +2,16 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types;
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 
 #[derive(Debug, Clone, PartialEq, Eq, FromSqlRow, AsExpression)]
-#[sql_type = "types::Numeric"]
+#[sql_type = "sql_types::Numeric"]
 /// Represents a NUMERIC value, closely mirroring the PG wire protocol
 /// representation
 pub enum PgNumeric {
@@ -51,7 +52,7 @@ impl Error for InvalidNumericSign {
     }
 }
 
-impl FromSql<types::Numeric, Pg> for PgNumeric {
+impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         let ndigits = try!(bytes.read_u16::<NetworkEndian>());
@@ -80,8 +81,8 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
     }
 }
 
-impl ToSql<types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,

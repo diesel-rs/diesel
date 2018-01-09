@@ -9,17 +9,17 @@ use std::ffi::CString;
 use std::os::raw as libc;
 
 use connection::*;
+use deserialize::{Queryable, QueryableByName};
 use pg::{Pg, PgMetadataLookup};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
-use query_source::{Queryable, QueryableByName};
 use result::*;
 use result::ConnectionError::CouldntSetupConfiguration;
 use self::cursor::*;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
-use types::HasSqlType;
+use sql_types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -163,7 +163,7 @@ mod tests {
     use dsl::sql;
     use prelude::*;
     use super::*;
-    use types::{Integer, VarChar};
+    use sql_types::{Integer, VarChar};
 
     #[test]
     fn prepared_statements_are_cached() {

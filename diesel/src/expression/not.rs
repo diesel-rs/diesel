@@ -1,7 +1,7 @@
 use dsl::Not;
 use expression::AsExpression;
 use expression::grouped::Grouped;
-use types::Bool;
+use sql_types::Bool;
 
 /// Creates a SQL `NOT` expression
 ///

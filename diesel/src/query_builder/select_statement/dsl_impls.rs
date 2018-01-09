@@ -18,7 +18,7 @@ use query_dsl::boxed_dsl::BoxedDsl;
 use query_source::QuerySource;
 use query_source::joins::{Join, JoinOn, JoinTo};
 use super::BoxedSelectStatement;
-use types::{BigInt, Bool};
+use sql_types::{BigInt, Bool};
 
 impl<F, S, D, W, O, L, Of, G, FU, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>

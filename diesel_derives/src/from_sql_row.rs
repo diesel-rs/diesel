@@ -22,22 +22,22 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
     wrap_item_in_const(
         format!("_IMPL_FROM_SQL_ROW_FOR_{}", item_name).into(),
         quote!(
-            impl#generics diesel::types::FromSqlRow<__ST, __DB> for #struct_ty
+            impl#generics diesel::deserialize::FromSqlRow<__ST, __DB> for #struct_ty
             where
                 __DB: diesel::backend::Backend,
-                Self: diesel::types::FromSql<__ST, __DB>,
+                Self: diesel::deserialize::FromSql<__ST, __DB>,
             {
                 fn build_from_row<R: diesel::row::Row<__DB>>(row: &mut R)
                     -> diesel::deserialize::Result<Self>
                 {
-                    diesel::types::FromSql::<__ST, __DB>::from_sql(row.take())
+                    diesel::deserialize::FromSql::<__ST, __DB>::from_sql(row.take())
                 }
             }
 
-            impl#generics diesel::query_source::Queryable<__ST, __DB> for #struct_ty
+            impl#generics diesel::deserialize::Queryable<__ST, __DB> for #struct_ty
             where
                 __DB: diesel::backend::Backend,
-                Self: diesel::types::FromSqlRow<__ST, __DB>,
+                Self: diesel::deserialize::FromSqlRow<__ST, __DB>,
             {
                 type Row = Self;
 

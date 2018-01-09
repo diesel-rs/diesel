@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
-use types::Bool;
+use sql_types::Bool;
 
 /// Creates a SQL `EXISTS` expression.
 ///

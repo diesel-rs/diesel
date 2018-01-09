@@ -7,10 +7,11 @@ use std::io::Write;
 use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use self::chrono::naive::MAX_DATE;
 
+use deserialize::{self, FromSql};
 use pg::Pg;
+use serialize::{self, Output, ToSql};
+use sql_types::{Date, Time, Timestamp, Timestamptz};
 use super::{PgDate, PgTime, PgTimestamp};
-use types::{Date, FromSql, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
-use {deserialize, serialize};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -31,7 +32,7 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let time = match (self.signed_duration_since(pg_epoch())).num_microseconds() {
             Some(time) => time,
             None => {
@@ -51,7 +52,7 @@ impl FromSql<Timestamptz, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamptz, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Timestamp, Pg>::to_sql(self, out)
     }
 }
@@ -64,7 +65,7 @@ impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
 }
 
 impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
     }
 }
@@ -74,7 +75,7 @@ fn midnight() -> NaiveTime {
 }
 
 impl ToSql<Time, Pg> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let duration = self.signed_duration_since(midnight());
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
@@ -96,7 +97,7 @@ fn pg_epoch_date() -> NaiveDate {
 }
 
 impl ToSql<Date, Pg> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
         ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }
@@ -127,7 +128,7 @@ mod tests {
     use select;
     use dsl::{now, sql};
     use prelude::*;
-    use types::{Date, Time, Timestamp, Timestamptz};
+    use sql_types::{Date, Time, Timestamp, Timestamptz};
 
     fn connection() -> PgConnection {
         dotenv().ok();

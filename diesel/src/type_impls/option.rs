@@ -1,15 +1,14 @@
-use std::error::Error;
-use std::fmt;
 use std::io::Write;
 
 use backend::Backend;
+use deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
 use expression::*;
 use expression::bound::Bound;
 use query_builder::QueryId;
-use query_source::{Queryable, QueryableByName};
+use result::UnexpectedNullError;
 use row::NamedRow;
-use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types::{HasSqlType, NotNull, Nullable};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -104,7 +103,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
@@ -135,33 +134,16 @@ where
     }
 }
 
-#[derive(Debug)]
-pub struct UnexpectedNullError {
-    pub msg: String,
-}
-
-impl fmt::Display for UnexpectedNullError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.msg)
-    }
-}
-
-impl Error for UnexpectedNullError {
-    fn description(&self) -> &str {
-        &self.msg
-    }
-}
-
 #[cfg(all(test, feature = "postgres"))]
-use types;
+use sql_types;
 #[cfg(all(test, feature = "postgres"))]
 use pg::Pg;
 
 #[test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
-    type Type = types::Nullable<types::VarChar>;
-    let mut bytes = ToSqlOutput::test();
+    type Type = sql_types::Nullable<sql_types::VarChar>;
+    let mut bytes = Output::test();
 
     let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
     assert_eq!(IsNull::Yes, is_null);

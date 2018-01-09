@@ -2,11 +2,12 @@ use std::marker::PhantomData;
 
 use backend::Backend;
 use connection::Connection;
+use deserialize::QueryableByName;
 use query_builder::{AstPass, QueryFragment, QueryId};
 use query_dsl::{LoadQuery, RunQueryDsl};
-use query_source::QueryableByName;
 use result::QueryResult;
-use types::{HasSqlType, ToSql};
+use serialize::ToSql;
+use sql_types::HasSqlType;
 
 #[derive(Debug, Clone)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -51,7 +52,7 @@ impl SqlQuery {
     /// #
     /// # fn main() {
     /// #     use diesel::sql_query;
-    /// #     use diesel::types::{Integer, Text};
+    /// #     use diesel::sql_types::{Integer, Text};
     /// #
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users::table)

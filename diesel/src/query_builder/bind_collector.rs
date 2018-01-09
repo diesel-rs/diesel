@@ -1,9 +1,10 @@
 //! Types related to managing bind parameters during query construction.
 
-use backend::{Backend, TypeMetadata};
+use backend::Backend;
 use result::Error::SerializationError;
 use result::QueryResult;
-use types::{HasSqlType, IsNull, ToSql, ToSqlOutput};
+use serialize::{IsNull, Output, ToSql};
+use sql_types::{HasSqlType, TypeMetadata};
 
 /// A type which manages serializing bind parameters during query construction.
 ///
@@ -62,7 +63,7 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        let mut to_sql_output = ToSqlOutput::new(Vec::new(), metadata_lookup);
+        let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
         let is_null = bind.to_sql(&mut to_sql_output).map_err(SerializationError)?;
         let bytes = to_sql_output.into_inner();
         let metadata = <DB as HasSqlType<T>>::metadata(metadata_lookup);

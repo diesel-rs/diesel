@@ -70,7 +70,7 @@ pub struct Default<'a, Col> {
 use diesel::backend::*;
 use diesel::query_builder::*;
 use diesel::result::QueryResult;
-use diesel::types::Integer;
+use diesel::sql_types::Integer;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 #[cfg(feature = "sqlite")]

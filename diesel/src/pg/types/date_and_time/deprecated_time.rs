@@ -4,30 +4,31 @@ use std::io::Write;
 
 use self::time::{Duration, Timespec};
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, FromSql, Timestamp, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use serialize::{self, Output, ToSql};
+use sql_types;
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
-#[sql_type = "Timestamp"]
+#[sql_type = "sql_types::Timestamp"]
 #[allow(dead_code)]
 struct TimespecProxy(Timespec);
 
 const TIME_SEC_CONV: i64 = 946_684_800;
 
-impl ToSql<types::Timestamp, Pg> for Timespec {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<sql_types::Timestamp, Pg> for Timespec {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = *self - pg_epoch;
         let t = try!(duration.num_microseconds().ok_or("Overflow error"));
-        ToSql::<types::BigInt, Pg>::to_sql(&t, out)
+        ToSql::<sql_types::BigInt, Pg>::to_sql(&t, out)
     }
 }
 
-impl FromSql<types::Timestamp, Pg> for Timespec {
+impl FromSql<sql_types::Timestamp, Pg> for Timespec {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let t = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
+        let t = try!(<i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes));
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);
         let out = pg_epoch + duration;
@@ -46,7 +47,7 @@ mod tests {
     use select;
     use dsl::{now, sql};
     use prelude::*;
-    use types::Timestamp;
+    use sql_types::Timestamp;
 
     fn connection() -> PgConnection {
         dotenv().ok();

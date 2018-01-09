@@ -89,7 +89,7 @@ macro_rules! sql_function_body {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// sql_function!(canon_crate_name, canon_crate_name_t, (a: types::VarChar) -> types::VarChar);
+/// sql_function!(canon_crate_name, canon_crate_name_t, (a: sql_types::VarChar) -> sql_types::VarChar);
 ///
 /// # fn main() {
 /// # use self::crates::dsl::*;
@@ -177,7 +177,7 @@ macro_rules! no_arg_sql_function_body {
 /// ```no_run
 /// # #[macro_use] extern crate diesel;
 /// # pub use diesel::*;
-/// no_arg_sql_function!(now, types::Timestamp, "Represents the SQL NOW() function");
+/// no_arg_sql_function!(now, sql_types::Timestamp, "Represents the SQL NOW() function");
 /// # fn main() {}
 /// ```
 ///

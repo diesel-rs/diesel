@@ -4,7 +4,7 @@ use expression::operators::And;
 use expression_methods::*;
 use result::QueryResult;
 use super::*;
-use types::Bool;
+use sql_types::Bool;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
 /// applicable.

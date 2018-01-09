@@ -1,7 +1,7 @@
 #[macro_use] extern crate diesel;
 
 use diesel::*;
-use diesel::types::Text;
+use diesel::sql_types::Text;
 
 table! {
     users {

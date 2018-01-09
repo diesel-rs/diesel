@@ -326,3 +326,19 @@ fn error_impls_send() {
 pub(crate) fn first_or_not_found<T>(records: QueryResult<Vec<T>>) -> QueryResult<T> {
     records?.into_iter().next().ok_or(Error::NotFound)
 }
+
+/// An unexpected `NULL` was encountered during deserialization
+#[derive(Debug, Clone, Copy)]
+pub struct UnexpectedNullError;
+
+impl fmt::Display for UnexpectedNullError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description())
+    }
+}
+
+impl StdError for UnexpectedNullError {
+    fn description(&self) -> &str {
+        "Unexpected null for non-null column"
+    }
+}

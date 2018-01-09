@@ -2,7 +2,7 @@ use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
 use super::Expression;
-use types::BigInt;
+use sql_types::BigInt;
 
 /// Creates a SQL `COUNT` expression
 ///

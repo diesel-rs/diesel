@@ -5,9 +5,9 @@ use byteorder::NetworkEndian;
 use backend::*;
 use prelude::Queryable;
 use query_builder::bind_collector::RawBytesBindCollector;
+use sql_types::{Oid, TypeMetadata};
 use super::PgMetadataLookup;
 use super::query_builder::PgQueryBuilder;
-use types::Oid;
 
 /// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

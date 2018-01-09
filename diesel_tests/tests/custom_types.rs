@@ -1,12 +1,13 @@
 use diesel::*;
 use diesel::connection::SimpleConnection;
+use diesel::deserialize::{self, FromSql};
 use diesel::pg::Pg;
-use diesel::types::*;
+use diesel::serialize::{self, IsNull, Output, ToSql};
 use schema::*;
 use std::io::Write;
 
 table! {
-    use diesel::types::*;
+    use diesel::sql_types::*;
     use super::MyType;
     custom_types {
         id -> Integer,
@@ -26,7 +27,7 @@ pub enum MyEnum {
 }
 
 impl ToSql<MyType, Pg> for MyEnum {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         match *self {
             MyEnum::Foo => out.write_all(b"foo")?,
             MyEnum::Bar => out.write_all(b"bar")?,

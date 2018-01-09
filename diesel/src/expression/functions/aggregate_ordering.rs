@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
-use types::{IntoNullable, SqlOrd};
+use sql_types::{IntoNullable, SqlOrd};
 
 macro_rules! ord_function {
     ($fn_name:ident, $type_name:ident, $operator:expr, $docs:expr) => {

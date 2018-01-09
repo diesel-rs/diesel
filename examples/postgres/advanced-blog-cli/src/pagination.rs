@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::query_dsl::methods::LoadQuery;
 use diesel::query_builder::*;
 use diesel::pg::Pg;
-use diesel::types::BigInt;
+use diesel::sql_types::BigInt;
 
 pub trait Paginate: Sized {
     fn paginate(self, page: i64) -> Paginated<Self>;

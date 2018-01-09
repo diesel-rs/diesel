@@ -5,7 +5,7 @@
 #![cfg(feature = "postgres")]
 use schema::*;
 use diesel::*;
-use diesel::types::{BigInt, VarChar};
+use diesel::sql_types::{BigInt, VarChar};
 
 sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
 

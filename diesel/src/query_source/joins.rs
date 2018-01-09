@@ -6,7 +6,7 @@ use prelude::*;
 use query_builder::*;
 use result::QueryResult;
 use super::{AppearsInFromClause, Plus, QuerySource};
-use types::Bool;
+use sql_types::Bool;
 use util::TupleAppend;
 
 #[derive(Debug, Clone, Copy, QueryId)]

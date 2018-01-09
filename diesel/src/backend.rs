@@ -4,7 +4,7 @@ use byteorder::ByteOrder;
 
 use query_builder::QueryBuilder;
 use query_builder::bind_collector::BindCollector;
-use types::{self, HasSqlType};
+use sql_types::{self, HasSqlType};
 
 /// A database backend
 ///
@@ -21,17 +21,17 @@ use types::{self, HasSqlType};
 pub trait Backend
 where
     Self: Sized,
-    Self: HasSqlType<types::SmallInt>,
-    Self: HasSqlType<types::Integer>,
-    Self: HasSqlType<types::BigInt>,
-    Self: HasSqlType<types::Float>,
-    Self: HasSqlType<types::Double>,
-    Self: HasSqlType<types::VarChar>,
-    Self: HasSqlType<types::Text>,
-    Self: HasSqlType<types::Binary>,
-    Self: HasSqlType<types::Date>,
-    Self: HasSqlType<types::Time>,
-    Self: HasSqlType<types::Timestamp>,
+    Self: HasSqlType<sql_types::SmallInt>,
+    Self: HasSqlType<sql_types::Integer>,
+    Self: HasSqlType<sql_types::BigInt>,
+    Self: HasSqlType<sql_types::Float>,
+    Self: HasSqlType<sql_types::Double>,
+    Self: HasSqlType<sql_types::VarChar>,
+    Self: HasSqlType<sql_types::Text>,
+    Self: HasSqlType<sql_types::Binary>,
+    Self: HasSqlType<sql_types::Date>,
+    Self: HasSqlType<sql_types::Time>,
+    Self: HasSqlType<sql_types::Timestamp>,
 {
     /// The concrete `QueryBuilder` implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
@@ -52,24 +52,13 @@ where
     type ByteOrder: ByteOrder;
 }
 
-/// Information about how a backend stores metadata about given SQL types
-pub trait TypeMetadata {
-    /// The actual type used to represent metadata.
-    ///
-    /// On PostgreSQL, this is the type's OID.
-    /// On MySQL and SQLite, this is an enum representing all storage classes
-    /// they support.
-    type TypeMetadata;
-    /// The type used for runtime lookup of metadata.
-    ///
-    /// For most backends, which don't support user defined types, this will
-    /// be `()`.
-    type MetadataLookup;
-}
-
 /// Does this backend support `RETURNING` clauses?
 pub trait SupportsReturningClause {}
 /// Does this backend support the bare `DEFAULT` keyword?
 pub trait SupportsDefaultKeyword {}
 /// Does this backend use the standard `SAVEPOINT` syntax?
 pub trait UsesAnsiSavepointSyntax {}
+
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "1.1.0", note = "use `sql_types::TypeMetadata` instead")]
+pub use sql_types::TypeMetadata;

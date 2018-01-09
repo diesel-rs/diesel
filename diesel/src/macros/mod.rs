@@ -71,7 +71,7 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::types::Bool>,
+            $crate::dsl::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
         {
             type Output = $crate::dsl::Eq<Self, T>;
 
@@ -163,7 +163,7 @@ macro_rules! __diesel_column {
 /// # }
 ///
 /// table! {
-///     use diesel::types::*;
+///     use diesel::sql_types::*;
 ///     use diesel_full_text_search::*;
 ///
 ///     posts {
@@ -336,7 +336,7 @@ macro_rules! __diesel_table_impl {
     };
 
     // We are finished parsing the import list and the table documentation
-    // Because the import list is empty we add a default import (diesel::types::*)
+    // Because the import list is empty we add a default import (diesel::sql_types::*)
     // After that we forward the remaining tokens to parse the body of the table
     // definition
     (
@@ -348,7 +348,7 @@ macro_rules! __diesel_table_impl {
     ) => {
         table! {
             @parse_body
-            import = [use $crate::types::*;];
+            import = [use $crate::sql_types::*;];
             table_doc = [$($doc,)*];
             table_sql_name = [$($table_sql_name)*];
             $($rest)+
@@ -1092,6 +1092,19 @@ macro_rules! __diesel_use_everything {
     }
 }
 
+/// Gets the value out of an option, or returns an error.
+///
+/// This is used by `FromSql` implementations.
+#[macro_export]
+macro_rules! not_none {
+    ($bytes:expr) => {
+        match $bytes {
+            Some(bytes) => bytes,
+            None => return Err(Box::new($crate::result::UnexpectedNullError)),
+        }
+    }
+}
+
 // The order of these modules is important (at least for those which have tests).
 // Utility macros which don't call any others need to come first.
 #[macro_use]
@@ -1131,7 +1144,7 @@ mod tests {
     }
 
     table! {
-        use types::*;
+        use sql_types::*;
         use macros::tests::my_types::*;
 
         table_with_custom_types {
@@ -1141,7 +1154,7 @@ mod tests {
     }
 
     table! {
-        use types::*;
+        use sql_types::*;
         use macros::tests::my_types::*;
 
         /// Table documentation
@@ -1168,16 +1181,16 @@ mod tests {
     }
 
     table! {
-        use types;
-        use types::*;
+        use sql_types;
+        use sql_types::*;
 
         table_with_arbitrarily_complex_types {
-            id -> types::Integer,
-            qualified_nullable -> types::Nullable<types::Integer>,
+            id -> sql_types::Integer,
+            qualified_nullable -> sql_types::Nullable<sql_types::Integer>,
             deeply_nested_type -> Option<Nullable<Integer>>,
             // This actually should work, but there appears to be a rustc bug
             // on the `AsExpression` bound for `EqAll` when the ty param is a projection
-            // projected_type -> <Nullable<Integer> as types::IntoNullable>::Nullable,
+            // projected_type -> <Nullable<Integer> as sql_types::IntoNullable>::Nullable,
             random_tuple -> (Integer, Integer),
         }
     }
@@ -1234,7 +1247,7 @@ mod tests {
     }
 
     table!(
-        use types::*;
+        use sql_types::*;
 
         /// Some documentation
         #[sql_name="mod"]

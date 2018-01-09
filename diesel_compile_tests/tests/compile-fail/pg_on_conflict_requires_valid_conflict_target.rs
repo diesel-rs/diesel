@@ -21,7 +21,7 @@ table! {
 #[table_name = "users"]
 pub struct NewUser(#[column_name = "name"] &'static str);
 
-sql_function!(lower, lower_t, (x: diesel::types::Text) -> diesel::types::Text);
+sql_function!(lower, lower_t, (x: diesel::sql_types::Text) -> diesel::sql_types::Text);
 
 fn main() {
     use self::users::dsl::*;

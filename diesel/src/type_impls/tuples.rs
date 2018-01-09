@@ -2,7 +2,7 @@ use std::error::Error;
 
 use associations::BelongsTo;
 use backend::Backend;
-use deserialize;
+use deserialize::{self, FromSqlRow, Queryable, QueryableByName};
 use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate,
                  SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
@@ -10,7 +10,7 @@ use query_builder::*;
 use query_source::*;
 use result::QueryResult;
 use row::*;
-use types::{FromSqlRow, HasSqlType, NotNull};
+use sql_types::{HasSqlType, NotNull};
 use util::TupleAppend;
 
 macro_rules! tuple_impls {

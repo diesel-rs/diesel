@@ -1,7 +1,7 @@
 use support::{database, project};
 use diesel::{select, RunQueryDsl};
 use diesel::dsl::sql;
-use diesel::types::Bool;
+use diesel::sql_types::Bool;
 
 #[test]
 fn migration_run_runs_pending_migrations() {

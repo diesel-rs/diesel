@@ -2,7 +2,7 @@ use expression::{AsExpression, Expression, NonAggregate};
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
-use types::Array;
+use sql_types::Array;
 
 /// Creates a PostgreSQL `ANY` expression.
 ///

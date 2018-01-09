@@ -2,12 +2,12 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
 
+use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::AsExpression;
 use expression::bound::Bound as SqlBound;
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
-use query_source::Queryable;
-use types::*;
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types::*;
 
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
 bitflags! {
@@ -116,7 +116,7 @@ impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let mut flags = match self.0 {
             Bound::Included(_) => RangeFlags::LB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
@@ -161,7 +161,7 @@ impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Range<ST>, Pg>::to_sql(self, out)
     }
 }

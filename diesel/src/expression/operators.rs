@@ -210,11 +210,11 @@ macro_rules! __diesel_operator_to_sql {
 #[macro_export]
 macro_rules! diesel_infix_operator {
     ($name:ident, $operator:expr) => {
-        diesel_infix_operator!($name, $operator, $crate::types::Bool);
+        diesel_infix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        diesel_infix_operator!($name, $operator, $crate::types::Bool, backend: $backend);
+        diesel_infix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $($return_ty:tt)::*) => {
@@ -255,11 +255,11 @@ macro_rules! diesel_infix_operator {
 #[macro_export]
 macro_rules! diesel_postfix_operator {
     ($name:ident, $operator:expr) => {
-        diesel_postfix_operator!($name, $operator, $crate::types::Bool);
+        diesel_postfix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        diesel_postfix_operator!($name, $operator, $crate::types::Bool, backend: $backend);
+        diesel_postfix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $return_ty:ty) => {
@@ -300,11 +300,11 @@ macro_rules! diesel_postfix_operator {
 #[macro_export]
 macro_rules! diesel_prefix_operator {
     ($name:ident, $operator:expr) => {
-        diesel_prefix_operator!($name, $operator, $crate::types::Bool);
+        diesel_prefix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        diesel_prefix_operator!($name, $operator, $crate::types::Bool, backend: $backend);
+        diesel_prefix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $return_ty:ty) => {

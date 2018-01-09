@@ -3,6 +3,7 @@ use byteorder::NativeEndian;
 
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
+use sql_types::TypeMetadata;
 use super::connection::SqliteValue;
 use super::query_builder::SqliteQueryBuilder;
 

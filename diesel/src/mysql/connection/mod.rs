@@ -4,15 +4,15 @@ mod stmt;
 mod url;
 
 use connection::*;
+use deserialize::{Queryable, QueryableByName};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
-use query_source::{Queryable, QueryableByName};
 use result::*;
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use types::HasSqlType;
+use sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
@@ -66,8 +66,8 @@ impl Connection for MysqlConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
+        use deserialize::FromSqlRow;
         use result::Error::DeserializationError;
-        use types::FromSqlRow;
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
         let mut metadata = Vec::new();

@@ -13,7 +13,7 @@ table! {
 
 fn main() {
     let connection = PgConnection::establish("").unwrap();
-    let select_count = users::table.select(sql::<types::BigInt>("COUNT(*)"));
+    let select_count = users::table.select(sql::<sql_types::BigInt>("COUNT(*)"));
     let count = select_count.get_result::<String>(&connection).unwrap();
     //~^ ERROR E0277
 }

@@ -2,9 +2,10 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt;
 use std::io::Write;
 
+use deserialize::{self, FromSql};
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
-use types::*;
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types::{Array, HasSqlType, NotNull, Nullable, SingleValue};
 
 impl<T> HasSqlType<Array<T>> for Pg
 where
@@ -92,7 +93,7 @@ where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
@@ -124,7 +125,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
     [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
@@ -134,7 +135,7 @@ where
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         (self as &[T]).to_sql(out)
     }
 }
@@ -143,7 +144,7 @@ impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }

@@ -6,9 +6,10 @@ extern crate chrono;
 
 use schema::*;
 use diesel::*;
+use diesel::deserialize::FromSql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
-use diesel::types::*;
+use diesel::sql_types::*;
 
 use quickcheck::quickcheck;
 
@@ -1040,7 +1041,7 @@ where
 #[should_panic(expected = "Received more than 4 bytes decoding i32")]
 fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
     use diesel::dsl::sql;
-    use diesel::types::Integer;
+    use diesel::sql_types::Integer;
 
     let connection = connection();
     users::table

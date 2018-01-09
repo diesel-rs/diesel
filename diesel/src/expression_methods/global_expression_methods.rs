@@ -1,7 +1,7 @@
 use expression::{nullable, AsExpression, Expression};
 use expression::array_comparison::{AsInExpression, In, NotIn};
 use expression::operators::*;
-use types::SingleValue;
+use sql_types::SingleValue;
 
 /// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {
@@ -414,7 +414,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    /// # use diesel::types::*;
+    /// # use diesel::sql_types::*;
     /// # use schema::users;
     /// #
     /// table! {

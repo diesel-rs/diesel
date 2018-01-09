@@ -2,7 +2,7 @@ use backend::Backend;
 use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
-use types::*;
+use sql_types::*;
 
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
@@ -49,8 +49,6 @@ let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwr
 use expression::AsExpression;
 #[cfg(feature = "postgres")]
 use expression::coerce::Coerce;
-#[cfg(feature = "postgres")]
-use types::Timestamptz;
 
 #[cfg(feature = "postgres")]
 impl AsExpression<Timestamptz> for now {

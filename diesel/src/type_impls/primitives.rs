@@ -2,9 +2,9 @@ use std::error::Error;
 use std::io::Write;
 
 use backend::Backend;
-use types::{self, BigInt, Binary, Bool, Double, Float, FromSql, Integer, IsNull, NotNull,
-            SmallInt, Text, ToSql, ToSqlOutput};
-use {deserialize, serialize};
+use deserialize::{self, FromSql, FromSqlRow, Queryable};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types::{self, BigInt, Binary, Bool, Double, Float, Integer, NotNull, SmallInt, Text};
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -17,7 +17,7 @@ mod foreign_impls {
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql", sql_type = "types::Tinyint")]
+    #[cfg_attr(feature = "mysql", sql_type = "::sql_types::Tinyint")]
     struct I8Proxy(i8);
 
     #[derive(FromSqlRow, AsExpression)]
@@ -37,7 +37,7 @@ mod foreign_impls {
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "postgres", sql_type = "::types::Oid")]
+    #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Oid")]
     struct U32Proxy(u32);
 
     #[derive(FromSqlRow, AsExpression)]
@@ -53,17 +53,17 @@ mod foreign_impls {
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
     #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Timestamp")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Timestamp")]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive, not_sized)]
     #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "::types::Timestamp")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Date")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Time")]
+    #[cfg_attr(feature = "sqlite", sql_type = "::sql_types::Timestamp")]
     struct StrProxy(str);
 
     #[derive(FromSqlRow)]
@@ -83,49 +83,49 @@ mod foreign_impls {
 
 impl NotNull for () {}
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<types::Text, DB> for String {
+impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for String {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         String::from_utf8(bytes.into()).map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
 
-impl<DB: Backend> ToSql<types::Text, DB> for str {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
 
-impl<DB> ToSql<types::Text, DB> for String
+impl<DB> ToSql<sql_types::Text, DB> for String
 where
     DB: Backend,
-    str: ToSql<types::Text, DB>,
+    str: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         (self as &str).to_sql(out)
     }
 }
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<types::Binary, DB> for Vec<u8> {
+impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Binary, DB> for Vec<u8> {
     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
         Ok(not_none!(bytes).into())
     }
 }
 
-impl<DB> ToSql<types::Binary, DB> for Vec<u8>
+impl<DB> ToSql<sql_types::Binary, DB> for Vec<u8>
 where
     DB: Backend,
-    [u8]: ToSql<types::Binary, DB>,
+    [u8]: ToSql<sql_types::Binary, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         (self as &[u8]).to_sql(out)
     }
 }
 
-impl<DB: Backend> ToSql<types::Binary, DB> for [u8] {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+impl<DB: Backend> ToSql<sql_types::Binary, DB> for [u8] {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
@@ -139,7 +139,7 @@ where
     DB: Backend,
     T::Owned: ToSql<ST, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         match *self {
             Cow::Borrowed(t) => t.to_sql(out),
             Cow::Owned(ref t) => t.to_sql(out),
@@ -158,7 +158,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized, ST, DB> ::types::FromSqlRow<ST, DB> for Cow<'a, T>
+impl<'a, T: ?Sized, ST, DB> FromSqlRow<ST, DB> for Cow<'a, T>
 where
     T: 'a + ToOwned,
     DB: Backend,
@@ -169,11 +169,11 @@ where
     }
 }
 
-impl<'a, T: ?Sized, ST, DB> ::Queryable<ST, DB> for Cow<'a, T>
+impl<'a, T: ?Sized, ST, DB> Queryable<ST, DB> for Cow<'a, T>
 where
     T: 'a + ToOwned,
     DB: Backend,
-    Self: ::types::FromSqlRow<ST, DB>,
+    Self: FromSqlRow<ST, DB>,
 {
     type Row = Self;
 

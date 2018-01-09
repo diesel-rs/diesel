@@ -1,15 +1,14 @@
 //! Contains the `Row` trait
 
 use backend::Backend;
-use deserialize;
-use types::FromSql;
+use deserialize::{self, FromSql};
 
 /// Represents a single database row.
 /// Apps should not need to concern themselves with this trait.
 ///
 /// This trait is only used as an argument to [`FromSqlRow`].
 ///
-/// [`FromSqlRow`]: ../types/trait.FromSqlRow.html
+/// [`FromSqlRow`]: ../deserialize/trait.FromSqlRow.html
 pub trait Row<DB: Backend> {
     /// Returns the value of the next column in the row.
     fn take(&mut self) -> Option<&DB::RawValue>;
@@ -34,7 +33,7 @@ pub trait Row<DB: Backend> {
 /// rather than by index.
 ///
 /// This trait is used by implementations of
-/// [`QueryableByName`](../query_source/trait.QueryableByName.html)
+/// [`QueryableByName`](../deserialize/trait.QueryableByName.html)
 pub trait NamedRow<DB: Backend> {
     /// Retrieve and deserialize a single value from the query
     ///

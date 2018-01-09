@@ -1,13 +1,14 @@
 extern crate ipnetwork;
 extern crate libc;
 
+use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
 use std::io::prelude::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
+use deserialize::{self, FromSql};
 use pg::Pg;
-use types::{self, Cidr, FromSql, Inet, IsNull, MacAddr, ToSql, ToSqlOutput};
-use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
-use {deserialize, serialize};
+use serialize::{self, IsNull, Output, ToSql};
+use sql_types::{Cidr, Inet, MacAddr};
 
 #[cfg(windows)]
 const AF_INET: u8 = 2;
@@ -51,7 +52,7 @@ macro_rules! assert_or_error {
     };
 }
 
-impl FromSql<types::MacAddr, Pg> for [u8; 6] {
+impl FromSql<MacAddr, Pg> for [u8; 6] {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
@@ -59,8 +60,8 @@ impl FromSql<types::MacAddr, Pg> for [u8; 6] {
     }
 }
 
-impl ToSql<types::MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+impl ToSql<MacAddr, Pg> for [u8; 6] {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(Into::into)
@@ -102,7 +103,7 @@ macro_rules! impl_Sql {
         }
 
         impl ToSql<$ty, Pg> for IpNetwork {
-            fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
                 match *self {
@@ -138,14 +139,14 @@ macro_rules! impl_Sql {
     }
 }
 
-impl_Sql!(types::Inet, 0);
-impl_Sql!(types::Cidr, 1);
+impl_Sql!(Inet, 0);
+impl_Sql!(Cidr, 1);
 
 #[test]
 fn macaddr_roundtrip() {
-    let mut bytes = ToSqlOutput::test();
+    let mut bytes = Output::test();
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
-    ToSql::<types::MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+    ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
     let output_address: [u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
     assert_eq!(input_address, output_address);
 }
@@ -154,15 +155,15 @@ fn macaddr_roundtrip() {
 fn v4address_to_sql() {
     macro_rules! test_to_sql {
         ($ty: ty, $net_type: expr) => {
-            let mut bytes = ToSqlOutput::test();
+            let mut bytes = Output::test();
             let test_address = IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
             ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             assert_eq!(bytes, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
         }
     }
 
-    test_to_sql!(types::Inet, 0);
-    test_to_sql!(types::Cidr, 1);
+    test_to_sql!(Inet, 0);
+    test_to_sql!(Cidr, 1);
 }
 
 #[test]
@@ -170,30 +171,30 @@ fn some_v4address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty: ty) => {
             let input_address = IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-            let mut bytes = ToSqlOutput::test();
+            let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
             assert_eq!(input_address, output_address);
         }
     }
 
-    test_some_address_from_sql!(types::Cidr);
-    test_some_address_from_sql!(types::Inet);
+    test_some_address_from_sql!(Cidr);
+    test_some_address_from_sql!(Inet);
 }
 
 #[test]
 fn v6address_to_sql() {
     macro_rules! test_to_sql {
         ($ty: ty, $net_type: expr) => {
-            let mut bytes = ToSqlOutput::test();
+            let mut bytes = Output::test();
             let test_address = IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             assert_eq!(bytes, vec![PGSQL_AF_INET6, 64, $net_type, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
         }
     }
 
-    test_to_sql!(types::Inet, 0);
-    test_to_sql!(types::Cidr, 1);
+    test_to_sql!(Inet, 0);
+    test_to_sql!(Cidr, 1);
 }
 
 #[test]
@@ -201,15 +202,15 @@ fn some_v6address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty: ty) => {
             let input_address = IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
-            let mut bytes = ToSqlOutput::test();
+            let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
             assert_eq!(input_address, output_address);
         }
     }
 
-    test_some_address_from_sql!(types::Inet);
-    test_some_address_from_sql!(types::Cidr);
+    test_some_address_from_sql!(Inet);
+    test_some_address_from_sql!(Cidr);
 }
 
 #[test]
@@ -222,8 +223,8 @@ fn bad_address_from_sql() {
         }
     }
 
-    bad_address_from_sql!(types::Inet);
-    bad_address_from_sql!(types::Cidr);
+    bad_address_from_sql!(Inet);
+    bad_address_from_sql!(Cidr);
 }
 
 #[test]
@@ -238,6 +239,6 @@ fn no_address_from_sql() {
         }
     }
 
-    test_no_address_from_sql!(types::Inet);
-    test_no_address_from_sql!(types::Cidr);
+    test_no_address_from_sql!(Inet);
+    test_no_address_from_sql!(Cidr);
 }

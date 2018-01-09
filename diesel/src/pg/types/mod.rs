@@ -20,7 +20,7 @@ pub mod money;
 
 /// PostgreSQL specific SQL types
 ///
-/// Note: All types in this module can be accessed through `diesel::types`
+/// Note: All types in this module can be accessed through `diesel::sql_types`
 pub mod sql_types {
     /// The `OID` SQL type. This is a PostgreSQL specific type.
     ///
@@ -32,8 +32,8 @@ pub mod sql_types {
     ///
     /// - [`u32`]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "26", array_oid = "1018")]
@@ -54,8 +54,8 @@ pub mod sql_types {
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
     /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
     /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
@@ -78,8 +78,8 @@ pub mod sql_types {
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId)]
@@ -97,35 +97,34 @@ pub mod sql_types {
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Range<ST>(ST);
 
     #[doc(hidden)]
-    pub type Int4range = Range<::types::Int4>;
+    pub type Int4range = Range<::sql_types::Int4>;
     #[doc(hidden)]
-    pub type Int8range = Range<::types::Int8>;
+    pub type Int8range = Range<::sql_types::Int8>;
     #[doc(hidden)]
-    pub type Daterange = Range<::types::Date>;
+    pub type Daterange = Range<::sql_types::Date>;
     #[doc(hidden)]
-    pub type Numrange = Range<::types::Numeric>;
+    pub type Numrange = Range<::sql_types::Numeric>;
     #[doc(hidden)]
-    pub type Tsrange = Range<::types::Timestamp>;
+    pub type Tsrange = Range<::sql_types::Timestamp>;
     #[doc(hidden)]
-    pub type Tstzrange = Range<::types::Timestamptz>;
+    pub type Tstzrange = Range<::sql_types::Timestamptz>;
 
     /// Alias for `SmallInt`
-    pub type SmallSerial = ::types::SmallInt;
+    pub type SmallSerial = ::sql_types::SmallInt;
 
     /// Alias for `Integer`
-    pub type Serial = ::types::Integer;
+    pub type Serial = ::sql_types::Integer;
 
     /// Alias for `BigInt`
-    pub type BigSerial = ::types::BigInt;
+    pub type BigSerial = ::sql_types::BigInt;
 
-    #[cfg(feature = "uuid")]
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
     ///
     /// ### [`ToSql`] impls
@@ -136,8 +135,8 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
@@ -145,12 +144,11 @@ pub mod sql_types {
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
     #[doc(hidden)]
-    pub type Bytea = ::types::Binary;
+    pub type Bytea = ::sql_types::Binary;
 
     #[doc(hidden)]
-    pub type Bpchar = ::types::VarChar;
+    pub type Bpchar = ::sql_types::VarChar;
 
-    #[cfg(feature = "serde_json")]
     /// The JSON SQL type.  This type can only be used with `feature =
     /// "serde_json"`
     ///
@@ -165,14 +163,13 @@ pub mod sql_types {
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "114", array_oid = "199")]
     pub struct Json;
 
-    #[cfg(feature = "serde_json")]
     /// The `jsonb` SQL type.  This type can only be used with `feature =
     /// "serde_json"`
     ///
@@ -202,8 +199,8 @@ pub mod sql_types {
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
     ///
     /// # Examples
@@ -258,8 +255,8 @@ pub mod sql_types {
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [PgMoney]: ../../data_types/struct.PgMoney.html
     ///
     /// # Examples
@@ -298,7 +295,6 @@ pub mod sql_types {
     #[postgres(oid = "790", array_oid = "791")]
     pub struct Money;
 
-    #[cfg(feature = "network-address")]
     /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`] impls
@@ -309,8 +305,8 @@ pub mod sql_types {
     ///
     /// - `[u8; 6]`
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     ///
     /// # Examples
     ///
@@ -344,12 +340,10 @@ pub mod sql_types {
     #[postgres(oid = "829", array_oid = "1040")]
     pub struct MacAddr;
 
-    #[cfg(feature = "network-address")]
     #[doc(hidden)]
     /// Alias for `MacAddr` to be able to use it with `infer_schema`.
     pub type Macaddr = MacAddr;
 
-    #[cfg(feature = "network-address")]
     /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`] impls
@@ -360,8 +354,8 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples
@@ -402,7 +396,6 @@ pub mod sql_types {
     #[postgres(oid = "869", array_oid = "1041")]
     pub struct Inet;
 
-    #[cfg(feature = "network-address")]
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`] impls
@@ -413,8 +406,8 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../types/trait.ToSql.html
-    /// [`FromSql`]: ../../../types/trait.FromSql.html
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples

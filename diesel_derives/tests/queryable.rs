@@ -1,6 +1,6 @@
 use diesel::dsl::sql;
 use diesel::*;
-use diesel::types::Integer;
+use diesel::sql_types::Integer;
 
 use test_helpers::connection;
 

@@ -1,10 +1,10 @@
 use backend::Backend;
 use connection::Connection;
+use deserialize::Queryable;
 use query_builder::{AsQuery, QueryFragment, QueryId};
-use query_source::Queryable;
 use result::QueryResult;
 use super::RunQueryDsl;
-use types::HasSqlType;
+use sql_types::HasSqlType;
 
 /// The `load` method
 ///
