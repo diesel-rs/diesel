@@ -303,8 +303,6 @@ impl QueryFragment<Mysql> for InsertOrIgnore {
     }
 }
 
-impl_query_id!(InsertOrIgnore);
-
 #[derive(Debug, Copy, Clone)]
 #[doc(hidden)]
 pub struct Replace;
