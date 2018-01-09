@@ -1,5 +1,7 @@
 #[macro_export]
 #[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "1.1.0", note = "Use `#[derive(Associations)]` instead")]
 macro_rules! BelongsTo {
     // Format arguments
     (
