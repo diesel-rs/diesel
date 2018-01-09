@@ -15,7 +15,9 @@ impl FromSql<types::Bool, Pg> for bool {
 
 impl ToSql<types::Bool, Pg> for bool {
     fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
-        out.write_all(&[*self as u8]).map(|_| IsNull::No).map_err(Into::into)
+        out.write_all(&[*self as u8])
+            .map(|_| IsNull::No)
+            .map_err(Into::into)
     }
 }
 
