@@ -3,14 +3,14 @@
 
 extern crate chrono;
 
-use std::error::Error;
 use std::io::Write;
 use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use self::chrono::naive::MAX_DATE;
 
 use pg::Pg;
 use super::{PgDate, PgTime, PgTimestamp};
-use types::{Date, FromSql, IsNull, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
+use types::{Date, FromSql, Time, Timestamp, Timestamptz, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -18,7 +18,7 @@ fn pg_epoch() -> NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let PgTimestamp(offset) = FromSql::<Timestamp, Pg>::from_sql(bytes)?;
         match pg_epoch().checked_add_signed(Duration::microseconds(offset)) {
             Some(v) => Ok(v),
@@ -31,16 +31,13 @@ impl FromSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let time = match (self.signed_duration_since(pg_epoch())).num_microseconds() {
             Some(time) => time,
             None => {
                 let error_message =
                     format!("{:?} as microseconds is too large to fit in an i64", self);
-                return Err(Box::<Error + Send + Sync>::from(error_message));
+                return Err(error_message.into());
             }
         };
         ToSql::<Timestamp, Pg>::to_sql(&PgTimestamp(time), out)
@@ -48,32 +45,26 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl FromSql<Timestamptz, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         FromSql::<Timestamp, Pg>::from_sql(bytes)
     }
 }
 
 impl ToSql<Timestamptz, Pg> for NaiveDateTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Timestamp, Pg>::to_sql(self, out)
     }
 }
 
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }
 
 impl<TZ: TimeZone> ToSql<Timestamptz, Pg> for DateTime<TZ> {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Timestamptz, Pg>::to_sql(&self.naive_utc(), out)
     }
 }
@@ -83,10 +74,7 @@ fn midnight() -> NaiveTime {
 }
 
 impl ToSql<Time, Pg> for NaiveTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let duration = self.signed_duration_since(midnight());
         match duration.num_microseconds() {
             Some(offset) => ToSql::<Time, Pg>::to_sql(&PgTime(offset), out),
@@ -96,7 +84,7 @@ impl ToSql<Time, Pg> for NaiveTime {
 }
 
 impl FromSql<Time, Pg> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let PgTime(offset) = try!(FromSql::<Time, Pg>::from_sql(bytes));
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
@@ -108,23 +96,20 @@ fn pg_epoch_date() -> NaiveDate {
 }
 
 impl ToSql<Date, Pg> for NaiveDate {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let days_since_epoch = self.signed_duration_since(pg_epoch_date()).num_days();
         ToSql::<Date, Pg>::to_sql(&PgDate(days_since_epoch as i32), out)
     }
 }
 
 impl FromSql<Date, Pg> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {
                 let error_message = format!("Chrono can only represent dates up to {:?}", MAX_DATE);
-                Err(Box::<Error + Send + Sync>::from(error_message))
+                Err(error_message.into())
             }
         }
     }

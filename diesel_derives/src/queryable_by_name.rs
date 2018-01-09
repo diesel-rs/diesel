@@ -20,7 +20,6 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
         } else {
             let st = sql_type(attr, &model);
             quote!(
-                __DB: diesel::types::HasSqlType<#st>,
                 #attr_ty: diesel::types::FromSql<#st, __DB>,
             )
         }
@@ -35,7 +34,7 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
                 __DB: diesel::backend::Backend,
                 #(#attr_where_clause)*
             {
-               fn build<__R: diesel::row::NamedRow<__DB>>(row: &__R) -> ::std::result::Result<Self, Box<::std::error::Error + Send + Sync>> {
+               fn build<__R: diesel::row::NamedRow<__DB>>(row: &__R) -> diesel::deserialize::Result<Self> {
                    Ok(#build_expr)
                }
             }

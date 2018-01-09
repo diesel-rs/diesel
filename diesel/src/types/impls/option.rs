@@ -9,6 +9,7 @@ use query_builder::QueryId;
 use query_source::{Queryable, QueryableByName};
 use row::NamedRow;
 use types::{FromSql, FromSqlRow, HasSqlType, IsNull, NotNull, Nullable, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -36,10 +37,10 @@ where
 impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
 where
     T: FromSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None),
@@ -50,7 +51,7 @@ where
 impl<T, ST, DB> Queryable<Nullable<ST>, DB> for Option<T>
 where
     T: Queryable<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     Option<T::Row>: FromSqlRow<Nullable<ST>, DB>,
     ST: NotNull,
 {
@@ -66,7 +67,7 @@ where
     T: QueryableByName<DB>,
     DB: Backend,
 {
-    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>> {
+    fn build<R: NamedRow<DB>>(row: &R) -> deserialize::Result<Self> {
         match T::build(row) {
             Ok(v) => Ok(Some(v)),
             Err(e) => if e.is::<UnexpectedNullError>() {
@@ -81,12 +82,12 @@ where
 impl<T, ST, DB> FromSqlRow<Nullable<ST>, DB> for Option<T>
 where
     T: FromSqlRow<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 
-    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> Result<Self, Box<Error + Send + Sync>> {
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
         let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
@@ -100,13 +101,10 @@ where
 impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>
 where
     T: ToSql<ST, DB>,
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     ST: NotNull,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {

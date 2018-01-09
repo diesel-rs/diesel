@@ -41,8 +41,8 @@ pub use self::fold::Foldable;
 
 use backend::{Backend, TypeMetadata};
 use row::Row;
-use std::error::Error;
 use std::io::{self, Write};
+use {deserialize, serialize};
 
 /// The boolean SQL type.
 ///
@@ -498,9 +498,9 @@ impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
-pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
+pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self, Box<Error + Send + Sync>>;
+    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self>;
 }
 
 /// Deserialize one or more fields.
@@ -519,13 +519,13 @@ pub trait FromSql<A, DB: Backend + HasSqlType<A>>: Sized {
 /// for any type which implements `FromSql`.
 /// There are no options or special considerations needed for this derive.
 /// Note that `#[derive(FromSqlRow)]` will also generate a `Queryable` implementation.
-pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
+pub trait FromSqlRow<A, DB: Backend>: Sized {
     /// The number of fields that this type will consume. Must be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
     const FIELDS_NEEDED: usize = 1;
 
     /// See the trait documentation.
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>>;
+    fn build_from_row<T: Row<DB>>(row: &mut T) -> deserialize::Result<Self>;
 }
 
 // Reasons we can't write this:
@@ -535,7 +535,7 @@ pub trait FromSqlRow<A, DB: Backend + HasSqlType<A>>: Sized {
 //     DB: Backend + HasSqlType<ST>,
 //     T: FromSql<ST, DB>,
 // {
-//     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self, Box<Error + Send + Sync>> {
+//     fn build_from_row<T: Row<DB>>(row: &mut T) -> deserialize::Result<Self> {
 //         Self::from_sql(row.take())
 //     }
 // }
@@ -704,23 +704,17 @@ where
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
-pub trait ToSql<A, DB: Backend + HasSqlType<A>>: fmt::Debug {
+pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>>;
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T
 where
-    DB: Backend + HasSqlType<A>,
+    DB: Backend,
     T: ToSql<A, DB> + ?Sized,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, DB>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, DB>) -> serialize::Result {
         (*self).to_sql(out)
     }
 }

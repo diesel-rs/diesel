@@ -981,8 +981,6 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 #[test]
 #[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
-    use std::error::Error;
-
     #[derive(Debug, Clone, Copy, QueryId, SqlType)]
     struct MyInt;
 
@@ -993,7 +991,7 @@ fn third_party_crates_can_add_new_types() {
     }
 
     impl FromSql<MyInt, Pg> for i32 {
-        fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+        fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
             FromSql::<Integer, Pg>::from_sql(bytes)
         }
     }
@@ -1019,7 +1017,6 @@ use diesel::query_builder::{QueryFragment, QueryId};
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
-    TestBackend: HasSqlType<T>,
     U: AsExpression<T> + Debug + Clone,
     U::Expression: SelectableExpression<(), SqlType = T>,
     U::Expression: QueryFragment<TestBackend> + QueryId,

@@ -1,6 +1,6 @@
 use diesel::*;
 use diesel::backend::Backend;
-use diesel::types::{FromSqlRow, HasSqlType};
+use diesel::types::FromSqlRow;
 use std::fmt;
 use std::str::FromStr;
 
@@ -40,7 +40,7 @@ impl TableName {
 
 impl<ST, DB> Queryable<ST, DB> for TableName
 where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
     (String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String);

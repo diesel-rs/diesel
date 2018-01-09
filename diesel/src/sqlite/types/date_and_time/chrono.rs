@@ -1,34 +1,31 @@
 extern crate chrono;
 
-use std::error::Error;
 use std::io::Write;
 use self::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use sqlite::Sqlite;
 use sqlite::connection::SqliteValue;
-use types::{Date, FromSql, IsNull, Text, Time, Timestamp, ToSql, ToSqlOutput};
+use types::{Date, FromSql, Text, Time, Timestamp, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
         let text = not_none!(value).read_text();
         Self::parse_from_str(text, SQLITE_DATE_FORMAT).map_err(Into::into)
     }
 }
 
 impl ToSql<Date, Sqlite> for NaiveDate {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Sqlite>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> serialize::Result {
         let s = self.format(SQLITE_DATE_FORMAT).to_string();
         ToSql::<Text, Sqlite>::to_sql(&s, out)
     }
 }
 
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
         let text = not_none!(value).read_text();
         let valid_time_formats = &[
             // Most likely
@@ -52,17 +49,14 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 }
 
 impl ToSql<Time, Sqlite> for NaiveTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Sqlite>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> serialize::Result {
         let s = self.format("%T%.f").to_string();
         ToSql::<Text, Sqlite>::to_sql(&s, out)
     }
 }
 
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn from_sql(value: Option<&SqliteValue>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(value: Option<&SqliteValue>) -> deserialize::Result<Self> {
         let text = not_none!(value).read_text();
 
         let sqlite_datetime_formats = &[
@@ -104,10 +98,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Sqlite>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Sqlite>) -> serialize::Result {
         let s = self.format("%F %T%.f").to_string();
         ToSql::<Text, Sqlite>::to_sql(&s, out)
     }

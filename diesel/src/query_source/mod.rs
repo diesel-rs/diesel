@@ -7,13 +7,12 @@
 pub mod joins;
 mod peano_numbers;
 
-use std::error::Error;
-
 use backend::Backend;
+use deserialize;
 use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use row::NamedRow;
-use types::{FromSqlRow, HasSqlType};
+use types::FromSqlRow;
 
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
@@ -108,7 +107,7 @@ pub use self::peano_numbers::*;
 /// # }
 pub trait Queryable<ST, DB>
 where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend,
 {
     /// The Rust type you'd like to map from.
     ///
@@ -123,7 +122,7 @@ where
 //
 // impl<T, ST, DB> Queryable<ST, DB> for T
 // where
-//     DB: Backend + HasSqlType<ST>,
+//     DB: Backend,
 //     T: FromSqlRow<ST, DB>,
 // {
 //     type Row = Self;
@@ -177,7 +176,7 @@ where
     DB: Backend,
 {
     /// Construct an instance of `Self` from the database row
-    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self, Box<Error + Send + Sync>>;
+    fn build<R: NamedRow<DB>>(row: &R) -> deserialize::Result<Self>;
 }
 
 /// Represents a type which can appear in the `FROM` clause. Apps should not
