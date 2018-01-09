@@ -24,6 +24,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The return type of `ToSql` can now be written as `serialize::Result`.
 
+* Added support for SQLite's `INSERT OR IGNORE` and MySQL's `INSERT IGNORE`
+  via the `insert_or_ignore` function.
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
