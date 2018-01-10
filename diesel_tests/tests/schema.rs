@@ -11,7 +11,8 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
+         QueryableByName)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
