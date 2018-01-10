@@ -165,6 +165,20 @@ pub type TestConnection = MysqlConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
+//Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
+pub struct DropTable<'a> {
+    pub connection: &'a TestConnection,
+    pub table_name: &'static str,
+}
+
+impl<'a> Drop for DropTable<'a> {
+    fn drop(&mut self) {
+        self.connection
+            .execute(&format!("DROP TABLE {}", self.table_name))
+            .unwrap();
+    }
+}
+
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
     #[cfg(feature = "sqlite")]
