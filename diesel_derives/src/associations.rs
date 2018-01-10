@@ -7,22 +7,30 @@ use util::{str_value_of_meta_item, wrap_item_in_const};
 pub fn derive_associations(input: syn::DeriveInput) -> quote::Tokens {
     let model = t!(Model::from_item(&input, "Associations"));
 
-    let derived_associations = input.attrs.as_slice().iter().filter_map(|attr| {
-        if attr.name() == "belongs_to" {
-            Some(
-                build_association_options(attr)
-                    .map(|options| expand_belongs_to(&model, options))
-                    .unwrap_or_else(|e| e),
-            )
-        } else {
-            None
-        }
-    });
-
-    wrap_item_in_const(
-        model.dummy_const_name("ASSOCIATIONS"),
-        quote!(#(#derived_associations)*),
-    )
+    let derived_associations = input
+        .attrs
+        .as_slice()
+        .iter()
+        .filter_map(|attr| {
+            if attr.name() == "belongs_to" {
+                Some(
+                    build_association_options(attr)
+                        .map(|options| expand_belongs_to(&model, options))
+                        .unwrap_or_else(|e| e),
+                )
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    if derived_associations.is_empty() {
+        quote!(compile_error!("Could not derive `Associations` without any `#[belongs_to(table_name)]` attribute");)
+    } else {
+        wrap_item_in_const(
+            model.dummy_const_name("ASSOCIATIONS"),
+            quote!(#(#derived_associations)*),
+        )
+    }
 }
 
 fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Tokens {
@@ -33,28 +41,25 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
     let foreign_key_name = options
         .foreign_key_name
         .unwrap_or_else(|| to_foreign_key(parent_struct.as_ref()));
-    let foreign_key_name = &foreign_key_name;
     let child_table_name = model.table_name();
     let child_table_name = &child_table_name;
     let foreign_key_attr = fields
         .iter()
-        .find(|attr| attr.column_name().as_ref() == foreign_key_name.as_ref())
-        .unwrap();
-    let foreign_key_ty = &foreign_key_attr.ty;
+        .find(|attr| *attr.column_name() == foreign_key_name);
+    let foreign_key_ty = if let Some(foreign_key_attr) = foreign_key_attr {
+        &foreign_key_attr.ty
+    } else {
+        let msg = format!("The foreign key column {} is not found", foreign_key_name);
+        return quote!{
+            compile_error!(#msg);
+        };
+    };
 
     // we need to special case foreign keys on with an Option type
     // to allow self referencing joins
-    let (foreign_key, foreign_key_ty) = match *foreign_key_ty {
-        syn::Ty::Path(None, ref p) if p.segments[0].ident == "Option" => {
-            let segment = &p.segments[0];
-            let t = match segment.parameters {
-                syn::PathParameters::AngleBracketed(ref p) => p.types[0].clone(),
-                syn::PathParameters::Parenthesized(_) => unreachable!(),
-            };
-            (quote!(self.#foreign_key_name.as_ref()), t)
-        }
-        ref t => (quote!(Some(&self.#foreign_key_name)), t.clone()),
-    };
+    let (foreign_key, foreign_key_ty) = ::util::inner_of_option_ty(foreign_key_ty)
+        .map(|foreign_key_ty| (quote!(self.#foreign_key_name.as_ref()), foreign_key_ty))
+        .unwrap_or_else(|| (quote!(Some(&self.#foreign_key_name)), foreign_key_ty));
 
     quote!(
         impl diesel::associations::BelongsTo<#parent_struct> for #struct_name {
