@@ -1,7 +1,7 @@
 mod date_and_time;
 mod ops;
 
-use schema::{connection, NewUser, TestBackend};
+use schema::{connection, DropTable, NewUser, TestBackend};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -65,6 +65,58 @@ fn test_count_max() {
     assert_eq!(Ok(Some(2)), source.first(&connection));
     connection.execute("DELETE FROM numbers").unwrap();
     assert_eq!(Ok(None::<i32>), source.first(&connection));
+}
+
+#[cfg(feature = "postgres")]
+table! {
+    number_arrays (na) {
+        na -> Array<Integer>,
+    }
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn test_min_max_of_array() {
+    use self::number_arrays::dsl::*;
+
+    let connection = connection();
+    connection
+        .execute("CREATE TABLE number_arrays ( na INTEGER[] PRIMARY KEY )")
+        .unwrap();
+    let _bomb = DropTable {
+        connection: &connection,
+        table_name: "number_arrays",
+    };
+
+    insert_into(number_arrays)
+        .values(&vec![
+            na.eq(vec![1, 1, 100]),
+            na.eq(vec![1, 5, 5]),
+            na.eq(vec![5, 0]),
+        ])
+        .execute(&connection)
+        .unwrap();
+
+    let max_query = number_arrays.select(max(na));
+    let min_query = number_arrays.select(min(na));
+    assert_eq!(Ok(Some(vec![5, 0])), max_query.first(&connection));
+    assert_eq!(Ok(Some(vec![1, 1, 100])), min_query.first(&connection));
+
+    delete(number_arrays.filter(na.eq(vec![5, 0])))
+        .execute(&connection)
+        .unwrap();
+    assert_eq!(Ok(Some(vec![1, 5, 5])), max_query.first(&connection));
+    assert_eq!(Ok(Some(vec![1, 1, 100])), min_query.first(&connection));
+
+    delete(number_arrays.filter(na.eq(vec![1, 1, 100])))
+        .execute(&connection)
+        .unwrap();
+    assert_eq!(Ok(Some(vec![1, 5, 5])), max_query.first(&connection));
+    assert_eq!(Ok(Some(vec![1, 5, 5])), min_query.first(&connection));
+
+    delete(number_arrays).execute(&connection).unwrap();
+    assert_eq!(Ok(None::<Vec<i32>>), max_query.first(&connection));
+    assert_eq!(Ok(None::<Vec<i32>>), min_query.first(&connection));
 }
 
 #[test]

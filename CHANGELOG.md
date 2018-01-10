@@ -27,6 +27,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for SQLite's `INSERT OR IGNORE` and MySQL's `INSERT IGNORE`
   via the `insert_or_ignore` function.
 
+* Trait `SqlOrd` is now implemented for `Array`, meaning min/max functions can be used
+  on Array columns (PostgreSQL only).
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`

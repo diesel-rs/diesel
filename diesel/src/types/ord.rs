@@ -14,3 +14,5 @@ impl SqlOrd for types::Interval {}
 impl SqlOrd for types::Time {}
 impl SqlOrd for types::Timestamp {}
 impl<T: SqlOrd + NotNull> SqlOrd for types::Nullable<T> {}
+#[cfg(feature = "postgres")]
+impl<T: SqlOrd> SqlOrd for types::Array<T> {}
