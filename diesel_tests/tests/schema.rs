@@ -11,8 +11,7 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
-         Associations, QueryableByName)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -118,7 +117,7 @@ pub struct NewComment<'a>(
     #[column_name(text)] pub &'a str,
 );
 
-#[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
+#[derive(PartialEq, Eq, Debug, Clone, Insertable)]
 #[table_name = "fk_tests"]
 pub struct FkTest {
     id: i32,
