@@ -75,7 +75,7 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
                 __DB: diesel::backend::Backend + diesel::types::HasSqlType<#sql_type>,
                 Self: diesel::types::ToSql<#sql_type, __DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut diesel::types::ToSqlOutput<W, __DB>) -> ::std::result::Result<diesel::types::IsNull, Box<::std::error::Error + Send + Sync>> {
+                fn to_sql<W: ::std::io::Write>(&self, out: &mut diesel::types::ToSqlOutput<W, __DB>) -> diesel::serialize::Result {
                     diesel::types::ToSql::<#sql_type, __DB>::to_sql(self, out)
                 }
             }

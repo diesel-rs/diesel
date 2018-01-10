@@ -1,10 +1,10 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::error::Error;
 use std::fmt;
 use std::io::Write;
 
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use types::*;
+use {deserialize, serialize};
 
 impl<T> HasSqlType<Array<T>> for Pg
 where
@@ -25,9 +25,8 @@ impl<T> SingleValue for Array<T> {}
 impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
-    Pg: HasSqlType<ST>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
         let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
@@ -67,9 +66,7 @@ use expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
-        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty where
-            Pg: HasSqlType<ST>,
-        {
+        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty {
             type Expression = Bound<$sql_type, Self>;
 
             fn as_expression(self) -> Self::Expression {
@@ -95,10 +92,7 @@ where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         try!(out.write_i32::<NetworkEndian>(num_dimensions));
         let flags = 0;
@@ -128,40 +122,28 @@ where
 
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
-    Pg: HasSqlType<ST>,
     [T]: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
 
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
 where
-    Pg: HasSqlType<ST>,
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         (self as &[T]).to_sql(out)
     }
 }
 
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
-    Pg: HasSqlType<ST>,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }

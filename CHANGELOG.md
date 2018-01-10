@@ -19,12 +19,28 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `HasSqlType`, `NotNull`, and `SingleValue` can now be derived with
   `#[derive(SqlType)]`. See the docs for those traits for more information.
 
+* The return type of `FromSql`, `FromSqlRow`, and `QueryableByName` can now be
+  written as `deserialize::Result<Self>`.
+
+* The return type of `ToSql` can now be written as `serialize::Result`.
+
+* Added support for SQLite's `INSERT OR IGNORE` and MySQL's `INSERT IGNORE`
+  via the `insert_or_ignore` function.
+
+* Trait `SqlOrd` is now implemented for `Array`, meaning min/max functions can be used
+  on Array columns (PostgreSQL only).
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
 
 * Deprecated specifying a column name as `#[column_name(foo)]`. `#[column_name =
   "foo"]` should be used instead.
+
+### Fixed
+
+* `infer_schema!` generates valid code when run against a database with no
+  tables.
 
 ## [1.0.0] - 2018-01-02
 

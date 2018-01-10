@@ -1,10 +1,10 @@
-use std::error::Error;
 use std::io::Write;
 use std::ops::Add;
 
 use pg::Pg;
 use types::{self, Date, FromSql, Interval, IsNull, Time, Timestamp, Timestamptz, ToSql,
             ToSqlOutput};
+use {deserialize, serialize};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -83,70 +83,55 @@ impl PgInterval {
 }
 
 impl ToSql<types::Timestamp, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Timestamp, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgTimestamp)
     }
 }
 
 impl ToSql<types::Timestamptz, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<types::Timestamp, Pg>::to_sql(self, out)
     }
 }
 
 impl FromSql<types::Timestamptz, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         FromSql::<types::Timestamp, Pg>::from_sql(bytes)
     }
 }
 
 impl ToSql<types::Date, Pg> for PgDate {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<types::Integer, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Date, Pg> for PgDate {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         FromSql::<types::Integer, Pg>::from_sql(bytes).map(PgDate)
     }
 }
 
 impl ToSql<types::Time, Pg> for PgTime {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         ToSql::<types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
 impl FromSql<types::Time, Pg> for PgTime {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         FromSql::<types::BigInt, Pg>::from_sql(bytes).map(PgTime)
     }
 }
 
 impl ToSql<types::Interval, Pg> for PgInterval {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         try!(ToSql::<types::BigInt, Pg>::to_sql(&self.microseconds, out));
         try!(ToSql::<types::Integer, Pg>::to_sql(&self.days, out));
         try!(ToSql::<types::Integer, Pg>::to_sql(&self.months, out));
@@ -155,7 +140,7 @@ impl ToSql<types::Interval, Pg> for PgInterval {
 }
 
 impl FromSql<types::Interval, Pg> for PgInterval {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(PgInterval {
             microseconds: try!(FromSql::<types::BigInt, Pg>::from_sql(Some(&bytes[..8]))),

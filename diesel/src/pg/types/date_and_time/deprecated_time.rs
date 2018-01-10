@@ -1,12 +1,12 @@
 extern crate time;
 
-use std::error::Error;
 use std::io::Write;
 
 use self::time::{Duration, Timespec};
 
 use pg::Pg;
-use types::{self, FromSql, IsNull, Timestamp, ToSql, ToSqlOutput};
+use types::{self, FromSql, Timestamp, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
@@ -17,10 +17,7 @@ struct TimespecProxy(Timespec);
 const TIME_SEC_CONV: i64 = 946_684_800;
 
 impl ToSql<types::Timestamp, Pg> for Timespec {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = *self - pg_epoch;
         let t = try!(duration.num_microseconds().ok_or("Overflow error"));
@@ -29,7 +26,7 @@ impl ToSql<types::Timestamp, Pg> for Timespec {
 }
 
 impl FromSql<types::Timestamp, Pg> for Timespec {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let t = try!(<i64 as FromSql<types::BigInt, Pg>>::from_sql(bytes));
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);

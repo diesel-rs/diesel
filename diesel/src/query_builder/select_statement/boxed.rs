@@ -14,7 +14,7 @@ use query_dsl::methods::*;
 use query_source::QuerySource;
 use query_source::joins::*;
 use result::QueryResult;
-use types::{BigInt, Bool, HasSqlType};
+use types::{BigInt, Bool};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
@@ -58,7 +58,6 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
 impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend,
-    DB: HasSqlType<ST>,
 {
     type SqlType = ST;
 }
@@ -166,7 +165,7 @@ where
 
 impl<'a, ST, QS, DB, Selection> SelectDsl<Selection> for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    DB: Backend + HasSqlType<Selection::SqlType>,
+    DB: Backend,
     Selection: SelectableExpression<QS> + QueryFragment<DB> + 'a,
 {
     type Output = BoxedSelectStatement<'a, Selection::SqlType, QS, DB>;
@@ -187,7 +186,7 @@ where
 
 impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    DB: Backend + HasSqlType<ST> + 'a,
+    DB: Backend + 'a,
     Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
     Predicate: QueryFragment<DB> + 'a,
 {

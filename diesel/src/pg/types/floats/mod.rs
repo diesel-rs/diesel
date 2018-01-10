@@ -4,6 +4,7 @@ use std::io::prelude::*;
 
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -51,7 +52,7 @@ impl Error for InvalidNumericSign {
 }
 
 impl FromSql<types::Numeric, Pg> for PgNumeric {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         let ndigits = try!(bytes.read_u16::<NetworkEndian>());
         let mut digits = Vec::with_capacity(ndigits as usize);
@@ -80,10 +81,7 @@ impl FromSql<types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,

@@ -11,6 +11,11 @@ infer_schema!("dotenv:MYSQL_DATABASE_URL");
 #[cfg(not(feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:DATABASE_URL");
 
+#[cfg(feature = "sqlite")]
+mod test_infer_schema_works_on_empty_database {
+    infer_schema!(":memory:");
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
          QueryableByName)]
 #[table_name = "users"]
@@ -159,6 +164,20 @@ pub type TestConnection = SqliteConnection;
 pub type TestConnection = MysqlConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
+
+//Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
+pub struct DropTable<'a> {
+    pub connection: &'a TestConnection,
+    pub table_name: &'static str,
+}
+
+impl<'a> Drop for DropTable<'a> {
+    fn drop(&mut self) {
+        self.connection
+            .execute(&format!("DROP TABLE {}", self.table_name))
+            .unwrap();
+    }
+}
 
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();

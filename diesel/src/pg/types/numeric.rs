@@ -9,12 +9,12 @@ mod bigdecimal {
     use self::num_bigint::{BigInt, BigUint, Sign};
     use self::num_integer::Integer;
     use self::num_traits::{Signed, ToPrimitive, Zero};
-    use std::error::Error;
     use std::io::prelude::*;
 
     use pg::Pg;
     use pg::data_types::PgNumeric;
-    use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+    use types::{self, FromSql, ToSql, ToSqlOutput};
+    use {deserialize, serialize};
 
     /// Iterator over the digits of a big uint in base 10k.
     /// The digits will be returned in little endian order.
@@ -94,17 +94,14 @@ mod bigdecimal {
     }
 
     impl ToSql<types::Numeric, Pg> for BigDecimal {
-        fn to_sql<W: Write>(
-            &self,
-            out: &mut ToSqlOutput<W, Pg>,
-        ) -> Result<IsNull, Box<Error + Send + Sync>> {
+        fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
             let numeric = PgNumeric::from(self);
             ToSql::<types::Numeric, Pg>::to_sql(&numeric, out)
         }
     }
 
     impl FromSql<types::Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+        fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
             let (sign, weight, scale, digits) = match PgNumeric::from_sql(numeric)? {
                 PgNumeric::Positive {
                     weight,

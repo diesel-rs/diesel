@@ -285,6 +285,26 @@ impl<DB: Backend> QueryFragment<DB> for Insert {
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
+pub struct InsertOrIgnore;
+
+#[cfg(feature = "sqlite")]
+impl QueryFragment<Sqlite> for InsertOrIgnore {
+    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+        out.push_sql("INSERT OR IGNORE");
+        Ok(())
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl QueryFragment<Mysql> for InsertOrIgnore {
+    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+        out.push_sql("INSERT IGNORE");
+        Ok(())
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct Replace;
 
 #[cfg(feature = "sqlite")]

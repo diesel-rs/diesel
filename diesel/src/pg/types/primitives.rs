@@ -1,11 +1,11 @@
 use std::io::prelude::*;
-use std::error::Error;
 
 use pg::Pg;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 impl FromSql<types::Bool, Pg> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<Error + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         match bytes {
             Some(bytes) => Ok(bytes[0] != 0),
             None => Ok(false),
@@ -14,18 +14,10 @@ impl FromSql<types::Bool, Pg> for bool {
 }
 
 impl ToSql<types::Bool, Pg> for bool {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Pg>,
-    ) -> Result<IsNull, Box<Error + Send + Sync>> {
-        let write_result = if *self {
-            out.write_all(&[1])
-        } else {
-            out.write_all(&[0])
-        };
-        write_result
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> serialize::Result {
+        out.write_all(&[*self as u8])
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(Into::into)
     }
 }
 

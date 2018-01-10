@@ -6,40 +6,32 @@ mod numeric;
 
 use byteorder::WriteBytesExt;
 use mysql::Mysql;
-use std::error::Error as StdError;
 use std::io::Write;
 use types::{self, FromSql, IsNull, ToSql, ToSqlOutput};
+use {deserialize, serialize};
 
 impl ToSql<types::Tinyint, Mysql> for i8 {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Mysql>,
-    ) -> Result<IsNull, Box<StdError + Send + Sync>> {
-        out.write_i8(*self)
-            .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<StdError + Send + Sync>)
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> serialize::Result {
+        out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
 
 impl FromSql<types::Tinyint, Mysql> for i8 {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
     }
 }
 
 impl ToSql<types::Bool, Mysql> for bool {
-    fn to_sql<W: Write>(
-        &self,
-        out: &mut ToSqlOutput<W, Mysql>,
-    ) -> Result<IsNull, Box<StdError + Send + Sync>> {
+    fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Mysql>) -> serialize::Result {
         let int_value = if *self { 1 } else { 0 };
         <i32 as ToSql<types::Integer, Mysql>>::to_sql(&int_value, out)
     }
 }
 
 impl FromSql<types::Bool, Mysql> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> Result<Self, Box<StdError + Send + Sync>> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         Ok(not_none!(bytes).iter().any(|x| *x != 0))
     }
 }

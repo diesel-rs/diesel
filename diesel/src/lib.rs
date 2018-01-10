@@ -136,12 +136,14 @@ pub mod associations;
 pub mod backend;
 #[doc(hidden)]
 pub mod connection;
+pub mod deserialize;
 #[macro_use]
 pub mod expression;
 pub mod expression_methods;
 #[doc(hidden)]
 pub mod insertable;
 pub mod query_builder;
+pub mod serialize;
 #[macro_use]
 pub mod types;
 
@@ -267,7 +269,8 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{delete, insert_into, replace_into, select, sql_query, update};
+pub use query_builder::functions::{delete, insert_into, insert_or_ignore_into, replace_into,
+                                   select, sql_query, update};
 pub use result::Error::NotFound;
 #[doc(inline)]
 pub use types::structs::data_types;
