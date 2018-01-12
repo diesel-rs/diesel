@@ -4,6 +4,12 @@ use associations::BelongsTo;
 use backend::Backend;
 use deserialize;
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+#[cfg(feature = "postgres")]
+use expression::{AsExpression, IntoSql};
+#[cfg(feature = "postgres")]
+use expression::IntoSingleTypeExpressionList;
+#[cfg(feature = "postgres")]
+use expression::helper_types::AsExprOf;
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;
@@ -244,6 +250,17 @@ macro_rules! tuple_impls {
                 fn tuple_append(self, next: Next) -> Self::Output {
                     let ($($T,)+) = self;
                     ($($T,)+ next)
+                }
+            }
+
+            #[cfg(feature = "postgres")]
+            impl<$($T,)+ ST> IntoSingleTypeExpressionList<ST> for ($($T,)+) where
+                $($T: AsExpression<ST>,)+
+            {
+                type Expression = ($(AsExprOf<$T, ST>,)+);
+
+                fn into_single_type_expression_list(self) -> Self::Expression {
+                    ($(self.$idx.into_sql::<ST>(),)+)
                 }
             }
         )+
