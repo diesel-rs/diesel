@@ -30,6 +30,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Trait `SqlOrd` is now implemented for `Array`, meaning min/max functions can be used
   on Array columns (PostgreSQL only).
 
+* Added `diesel::dsl::array`, which corresponds to a PG `ARRAY[]` literal.
+
 ### Deprecated
 
 * Deprecated `impl_query_id!` in favor of `#[derive(QueryId)]`
