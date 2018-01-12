@@ -2,6 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 #[doc(hidden)]
 pub mod raw;
+mod from_sqlite_value;
 mod into_sqlite_result;
 mod sqlite_value;
 mod statement_iterator;
@@ -18,6 +19,7 @@ use deserialize::{Queryable, QueryableByName};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use result::*;
+use self::from_sqlite_value::FromSqliteValue;
 use self::into_sqlite_result::IntoSqliteResult;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
@@ -113,8 +115,6 @@ pub struct Context<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
 
-use types::FromSql;
-
 // Context is translated from rusqlite
 impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
@@ -132,30 +132,13 @@ impl<'a> Context<'a> {
     /// # Failure
     ///
     /// Will panic if `idx` is greater than or equal to `self.len()`.
-    ///
-    /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
-    pub fn get<A, T>(&self, idx: usize) -> QueryResult<T>
+    pub fn get<T>(&self, idx: usize) -> T
     where
-        Sqlite: HasSqlType<A>,
-        T: FromSql<A, Sqlite>
+        T: FromSqliteValue
     {
-        let _arg = self.args[idx];
-/*
-        let value = unsafe { ValueRef::from_value(arg) };
-        FromSql::column_result(value).map_err(|err| match err {
-                                                  FromSqlError::InvalidType => {
-                Error::InvalidFunctionParameterType(idx, value.data_type())
-            }
-                                                  FromSqlError::OutOfRange(i) => {
-                                                      Error::IntegralValueOutOfRange(idx as c_int,
-                                                                                     i)
-                                                  }
-                                                  FromSqlError::Other(err) => {
-                Error::FromSqlConversionFailure(idx, value.data_type(), err)
-            }
-        })
-*/
-        unimplemented!()
+        let arg = self.args[idx];
+
+        T::from_sqlite_value(arg)
     }
 }
 
@@ -227,6 +210,15 @@ impl SqliteConnection {
 
             t.into_sqlite_result(ctx.ctx);
         }
+
+        // https://www.sqlite.org/c3ref/create_function.html
+
+        // >The length of the name is limited to 255 bytes in a UTF-8 representation, exclusive of the zero-terminator.
+        assert!(fn_name.as_bytes().len() <= 255);
+        // Might also be a good idea to avoid embedded NUL chars. Switch to CStr?
+
+        // >If the third parameter is less than -1 or greater than 127 then the behavior is undefined.
+        assert!(-1 <= n_arg && n_arg <= 127);
 
         let boxed_f: *mut F = Box::into_raw(Box::new(x_func));
         let c_name = ::std::ffi::CString::new(fn_name)?;
@@ -469,5 +461,37 @@ mod tests {
             },
             _ => panic!("Expected Err result"),
         }
+    }
+
+    #[test]
+    fn create_scalar_function_arg_i32_return_i32() {
+        use expression::sql_literal::sql;
+
+        fn f(ctx: &Context) -> i32 {
+            ctx.get::<i32>(0) + 10
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 1, true, f).unwrap();
+
+        let query = sql("SELECT f(32)");
+        assert_eq!(Ok(42), query.get_result(&connection));
+    }
+
+    #[test]
+    fn create_scalar_function_arg_str_return_str() {
+        use std::ffi::CString;
+        use expression::sql_literal::sql;
+
+        fn f(ctx: &Context) -> CString {
+            CString::new(ctx.get::<String>(0).to_uppercase()).unwrap()
+        }
+
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.create_scalar_function("f", 1, true, f).unwrap();
+
+        use types;
+        let query = sql::<types::Text>("SELECT f('Fun!')");
+        assert_eq!(Ok("FUN!".to_string()), query.get_result(&connection));
     }
 }
