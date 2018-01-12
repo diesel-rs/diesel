@@ -17,6 +17,11 @@ mod bigdecimal {
     use serialize::{self, Output, ToSql};
     use sql_types::Numeric;
 
+    #[cfg(feature = "unstable")]
+    use std::convert::{TryFrom, TryInto};
+    #[cfg(feature = "unstable")]
+    use std::error::Error;
+
     /// Iterator over the digits of a big uint in base 10k.
     /// The digits will be returned in little endian order.
     struct ToBase10000(Option<BigUint>);
@@ -32,6 +37,52 @@ mod bigdecimal {
                 }
                 rem.to_i16().expect("10000 always fits in an i16")
             })
+        }
+    }
+
+    fn pg_decimal_to_bigdecimal(numeric: &PgNumeric) -> deserialize::Result<BigDecimal> {
+        let (sign, weight, scale, digits) = match *numeric {
+            PgNumeric::Positive {
+                weight,
+                scale,
+                ref digits,
+            } => (Sign::Plus, weight, scale, digits),
+            PgNumeric::Negative {
+                weight,
+                scale,
+                ref digits,
+            } => (Sign::Minus, weight, scale, digits),
+            PgNumeric::NaN => return Err(Box::from("NaN is not (yet) supported in BigDecimal")),
+        };
+
+        let mut result = BigUint::default();
+        let count = digits.len() as i64;
+        for digit in digits {
+            result *= BigUint::from(10_000u64);
+            result += BigUint::from(*digit as u64);
+        }
+        // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
+        let correction_exp = 4 * (i64::from(weight) - count + 1);
+        let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
+            .with_scale(i64::from(scale));
+        Ok(result)
+    }
+
+    #[cfg(feature = "unstable")]
+    impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
+        type Error = Box<Error + Send + Sync>;
+
+        fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
+            pg_decimal_to_bigdecimal(numeric)
+        }
+    }
+
+    #[cfg(feature = "unstable")]
+    impl TryFrom<PgNumeric> for BigDecimal {
+        type Error = Box<Error + Send + Sync>;
+
+        fn try_from(numeric: PgNumeric) -> deserialize::Result<Self> {
+            (&numeric).try_into()
         }
     }
 
@@ -103,30 +154,9 @@ mod bigdecimal {
 
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
-            let (sign, weight, scale, digits) = match PgNumeric::from_sql(numeric)? {
-                PgNumeric::Positive {
-                    weight,
-                    scale,
-                    digits,
-                } => (Sign::Plus, weight, scale, digits),
-                PgNumeric::Negative {
-                    weight,
-                    scale,
-                    digits,
-                } => (Sign::Minus, weight, scale, digits),
-                PgNumeric::NaN => return Err(Box::from("NaN is not (yet) supported in BigDecimal")),
-            };
-            let mut result = BigUint::default();
-            let count = digits.len() as i64;
-            for digit in digits {
-                result *= BigUint::from(10_000u64);
-                result += BigUint::from(digit as u64);
-            }
-            // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
-            let correction_exp = 4 * (i64::from(weight) - count + 1);
-            let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
-                .with_scale(i64::from(scale));
-            Ok(result)
+            // FIXME: Use the TryFrom impl when try_from is stable
+            let numeric = PgNumeric::from_sql(numeric)?;
+            pg_decimal_to_bigdecimal(&numeric)
         }
     }
 
@@ -246,6 +276,28 @@ mod bigdecimal {
                 digits: vec![123, 4560],
             };
             assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        #[cfg(feature = "unstable")]
+        fn pg_numeric_to_bigdecimal_works() {
+            let expected = BigDecimal::from_str("123.456").unwrap();
+            let pg_numeric = PgNumeric::Positive {
+                weight: 0,
+                scale: 3,
+                digits: vec![123, 4560],
+            };
+            let res: BigDecimal = pg_numeric.try_into().unwrap();
+            assert_eq!(res, expected);
+
+            let expected = BigDecimal::from_str("-56.78").unwrap();
+            let pg_numeric = PgNumeric::Negative {
+                weight: 0,
+                scale: 2,
+                digits: vec![56, 7800],
+            };
+            let res: BigDecimal = pg_numeric.try_into().unwrap();
+            assert_eq!(res, expected);
         }
     }
 }
