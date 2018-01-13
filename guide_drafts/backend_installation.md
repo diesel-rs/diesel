@@ -40,7 +40,7 @@ with various package managers.
 
 ### PostgreSQL
 
-`sudo apt-get install postgresql-server-dev-all`
+`sudo apt-get install libpq-dev`
 
 ### MySQL
 
