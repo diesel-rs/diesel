@@ -7,28 +7,28 @@ cfg_if! {
         pub fn connection() -> TestConnection {
             SqliteConnection::establish(":memory:").unwrap()
         }
+
+        pub fn database_url() -> String {
+            String::from(":memory:")
+        }
     } else if #[cfg(feature = "postgres")] {
         extern crate dotenv;
-
-        use self::dotenv::dotenv;
-        use std::env;
 
         pub type TestConnection = PgConnection;
 
         pub fn connection() -> TestConnection {
-            dotenv().ok();
-            let database_url = env::var("PG_DATABASE_URL")
-                .or_else(|_| env::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests");
-            let conn = PgConnection::establish(&database_url).unwrap();
+            let conn = PgConnection::establish(&database_url()).unwrap();
             conn.begin_test_transaction().unwrap();
             conn
         }
+
+        pub fn database_url() -> String {
+            dotenv::var("PG_DATABASE_URL")
+                .or_else(|_| dotenv::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests")
+        }
     } else if #[cfg(feature = "mysql")] {
         extern crate dotenv;
-
-        use self::dotenv::dotenv;
-        use std::env;
 
         pub type TestConnection = MysqlConnection;
 
@@ -39,11 +39,13 @@ cfg_if! {
         }
 
         pub fn connection_no_transaction() -> TestConnection {
-            dotenv().ok();
-            let database_url = env::var("MYSQL_UNIT_TEST_DATABASE_URL")
-                .or_else(|_| env::var("DATABASE_URL"))
+            MysqlConnection::establish(&database_url()).unwrap()
+        }
+
+        fn database_url() -> String {
+            dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
+                .or_else(|_| dotenv::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
-            MysqlConnection::establish(&database_url).unwrap()
         }
     } else {
         compile_error!(

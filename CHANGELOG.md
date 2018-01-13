@@ -8,6 +8,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* `r2d2-diesel` has been merged into Diesel proper. You should no longer rely
+  directly on `r2d2-diesel` or `r2d2`. The functionality of both is exposed from
+  `diesel::r2d2`.
+
+* `r2d2::PooledConnection` now implements `Connection`. This means that you
+  should no longer need to write `&*connection` when using `r2d2`.
+
 * The `BINARY` column type name is now supported for SQLite.
 
 * The `QueryId` trait can now be derived.
