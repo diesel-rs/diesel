@@ -42,10 +42,10 @@ cfg_if! {
             MysqlConnection::establish(&database_url()).unwrap()
         }
 
-        fn database_url() -> String {
+        pub fn database_url() -> String {
             dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
                 .or_else(|_| dotenv::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests");
+                .expect("DATABASE_URL must be set in order to run tests")
         }
     } else {
         compile_error!(
