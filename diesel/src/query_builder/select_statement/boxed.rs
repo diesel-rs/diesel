@@ -204,7 +204,7 @@ where
 
 impl<'a, ST, QS, DB, Predicate> OrFilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    DB: Backend + HasSqlType<ST> + 'a,
+    DB: Backend + 'a,
     Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
     Predicate: QueryFragment<DB> + 'a,
 {
