@@ -91,7 +91,7 @@ after_success:
 branches:
   only:
     - master
-    - 0.99.x
+    - 1.1.x
     - ಠ_ಠ
 notifications:
   webhooks:
