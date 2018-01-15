@@ -47,6 +47,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `.or_filter`, which behaves identically to `.filter`, but using `OR`
   instead of `AND`.
 
+* `helper_types` now contains a type for every method defined in
+  `expression_methods`, and every function in `dsl`.
+
 ### Deprecated
 
 * *IMPORTANT NOTE* Do to [several][rust-deprecation-bug-1]
@@ -74,6 +77,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `types::ToSqlOutput` has been deprecated. It has been renamed to
   `serialize::Output`.
+
+* `helper_types::Not` is now `helper_types::not`
 
 ### Fixed
 

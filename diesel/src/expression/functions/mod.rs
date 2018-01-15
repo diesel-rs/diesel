@@ -1,8 +1,13 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! sql_function_body {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
-    $docs: expr) => {
+    (
+        $fn_name:ident,
+        $struct_name:ident,
+        ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
+        $docs:expr,
+        $helper_ty_docs:expr
+    ) => {
         #[allow(non_camel_case_types)]
         #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
@@ -11,6 +16,7 @@ macro_rules! sql_function_body {
         }
 
         #[allow(non_camel_case_types)]
+        #[doc=$helper_ty_docs]
         pub type $fn_name<$($arg_name),*> = $struct_name<$(
             <$arg_name as $crate::expression::AsExpression<$arg_type>>::Expression
         ),*>;
@@ -100,17 +106,26 @@ macro_rules! sql_function_body {
 /// # }
 /// ```
 macro_rules! sql_function {
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty) => {
-        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, "");
+    ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty) => {
+        sql_function!($fn_name, $struct_name, $args -> $return_type, "");
     };
 
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
-    $docs: expr) => {
-        sql_function_body!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> $return_type, $docs);
+    ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty, $docs:expr) => {
+        sql_function!($fn_name, $struct_name, $args -> $return_type, $docs, "");
     };
 
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
         sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
+    };
+
+    (
+        $fn_name:ident,
+        $struct_name:ident,
+        $args:tt -> $return_type:ty,
+        $docs:expr,
+        $helper_ty_docs:expr
+    ) => {
+        sql_function_body!($fn_name, $struct_name, $args -> $return_type, $docs, $helper_ty_docs);
     };
 }
 
@@ -200,3 +215,4 @@ macro_rules! no_arg_sql_function {
 pub mod aggregate_ordering;
 pub mod aggregate_folding;
 pub mod date_and_time;
+pub mod helper_types;

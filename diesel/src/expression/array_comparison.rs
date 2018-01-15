@@ -1,5 +1,4 @@
 use backend::Backend;
-use dsl::SqlTypeOf;
 use expression::*;
 use query_builder::*;
 use result::QueryResult;
@@ -16,11 +15,6 @@ pub struct NotIn<T, U> {
     left: T,
     values: U,
 }
-
-/// The return type of `lhs.eq_any(rhs)`
-pub type EqAny<Lhs, Rhs> = In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>;
-/// The return type of `lhs.ne_any(rhs)`
-pub type NeAny<Lhs, Rhs> = NotIn<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>;
 
 impl<T, U> In<T, U> {
     pub fn new(left: T, values: U) -> Self {
