@@ -103,3 +103,14 @@ Already installed by default.
 ### MySQL
 
 `brew install mysql`
+
+## Windows
+
+### PostgreSQL
+
+The simplest way to install PostgreSQL on Windows, it's to use the graphical installer of EnterpriseDB: https://www.postgresql.org/download/windows/ but you can also install it just with binaries : https://www.enterprisedb.com/download-postgresql-binaries 
+
+And finally, you can run `pg_env.bat` in `PostgreSQL\10` where PostgreSQL is install in your system, which does all the setup needed for you. If you use the graphical installer of EnterpriseDB, it should be in `C:\Program Files\`.
+
+Or you can add the `bin/` diretory of PostgreSQL to your PATH environment variable.
+
