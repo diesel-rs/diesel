@@ -1,6 +1,6 @@
 [package]
 name = "diesel_migrations"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Migratation managment for diesel"
@@ -10,11 +10,11 @@ homepage = "http://diesel.rs"
 
 [dependencies]
 clippy = { optional = true, version = "=0.0.174" }
-migrations_internals = { version = "1.0.0" }
-migrations_macros = { version = "1.0.0" }
+migrations_internals = { version = "1.1.0" }
+migrations_macros = { version = "1.1.0" }
 
 [dev-dependencies]
-diesel = { version = "1.0.0", features = ["sqlite", "postgres", "mysql"] }
+diesel = { version = "1.1.0", features = ["sqlite", "postgres", "mysql"] }
 dotenv = ">=0.8, <0.11"
 cfg-if = "0.1.0"
 

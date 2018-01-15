@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Custom derive and procedural macros for Diesel"
@@ -18,7 +18,7 @@ clippy = { optional = true, version = "=0.0.174" }
 [dev-dependencies]
 dotenv = { version = ">=0.8, <0.11", default-features = false }
 tempdir = "0.3.4"
-diesel = { version = "1.0.0" }
+diesel = { version = "1.1.0" }
 cfg-if = "0.1.0"
 
 [lib]
@@ -36,4 +36,4 @@ name = "tests"
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "sgrif/diesel" }
+appveyor = { repository = "diesel-rs/diesel" }

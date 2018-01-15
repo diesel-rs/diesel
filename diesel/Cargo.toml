@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query builder"
@@ -13,7 +13,7 @@ categories = ["database"]
 
 [dependencies]
 byteorder = "1.0"
-diesel_derives = { version = "1.0.0" }
+diesel_derives = { version = "1.1.0" }
 chrono = { version = "0.4", optional = true }
 clippy = { optional = true, version = "=0.0.174" }
 libc = { version = "0.2.0", optional = true }
@@ -56,7 +56,7 @@ numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "sgrif/diesel" }
+appveyor = { repository = "diesel-rs/diesel" }
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]
