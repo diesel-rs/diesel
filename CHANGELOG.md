@@ -4,6 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.1.1] - 2018-01-15
+
+### Added
+
+* Added `diesel::r2d2::PoolError` as an alias for `r2d2::Error`. Previously this
+  type was inaccessible due to `diesel::r2d2::Error`.
+
 ## [1.1.0] - 2018-01-15
 
 ### Added
