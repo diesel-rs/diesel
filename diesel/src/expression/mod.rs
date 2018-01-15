@@ -107,7 +107,7 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///   [`IntoSql`]: trait.IntoSql.html
 ///   [`now`]: ../dsl/struct.now.html
 ///   [`Timestamp`]: ../sql_types/struct.Timestamp.html
-///   [`Timestamptz`]: ../../pg/types/sql_types/struct.Timestamptz.html
+///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: ../serialize/trait.ToSql.html
 ///
 /// ## Deriving

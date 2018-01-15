@@ -163,8 +163,8 @@ where
     /// See the documentation for [`on_constraint`] and [`do_update`] for
     /// more examples.
     ///
-    /// [`on_constraint`]: ../../pg/upsert/fn.on_constraint.html
-    /// [`do_update`]: ../../pg/upsert/struct.IncompleteOnConflict.html#method.do_update
+    /// [`on_constraint`]: ../pg/upsert/fn.on_constraint.html
+    /// [`do_update`]: ../pg/upsert/struct.IncompleteOnConflict.html#method.do_update
     pub fn on_conflict<Target>(
         self,
         target: Target,
