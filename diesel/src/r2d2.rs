@@ -3,6 +3,8 @@
 extern crate r2d2;
 
 pub use self::r2d2::*;
+/// A re-export of r2d2::Error, which is only used by methods on r2d2::Pool.
+pub type PoolError = self::r2d2::Error;
 
 use std::convert::Into;
 use std::fmt;
