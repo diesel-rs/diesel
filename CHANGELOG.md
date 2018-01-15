@@ -58,7 +58,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Deprecated
 
-* *IMPORTANT NOTE* Do to [several][rust-deprecation-bug-1]
+* *IMPORTANT NOTE* Due to [several][rust-deprecation-bug-1]
   [bugs][rust-deprecation-bug-2] in Rust, many of the deprecations in this
   release may not show a warning. If you want to ensure you are not using any
   deprecated items, we recommend attempting to compile your code without the
