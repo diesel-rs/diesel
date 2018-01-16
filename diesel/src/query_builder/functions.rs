@@ -199,14 +199,14 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let new_users = vec![
 ///     (id.eq(2), name.eq("Tess")),
-///     (id.eq(2), name.eq("Jim")),
+///     (id.eq(3), name.eq("Jim")),
 /// ];
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
 ///     .execute(&connection);
 ///
-/// // assert_eq!(Ok(2), rows_inserted);
+/// assert_eq!(Ok(2), rows_inserted);
 /// # }
 /// ```
 ///
