@@ -10,6 +10,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `ne_any` has been renamed to `ne_all`.
 
+## [1.1.1] - 2018-01-16
+
+### Added
+
+* Added `diesel::r2d2::PoolError` as an alias for `r2d2::Error`. Previously this
+  type was inaccessible due to `diesel::r2d2::Error`.
+
 ## [1.1.0] - 2018-01-15
 
 ### Added
@@ -1284,3 +1291,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [0.99.1]: https://github.com/diesel-rs/diesel/compare/v0.99.0...v0.99.1
 [1.0.0]: https://github.com/diesel-rs/diesel/compare/v0.99.1...v1.0.0
 [1.1.0]: https://github.com/diesel-rs/diesel/compare/v1.0.0...v1.1.0
+[1.1.1]: https://github.com/diesel-rs/diesel/compare/v1.1.0...v1.1.1
