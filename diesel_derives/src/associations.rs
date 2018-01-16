@@ -49,7 +49,7 @@ fn expand_belongs_to(model: &Model, options: AssociationOptions) -> quote::Token
     let foreign_key_ty = if let Some(foreign_key_attr) = foreign_key_attr {
         &foreign_key_attr.ty
     } else {
-        let msg = format!("The foreign key column {} is not found", foreign_key_name);
+        let msg = format!("No field found that corresponds to the column {}", foreign_key_name);
         return quote!{
             compile_error!(#msg);
         };

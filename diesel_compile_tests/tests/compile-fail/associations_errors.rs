@@ -7,7 +7,7 @@ struct Post1 {
 }
 
 #[derive(Associations)]
-//~^ ERROR The foreign key column post_id is not found
+//~^ ERROR No field found that corresponds to the column post_id
 #[belongs_to(Post)]
 struct Post2 {
     a: i32,
