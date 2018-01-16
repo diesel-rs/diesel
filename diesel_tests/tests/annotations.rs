@@ -116,7 +116,7 @@ mod associations_can_have_nullable_foreign_keys {
         }
     }
     // This test has no assertions, as it is for compilation purposes only.
-    #[derive(Identifiable, Associations)]
+    #[derive(Identifiable)]
     pub struct Foo {
         id: i32,
     }

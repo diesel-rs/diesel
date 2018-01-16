@@ -17,7 +17,7 @@ mod test_infer_schema_works_on_empty_database {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
-         Associations, QueryableByName)]
+         QueryableByName)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -123,7 +123,7 @@ pub struct NewComment<'a>(
     #[column_name(text)] pub &'a str,
 );
 
-#[derive(PartialEq, Eq, Debug, Clone, Insertable, Associations)]
+#[derive(PartialEq, Eq, Debug, Clone, Insertable)]
 #[table_name = "fk_tests"]
 pub struct FkTest {
     id: i32,
