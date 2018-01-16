@@ -3,7 +3,11 @@
 extern crate r2d2;
 
 pub use self::r2d2::*;
-/// A re-export of r2d2::Error, which is only used by methods on r2d2::Pool.
+
+/// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
+///
+/// [`r2d2::Error`]: ../../r2d2/struct.Error.html
+/// [`r2d2::Pool`]: ../../r2d2/struct.Pool.html
 pub type PoolError = self::r2d2::Error;
 
 use std::convert::Into;
