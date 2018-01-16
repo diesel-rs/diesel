@@ -1108,8 +1108,6 @@ mod ops;
 #[macro_use]
 mod as_changeset;
 #[macro_use]
-mod associations;
-#[macro_use]
 mod identifiable;
 #[macro_use]
 mod insertable;
