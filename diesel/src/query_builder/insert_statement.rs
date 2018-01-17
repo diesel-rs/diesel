@@ -386,7 +386,21 @@ where
         Ok(())
     }
 
+    #[cfg(not(feature = "mysql"))]
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "mysql")]
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        // The syntax for this on MySQL is
+        // INSERT INTO table () VALUES ()
+        //
+        // This is hacky, but it's the easiest way to get this done without a
+        // deeper restructuring of this code (which is in progress, but ugly at some mid-points...)
+        if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
+            out.push_sql("()");
+        }
         Ok(())
     }
 
