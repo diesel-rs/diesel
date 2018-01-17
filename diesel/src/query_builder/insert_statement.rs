@@ -166,17 +166,9 @@ where
             out.push_sql(" DEFAULT VALUES");
         } else {
             out.push_sql(" (");
-            if let Some(builder) = out.reborrow().query_builder() {
-                self.records.column_names(builder)?;
-            }
+            self.records.column_names(out.reborrow())?;
             out.push_sql(") VALUES ");
-            if self.records.requires_parenthesis() {
-                out.push_sql("(");
-            }
             self.records.walk_ast(out.reborrow())?;
-            if self.records.requires_parenthesis() {
-                out.push_sql(")");
-            }
         }
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
@@ -390,11 +382,25 @@ where
     Tab: Table,
     DB: Backend + Any,
 {
-    fn column_names(&self, _: &mut DB::QueryBuilder) -> QueryResult<()> {
+    fn column_names(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 
+    #[cfg(not(feature = "mysql"))]
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
+    }
+
+    #[cfg(feature = "mysql")]
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        // The syntax for this on MySQL is
+        // INSERT INTO table () VALUES ()
+        //
+        // This is hacky, but it's the easiest way to get this done without a
+        // deeper restructuring of this code (which is in progress, but ugly at some mid-points...)
+        if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
+            out.push_sql("()");
+        }
         Ok(())
     }
 

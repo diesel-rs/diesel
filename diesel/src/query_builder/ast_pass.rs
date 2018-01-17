@@ -209,17 +209,6 @@ where
         Ok(())
     }
 
-    /// FIXME: This method is a temporary shim, and should be removed when
-    /// we are able to merge `InsertValues` into `QueryFragment`
-    #[doc(hidden)]
-    pub fn query_builder(self) -> Option<&'a mut DB::QueryBuilder> {
-        if let AstPassInternals::ToSql(out) = self.internals {
-            Some(out)
-        } else {
-            None
-        }
-    }
-
     #[doc(hidden)]
     pub fn push_bind_param_value_only<T, U>(&mut self, bind: &U) -> QueryResult<()>
     where

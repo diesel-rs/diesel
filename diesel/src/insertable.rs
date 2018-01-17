@@ -1,7 +1,7 @@
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::{AppearsOnTable, Expression};
+use expression::{AppearsOnTable, Expression, Grouped};
 use result::QueryResult;
-use query_builder::{AstPass, QueryBuilder, QueryFragment, UndecoratedInsertRecord};
+use query_builder::{AstPass, QueryFragment, UndecoratedInsertRecord};
 use query_source::{Column, Table};
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;
@@ -55,8 +55,18 @@ where
     }
 }
 
+impl<T, DB> CanInsertInSingleQuery<DB> for Grouped<T>
+where
+    DB: Backend,
+    T: CanInsertInSingleQuery<DB>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.0.rows_to_insert()
+    }
+}
+
 pub trait InsertValues<T: Table, DB: Backend> {
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()>;
+    fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()>;
 
     /// Whether or not `column_names` and `walk_ast` will perform any action
@@ -69,13 +79,6 @@ pub trait InsertValues<T: Table, DB: Backend> {
     /// single row. Types which represent multiple rows will always return
     /// `false` for this, even if they will insert 0 rows.
     fn is_noop(&self) -> bool;
-
-    // FIXME: Once #1166 is done we should just wrap the value in a `Grouped`
-    // when it is passed to `insert`
-    #[doc(hidden)]
-    fn requires_parenthesis(&self) -> bool {
-        true
-    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -97,7 +100,7 @@ where
     Col: Column,
     Expr: Expression<SqlType = Col::SqlType> + QueryFragment<DB> + AppearsOnTable<()>,
 {
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
+    fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
@@ -122,7 +125,7 @@ where
     Col: Column,
     Expr: Expression<SqlType = Col::SqlType> + QueryFragment<Sqlite> + AppearsOnTable<()>,
 {
-    fn column_names(&self, out: &mut <Sqlite as Backend>::QueryBuilder) -> QueryResult<()> {
+    fn column_names(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(..) = *self {
             out.push_identifier(Col::NAME)?;
         }
@@ -197,7 +200,7 @@ where
     &'a T: Insertable<Tab>,
     <&'a T as Insertable<Tab>>::Values: InsertValues<Tab, DB>,
 {
-    fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
+    fn column_names(&self, out: AstPass<DB>) -> QueryResult<()> {
         self.get(0)
             .expect("Tried to read column names from empty list of rows")
             .values()
@@ -207,7 +210,7 @@ where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         for (i, record) in self.iter().enumerate() {
             if i != 0 {
-                out.push_sql("), (");
+                out.push_sql(", ");
             }
             record.values().walk_ast(out.reborrow())?;
         }
