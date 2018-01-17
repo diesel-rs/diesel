@@ -162,7 +162,7 @@ where
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
-        if self.records.is_noop() {
+        if self.records.is_noop()? {
             out.push_sql(" DEFAULT VALUES");
         } else {
             out.push_sql(" (");
@@ -197,6 +197,21 @@ where
             }
             Ok(result)
         })
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
+where
+    InsertStatement<T, &'a [U], Op>: ExecuteDsl<SqliteConnection>,
+{
+    fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
+        InsertStatement::new(
+            query.target,
+            query.records.records,
+            query.operator,
+            query.returning,
+        ).execute(conn)
     }
 }
 
@@ -341,6 +356,12 @@ where
 {
 }
 
+impl<'a, T, Table> UndecoratedInsertRecord<Table> for BatchInsert<'a, T, Table>
+where
+    T: UndecoratedInsertRecord<Table>,
+{
+}
+
 impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T>
 where
     [T]: UndecoratedInsertRecord<Table>,
@@ -380,24 +401,27 @@ impl<'a, Tab> Insertable<Tab> for &'a DefaultValues {
 impl<Tab, DB> InsertValues<Tab, DB> for DefaultValues
 where
     Tab: Table,
-    DB: Backend + Any,
+    DB: Backend,
+    Self: QueryFragment<DB>,
 {
     fn column_names(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
+}
 
-    #[cfg(not(feature = "mysql"))]
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
-        Ok(())
-    }
-
+impl<DB> QueryFragment<DB> for DefaultValues
+where
+    DB: Backend + Any,
+{
     #[cfg(feature = "mysql")]
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         // The syntax for this on MySQL is
         // INSERT INTO table () VALUES ()
         //
         // This is hacky, but it's the easiest way to get this done without a
-        // deeper restructuring of this code (which is in progress, but ugly at some mid-points...)
+        // deeper restructuring of this code.
+        // This can become less hacky once we have a `ValuesClause` struct,
+        // but without specialization we'll always need this ugly typeid check
         if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
             out.push_sql("()");
         }
@@ -405,17 +429,7 @@ where
     }
 
     #[cfg(not(feature = "mysql"))]
-    fn is_noop(&self) -> bool {
-        true
-    }
-
-    #[cfg(feature = "mysql")]
-    fn is_noop(&self) -> bool {
-        // The syntax for this on MySQL is
-        // INSERT INTO table () VALUES ()
-        //
-        // This is hacky, but it's the easiest way to get this done without a
-        // deeper restructuring of this code.
-        TypeId::of::<DB>() != TypeId::of::<::mysql::Mysql>()
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
     }
 }

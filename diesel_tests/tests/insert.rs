@@ -487,6 +487,40 @@ fn insert_optional_field_with_default() {
 }
 
 #[test]
+#[cfg(not(feature = "mysql"))]
+fn insert_all_default_fields() {
+    use schema::users::dsl::*;
+    use schema_dsl::*;
+    let connection = connection();
+    drop_table_cascade(&connection, "users");
+    create_table(
+        "users",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null().default("'Tess'"),
+            string("hair_color").not_null().default("'Green'"),
+        ),
+    ).execute(&connection)
+        .unwrap();
+
+    let new_users = vec![
+        (Some(name.eq("Sean")), Some(hair_color.eq("Brown"))),
+        (None, None),
+    ];
+    insert_into(users)
+        .values(&new_users)
+        .execute(&connection)
+        .unwrap();
+
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Brown".to_string())),
+        ("Tess".to_string(), Some("Green".to_string())),
+    ];
+    let actual_data = users.select((name, hair_color)).load(&connection);
+    assert_eq!(Ok(expected_data), actual_data);
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn batch_insert_is_atomic_on_sqlite() {
     use schema::users::dsl::*;

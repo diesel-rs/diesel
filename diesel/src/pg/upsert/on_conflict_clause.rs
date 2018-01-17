@@ -43,22 +43,24 @@ impl<Tab, Values, Target, Action> InsertValues<Tab, Pg> for OnConflictValues<Val
 where
     Tab: Table,
     Values: InsertValues<Tab, Pg>,
-    Target: QueryFragment<Pg>,
-    Action: QueryFragment<Pg>,
+    Self: QueryFragment<Pg>,
 {
     fn column_names(&self, out: AstPass<Pg>) -> QueryResult<()> {
         self.values.column_names(out)
     }
+}
 
+impl<Values, Target, Action> QueryFragment<Pg> for OnConflictValues<Values, Target, Action>
+where
+    Values: QueryFragment<Pg>,
+    Target: QueryFragment<Pg>,
+    Action: QueryFragment<Pg>,
+{
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         out.push_sql(" ON CONFLICT");
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
         Ok(())
-    }
-
-    fn is_noop(&self) -> bool {
-        self.values.is_noop()
     }
 }

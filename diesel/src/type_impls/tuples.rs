@@ -147,7 +147,7 @@ macro_rules! tuple_impls {
                 fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
-                        let noop_element = self.$idx.is_noop();
+                        let noop_element = self.$idx.is_noop()?;
                         if !noop_element {
                             if needs_comma {
                                 out.push_sql(", ");
@@ -157,25 +157,6 @@ macro_rules! tuple_impls {
                         }
                     )+
                     Ok(())
-                }
-
-                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                    let mut needs_comma = false;
-                    $(
-                        let noop_element = self.$idx.is_noop();
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            self.$idx.walk_ast(out.reborrow())?;
-                            needs_comma = true;
-                        }
-                    )+
-                    Ok(())
-                }
-
-                fn is_noop(&self) -> bool {
-                    $(self.$idx.is_noop() &&)+ true
                 }
             }
 

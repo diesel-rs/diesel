@@ -14,9 +14,14 @@ impl<T: Expression> Expression for Grouped<T> {
 
 impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("(");
+        let is_noop = self.0.is_noop()?;
+        if !is_noop {
+            out.push_sql("(");
+        }
         self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
+        if !is_noop {
+            out.push_sql(")");
+        }
         Ok(())
     }
 }
@@ -37,17 +42,6 @@ where
 {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()> {
         self.0.column_names(out)
-    }
-
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("(");
-        self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-
-    fn is_noop(&self) -> bool {
-        self.0.is_noop()
     }
 }
 

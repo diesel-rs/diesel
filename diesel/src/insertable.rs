@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression, Grouped};
 use result::QueryResult;
@@ -37,12 +39,12 @@ where
     }
 }
 
-impl<T, DB> CanInsertInSingleQuery<DB> for [T]
+impl<'a, T, Tab, DB> CanInsertInSingleQuery<DB> for BatchInsert<'a, T, Tab>
 where
     DB: Backend + SupportsDefaultKeyword,
 {
     fn rows_to_insert(&self) -> usize {
-        self.len()
+        self.records.len()
     }
 }
 
@@ -65,20 +67,8 @@ where
     }
 }
 
-pub trait InsertValues<T: Table, DB: Backend> {
+pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()>;
-
-    /// Whether or not `column_names` and `walk_ast` will perform any action
-    ///
-    /// This method will return `true` for values which semantically represent
-    /// `DEFAULT` on backends which don't support it, or `DEFAULT VALUES` on
-    /// any backend.
-    ///
-    /// Note: This method only has semantic meaning for types which represent a
-    /// single row. Types which represent multiple rows will always return
-    /// `false` for this, even if they will insert 0 rows.
-    fn is_noop(&self) -> bool;
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -98,13 +88,20 @@ impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr
 where
     DB: Backend + SupportsDefaultKeyword,
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<DB> + AppearsOnTable<()>,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Self: QueryFragment<DB>,
 {
     fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
+}
 
+impl<Col, Expr, DB> QueryFragment<DB> for ColumnInsertValue<Col, Expr>
+where
+    DB: Backend + SupportsDefaultKeyword,
+    Expr: QueryFragment<DB>,
+{
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(_, ref value) = *self {
             value.walk_ast(out.reborrow())?;
@@ -113,17 +110,14 @@ where
         }
         Ok(())
     }
-
-    fn is_noop(&self) -> bool {
-        false
-    }
 }
 
 #[cfg(feature = "sqlite")]
 impl<Col, Expr> InsertValues<Col::Table, Sqlite> for ColumnInsertValue<Col, Expr>
 where
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + QueryFragment<Sqlite> + AppearsOnTable<()>,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Self: QueryFragment<Sqlite>,
 {
     fn column_names(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(..) = *self {
@@ -131,20 +125,18 @@ where
         }
         Ok(())
     }
+}
 
+#[cfg(feature = "sqlite")]
+impl<Col, Expr> QueryFragment<Sqlite> for ColumnInsertValue<Col, Expr>
+where
+    Expr: QueryFragment<Sqlite>,
+{
     fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(_, ref value) = *self {
             value.walk_ast(out.reborrow())?;
         }
         Ok(())
-    }
-
-    fn is_noop(&self) -> bool {
-        if let ColumnInsertValue::Expression(..) = *self {
-            false
-        } else {
-            true
-        }
     }
 }
 
@@ -152,10 +144,13 @@ impl<'a, T, Tab> Insertable<Tab> for &'a [T]
 where
     &'a T: UndecoratedInsertRecord<Tab>,
 {
-    type Values = Self;
+    type Values = BatchInsert<'a, T, Tab>;
 
     fn values(self) -> Self::Values {
-        self
+        BatchInsert {
+            records: self,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -193,7 +188,13 @@ where
     }
 }
 
-impl<'a, T, Tab, DB> InsertValues<Tab, DB> for &'a [T]
+#[derive(Debug, Clone, Copy)]
+pub struct BatchInsert<'a, T: 'a, Tab> {
+    pub(crate) records: &'a [T],
+    _marker: PhantomData<Tab>,
+}
+
+impl<'a, T, Tab, DB> InsertValues<Tab, DB> for BatchInsert<'a, T, Tab>
 where
     Tab: Table,
     DB: Backend + SupportsDefaultKeyword,
@@ -201,23 +202,27 @@ where
     <&'a T as Insertable<Tab>>::Values: InsertValues<Tab, DB>,
 {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()> {
-        self.get(0)
+        self.records
+            .get(0)
             .expect("Tried to read column names from empty list of rows")
             .values()
             .column_names(out)
     }
+}
 
+impl<'a, T, Tab, DB> QueryFragment<DB> for BatchInsert<'a, T, Tab>
+where
+    DB: Backend + SupportsDefaultKeyword,
+    &'a T: Insertable<Tab>,
+    <&'a T as Insertable<Tab>>::Values: QueryFragment<DB>,
+{
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        for (i, record) in self.iter().enumerate() {
+        for (i, record) in self.records.iter().enumerate() {
             if i != 0 {
                 out.push_sql(", ");
             }
             record.values().walk_ast(out.reborrow())?;
         }
         Ok(())
-    }
-
-    fn is_noop(&self) -> bool {
-        false
     }
 }
