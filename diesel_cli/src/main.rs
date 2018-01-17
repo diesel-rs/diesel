@@ -17,6 +17,8 @@ extern crate diesel;
 extern crate dotenv;
 extern crate infer_schema_internals;
 extern crate migrations_internals;
+#[cfg(feature = "url")]
+extern crate url;
 
 mod database_error;
 #[macro_use]
