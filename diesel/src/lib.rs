@@ -134,7 +134,6 @@ pub mod test_helpers;
 
 pub mod associations;
 pub mod backend;
-#[doc(hidden)]
 pub mod connection;
 pub mod data_types;
 pub mod deserialize;

@@ -1,4 +1,4 @@
-///! Types related to database connections
+//! Types related to database connections
 
 mod statement_cache;
 mod transaction_manager;

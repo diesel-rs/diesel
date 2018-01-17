@@ -1,3 +1,4 @@
+#![doc(hidden)]
 //! A primer on prepared statement caching in Diesel
 //! ------------------------------------------------
 //!
