@@ -1,6 +1,8 @@
 use backend::Backend;
-use query_builder::AstPass;
-use query_source::QuerySource;
+use expression::AppearsOnTable;
+use expression::operators::Eq;
+use query_builder::*;
+use query_source::{Column, QuerySource};
 use result::QueryResult;
 
 /// Types which can be passed to
@@ -29,17 +31,6 @@ pub trait AsChangeset {
     fn as_changeset(self) -> Self::Changeset;
 }
 
-#[doc(hidden)]
-pub trait Changeset<DB: Backend> {
-    /// Does this changeset actually include any changes?
-    fn is_noop(&self) -> bool;
-
-    /// See [`QueryFragment#walk_ast`]
-    ///
-    /// [`QueryFragment#walk_ast`]: trait.QueryFragment.html#tymethod.walk_ast
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
-}
-
 impl<T: AsChangeset> AsChangeset for Option<T> {
     type Target = T::Target;
     type Changeset = Option<T::Changeset>;
@@ -49,15 +40,37 @@ impl<T: AsChangeset> AsChangeset for Option<T> {
     }
 }
 
-impl<T: Changeset<DB>, DB: Backend> Changeset<DB> for Option<T> {
-    fn is_noop(&self) -> bool {
-        self.is_none()
-    }
+impl<Left, Right> AsChangeset for Eq<Left, Right>
+where
+    Left: Column,
+    Right: AppearsOnTable<Left::Table>,
+{
+    type Target = Left::Table;
+    type Changeset = Assign<Left, Right>;
 
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
-        match *self {
-            Some(ref c) => c.walk_ast(out),
-            None => Ok(()),
+    fn as_changeset(self) -> Self::Changeset {
+        Assign {
+            _column: self.left,
+            expr: self.right,
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Assign<Col, Expr> {
+    _column: Col,
+    expr: Expr,
+}
+
+impl<T, U, DB> QueryFragment<DB> for Assign<T, U>
+where
+    DB: Backend,
+    T: Column,
+    U: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        try!(out.push_identifier(T::NAME));
+        out.push_sql(" = ");
+        QueryFragment::walk_ast(&self.expr, out)
     }
 }

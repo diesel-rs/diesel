@@ -1,7 +1,7 @@
 pub mod changeset;
 pub mod target;
 
-pub use self::changeset::{AsChangeset, Changeset};
+pub use self::changeset::AsChangeset;
 pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
@@ -172,11 +172,11 @@ where
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: QueryFragment<DB>,
-    V: changeset::Changeset<DB>,
+    V: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        if self.values.is_noop() {
+        if self.values.is_noop()? {
             return Err(QueryBuilderError(
                 "There are no changes to save. This query cannot be built".into(),
             ));

@@ -34,11 +34,11 @@ impl<T> DoUpdate<T> {
 
 impl<T> QueryFragment<Pg> for DoUpdate<T>
 where
-    T: Changeset<Pg>,
+    T: QueryFragment<Pg>,
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        if self.changeset.is_noop() {
+        if self.changeset.is_noop()? {
             out.push_sql(" DO NOTHING");
         } else {
             out.push_sql(" DO UPDATE SET ");

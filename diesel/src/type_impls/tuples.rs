@@ -73,12 +73,17 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
+                #[allow(unused_assignments)]
                 fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                    let mut needs_comma = false;
                     $(
-                        if $idx != 0 {
-                            out.push_sql(", ");
+                        if !self.$idx.is_noop()? {
+                            if needs_comma {
+                                out.push_sql(", ");
+                            }
+                            self.$idx.walk_ast(out.reborrow())?;
+                            needs_comma = true;
                         }
-                        self.$idx.walk_ast(out.reborrow())?;
                     )+
                     Ok(())
                 }
@@ -195,31 +200,6 @@ macro_rules! tuple_impls {
 
                 fn as_changeset(self) -> Self::Changeset {
                     ($(self.$idx.as_changeset(),)+)
-                }
-            }
-
-            impl<DB, $($T,)+> Changeset<DB> for ($($T,)+) where
-                DB: Backend,
-                $($T: Changeset<DB>,)+
-            {
-                fn is_noop(&self) -> bool {
-                    $(self.$idx.is_noop() &&)+ true
-                }
-
-                #[allow(unused_assignments)]
-                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                    let mut needs_comma = false;
-                    $(
-                        let noop_element = self.$idx.is_noop();
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            self.$idx.walk_ast(out.reborrow())?;
-                            needs_comma = true;
-                        }
-                    )+
-                    Ok(())
                 }
             }
 

@@ -43,8 +43,8 @@ pub use self::query_id::QueryId;
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::SqlQuery;
 #[doc(inline)]
-pub use self::update_statement::{AsChangeset, Changeset, IncompleteUpdateStatement,
-                                 IntoUpdateTarget, UpdateStatement, UpdateTarget};
+pub use self::update_statement::{AsChangeset, IncompleteUpdateStatement, IntoUpdateTarget,
+                                 UpdateStatement, UpdateTarget};
 
 use std::error::Error;
 
@@ -164,6 +164,14 @@ pub trait QueryFragment<DB: Backend> {
         self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
         Ok(result)
     }
+
+    #[doc(hidden)]
+    /// Does walking this AST have any effect?
+    fn is_noop(&self) -> QueryResult<bool> {
+        let mut result = true;
+        self.walk_ast(AstPass::is_noop(&mut result))?;
+        Ok(result)
+    }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T>
@@ -189,6 +197,19 @@ where
 impl<DB: Backend> QueryFragment<DB> for () {
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
+    }
+}
+
+impl<T, DB> QueryFragment<DB> for Option<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
+        match *self {
+            Some(ref c) => c.walk_ast(out),
+            None => Ok(()),
+        }
     }
 }
 
