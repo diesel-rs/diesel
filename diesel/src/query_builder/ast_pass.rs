@@ -70,6 +70,16 @@ where
         }
     }
 
+    /// Does running this AST pass have any effect?
+    ///
+    /// The result will be set to `false` if any method that generates SQL
+    /// is called.
+    pub(crate) fn is_noop(result: &'a mut bool) -> Self {
+        AstPass {
+            internals: AstPassInternals::IsNoop(result),
+        }
+    }
+
     /// Call this method whenever you pass an instance of `AstPass` by value.
     ///
     /// Effectively copies `self`, with a narrower lifetime. When passing a
@@ -96,6 +106,7 @@ where
                 let f_with_shorter_lifetime = unsafe { mem::transmute(&mut **f) };
                 DebugBinds(f_with_shorter_lifetime)
             }
+            IsNoop(ref mut result) => IsNoop(&mut **result),
         };
         AstPass { internals }
     }
@@ -152,8 +163,10 @@ where
     /// # fn main() {}
     /// ```
     pub fn push_sql(&mut self, sql: &str) {
-        if let AstPassInternals::ToSql(ref mut builder) = self.internals {
-            builder.push_sql(sql);
+        match self.internals {
+            AstPassInternals::ToSql(ref mut builder) => builder.push_sql(sql),
+            AstPassInternals::IsNoop(ref mut result) => **result = false,
+            _ => {}
         }
     }
 
@@ -162,8 +175,10 @@ where
     /// The identifier will be quoted using the rules specific to the backend
     /// the query is being constructed for.
     pub fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
-        if let AstPassInternals::ToSql(ref mut builder) = self.internals {
-            builder.push_identifier(identifier)?;
+        match self.internals {
+            AstPassInternals::ToSql(ref mut builder) => builder.push_identifier(identifier)?,
+            AstPassInternals::IsNoop(ref mut result) => **result = false,
+            _ => {}
         }
         Ok(())
     }
@@ -188,7 +203,8 @@ where
             DebugBinds(ref mut f) => {
                 f.entry(bind);
             }
-            _ => {} // noop
+            IsNoop(ref mut result) => **result = false,
+            _ => {}
         }
         Ok(())
     }
@@ -238,4 +254,5 @@ where
     },
     IsSafeToCachePrepared(&'a mut bool),
     DebugBinds(&'a mut fmt::DebugList<'a, 'a>),
+    IsNoop(&'a mut bool),
 }

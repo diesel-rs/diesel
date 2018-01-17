@@ -64,7 +64,7 @@ macro_rules! __diesel_operator_body {
         #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
-            $($field_name: $ty_param,)+
+            $(pub(crate) $field_name: $ty_param,)+
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
@@ -356,42 +356,8 @@ diesel_postfix_operator!(Desc, " DESC", ());
 
 diesel_prefix_operator!(Not, "NOT ");
 
-use backend::Backend;
 use insertable::{ColumnInsertValue, Insertable};
 use query_source::Column;
-use query_builder::*;
-use result::QueryResult;
-use super::AppearsOnTable;
-
-impl<T, U, DB> Changeset<DB> for Eq<T, U>
-where
-    DB: Backend,
-    T: Column,
-    U: AppearsOnTable<T::Table> + QueryFragment<DB>,
-{
-    fn is_noop(&self) -> bool {
-        false
-    }
-
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        try!(out.push_identifier(T::NAME));
-        out.push_sql(" = ");
-        QueryFragment::walk_ast(&self.right, out)
-    }
-}
-
-impl<T, U> AsChangeset for Eq<T, U>
-where
-    T: Column,
-    U: AppearsOnTable<T::Table>,
-{
-    type Target = T::Table;
-    type Changeset = Self;
-
-    fn as_changeset(self) -> Self {
-        self
-    }
-}
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
