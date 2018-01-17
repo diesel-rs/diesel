@@ -1,9 +1,11 @@
 use backend::Backend;
 use expression::{Expression, NonAggregate};
+use insertable::InsertValues;
 use query_builder::*;
+use query_source::Table;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, Default)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {
@@ -24,5 +26,33 @@ impl_selectable_expression!(Grouped<T>);
 impl<T: NonAggregate> NonAggregate for Grouped<T>
 where
     Grouped<T>: Expression,
+{
+}
+
+impl<T, U, DB> InsertValues<T, DB> for Grouped<U>
+where
+    T: Table,
+    DB: Backend,
+    U: InsertValues<T, DB>,
+{
+    fn column_names(&self, out: AstPass<DB>) -> QueryResult<()> {
+        self.0.column_names(out)
+    }
+
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql("(");
+        self.0.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+
+    fn is_noop(&self) -> bool {
+        self.0.is_noop()
+    }
+}
+
+impl<T, U> UndecoratedInsertRecord<T> for Grouped<U>
+where
+    U: UndecoratedInsertRecord<T>,
 {
 }

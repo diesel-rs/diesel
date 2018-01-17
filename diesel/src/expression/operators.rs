@@ -356,6 +356,7 @@ diesel_postfix_operator!(Desc, " DESC", ());
 
 diesel_prefix_operator!(Not, "NOT ");
 
+use expression::Grouped;
 use insertable::{ColumnInsertValue, Insertable};
 use query_source::Column;
 
@@ -363,10 +364,10 @@ impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
     T: Column,
 {
-    type Values = ColumnInsertValue<T, U>;
+    type Values = Grouped<ColumnInsertValue<T, U>>;
 
     fn values(self) -> Self::Values {
-        ColumnInsertValue::Expression(self.left, self.right)
+        Grouped(ColumnInsertValue::Expression(self.left, self.right))
     }
 }
 

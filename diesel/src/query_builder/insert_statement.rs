@@ -166,17 +166,9 @@ where
             out.push_sql(" DEFAULT VALUES");
         } else {
             out.push_sql(" (");
-            if let Some(builder) = out.reborrow().query_builder() {
-                self.records.column_names(builder)?;
-            }
+            self.records.column_names(out.reborrow())?;
             out.push_sql(") VALUES ");
-            if self.records.requires_parenthesis() {
-                out.push_sql("(");
-            }
             self.records.walk_ast(out.reborrow())?;
-            if self.records.requires_parenthesis() {
-                out.push_sql(")");
-            }
         }
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
@@ -390,7 +382,7 @@ where
     Tab: Table,
     DB: Backend + Any,
 {
-    fn column_names(&self, _: &mut DB::QueryBuilder) -> QueryResult<()> {
+    fn column_names(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 

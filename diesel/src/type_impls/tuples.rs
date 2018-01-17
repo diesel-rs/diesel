@@ -3,8 +3,8 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use deserialize::{self, FromSqlRow, Queryable, QueryableByName};
-use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate,
-                 SelectableExpression};
+use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, Grouped,
+                 NonAggregate, SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;
@@ -115,14 +115,14 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T,)+ Tab> Insertable<Tab> for ($($T,)+)
+            impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+)
             where
-                $($T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,)+
+                $($T: Insertable<Tab, Values = Grouped<$ST>>,)+
             {
-                type Values = ($($T::Values,)+);
+                type Values = Grouped<($($ST,)+)>;
 
                 fn values(self) -> Self::Values {
-                    ($(self.$idx.values(),)+)
+                    Grouped(($(self.$idx.values().0,)+))
                 }
             }
 
@@ -144,7 +144,7 @@ macro_rules! tuple_impls {
                 DB: Backend,
                 $($T: InsertValues<Tab, DB>,)+
             {
-                fn column_names(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
+                fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
                         let noop_element = self.$idx.is_noop();
@@ -152,7 +152,7 @@ macro_rules! tuple_impls {
                             if needs_comma {
                                 out.push_sql(", ");
                             }
-                            self.$idx.column_names(out)?;
+                            self.$idx.column_names(out.reborrow())?;
                             needs_comma = true;
                         }
                     )+
