@@ -37,7 +37,7 @@ pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::DeleteStatement;
 #[doc(inline)]
 pub use self::insert_statement::{IncompleteInsertStatement, InsertStatement,
-                                 UndecoratedInsertRecord};
+                                 UndecoratedInsertRecord, ValuesClause};
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};

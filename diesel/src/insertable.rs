@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
 use backend::{Backend, SupportsDefaultKeyword};
-use expression::{AppearsOnTable, Expression, Grouped};
+use expression::{AppearsOnTable, Expression};
 use result::QueryResult;
-use query_builder::{AstPass, QueryFragment, UndecoratedInsertRecord};
+use query_builder::{AstPass, QueryFragment, UndecoratedInsertRecord, ValuesClause};
 use query_source::{Column, Table};
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;
@@ -54,16 +54,6 @@ where
 {
     fn rows_to_insert(&self) -> usize {
         1
-    }
-}
-
-impl<T, DB> CanInsertInSingleQuery<DB> for Grouped<T>
-where
-    DB: Backend,
-    T: CanInsertInSingleQuery<DB>,
-{
-    fn rows_to_insert(&self) -> usize {
-        self.0.rows_to_insert()
     }
 }
 
@@ -194,34 +184,22 @@ pub struct BatchInsert<'a, T: 'a, Tab> {
     _marker: PhantomData<Tab>,
 }
 
-impl<'a, T, Tab, DB> InsertValues<Tab, DB> for BatchInsert<'a, T, Tab>
-where
-    Tab: Table,
-    DB: Backend + SupportsDefaultKeyword,
-    &'a T: Insertable<Tab>,
-    <&'a T as Insertable<Tab>>::Values: InsertValues<Tab, DB>,
-{
-    fn column_names(&self, out: AstPass<DB>) -> QueryResult<()> {
-        self.records
-            .get(0)
-            .expect("Tried to read column names from empty list of rows")
-            .values()
-            .column_names(out)
-    }
-}
-
-impl<'a, T, Tab, DB> QueryFragment<DB> for BatchInsert<'a, T, Tab>
+impl<'a, T, Tab, Inner, DB> QueryFragment<DB> for BatchInsert<'a, T, Tab>
 where
     DB: Backend + SupportsDefaultKeyword,
-    &'a T: Insertable<Tab>,
-    <&'a T as Insertable<Tab>>::Values: QueryFragment<DB>,
+    &'a T: Insertable<Tab, Values = ValuesClause<Inner, Tab>>,
+    ValuesClause<Inner, Tab>: QueryFragment<DB>,
+    Inner: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        for (i, record) in self.records.iter().enumerate() {
-            if i != 0 {
-                out.push_sql(", ");
-            }
-            record.values().walk_ast(out.reborrow())?;
+        let mut records = self.records.iter().map(Insertable::values);
+        if let Some(record) = records.next() {
+            record.walk_ast(out.reborrow())?;
+        }
+        for record in records {
+            out.push_sql(", (");
+            record.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
         }
         Ok(())
     }

@@ -68,9 +68,6 @@ pub mod dsl {
 #[doc(inline)]
 pub use self::sql_literal::SqlLiteral;
 
-#[doc(hidden)]
-pub use self::grouped::Grouped;
-
 use backend::Backend;
 use dsl::AsExprOf;
 

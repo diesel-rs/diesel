@@ -26,4 +26,6 @@ fn main() {
     insert_into(users::table)
         .values(&(posts::id.eq(1), users::id.eq(2)));
         //~^ ERROR type mismatch resolving `<posts::columns::id as diesel::Column>::Table == users::table`
+        //~| ERROR E0271
+        //FIXME: Bad error on the second one
 }
