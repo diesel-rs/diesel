@@ -42,17 +42,30 @@ impl<'a> TransactionBuilder<'a> {
     /// ```rust
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_query;
     /// #
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
     /// #
+    /// # table! {
+    /// #     users_for_read_only {
+    /// #         id -> Integer,
+    /// #         name -> Text,
+    /// #     }
+    /// # }
+    /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use users_for_read_only::table as users;
+    /// #     use users_for_read_only::columns::*;
     /// #     let conn = connection_no_transaction();
+    /// #     sql_query("CREATE TABLE IF NOT EXISTS users_for_read_only (
+    /// #       id SERIAL PRIMARY KEY,
+    /// #       name TEXT NOT NULL
+    /// #     )").execute(&conn)?;
     /// conn.build_transaction()
     ///     .read_only()
-    ///     .run(|| {
+    ///     .run::<_, diesel::result::Error, _>(|| {
     ///         let read_attempt = users.select(name).load::<String>(&conn);
     ///         assert!(read_attempt.is_ok());
     ///
@@ -62,7 +75,9 @@ impl<'a> TransactionBuilder<'a> {
     ///         assert!(write_attempt.is_err());
     ///
     ///         Ok(())
-    ///     })
+    ///     })?;
+    /// #     sql_query("DROP TABLE users_for_read_only").execute(&conn)?;
+    /// #     Ok(())
     /// # }
     /// ```
     pub fn read_only(mut self) -> Self {
@@ -81,6 +96,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::result::Error::RollbackTransaction;
+    /// # use diesel::sql_query;
     /// #
     /// # fn main() {
     /// #     assert_eq!(run_test(), Err(RollbackTransaction));
@@ -92,6 +108,10 @@ impl<'a> TransactionBuilder<'a> {
     /// conn.build_transaction()
     ///     .read_write()
     ///     .run(|| {
+    /// #         sql_query("CREATE TABLE IF NOT EXISTS users (
+    /// #             id SERIAL PRIMARY KEY,
+    /// #             name TEXT NOT NULL
+    /// #         )").execute(&conn)?;
     ///         let read_attempt = users.select(name).load::<String>(&conn);
     ///         assert!(read_attempt.is_ok());
     ///
