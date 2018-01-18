@@ -14,7 +14,6 @@ If you want to report a bug, we added some points below you can fill out. If you
 ### Feature Flags
 
 - **diesel:**
-- **diesel_codegen:**
 
 ## Problem Description
 
@@ -45,7 +44,7 @@ Please post as much of your database schema as necessary. If you are using `infe
 
 
 <!--
-Thank you for your submission!  You're helping make Diesel more robust 🎉  
+Thank you for your submission!  You're helping make Diesel more robust 🎉
 
 We'll try to respond as quickly as possible.
 -->
