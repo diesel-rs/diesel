@@ -249,6 +249,47 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # }
 /// ```
 ///
+/// ### Insert from select
+///
+/// When inserting from a select statement,
+/// the column list can be specified with [`.into_columns`].
+/// (See also [`SelectStatement::insert_into`], which generally
+/// reads better for select statements)
+///
+/// [`SelectStatement::insert_into`]: prelude/trait.Insertable.html#method.insert_into
+/// [`.into_columns`]: query_builder/struct.InsertStatement.html#method.into_columns
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::{posts, users};
+/// #     let conn = establish_connection();
+/// #     diesel::delete(posts::table).execute(&conn)?;
+/// let new_posts = users::table
+///     .select((
+///         users::name.concat("'s First Post"),
+///         users::id,
+///     ));
+/// diesel::insert_into(posts::table)
+///     .values(new_posts)
+///     .into_columns((posts::title, posts::user_id))
+///     .execute(&conn)?;
+///
+/// let inserted_posts = posts::table
+///     .select(posts::title)
+///     .load::<String>(&conn)?;
+/// let expected = vec!["Sean's First Post", "Tess's First Post"];
+/// assert_eq!(expected, inserted_posts);
+/// #     Ok(())
+/// # }
+/// ```
+///
 /// ### With return value
 ///
 /// ```rust

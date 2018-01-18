@@ -707,6 +707,7 @@ macro_rules! table_body {
                 JoinTo,
             };
             use $crate::associations::HasTable;
+            use $crate::insertable::Insertable;
             use $crate::query_builder::*;
             use $crate::query_builder::nodes::Identifier;
             use $crate::query_source::{AppearsInFromClause, Once, Never};
@@ -858,6 +859,30 @@ macro_rules! table_body {
                 fn join_target(rhs: BoxedSelectStatement<'a, QS, ST, DB>) -> (Self::FromClause, Self::OnClause) {
                     let (_, on_clause) = BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
+                }
+            }
+
+            // This impl should be able to live in Diesel,
+            // but Rust tries to recurse for no reason
+            impl<T> Insertable<T> for table
+            where
+                <table as AsQuery>::Query: Insertable<T>,
+            {
+                type Values = <<table as AsQuery>::Query as Insertable<T>>::Values;
+
+                fn values(self) -> Self::Values {
+                    self.as_query().values()
+                }
+            }
+
+            impl<'a, T> Insertable<T> for &'a table
+            where
+                table: Insertable<T>,
+            {
+                type Values = <table as Insertable<T>>::Values;
+
+                fn values(self) -> Self::Values {
+                    (*self).values()
                 }
             }
 

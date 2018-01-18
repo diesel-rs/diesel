@@ -1,3 +1,9 @@
+mod column_list;
+mod insert_from_select;
+
+pub(crate) use self::column_list::ColumnList;
+pub(crate) use self::insert_from_select::InsertFromSelect;
+
 use std::any::*;
 use std::marker::PhantomData;
 
@@ -40,7 +46,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users (name) {
@@ -141,6 +147,29 @@ impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
     }
 }
 
+impl<T, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, Op, Ret> {
+    /// Set the column list when inserting from a select statement
+    ///
+    /// See the documentation for [`insert_into`] for usage examples.
+    ///
+    /// [`insert_into`]: ../fn.insert_into.html
+    pub fn into_columns<C2>(
+        self,
+        columns: C2,
+    ) -> InsertStatement<T, InsertFromSelect<U, C2>, Op, Ret>
+    where
+        C2: ColumnList<Table = T> + Expression<SqlType = U::SqlType>,
+        U: Query,
+    {
+        InsertStatement::new(
+            self.target,
+            self.records.with_columns(columns),
+            self.operator,
+            self.returning,
+        )
+    }
+}
+
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret>
 where
     DB: Backend,
@@ -153,7 +182,7 @@ where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
 
-        if self.records.rows_to_insert() == 0 {
+        if self.records.rows_to_insert() == Some(0) {
             out.push_sql("SELECT 1 FROM ");
             self.target.from_clause().walk_ast(out.reborrow())?;
             out.push_sql(" WHERE 1=0");
@@ -247,7 +276,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
@@ -387,8 +416,8 @@ where
 pub struct DefaultValues;
 
 impl<DB: Backend> CanInsertInSingleQuery<DB> for DefaultValues {
-    fn rows_to_insert(&self) -> usize {
-        1
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(1)
     }
 }
 
@@ -449,7 +478,7 @@ where
     DB: Backend,
     T: CanInsertInSingleQuery<DB>,
 {
-    fn rows_to_insert(&self) -> usize {
+    fn rows_to_insert(&self) -> Option<usize> {
         self.values.rows_to_insert()
     }
 }

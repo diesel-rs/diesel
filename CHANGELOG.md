@@ -8,6 +8,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added support for `INSERT INTO table (...) SELECT ...` queries. Tables, select
+  select statements, and boxed select statements can now be used just like any
+  other `Insertable` value.
+
+* Any insert query written as `insert_into(table).values(values)` can now be
+  written as `values.insert_into(table)`. This is particularly useful when
+  inserting from a select statement, as select statements tend to span multiple
+  lines.
+
 * Added support for specifying `ISOLATION LEVEL`, `DEFERRABLE`, and `READ ONLY`
   on PG transactions. See [`PgConnection::build_transaction`] for details.
 

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression};
 use result::QueryResult;
-use query_builder::{AstPass, QueryFragment, UndecoratedInsertRecord, ValuesClause};
+use query_builder::{AstPass, InsertStatement, QueryFragment, UndecoratedInsertRecord, ValuesClause};
 use query_source::{Column, Table};
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;
@@ -20,13 +20,71 @@ use sqlite::Sqlite;
 /// struct differs from the name of the column, you can annotate the field
 /// with `#[column_name = "some_column_name"]`.
 pub trait Insertable<T> {
+    /// The `VALUES` clause to insert these records
+    ///
+    /// The types used here are generally internal to Diesel.
+    /// Implementations of this trait should use the `Values`
+    /// type of other `Insertable` types.
+    /// For example `<diesel::dsl::Eq<column, &str> as Insertable<table>>::Values`.
     type Values;
 
+    /// Construct `Self::Values`
+    ///
+    /// Implementations of this trait typically call `.values`
+    /// on other `Insertable` types.
     fn values(self) -> Self::Values;
+
+    /// Insert `self` into a given table.
+    ///
+    /// `foo.insert_into(table)` is identical to `insert_into(table).values(foo)`.
+    /// However, when inserting from a select statement,
+    /// this form is generally preferred.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::{posts, users};
+    /// #     let conn = establish_connection();
+    /// #     diesel::delete(posts::table).execute(&conn)?;
+    /// users::table
+    ///     .select((
+    ///         users::name.concat("'s First Post"),
+    ///         users::id,
+    ///     ))
+    ///     .insert_into(posts::table)
+    ///     .into_columns((posts::title, posts::user_id))
+    ///     .execute(&conn)?;
+    ///
+    /// let inserted_posts = posts::table
+    ///     .select(posts::title)
+    ///     .load::<String>(&conn)?;
+    /// let expected = vec!["Sean's First Post", "Tess's First Post"];
+    /// assert_eq!(expected, inserted_posts);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn insert_into(self, table: T) -> InsertStatement<T, Self::Values>
+    where
+        Self: Sized,
+    {
+        ::insert_into(table).values(self)
+    }
 }
 
 pub trait CanInsertInSingleQuery<DB: Backend> {
-    fn rows_to_insert(&self) -> usize;
+    /// How many rows will this query insert?
+    ///
+    /// This function should only return `None` when the query is valid on all
+    /// backends, regardless of how many rows get inserted.
+    fn rows_to_insert(&self) -> Option<usize>;
 }
 
 impl<'a, T, DB> CanInsertInSingleQuery<DB> for &'a T
@@ -34,7 +92,7 @@ where
     T: ?Sized + CanInsertInSingleQuery<DB>,
     DB: Backend,
 {
-    fn rows_to_insert(&self) -> usize {
+    fn rows_to_insert(&self) -> Option<usize> {
         (*self).rows_to_insert()
     }
 }
@@ -43,8 +101,8 @@ impl<'a, T, Tab, DB> CanInsertInSingleQuery<DB> for BatchInsert<'a, T, Tab>
 where
     DB: Backend + SupportsDefaultKeyword,
 {
-    fn rows_to_insert(&self) -> usize {
-        self.records.len()
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(self.records.len())
     }
 }
 
@@ -52,8 +110,8 @@ impl<T, U, DB> CanInsertInSingleQuery<DB> for ColumnInsertValue<T, U>
 where
     DB: Backend,
 {
-    fn rows_to_insert(&self) -> usize {
-        1
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(1)
     }
 }
 

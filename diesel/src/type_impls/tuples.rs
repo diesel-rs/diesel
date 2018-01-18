@@ -89,6 +89,23 @@ macro_rules! tuple_impls {
                 }
             }
 
+            impl<$($T,)+ Tab> ColumnList for ($($T,)+)
+            where
+                $($T: ColumnList<Table = Tab>,)+
+            {
+                type Table = Tab;
+
+                fn walk_ast<DB: Backend>(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.walk_ast(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+            }
+
             impl<$($T: QueryId),+> QueryId for ($($T,)+) {
                 type QueryId = ($($T::QueryId,)+);
 
@@ -109,9 +126,9 @@ macro_rules! tuple_impls {
                 DB: Backend,
                 $($T: CanInsertInSingleQuery<DB>,)+
             {
-                fn rows_to_insert(&self) -> usize {
-                    $(debug_assert_eq!(self.$idx.rows_to_insert(), 1);)+
-                    1
+                fn rows_to_insert(&self) -> Option<usize> {
+                    $(debug_assert_eq!(self.$idx.rows_to_insert(), Some(1));)+
+                    Some(1)
                 }
             }
 

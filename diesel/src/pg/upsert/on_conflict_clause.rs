@@ -33,7 +33,7 @@ impl<Values, Target, Action> CanInsertInSingleQuery<Pg> for OnConflictValues<Val
 where
     Values: CanInsertInSingleQuery<Pg>,
 {
-    fn rows_to_insert(&self) -> usize {
+    fn rows_to_insert(&self) -> Option<usize> {
         self.values.rows_to_insert()
     }
 }

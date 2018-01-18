@@ -33,6 +33,7 @@ mod filter_operators;
 mod find;
 mod group_by;
 mod insert;
+mod insert_from_select;
 mod internal_details;
 mod joins;
 mod macros;

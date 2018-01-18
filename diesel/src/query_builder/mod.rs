@@ -46,6 +46,8 @@ pub use self::sql_query::SqlQuery;
 pub use self::update_statement::{AsChangeset, IncompleteUpdateStatement, IntoUpdateTarget,
                                  UpdateStatement, UpdateTarget};
 
+pub(crate) use self::insert_statement::ColumnList;
+
 use std::error::Error;
 
 use backend::Backend;

@@ -2,9 +2,11 @@ use associations::HasTable;
 use backend::Backend;
 use dsl::AsExprOf;
 use expression::*;
+use insertable::Insertable;
 use query_builder::distinct_clause::*;
 use query_builder::for_update_clause::*;
 use query_builder::group_by_clause::*;
+use query_builder::insert_statement::InsertFromSelect;
 use query_builder::limit_clause::*;
 use query_builder::offset_clause::*;
 use query_builder::order_clause::*;
@@ -374,4 +376,30 @@ impl<F, S, D, W, O, L, Of, G, FU> QueryDsl for SelectStatement<F, S, D, W, O, L,
 
 impl<F, S, D, W, O, L, Of, G, FU, Conn> RunQueryDsl<Conn>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU> {
+}
+
+impl<F, S, D, W, O, L, Of, G, FU, Tab> Insertable<Tab>
+    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
+where
+    Tab: Table,
+    Self: Query,
+{
+    type Values = InsertFromSelect<Self, Tab::AllColumns>;
+
+    fn values(self) -> Self::Values {
+        InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, F, S, D, W, O, L, Of, G, FU, Tab> Insertable<Tab>
+    for &'a SelectStatement<F, S, D, W, O, L, Of, G, FU>
+where
+    Tab: Table,
+    Self: Query,
+{
+    type Values = InsertFromSelect<Self, Tab::AllColumns>;
+
+    fn values(self) -> Self::Values {
+        InsertFromSelect::new(self)
+    }
 }

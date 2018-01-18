@@ -3,16 +3,18 @@ use std::marker::PhantomData;
 use backend::Backend;
 use dsl::AsExprOf;
 use expression::*;
+use insertable::Insertable;
 use query_builder::*;
 use query_builder::distinct_clause::DistinctClause;
 use query_builder::group_by_clause::GroupByClause;
+use query_builder::insert_statement::InsertFromSelect;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
 use query_dsl::*;
 use query_dsl::methods::*;
-use query_source::QuerySource;
 use query_source::joins::*;
+use query_source::{QuerySource, Table};
 use result::QueryResult;
 use sql_types::{BigInt, Bool};
 
@@ -292,3 +294,27 @@ where
 impl<'a, ST, QS, DB> QueryDsl for BoxedSelectStatement<'a, ST, QS, DB> {}
 
 impl<'a, ST, QS, DB, Conn> RunQueryDsl<Conn> for BoxedSelectStatement<'a, ST, QS, DB> {}
+
+impl<'a, ST, QS, DB, T> Insertable<T> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    T: Table,
+    Self: Query,
+{
+    type Values = InsertFromSelect<Self, T::AllColumns>;
+
+    fn values(self) -> Self::Values {
+        InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, 'b, ST, QS, DB, T> Insertable<T> for &'b BoxedSelectStatement<'a, ST, QS, DB>
+where
+    T: Table,
+    Self: Query,
+{
+    type Values = InsertFromSelect<Self, T::AllColumns>;
+
+    fn values(self) -> Self::Values {
+        InsertFromSelect::new(self)
+    }
+}
