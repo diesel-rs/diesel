@@ -1,4 +1,5 @@
 use std::any::*;
+use std::marker::PhantomData;
 
 use backend::Backend;
 use expression::{Expression, NonAggregate, SelectableExpression};
@@ -145,7 +146,7 @@ where
     DB: Backend,
     T: Table,
     T::FromClause: QueryFragment<DB>,
-    U: InsertValues<T, DB> + CanInsertInSingleQuery<DB>,
+    U: QueryFragment<DB> + CanInsertInSingleQuery<DB>,
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
@@ -162,20 +163,14 @@ where
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
-        if self.records.is_noop()? {
-            out.push_sql(" DEFAULT VALUES");
-        } else {
-            out.push_sql(" (");
-            self.records.column_names(out.reborrow())?;
-            out.push_sql(") VALUES ");
-            self.records.walk_ast(out.reborrow())?;
-        }
+        self.records.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
 
 #[cfg(feature = "sqlite")]
+#[deprecated(since = "1.2.0", note = "Use `<&'a [U] as Insertable<T>>::Values` instead")]
 impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
 where
     &'a U: Insertable<T>,
@@ -380,6 +375,12 @@ where
 {
 }
 
+impl<T, Table> UndecoratedInsertRecord<Table> for ValuesClause<T, Table>
+where
+    T: UndecoratedInsertRecord<Table>,
+{
+}
+
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub struct DefaultValues;
@@ -398,38 +399,77 @@ impl<'a, Tab> Insertable<Tab> for &'a DefaultValues {
     }
 }
 
-impl<Tab, DB> InsertValues<Tab, DB> for DefaultValues
-where
-    Tab: Table,
-    DB: Backend,
-    Self: QueryFragment<DB>,
-{
-    fn column_names(&self, _: AstPass<DB>) -> QueryResult<()> {
-        Ok(())
-    }
-}
-
 impl<DB> QueryFragment<DB> for DefaultValues
 where
     DB: Backend + Any,
 {
     #[cfg(feature = "mysql")]
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        // The syntax for this on MySQL is
-        // INSERT INTO table () VALUES ()
-        //
-        // This is hacky, but it's the easiest way to get this done without a
-        // deeper restructuring of this code.
-        // This can become less hacky once we have a `ValuesClause` struct,
-        // but without specialization we'll always need this ugly typeid check
+        // This can be less hacky once stabilization lands
         if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
-            out.push_sql("()");
+            out.push_sql("() VALUES ()");
+        } else {
+            out.push_sql("DEFAULT VALUES");
         }
         Ok(())
     }
 
     #[cfg(not(feature = "mysql"))]
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql("DEFAULT VALUES");
+        Ok(())
+    }
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
+pub struct ValuesClause<T, Tab> {
+    pub(crate) values: T,
+    _marker: PhantomData<Tab>,
+}
+
+impl<T: Default, Tab> Default for ValuesClause<T, Tab> {
+    fn default() -> Self {
+        Self::new(T::default())
+    }
+}
+
+impl<T, Tab> ValuesClause<T, Tab> {
+    pub(crate) fn new(values: T) -> Self {
+        Self {
+            values,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T, Tab, DB> CanInsertInSingleQuery<DB> for ValuesClause<T, Tab>
+where
+    DB: Backend,
+    T: CanInsertInSingleQuery<DB>,
+{
+    fn rows_to_insert(&self) -> usize {
+        self.values.rows_to_insert()
+    }
+}
+
+impl<T, Tab, DB> QueryFragment<DB> for ValuesClause<T, Tab>
+where
+    DB: Backend,
+    Tab: Table,
+    T: InsertValues<Tab, DB>,
+    DefaultValues: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        if self.values.is_noop()? {
+            DefaultValues.walk_ast(out)?;
+        } else {
+            out.push_sql("(");
+            self.values.column_names(out.reborrow())?;
+            out.push_sql(") VALUES (");
+            self.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
         Ok(())
     }
 }

@@ -3,8 +3,8 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use deserialize::{self, FromSqlRow, Queryable, QueryableByName};
-use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, Grouped,
-                 NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate,
+                 SelectableExpression};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;
@@ -117,12 +117,12 @@ macro_rules! tuple_impls {
 
             impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+)
             where
-                $($T: Insertable<Tab, Values = Grouped<$ST>>,)+
+                $($T: Insertable<Tab, Values = ValuesClause<$ST, Tab>>,)+
             {
-                type Values = Grouped<($($ST,)+)>;
+                type Values = ValuesClause<($($ST,)+), Tab>;
 
                 fn values(self) -> Self::Values {
-                    Grouped(($(self.$idx.values().0,)+))
+                    ValuesClause::new(($(self.$idx.values().values,)+))
                 }
             }
 

@@ -2,10 +2,9 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 use diesel::deserialize::FromSql;
 use diesel::expression::bound::Bound;
-use diesel::expression::Grouped;
 use diesel::insertable::ColumnInsertValue;
 use diesel::prelude::*;
-use diesel::query_builder::InsertStatement;
+use diesel::query_builder::{InsertStatement, ValuesClause};
 use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::sql_types::VarChar;
 
@@ -26,7 +25,7 @@ where
     T: Connection,
     String: FromSql<VarChar, T::Backend>,
     // FIXME: HRTB is preventing projecting on any associated types here
-    for<'a> InsertStatement<__diesel_schema_migrations, Grouped<ColumnInsertValue<version, &'a Bound<VarChar, &'a str>>>>: ExecuteDsl<T>,
+    for<'a> InsertStatement<__diesel_schema_migrations, ValuesClause<ColumnInsertValue<version, &'a Bound<VarChar, &'a str>>, __diesel_schema_migrations>>: ExecuteDsl<T>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations
