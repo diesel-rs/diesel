@@ -163,6 +163,7 @@ where
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
+        out.push_sql(" ");
         self.records.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
