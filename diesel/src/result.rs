@@ -16,6 +16,7 @@ pub enum Error {
     ///
     /// This should never occur in normal usage.
     InvalidCString(NulError),
+
     /// The database returned an error.
     ///
     /// While Diesel prevents almost all sources of runtime errors at compile
@@ -26,6 +27,7 @@ pub enum Error {
         DatabaseErrorKind,
         Box<DatabaseErrorInformation + Send + Sync>,
     ),
+
     /// No rows were returned by a query expected to return at least one row.
     ///
     /// This variant is only returned by [`get_result`] and [`first`]. [`load`]
@@ -37,24 +39,28 @@ pub enum Error {
     /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
     /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
     NotFound,
+
     /// The query could not be constructed
     ///
     /// An example of when this error could occur is if you are attempting to
     /// construct an update statement with no changes (e.g. all fields on the
     /// struct are `None`).
     QueryBuilderError(Box<StdError + Send + Sync>),
+
     /// An error occurred deserializing the data being sent to the database.
     ///
     /// Typically this error means that the stated type of the query is
     /// incorrect. An example of when this error might occur in normal usage is
     /// attempting to deserialize an infinite date into chrono.
     DeserializationError(Box<StdError + Send + Sync>),
+
     /// An error occurred serializing the data being sent to the database.
     ///
     /// An example of when this error would be returned is if you attempted to
     /// serialize a `chrono::NaiveDate` earlier than the earliest date supported
     /// by PostgreSQL.
     SerializationError(Box<StdError + Send + Sync>),
+
     /// Roll back the current transaction.
     ///
     /// You can return this variant inside of a transaction when you want to
@@ -62,6 +68,11 @@ pub enum Error {
     /// return this variant unless you gave it to us, and it can be safely
     /// ignored in error handling.
     RollbackTransaction,
+
+    /// Attempted to perform an operation that cannot be done inside a transaction
+    /// when a transaction was already open.
+    AlreadyInTransaction,
+
     #[doc(hidden)] __Nonexhaustive,
 }
 
@@ -241,6 +252,7 @@ impl Display for Error {
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
             Error::RollbackTransaction => write!(f, "{}", self.description()),
+            Error::AlreadyInTransaction => write!(f, "{}", self.description()),
             Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -256,6 +268,9 @@ impl StdError for Error {
             Error::DeserializationError(ref e) => e.description(),
             Error::SerializationError(ref e) => e.description(),
             Error::RollbackTransaction => "The current transaction was aborted",
+            Error::AlreadyInTransaction => {
+                "Cannot perform this operation while a transaction is open"
+            }
             Error::__Nonexhaustive => unreachable!(),
         }
     }
@@ -311,6 +326,8 @@ impl PartialEq for Error {
                 a.message() == b.message()
             }
             (&Error::NotFound, &Error::NotFound) => true,
+            (&Error::RollbackTransaction, &Error::RollbackTransaction) => true,
+            (&Error::AlreadyInTransaction, &Error::AlreadyInTransaction) => true,
             _ => false,
         }
     }

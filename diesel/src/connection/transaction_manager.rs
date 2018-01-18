@@ -1,5 +1,5 @@
 use backend::UsesAnsiSavepointSyntax;
-use connection::Connection;
+use connection::{Connection, SimpleConnection};
 use result::QueryResult;
 
 /// Manages the internal transaction state for a connection.
@@ -57,6 +57,24 @@ impl AnsiTransactionManager {
                 .set(self.transaction_depth.get() + by)
         }
         query
+    }
+
+    /// Begin a transaction with custom SQL
+    ///
+    /// This is used by connections to implement more complex transaction APIs
+    /// to set things such as isolation levels.
+    /// Returns an error if already inside of a transaction.
+    pub fn begin_transaction_sql<Conn>(&self, conn: &Conn, sql: &str) -> QueryResult<()>
+    where
+        Conn: SimpleConnection,
+    {
+        use result::Error::AlreadyInTransaction;
+
+        if self.transaction_depth.get() == 0 {
+            self.change_transaction_depth(1, conn.batch_execute(sql))
+        } else {
+            Err(AlreadyInTransaction)
+        }
     }
 }
 

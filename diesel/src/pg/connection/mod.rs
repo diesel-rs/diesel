@@ -10,7 +10,7 @@ use std::os::raw as libc;
 
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataLookup};
+use pg::{Pg, PgMetadataLookup, TransactionBuilder};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use result::*;
@@ -108,6 +108,34 @@ impl Connection for PgConnection {
 }
 
 impl PgConnection {
+    /// Build a transaction, specifying additional details such as isolation level
+    ///
+    /// See [`TransactionBuilder`] for more examples.
+    ///
+    /// [`TransactionBuilder`]: ../pg/struct.TransactionBuilder.html
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let conn = connection_no_transaction();
+    /// conn.build_transaction()
+    ///     .read_only()
+    ///     .serializable()
+    ///     .deferrable()
+    ///     .run(|| Ok(()))
+    /// # }
+    /// ```
+    pub fn build_transaction(&self) -> TransactionBuilder {
+        TransactionBuilder::new(self)
+    }
+
     #[cfg_attr(feature = "clippy", allow(type_complexity))]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(
         &self,

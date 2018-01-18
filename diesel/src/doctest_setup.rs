@@ -9,9 +9,13 @@ cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
 
-        fn connection_no_data() -> PgConnection {
+        fn connection_no_transaction() -> PgConnection {
             let connection_url = database_url_from_env("PG_DATABASE_URL");
-            let connection = PgConnection::establish(&connection_url).unwrap();
+            PgConnection::establish(&connection_url).unwrap()
+        }
+
+        fn connection_no_data() -> PgConnection {
+            let connection = connection_no_transaction();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
