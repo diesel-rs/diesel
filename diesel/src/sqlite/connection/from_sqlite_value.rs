@@ -1,14 +1,12 @@
-extern crate libsqlite3_sys as ffi;
+use super::ffi;
 
-use std::ffi::CStr;
-use std::os::raw as libc;
-
-// The sqlite3_value_*type*-functions are only safe for so-called "protected" values.
-
-// Per https://www.sqlite.org/c3ref/value.html, values sent to application-defined functions are protected,
-// making it safe to use those values with FromSqliteValue.
-
+/// The sqlite3_value_*type*-functions are only safe for so-called "protected" values.
+///
+/// Per https://www.sqlite.org/c3ref/value.html, values sent to application-defined functions are protected,
+/// making it safe to use those values with FromSqliteValue.
 pub trait FromSqliteValue {
+    /// * `value` must be a valid pointer
+    /// * `value` must be "protected" as defined in the sqlite documentation
     fn from_sqlite_value(value: *mut ffi::sqlite3_value) -> Self;
 }
 
@@ -50,6 +48,8 @@ impl FromSqliteValue for String {
             // >can be invalidated by a subsequent call to sqlite3_value_bytes(), sqlite3_value_bytes16(),
             // >sqlite3_value_text(), or sqlite3_value_text16().
 
+            // This copy makes this abstraction non-zero cost
+
             let buf = slice::from_raw_parts(ptr, len as usize);
 
             str::from_utf8(buf)
@@ -72,6 +72,8 @@ impl FromSqliteValue for Vec<u8> {
             // >Please pay particular attention to the fact that the pointer returned from ... sqlite3_value_blob(), ...
             // >can be invalidated by a subsequent call to sqlite3_value_bytes(), sqlite3_value_bytes16(),
             // >sqlite3_value_text(), or sqlite3_value_text16().
+
+            // This copy makes this abstraction non-zero cost
 
             let buf = slice::from_raw_parts(ptr as *const u8, len as usize);
 

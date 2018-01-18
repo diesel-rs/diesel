@@ -1,14 +1,17 @@
-extern crate libsqlite3_sys as ffi;
-
 use std::ffi::{CString, CStr};
 use std::os::raw as libc;
 
+use super::ffi;
+
+// TODO: Support BLOB values
 
 pub trait IntoSqliteResult {
+    /// `ctx` must be a valid pointer
     fn into_sqlite_result(self, ctx: *mut ffi::sqlite3_context);
 }
 
 pub trait IntoSqliteResultError {
+    /// `ctx` must be a valid pointer
     fn into_sqlite_result_error(self, ctx: *mut ffi::sqlite3_context);
 }
 

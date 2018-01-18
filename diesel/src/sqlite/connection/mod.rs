@@ -2,6 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 #[doc(hidden)]
 pub mod raw;
+mod app_defined_fn;
 mod from_sqlite_value;
 mod into_sqlite_result;
 mod sqlite_value;
@@ -19,7 +20,6 @@ use deserialize::{Queryable, QueryableByName};
 use query_builder::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use result::*;
-use self::from_sqlite_value::FromSqliteValue;
 use self::into_sqlite_result::IntoSqliteResult;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
@@ -108,44 +108,6 @@ impl Connection for SqliteConnection {
     }
 }
 
-/// Context is a wrapper for the SQLite function evaluation context.
-#[derive(Debug)]
-pub struct Context<'a> {
-    ctx: *mut ffi::sqlite3_context,
-    args: &'a [*mut ffi::sqlite3_value],
-}
-
-// Context is translated from rusqlite
-impl<'a> Context<'a> {
-    /// Returns the number of arguments to the function.
-    pub fn len(&self) -> usize {
-        self.args.len()
-    }
-
-    /// Returns `true` when there is no argument.
-    pub fn is_empty(&self) -> bool {
-        self.args.is_empty()
-    }
-
-    /// Returns the `idx`th argument as a `T`.
-    ///
-    /// # Failure
-    ///
-    /// Will panic if `idx` is greater than or equal to `self.len()`.
-    pub fn get<T>(&self, idx: usize) -> T
-    where
-        T: FromSqliteValue
-    {
-        let arg = self.args[idx];
-
-        T::from_sqlite_value(arg)
-    }
-}
-
-unsafe extern "C" fn free_boxed_value<T>(p: *mut ::std::os::raw::c_void) {
-    let _: Box<T> = Box::from_raw(::std::mem::transmute(p));
-}
-
 impl SqliteConnection {
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
         &self,
@@ -182,40 +144,17 @@ impl SqliteConnection {
         x_func: F
     ) -> QueryResult<()>
     where
-        F: FnMut(&Context) -> T,
+        F: FnMut(&app_defined_fn::Context) -> T,
         T: IntoSqliteResult
     {
         // create_scalar_function is translated from rusqlite
 
-        unsafe extern "C" fn call_boxed_closure<F, T>(
-            ctx: *mut ffi::sqlite3_context,
-            argc: libc::c_int,
-            argv: *mut *mut ffi::sqlite3_value
-        )
-        where
-            F: FnMut(&Context) -> T,
-            T: IntoSqliteResult
-        {
-            use std::{slice, mem};
-
-            let ctx = Context {
-                ctx: ctx,
-                args: slice::from_raw_parts(argv, argc as usize),
-            };
-
-            let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
-            assert!(!boxed_f.is_null(), "Internal error - null function pointer");
-
-            let t = (*boxed_f)(&ctx);
-
-            t.into_sqlite_result(ctx.ctx);
-        }
+        use self::app_defined_fn::{call_boxed_closure, free_boxed_value};
 
         // https://www.sqlite.org/c3ref/create_function.html
-
-        // >The length of the name is limited to 255 bytes in a UTF-8 representation, exclusive of the zero-terminator.
+        // >The length of the name is limited to 255 bytes in a UTF-8 representation, excluding the zero-terminator.
         assert!(fn_name.as_bytes().len() <= 255);
-        // Might also be a good idea to avoid embedded NUL chars. Switch to CStr?
+        // Might also be a good idea to avoid embedded NUL chars. Switch to CStr parameter?
 
         // >If the third parameter is less than -1 or greater than 127 then the behavior is undefined.
         assert!(-1 <= n_arg && n_arg <= 127);
@@ -259,7 +198,12 @@ mod tests {
     use dsl::sql;
     use prelude::*;
     use super::*;
+<<<<<<< HEAD
     use sql_types::Integer;
+=======
+    use super::app_defined_fn::Context;
+    use types::Integer;
+>>>>>>> Cleanup. Module structure and documentation
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
