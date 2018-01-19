@@ -11,6 +11,7 @@ mod stmt;
 
 pub use self::sqlite_value::SqliteValue;
 pub use self::into_sqlite_result::error;
+pub use self::app_defined_fn::Context;
 
 use std::os::raw as libc;
 use std::rc::Rc;
@@ -144,7 +145,7 @@ impl SqliteConnection {
         x_func: F
     ) -> QueryResult<()>
     where
-        F: FnMut(&app_defined_fn::Context) -> T,
+        F: FnMut(&Context) -> T,
         T: IntoSqliteResult
     {
         // create_scalar_function is translated from rusqlite
