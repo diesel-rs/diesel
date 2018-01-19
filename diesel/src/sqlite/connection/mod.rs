@@ -198,12 +198,8 @@ mod tests {
     use dsl::sql;
     use prelude::*;
     use super::*;
-<<<<<<< HEAD
-    use sql_types::Integer;
-=======
     use super::app_defined_fn::Context;
-    use types::Integer;
->>>>>>> Cleanup. Module structure and documentation
+    use sql_types::{Integer, Nullable, Text};
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
@@ -291,8 +287,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Text>("SELECT f()");
+        let query = sql::<Text>("SELECT f()");
         assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
     }
 
@@ -308,8 +303,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Text>("SELECT f()");
+        let query = sql::<Text>("SELECT f()");
         assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
     }
 
@@ -324,8 +318,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Nullable<types::Integer>>("SELECT f()");
+        let query = sql::<Nullable<Integer>>("SELECT f()");
         assert_eq!(Ok(Some(42)), query.get_result(&connection));
     }
 
@@ -340,8 +333,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Nullable<types::Integer>>("SELECT f()");
+        let query = sql::<Nullable<Integer>>("SELECT f()");
         assert_eq!(Ok(None as Option<i32>), query.get_result(&connection));
     }
 
@@ -357,8 +349,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Integer>("SELECT f()");
+        let query = sql::<Integer>("SELECT f()");
         assert_eq!(Ok(42), query.get_result(&connection));
     }
 
@@ -375,8 +366,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Integer>("SELECT f()");
+        let query = sql::<Integer>("SELECT f()");
         match query.get_result::<i32>(&connection) {
             Err(DatabaseError(..)) => (),
             _ => panic!("Expected Err result"),
@@ -397,8 +387,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Integer>("SELECT f()");
+        let query = sql::<Integer>("SELECT f()");
         match query.get_result::<i32>(&connection) {
             Err(DatabaseError(_kind, info)) => {
                 assert_eq!("My custom error", info.message());
@@ -434,8 +423,7 @@ mod tests {
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
         connection.create_scalar_function("f", 1, true, f).unwrap();
 
-        use types;
-        let query = sql::<types::Text>("SELECT f('Fun!')");
+        let query = sql::<Text>("SELECT f('Fun!')");
         assert_eq!(Ok("FUN!".to_string()), query.get_result(&connection));
     }
 }

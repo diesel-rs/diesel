@@ -39,8 +39,9 @@ impl FromSqliteValue for String {
         use std::{slice, str};
 
         unsafe {
-            let len = ffi::sqlite3_value_bytes(value); // Must not be called after sqlite3_value_text
+            // Call sqlite3_value_text(), then _bytes(), as per https://www.sqlite.org/c3ref/column_blob.html
             let ptr = ffi::sqlite3_value_text(value);
+            let len = ffi::sqlite3_value_bytes(value);
             assert!(!ptr.is_null());
 
             // The buffer must be copied immediately (https://www.sqlite.org/c3ref/value_blob.html):
@@ -64,8 +65,9 @@ impl FromSqliteValue for Vec<u8> {
         use std::slice;
 
         unsafe {
-            let len = ffi::sqlite3_value_bytes(value); // Must not be called after sqlite3_value_blob
+            // Call sqlite3_value_blob(), then _bytes(), as per https://www.sqlite.org/c3ref/column_blob.html
             let ptr = ffi::sqlite3_value_blob(value);
+            let len = ffi::sqlite3_value_bytes(value);
             assert!(!ptr.is_null());
 
             // The buffer must be copied immediately (https://www.sqlite.org/c3ref/value_blob.html):
