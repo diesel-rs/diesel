@@ -79,6 +79,10 @@ Thank you! We'll try to respond as quickly as possible.
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
 
+   *Additional note:* The MySQL tests currently fail when running on MySQL 5.6
+   or lower. If you have 5.6 or lower installed locally and cannot upgrade for
+   some reason, you may want to consider setting up Docker as mentioned below.
+
    See [.env.sample](.env.sample) for an example that works with a trivial
    local setup.
 
