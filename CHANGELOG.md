@@ -13,6 +13,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [`PgConnection::build_transaction`]: http://docs.diesel.rs/diesel/pg/struct.PgConnection.html#method.build_transaction
 
+### Changed
+
+* The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
+  require that `T::Owned: ToSql`.
+
 ### Deprecated
 
 * `ne_any` has been renamed to `ne_all`.
