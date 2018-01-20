@@ -170,17 +170,15 @@ impl<DB: Backend> ToSql<sql_types::Binary, DB> for [u8] {
 }
 
 use std::borrow::{Cow, ToOwned};
+use std::fmt;
 impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T>
 where
     T: 'a + ToOwned + ToSql<ST, DB>,
     DB: Backend,
-    T::Owned: ToSql<ST, DB>,
+    Self: fmt::Debug,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-        match *self {
-            Cow::Borrowed(t) => t.to_sql(out),
-            Cow::Owned(ref t) => t.to_sql(out),
-        }
+        ToSql::<ST, DB>::to_sql(&**self, out)
     }
 }
 
