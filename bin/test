@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-CLIPPY="lint"
+if [[ $* == *--no-clippy* ]]; then
+  CLIPPY=""
+  shift
+else
+  CLIPPY="lint"
+  shift
+fi
 
 if [ "$1" = "integration" ]; then
   if [ "$2" ]; then
