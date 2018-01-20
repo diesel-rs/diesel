@@ -109,6 +109,13 @@ Thank you! We'll try to respond as quickly as possible.
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
 
+   - One thing to note is that this script runs Clippy checks by default.
+   Since this requires the nightly compiler, you can run the tests on stable with
+   the following:
+   ```bash
+   bin/test --no-clippy
+   ```
+
 [rustup]: https://www.rustup.rs
 
 ### Coding Style
