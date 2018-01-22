@@ -79,7 +79,7 @@ fn attr_to_insertable_values(a: &::attr::Attr, table_name: &syn::Ident) -> quote
     let column_name = a.column_name();
     let field_name = a.field_name
         .clone()
-        .unwrap_or(a.column_name.clone().unwrap());
+        .unwrap_or_else(|| a.column_name.clone().unwrap());
     let column = quote!(#table_name::#column_name);
     let inner = quote! {
         Some(diesel::ExpressionMethods::eq(#column, #field_name))
@@ -90,7 +90,6 @@ fn attr_to_insertable_values(a: &::attr::Attr, table_name: &syn::Ident) -> quote
         inner
     }
 }
-
 
 fn attr_to_value_type(a: &::attr::Attr, table_name: &syn::Ident) -> quote::Tokens {
     let field_name = a.column_name();

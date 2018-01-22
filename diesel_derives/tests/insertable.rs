@@ -109,8 +109,7 @@ fn named_struct_with_renamed_field() {
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser {
-        #[column_name = "name"]
-        my_name: String,
+        #[column_name = "name"] my_name: String,
         hair_color: String,
     }
 
@@ -136,10 +135,8 @@ fn named_struct_with_renamed_option_field() {
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser {
-        #[column_name = "name"]
-        my_name: String,
-        #[column_name = "hair_color"]
-        my_hair_color: Option<String>,
+        #[column_name = "name"] my_name: String,
+        #[column_name = "hair_color"] my_hair_color: Option<String>,
     }
 
     let conn = connection();
@@ -164,10 +161,8 @@ fn tuple_struct() {
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser<'a>(
-        #[column_name = "name"]
-        &'a str,
-        #[column_name = "hair_color"]
-        Option<&'a str>
+        #[column_name = "name"] &'a str,
+        #[column_name = "hair_color"] Option<&'a str>,
     );
 
     let conn = connection();
@@ -189,10 +184,8 @@ fn tuple_struct_without_trailing_comma() {
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser<'a>(
-        #[column_name = "name"]
-        &'a str,
-        #[column_name = "hair_color"]
-        Option<&'a str>
+        #[column_name = "name"] &'a str,
+        #[column_name = "hair_color"] Option<&'a str>,
     );
 
     let conn = connection();
