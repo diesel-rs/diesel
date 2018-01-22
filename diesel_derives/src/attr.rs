@@ -5,8 +5,8 @@ use util::*;
 
 #[derive(Debug)]
 pub struct Attr {
-    column_name: Option<syn::Ident>,
-    field_name: Option<syn::Ident>,
+    pub column_name: Option<syn::Ident>,
+    pub field_name: Option<syn::Ident>,
     sql_type: Option<syn::Ty>,
     flags: Vec<syn::Ident>,
     pub ty: syn::Ty,

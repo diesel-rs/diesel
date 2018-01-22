@@ -1147,8 +1147,6 @@ mod ops;
 mod as_changeset;
 #[macro_use]
 mod identifiable;
-#[macro_use]
-mod insertable;
 
 #[cfg(test)]
 mod tests {
