@@ -24,7 +24,6 @@ pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
     let struct_ty = &model.ty;
     let table_name = &model.table_name();
     let dummy_const_name = model.dummy_const_name("INSERTABLE");
-    let destruct_pattern = model.destruct_pattern();
     let syn::Generics {
         lifetimes,
         ty_params,
@@ -62,7 +61,6 @@ pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
                 type Values = <(#(#values_types,)*) as diesel::insertable::Insertable<#table_name::table>>::Values;
 
                 fn values(self) -> Self::Values {
-                    let #destruct_pattern = *self;
                     diesel::insertable::Insertable::values((#(#values,)*))
                 }
             }
@@ -77,17 +75,17 @@ pub fn derive_insertable(item: syn::DeriveInput) -> quote::Tokens {
 
 fn attr_to_insertable_values(a: &::attr::Attr, table_name: &syn::Ident) -> quote::Tokens {
     let column_name = a.column_name();
-    let field_name = a.field_name
-        .clone()
-        .unwrap_or_else(|| a.column_name.clone().unwrap());
+    let field_name = a.field_name();
     let column = quote!(#table_name::#column_name);
-    let inner = quote! {
-        Some(diesel::ExpressionMethods::eq(#column, #field_name))
-    };
     if ::util::is_option_ty(&a.ty) {
-        quote!(#field_name.as_ref().and_then(|#field_name| #inner))
+        quote!{
+            self.#field_name.as_ref()
+                .and_then(|v| Some(diesel::ExpressionMethods::eq(#column, v)))
+        }
     } else {
-        inner
+        quote! {
+            Some(diesel::ExpressionMethods::eq(#column, &self.#field_name))
+        }
     }
 }
 

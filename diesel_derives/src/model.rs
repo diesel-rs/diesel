@@ -10,25 +10,18 @@ pub struct Model {
     pub generics: syn::Generics,
     pub primary_key_names: Vec<syn::Ident>,
     table_name_from_annotation: Option<syn::Ident>,
-    is_tuple_struct: bool,
 }
 
 impl Model {
     pub fn from_item(item: &syn::DeriveInput, derived_from: &str) -> Result<Self, String> {
-        let (attrs, is_tuple_struct) = match item.body {
+        let attrs = match item.body {
             syn::Body::Enum(..) => {
                 return Err(format!(
                     "#[derive({})] cannot be used with enums",
                     derived_from
                 ))
             }
-            syn::Body::Struct(ref fields) => {
-                let is_tuple_struct = match *fields {
-                    syn::VariantData::Tuple(_) => true,
-                    _ => false,
-                };
-                (attrs_from_struct_body(fields), is_tuple_struct)
-            }
+            syn::Body::Struct(ref fields) => attrs_from_struct_body(fields),
         };
         let ty = struct_ty(item.ident.clone(), &item.generics);
         let name = item.ident.clone();
@@ -44,7 +37,6 @@ impl Model {
             generics,
             primary_key_names,
             table_name_from_annotation,
-            is_tuple_struct,
         })
     }
 
@@ -61,29 +53,6 @@ impl Model {
     pub fn dummy_const_name(&self, trait_name: &str) -> syn::Ident {
         let model_name = self.name.as_ref().to_uppercase();
         format!("_IMPL_{}_FOR_{}", trait_name, model_name).into()
-    }
-
-    pub fn destruct_pattern(&self) -> ::quote::Tokens {
-        let name = &self.name;
-        if self.is_tuple_struct {
-            let field_list = self.attrs
-                .iter()
-                .map(|a| {
-                    let name = a.column_name();
-                    quote!(ref #name)
-                })
-                .collect::<Vec<_>>();
-            quote!(#name(#(#field_list,)*))
-        } else {
-            let field_list = self.attrs
-                .iter()
-                .map(|a| {
-                    let field_name = a.field_name();
-                    quote!(ref #field_name)
-                })
-                .collect::<Vec<_>>();
-            quote!(#name{#(#field_list,)*})
-        }
     }
 }
 
