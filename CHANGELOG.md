@@ -33,8 +33,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Fixed
 
-* The CLI now handles query strings in the database URL to properly infer the
-  name of the database.
+* `diesel database setup` now correctly handles database URLs containing query
+  strings
 
 ## [1.1.1] - 2018-01-16
 
