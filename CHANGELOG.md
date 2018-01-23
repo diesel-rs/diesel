@@ -31,6 +31,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `ne_any` has been renamed to `ne_all`.
 
+### Fixed
+
+* The CLI now handles query strings in the database URL to properly infer the
+  name of the database.
+
 ## [1.1.1] - 2018-01-16
 
 ### Added
