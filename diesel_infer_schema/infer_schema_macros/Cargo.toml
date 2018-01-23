@@ -1,6 +1,6 @@
 [package]
 name = "infer_schema_macros"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "This crate is internal to diesel_infer_schema and should not be used directly"

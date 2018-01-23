@@ -1,6 +1,6 @@
 [package]
 name = "infer_schema_internals"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides functionality to infer the schema of a database"
