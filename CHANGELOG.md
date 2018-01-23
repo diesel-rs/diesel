@@ -4,6 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Fixed
+
+* Diesel's internal dependencies have been locked more restrictively. `diesel`
+  1.0.0 would resolve to `diesel_derives` (an internal dependency) 1.1.1, which
+  assumes it is being used with Diesel 1.1.1. Any dependencies Diesel internal
+  crates and the rest of its dependencies have been locked down.
+
 ## [1.0.0] - 2018-01-02
 
 ### Added
