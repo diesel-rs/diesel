@@ -141,7 +141,7 @@ where
 pub fn mark_migrations_in_directory<Conn>(
     conn: &Conn,
     migrations_dir: &Path,
-) -> Result<Vec<(Option<PathBuf>, bool)>, RunMigrationsError>
+) -> Result<Vec<(Box<Migration>, bool)>, RunMigrationsError>
 where
     Conn: MigrationConnection,
 {
@@ -152,7 +152,7 @@ where
         .into_iter()
         .map(|m| {
             let applied = already_run.contains(&m.version().to_string());
-            (m.file_path().map(|p| p.to_path_buf()), applied)
+            (m, applied)
         })
         .collect();
     Ok(migrations)

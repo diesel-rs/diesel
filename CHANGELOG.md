@@ -31,6 +31,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `ne_any` has been renamed to `ne_all`.
 
+### Fixed
+
+* `diesel migration list` shows the proper migration order when mixing
+  old and new timestamp formats. (The migrations were always run in the correct
+  order, this only affects the display logic of `migration list`)
+
 ## [1.1.1] - 2018-01-16
 
 ### Added

@@ -77,33 +77,22 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(database_url, redo_latest_migration(&dir));
         }
         ("list", Some(_)) => {
-            use std::ffi::OsStr;
-
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches);
-            let migrations =
+            let mut migrations =
                 call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))
                     .unwrap_or_else(handle_error);
 
-            // Since our migrations came from `mark_migrations_in_directory` they should all have valid file names.
-            let mut sorted = migrations
-                .into_iter()
-                .map(|(path_buf, applied)| {
-                    let path_buf = path_buf.expect("Found migration with invalid file name");
-                    let file_path = path_buf.as_path();
-                    let file_name = file_path
-                        .file_name()
-                        .and_then(OsStr::to_str)
-                        .map(str::to_string)
-                        .expect(&format!("Error getting file name from {:?}", path_buf));
-                    (file_name, applied)
-                })
-                .collect::<Vec<_>>();
-
-            sorted.sort();
+            migrations.sort_by_key(|&(ref m, _)| m.version().to_string());
 
             println!("Migrations:");
-            for (name, applied) in sorted {
+            for (migration, applied) in migrations {
+                let name = migration
+                    .file_path()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy();
                 let x = if applied { 'X' } else { ' ' };
                 println!("  [{}] {}", x, name);
             }

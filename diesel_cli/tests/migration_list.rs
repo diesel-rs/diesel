@@ -146,3 +146,23 @@ fn migration_list_orders_nontimestamp_versions_alphabetically() {
     let output = result.stdout();
     assert_tags_in_order(output, &[&tag1, &tag2, &tag3, &tag4, &tag5, &tag6]);
 }
+
+#[test]
+fn migration_list_orders_old_and_new_timestamp_forms_mixed_correctly() {
+    let p = project("migration_list_mixed_timestamps")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    let tag1 = "20170505070309_migration";
+    p.create_migration(&tag1, "", "");
+
+    let tag2 = "2017-11-23-064836_migration";
+    p.create_migration(&tag2, "", "");
+
+    let result = p.command("migration").arg("list").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    let output = result.stdout();
+    assert_tags_in_order(output, &[&tag1, &tag2]);
+}
