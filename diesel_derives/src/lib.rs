@@ -24,7 +24,6 @@ extern crate proc_macro;
 extern crate quote;
 extern crate syn;
 
-mod as_changeset;
 mod as_expression;
 mod associations;
 mod ast_builder;
@@ -60,12 +59,6 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
-}
-
-#[proc_macro_derive(AsChangeset,
-                    attributes(table_name, primary_key, column_name, changeset_options))]
-pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
-    expand_derive(input, as_changeset::derive_as_changeset)
 }
 
 #[proc_macro_derive(Associations, attributes(table_name, belongs_to))]
