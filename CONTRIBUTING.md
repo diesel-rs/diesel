@@ -79,6 +79,10 @@ Thank you! We'll try to respond as quickly as possible.
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
 
+   *Additional note:* The MySQL tests currently fail when running on MySQL 5.6
+   or lower. If you have 5.6 or lower installed locally and cannot upgrade for
+   some reason, you may want to consider setting up Docker as mentioned below.
+
    See [.env.sample](.env.sample) for an example that works with a trivial
    local setup.
 
@@ -108,6 +112,13 @@ Thank you! We'll try to respond as quickly as possible.
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
+
+   - One thing to note is that this script runs Clippy checks by default.
+   Since this requires the nightly compiler, you can run the tests on stable with
+   the following:
+   ```bash
+   bin/test --no-clippy
+   ```
 
 [rustup]: https://www.rustup.rs
 
