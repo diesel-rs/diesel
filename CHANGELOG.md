@@ -22,6 +22,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [`PgConnection::build_transaction`]: http://docs.diesel.rs/diesel/pg/struct.PgConnection.html#method.build_transaction
 
+* Added support for `BEGIN IMMEDIATE` and `BEGIN EXCLUSIVE` on SQLite.
+  See [`SqliteConnection::immediate_transaction`] and
+  [`SqliteConnection::exclusive_transaction`] for details
+
+[`SqliteConnection::immediate_transaction`]: http://docs.diesel.rs/diesel/sqlite/struct.SqliteConnection.html#method.immediate_transaction
+[`SqliteConnection::exclusive_transaction`]: http://docs.diesel.rs/diesel/sqlite/struct.SqliteConnection.html#method.exclusive_transaction
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
