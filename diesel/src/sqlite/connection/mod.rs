@@ -142,11 +142,11 @@ impl SqliteConnection {
         fn_name: &str,
         n_arg: libc::c_int,
         deterministic: bool,
-        x_func: F
+        x_func: F,
     ) -> QueryResult<()>
     where
         F: FnMut(&Context) -> T,
-        T: IntoSqliteResult
+        T: IntoSqliteResult,
     {
         // create_scalar_function is translated from rusqlite
 
@@ -176,7 +176,7 @@ impl SqliteConnection {
                 Some(call_boxed_closure::<F, T>),
                 None,
                 None,
-                Some(free_boxed_value::<F>)
+                Some(free_boxed_value::<F>),
             )
         };
 
@@ -253,7 +253,9 @@ mod tests {
 
     #[test]
     fn create_scalar_function() {
-        fn f(_: &Context) -> i32 { panic!(); }
+        fn f(_: &Context) -> i32 {
+            panic!();
+        }
 
         let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
@@ -289,7 +291,10 @@ mod tests {
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
         let query = sql::<Text>("SELECT f()");
-        assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
+        assert_eq!(
+            Ok("Meaning of life".to_string()),
+            query.get_result(&connection)
+        );
     }
 
     #[test]
@@ -305,7 +310,10 @@ mod tests {
         connection.create_scalar_function("f", 0, true, f).unwrap();
 
         let query = sql::<Text>("SELECT f()");
-        assert_eq!(Ok("Meaning of life".to_string()), query.get_result(&connection));
+        assert_eq!(
+            Ok("Meaning of life".to_string()),
+            query.get_result(&connection)
+        );
     }
 
     #[test]
@@ -392,7 +400,7 @@ mod tests {
         match query.get_result::<i32>(&connection) {
             Err(DatabaseError(_kind, info)) => {
                 assert_eq!("My custom error", info.message());
-            },
+            }
             _ => panic!("Expected Err result"),
         }
     }

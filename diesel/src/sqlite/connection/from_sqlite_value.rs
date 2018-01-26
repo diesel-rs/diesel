@@ -12,25 +12,19 @@ pub trait FromSqliteValue {
 
 impl FromSqliteValue for i32 {
     fn from_sqlite_value(value: *mut ffi::sqlite3_value) -> Self {
-        unsafe {
-            ffi::sqlite3_value_int(value)
-        }
+        unsafe { ffi::sqlite3_value_int(value) }
     }
 }
 
 impl FromSqliteValue for i64 {
     fn from_sqlite_value(value: *mut ffi::sqlite3_value) -> Self {
-        unsafe {
-            ffi::sqlite3_value_int64(value)
-        }
+        unsafe { ffi::sqlite3_value_int64(value) }
     }
 }
 
 impl FromSqliteValue for f64 {
     fn from_sqlite_value(value: *mut ffi::sqlite3_value) -> Self {
-        unsafe {
-            ffi::sqlite3_value_double(value)
-        }
+        unsafe { ffi::sqlite3_value_double(value) }
     }
 }
 
