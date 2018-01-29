@@ -20,36 +20,36 @@ macro_rules! tuple_impls {
     }
     )+) => {
         $(
-            impl<$($T),+, DB> HasSqlType<($($T,)+)> for DB where
-                $(DB: HasSqlType<$T>),+,
-                DB: Backend,
+            impl<$($T),+, __DB> HasSqlType<($($T,)+)> for __DB where
+                $(__DB: HasSqlType<$T>),+,
+                __DB: Backend,
             {
-                fn metadata(_: &DB::MetadataLookup) -> DB::TypeMetadata {
+                fn metadata(_: &__DB::MetadataLookup) -> __DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
 
-                fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
-                    $(<DB as HasSqlType<$T>>::row_metadata(out, lookup);)+
+                fn row_metadata(out: &mut Vec<__DB::TypeMetadata>, lookup: &__DB::MetadataLookup) {
+                    $(<__DB as HasSqlType<$T>>::row_metadata(out, lookup);)+
                 }
             }
 
             impl<$($T),+> NotNull for ($($T,)+) {
             }
 
-            impl<$($T),+, $($ST),+, DB> FromSqlRow<($($ST,)+), DB> for ($($T,)+) where
-                DB: Backend,
-                $($T: FromSqlRow<$ST, DB>),+,
+            impl<$($T),+, $($ST),+, __DB> FromSqlRow<($($ST,)+), __DB> for ($($T,)+) where
+                __DB: Backend,
+                $($T: FromSqlRow<$ST, __DB>),+,
             {
                 const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
 
-                fn build_from_row<RowT: Row<DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
+                fn build_from_row<RowT: Row<__DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
                     Ok(($(try!($T::build_from_row(row)),)+))
                 }
             }
 
-            impl<$($T),+, $($ST),+, DB> Queryable<($($ST,)+), DB> for ($($T,)+) where
-                DB: Backend,
-                $($T: Queryable<$ST, DB>),+,
+            impl<$($T),+, $($ST),+, __DB> Queryable<($($ST,)+), __DB> for ($($T,)+) where
+                __DB: Backend,
+                $($T: Queryable<$ST, __DB>),+,
             {
                 type Row = ($($T::Row,)+);
 
@@ -58,12 +58,12 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T,)+ DB> QueryableByName<DB> for ($($T,)+)
+            impl<$($T,)+ __DB> QueryableByName<__DB> for ($($T,)+)
             where
-                DB: Backend,
-                $($T: QueryableByName<DB>,)+
+                __DB: Backend,
+                $($T: QueryableByName<__DB>,)+
             {
-                fn build<RowT: NamedRow<DB>>(row: &RowT) -> deserialize::Result<Self> {
+                fn build<RowT: NamedRow<__DB>>(row: &RowT) -> deserialize::Result<Self> {
                     Ok(($($T::build(row)?,)+))
                 }
             }
@@ -72,9 +72,9 @@ macro_rules! tuple_impls {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
-            impl<$($T: QueryFragment<DB>),+, DB: Backend> QueryFragment<DB> for ($($T,)+) {
+            impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
                 #[allow(unused_assignments)]
-                fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                fn walk_ast(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
                         if !self.$idx.is_noop()? {
@@ -95,7 +95,7 @@ macro_rules! tuple_impls {
             {
                 type Table = Tab;
 
-                fn walk_ast<DB: Backend>(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                fn walk_ast<__DB: Backend>(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
@@ -121,10 +121,10 @@ macro_rules! tuple_impls {
             {
             }
 
-            impl<$($T,)+ DB> CanInsertInSingleQuery<DB> for ($($T,)+)
+            impl<$($T,)+ __DB> CanInsertInSingleQuery<__DB> for ($($T,)+)
             where
-                DB: Backend,
-                $($T: CanInsertInSingleQuery<DB>,)+
+                __DB: Backend,
+                $($T: CanInsertInSingleQuery<__DB>,)+
             {
                 fn rows_to_insert(&self) -> Option<usize> {
                     $(debug_assert_eq!(self.$idx.rows_to_insert(), Some(1));)+
@@ -155,13 +155,13 @@ macro_rules! tuple_impls {
             }
 
             #[allow(unused_assignments)]
-            impl<$($T,)+ Tab, DB> InsertValues<Tab, DB> for ($($T,)+)
+            impl<$($T,)+ Tab, __DB> InsertValues<Tab, __DB> for ($($T,)+)
             where
                 Tab: Table,
-                DB: Backend,
-                $($T: InsertValues<Tab, DB>,)+
+                __DB: Backend,
+                $($T: InsertValues<Tab, __DB>,)+
             {
-                fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                fn column_names(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
                         let noop_element = self.$idx.is_noop()?;
