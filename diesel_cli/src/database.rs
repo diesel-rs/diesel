@@ -323,10 +323,11 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    let mut split: Vec<&str> = database_url.split('/').collect();
-    let database = split.pop().unwrap();
-    let new_url = format!("{}/{}", split.join("/"), default_database);
-    (database.to_owned(), new_url)
+    let base = ::url::Url::parse(database_url).unwrap();
+    let database = base.path_segments().unwrap().last().unwrap().to_owned();
+    let mut new_url = base.join(default_database).unwrap();
+    new_url.set_query(base.query());
+    (database, new_url.into_string())
 }
 
 #[cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
@@ -357,6 +358,19 @@ mod tests {
         let base_url = "postgresql://user:password@localhost:5432".to_owned();
         let database_url = format!("{}/{}", base_url, database);
         let postgres_url = format!("{}/{}", base_url, "postgres");
+        assert_eq!(
+            (database, postgres_url),
+            change_database_of_url(&database_url, "postgres")
+        );
+    }
+
+    #[test]
+    fn split_pg_connection_string_handles_query_string() {
+        let database = "database".to_owned();
+        let query = "?sslmode=true".to_owned();
+        let base_url = "postgresql://user:password@localhost:5432".to_owned();
+        let database_url = format!("{}/{}{}", base_url, database, query);
+        let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
         assert_eq!(
             (database, postgres_url),
             change_database_of_url(&database_url, "postgres")

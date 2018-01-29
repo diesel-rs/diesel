@@ -104,6 +104,86 @@ impl Connection for SqliteConnection {
 }
 
 impl SqliteConnection {
+    /// Run a transaction with `BEGIN IMMEDIATE`
+    ///
+    /// This method will return an error if a transaction is already open.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.immediate_transaction(|| {
+    ///     // Do stuff in a transaction
+    ///     Ok(())
+    /// })
+    /// # }
+    /// ```
+    pub fn immediate_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    where
+        F: FnOnce() -> Result<T, E>,
+        E: From<Error>,
+    {
+        self.transaction_sql(f, "BEGIN IMMEDIATE")
+    }
+
+    /// Run a transaction with `BEGIN EXCLUSIVE`
+    ///
+    /// This method will return an error if a transaction is already open.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.exclusive_transaction(|| {
+    ///     // Do stuff in a transaction
+    ///     Ok(())
+    /// })
+    /// # }
+    /// ```
+    pub fn exclusive_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    where
+        F: FnOnce() -> Result<T, E>,
+        E: From<Error>,
+    {
+        self.transaction_sql(f, "BEGIN EXCLUSIVE")
+    }
+
+    fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>
+    where
+        F: FnOnce() -> Result<T, E>,
+        E: From<Error>,
+    {
+        let transaction_manager = self.transaction_manager();
+
+        transaction_manager.begin_transaction_sql(self, sql)?;
+        match f() {
+            Ok(value) => {
+                transaction_manager.commit_transaction(self)?;
+                Ok(value)
+            }
+            Err(e) => {
+                transaction_manager.rollback_transaction(self)?;
+                Err(e)
+            }
+        }
+    }
+
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
         &self,
         source: &T,
