@@ -131,25 +131,6 @@ fn update_with_struct_as_changes() {
 }
 
 #[test]
-fn update_with_struct_does_not_set_primary_key() {
-    use schema::users::dsl::*;
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &connection);
-    let other_id = sean.id + 1;
-    let changes = User::with_hair_color(other_id, "Jim", "blue");
-
-    update(users.filter(id.eq(sean.id)))
-        .set(&changes)
-        .execute(&connection)
-        .unwrap();
-    let user = users.find(sean.id).first(&connection);
-    let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
-
-    assert_eq!(Ok(expected_user), user);
-}
-
-#[test]
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use schema::users::dsl::*;
 
@@ -160,22 +141,6 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     let user_in_db = users.find(sean.id).first(&connection);
 
     assert_eq!(user, user_in_db);
-}
-
-#[test]
-fn option_fields_on_structs_are_not_assigned() {
-    use schema::users::dsl::*;
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &connection);
-    update(users.filter(id.eq(sean.id)))
-        .set(hair_color.eq("black"))
-        .execute(&connection)
-        .unwrap();
-    let user = User::new(sean.id, "Jim").save_changes(&connection);
-
-    let expected_user = User::with_hair_color(sean.id, "Jim", "black");
-    assert_eq!(Ok(expected_user), user);
 }
 
 #[test]
@@ -237,74 +202,6 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
 
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
     assert_eq!(expected_post, post);
-}
-
-#[test]
-fn can_update_with_struct_containing_single_field() {
-    #[derive(AsChangeset)]
-    #[table_name = "posts"]
-    struct SetBody {
-        body: String,
-    }
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &connection);
-    let new_post = sean.new_post("Hello", Some("world"));
-    insert_into(posts::table)
-        .values(&new_post)
-        .execute(&connection)
-        .unwrap();
-
-    let changes = SetBody {
-        body: "earth".into(),
-    };
-    update(posts::table)
-        .set(&changes)
-        .execute(&connection)
-        .unwrap();
-    let post = posts::table
-        .order(posts::id.desc())
-        .first::<Post>(&connection)
-        .unwrap();
-
-    let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
-    assert_eq!(expected_post, post);
-}
-
-#[test]
-fn struct_with_option_fields_treated_as_null() {
-    #[derive(Identifiable, AsChangeset)]
-    #[table_name = "posts"]
-    #[changeset_options(treat_none_as_null = "true")]
-    struct UpdatePost {
-        id: i32,
-        title: String,
-        body: Option<String>,
-    }
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &connection);
-    let new_post = sean.new_post("Hello", Some("world"));
-    insert_into(posts::table)
-        .values(&new_post)
-        .execute(&connection)
-        .unwrap();
-    let post = posts::table
-        .order(posts::id.desc())
-        .first::<Post>(&connection)
-        .unwrap();
-
-    let changes = UpdatePost {
-        id: post.id,
-        title: "Hello again".into(),
-        body: None,
-    };
-    let expected_post = Post::new(post.id, sean.id, "Hello again".into(), None);
-    let updated_post = changes.save_changes(&connection);
-    let post_in_database = posts::table.find(post.id).first(&connection);
-
-    assert_eq!(Ok(&expected_post), updated_post.as_ref());
-    assert_eq!(Ok(&expected_post), post_in_database.as_ref());
 }
 
 #[test]
@@ -383,54 +280,4 @@ fn upsert_with_sql_literal_for_target() {
         ("Tess".to_string(), Some("Blue".to_string())),
     ];
     assert_eq!(Ok(expected_data), data);
-}
-
-#[test]
-fn update_with_custom_pk() {
-    #[derive(AsChangeset)]
-    #[table_name = "users"]
-    #[primary_key(name)]
-    #[allow(dead_code)]
-    struct Changes<'a> {
-        name: &'a str,
-        hair_color: Option<&'a str>,
-    }
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    update(users::table.find(1))
-        .set(&Changes {
-            name: "Jim",
-            hair_color: Some("Black"),
-        })
-        .execute(&connection)
-        .unwrap();
-    let user = users::table.find(1).first(&connection);
-    let expected_user = User::with_hair_color(1, "Sean", "Black");
-    assert_eq!(Ok(expected_user), user);
-}
-
-#[test]
-fn update_with_custom_composite_pk() {
-    #[derive(AsChangeset)]
-    #[table_name = "users"]
-    #[primary_key(id, hair_color)]
-    #[allow(dead_code)]
-    struct Changes<'a> {
-        id: i32,
-        name: &'a str,
-        hair_color: Option<&'a str>,
-    }
-
-    let connection = connection_with_sean_and_tess_in_users_table();
-    update(users::table.find(1))
-        .set(&Changes {
-            id: 2,
-            name: "Jim",
-            hair_color: Some("Blue"),
-        })
-        .execute(&connection)
-        .unwrap();
-    let user = users::table.find(1).first(&connection);
-    let expected_user = User::new(1, "Jim");
-    assert_eq!(Ok(expected_user), user);
 }

@@ -11,6 +11,10 @@ check() {
     check &&
     echo "✔ derives crate looks good!")
 
+(cd diesel_derives2 &&
+    check &&
+    echo "✔ derives2 crate looks good!")
+
 (cd diesel &&
     check "unstable extras" &&
     echo "✔ diesel core crate looks good!")

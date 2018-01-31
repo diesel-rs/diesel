@@ -13,12 +13,24 @@ syn = { version = "0.12.0", features = ["full"] }
 quote = "0.4"
 clippy = { optional = true, version = "=0.0.174" }
 
+[dev-dependencies]
+cfg-if = "0.1.0"
+diesel = "1.1.0"
+diesel_migrations = "1.1.0"
+dotenv = "0.10.0"
+
 [lib]
 proc-macro = true
+
+[[test]]
+name = "tests"
 
 [features]
 default = []
 lint = ["clippy"]
+postgres = ["diesel/postgres", "diesel_migrations/postgres"]
+sqlite = ["diesel/sqlite", "diesel_migrations/sqlite"]
+mysql = ["diesel/mysql", "diesel_migrations/mysql"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
