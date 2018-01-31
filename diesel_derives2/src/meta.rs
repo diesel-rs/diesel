@@ -38,24 +38,24 @@ impl MetaItem {
                     "The form `{0}(value)` is deprecated. Use `{0} = \"value\"` instead",
                     self.name()
                 );
-                x.clone()
+                x
             }
             _ => self.expect_str_value().into(),
         }
     }
 
-    pub fn expect_word(&self) -> &syn::Ident {
+    pub fn expect_word(self) -> syn::Ident {
         self.word().unwrap_or_else(|| {
             let meta = &self.meta;
             panic!("Expected `{}` found `{}`", self.name(), quote!(#meta))
         })
     }
 
-    pub fn word(&self) -> Option<&syn::Ident> {
+    pub fn word(&self) -> Option<syn::Ident> {
         use syn::Meta::*;
 
         match self.meta {
-            Word(ref x) => Some(x),
+            Word(x) => Some(x),
             _ => None,
         }
     }

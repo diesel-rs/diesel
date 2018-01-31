@@ -21,18 +21,19 @@ pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
     let mut impl_generics = item.generics.clone();
     impl_generics.params.push(parse_quote!('update));
+    let (impl_generics, _, _) = impl_generics.split_for_impl();
 
     let fields_for_update = model
         .fields()
         .iter()
-        .filter(|f| !model.primary_key_names.contains(f.column_name()))
+        .filter(|f| !model.primary_key_names.contains(&f.column_name()))
         .collect::<Vec<_>>();
     let changeset_ty = fields_for_update
         .iter()
-        .map(|field| field_changeset_ty(field, &table_name, treat_none_as_null));
+        .map(|field| field_changeset_ty(field, table_name, treat_none_as_null));
     let changeset_expr = fields_for_update
         .iter()
-        .map(|field| field_changeset_expr(field, &table_name, treat_none_as_null));
+        .map(|field| field_changeset_expr(field, table_name, treat_none_as_null));
 
     if fields_for_update.is_empty() {
         panic!(
@@ -63,7 +64,7 @@ pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
 
 fn field_changeset_ty(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: syn::Ident,
     treat_none_as_null: bool,
 ) -> syn::Type {
     let column_name = field.column_name();
@@ -78,7 +79,7 @@ fn field_changeset_ty(
 
 fn field_changeset_expr(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: syn::Ident,
     treat_none_as_null: bool,
 ) -> syn::Expr {
     let field_name = field.field_name();

@@ -1,5 +1,4 @@
 use syn;
-use std::borrow::Cow;
 
 use field::*;
 use meta::*;
@@ -17,22 +16,20 @@ impl Model {
             .ok()
             .map(|m| m.expect_ident_value());
         let primary_key_names = MetaItem::with_name(&item.attrs, "primary_key")
-            .map(|m| m.expect_nested().map(|m| m.expect_word().clone()).collect())
+            .map(|m| m.expect_nested().map(|m| m.expect_word()).collect())
             .unwrap_or_else(|_| vec!["id".into()]);
         let fields = fields_from_item_data(&item.data);
         Self {
-            name: item.ident.clone(),
+            name: item.ident,
             table_name_from_attribute,
             primary_key_names,
             fields,
         }
     }
 
-    pub fn table_name(&self) -> Cow<syn::Ident> {
+    pub fn table_name(&self) -> syn::Ident {
         self.table_name_from_attribute
-            .as_ref()
-            .map(Cow::Borrowed)
-            .unwrap_or_else(|| Cow::Owned(infer_table_name(self.name.as_ref()).into()))
+            .unwrap_or_else(|| infer_table_name(self.name.as_ref()).into())
     }
 
     pub fn dummy_const_name(&self, trait_name: &str) -> syn::Ident {

@@ -14,7 +14,7 @@ impl Field {
             .ok()
             .map(|m| m.expect_ident_value());
         let identifier = match field.ident {
-            Some(ref x) => Identifier::Named(x.clone()),
+            Some(x) => Identifier::Named(x),
             None => Identifier::Unnamed(index.to_string().into()),
         };
 
@@ -25,16 +25,15 @@ impl Field {
         }
     }
 
-    pub fn column_name(&self) -> &syn::Ident {
+    pub fn column_name(&self) -> syn::Ident {
         self.column_name_from_attribute
-            .as_ref()
             .unwrap_or_else(|| match self.identifier {
-                Identifier::Named(ref x) => x,
+                Identifier::Named(x) => x,
                 _ => panic!("All fields of tuple structs must be annotated with `#[column_name]`"),
             })
     }
 
-    pub fn field_name(&self) -> &syn::Ident {
+    pub fn field_name(&self) -> syn::Ident {
         self.identifier.ident()
     }
 }
@@ -46,11 +45,11 @@ enum Identifier {
 }
 
 impl Identifier {
-    fn ident(&self) -> &syn::Ident {
+    fn ident(&self) -> syn::Ident {
         use self::Identifier::*;
 
         match *self {
-            Named(ref x) | Unnamed(ref x) => x,
+            Named(x) | Unnamed(x) => x,
         }
     }
 }
