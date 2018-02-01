@@ -1,5 +1,6 @@
-use syn;
+use proc_macro2::Span;
 use quote;
+use syn;
 
 use meta::*;
 
@@ -16,7 +17,11 @@ impl Field {
             .map(|m| m.expect_ident_value());
         let name = match field.ident {
             Some(x) => FieldName::Named(x),
-            None => FieldName::Unnamed(index.into()),
+            None => FieldName::Unnamed(syn::Index {
+                index: index as u32,
+                // https://github.com/rust-lang/rust/issues/47312
+                span: Span::call_site(),
+            }),
         };
 
         Self {
@@ -42,6 +47,13 @@ pub enum FieldName {
 
 impl quote::ToTokens for FieldName {
     fn to_tokens(&self, tokens: &mut quote::Tokens) {
+        use proc_macro2::{Spacing, TokenNode, TokenTree};
+
+        // https://github.com/rust-lang/rust/issues/47312
+        tokens.append(TokenTree {
+            span: Span::call_site(),
+            kind: TokenNode::Op('.', Spacing::Alone),
+        });
         match *self {
             FieldName::Named(x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),

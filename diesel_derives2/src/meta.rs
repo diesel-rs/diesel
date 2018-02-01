@@ -1,6 +1,10 @@
+use proc_macro2::Span;
 use syn;
 
 pub struct MetaItem {
+    // Due to https://github.com/rust-lang/rust/issues/47941
+    // we can only ever get the span of the #, which is better than nothing
+    span: Span,
     meta: syn::Meta,
 }
 
@@ -11,9 +15,9 @@ impl MetaItem {
     ) -> Result<Self, MissingOption<'a>> {
         attrs
             .iter()
-            .filter_map(syn::Attribute::interpret_meta)
-            .find(|m| m.name() == name)
-            .map(|meta| Self { meta })
+            .filter_map(|attr| attr.interpret_meta().map(|m| (attr.pound_token.0[0], m)))
+            .find(|&(_, ref m)| m.name() == name)
+            .map(|(span, meta)| Self { span, meta })
             .ok_or(MissingOption { name })
     }
 
@@ -40,7 +44,7 @@ impl MetaItem {
                 );
                 x
             }
-            _ => self.expect_str_value().into(),
+            _ => syn::Ident::new(&self.expect_str_value(), self.span.resolved_at(Span::call_site())),
         }
     }
 
@@ -69,7 +73,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            List(ref list) => Some(Nested(list.nested.iter())),
+            List(ref list) => Some(Nested(list.nested.iter(), self.span)),
             _ => None,
         }
     }
@@ -112,7 +116,7 @@ impl<'a> RequiredOption<MetaItem> for Result<MetaItem, MissingOption<'a>> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2392
-pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta, Token![,]>);
+pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta, Token![,]>, Span);
 
 impl<'a> Iterator for Nested<'a> {
     type Item = MetaItem;
@@ -121,7 +125,7 @@ impl<'a> Iterator for Nested<'a> {
         use syn::NestedMeta::*;
 
         match self.0.next() {
-            Some(&Meta(ref item)) => Some(MetaItem { meta: item.clone() }),
+            Some(&Meta(ref item)) => Some(MetaItem { span: self.1, meta: item.clone() }),
             Some(_) => self.next(),
             None => None,
         }

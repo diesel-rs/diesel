@@ -43,7 +43,7 @@ tempdir = "^0.3.4"
 [features]
 default = ["with-deprecated"]
 extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address", "numeric", "r2d2"]
-unstable = []
+unstable = ["diesel_derives2/nightly"]
 lint = ["clippy"]
 large-tables = []
 huge-tables = ["large-tables"]

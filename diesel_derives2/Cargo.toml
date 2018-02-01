@@ -12,6 +12,7 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 syn = { version = "0.12.0", features = ["full"] }
 quote = "0.4"
 clippy = { optional = true, version = "=0.0.174" }
+proc-macro2 = "0.2.0"
 
 [dev-dependencies]
 cfg-if = "0.1.0"
@@ -28,6 +29,7 @@ name = "tests"
 [features]
 default = []
 lint = ["clippy"]
+nightly = ["proc-macro2/nightly"]
 postgres = ["diesel/postgres", "diesel_migrations/postgres"]
 sqlite = ["diesel/sqlite", "diesel_migrations/sqlite"]
 mysql = ["diesel/mysql", "diesel_migrations/mysql"]

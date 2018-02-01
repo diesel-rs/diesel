@@ -1,0 +1,14 @@
+error[E0433]: failed to resolve. Use of undeclared type or module `users`
+ --> $DIR/as_changeset_missing_table_import.rs:5:8
+  |
+5 | struct User {
+  |        ^^^^ Use of undeclared type or module `users`
+
+error[E0433]: failed to resolve. Use of undeclared type or module `users`
+ --> <macro expansion>:1:1
+  |
+1 | #[table_name = "users"]
+  | ^ Use of undeclared type or module `users`
+
+error: aborting due to 2 previous errors
+

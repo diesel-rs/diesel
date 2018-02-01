@@ -43,10 +43,10 @@ pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
         );
     }
 
-    wrap_in_dummy_const(
-        model.dummy_const_name("AS_CHANGESET"),
+    wrap_in_dummy_mod(
+        model.dummy_mod_name("as_changeset"),
         quote!(
-            use diesel::query_builder::AsChangeset;
+            use self::diesel::query_builder::AsChangeset;
 
             impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
             #where_clause
@@ -70,7 +70,7 @@ fn field_changeset_ty(
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let field_ty = inner_of_option_ty(&field.ty);
-        parse_quote!(::std::option::Option<diesel::dsl::Eq<#table_name::#column_name, &'update #field_ty>>)
+        parse_quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, &'update #field_ty>>)
     } else {
         let field_ty = &field.ty;
         parse_quote!(diesel::dsl::Eq<#table_name::#column_name, &'update #field_ty>)
@@ -82,11 +82,11 @@ fn field_changeset_expr(
     table_name: syn::Ident,
     treat_none_as_null: bool,
 ) -> syn::Expr {
-    let field_name = &field.name;
+    let field_access = &field.name;
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
-        parse_quote!(self.#field_name.as_ref().map(|x| #table_name::#column_name.eq(x)))
+        parse_quote!(self#field_access.as_ref().map(|x| #table_name::#column_name.eq(x)))
     } else {
-        parse_quote!(#table_name::#column_name.eq(&self.#field_name))
+        parse_quote!(#table_name::#column_name.eq(&self#field_access))
     }
 }
