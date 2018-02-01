@@ -93,6 +93,12 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
+#![cfg_attr(feature = "large-tables",
+            deprecated(since = "1.2.0",
+                       note = "The large-tables feature has been renamed to 32-column-tables"))]
+#![cfg_attr(feature = "huge-tables",
+            deprecated(since = "1.2.0",
+                       note = "The huge-tables feature has been renamed to 64-column-tables"))]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]

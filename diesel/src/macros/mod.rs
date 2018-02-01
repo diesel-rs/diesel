@@ -92,10 +92,14 @@ macro_rules! __diesel_column {
 /// additional set of columns which exist, but should not be selected by default
 /// (for example, for things like full text search)
 ///
-/// By default this allows a maximum of 16 columns per table, in order to reduce
-/// compilation time. You can increase this limit to 26 by enabling the
-/// `large-tables` feature, or up to 52 by enabling the `huge-tables` feature.
-/// Enabling `huge-tables` will *substantially* increase compile times.
+/// By default this allows a maximum of 32 columns per table.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64-column tables or larger will substantially increase
+/// the compile time of Diesel.
 ///
 /// Example usage
 /// -------------

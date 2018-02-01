@@ -410,7 +410,7 @@ tuple_impls! {
     }
 }
 
-#[cfg(feature = "large-tables")]
+#[cfg(feature = "32-column-tables")]
 tuple_impls! {
     17 {
         (0) -> A, SA, TA,
@@ -647,10 +647,6 @@ tuple_impls! {
         (24) -> Y, SY, TY,
         (25) -> Z, SZ, TZ,
     }
-}
-
-#[cfg(feature = "huge-tables")]
-tuple_impls! {
     27 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
@@ -840,6 +836,10 @@ tuple_impls! {
         (30) -> AE, SAE, TAE,
         (31) -> AF, SAF, TAF,
     }
+}
+
+#[cfg(feature = "64-column-tables")]
+tuple_impls! {
     33 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
@@ -1730,10 +1730,6 @@ tuple_impls! {
         (50) -> AY, SAY, TAY,
         (51) -> AZ, SAZ, TAZ,
     }
-}
-
-#[cfg(feature = "128-column-tables")]
-tuple_impls! {
     53 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,
@@ -2460,6 +2456,10 @@ tuple_impls! {
         (62) -> BK, SBK, TBK,
         (63) -> BL, SBL, TBL,
     }
+}
+
+#[cfg(feature = "128-column-tables")]
+tuple_impls! {
     65 {
         (0) -> A, SA, TA,
         (1) -> B, SB, TB,

@@ -41,9 +41,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
   require that `T::Owned: ToSql`.
 
+* `32-column-tables` are now enabled by default.
+
 ### Deprecated
 
 * `ne_any` has been renamed to `ne_all`.
+
+* The `large-tables` feature has been has been renamed to `32-column-tables`.
+
+* The `huge-tables` feature has been renamed to `64-column-tables`.
 
 ### Fixed
 

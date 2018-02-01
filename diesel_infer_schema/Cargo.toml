@@ -14,7 +14,7 @@ infer_schema_macros = { version = "1.1.0" }
 clippy = { optional = true, version = "=0.0.185" }
 
 [dev-dependencies]
-diesel = "1.1.0"
+diesel = { version = "1.1.0", default-features = false }
 dotenv = ">= 0.8, <0.11"
 cfg-if = "0.1.0"
 
