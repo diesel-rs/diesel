@@ -30,14 +30,13 @@ impl Model {
             .map(|v| v.into_iter().cloned().collect())
             .unwrap_or_else(|| vec![syn::Ident::new("id")]);
         let table_name_from_annotation = ident_value_of_attr_with_name(&item.attrs, "table_name");
-
         Ok(Model {
-            ty: ty,
-            attrs: attrs,
-            name: name,
-            generics: generics,
-            primary_key_names: primary_key_names,
-            table_name_from_annotation: table_name_from_annotation,
+            ty,
+            attrs,
+            name,
+            generics,
+            primary_key_names,
+            table_name_from_annotation,
         })
     }
 

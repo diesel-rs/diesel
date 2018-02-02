@@ -8,8 +8,7 @@ table! {
 }
 
 #[derive(Insertable)]
-//~^ ERROR proc-macro derive panicked
-//~| HELP `#[derive(Insertable)]` does not support generic types
+//~^ ERROR `#[derive(Insertable)]` does not support generic types
 #[table_name="users"]
 pub struct NewUser<T> {
     name: T,

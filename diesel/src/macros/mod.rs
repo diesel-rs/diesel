@@ -1145,8 +1145,6 @@ mod ops;
 
 #[macro_use]
 mod identifiable;
-#[macro_use]
-mod insertable;
 
 #[cfg(test)]
 mod tests {
