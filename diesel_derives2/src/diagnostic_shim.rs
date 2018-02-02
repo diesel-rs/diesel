@@ -52,9 +52,9 @@ impl Diagnostic {
         }
     }
 
-    pub fn help(mut self, msg: &str) -> Self {
+    pub fn help<T: Into<String>>(mut self, msg: T) -> Self {
         self.message.push_str("\n");
-        self.message.push_str(msg);
+        self.message.push_str(&msg.into());
         self
     }
 

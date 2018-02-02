@@ -31,6 +31,7 @@ mod as_expression;
 mod associations;
 mod from_sql_row;
 mod identifiable;
+mod insertable;
 mod query_id;
 mod queryable;
 
@@ -65,6 +66,11 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryId)]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_derive(input, query_id::derive)
+}
+
+#[proc_macro_derive(Insertable, attributes(table_name, column_name))]
+pub fn derive_insertable(input: TokenStream) -> TokenStream {
+    expand_derive(input, insertable::derive)
 }
 
 #[proc_macro_derive(Queryable, attributes(column_name))]

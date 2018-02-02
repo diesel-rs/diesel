@@ -4,8 +4,6 @@
 extern crate cfg_if;
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
 
 mod helpers;
 mod schema;
@@ -13,4 +11,5 @@ mod schema;
 mod as_changeset;
 mod associations;
 mod identifiable;
+mod insertable;
 mod queryable;

@@ -1,40 +1,59 @@
 use diesel::prelude::*;
-use std::sync::{Once, ONCE_INIT};
+use diesel::sql_query;
 
 cfg_if! {
     if #[cfg(feature = "sqlite")] {
-        embed_migrations!("../migrations/sqlite");
-
         pub type TestConnection = SqliteConnection;
 
-        fn connection_no_transaction() -> TestConnection {
-            SqliteConnection::establish(":memory:").unwrap()
+        pub fn connection() -> TestConnection {
+            let conn = SqliteConnection::establish(":memory:").unwrap();
+            sql_query("CREATE TABLE users (\
+                id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                name VARCHAR NOT NULL, \
+                hair_color VARCHAR DEFAULT 'Green')")
+                .execute(&conn)
+                .unwrap();
+            conn
         }
     } else if #[cfg(feature = "postgres")] {
         extern crate dotenv;
 
-        embed_migrations!("../migrations/postgresql");
-
         pub type TestConnection = PgConnection;
 
-        fn connection_no_transaction() -> TestConnection {
+        pub fn connection() -> TestConnection {
             let database_url = dotenv::var("PG_DATABASE_URL")
                 .or_else(|_| dotenv::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
-            PgConnection::establish(&database_url).unwrap()
+            let conn = PgConnection::establish(&database_url).unwrap();
+            conn.begin_test_transaction().unwrap();
+            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&conn).unwrap();
+            sql_query("CREATE TABLE users (\
+                id SERIAL PRIMARY KEY, \
+                name VARCHAR NOT NULL, \
+                hair_color VARCHAR DEFAULT 'Green')")
+                .execute(&conn)
+                .unwrap();
+            conn
         }
     } else if #[cfg(feature = "mysql")] {
         extern crate dotenv;
 
-        embed_migrations!("../migrations/mysql");
-
         pub type TestConnection = MysqlConnection;
 
-        fn connection_no_transaction() -> TestConnection {
-            let database_url = dotenv::var("MYSQL_DATABASE_URL")
+        pub fn connection() -> TestConnection {
+            let database_url = dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
                 .or_else(|_| dotenv::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
-            MysqlConnection::establish(&database_url).unwrap()
+            let conn = MysqlConnection::establish(&database_url).unwrap();
+            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&conn).unwrap();
+            sql_query("CREATE TABLE users (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+                name TEXT NOT NULL, \
+                hair_color VARCHAR(255) DEFAULT 'Green')")
+                .execute(&conn)
+                .unwrap();
+            conn.begin_test_transaction().unwrap();
+            conn
         }
     } else {
         compile_error!(
@@ -44,21 +63,6 @@ cfg_if! {
             ex. cargo test --features \"mysql postgres sqlite\"\n"
         );
      }
-}
-
-static RUN_MIGRATIONS: Once = ONCE_INIT;
-
-pub fn connection() -> TestConnection {
-    let connection = connection_no_transaction();
-    if cfg!(feature = "sqlite") {
-        embedded_migrations::run(&connection).unwrap();
-    } else {
-        RUN_MIGRATIONS.call_once(|| {
-            embedded_migrations::run(&connection).unwrap();
-        })
-    }
-    connection.begin_test_transaction().unwrap();
-    connection
 }
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {

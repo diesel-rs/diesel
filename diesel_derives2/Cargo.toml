@@ -17,7 +17,6 @@ proc-macro2 = "0.2.0"
 [dev-dependencies]
 cfg-if = "0.1.0"
 diesel = "1.1.0"
-diesel_migrations = "1.1.0"
 dotenv = "0.10.0"
 
 [lib]
@@ -30,9 +29,9 @@ name = "tests"
 default = []
 lint = ["clippy"]
 nightly = ["proc-macro2/nightly"]
-postgres = ["diesel/postgres", "diesel_migrations/postgres"]
-sqlite = ["diesel/sqlite", "diesel_migrations/sqlite"]
-mysql = ["diesel/mysql", "diesel_migrations/mysql"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
