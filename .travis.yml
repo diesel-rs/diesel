@@ -56,10 +56,7 @@ matrix:
   - rust: nightly-2018-02-02
     env: RUSTFMT=YESPLEASE
     script:
-    - |
-      if ! [ -x "$(command -v rustfmt)" ]; then
-        cargo install rustfmt-nightly --vers 0.3.7
-      fi
+    - cargo install rustfmt-nightly --vers 0.3.7 --force
     - cargo fmt --all -- --write-mode=diff
 env:
   matrix:
