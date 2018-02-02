@@ -9,6 +9,7 @@
 #![cfg_attr(feature = "clippy",
             warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+#![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 extern crate proc_macro;
 extern crate proc_macro2;
@@ -19,6 +20,7 @@ extern crate syn;
 
 use proc_macro::TokenStream;
 
+mod diagnostic_shim;
 mod field;
 mod meta;
 mod model;
@@ -26,13 +28,24 @@ mod util;
 
 mod as_changeset;
 
+use diagnostic_shim::*;
+
 #[proc_macro_derive(AsChangeset,
                     attributes(table_name, primary_key, column_name, changeset_options))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive)
 }
 
-fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
+fn expand_derive(
+    input: TokenStream,
+    f: fn(syn::DeriveInput) -> Result<quote::Tokens, Diagnostic>,
+) -> TokenStream {
     let item = syn::parse(input).unwrap();
-    f(item).into()
+    match f(item) {
+        Ok(x) => x.into(),
+        Err(e) => {
+            e.emit();
+            "".parse().unwrap()
+        }
+    }
 }

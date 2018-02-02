@@ -1,6 +1,7 @@
 use syn;
 use proc_macro2::Span;
 
+use diagnostic_shim::*;
 use field::*;
 use meta::*;
 
@@ -12,20 +13,19 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn from_item(item: &syn::DeriveInput) -> Self {
-        let table_name_from_attribute = MetaItem::with_name(&item.attrs, "table_name")
-            .ok()
-            .map(|m| m.expect_ident_value());
+    pub fn from_item(item: &syn::DeriveInput) -> Result<Self, Diagnostic> {
+        let table_name_from_attribute =
+            MetaItem::with_name(&item.attrs, "table_name").map(|m| m.expect_ident_value());
         let primary_key_names = MetaItem::with_name(&item.attrs, "primary_key")
-            .map(|m| m.expect_nested().map(|m| m.expect_word()).collect())
-            .unwrap_or_else(|_| vec!["id".into()]);
-        let fields = fields_from_item_data(&item.data);
-        Self {
+            .map(|m| Ok(m.nested()?.map(|m| m.expect_word()).collect()))
+            .unwrap_or_else(|| Ok(vec!["id".into()]))?;
+        let fields = fields_from_item_data(&item.data)?;
+        Ok(Self {
             name: item.ident,
             table_name_from_attribute,
             primary_key_names,
             fields,
-        }
+        })
     }
 
     pub fn table_name(&self) -> syn::Ident {
@@ -69,17 +69,17 @@ fn infer_table_name(name: &str) -> String {
     result
 }
 
-fn fields_from_item_data(data: &syn::Data) -> Vec<Field> {
+fn fields_from_item_data(data: &syn::Data) -> Result<Vec<Field>, Diagnostic> {
     use syn::Data::*;
 
     let struct_data = match *data {
         Struct(ref d) => d,
-        _ => panic!("This derive can only be used on structs"),
+        _ => return Err(Span::call_site().error("This derive can only be used on structs")),
     };
-    struct_data
+    Ok(struct_data
         .fields
         .iter()
         .enumerate()
         .map(|(i, f)| Field::from_struct_field(f, i))
-        .collect()
+        .collect())
 }

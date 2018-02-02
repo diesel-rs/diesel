@@ -1,0 +1,8 @@
+error: `column_name` must be in the form `column_name = "value"`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^
+
+error: aborting due to previous error
+

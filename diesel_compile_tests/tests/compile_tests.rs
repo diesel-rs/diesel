@@ -9,13 +9,14 @@ fn run_mode(mode: &'static str) {
 
     let cfg_mode = mode.parse().expect("Invalid mode");
 
-    config.target_rustcflags = Some("-L target/debug/deps/".to_owned());
     if let Ok(name) = var::<&str>("TESTNAME") {
         let s : String = name.to_owned();
         config.filter = Some(s)
     }
     config.mode = cfg_mode;
     config.src_base = PathBuf::from(format!("tests/{}", mode));
+    config.link_deps();
+    config.clean_rmeta();
 
     compiletest::run_tests(&config);
 }

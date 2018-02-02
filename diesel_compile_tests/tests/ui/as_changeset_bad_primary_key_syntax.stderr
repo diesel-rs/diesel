@@ -1,0 +1,14 @@
+error: Expected `bar` found `bar = "baz"`
+ --> <macro expansion>:1:1
+  |
+1 | #[primary_key(id, bar = "baz", qux(id))]
+  | ^
+
+error: Expected `qux` found `qux ( id )`
+ --> <macro expansion>:1:1
+  |
+1 | #[primary_key(id, bar = "baz", qux(id))]
+  | ^
+
+error: aborting due to 2 previous errors
+

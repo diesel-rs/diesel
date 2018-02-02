@@ -1,7 +1,9 @@
 use proc_macro2::Span;
 use quote;
 use syn;
+use syn::spanned::Spanned;
 
+use diagnostic_shim::*;
 use meta::*;
 
 pub struct Field {
@@ -12,9 +14,8 @@ pub struct Field {
 
 impl Field {
     pub fn from_struct_field(field: &syn::Field, index: usize) -> Self {
-        let column_name_from_attribute = MetaItem::with_name(&field.attrs, "column_name")
-            .ok()
-            .map(|m| m.expect_ident_value());
+        let column_name_from_attribute =
+            MetaItem::with_name(&field.attrs, "column_name").map(|m| m.expect_ident_value());
         let name = match field.ident {
             Some(x) => FieldName::Named(x),
             None => FieldName::Unnamed(syn::Index {
@@ -35,7 +36,15 @@ impl Field {
         self.column_name_from_attribute
             .unwrap_or_else(|| match self.name {
                 FieldName::Named(x) => x,
-                _ => panic!("All fields of tuple structs must be annotated with `#[column_name]`"),
+                _ => {
+                    self.ty
+                        .span()
+                        .error(
+                            "All fields of tuple structs must be annotated with `#[column_name]`",
+                        )
+                        .emit();
+                    "unknown_column".into()
+                }
             })
     }
 }

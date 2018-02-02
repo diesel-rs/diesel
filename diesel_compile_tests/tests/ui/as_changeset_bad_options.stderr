@@ -1,0 +1,38 @@
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options(treat_none_as_null("true"))]
+  | ^
+
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options(treat_none_as_null)]
+  | ^
+
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options(treat_none_as_null = "foo")]
+  | ^
+
+error: Missing required option treat_none_as_null
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options()]
+  | ^
+
+error: `changeset_options` must be in the form `changeset_options(...)`
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options = "treat_none_as_null"]
+  | ^
+
+error: `changeset_options` must be in the form `changeset_options(...)`
+ --> <macro expansion>:1:1
+  |
+1 | #[changeset_options]
+  | ^
+
+error: aborting due to 6 previous errors
+
