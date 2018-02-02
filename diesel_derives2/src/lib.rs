@@ -27,6 +27,7 @@ mod model;
 mod util;
 
 mod as_changeset;
+mod as_expression;
 mod associations;
 mod identifiable;
 mod query_id;
@@ -38,6 +39,11 @@ use diagnostic_shim::*;
                     attributes(table_name, primary_key, column_name, changeset_options))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive)
+}
+
+#[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
+pub fn derive_as_expression(input: TokenStream) -> TokenStream {
+    expand_derive(input, as_expression::derive)
 }
 
 #[proc_macro_derive(Associations, attributes(belongs_to, column_name, table_name))]

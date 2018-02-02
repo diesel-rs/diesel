@@ -25,7 +25,18 @@ impl MetaItem {
         Self::all_with_name(attrs, name).pop()
     }
 
-    pub fn nested_item<'a>(&self, name: &'a str) -> Result<Self, Diagnostic> {
+    pub fn empty(name: &str) -> Self {
+        Self {
+            pound_span: Span::call_site(),
+            meta: syn::Meta::List(syn::MetaList {
+                ident: name.into(),
+                paren_token: Default::default(),
+                nested: Default::default(),
+            }),
+        }
+    }
+
+    pub fn nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
         self.nested().and_then(|mut i| {
             i.find(|n| n.name() == name).ok_or_else(|| {
                 self.span()
@@ -117,7 +128,27 @@ impl MetaItem {
         self.meta.name()
     }
 
+    pub fn has_flag(&self, flag: &str) -> bool {
+        self.nested()
+            .map(|mut n| n.any(|m| m.expect_word() == flag))
+            .unwrap_or_else(|e| {
+                e.emit();
+                false
+            })
+    }
+
+    pub fn ty_value(&self) -> Result<syn::Type, Diagnostic> {
+        let mut str = self.lit_str_value()?.clone();
+        // https://github.com/rust-lang/rust/issues/47941
+        str.span = self.span_or_pound_token(str.span);
+        str.parse().map_err(|_| str.span.error("Invalid Rust type"))
+    }
+
     fn str_value(&self) -> Result<String, Diagnostic> {
+        self.lit_str_value().map(syn::LitStr::value)
+    }
+
+    fn lit_str_value(&self) -> Result<&syn::LitStr, Diagnostic> {
         use syn::Meta::*;
         use syn::MetaNameValue;
         use syn::Lit::*;
@@ -125,7 +156,7 @@ impl MetaItem {
         match self.meta {
             NameValue(MetaNameValue {
                 lit: Str(ref s), ..
-            }) => Ok(s.value()),
+            }) => Ok(s),
             _ => Err(self.span().error(format!(
                 "`{0}` must be in the form `{0} = \"value\"`",
                 self.name()

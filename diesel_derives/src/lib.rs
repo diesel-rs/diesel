@@ -24,7 +24,6 @@ extern crate proc_macro;
 extern crate quote;
 extern crate syn;
 
-mod as_expression;
 mod ast_builder;
 mod attr;
 mod from_sql_row;
@@ -50,11 +49,6 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(FromSqlRow, attributes(diesel))]
 pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     expand_derive(input, from_sql_row::derive)
-}
-
-#[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
-pub fn derive_as_expression(input: TokenStream) -> TokenStream {
-    expand_derive(input, as_expression::derive)
 }
 
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]

@@ -3,6 +3,7 @@ use quote::Tokens;
 use syn::*;
 
 pub use diagnostic_shim::*;
+use meta::*;
 
 pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
     let call_site = root_span(Span::call_site());
@@ -46,6 +47,26 @@ fn option_ty_arg(ty: &Type) -> Option<&Type> {
             }
         }
         _ => None,
+    }
+}
+
+pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Type, Diagnostic> {
+    if flags.has_flag("foreign_derive") {
+        match item.data {
+            Data::Struct(ref body) => match body.fields.iter().nth(0) {
+                Some(field) => Ok(field.ty.clone()),
+                None => Err(flags
+                    .span()
+                    .error("foreign_derive requires at least one field")),
+            },
+            _ => Err(flags
+                .span()
+                .error("foreign_derive can only be used with structs")),
+        }
+    } else {
+        let ident = item.ident;
+        let (_, ty_generics, ..) = item.generics.split_for_impl();
+        Ok(parse_quote!(#ident #ty_generics))
     }
 }
 

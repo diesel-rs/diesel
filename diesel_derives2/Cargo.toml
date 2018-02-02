@@ -9,7 +9,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 
 [dependencies]
-syn = { version = "0.12.0", features = ["full"] }
+syn = { version = "0.12.11", features = ["full"] }
 quote = "0.4"
 clippy = { optional = true, version = "=0.0.185" }
 proc-macro2 = "0.2.0"
