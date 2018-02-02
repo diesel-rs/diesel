@@ -108,7 +108,7 @@ pub struct StatementCache<DB: Backend, Statement> {
     pub cache: RefCell<HashMap<StatementCacheKey<DB>, Statement>>,
 }
 
-#[cfg_attr(feature = "clippy", allow(len_without_is_empty))]
+#[cfg_attr(feature = "clippy", allow(len_without_is_empty, new_without_default_derive))]
 impl<DB, Statement> StatementCache<DB, Statement>
 where
     DB: Backend,
@@ -116,7 +116,6 @@ where
     DB::QueryBuilder: Default,
     StatementCacheKey<DB>: Hash + Eq,
 {
-    #[cfg_attr(feature = "clippy", allow(new_without_default_derive))]
     pub fn new() -> Self {
         StatementCache {
             cache: RefCell::new(HashMap::new()),

@@ -1,14 +1,18 @@
 use syn::*;
 use quote::Tokens;
 
-pub fn wrap_in_dummy_const(const_name: Ident, item: Tokens) -> Tokens {
+pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
     quote! {
-        const #const_name: () = {
+        mod #const_name {
+            // https://github.com/rust-lang/rust/issues/47314
+            extern crate std;
+
             mod diesel {
                 __diesel_use_everything!();
             }
+            use self::diesel::prelude::*;
             #item
-        };
+        }
     }
 }
 

@@ -42,8 +42,8 @@ pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     pub binds: Vec<Option<Vec<u8>>>,
 }
 
+#[cfg_attr(feature = "clippy", allow(new_without_default_derive))]
 impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
-    #[cfg_attr(feature = "clippy", allow(new_without_default_derive))]
     /// Construct an empty `RawBytesBindCollector`
     pub fn new() -> Self {
         RawBytesBindCollector {

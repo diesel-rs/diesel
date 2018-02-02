@@ -22,15 +22,10 @@ script:
   (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
   (cd diesel_derives && travis-cargo test -- --features "diesel/$BACKEND") &&
   (cd diesel_derives2 && travis-cargo test -- --features "$BACKEND") &&
-  if [[ "$BACKEND" == postgres ]]; then
-    (cd examples/postgres && ./test_all)
+  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
+    (cd diesel_derives2 && travis-cargo test -- --features "nightly $BACKEND")
   fi &&
-  if [[ "$BACKEND" == mysql ]]; then
-    (cd examples/mysql && ./test_all)
-  fi &&
-  if [[ "$BACKEND" == sqlite ]]; then
-    (cd examples/sqlite && ./test_all)
-  fi &&
+  (cd "examples/$BACKEND" && ./test_all) &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_infer_schema/infer_schema_internals && travis-cargo test -- --no-default-features --features "$BACKEND") &&
   (cd diesel_infer_schema/infer_schema_macros && travis-cargo test -- --no-default-features --features "$BACKEND") &&
@@ -48,7 +43,7 @@ matrix:
     - rust: nightly
     - rust: beta
   include:
-  - rust: nightly-2017-11-28
+  - rust: nightly-2018-02-02
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)

@@ -11,7 +11,7 @@ keywords = ["diesel"]
 
 [dependencies]
 infer_schema_macros = { version = "1.1.0" }
-clippy = { optional = true, version = "=0.0.174" }
+clippy = { optional = true, version = "=0.0.185" }
 
 [dev-dependencies]
 diesel = "1.1.0"

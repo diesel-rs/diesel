@@ -7,7 +7,7 @@ description = "Internal implementation of diesels migration mechanism"
 homepage = "http://diesel.rs"
 
 [dependencies]
-clippy = { optional = true, version = "=0.0.174" }
+clippy = { optional = true, version = "=0.0.185" }
 diesel = "1.1.0"
 
 [dev-dependencies]

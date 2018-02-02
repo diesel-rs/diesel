@@ -1,4 +1,5 @@
 use syn;
+use proc_macro2::Span;
 
 use field::*;
 use meta::*;
@@ -28,13 +29,17 @@ impl Model {
     }
 
     pub fn table_name(&self) -> syn::Ident {
-        self.table_name_from_attribute
-            .unwrap_or_else(|| infer_table_name(self.name.as_ref()).into())
+        self.table_name_from_attribute.unwrap_or_else(|| {
+            syn::Ident::new(
+                &infer_table_name(self.name.as_ref()),
+                self.name.span.resolved_at(Span::call_site()),
+            )
+        })
     }
 
-    pub fn dummy_const_name(&self, trait_name: &str) -> syn::Ident {
-        let name = self.name.as_ref().to_uppercase();
-        format!("_IMPL_{}_FOR_{}", trait_name, name).into()
+    pub fn dummy_mod_name(&self, trait_name: &str) -> syn::Ident {
+        let name = self.name.as_ref().to_lowercase();
+        format!("_impl_{}_for_{}", trait_name, name).into()
     }
 
     pub fn fields(&self) -> &[Field] {
