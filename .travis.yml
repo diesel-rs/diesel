@@ -53,12 +53,12 @@ matrix:
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
-  - rust: nightly-2017-12-12
+  - rust: nightly-2018-02-02
     env: RUSTFMT=YESPLEASE
     script:
     - |
       if ! [ -x "$(command -v rustfmt)" ]; then
-        cargo install rustfmt-nightly --vers 0.3.1
+        cargo install rustfmt-nightly --vers 0.3.7
       fi
     - cargo fmt --all -- --write-mode=diff
 env:

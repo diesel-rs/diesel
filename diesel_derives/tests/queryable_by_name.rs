@@ -51,8 +51,10 @@ fn tuple_struct() {
 fn struct_with_no_table() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     struct MyStructNamedSoYouCantInferIt {
-        #[sql_type = "IntSql"] foo: IntRust,
-        #[sql_type = "IntSql"] bar: IntRust,
+        #[sql_type = "IntSql"]
+        foo: IntRust,
+        #[sql_type = "IntSql"]
+        bar: IntRust,
     }
 
     let conn = connection();
@@ -66,7 +68,8 @@ fn embedded_struct() {
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
-        #[diesel(embed)] b: B,
+        #[diesel(embed)]
+        b: B,
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
@@ -92,7 +95,8 @@ fn embedded_option() {
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
-        #[diesel(embed)] b: Option<B>,
+        #[diesel(embed)]
+        b: Option<B>,
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]

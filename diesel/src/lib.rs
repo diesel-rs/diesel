@@ -118,11 +118,11 @@ extern crate byteorder;
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
-extern crate diesel_derives2;
+extern crate diesel_derives;
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
-extern crate diesel_derives;
+extern crate diesel_derives2;
 #[doc(hidden)]
 pub use diesel_derives::*;
 #[doc(hidden)]

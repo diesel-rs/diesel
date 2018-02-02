@@ -15,9 +15,12 @@ static RESERVED_NAMES: &[&str] = &[
 ];
 
 pub(crate) enum InferConnection {
-    #[cfg(feature = "sqlite")] Sqlite(SqliteConnection),
-    #[cfg(feature = "postgres")] Pg(PgConnection),
-    #[cfg(feature = "mysql")] Mysql(MysqlConnection),
+    #[cfg(feature = "sqlite")]
+    Sqlite(SqliteConnection),
+    #[cfg(feature = "postgres")]
+    Pg(PgConnection),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlConnection),
 }
 
 pub fn load_table_names(

@@ -18,9 +18,12 @@ use std::fs::{self, File};
 use std::io::Write;
 
 enum Backend {
-    #[cfg(feature = "postgres")] Pg,
-    #[cfg(feature = "sqlite")] Sqlite,
-    #[cfg(feature = "mysql")] Mysql,
+    #[cfg(feature = "postgres")]
+    Pg,
+    #[cfg(feature = "sqlite")]
+    Sqlite,
+    #[cfg(feature = "mysql")]
+    Mysql,
 }
 
 impl Backend {
@@ -70,9 +73,12 @@ impl Backend {
 }
 
 pub enum InferConnection {
-    #[cfg(feature = "postgres")] Pg(PgConnection),
-    #[cfg(feature = "sqlite")] Sqlite(SqliteConnection),
-    #[cfg(feature = "mysql")] Mysql(MysqlConnection),
+    #[cfg(feature = "postgres")]
+    Pg(PgConnection),
+    #[cfg(feature = "sqlite")]
+    Sqlite(SqliteConnection),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlConnection),
 }
 
 impl InferConnection {

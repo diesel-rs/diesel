@@ -73,7 +73,8 @@ pub enum Error {
     /// when a transaction was already open.
     AlreadyInTransaction,
 
-    #[doc(hidden)] __Nonexhaustive,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -93,7 +94,8 @@ pub enum DatabaseErrorKind {
     /// An example of a case where this would occur is if you attempted to send
     /// a query with more than 65000 bind parameters using PostgreSQL.
     UnableToSendCommand,
-    #[doc(hidden)] __Unknown, // Match against _ instead, more variants may be added in the future
+    #[doc(hidden)]
+    __Unknown, // Match against _ instead, more variants may be added in the future
 }
 
 /// Information about an error that was returned by the database.
@@ -179,7 +181,8 @@ pub enum ConnectionError {
     /// This variant is returned if an error occurred executing the query to set
     /// those options. Diesel will never affect global configuration.
     CouldntSetupConfiguration(Error),
-    #[doc(hidden)] __Nonexhaustive, // Match against _ instead, more variants may be added in the future
+    #[doc(hidden)]
+    __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
 /// A specialized result type for queries.

@@ -49,20 +49,15 @@ impl SqliteValue {
     }
 
     pub fn read_long(&self) -> i64 {
-        unsafe {
-            ffi::sqlite3_column_int64(self.inner_statement, self.col_index.get()) as i64
-        }
+        unsafe { ffi::sqlite3_column_int64(self.inner_statement, self.col_index.get()) as i64 }
     }
 
     pub fn read_double(&self) -> f64 {
-        unsafe {
-            ffi::sqlite3_column_double(self.inner_statement, self.col_index.get()) as f64
-        }
+        unsafe { ffi::sqlite3_column_double(self.inner_statement, self.col_index.get()) as f64 }
     }
 
     pub fn is_null(&self) -> bool {
-        let tpe =
-            unsafe { ffi::sqlite3_column_type(self.inner_statement, self.col_index.get()) };
+        let tpe = unsafe { ffi::sqlite3_column_type(self.inner_statement, self.col_index.get()) };
         tpe == ffi::SQLITE_NULL
     }
 }

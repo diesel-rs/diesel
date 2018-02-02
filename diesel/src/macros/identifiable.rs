@@ -155,7 +155,8 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
             id: i32,
-            #[allow(dead_code)] foo: i32,
+            #[allow(dead_code)]
+            foo: i32,
         }
 
         impl_Identifiable! {
@@ -178,7 +179,8 @@ mod test {
 
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
-            #[allow(dead_code)] foo: i32,
+            #[allow(dead_code)]
+            foo: i32,
             id: i32,
         }
 
@@ -203,7 +205,8 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo {
             id: &'static str,
-            #[allow(dead_code)] foo: i32,
+            #[allow(dead_code)]
+            foo: i32,
         }
 
         impl_Identifiable! {
@@ -230,7 +233,8 @@ mod test {
         #[allow(missing_debug_implementations, missing_copy_implementations)]
         struct Foo<'a> {
             id: &'a str,
-            #[allow(dead_code)] foo: i32,
+            #[allow(dead_code)]
+            foo: i32,
         }
 
         impl_Identifiable! {

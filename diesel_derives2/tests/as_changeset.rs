@@ -141,8 +141,10 @@ fn with_explicit_column_names() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
     struct UserForm<'a> {
-        #[column_name = "name"] nombre: &'a str,
-        #[column_name = "hair_color"] color_de_pelo: &'a str,
+        #[column_name = "name"]
+        nombre: &'a str,
+        #[column_name = "hair_color"]
+        color_de_pelo: &'a str,
     }
 
     let connection = connection_with_sean_and_tess_in_users_table();
@@ -236,7 +238,8 @@ fn primary_key_is_not_updated() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
     struct UserForm<'a> {
-        #[allow(dead_code)] id: i32,
+        #[allow(dead_code)]
+        id: i32,
         name: &'a str,
         hair_color: &'a str,
     }
@@ -265,7 +268,8 @@ fn primary_key_is_based_on_column_name() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
     struct UserForm<'a> {
-        #[column_name = "id"] _id: i32,
+        #[column_name = "id"]
+        _id: i32,
         name: &'a str,
         hair_color: &'a str,
     }
@@ -295,7 +299,8 @@ fn primary_key_is_not_updated_with_custom_pk() {
     #[table_name = "users"]
     #[primary_key(name)]
     struct UserForm<'a> {
-        #[allow(dead_code)] name: &'a str,
+        #[allow(dead_code)]
+        name: &'a str,
         hair_color: &'a str,
     }
 
