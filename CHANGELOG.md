@@ -17,6 +17,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   inserting from a select statement, as select statements tend to span multiple
   lines.
 
+* Diesel's derives can now produce improved error messages if you are using a
+  nightly compiler, and enable the `unstable` feature. For the best errors, you
+  should also set `RUSTFLAGS="--cfg procmacro2_semver_exempt"`.
+
 * Added support for specifying `ISOLATION LEVEL`, `DEFERRABLE`, and `READ ONLY`
   on PG transactions. See [`PgConnection::build_transaction`] for details.
 

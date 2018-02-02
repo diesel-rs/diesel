@@ -1,6 +1,8 @@
 use syn::*;
 use quote::Tokens;
 
+pub use diagnostic_shim::*;
+
 pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
     quote! {
         mod #const_name {

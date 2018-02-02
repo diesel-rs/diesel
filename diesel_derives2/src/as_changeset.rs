@@ -1,20 +1,21 @@
 use quote;
 use syn;
+use proc_macro2::Span;
 
+use diagnostic_shim::*;
 use field::*;
 use meta::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
+pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let treat_none_as_null = MetaItem::with_name(&item.attrs, "changeset_options")
         .map(|meta| {
             meta.nested_item("treat_none_as_null")
-                .required()
-                .expect_bool_value()
+                .map(|m| m.expect_bool_value())
         })
-        .unwrap_or(false);
-    let model = Model::from_item(&item);
+        .unwrap_or(Ok(false))?;
+    let model = Model::from_item(&item)?;
     let struct_name = &model.name;
     let table_name = model.table_name();
 
@@ -36,14 +37,16 @@ pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
         .map(|field| field_changeset_expr(field, table_name, treat_none_as_null));
 
     if fields_for_update.is_empty() {
-        panic!(
-            "Deriving `AsChangeset` on a structure that only contains the primary key isn't \
-             supported. If you want to change the primary key of a row, you should do so with \
-             `.set(table::id.eq(new_id))`. `AsChangeset` never changes the primary key of a row."
-        );
+        Span::call_site()
+            .error(
+                "Deriving `AsChangeset` on a structure that only contains the primary key isn't supported."
+            )
+            .help("If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.")
+            .note("`#[derive(AsChangeset)]` never changes the primary key of a row.")
+            .emit();
     }
 
-    wrap_in_dummy_mod(
+    Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("as_changeset"),
         quote!(
             use self::diesel::query_builder::AsChangeset;
@@ -59,7 +62,7 @@ pub fn derive(item: syn::DeriveInput) -> quote::Tokens {
                 }
             }
         ),
-    )
+    ))
 }
 
 fn field_changeset_ty(

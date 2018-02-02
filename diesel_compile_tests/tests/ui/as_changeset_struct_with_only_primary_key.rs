@@ -1,11 +1,11 @@
 #[macro_use] extern crate diesel;
 
-table!(
+table! {
     foo {
         id -> Integer,
         bar -> Integer,
     }
-);
+}
 
 #[derive(AsChangeset)]
 #[table_name="foo"]
@@ -15,7 +15,6 @@ struct Foo1 {
 }
 
 #[derive(AsChangeset)]
-//~^ ERROR: proc-macro derive panicked
 #[table_name="foo"]
 struct Foo2 {
     id: i32,
