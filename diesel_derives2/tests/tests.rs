@@ -12,3 +12,4 @@ mod schema;
 
 mod as_changeset;
 mod identifiable;
+mod queryable;

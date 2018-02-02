@@ -54,6 +54,19 @@ pub enum FieldName {
     Unnamed(syn::Index),
 }
 
+impl FieldName {
+    pub fn for_assignment(&self) -> quote::Tokens {
+        match *self {
+            FieldName::Named(mut x) => {
+                // https://github.com/rust-lang/rust/issues/47311
+                x.span = Span::call_site();
+                quote!(#x)
+            }
+            FieldName::Unnamed(ref x) => quote!(#x),
+        }
+    }
+}
+
 impl quote::ToTokens for FieldName {
     fn to_tokens(&self, tokens: &mut quote::Tokens) {
         use proc_macro2::{Spacing, TokenNode, TokenTree};
