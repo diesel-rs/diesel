@@ -26,7 +26,6 @@ extern crate syn;
 
 mod ast_builder;
 mod attr;
-mod from_sql_row;
 mod insertable;
 mod model;
 mod queryable_by_name;
@@ -44,11 +43,6 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
-}
-
-#[proc_macro_derive(FromSqlRow, attributes(diesel))]
-pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
-    expand_derive(input, from_sql_row::derive)
 }
 
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]

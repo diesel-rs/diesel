@@ -148,10 +148,3 @@ pub fn wrap_item_in_const(const_name: Ident, item: Tokens) -> Tokens {
         };
     }
 }
-
-pub fn flag_present(attrs: &[Attribute], flag: &str) -> bool {
-    list_value_of_attr_with_name(attrs, "diesel")
-        .unwrap_or_else(Vec::new)
-        .into_iter()
-        .any(|f| f == flag)
-}
