@@ -10,7 +10,7 @@ syn = { version = "0.11.4", features = ["aster"] }
 quote = "0.3.12"
 dotenv = { version = ">=0.8, <0.11", optional = true, default-features = false }
 infer_schema_internals = { version = "1.1.0", default-features = false }
-clippy = { optional = true, version = "=0.0.174" }
+clippy = { optional = true, version = "=0.0.185" }
 
 [dev-dependencies]
 tempdir = "^0.3.4"

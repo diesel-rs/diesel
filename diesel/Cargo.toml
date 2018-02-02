@@ -16,7 +16,7 @@ byteorder = "1.0"
 diesel_derives = { version = "1.1.0" }
 diesel_derives2 = { path = "../diesel_derives2" }
 chrono = { version = "0.4", optional = true }
-clippy = { optional = true, version = "=0.0.174" }
+clippy = { optional = true, version = "=0.0.185" }
 libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.8.0, <0.10.0", optional = true, features = ["min_sqlite_version_3_7_16"] }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }
