@@ -27,6 +27,7 @@ mod model;
 mod util;
 
 mod as_changeset;
+mod identifiable;
 
 use diagnostic_shim::*;
 
@@ -34,6 +35,11 @@ use diagnostic_shim::*;
                     attributes(table_name, primary_key, column_name, changeset_options))]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive)
+}
+
+#[proc_macro_derive(Identifiable, attributes(table_name, primary_key, column_name))]
+pub fn derive_identifiable(input: TokenStream) -> TokenStream {
+    expand_derive(input, identifiable::derive)
 }
 
 fn expand_derive(

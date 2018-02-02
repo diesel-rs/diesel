@@ -54,6 +54,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   old and new timestamp formats. (The migrations were always run in the correct
   order, this only affects the display logic of `migration list`)
 
+* `#[derive(Identifiable)]` now correctly associates `#[primary_key]` with the
+  column name, not field name.
+
 ## [1.1.1] - 2018-01-16
 
 ### Added

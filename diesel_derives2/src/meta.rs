@@ -76,7 +76,10 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            Word(x) => Ok(x),
+            Word(mut x) => {
+                x.span = self.span_or_pound_token(x.span);
+                Ok(x)
+            }
             _ => {
                 let meta = &self.meta;
                 Err(self.span().error(format!(

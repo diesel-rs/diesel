@@ -12,7 +12,6 @@ pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
             mod diesel {
                 __diesel_use_everything!();
             }
-            use self::diesel::prelude::*;
             #item
         }
     }

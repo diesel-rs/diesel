@@ -45,6 +45,17 @@ impl Model {
     pub fn fields(&self) -> &[Field] {
         &self.fields
     }
+
+    pub fn find_column(&self, column_name: syn::Ident) -> Result<&Field, Diagnostic> {
+        self.fields()
+            .iter()
+            .find(|f| f.column_name() == column_name)
+            .ok_or_else(|| {
+                column_name
+                    .span
+                    .error(format!("No field with column name {}", column_name))
+            })
+    }
 }
 
 pub fn camel_to_snake(name: &str) -> String {

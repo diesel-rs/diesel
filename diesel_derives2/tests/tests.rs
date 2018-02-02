@@ -11,3 +11,4 @@ mod helpers;
 mod schema;
 
 mod as_changeset;
+mod identifiable;
