@@ -44,7 +44,10 @@ impl MetaItem {
                 );
                 x
             }
-            _ => syn::Ident::new(&self.expect_str_value(), self.span.resolved_at(Span::call_site())),
+            _ => syn::Ident::new(
+                &self.expect_str_value(),
+                self.span.resolved_at(Span::call_site()),
+            ),
         }
     }
 
@@ -125,7 +128,10 @@ impl<'a> Iterator for Nested<'a> {
         use syn::NestedMeta::*;
 
         match self.0.next() {
-            Some(&Meta(ref item)) => Some(MetaItem { span: self.1, meta: item.clone() }),
+            Some(&Meta(ref item)) => Some(MetaItem {
+                span: self.1,
+                meta: item.clone(),
+            }),
             Some(_) => self.next(),
             None => None,
         }
