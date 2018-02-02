@@ -1,0 +1,26 @@
+error: No field with column name bar_id
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^
+
+error: No field with column name bar_id
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^
+
+error: No field with column name bar_id
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^
+
+error: No field with column name bar_id
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^
+
+error: aborting due to 4 previous errors
+

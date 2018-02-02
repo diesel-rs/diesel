@@ -25,7 +25,6 @@ extern crate quote;
 extern crate syn;
 
 mod as_expression;
-mod associations;
 mod ast_builder;
 mod attr;
 mod from_sql_row;
@@ -53,11 +52,6 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
-}
-
-#[proc_macro_derive(Associations, attributes(table_name, belongs_to))]
-pub fn derive_associations(input: TokenStream) -> TokenStream {
-    expand_derive(input, associations::derive_associations)
 }
 
 #[proc_macro_derive(QueryId)]

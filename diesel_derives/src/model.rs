@@ -86,15 +86,3 @@ fn attrs_from_struct_body(body: &syn::VariantData) -> Vec<Attr> {
         .map(Attr::from_struct_field)
         .collect()
 }
-
-#[test]
-fn infer_table_name_pluralizes_and_downcases() {
-    assert_eq!("foos", &infer_table_name("Foo"));
-    assert_eq!("bars", &infer_table_name("Bar"));
-}
-
-#[test]
-fn infer_table_name_properly_handles_underscores() {
-    assert_eq!("foo_bars", &infer_table_name("FooBar"));
-    assert_eq!("foo_bar_bazs", &infer_table_name("FooBarBaz"));
-}

@@ -1,0 +1,48 @@
+error: `belongs_to` must be in the form `belongs_to(...)`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to]
+  | ^
+
+error: `belongs_to` must be in the form `belongs_to(...)`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to = "Bar"]
+  | ^
+
+error: Expected a struct name
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to()]
+  | ^
+  |
+  = help: e.g. `#[belongs_to(User)]`
+
+error: Expected a struct name
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(foreign_key = "bar_id")]
+  | ^
+  |
+  = help: e.g. `#[belongs_to(User)]`
+
+error: `foreign_key` must be in the form `foreign_key = "value"`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key)]
+  | ^
+
+warning: The form `foreign_key(value)` is deprecated. Use `foreign_key = "value"` instead
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key(bar_id))]
+  | ^
+
+warning: Unrecognized option random_option
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
+  | ^
+
+error: aborting due to 5 previous errors
+

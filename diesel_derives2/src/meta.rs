@@ -12,17 +12,22 @@ pub struct MetaItem {
 }
 
 impl MetaItem {
-    pub fn with_name<'a>(attrs: &[syn::Attribute], name: &'a str) -> Option<Self> {
+    pub fn all_with_name(attrs: &[syn::Attribute], name: &str) -> Vec<Self> {
         attrs
             .iter()
             .filter_map(|attr| attr.interpret_meta().map(|m| (attr.pound_token.0[0], m)))
-            .find(|&(_, ref m)| m.name() == name)
+            .filter(|&(_, ref m)| m.name() == name)
             .map(|(pound_span, meta)| Self { pound_span, meta })
+            .collect()
+    }
+
+    pub fn with_name(attrs: &[syn::Attribute], name: &str) -> Option<Self> {
+        Self::all_with_name(attrs, name).pop()
     }
 
     pub fn nested_item<'a>(&self, name: &'a str) -> Result<Self, Diagnostic> {
         self.nested().and_then(|mut i| {
-            i.nth(0).ok_or_else(|| {
+            i.find(|n| n.name() == name).ok_or_else(|| {
                 self.span()
                     .error(format!("Missing required option {}", name))
             })
@@ -46,6 +51,13 @@ impl MetaItem {
     }
 
     pub fn expect_ident_value(&self) -> syn::Ident {
+        self.ident_value().unwrap_or_else(|e| {
+            e.emit();
+            self.name()
+        })
+    }
+
+    pub fn ident_value(&self) -> Result<syn::Ident, Diagnostic> {
         let maybe_attr = self.nested().ok().and_then(|mut n| n.nth(0));
         let maybe_word = maybe_attr.as_ref().and_then(|m| m.word().ok());
         match maybe_word {
@@ -56,16 +68,16 @@ impl MetaItem {
                         self.name(),
                     ))
                     .emit();
-                x
+                Ok(x)
             }
-            _ => syn::Ident::new(
-                &self.expect_str_value(),
+            _ => Ok(syn::Ident::new(
+                &self.str_value()?,
                 self.value_span().resolved_at(Span::call_site()),
-            ),
+            )),
         }
     }
 
-    pub fn expect_word(self) -> syn::Ident {
+    pub fn expect_word(&self) -> syn::Ident {
         self.word().unwrap_or_else(|e| {
             e.emit();
             self.name()
@@ -101,14 +113,7 @@ impl MetaItem {
         }
     }
 
-    fn expect_str_value(&self) -> String {
-        self.str_value().unwrap_or_else(|e| {
-            e.emit();
-            self.name().to_string()
-        })
-    }
-
-    fn name(&self) -> syn::Ident {
+    pub fn name(&self) -> syn::Ident {
         self.meta.name()
     }
 
@@ -139,7 +144,7 @@ impl MetaItem {
         self.span_or_pound_token(s)
     }
 
-    fn span(&self) -> Span {
+    pub fn span(&self) -> Span {
         self.span_or_pound_token(self.meta.span())
     }
 

@@ -1,16 +1,10 @@
-#![allow(dead_code, unused_must_use)]
+use diesel::*;
+use helpers::*;
 
-#[cfg(feature = "sqlite")]
-type Backend = ::diesel::sqlite::Sqlite;
-#[cfg(feature = "mysql")]
-type Backend = ::diesel::mysql::Mysql;
-#[cfg(feature = "postgres")]
-type Backend = ::diesel::pg::Pg;
+type Backend = <TestConnection as Connection>::Backend;
 
 #[test]
 fn simple_belongs_to() {
-    use diesel::*;
-
     table! {
         users {
             id -> Integer,
@@ -31,7 +25,6 @@ fn simple_belongs_to() {
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
-        name: String,
     }
 
     #[derive(Associations, Identifiable)]
@@ -39,7 +32,6 @@ fn simple_belongs_to() {
     pub struct Post {
         id: i32,
         user_id: i32,
-        title: String,
     }
 
     joinable!(posts -> users(user_id));
@@ -59,10 +51,7 @@ fn simple_belongs_to() {
         .select((posts::id, posts::user_id, posts::title))
         .filter(users::id.eq(1).and(users::name.eq("Sean")));
 
-    let t = User {
-        id: 42,
-        name: "Sean".into(),
-    };
+    let t = User { id: 42 };
 
     let belong_to = Post::belonging_to(&t);
     let filter = posts::table.filter(posts::user_id.eq(42));
@@ -75,8 +64,6 @@ fn simple_belongs_to() {
 
 #[test]
 fn custom_foreign_key() {
-    use diesel::*;
-
     table! {
         users {
             id -> Integer,
@@ -97,7 +84,6 @@ fn custom_foreign_key() {
     #[derive(Identifiable)]
     pub struct User {
         id: i32,
-        name: String,
     }
 
     #[derive(Associations, Identifiable)]
@@ -105,7 +91,6 @@ fn custom_foreign_key() {
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
-        title: String,
     }
 
     joinable!(posts -> users(belongs_to_user));
@@ -125,10 +110,7 @@ fn custom_foreign_key() {
         .select((posts::id, posts::belongs_to_user, posts::title))
         .filter(users::id.eq(1).and(users::name.eq("Sean")));
 
-    let t = User {
-        id: 42,
-        name: "Sean".into(),
-    };
+    let t = User { id: 42 };
 
     let belong_to = Post::belonging_to(&t);
     let filter = posts::table.filter(posts::belongs_to_user.eq(42));
@@ -141,8 +123,6 @@ fn custom_foreign_key() {
 
 #[test]
 fn self_referential() {
-    use diesel::*;
-
     table! {
         trees {
             id -> Integer,

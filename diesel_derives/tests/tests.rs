@@ -7,5 +7,4 @@ extern crate diesel_derives;
 
 mod queryable;
 mod queryable_by_name;
-mod associations;
 mod test_helpers;

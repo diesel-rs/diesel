@@ -94,3 +94,15 @@ fn fields_from_item_data(data: &syn::Data) -> Result<Vec<Field>, Diagnostic> {
         .map(|(i, f)| Field::from_struct_field(f, i))
         .collect())
 }
+
+#[test]
+fn infer_table_name_pluralizes_and_downcases() {
+    assert_eq!("foos", &infer_table_name("Foo"));
+    assert_eq!("bars", &infer_table_name("Bar"));
+}
+
+#[test]
+fn infer_table_name_properly_handles_underscores() {
+    assert_eq!("foo_bars", &infer_table_name("FooBar"));
+    assert_eq!("foo_bar_bazs", &infer_table_name("FooBarBaz"));
+}

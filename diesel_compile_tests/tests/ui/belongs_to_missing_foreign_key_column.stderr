@@ -1,0 +1,50 @@
+error[E0412]: cannot find type `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar)]
+  | ^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+ --> <macro expansion>:1:1
+  |
+1 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  | ^ not found in `foo`
+
+error: aborting due to 8 previous errors
+
