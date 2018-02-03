@@ -178,6 +178,41 @@ where
     }
 }
 
+impl<F, S, D, W, O, L, Of, G, FU, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, OrderClause<O>, L, Of, G, FU>
+where
+    Expr: AppearsOnTable<F>,
+{
+    type Output = SelectStatement<F, S, D, W, OrderClause<(O, Expr)>, L, Of, G, FU>;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            OrderClause((self.order.0, expr)),
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.for_update,
+        )
+    }
+}
+
+impl<F, S, D, W, L, Of, G, FU, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, NoOrderClause, L, Of, G, FU>
+where
+    Expr: Expression,
+    Self: OrderDsl<Expr>,
+{
+    type Output = ::dsl::Order<Self, Expr>;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        self.order_by(expr)
+    }
+}
+
 #[doc(hidden)]
 pub type Limit = AsExprOf<i64, BigInt>;
 
@@ -280,7 +315,7 @@ where
     S: QueryFragment<DB> + SelectableExpression<F> + 'a,
     D: QueryFragment<DB> + 'a,
     W: Into<Option<Box<QueryFragment<DB> + 'a>>>,
-    O: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
     L: QueryFragment<DB> + 'a,
     Of: QueryFragment<DB> + 'a,
     G: QueryFragment<DB> + 'a,
@@ -293,7 +328,7 @@ where
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
-            Box::new(self.order),
+            self.order.into(),
             Box::new(self.limit),
             Box::new(self.offset),
             Box::new(self.group_by),
@@ -310,7 +345,7 @@ where
     F::DefaultSelection: QueryFragment<DB> + 'a,
     D: QueryFragment<DB> + 'a,
     W: Into<Option<Box<QueryFragment<DB> + 'a>>>,
-    O: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
     L: QueryFragment<DB> + 'a,
     Of: QueryFragment<DB> + 'a,
     G: QueryFragment<DB> + 'a,
@@ -323,7 +358,7 @@ where
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
-            Box::new(self.order),
+            self.order.into(),
             Box::new(self.limit),
             Box::new(self.offset),
             Box::new(self.group_by),
