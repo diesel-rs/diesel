@@ -1,13 +1,11 @@
 use proc_macro2::Span;
 use syn;
 use syn::spanned::Spanned;
+use syn::fold::Fold;
 
 use diagnostic_shim::*;
 
 pub struct MetaItem {
-    // Due to https://github.com/rust-lang/rust/issues/47941
-    // we can only ever get the span of the #, which is better than nothing
-    pound_span: Span,
     meta: syn::Meta,
 }
 
@@ -15,9 +13,12 @@ impl MetaItem {
     pub fn all_with_name(attrs: &[syn::Attribute], name: &str) -> Vec<Self> {
         attrs
             .iter()
-            .filter_map(|attr| attr.interpret_meta().map(|m| (attr.pound_token.0[0], m)))
-            .filter(|&(_, ref m)| m.name() == name)
-            .map(|(pound_span, meta)| Self { pound_span, meta })
+            .filter_map(|attr| {
+                attr.interpret_meta()
+                    .map(|m| FixSpan(attr.pound_token.0[0]).fold_meta(m))
+            })
+            .filter(|m| m.name() == name)
+            .map(|meta| Self { meta })
             .collect()
     }
 
@@ -99,10 +100,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            Word(mut x) => {
-                x.span = self.span_or_pound_token(x.span);
-                Ok(x)
-            }
+            Word(x) => Ok(x),
             _ => {
                 let meta = &self.meta;
                 Err(self.span().error(format!(
@@ -118,7 +116,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            List(ref list) => Ok(Nested(list.nested.iter(), self.pound_span)),
+            List(ref list) => Ok(Nested(list.nested.iter())),
             _ => Err(self.span()
                 .error(format!("`{0}` must be in the form `{0}(...)`", self.name()))),
         }
@@ -167,33 +165,20 @@ impl MetaItem {
     fn value_span(&self) -> Span {
         use syn::Meta::*;
 
-        let s = match self.meta {
+        match self.meta {
             Word(ident) => ident.span,
             List(ref meta) => meta.nested.span(),
             NameValue(ref meta) => meta.lit.span(),
-        };
-        self.span_or_pound_token(s)
+        }
     }
 
     pub fn span(&self) -> Span {
-        self.span_or_pound_token(self.meta.span())
-    }
-
-    /// If the given span is affected by
-    /// https://github.com/rust-lang/rust/issues/47941,
-    /// returns the span of the pound token
-    fn span_or_pound_token(&self, span: Span) -> Span {
-        let bad_span_debug = "Span(Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 })";
-        if format!("{:?}", span) == bad_span_debug {
-            self.pound_span
-        } else {
-            span
-        }
+        self.meta.span()
     }
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2392
-pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta, Token![,]>, Span);
+pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta, Token![,]>);
 
 impl<'a> Iterator for Nested<'a> {
     type Item = MetaItem;
@@ -202,12 +187,25 @@ impl<'a> Iterator for Nested<'a> {
         use syn::NestedMeta::*;
 
         match self.0.next() {
-            Some(&Meta(ref item)) => Some(MetaItem {
-                pound_span: self.1,
-                meta: item.clone(),
-            }),
+            Some(&Meta(ref item)) => Some(MetaItem { meta: item.clone() }),
             Some(_) => self.next(),
             None => None,
+        }
+    }
+}
+
+/// If the given span is affected by
+/// <https://github.com/rust-lang/rust/issues/47941>,
+/// returns the span of the pound token
+struct FixSpan(Span);
+
+impl Fold for FixSpan {
+    fn fold_span(&mut self, span: Span) -> Span {
+        let bad_span_debug = "Span(Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 })";
+        if format!("{:?}", span) == bad_span_debug {
+            self.0
+        } else {
+            span
         }
     }
 }
