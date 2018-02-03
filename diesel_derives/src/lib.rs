@@ -29,7 +29,6 @@ mod associations;
 mod ast_builder;
 mod attr;
 mod from_sql_row;
-mod identifiable;
 mod insertable;
 mod model;
 mod query_id;
@@ -49,11 +48,6 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable_by_name::derive)
-}
-
-#[proc_macro_derive(Identifiable, attributes(table_name, primary_key))]
-pub fn derive_identifiable(input: TokenStream) -> TokenStream {
-    expand_derive(input, identifiable::derive_identifiable)
 }
 
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
