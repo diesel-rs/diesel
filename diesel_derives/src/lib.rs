@@ -31,18 +31,12 @@ mod from_sql_row;
 mod insertable;
 mod model;
 mod query_id;
-mod queryable;
 mod queryable_by_name;
 mod sql_type;
 mod util;
 
 use proc_macro::TokenStream;
 use syn::parse_derive_input;
-
-#[proc_macro_derive(Queryable, attributes(column_name))]
-pub fn derive_queryable(input: TokenStream) -> TokenStream {
-    expand_derive(input, queryable::derive_queryable)
-}
 
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {

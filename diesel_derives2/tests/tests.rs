@@ -13,3 +13,4 @@ mod schema;
 mod as_changeset;
 mod associations;
 mod identifiable;
+mod queryable;

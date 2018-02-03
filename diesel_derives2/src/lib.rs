@@ -29,6 +29,7 @@ mod util;
 mod as_changeset;
 mod associations;
 mod identifiable;
+mod queryable;
 
 use diagnostic_shim::*;
 
@@ -46,6 +47,11 @@ pub fn derive_associations(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Identifiable, attributes(table_name, primary_key, column_name))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive)
+}
+
+#[proc_macro_derive(Queryable, attributes(column_name))]
+pub fn derive_queryable(input: TokenStream) -> TokenStream {
+    expand_derive(input, queryable::derive)
 }
 
 fn expand_derive(
