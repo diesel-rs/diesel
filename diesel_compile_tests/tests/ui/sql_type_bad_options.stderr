@@ -1,0 +1,52 @@
+error: Missing required options
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres]
+  | ^
+  |
+  = help: Valid options are `type_name` or `oid` and `array_oid`
+
+warning: Option oid has no effect
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+  | ^
+
+warning: Option array_oid has no effect
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+  | ^
+
+error: Missing required option array_oid
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(oid = "2")]
+  | ^
+
+error: Expected a number
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(oid = "NaN", array_oid = "1")]
+  | ^
+
+warning: Option ary_oid has no effect
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(oid = "NaN", ary_oid = "1")]
+  | ^
+
+error: Missing required option array_oid
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(oid = "NaN", ary_oid = "1")]
+  | ^
+
+error: Expected a number
+ --> <macro expansion>:1:1
+  |
+1 | #[postgres(oid = "NaN", ary_oid = "1")]
+  | ^
+
+error: aborting due to 5 previous errors
+

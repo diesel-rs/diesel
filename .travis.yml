@@ -21,9 +21,9 @@ script:
   fi &&
   (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
   (cd diesel_derives && travis-cargo test -- --features "diesel/$BACKEND") &&
-  (cd diesel_derives2 && travis-cargo test -- --features "$BACKEND") &&
+  (cd diesel_derives2 && travis-cargo test -- --features "diesel/$BACKEND diesel_migrations/$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_derives2 && travis-cargo test -- --features "nightly $BACKEND")
+    (cd diesel_derives2 && travis-cargo test -- --features "nightly diesel/$BACKEND diesel_migrations/$BACKEND")
   fi &&
   (cd "examples/$BACKEND" && ./test_all) &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&

@@ -11,6 +11,7 @@ use util::*;
 pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let treat_none_as_null = MetaItem::with_name(&item.attrs, "changeset_options")
         .map(|meta| {
+            meta.warn_if_other_options(&["treat_none_as_null"]);
             meta.nested_item("treat_none_as_null")
                 .map(|m| m.expect_bool_value())
         })

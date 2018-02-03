@@ -29,7 +29,6 @@ mod attr;
 mod insertable;
 mod model;
 mod queryable_by_name;
-mod sql_type;
 mod util;
 
 use proc_macro::TokenStream;
@@ -43,11 +42,6 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive_insertable)
-}
-
-#[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
-pub fn derive_sql_type(input: TokenStream) -> TokenStream {
-    expand_derive(input, sql_type::derive)
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {

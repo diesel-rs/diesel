@@ -33,6 +33,7 @@ mod from_sql_row;
 mod identifiable;
 mod query_id;
 mod queryable;
+mod sql_type;
 
 use diagnostic_shim::*;
 
@@ -70,6 +71,11 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive)
+}
+
+#[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
+pub fn derive_sql_type(input: TokenStream) -> TokenStream {
+    expand_derive(input, sql_type::derive)
 }
 
 fn expand_derive(
