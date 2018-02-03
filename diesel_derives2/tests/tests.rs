@@ -14,3 +14,4 @@ mod as_changeset;
 mod associations;
 mod identifiable;
 mod queryable;
+mod queryable_by_name;

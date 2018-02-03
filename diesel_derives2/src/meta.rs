@@ -2,7 +2,7 @@ use proc_macro2::Span;
 use syn;
 use syn::spanned::Spanned;
 
-use diagnostic_shim::*;
+use util::*;
 
 pub struct MetaItem {
     // Due to https://github.com/rust-lang/rust/issues/47941
@@ -183,12 +183,7 @@ impl MetaItem {
     /// https://github.com/rust-lang/rust/issues/47941,
     /// returns the span of the pound token
     fn span_or_pound_token(&self, span: Span) -> Span {
-        let bad_span_debug = "Span(Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 })";
-        if format!("{:?}", span) == bad_span_debug {
-            self.pound_span
-        } else {
-            span
-        }
+        fix_span(span, self.pound_span)
     }
 }
 

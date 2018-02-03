@@ -33,6 +33,7 @@ mod from_sql_row;
 mod identifiable;
 mod query_id;
 mod queryable;
+mod queryable_by_name;
 
 use diagnostic_shim::*;
 
@@ -70,6 +71,11 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Queryable, attributes(column_name))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive)
+}
+
+#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
+pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
+    expand_derive(input, queryable_by_name::derive)
 }
 
 fn expand_derive(

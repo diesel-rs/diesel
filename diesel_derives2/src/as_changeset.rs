@@ -86,7 +86,7 @@ fn field_changeset_expr(
     table_name: syn::Ident,
     treat_none_as_null: bool,
 ) -> syn::Expr {
-    let field_access = &field.name;
+    let field_access = field.name.access();
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         parse_quote!(self#field_access.as_ref().map(|x| #table_name::#column_name.eq(x)))

@@ -50,11 +50,6 @@ impl Model {
     pub fn has_table_name_annotation(&self) -> bool {
         self.table_name_from_annotation.is_some()
     }
-
-    pub fn dummy_const_name(&self, trait_name: &str) -> syn::Ident {
-        let model_name = self.name.as_ref().to_uppercase();
-        format!("_IMPL_{}_FOR_{}", trait_name, model_name).into()
-    }
 }
 
 pub fn infer_association_name(name: &str) -> String {

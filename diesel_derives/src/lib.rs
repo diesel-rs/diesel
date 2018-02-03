@@ -28,17 +28,11 @@ mod ast_builder;
 mod attr;
 mod insertable;
 mod model;
-mod queryable_by_name;
 mod sql_type;
 mod util;
 
 use proc_macro::TokenStream;
 use syn::parse_derive_input;
-
-#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
-pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
-    expand_derive(input, queryable_by_name::derive)
-}
 
 #[proc_macro_derive(Insertable, attributes(table_name, column_name))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
