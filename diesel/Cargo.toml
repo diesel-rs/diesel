@@ -3,12 +3,12 @@ name = "diesel"
 version = "1.1.1"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
-description = "A safe, extensible ORM and Query builder"
+description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
 documentation = "https://docs.rs/diesel/"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-keywords = ["orm", "database", "postgres", "postgresql", "sql"]
+keywords = ["orm", "database", "blockchain", "sql"]
 categories = ["database"]
 
 [dependencies]
