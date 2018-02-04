@@ -18,7 +18,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
         .primary_key_names
         .iter()
         .filter_map(|&pk| model.find_column(pk).map_err(Diagnostic::emit).ok())
-        .map(|f| (&f.ty, &f.name))
+        .map(|f| (&f.ty, f.name.access()))
         .unzip();
 
     Ok(wrap_in_dummy_mod(

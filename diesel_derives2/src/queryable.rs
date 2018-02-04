@@ -1,4 +1,3 @@
-use proc_macro2::Span;
 use quote;
 use syn;
 
@@ -12,13 +11,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let field_ty = model.fields().iter().map(|f| &f.ty).collect::<Vec<_>>();
     let field_ty = &field_ty;
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
-        let field_name = &f.name.for_assignment();
-        let i: syn::Index = i.into();
-        // Make sure `row` has a `def_site` span
-        let row = quote!(row);
-        // https://github.com/rust-lang/rust/issues/47311
-        let span = Span::call_site();
-        quote_spanned!(span=> #field_name: (#row.#i))
+        let i = syn::Index::from(i);
+        f.name.assign(parse_quote!(row.#i))
     });
 
     let (_, ty_generics, _) = item.generics.split_for_impl();

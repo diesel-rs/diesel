@@ -10,34 +10,17 @@
             warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 
-macro_rules! t {
-    ($expr:expr) => {
-        match $expr {
-            Ok(val) => val,
-            Err(e) => panic!("{}", e),
-        }
-    };
-}
-
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
 extern crate syn;
 
 mod ast_builder;
-mod attr;
-mod model;
-mod queryable_by_name;
 mod sql_type;
 mod util;
 
 use proc_macro::TokenStream;
 use syn::parse_derive_input;
-
-#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
-pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
-    expand_derive(input, queryable_by_name::derive)
-}
 
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {

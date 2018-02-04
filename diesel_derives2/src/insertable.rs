@@ -71,7 +71,7 @@ fn field_ty(field: &Field, table_name: syn::Ident) -> syn::Type {
 }
 
 fn field_expr(field: &Field, table_name: syn::Ident) -> syn::Expr {
-    let field_access = &field.name;
+    let field_access = field.name.access();
     let column_name = field.column_name();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
     if is_option_ty(&field.ty) {

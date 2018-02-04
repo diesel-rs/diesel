@@ -56,6 +56,10 @@ impl Model {
                     .error(format!("No field with column name {}", column_name))
             })
     }
+
+    pub fn has_table_name_attribute(&self) -> bool {
+        self.table_name_from_attribute.is_some()
+    }
 }
 
 pub fn camel_to_snake(name: &str) -> String {

@@ -29,9 +29,6 @@ postgres = []
 sqlite = []
 mysql = []
 
-[[test]]
-name = "tests"
-
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
 appveyor = { repository = "diesel-rs/diesel" }
