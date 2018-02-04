@@ -7,9 +7,9 @@ check() {
     cargo rustc --quiet --features "lint $BACKENDS $1" -- -Zno-trans
 }
 
-(cd diesel_derives2 &&
+(cd diesel_derives &&
     check &&
-    echo "✔ derives2 crate looks good!")
+    echo "✔ derives crate looks good!")
 
 (cd diesel &&
     check "unstable extras" &&

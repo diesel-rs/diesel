@@ -124,9 +124,9 @@ extern crate byteorder;
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
-extern crate diesel_derives2;
+extern crate diesel_derives;
 #[doc(hidden)]
-pub use diesel_derives2::*;
+pub use diesel_derives::*;
 
 #[macro_use]
 mod macros;

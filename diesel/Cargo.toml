@@ -13,7 +13,7 @@ categories = ["database"]
 
 [dependencies]
 byteorder = "1.0"
-diesel_derives2 = { path = "../diesel_derives2" }
+diesel_derives = "~1.1.0"
 chrono = { version = "0.4", optional = true }
 clippy = { optional = true, version = "=0.0.185" }
 libc = { version = "0.2.0", optional = true }
@@ -42,16 +42,16 @@ tempdir = "^0.3.4"
 [features]
 default = ["with-deprecated", "32-column-tables"]
 extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address", "numeric", "r2d2"]
-unstable = ["diesel_derives2/nightly"]
+unstable = ["diesel_derives/nightly"]
 lint = ["clippy"]
 large-tables = ["32-column-tables"]
 huge-tables = ["64-column-tables"]
 32-column-tables = []
 64-column-tables = ["32-column-tables"]
 128-column-tables = ["64-column-tables"]
-postgres = ["pq-sys", "bitflags", "diesel_derives2/postgres"]
-sqlite = ["libsqlite3-sys", "diesel_derives2/sqlite"]
-mysql = ["mysqlclient-sys", "url", "diesel_derives2/mysql"]
+postgres = ["pq-sys", "bitflags", "diesel_derives/postgres"]
+sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
+mysql = ["mysqlclient-sys", "url", "diesel_derives/mysql"]
 with-deprecated = []
 deprecated-time = ["time"]
 network-address = ["ipnetwork", "libc"]

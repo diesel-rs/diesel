@@ -20,9 +20,9 @@ script:
     (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
   fi &&
   (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
-  (cd diesel_derives2 && travis-cargo test -- --features "diesel/$BACKEND") &&
+  (cd diesel_derives && travis-cargo test -- --features "diesel/$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_derives2 && travis-cargo test -- --features "diesel/unstable diesel/$BACKEND")
+    (cd diesel_derives && travis-cargo test -- --features "diesel/unstable diesel/$BACKEND")
   fi &&
   (cd "examples/$BACKEND" && ./test_all) &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
@@ -47,7 +47,7 @@ matrix:
     script:
     - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_derives2 && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
+    - (cd diesel_derives && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
