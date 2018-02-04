@@ -6,7 +6,7 @@ use query_source::{Column, QuerySource};
 use result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](struct.IncompleteUpdateStatement.html#method.set).
+/// [`update.set`](struct.UpdateStatement.html#method.set).
 ///
 /// ### Deriving
 ///

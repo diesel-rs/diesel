@@ -3,8 +3,8 @@ use expression::Expression;
 use query_dsl::methods::SelectDsl;
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::{Insert, InsertOrIgnore, Replace};
-use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarget,
-            SelectStatement, SqlQuery};
+use super::{IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery,
+            UpdateStatement};
 
 /// Creates an `UPDATE` statement.
 ///
@@ -15,7 +15,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// Passing a type which implements `Identifiable` is the same as passing
 /// `some_table.find(some_struct.id())`.
 ///
-/// [`filter`]: query_builder/update_statement/struct.IncompleteUpdateStatement.html#method.filter
+/// [`filter`]: query_builder/struct.UpdateStatement.html#method.filter
 ///
 /// # Examples
 ///
@@ -42,7 +42,7 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 ///
 /// To update multiple columns, give [`set`] a tuple argument:
 ///
-/// [`set`]: query_builder/struct.IncompleteUpdateStatement.html#method.set
+/// [`set`]: query_builder/struct.UpdateStatement.html#method.set
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -76,10 +76,8 @@ use super::{IncompleteInsertStatement, IncompleteUpdateStatement, IntoUpdateTarg
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn update<T: IntoUpdateTarget>(
-    source: T,
-) -> IncompleteUpdateStatement<T::Table, T::WhereClause> {
-    IncompleteUpdateStatement::new(source.into_update_target())
+pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+    UpdateStatement::new(source.into_update_target())
 }
 
 /// Creates a `DELETE` statement.

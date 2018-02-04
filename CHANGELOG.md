@@ -51,6 +51,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `huge-tables` feature has been renamed to `64-column-tables`.
 
+* `IncompleteUpdateStatement` has been removed. Use `UpdateStatement` instead.
+
 ### Fixed
 
 * `diesel database setup` now correctly handles database URLs containing query

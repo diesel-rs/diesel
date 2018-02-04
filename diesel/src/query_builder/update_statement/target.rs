@@ -24,7 +24,7 @@ pub struct UpdateTarget<Table, WhereClause> {
 ///
 /// [`update`]: ../fn.update.html
 /// [`delete`]: ../fn.delete.html
-/// [`filter`]: struct.IncompleteUpdateStatement.html#method.filter
+/// [`filter`]: struct.UpdateStatement.html#method.filter
 pub trait IntoUpdateTarget: HasTable {
     /// What is the `WHERE` clause of this target?
     type WhereClause;
