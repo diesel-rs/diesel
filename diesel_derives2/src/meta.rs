@@ -144,23 +144,68 @@ impl MetaItem {
         str.parse().map_err(|_| str.span.error("Invalid Rust type"))
     }
 
+    pub fn expect_str_value(&self) -> String {
+        self.str_value().unwrap_or_else(|e| {
+            e.emit();
+            self.name().to_string()
+        })
+    }
+
     fn str_value(&self) -> Result<String, Diagnostic> {
         self.lit_str_value().map(syn::LitStr::value)
     }
 
     fn lit_str_value(&self) -> Result<&syn::LitStr, Diagnostic> {
-        use syn::Meta::*;
-        use syn::MetaNameValue;
         use syn::Lit::*;
 
-        match self.meta {
-            NameValue(MetaNameValue {
-                lit: Str(ref s), ..
-            }) => Ok(s),
+        match *self.lit_value()? {
+            Str(ref s) => Ok(s),
             _ => Err(self.span().error(format!(
                 "`{0}` must be in the form `{0} = \"value\"`",
                 self.name()
             ))),
+        }
+    }
+
+    pub fn expect_int_value(&self) -> u64 {
+        self.int_value().emit_error().unwrap_or(0)
+    }
+
+    pub fn int_value(&self) -> Result<u64, Diagnostic> {
+        use syn::Lit::*;
+
+        let error = self.value_span().error("Expected a number");
+
+        match *self.lit_value()? {
+            Str(ref s) => s.value().parse().map_err(|_| error),
+            Int(ref i) => Ok(i.value()),
+            _ => Err(error),
+        }
+    }
+
+    fn lit_value(&self) -> Result<&syn::Lit, Diagnostic> {
+        use syn::Meta::*;
+
+        match self.meta {
+            NameValue(ref name_value) => Ok(&name_value.lit),
+            _ => Err(self.span().error(format!(
+                "`{0}` must be in the form `{0} = \"value\"`",
+                self.name()
+            ))),
+        }
+    }
+
+    pub fn warn_if_other_options(&self, options: &[&str]) {
+        let nested = match self.nested() {
+            Ok(x) => x,
+            Err(_) => return,
+        };
+        let unrecognized_options = nested.filter(|n| !options.contains(&n.name().as_ref()));
+        for ignored in unrecognized_options {
+            ignored
+                .span()
+                .warning(format!("Option {} has no effect", ignored.name()))
+                .emit();
         }
     }
 

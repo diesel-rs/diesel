@@ -13,7 +13,6 @@ categories = ["database"]
 
 [dependencies]
 byteorder = "1.0"
-diesel_derives = { version = "1.1.0" }
 diesel_derives2 = { path = "../diesel_derives2" }
 chrono = { version = "0.4", optional = true }
 clippy = { optional = true, version = "=0.0.185" }
@@ -50,9 +49,9 @@ huge-tables = ["64-column-tables"]
 32-column-tables = []
 64-column-tables = ["32-column-tables"]
 128-column-tables = ["64-column-tables"]
-postgres = ["pq-sys", "bitflags", "diesel_derives/postgres"]
-sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
-mysql = ["mysqlclient-sys", "url", "diesel_derives/mysql"]
+postgres = ["pq-sys", "bitflags", "diesel_derives2/postgres"]
+sqlite = ["libsqlite3-sys", "diesel_derives2/sqlite"]
+mysql = ["mysqlclient-sys", "url", "diesel_derives2/mysql"]
 with-deprecated = []
 deprecated-time = ["time"]
 network-address = ["ipnetwork", "libc"]

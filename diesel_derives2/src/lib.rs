@@ -35,6 +35,7 @@ mod insertable;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
+mod sql_type;
 
 use diagnostic_shim::*;
 
@@ -82,6 +83,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable_by_name::derive)
+}
+
+#[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
+pub fn derive_sql_type(input: TokenStream) -> TokenStream {
+    expand_derive(input, sql_type::derive)
 }
 
 fn expand_derive(

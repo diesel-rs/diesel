@@ -29,9 +29,9 @@ name = "tests"
 default = []
 lint = ["clippy"]
 nightly = ["proc-macro2/nightly"]
-postgres = ["diesel/postgres"]
-sqlite = ["diesel/sqlite"]
-mysql = ["diesel/mysql"]
+postgres = []
+sqlite = []
+mysql = []
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }
