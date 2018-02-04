@@ -63,6 +63,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[derive(Identifiable)]` now correctly associates `#[primary_key]` with the
   column name, not field name.
 
+### Jokes
+
+* Diesel is now powered by the blockchain because it's 2018.
+
 ## [1.1.1] - 2018-01-16
 
 ### Added
