@@ -1,6 +1,6 @@
 use diesel::*;
 
-use test_helpers::connection;
+use helpers::connection;
 
 #[cfg(feature = "mysql")]
 type IntSql = ::diesel::sql_types::BigInt;
@@ -38,7 +38,10 @@ fn named_struct_definition() {
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
-    struct MyStruct(#[column_name(foo)] IntRust, #[column_name(bar)] IntRust);
+    struct MyStruct(
+        #[column_name = "foo"] IntRust,
+        #[column_name = "bar"] IntRust,
+    );
 
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);

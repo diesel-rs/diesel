@@ -1139,16 +1139,11 @@ macro_rules! not_none {
 #[macro_use]
 mod internal;
 #[macro_use]
-mod parse;
-#[macro_use]
 mod query_id;
 #[macro_use]
 mod static_cond;
 #[macro_use]
 mod ops;
-
-#[macro_use]
-mod insertable;
 
 #[cfg(test)]
 mod tests {

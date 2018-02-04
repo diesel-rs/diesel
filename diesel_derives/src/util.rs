@@ -1,150 +1,93 @@
+use proc_macro2::Span;
 use quote::Tokens;
 use syn::*;
 
-use ast_builder::ty_ident;
+pub use diagnostic_shim::*;
+use meta::*;
 
-pub fn struct_ty(name: Ident, generics: &Generics) -> Ty {
-    let lifetimes = generics
-        .lifetimes
-        .iter()
-        .map(|lt| lt.lifetime.clone())
-        .collect();
-    let ty_params = generics
-        .ty_params
-        .iter()
-        .map(|param| ty_ident(param.ident.clone()))
-        .collect();
-    let parameter_data = AngleBracketedParameterData {
-        lifetimes: lifetimes,
-        types: ty_params,
-        bindings: Vec::new(),
-    };
-    let parameters = PathParameters::AngleBracketed(parameter_data);
-    Ty::Path(
-        None,
-        Path {
-            global: false,
-            segments: vec![
-                PathSegment {
-                    ident: name,
-                    parameters: parameters,
-                },
-            ],
-        },
-    )
-}
+pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
+    let call_site = root_span(Span::call_site());
+    let use_everything = quote_spanned!(call_site=> __diesel_use_everything!());
+    quote! {
+        #[allow(non_snake_case)]
+        mod #const_name {
+            // https://github.com/rust-lang/rust/issues/47314
+            extern crate std;
 
-pub fn ty_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<Ty> {
-    attr_with_name(attrs, name).map(|attr| ty_value_of_attr(attr, name))
-}
-
-pub fn ident_value_of_attr_with_name<'a>(attrs: &'a [Attribute], name: &str) -> Option<Ident> {
-    let error = || {
-        panic!(
-            r#"`{}` must be in the form `#[{} = "something"]`"#,
-            name, name
-        )
-    };
-    attr_with_name(attrs, name).map(|attr| match attr.value {
-        MetaItem::NameValue(_, Lit::Str(ref value, _)) => Ident::from(&**value),
-        MetaItem::List(_, ref list) => {
-            if list.len() != 1 {
-                error();
+            mod diesel {
+                #use_everything;
             }
-            println!(
-                r#"The form `#[{}(something)]` is deprecated. Use `#[{} = "something"]` instead"#,
-                name, name
-            );
-            if let NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) = list[0] {
-                ident.clone()
-            } else {
-                error()
+            #item
+        }
+    }
+}
+
+pub fn inner_of_option_ty(ty: &Type) -> &Type {
+    option_ty_arg(ty).unwrap_or(ty)
+}
+
+pub fn is_option_ty(ty: &Type) -> bool {
+    option_ty_arg(ty).is_some()
+}
+
+fn option_ty_arg(ty: &Type) -> Option<&Type> {
+    use syn::PathArguments::AngleBracketed;
+
+    match *ty {
+        Type::Path(ref ty) => {
+            let last_segment = ty.path.segments.iter().last().unwrap();
+            match last_segment.arguments {
+                AngleBracketed(ref args) if last_segment.ident == "Option" => {
+                    match args.args.iter().last() {
+                        Some(&GenericArgument::Type(ref ty)) => Some(ty),
+                        _ => None,
+                    }
+                }
+                _ => None,
             }
         }
-        _ => error(),
-    })
-}
-
-pub fn list_value_of_attr_with_name<'a>(
-    attrs: &'a [Attribute],
-    name: &str,
-) -> Option<Vec<&'a Ident>> {
-    attr_with_name(attrs, name).map(|attr| list_value_of_attr(attr, name))
-}
-
-pub fn attr_with_name<'a, T>(attrs: T, name: &str) -> Option<&'a Attribute>
-where
-    T: IntoIterator<Item = &'a Attribute>,
-{
-    attrs.into_iter().find(|attr| attr.name() == name)
-}
-
-fn str_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> &'a str {
-    str_value_of_meta_item(&attr.value, name)
-}
-
-pub fn ty_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Ty {
-    parse::ty(str_value_of_attr(attr, name))
-        .expect(&format!("#[{}] did not contain a valid Rust type", name))
-}
-
-pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
-    match *item {
-        MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
-        _ => panic!(
-            r#"`{}` must be in the form `#[{}="something"]`"#,
-            name, name
-        ),
-    }
-}
-
-fn list_value_of_attr<'a>(attr: &'a Attribute, name: &str) -> Vec<&'a Ident> {
-    match attr.value {
-        MetaItem::List(_, ref items) => items
-            .iter()
-            .map(|item| match *item {
-                NestedMetaItem::MetaItem(MetaItem::Word(ref name)) => name,
-                _ => panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name),
-            })
-            .collect(),
-        _ => panic!(r#"`{}` must be in the form `#[{}(something)]`"#, name, name),
-    }
-}
-
-pub fn is_option_ty(ty: &Ty) -> bool {
-    let option_ident = Ident::new("Option");
-    match *ty {
-        Ty::Path(_, ref path) => path.segments
-            .first()
-            .map(|s| s.ident == option_ident)
-            .unwrap_or(false),
-        _ => false,
-    }
-}
-
-pub fn inner_of_option_ty(ty: &Ty) -> Option<&Ty> {
-    use syn::PathParameters::AngleBracketed;
-
-    if !is_option_ty(ty) {
-        return None;
-    }
-
-    match *ty {
-        Ty::Path(_, Path { ref segments, .. }) => match segments[0].parameters {
-            AngleBracketed(ref data) => data.types.first(),
-            _ => None,
-        },
         _ => None,
     }
 }
 
-pub fn wrap_item_in_const(const_name: Ident, item: Tokens) -> Tokens {
-    quote! {
-        const #const_name: () = {
-            mod diesel {
-                __diesel_use_everything!();
-            }
-            #item
-        };
+pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Type, Diagnostic> {
+    if flags.has_flag("foreign_derive") {
+        match item.data {
+            Data::Struct(ref body) => match body.fields.iter().nth(0) {
+                Some(field) => Ok(field.ty.clone()),
+                None => Err(flags
+                    .span()
+                    .error("foreign_derive requires at least one field")),
+            },
+            _ => Err(flags
+                .span()
+                .error("foreign_derive can only be used with structs")),
+        }
+    } else {
+        let ident = item.ident;
+        let (_, ty_generics, ..) = item.generics.split_for_impl();
+        Ok(parse_quote!(#ident #ty_generics))
     }
+}
+
+pub fn fix_span(maybe_bad_span: Span, fallback: Span) -> Span {
+    let bad_span_debug = "Span(Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 })";
+    if format!("{:?}", maybe_bad_span) == bad_span_debug {
+        fallback
+    } else {
+        maybe_bad_span
+    }
+}
+
+#[cfg(not(feature = "nightly"))]
+fn root_span(span: Span) -> Span {
+    span
+}
+
+#[cfg(feature = "nightly")]
+/// There's an issue with the resolution of `__diesel_use_everything` if the
+/// derive itself was generated from within a macro. This is a shitty workaround
+/// until we figure out the expected behavior.
+fn root_span(span: Span) -> Span {
+    span.unstable().source().into()
 }
