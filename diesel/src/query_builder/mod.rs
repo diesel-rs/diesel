@@ -43,8 +43,10 @@ pub use self::query_id::QueryId;
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::SqlQuery;
 #[doc(inline)]
-pub use self::update_statement::{AsChangeset, IncompleteUpdateStatement, IntoUpdateTarget,
-                                 UpdateStatement, UpdateTarget};
+pub use self::update_statement::{AsChangeset, IntoUpdateTarget, UpdateStatement, UpdateTarget};
+#[cfg(feature = "with-deprecated")]
+#[allow(deprecated)]
+pub use self::update_statement::IncompleteUpdateStatement;
 
 pub(crate) use self::insert_statement::ColumnList;
 
