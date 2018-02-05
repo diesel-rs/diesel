@@ -220,6 +220,9 @@ pub mod helper_types {
     /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
 
+    /// Represents the return type of `.then_order_by(ordering)`
+    pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
+
     /// Represents the return type of `.limit()`
     pub type Limit<Source> = <Source as LimitDsl>::Output;
 

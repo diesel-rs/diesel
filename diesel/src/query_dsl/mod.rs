@@ -63,7 +63,7 @@ pub mod methods {
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::offset_dsl::OffsetDsl;
-    pub use super::order_dsl::OrderDsl;
+    pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
 }
 
@@ -562,6 +562,8 @@ pub trait QueryDsl: Sized {
     ///
     /// Ordering by multiple columns can be achieved by passing a tuple of those
     /// columns.
+    /// To construct an order clause of an unknown number of columns,
+    /// see [`QueryDsl::then_order_by`](#method.then_order_by)
     ///
     /// # Examples
     ///
@@ -611,6 +613,68 @@ pub trait QueryDsl: Sized {
         Self: methods::OrderDsl<Expr>,
     {
         methods::OrderDsl::order(self, expr)
+    }
+
+    /// Alias for `order`
+    fn order_by<Expr>(self, expr: Expr) -> Order<Self, Expr>
+    where
+        Expr: Expression,
+        Self: methods::OrderDsl<Expr>,
+    {
+        QueryDsl::order(self, expr)
+    }
+
+    /// Appends to the `ORDER BY` clause of this SQL query.
+    ///
+    /// Unlike `.order`, this method will append rather than replace.
+    /// In other words,
+    /// `.order_by(foo).order_by(bar)` is equivalent to `.order_by(bar)`.
+    /// In contrast,
+    /// `.order_by(foo).then_order_by(bar)` is equivalent to `.order((foo, bar))`.
+    /// This method is only present on boxed queries.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("DELETE FROM users")?;
+    /// diesel::insert_into(users)
+    ///     .values(&vec![
+    ///         name.eq("Saul"),
+    ///         name.eq("Steve"),
+    ///         name.eq("Stan"),
+    ///         name.eq("Stan"),
+    ///     ])
+    ///     .execute(&connection)?;
+    ///
+    /// let data = users.select((name, id))
+    ///     .order_by(name.asc())
+    ///     .then_order_by(id.desc())
+    ///     .load(&connection)?;
+    /// let expected_data = vec![
+    ///     (String::from("Saul"), 3),
+    ///     (String::from("Stan"), 6),
+    ///     (String::from("Stan"), 5),
+    ///     (String::from("Steve"), 4),
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #    Ok(())
+    /// # }
+    /// ```
+    fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
+    where
+        Self: methods::ThenOrderDsl<Order>,
+    {
+        methods::ThenOrderDsl::then_order_by(self, order)
     }
 
     /// Sets the limit clause of the query.

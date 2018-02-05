@@ -36,6 +36,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Tables with more than 56 columns are now supported by enabling the
   `128-column-tables` feature.
 
+* Added `order_by` as an alias for `order`.
+
+* Added `then_order_by`, which appends to an `ORDER BY` clause rather than
+  replacing it. This is useful with boxed queries to dynamically construct an
+  order by clause containing an unknown number of columns.
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer

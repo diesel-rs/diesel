@@ -28,3 +28,31 @@ where
         self.as_query().order(expr)
     }
 }
+
+/// The `then_order_by` method
+///
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `then_order_by` from generic code.
+///
+/// [`QueryDsl`]: ../trait.QueryDsl.html
+pub trait ThenOrderDsl<Expr> {
+    /// The type returned by `.then_order_by`.
+    type Output;
+
+    /// See the trait documentation.
+    fn then_order_by(self, expr: Expr) -> Self::Output;
+}
+
+impl<T, Expr> ThenOrderDsl<Expr> for T
+where
+    Expr: Expression,
+    T: Table,
+    T::Query: ThenOrderDsl<Expr>,
+{
+    type Output = <T::Query as ThenOrderDsl<Expr>>::Output;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        self.as_query().then_order_by(expr)
+    }
+}
