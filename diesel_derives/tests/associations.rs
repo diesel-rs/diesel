@@ -148,3 +148,146 @@ fn self_referential() {
         debug_query::<Backend, _>(&filter).to_string()
     );
 }
+
+#[test]
+fn multiple_associations() {
+    table! {
+        users {
+            id -> Integer,
+        }
+    }
+
+    table! {
+        posts {
+            id -> Integer,
+        }
+    }
+
+    table! {
+        comments {
+            id -> Integer,
+            user_id -> Integer,
+            post_id -> Integer,
+        }
+    }
+
+    #[derive(Identifiable)]
+    struct User {
+        id: i32,
+    }
+
+    #[derive(Identifiable)]
+    struct Post {
+        id: i32,
+    }
+
+    #[derive(Identifiable, Associations)]
+    #[belongs_to(User)]
+    #[belongs_to(Post)]
+    struct Comment {
+        id: i32,
+        user_id: i32,
+        post_id: i32,
+    }
+
+    let user = User { id: 1 };
+    let post = Post { id: 2 };
+
+    let query = Comment::belonging_to(&user);
+    let expected = comments::table.filter(comments::user_id.eq(1));
+    assert_eq!(
+        debug_query::<Backend, _>(&query).to_string(),
+        debug_query::<Backend, _>(&expected).to_string()
+    );
+    let query = Comment::belonging_to(&post);
+    let expected = comments::table.filter(comments::post_id.eq(2));
+    assert_eq!(
+        debug_query::<Backend, _>(&query).to_string(),
+        debug_query::<Backend, _>(&expected).to_string()
+    );
+}
+
+#[test]
+fn foreign_key_field_with_column_rename() {
+    table! {
+        users {
+            id -> Integer,
+        }
+    }
+
+    table! {
+        posts {
+            id -> Integer,
+            user_id -> Integer,
+        }
+    }
+
+    #[derive(Identifiable, Clone, Copy)]
+    pub struct User {
+        id: i32,
+    }
+
+    #[derive(Associations, Identifiable, Clone, Copy, PartialEq, Debug)]
+    #[belongs_to(User)]
+    pub struct Post {
+        id: i32,
+        #[column_name = "user_id"]
+        author_id: i32,
+    }
+
+    let user1 = User { id: 1 };
+    let user2 = User { id: 2 };
+    let post1 = Post {
+        id: 1,
+        author_id: 2,
+    };
+    let post2 = Post {
+        id: 2,
+        author_id: 1,
+    };
+
+    let query = Post::belonging_to(&user1);
+    let expected = posts::table.filter(posts::user_id.eq(1));
+    assert_eq!(
+        debug_query::<Backend, _>(&query).to_string(),
+        debug_query::<Backend, _>(&expected).to_string()
+    );
+
+    let users = vec![user1, user2];
+    let posts = vec![post1, post2].grouped_by(&users);
+    assert_eq!(vec![vec![post2], vec![post1]], posts);
+}
+
+#[test]
+fn tuple_struct() {
+    table! {
+        users {
+            id -> Integer,
+        }
+    }
+
+    table! {
+        posts {
+            id -> Integer,
+            user_id -> Integer,
+        }
+    }
+
+    #[derive(Identifiable)]
+    pub struct User {
+        id: i32,
+    }
+
+    #[derive(Associations, Identifiable)]
+    #[belongs_to(User)]
+    pub struct Post(#[column_name = "id"] i32, #[column_name = "user_id"] i32);
+
+    let user = User { id: 1 };
+
+    let query = Post::belonging_to(&user);
+    let expected = posts::table.filter(posts::user_id.eq(1));
+    assert_eq!(
+        debug_query::<Backend, _>(&query).to_string(),
+        debug_query::<Backend, _>(&expected).to_string()
+    );
+}
