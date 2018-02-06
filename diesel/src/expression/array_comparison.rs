@@ -1,5 +1,6 @@
 use backend::Backend;
 use expression::*;
+use expression::subselect::Subselect;
 use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;
@@ -103,7 +104,6 @@ where
 impl_selectable_expression!(In<T, U>);
 impl_selectable_expression!(NotIn<T, U>);
 
-use std::marker::PhantomData;
 use query_builder::{BoxedSelectStatement, SelectStatement};
 
 pub trait AsInExpression<T> {
@@ -136,10 +136,7 @@ where
     type InExpression = Subselect<Self, ST>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        Subselect {
-            values: self,
-            _sql_type: PhantomData,
-        }
+        Subselect::new(self)
     }
 }
 
@@ -150,10 +147,7 @@ where
     type InExpression = Subselect<Self, ST>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        Subselect {
-            values: self,
-            _sql_type: PhantomData,
-        }
+        Subselect::new(self)
     }
 }
 
@@ -208,44 +202,4 @@ impl<T> QueryId for Many<T> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
-}
-
-#[derive(Debug, Copy, Clone, QueryId)]
-pub struct Subselect<T, ST> {
-    values: T,
-    _sql_type: PhantomData<ST>,
-}
-
-impl<T: Expression, ST> Expression for Subselect<T, ST> {
-    type SqlType = ST;
-}
-
-impl<T, ST> MaybeEmpty for Subselect<T, ST> {
-    fn is_empty(&self) -> bool {
-        false
-    }
-}
-
-impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST>
-where
-    Subselect<T, ST>: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
-{
-}
-
-impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST>
-where
-    Subselect<T, ST>: Expression,
-    T: AppearsOnTable<QS>,
-{
-}
-
-impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>
-where
-    DB: Backend,
-    T: QueryFragment<DB>,
-{
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
-        self.values.walk_ast(pass)
-    }
 }

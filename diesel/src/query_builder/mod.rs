@@ -108,6 +108,19 @@ impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
 }
 
+/// Indicates that a type is a `SELECT` statement.
+///
+/// This trait differs from `Query` in two ways:
+/// - It is implemented only for select statements, rather than all queries
+///   which return a value.
+/// - It has looser constraints. A type implementing `SelectQuery` is known to
+///   be potentially valid if used as a subselect, but it is not necessarily
+///   able to be executed.
+pub trait SelectQuery {
+    /// The SQL type of the `SELECT` clause
+    type SqlType;
+}
+
 /// An untyped fragment of SQL.
 ///
 /// This may be a complete SQL command (such as an update statement without a

@@ -1,14 +1,14 @@
 use backend::Backend;
-use expression::{Expression, NonAggregate};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use expression::subselect::Subselect;
 use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;
 
 /// Creates a SQL `EXISTS` expression.
 ///
-/// The argument must be a complete SQL query. The result of this could in
-/// theory be passed to `.filter`, but since the query cannot reference columns
-/// from the outer query, this is of limited usefulness.
+/// The argument must be a complete SQL query. The query may reference columns
+/// from the outer table.
 ///
 /// # Example
 ///
@@ -30,15 +30,15 @@ use sql_types::Bool;
 /// # }
 /// ```
 pub fn exists<T>(query: T) -> Exists<T> {
-    Exists(query)
+    Exists(Subselect::new(query))
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct Exists<T>(T);
+pub struct Exists<T>(Subselect<T, ()>);
 
 impl<T> Expression for Exists<T>
 where
-    T: Expression,
+    Subselect<T, ()>: Expression,
 {
     type SqlType = Bool;
 }
@@ -58,4 +58,16 @@ where
     }
 }
 
-impl_selectable_expression!(Exists<T>);
+impl<T, QS> SelectableExpression<QS> for Exists<T>
+where
+    Self: AppearsOnTable<QS>,
+    Subselect<T, ()>: SelectableExpression<QS>,
+{
+}
+
+impl<T, QS> AppearsOnTable<QS> for Exists<T>
+where
+    Self: Expression,
+    Subselect<T, ()>: AppearsOnTable<QS>,
+{
+}

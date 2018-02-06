@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use dsl::AsExprOf;
 use expression::*;
+use expression::subselect::ValidSubselect;
 use insertable::Insertable;
 use query_builder::*;
 use query_builder::distinct_clause::DistinctClause;
@@ -64,14 +65,14 @@ where
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, DB> Expression for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB> SelectQuery for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    Self: Query<SqlType = ST>,
+    DB: Backend,
 {
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, QS2, DB> AppearsOnTable<QS2> for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, QS2, DB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     Self: Query<SqlType = ST>,
 {
