@@ -236,3 +236,37 @@ fn insertable_with_slice_of_borrowed() {
     let expected = vec![vec![String::from("hi"), String::from("there")]];
     assert_eq!(Ok(expected), saved);
 }
+
+#[test]
+fn embedded_struct() {
+    #[derive(Insertable)]
+    #[table_name = "users"]
+    struct NameAndHairColor<'a> {
+        name: &'a str,
+        hair_color: &'a str,
+    }
+
+    #[derive(Insertable)]
+    struct User<'a> {
+        id: i32,
+        #[diesel(embed)]
+        name_and_hair_color: NameAndHairColor<'a>,
+    }
+
+    let conn = connection();
+    let new_user = User {
+        id: 1,
+        name_and_hair_color: NameAndHairColor {
+            name: "Sean",
+            hair_color: "Black",
+        },
+    };
+    insert_into(users::table)
+        .values(&new_user)
+        .execute(&conn)
+        .unwrap();
+
+    let saved = users::table.load::<(i32, String, Option<String>)>(&conn);
+    let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}

@@ -42,6 +42,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   replacing it. This is useful with boxed queries to dynamically construct an
   order by clause containing an unknown number of columns.
 
+* `#[derive(Insertable)]` can now work on structs with fields that implement
+  `Insertable` (meaning one field can map to more than one column). Add
+  `#[diesel(embed)]` to the field to enable this behavior.
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer

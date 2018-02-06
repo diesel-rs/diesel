@@ -60,23 +60,32 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 }
 
 fn field_ty(field: &Field, table_name: syn::Ident) -> syn::Type {
-    let inner_ty = inner_of_option_ty(&field.ty);
-    let column_name = field.column_name();
-    parse_quote!(
-        std::option::Option<diesel::dsl::Eq<
-            #table_name::#column_name,
-            &'insert #inner_ty,
-        >>
-    )
+    if field.has_flag("embed") {
+        let field_ty = &field.ty;
+        parse_quote!(&'insert #field_ty)
+    } else {
+        let inner_ty = inner_of_option_ty(&field.ty);
+        let column_name = field.column_name();
+        parse_quote!(
+            std::option::Option<diesel::dsl::Eq<
+                #table_name::#column_name,
+                &'insert #inner_ty,
+            >>
+        )
+    }
 }
 
 fn field_expr(field: &Field, table_name: syn::Ident) -> syn::Expr {
     let field_access = field.name.access();
-    let column_name = field.column_name();
-    let column: syn::Expr = parse_quote!(#table_name::#column_name);
-    if is_option_ty(&field.ty) {
-        parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+    if field.has_flag("embed") {
+        parse_quote!(&self#field_access)
     } else {
-        parse_quote!(std::option::Option::Some(#column.eq(&self#field_access)))
+        let column_name = field.column_name();
+        let column: syn::Expr = parse_quote!(#table_name::#column_name);
+        if is_option_ty(&field.ty) {
+            parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+        } else {
+            parse_quote!(std::option::Option::Some(#column.eq(&self#field_access)))
+        }
     }
 }
