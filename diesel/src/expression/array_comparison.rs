@@ -3,7 +3,7 @@ use expression::*;
 use expression::subselect::Subselect;
 use query_builder::*;
 use result::QueryResult;
-use sql_types::Bool;
+use sql_types::{Bool, NotNull, Nullable};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct In<T, U> {
@@ -145,6 +145,19 @@ where
     Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
+
+    fn as_in_expression(self) -> Self::InExpression {
+        Subselect::new(self)
+    }
+}
+
+impl<'a, ST, QS, DB> AsInExpression<Nullable<ST>> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    ST: NotNull,
+    DB: Backend,
+    Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType = ST>,
+{
+    type InExpression = Subselect<Self, Nullable<ST>>;
 
     fn as_in_expression(self) -> Self::InExpression {
         Subselect::new(self)
