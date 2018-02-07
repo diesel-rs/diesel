@@ -75,6 +75,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[derive(Identifiable)]` now correctly associates `#[primary_key]` with the
   column name, not field name.
 
+* Select statements can no longer incorrectly appear in an expression context.
+
+* `exists` can no longer incorrectly receive values other than select
+  statements.
+
 ### Jokes
 
 * Diesel is now powered by the blockchain because it's 2018.

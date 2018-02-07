@@ -1,4 +1,5 @@
 use expression::{AsExpression, Expression, NonAggregate};
+use expression::subselect::Subselect;
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
@@ -29,7 +30,7 @@ use sql_types::Array;
 /// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression>
 where
-    T: AsExpression<Array<ST>>,
+    T: AsArrayExpression<ST>,
 {
     Any::new(vals.as_expression())
 }
@@ -57,7 +58,7 @@ where
 /// ```
 pub fn all<ST, T>(vals: T) -> All<T::Expression>
 where
-    T: AsExpression<Array<ST>>,
+    T: AsArrayExpression<ST>,
 {
     All::new(vals.as_expression())
 }
@@ -138,4 +139,44 @@ impl<Expr> NonAggregate for All<Expr>
 where
     Expr: NonAggregate,
 {
+}
+
+pub trait AsArrayExpression<ST> {
+    type Expression: Expression<SqlType = Array<ST>>;
+
+    fn as_expression(self) -> Self::Expression;
+}
+
+impl<ST, T> AsArrayExpression<ST> for T
+where
+    T: AsExpression<Array<ST>>,
+{
+    type Expression = <T as AsExpression<Array<ST>>>::Expression;
+
+    fn as_expression(self) -> Self::Expression {
+        AsExpression::as_expression(self)
+    }
+}
+
+impl<ST, S, F, W, O, L, Of, G, FU> AsArrayExpression<ST>
+    for SelectStatement<S, F, W, O, L, Of, G, FU>
+where
+    Self: SelectQuery<SqlType = ST>,
+{
+    type Expression = Subselect<Self, Array<ST>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Subselect::new(self)
+    }
+}
+
+impl<'a, ST, QS, DB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    Self: SelectQuery<SqlType = ST>,
+{
+    type Expression = Subselect<Self, Array<ST>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Subselect::new(self)
+    }
 }
