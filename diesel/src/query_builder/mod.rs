@@ -34,7 +34,7 @@ mod update_statement;
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
-pub use self::delete_statement::DeleteStatement;
+pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
 #[doc(inline)]
 pub use self::insert_statement::{IncompleteInsertStatement, InsertStatement,
                                  UndecoratedInsertRecord, ValuesClause};

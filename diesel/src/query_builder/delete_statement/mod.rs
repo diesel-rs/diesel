@@ -1,13 +1,17 @@
+mod boxed;
+
 use backend::Backend;
-use dsl::Filter;
+use dsl::{Filter, IntoBoxed};
 use expression::{AppearsOnTable, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
 use query_dsl::RunQueryDsl;
-use query_dsl::methods::FilterDsl;
+use query_dsl::methods::{BoxedDsl, FilterDsl};
 use query_source::Table;
 use result::QueryResult;
+
+pub use self::boxed::BoxedDeleteStatement;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 /// Represents a SQL `DELETE` statement.
@@ -27,8 +31,7 @@ pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
 }
 
 impl<T, U> DeleteStatement<T, U, NoReturningClause> {
-    #[doc(hidden)]
-    pub fn new(table: T, where_clause: U) -> Self {
+    pub(crate) fn new(table: T, where_clause: U) -> Self {
         DeleteStatement {
             table: table,
             where_clause: where_clause,
@@ -47,7 +50,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
@@ -69,6 +72,58 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     {
         FilterDsl::filter(self, predicate)
     }
+
+    /// Boxes the `WHERE` clause of this delete statement.
+    ///
+    /// This is useful for cases where you want to conditionally modify a query,
+    /// but need the type to remain the same. The backend must be specified as
+    /// part of this. It is not possible to box a query and have it be useable
+    /// on multiple backends.
+    ///
+    /// A boxed query will incur a minor performance penalty, as the query builder
+    /// can no longer be inlined by the compiler. For most applications this cost
+    /// will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::HashMap;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("sean_has_been_a_jerk", true);
+    /// let mut query = diesel::delete(users)
+    ///     .into_boxed();
+    ///
+    /// if params["sean_has_been_a_jerk"] {
+    ///     query = query.filter(name.eq("Sean"));
+    /// }
+    ///
+    /// let deleted_rows = query.execute(&connection)?;
+    /// assert_eq!(1, deleted_rows);
+    ///
+    /// let expected_names = vec!["Tess"];
+    /// let names = users.select(name).load::<String>(&connection)?;
+    ///
+    /// assert_eq!(expected_names, names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: BoxedDsl<'a, DB>,
+    {
+        BoxedDsl::internal_into_boxed(self)
+    }
 }
 
 impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
@@ -84,6 +139,17 @@ where
             where_clause: self.where_clause.and(predicate),
             returning: self.returning,
         }
+    }
+}
+
+impl<'a, T, U, Ret, DB> BoxedDsl<'a, DB> for DeleteStatement<T, U, Ret>
+where
+    U: Into<Option<Box<QueryFragment<DB> + 'a>>>,
+{
+    type Output = BoxedDeleteStatement<'a, DB, T, Ret>;
+
+    fn internal_into_boxed(self) -> Self::Output {
+        BoxedDeleteStatement::new(self.table, self.where_clause.into(), self.returning)
     }
 }
 
@@ -137,7 +203,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
+    /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {

@@ -36,6 +36,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Tables with more than 56 columns are now supported by enabling the
   `128-column-tables` feature.
 
+* Delete statements can now be boxed. This is useful for conditionally modifying
+  the where clause of a delete statement. See [`DeleteStatement::into_boxed`]
+  for details.
+
+[`DeleteStatement::into_boxed`]: http://docs.diesel.rs/diesel/query_builder/struct.DeleteStatement.html#method.into_boxed
+
 * Added `order_by` as an alias for `order`.
 
 * Added `then_order_by`, which appends to an `ORDER BY` clause rather than
