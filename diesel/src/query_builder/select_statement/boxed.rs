@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use dsl::AsExprOf;
 use expression::*;
+use expression::subselect::ValidSubselect;
 use insertable::Insertable;
 use query_builder::*;
 use query_builder::distinct_clause::DistinctClause;
@@ -24,7 +25,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     from: QS,
     distinct: Box<QueryFragment<DB> + 'a>,
     where_clause: Option<Box<QueryFragment<DB> + 'a>>,
-    order: Box<QueryFragment<DB> + 'a>,
+    order: Option<Box<QueryFragment<DB> + 'a>>,
     limit: Box<QueryFragment<DB> + 'a>,
     offset: Box<QueryFragment<DB> + 'a>,
     group_by: Box<QueryFragment<DB> + 'a>,
@@ -38,7 +39,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         from: QS,
         distinct: Box<QueryFragment<DB> + 'a>,
         where_clause: Option<Box<QueryFragment<DB> + 'a>>,
-        order: Box<QueryFragment<DB> + 'a>,
+        order: Option<Box<QueryFragment<DB> + 'a>>,
         limit: Box<QueryFragment<DB> + 'a>,
         offset: Box<QueryFragment<DB> + 'a>,
         group_by: Box<QueryFragment<DB> + 'a>,
@@ -64,14 +65,14 @@ where
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, DB> Expression for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB> SelectQuery for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    Self: Query<SqlType = ST>,
+    DB: Backend,
 {
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, QS2, DB> AppearsOnTable<QS2> for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, QS2, DB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     Self: Query<SqlType = ST>,
 {
@@ -96,7 +97,12 @@ where
         }
 
         self.group_by.walk_ast(out.reborrow())?;
-        self.order.walk_ast(out.reborrow())?;
+
+        if let Some(ref order) = self.order {
+            out.push_sql(" ORDER BY ");
+            order.walk_ast(out.reborrow())?;
+        }
+
         self.limit.walk_ast(out.reborrow())?;
         self.offset.walk_ast(out.reborrow())?;
         Ok(())
@@ -257,7 +263,23 @@ where
     type Output = Self;
 
     fn order(mut self, order: Order) -> Self::Output {
-        self.order = Box::new(OrderClause(order));
+        self.order = OrderClause(order).into();
+        self
+    }
+}
+
+impl<'a, ST, QS, DB, Order> ThenOrderDsl<Order> for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    DB: Backend + 'a,
+    Order: QueryFragment<DB> + AppearsOnTable<QS> + 'a,
+{
+    type Output = Self;
+
+    fn then_order_by(mut self, order: Order) -> Self::Output {
+        self.order = match self.order {
+            Some(old) => Some(Box::new((old, order))),
+            None => Some(Box::new(order)),
+        };
         self
     }
 }

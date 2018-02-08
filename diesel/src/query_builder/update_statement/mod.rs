@@ -18,84 +18,37 @@ use result::QueryResult;
 
 /// The type returned by [`update`](../fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
-#[derive(Debug)]
-pub struct IncompleteUpdateStatement<T, U>(UpdateTarget<T, U>);
+#[deprecated(since = "1.2.0", note = "Use `UpdateStatement<T, U>` instead")]
+#[cfg(feature = "with-deprecated")]
+pub type IncompleteUpdateStatement<T, U> = UpdateStatement<T, U>;
 
-impl<T, U> IncompleteUpdateStatement<T, U> {
-    #[doc(hidden)]
-    pub fn new(t: UpdateTarget<T, U>) -> Self {
-        IncompleteUpdateStatement(t)
+impl<T, U> UpdateStatement<T, U, SetNotCalled> {
+    pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
+        UpdateStatement {
+            table: target.table,
+            where_clause: target.where_clause,
+            values: SetNotCalled,
+            returning: NoReturningClause,
+        }
     }
-}
 
-impl<T, U> IncompleteUpdateStatement<T, U> {
     /// Provides the `SET` clause of the `UPDATE` statement.
     ///
     /// See [`update`](../fn.update.html) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset, NoReturningClause>
+    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
     where
         T: Table,
         V: changeset::AsChangeset<Target = T>,
-        UpdateStatement<T, U, V::Changeset, NoReturningClause>: AsQuery,
+        UpdateStatement<T, U, V::Changeset>: AsQuery,
     {
         UpdateStatement {
-            table: self.0.table,
-            where_clause: self.0.where_clause,
+            table: self.table,
+            where_clause: self.where_clause,
             values: values.as_changeset(),
-            returning: NoReturningClause,
+            returning: self.returning,
         }
-    }
-
-    /// Adds the given predicate to the `WHERE` clause of the statement being
-    /// constructed.
-    ///
-    /// If there is already a `WHERE` clause, the predicate will be appended
-    /// with `AND`. There is no difference in behavior between
-    /// `update(table.filter(x))` and `update(table).filter(x)`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// let updated_rows = diesel::update(users)
-    ///     .filter(name.eq("Sean"))
-    ///     .set(name.eq("Jim"))
-    ///     .execute(&connection);
-    /// assert_eq!(Ok(1), updated_rows);
-    ///
-    /// let expected_names = vec!["Jim".to_string(), "Tess".to_string()];
-    /// let names = users.select(name).order(id).load(&connection);
-    ///
-    /// assert_eq!(Ok(expected_names), names);
-    /// # }
-    /// ```
-    pub fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
-    where
-        Self: FilterDsl<Predicate>,
-    {
-        FilterDsl::filter(self, predicate)
-    }
-}
-
-impl<T, U, Predicate> FilterDsl<Predicate> for IncompleteUpdateStatement<T, U>
-where
-    U: WhereAnd<Predicate>,
-    Predicate: AppearsOnTable<T>,
-{
-    type Output = IncompleteUpdateStatement<T, U::Output>;
-
-    fn filter(self, predicate: Predicate) -> Self::Output {
-        IncompleteUpdateStatement::new(UpdateTarget {
-            table: self.0.table,
-            where_clause: self.0.where_clause.and(predicate),
-        })
     }
 }
 
@@ -105,7 +58,7 @@ where
 /// See [`update`](../fn.update.html) for usage examples, or [the update
 /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
 /// set of examples.
-pub struct UpdateStatement<T, U, V, Ret = NoReturningClause> {
+pub struct UpdateStatement<T, U, V = SetNotCalled, Ret = NoReturningClause> {
     table: T,
     where_clause: U,
     values: V,
@@ -258,3 +211,7 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
         }
     }
 }
+
+/// Indicates that you have not yet called `.set` on an update statement
+#[derive(Debug, Clone, Copy)]
+pub struct SetNotCalled;

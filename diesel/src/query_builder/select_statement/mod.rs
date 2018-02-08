@@ -18,6 +18,8 @@ pub use self::boxed::BoxedSelectStatement;
 
 use backend::Backend;
 use expression::*;
+use expression::subselect::ValidSubselect;
+use query_builder::SelectQuery;
 use query_source::*;
 use query_source::joins::{AppendSelection, Inner, Join};
 use result::QueryResult;
@@ -107,16 +109,7 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-#[cfg(feature = "postgres")]
-impl<F, S, D, W, O, L, Of, G, FU> Expression for SelectStatement<F, S, D, W, O, L, Of, G, FU>
-where
-    S: SelectClauseExpression<F>,
-{
-    type SqlType = ::sql_types::Array<S::SelectClauseSqlType>;
-}
-
-#[cfg(not(feature = "postgres"))]
-impl<F, S, D, W, O, L, Of, G, FU> Expression for SelectStatement<F, S, D, W, O, L, Of, G, FU>
+impl<F, S, D, W, O, L, Of, G, FU> SelectQuery for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     S: SelectClauseExpression<F>,
 {
@@ -181,24 +174,11 @@ where
     }
 }
 
-impl<F, S, D, W, O, L, Of, G, FU, QS> SelectableExpression<QS>
-    for SelectStatement<F, S, D, W, O, L, Of, G, FU>
-where
-    Self: AppearsOnTable<QS>,
-{
-}
-
-impl<S, F, D, W, O, L, Of, G, FU, QS> AppearsOnTable<QS>
+impl<S, F, D, W, O, L, Of, G, FU, QS> ValidSubselect<QS>
     for SelectStatement<F, S, D, W, O, L, Of, FU, G>
 where
-    Self: Expression,
+    Self: SelectQuery,
     W: ValidWhereClause<Join<F, QS, Inner>>,
-{
-}
-
-impl<F, S, D, W, O, L, Of, G, FU> NonAggregate for SelectStatement<F, S, D, W, O, L, Of, G, FU>
-where
-    Self: Expression,
 {
 }
 

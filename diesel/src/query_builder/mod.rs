@@ -43,8 +43,10 @@ pub use self::query_id::QueryId;
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::SqlQuery;
 #[doc(inline)]
-pub use self::update_statement::{AsChangeset, IncompleteUpdateStatement, IntoUpdateTarget,
-                                 UpdateStatement, UpdateTarget};
+pub use self::update_statement::{AsChangeset, IntoUpdateTarget, UpdateStatement, UpdateTarget};
+#[cfg(feature = "with-deprecated")]
+#[allow(deprecated)]
+pub use self::update_statement::IncompleteUpdateStatement;
 
 pub(crate) use self::insert_statement::ColumnList;
 
@@ -104,6 +106,19 @@ pub trait Query {
 
 impl<'a, T: Query> Query for &'a T {
     type SqlType = T::SqlType;
+}
+
+/// Indicates that a type is a `SELECT` statement.
+///
+/// This trait differs from `Query` in two ways:
+/// - It is implemented only for select statements, rather than all queries
+///   which return a value.
+/// - It has looser constraints. A type implementing `SelectQuery` is known to
+///   be potentially valid if used as a subselect, but it is not necessarily
+///   able to be executed.
+pub trait SelectQuery {
+    /// The SQL type of the `SELECT` clause
+    type SqlType;
 }
 
 /// An untyped fragment of SQL.

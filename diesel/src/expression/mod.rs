@@ -43,6 +43,8 @@ pub mod nullable;
 pub mod operators;
 #[doc(hidden)]
 pub mod sql_literal;
+#[doc(hidden)]
+pub mod subselect;
 
 #[doc(hidden)]
 pub mod dsl {

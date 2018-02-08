@@ -6,7 +6,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [workspace]
 
 [dependencies]
-diesel = { version = "1.1.0", features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
+diesel = { version = "1.1.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
 compiletest_rs = "=0.3.6"
 
 [replace]

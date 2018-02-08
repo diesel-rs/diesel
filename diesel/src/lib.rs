@@ -93,6 +93,12 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
+#![cfg_attr(feature = "large-tables",
+            deprecated(since = "1.2.0",
+                       note = "The large-tables feature has been renamed to 32-column-tables"))]
+#![cfg_attr(feature = "huge-tables",
+            deprecated(since = "1.2.0",
+                       note = "The huge-tables feature has been renamed to 64-column-tables"))]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
@@ -119,14 +125,8 @@ extern crate byteorder;
 #[allow(unused_imports)]
 #[macro_use]
 extern crate diesel_derives;
-#[cfg_attr(feature = "clippy", allow(useless_attribute))]
-#[allow(unused_imports)]
-#[macro_use]
-extern crate diesel_derives2;
 #[doc(hidden)]
 pub use diesel_derives::*;
-#[doc(hidden)]
-pub use diesel_derives2::*;
 
 #[macro_use]
 mod macros;
@@ -219,6 +219,9 @@ pub mod helper_types {
 
     /// Represents the return type of `.order(ordering)`
     pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
+
+    /// Represents the return type of `.then_order_by(ordering)`
+    pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
     /// Represents the return type of `.limit()`
     pub type Limit<Source> = <Source as LimitDsl>::Output;

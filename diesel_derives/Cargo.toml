@@ -9,28 +9,29 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 
 [dependencies]
-syn = { version = "0.11.4", features = ["aster"] }
-quote = "0.3.12"
+syn = { version = "0.12.11", features = ["full", "fold"] }
+quote = "0.4"
 clippy = { optional = true, version = "=0.0.185" }
+proc-macro2 = "0.2.0"
 
 [dev-dependencies]
-dotenv = { version = ">=0.8, <0.11", default-features = false }
-tempdir = "0.3.4"
-diesel = { version = "1.1.0" }
 cfg-if = "0.1.0"
+diesel = "1.1.0"
+dotenv = "0.10.0"
 
 [lib]
 proc-macro = true
 
+[[test]]
+name = "tests"
+
 [features]
 default = []
 lint = ["clippy"]
+nightly = ["proc-macro2/nightly"]
 postgres = []
 sqlite = []
 mysql = []
-
-[[test]]
-name = "tests"
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }

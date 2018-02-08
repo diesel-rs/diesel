@@ -13,7 +13,7 @@ use query_builder::order_clause::*;
 use query_builder::select_clause::*;
 use query_builder::update_statement::*;
 use query_builder::where_clause::*;
-use query_builder::{AsQuery, Query, QueryFragment, SelectStatement};
+use query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
 use query_dsl::*;
 use query_dsl::methods::*;
 use query_dsl::boxed_dsl::BoxedDsl;
@@ -47,8 +47,8 @@ where
 impl<F, S, D, W, O, L, Of, G, FU, Selection> SelectDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Selection: Expression,
-    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>: Expression,
+    Selection: SelectableExpression<F>,
+    SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>: SelectQuery,
 {
     type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, FU>;
 
@@ -69,8 +69,8 @@ where
 
 impl<ST, F, S, D, W, O, L, Of, G> DistinctDsl for SelectStatement<F, S, D, W, O, L, Of, G>
 where
-    Self: Expression<SqlType = ST>,
-    SelectStatement<F, S, DistinctClause, W, O, L, Of, G>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, DistinctClause, W, O, L, Of, G>: SelectQuery<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, DistinctClause, W, O, L, Of, G>;
 
@@ -157,8 +157,8 @@ impl<ST, F, S, D, W, O, L, Of, G, FU, Expr> OrderDsl<Expr>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
     Expr: AppearsOnTable<F>,
-    Self: Expression<SqlType = ST>,
-    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>: SelectQuery<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, L, Of, G, FU>;
 
@@ -178,13 +178,48 @@ where
     }
 }
 
+impl<F, S, D, W, O, L, Of, G, FU, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, OrderClause<O>, L, Of, G, FU>
+where
+    Expr: AppearsOnTable<F>,
+{
+    type Output = SelectStatement<F, S, D, W, OrderClause<(O, Expr)>, L, Of, G, FU>;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            OrderClause((self.order.0, expr)),
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.for_update,
+        )
+    }
+}
+
+impl<F, S, D, W, L, Of, G, FU, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, NoOrderClause, L, Of, G, FU>
+where
+    Expr: Expression,
+    Self: OrderDsl<Expr>,
+{
+    type Output = ::dsl::Order<Self, Expr>;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        self.order_by(expr)
+    }
+}
+
 #[doc(hidden)]
 pub type Limit = AsExprOf<i64, BigInt>;
 
 impl<ST, F, S, D, W, O, L, Of, G, FU> LimitDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Self: Expression<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>: SelectQuery<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, O, LimitClause<Limit>, Of, G, FU>;
 
@@ -209,8 +244,8 @@ pub type Offset = Limit;
 
 impl<ST, F, S, D, W, O, L, Of, G, FU> OffsetDsl for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Self: Expression<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>: SelectQuery<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, D, W, O, L, OffsetClause<Offset>, G, FU>;
 
@@ -280,7 +315,7 @@ where
     S: QueryFragment<DB> + SelectableExpression<F> + 'a,
     D: QueryFragment<DB> + 'a,
     W: Into<Option<Box<QueryFragment<DB> + 'a>>>,
-    O: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
     L: QueryFragment<DB> + 'a,
     Of: QueryFragment<DB> + 'a,
     G: QueryFragment<DB> + 'a,
@@ -293,7 +328,7 @@ where
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
-            Box::new(self.order),
+            self.order.into(),
             Box::new(self.limit),
             Box::new(self.offset),
             Box::new(self.group_by),
@@ -310,7 +345,7 @@ where
     F::DefaultSelection: QueryFragment<DB> + 'a,
     D: QueryFragment<DB> + 'a,
     W: Into<Option<Box<QueryFragment<DB> + 'a>>>,
-    O: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
     L: QueryFragment<DB> + 'a,
     Of: QueryFragment<DB> + 'a,
     G: QueryFragment<DB> + 'a,
@@ -323,7 +358,7 @@ where
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
-            Box::new(self.order),
+            self.order.into(),
             Box::new(self.limit),
             Box::new(self.offset),
             Box::new(self.group_by),

@@ -17,8 +17,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let (field_ty, field_access): (Vec<_>, Vec<_>) = model
         .primary_key_names
         .iter()
-        .filter_map(|&pk| model.find_column(pk).map_err(Diagnostic::emit).ok())
-        .map(|f| (&f.ty, &f.name))
+        .filter_map(|&pk| model.find_column(pk).emit_error())
+        .map(|f| (&f.ty, f.name.access()))
         .unzip();
 
     Ok(wrap_in_dummy_mod(

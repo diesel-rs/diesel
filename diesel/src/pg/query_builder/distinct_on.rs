@@ -1,8 +1,8 @@
 use pg::Pg;
 use query_dsl::methods::DistinctOnDsl;
-use query_builder::{AstPass, QueryFragment, SelectStatement};
+use query_builder::{AstPass, QueryFragment, SelectQuery, SelectStatement};
 use result::QueryResult;
-use expression::{Expression, SelectableExpression};
+use expression::SelectableExpression;
 
 /// Represents `DISTINCT ON (...)`
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -24,8 +24,8 @@ impl<ST, F, S, D, W, O, L, Of, G, Selection> DistinctOnDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G>
 where
     Selection: SelectableExpression<F>,
-    Self: Expression<SqlType = ST>,
-    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, L, Of, G>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, L, Of, G>: SelectQuery<SqlType = ST>,
 {
     type Output = SelectStatement<F, S, DistinctOnClause<Selection>, W, O, L, Of, G>;
 

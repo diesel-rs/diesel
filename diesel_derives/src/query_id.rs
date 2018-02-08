@@ -1,47 +1,39 @@
-use quote::Tokens;
+use quote;
 use syn;
 
-use model::Model;
-use util::wrap_item_in_const;
+use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Tokens {
-    let model = t!(Model::from_item(&item, "QueryId"));
-
-    let query_id_path: &[_] = &["diesel", "query_builder", "QueryId"];
-    let mut generics = syn::aster::from_generics(model.generics.clone())
-        .add_ty_param_bound(query_id_path)
-        .build();
-
-    for ty_param in &mut generics.ty_params {
-        ty_param.default = None;
+pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+    for ty_param in item.generics.type_params_mut() {
+        ty_param.bounds.push(parse_quote!(QueryId));
     }
+    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
-    let struct_ty = &model.ty;
-    let struct_name = &model.name;
-    let lifetimes = &generics.lifetimes;
+    let struct_name = item.ident;
+    let lifetimes = item.generics.lifetimes();
+    let query_id_ty_params = item.generics
+        .type_params()
+        .map(|ty_param| ty_param.ident)
+        .map(|ty_param| quote!(<#ty_param as QueryId>::QueryId));
+    let has_static_query_id = item.generics
+        .type_params()
+        .map(|ty_param| ty_param.ident)
+        .map(|ty_param| quote!(<#ty_param as QueryId>::HAS_STATIC_QUERY_ID));
 
-    let query_id_ty_params = generics
-        .ty_params
-        .iter()
-        .map(|ty_param| &ty_param.ident)
-        .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::QueryId))
-        .collect::<Vec<_>>();
-    let has_static_query_id = generics
-        .ty_params
-        .iter()
-        .map(|ty_param| &ty_param.ident)
-        .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID))
-        .collect::<Vec<_>>();
+    let dummy_mod = format!("_impl_query_id_for_{}", item.ident.as_ref().to_lowercase());
+    Ok(wrap_in_dummy_mod(
+        dummy_mod.into(),
+        quote! {
+            use self::diesel::query_builder::QueryId;
 
-    wrap_item_in_const(
-        model.dummy_const_name("QUERY_ID"),
-        quote!(
             #[allow(non_camel_case_types)]
-            impl#generics diesel::query_builder::QueryId for #struct_ty {
+            impl #impl_generics QueryId for #struct_name #ty_generics
+            #where_clause
+            {
                 type QueryId = #struct_name<#(#lifetimes,)* #(#query_id_ty_params,)*>;
 
                 const HAS_STATIC_QUERY_ID: bool = #(#has_static_query_id &&)* true;
             }
-        ),
-    )
+        },
+    ))
 }

@@ -1,82 +1,81 @@
-use quote::Tokens;
+use quote;
 use syn;
 
+use meta::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Tokens {
-    let item_name = item.ident.as_ref().to_uppercase();
-    let is_sized = !flag_present(&item.attrs, "not_sized");
-    let sql_types = item.attrs
-        .iter()
-        .filter(|attr| attr.name() == "sql_type")
-        .map(|attr| ty_value_of_attr(attr, "sql_type"));
+pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+    let dummy_mod = format!(
+        "_impl_as_expression_for_{}",
+        item.ident.as_ref().to_lowercase()
+    );
+    let flags =
+        MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
+    let is_sized = !flags.has_flag("not_sized");
 
-    let struct_ty = if flag_present(&item.attrs, "foreign_derive") {
-        match item.body {
-            syn::Body::Struct(ref body) => body.fields()[0].ty.clone(),
-            _ => panic!("foreign_derive cannot be used on enums"),
-        }
-    } else {
-        struct_ty(item.ident.clone(), &item.generics)
-    };
+    let sql_types = MetaItem::all_with_name(&item.attrs, "sql_type");
+    let any_sql_types = !sql_types.is_empty();
+    let sql_types = sql_types
+        .into_iter()
+        .filter_map(|attr| attr.ty_value().map_err(Diagnostic::emit).ok());
 
-    let generics = &item.generics;
-    let syn::Generics {
-        ref lifetimes,
-        ref ty_params,
-        ..
-    } = *generics;
+    let (impl_generics, ..) = item.generics.split_for_impl();
+    let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
+    let ty_params = item.generics.type_params().collect::<Vec<_>>();
+    let struct_ty = ty_for_foreign_derive(&item, &flags)?;
 
     let tokens = sql_types.map(|sql_type| {
+        let lifetimes = &lifetimes;
+        let ty_params = &ty_params;
         let tokens = quote!(
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> diesel::expression::AsExpression<#sql_type>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
                 for &'expr #struct_ty
             {
-                type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
+                type Expression = Bound<#sql_type, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    diesel::expression::bound::Bound::new(self)
+                    Bound::new(self)
                 }
             }
 
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
                 for &'expr #struct_ty
             {
-                type Expression = diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
+                type Expression = Bound<Nullable<#sql_type>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    diesel::expression::bound::Bound::new(self)
+                    Bound::new(self)
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> diesel::expression::AsExpression<#sql_type>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
                 for &'expr2 &'expr #struct_ty
             {
-                type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
+                type Expression = Bound<#sql_type, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    diesel::expression::bound::Bound::new(self)
+                    Bound::new(self)
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
                 for &'expr2 &'expr #struct_ty
             {
-                type Expression = diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
+                type Expression = Bound<Nullable<#sql_type>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    diesel::expression::bound::Bound::new(self)
+                    Bound::new(self)
                 }
             }
 
-            impl<#(#lifetimes,)* #(#ty_params,)* __DB> diesel::serialize::ToSql<diesel::sql_types::Nullable<#sql_type>, __DB>
+            impl<#(#lifetimes,)* #(#ty_params,)* __DB> diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
                 for #struct_ty
             where
                 __DB: diesel::backend::Backend,
-                Self: diesel::serialize::ToSql<#sql_type, __DB>,
+                Self: ToSql<#sql_type, __DB>,
             {
-                fn to_sql<W: ::std::io::Write>(&self, out: &mut diesel::serialize::Output<W, __DB>) -> diesel::serialize::Result {
-                    diesel::serialize::ToSql::<#sql_type, __DB>::to_sql(self, out)
+                fn to_sql<W: std::io::Write>(&self, out: &mut Output<W, __DB>) -> serialize::Result {
+                    ToSql::<#sql_type, __DB>::to_sql(self, out)
                 }
             }
         );
@@ -84,19 +83,19 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
             quote!(
                 #tokens
 
-                impl#generics diesel::expression::AsExpression<#sql_type> for #struct_ty {
-                    type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
+                impl#impl_generics AsExpression<#sql_type> for #struct_ty {
+                    type Expression = Bound<#sql_type, Self>;
 
                     fn as_expression(self) -> Self::Expression {
-                        diesel::expression::bound::Bound::new(self)
+                        Bound::new(self)
                     }
                 }
 
-                impl#generics diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>> for #struct_ty {
-                    type Expression = diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
+                impl#impl_generics AsExpression<Nullable<#sql_type>> for #struct_ty {
+                    type Expression = Bound<Nullable<#sql_type>, Self>;
 
                     fn as_expression(self) -> Self::Expression {
-                        diesel::expression::bound::Bound::new(self)
+                        Bound::new(self)
                     }
                 }
             )
@@ -105,8 +104,19 @@ pub fn derive(item: syn::DeriveInput) -> Tokens {
         }
     });
 
-    wrap_item_in_const(
-        format!("_IMPL_AS_EXPRESSION_FOR_{}", item_name).into(),
-        quote!(#(#tokens)*),
-    )
+    if any_sql_types {
+        Ok(wrap_in_dummy_mod(
+            dummy_mod.into(),
+            quote! {
+                use self::diesel::expression::AsExpression;
+                use self::diesel::expression::bound::Bound;
+                use self::diesel::sql_types::Nullable;
+                use self::diesel::serialize::{self, ToSql, Output};
+
+                #(#tokens)*
+            },
+        ))
+    } else {
+        Ok(quote!())
+    }
 }

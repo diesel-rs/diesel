@@ -42,14 +42,32 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [`DeleteStatement::into_boxed`]: http://docs.diesel.rs/diesel/query_builder/struct.DeleteStatement.html#method.into_boxed
 
+* Added `order_by` as an alias for `order`.
+
+* Added `then_order_by`, which appends to an `ORDER BY` clause rather than
+  replacing it. This is useful with boxed queries to dynamically construct an
+  order by clause containing an unknown number of columns.
+
+* `#[derive(Insertable)]` can now work on structs with fields that implement
+  `Insertable` (meaning one field can map to more than one column). Add
+  `#[diesel(embed)]` to the field to enable this behavior.
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
   require that `T::Owned: ToSql`.
 
+* `32-column-tables` are now enabled by default.
+
 ### Deprecated
 
 * `ne_any` has been renamed to `ne_all`.
+
+* The `large-tables` feature has been has been renamed to `32-column-tables`.
+
+* The `huge-tables` feature has been renamed to `64-column-tables`.
+
+* `IncompleteUpdateStatement` has been removed. Use `UpdateStatement` instead.
 
 ### Fixed
 
@@ -62,6 +80,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `#[derive(Identifiable)]` now correctly associates `#[primary_key]` with the
   column name, not field name.
+
+* Select statements can no longer incorrectly appear in an expression context.
+
+* `exists` can no longer incorrectly receive values other than select
+  statements.
+
+### Jokes
+
+* Diesel is now powered by the blockchain because it's 2018.
 
 ## [1.1.1] - 2018-01-16
 

@@ -1,5 +1,15 @@
 use proc_macro2::Span;
 
+pub trait EmitErrorExt<T> {
+    fn emit_error(self) -> Option<T>;
+}
+
+impl<T> EmitErrorExt<T> for Result<T, Diagnostic> {
+    fn emit_error(self) -> Option<T> {
+        self.map_err(Diagnostic::emit).ok()
+    }
+}
+
 pub trait DiagnosticShim {
     fn error<T: Into<String>>(self, msg: T) -> Diagnostic;
     fn warning<T: Into<String>>(self, msg: T) -> Diagnostic;
@@ -52,9 +62,9 @@ impl Diagnostic {
         }
     }
 
-    pub fn help(mut self, msg: &str) -> Self {
+    pub fn help<T: Into<String>>(mut self, msg: T) -> Self {
         self.message.push_str("\n");
-        self.message.push_str(msg);
+        self.message.push_str(&msg.into());
         self
     }
 
