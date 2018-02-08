@@ -875,8 +875,12 @@ impl<T: Table> QueryDsl for T {}
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
-    /// Used in conjunction with [`insert_into`](../fn.insert_into.html),
-    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html)
+    /// `execute` is usually used in conjunction with [`insert_into`](../fn.insert_into.html),
+    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html) where the number of
+    /// affected rows is often enough information.
+    ///
+    /// When asking the database to return data from a query, [`load`](fn.load.html) should
+    /// probably be used instead.
     ///
     /// # Example
     ///
@@ -922,8 +926,12 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
     ///
+    /// For insert, update, and delete operations where only a count of affected is needed,
+    /// [`execute`] should be used instead.
+    ///
     /// [`Queryable`]: ../deserialize/trait.Queryable.html
     /// [`QueryableByName`]: ../deserialize/trait.QueryableByName.html
+    /// [`execute`]: fn.execute.html
     /// [`sql_query`]: ../fn.sql_query.html
     ///
     /// # Examples
