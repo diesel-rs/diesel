@@ -1008,7 +1008,7 @@ macro_rules! __diesel_table_query_source_impl {
 /// * The child table would be `Post`
 /// * and the Foreighn key would be `Post.user_id`
 ///
-/// For joins that do not explicitly use on clauses via [JoinOnDsl](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
 /// the following on clause is generated implicitly:
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id
