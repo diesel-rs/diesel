@@ -37,6 +37,7 @@ pub mod select_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
 mod save_changes_dsl;
+mod single_value_dsl;
 mod offset_dsl;
 mod order_dsl;
 
@@ -65,6 +66,7 @@ pub mod methods {
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
+    pub use super::single_value_dsl::SingleValueDsl;
 }
 
 /// Methods used to construct select statements.
@@ -866,6 +868,51 @@ pub trait QueryDsl: Sized {
         Self: methods::BoxedDsl<'a, DB>,
     {
         methods::BoxedDsl::internal_into_boxed(self)
+    }
+
+    /// Wraps this select statement in parenthesis, allowing it to be used
+    /// as an expression.
+    ///
+    /// SQL allows queries such as `foo = (SELECT ...)`, as long as the
+    /// subselect returns only a single column, and 0 or 1 rows. This method
+    /// indicates that you expect the query to only return a single value (this
+    /// will be enforced by adding `LIMIT 1`).
+    ///
+    /// The SQL type of this will always be `Nullable`, as the query returns
+    /// `NULL` if the table is empty or it otherwise returns 0 rows.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     use schema::posts;
+    /// #     let connection = establish_connection();
+    /// insert_into(posts::table)
+    ///     .values(posts::user_id.eq(1))
+    ///     .execute(&connection)?;
+    /// let last_post = posts::table
+    ///     .order(posts::id.desc());
+    /// let most_recently_active_user = users.select(name)
+    ///     .filter(id.nullable().eq(last_post.select(posts::user_id).single_value()))
+    ///     .first::<String>(&connection)?;
+    /// assert_eq!("Sean", most_recently_active_user);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn single_value(self) -> SingleValue<Self>
+    where
+        Self: methods::SingleValueDsl,
+    {
+        methods::SingleValueDsl::single_value(self)
     }
 }
 

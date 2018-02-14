@@ -52,6 +52,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `Insertable` (meaning one field can map to more than one column). Add
   `#[diesel(embed)]` to the field to enable this behavior.
 
+* Queries that treat a subselect as a single value (e.g. `foo = (subselect)`)
+  are now supported by calling [`.single_value()`].
+
+[`.single_value()`]: http://docs.diesel.rs/diesel/query_dsl/trait.QueryDsl.html#method.single_value
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
