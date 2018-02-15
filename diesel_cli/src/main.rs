@@ -119,26 +119,50 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches).join(versioned_name);
-            fs::create_dir(&migration_dir)?;
+            let migration_type: Option<&str> = args.value_of("type");
+            fs::create_dir(&migration_dir).unwrap();
 
             let migration_dir_relative =
                 convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
 
-            let up_path = migration_dir.join("up.sql");
-            println!(
-                "Creating {}",
-                migration_dir_relative.join("up.sql").display()
-            );
-            let mut up = fs::File::create(up_path).unwrap();
-            up.write_all(b"-- Your SQL goes here").unwrap();
+            match migration_type {
+                Some("barrel") => {
+                    let migr_path = migration_dir.join("mod.rs");
+                    println!(
+                        "Creating {}",
+                        migration_dir_relative.join("mod.rs").display()
+                    );
 
-            let down_path = migration_dir.join("down.sql");
-            println!(
-                "Creating {}",
-                migration_dir_relative.join("down.sql").display()
-            );
-            let mut down = fs::File::create(down_path)?;
-            down.write_all(b"-- This file should undo anything in `up.sql`")?;
+                    // TODO: Is there a nier way to print this?
+                    let mut barrel_migr = fs::File::create(migr_path).unwrap();
+                    barrel_migr.write(b"/// Handle up migrations \n").unwrap();
+                    barrel_migr
+                        .write(b"fn up(migr: &mut Migration) -> String {} \n\n")
+                        .unwrap();
+                    barrel_migr.write(b"/// Handle down migrations \n").unwrap();
+                    barrel_migr
+                        .write(b"fn down(migr: &mut Migration) -> String {} \n")
+                        .unwrap();
+                },
+                _ => {
+                    let up_path = migration_dir.join("up.sql");
+                    println!(
+                        "Creating {}",
+                        migration_dir_relative.join("up.sql").display()
+                    );
+                    let mut up = fs::File::create(up_path).unwrap();
+                    up.write_all(b"-- Your SQL goes here").unwrap();
+
+                    let down_path = migration_dir.join("down.sql");
+                    println!(
+                        "Creating {}",
+                        migration_dir_relative.join("down.sql").display()
+                    );
+                    let mut down = fs::File::create(down_path).unwrap();
+                    down.write_all(b"-- This file should undo anything in `up.sql`")
+                        .unwrap();
+                }
+            }
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     };

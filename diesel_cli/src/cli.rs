@@ -51,6 +51,13 @@ pub fn build_cli() -> App<'static, 'static> {
                              for most use cases.",
                         )
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("type")
+                        .long("type")
+                        .short("t")
+                        .takes_value(true)
+                        .help("Specify the migration type."),
                 ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
