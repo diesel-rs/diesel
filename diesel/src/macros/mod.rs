@@ -6,7 +6,7 @@ macro_rules! __diesel_column {
             #[doc=$doc]
         )*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId)]
+        #[derive(Debug, Clone, Copy, QueryId, Default)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
