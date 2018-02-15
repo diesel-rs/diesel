@@ -51,6 +51,9 @@ pub trait Column: Expression {
 
     /// The name of this column
     const NAME: &'static str;
+
+    /// Get an instance of the column type
+    fn column() -> Self;
 }
 
 /// A SQL database table. Types which implement this trait should have been

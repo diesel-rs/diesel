@@ -67,6 +67,10 @@ macro_rules! __diesel_column {
             type Table = $($table)::*;
 
             const NAME: &'static str = $sql_name;
+
+            fn column() -> Self {
+                $column_name
+            }
         }
 
         impl<T> $crate::EqAll<T> for $column_name where
