@@ -27,6 +27,10 @@ macro_rules! __diesel_column {
         impl SelectableExpression<$($table)::*> for $column_name {
         }
 
+        impl SelectableExpression<$($table)::*> for $crate::expression::nullable::Nullable<$column_name>
+        {
+        }
+
         impl<QS> AppearsOnTable<QS> for $column_name where
             QS: AppearsInFromClause<$($table)::*, Count=Once>,
         {
