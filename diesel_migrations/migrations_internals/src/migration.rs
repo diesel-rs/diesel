@@ -41,6 +41,11 @@ impl<'a> fmt::Display for MigrationName<'a> {
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
+    #[cfg(feature = "barrel")]
+    if let Some(migration) = ::barrel::migration_from(&path) {
+        return Ok(migration);
+    }
+
     if valid_sql_migration_directory(&path) {
         let version = try!(version_from_path(&path));
         Ok(Box::new(SqlFileMigration(path, version)))

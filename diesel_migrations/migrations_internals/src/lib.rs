@@ -77,6 +77,9 @@
 #[macro_use]
 extern crate diesel;
 
+#[cfg(feature = "barrel")]
+extern crate barrel;
+
 mod migration;
 #[doc(hidden)]
 pub mod connection;
