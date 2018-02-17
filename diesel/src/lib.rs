@@ -255,6 +255,9 @@ pub mod helper_types {
     /// Represents the return type of `.distinct_on(expr)`
     #[cfg(feature = "postgres")]
     pub type DistinctOn<Source, Expr> = <Source as DistinctOnDsl<Expr>>::Output;
+
+    /// Represents the return type of `.single_value()`
+    pub type SingleValue<Source> = <Source as SingleValueDsl>::Output;
 }
 
 pub mod prelude {
