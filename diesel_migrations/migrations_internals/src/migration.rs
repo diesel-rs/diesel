@@ -42,16 +42,22 @@ impl<'a> fmt::Display for MigrationName<'a> {
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
-    if let Some(migration) = ::barrel::migration_from(&path) {
-        return Ok(migration);
+    match ::barrel::diesel::migration_from(&path) {
+        Some(sql) => return barrel_to_migration(&sql),
+        None => {}
     }
-
+    
     if valid_sql_migration_directory(&path) {
         let version = try!(version_from_path(&path));
         Ok(Box::new(SqlFileMigration(path, version)))
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
     }
+}
+
+#[cfg(feature = "barrel")]
+fn barrel_to_migration(_sql: &str) -> Result<Box<Migration>, MigrationError> {
+    Err(MigrationError::NoMigrationRun)
 }
 
 impl Migration for Box<Migration> {
