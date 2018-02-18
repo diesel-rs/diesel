@@ -57,6 +57,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [`.single_value()`]: http://docs.diesel.rs/diesel/query_dsl/trait.QueryDsl.html#method.single_value
 
+* `ConnectionError` now implements `PartialEq`.
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer

@@ -166,7 +166,7 @@ impl DatabaseErrorInformation for String {
 /// Errors which can occur during [`Connection::establish`]
 ///
 /// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ConnectionError {
     /// The connection URL contained a `NUL` byte.
     InvalidCString(NulError),
