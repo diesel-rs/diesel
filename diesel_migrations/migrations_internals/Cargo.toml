@@ -8,8 +8,13 @@ homepage = "http://diesel.rs"
 
 [dependencies]
 clippy = { optional = true, version = "=0.0.185" }
+<<<<<<< HEAD
 diesel = { version = "~1.2.0", default-features = false }
 barrel = { version = "0.2.0", optional = true }
+=======
+diesel = { version = "1.1.0", default-features = false }
+barrel = { path = "/home/spacekookie/Projects/code/barrel", optional = true, features = ["diesel"] }
+>>>>>>> Changing barrel call signature to build Migration on diesel side
 
 [dev-dependencies]
 tempdir = "0.3.4"
