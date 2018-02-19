@@ -59,6 +59,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `ConnectionError` now implements `PartialEq`.
 
+* Added support for the PostgreSQL [`Point` type][pg-point].
+
+[pg-point]: https://www.postgresql.org/docs/9.3/static/datatype-geometric.html
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer

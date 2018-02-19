@@ -17,6 +17,7 @@ mod uuid;
 mod json;
 #[doc(hidden)]
 pub mod money;
+pub mod geometric;
 
 /// PostgreSQL specific SQL types
 ///
@@ -446,4 +447,51 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "650", array_oid = "651")]
     pub struct Cidr;
+
+    /// The PostgreSQL [Point](https://www.postgresql.org/docs/9.3/static/datatype-geometric.html) type.
+    ///
+    /// ### [`ToSql`](::serialize::ToSql) impls
+    ///
+    /// - [`PgPoint`](::pg::data_types::PgPoint)
+    ///
+    /// ### [`FromSql`](::deserialize::FromSql) impls
+    ///
+    /// - [`PgPoint`](::pg::data_types::PgPoint)
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::data_types::PgPoint;
+    ///
+    /// table! {
+    ///     items {
+    ///         id -> Integer,
+    ///         name -> VarChar,
+    ///         location -> Point,
+    ///     }
+    /// }
+    ///
+    /// # fn main() {
+    /// #     use diesel::insert_into;
+    /// #     use items::dsl::*;
+    /// #     let connection = connection_no_data();
+    /// #     connection.execute("CREATE TABLE items (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         location POINT NOT NULL
+    /// #     )").unwrap();
+    /// let inserted_location = insert_into(items)
+    ///     .values((name.eq("Shiny Thing"), location.eq(PgPoint(3.1, 9.4))))
+    ///     .returning(location)
+    ///     .get_result(&connection);
+    /// assert_eq!(Ok(PgPoint(3.1, 9.4)), inserted_location);
+    /// # }
+    /// ```
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "600", array_oid = "1017")]
+    pub struct Point;
 }
