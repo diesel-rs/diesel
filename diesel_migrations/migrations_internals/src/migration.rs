@@ -43,10 +43,13 @@ impl<'a> fmt::Display for MigrationName<'a> {
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
     match ::barrel::diesel::migration_from(&path) {
-        Some(sql) => return barrel_to_migration(&sql),
+        Some(sql) => {
+            let version = try!(version_from_path(&path));
+            return barrel_to_migration(path, version, sql);
+        }
         None => {}
     }
-    
+
     if valid_sql_migration_directory(&path) {
         let version = try!(version_from_path(&path));
         Ok(Box::new(SqlFileMigration(path, version)))
@@ -56,8 +59,34 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 }
 
 #[cfg(feature = "barrel")]
-fn barrel_to_migration(_sql: &str) -> Result<Box<Migration>, MigrationError> {
-    Err(MigrationError::NoMigrationRun)
+/// Include the path, version, up and down sql strings 
+struct BarrelMigration(PathBuf, String, String, String);
+
+#[cfg(feature = "barrel")]
+impl Migration for BarrelMigration {
+    fn file_path(&self) -> Option<&Path> {
+        Some(self.0.as_path())
+    }
+
+    fn version(&self) -> &str {
+        &self.1
+    }
+
+    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        try!(conn.batch_execute(&self.2));
+        Ok(())
+    }
+
+    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+        try!(conn.batch_execute(&self.3));
+        Ok(())
+    }
+}
+
+#[cfg(feature = "barrel")]
+fn barrel_to_migration(path: PathBuf, version: String, sql: (String, String)) -> Result<Box<Migration>, MigrationError> {
+    println!("Converting migration: {:?}", sql);
+    Ok(Box::new(BarrelMigration(path, version, sql.0, sql.1)))
 }
 
 impl Migration for Box<Migration> {
