@@ -1,7 +1,7 @@
 extern crate url;
 
 use std::ffi::{CStr, CString};
-use self::url::Url;
+use self::url::{Host, Url};
 use self::url::percent_encoding::percent_decode;
 
 use result::{ConnectionError, ConnectionResult};
@@ -29,8 +29,9 @@ impl ConnectionOptions {
             return Err(connection_url_error());
         }
 
-        let host = match url.host_str() {
-            Some(host) => Some(try!(CString::new(host.as_bytes()))),
+        let host = match url.host() {
+            Some(Host::Ipv6(host)) => Some(try!(CString::new(host.to_string()))),
+            Some(host) => Some(try!(CString::new(host.to_string()))),
             None => None,
         };
         let user = try!(decode_into_cstring(url.username()));
@@ -148,4 +149,21 @@ fn userinfo_should_be_percent_decode() {
     let password = CString::new(password.as_bytes()).unwrap();
     assert_eq!(username, conn_opts.user);
     assert_eq!(password, conn_opts.password.unwrap());
+}
+
+#[test]
+fn ipv6_host_not_wrapped_in_brackets() {
+    let host1 = CString::new("::1").unwrap();
+    let host2 = CString::new("2001:db8:85a3::8a2e:370:7334").unwrap();
+
+    assert_eq!(
+        Some(&*host1),
+        ConnectionOptions::parse("mysql://[::1]").unwrap().host()
+    );
+    assert_eq!(
+        Some(&*host2),
+        ConnectionOptions::parse("mysql://[2001:db8:85a3::8a2e:370:7334]")
+            .unwrap()
+            .host()
+    );
 }
