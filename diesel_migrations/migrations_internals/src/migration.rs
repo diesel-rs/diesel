@@ -59,7 +59,6 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 }
 
 #[cfg(feature = "barrel")]
-/// Include the path, version, up and down sql strings 
 struct BarrelMigration(PathBuf, String, String, String);
 
 #[cfg(feature = "barrel")]
@@ -84,7 +83,11 @@ impl Migration for BarrelMigration {
 }
 
 #[cfg(feature = "barrel")]
-fn barrel_to_migration(path: PathBuf, version: String, sql: (String, String)) -> Result<Box<Migration>, MigrationError> {
+fn barrel_to_migration(
+    path: PathBuf,
+    version: String,
+    sql: (String, String),
+) -> Result<Box<Migration>, MigrationError> {
     println!("Converting migration: {:?}", sql);
     Ok(Box::new(BarrelMigration(path, version, sql.0, sql.1)))
 }
