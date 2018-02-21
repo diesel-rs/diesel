@@ -129,13 +129,13 @@ fn run_migration_command(matches: &ArgMatches) {
                     let mut barrel_migr = fs::File::create(migr_path).unwrap();
                     barrel_migr.write(b"/// Handle up migrations \n").unwrap();
                     barrel_migr
-                        .write(b"fn up(migr: &mut Migration) -> String {} \n\n")
+                        .write(b"fn up(migr: &mut Migration) {} \n\n")
                         .unwrap();
                     barrel_migr.write(b"/// Handle down migrations \n").unwrap();
                     barrel_migr
-                        .write(b"fn down(migr: &mut Migration) -> String {} \n")
+                        .write(b"fn down(migr: &mut Migration) {} \n")
                         .unwrap();
-                },
+                }
                 _ => {
                     let up_path = migration_dir.join("up.sql");
                     println!(
