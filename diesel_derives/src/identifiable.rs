@@ -14,7 +14,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     ref_generics.params.push(parse_quote!('ident));
     let (ref_generics, ..) = ref_generics.split_for_impl();
 
-    let (field_ty, field_access): (Vec<_>, Vec<_>) = model
+    let (ref field_ty, ref field_access): (Vec<_>, Vec<_>) = model
         .primary_key_names
         .iter()
         .filter_map(|&pk| model.find_column(pk).emit_error())
@@ -43,6 +43,16 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 
                 fn id(self) -> Self::Id {
                     (#(&self#field_access),*)
+                }
+            }
+
+            impl #impl_generics Identifiable for #struct_name #ty_generics
+            #where_clause
+            {
+                type Id = (#(#field_ty),*);
+
+                fn id(self) -> Self::Id {
+                    (#(self#field_access),*)
                 }
             }
         },

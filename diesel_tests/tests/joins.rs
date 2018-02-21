@@ -690,7 +690,7 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         .unwrap();
     let like = Like {
         user_id: tess.id,
-        comment_id: *comments[0].id(),
+        comment_id: *(&comments[0]).id(),
     };
     insert_into(likes::table)
         .values(&like)
