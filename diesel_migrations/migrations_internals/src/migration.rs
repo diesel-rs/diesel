@@ -1,5 +1,5 @@
 use diesel::connection::SimpleConnection;
-use super::{MigrationError, RunMigrationsError};
+use diesel::migration::errors::*;
 
 use std::path::{Path, PathBuf};
 use std::fmt;
@@ -90,6 +90,7 @@ fn barrel_to_migration(
 ) -> Result<Box<Migration>, MigrationError> {
     Ok(Box::new(BarrelMigration(path, version, sql.0, sql.1)))
 }
+
 
 impl Migration for Box<Migration> {
     fn version(&self) -> &str {
