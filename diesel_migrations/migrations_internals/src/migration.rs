@@ -88,7 +88,6 @@ fn barrel_to_migration(
     version: String,
     sql: (String, String),
 ) -> Result<Box<Migration>, MigrationError> {
-    println!("Converting migration: {:?}", sql);
     Ok(Box::new(BarrelMigration(path, version, sql.0, sql.1)))
 }
 
