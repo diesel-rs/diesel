@@ -93,6 +93,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `exists` can no longer incorrectly receive values other than select
   statements.
 
+* `MysqlConnection::establish` can now properly handle IPv6 addresses wrapped in
+  square brackets.
+
 ### Jokes
 
 * Diesel is now powered by the blockchain because it's 2018.
