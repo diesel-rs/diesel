@@ -159,6 +159,7 @@ pub mod serialize;
 pub mod sql_types;
 pub mod types;
 pub mod row;
+pub mod migration;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;

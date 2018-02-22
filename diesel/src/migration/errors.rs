@@ -1,16 +1,27 @@
-use diesel::result;
+//! Error types that represent migration errors.
+//! 
+//! These are split into multiple segments, depending on
+//! where in the migration process an error occurs.
 
 use std::convert::From;
 use std::{fmt, io};
 use std::path::PathBuf;
 use std::error::Error;
 
+use result;
+
+/// Errors that occur while preparing to run migrations
 #[derive(Debug)]
 pub enum MigrationError {
+    /// The migration directory wasn't found
     MigrationDirectoryNotFound,
+    /// Provided migration was in an unknown format
     UnknownMigrationFormat(PathBuf),
+    /// General system IO error
     IoError(io::Error),
+    /// Provided migration had an incompatible version number
     UnknownMigrationVersion(String),
+    /// No migrations had to be/ could be run
     NoMigrationRun,
 }
 
@@ -63,11 +74,15 @@ impl From<io::Error> for MigrationError {
     }
 }
 
+/// Errors that occur while running migrations
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
 pub enum RunMigrationsError {
+    /// A general migration error occured
     MigrationError(MigrationError),
+    /// The provided migration included an invalid query
     QueryError(result::Error),
+    /// The provided migration was empty
     EmptyMigration,
 }
 

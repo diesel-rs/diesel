@@ -80,10 +80,9 @@ extern crate diesel;
 #[cfg(feature = "barrel")]
 extern crate barrel;
 
-mod migration;
+pub mod migration;
 #[doc(hidden)]
 pub mod connection;
-mod migration_error;
 #[doc(hidden)]
 pub mod schema;
 
@@ -91,14 +90,16 @@ pub mod schema;
 pub use self::connection::MigrationConnection;
 #[doc(inline)]
 pub use self::migration::*;
-pub use self::migration_error::*;
+// pub use self::migration_error::*;
 
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
+use diesel::migration::errors::*;
 use diesel::expression_methods::*;
 use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
+use self::migration::Migration;
 
 use std::env;
 use std::path::{Path, PathBuf};
