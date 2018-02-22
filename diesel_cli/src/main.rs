@@ -23,7 +23,13 @@ extern crate toml;
 #[cfg(feature = "url")]
 extern crate url;
 
+<<<<<<< HEAD
 mod config;
+=======
+#[cfg(feature = "barrel")]
+extern crate barrel;
+
+>>>>>>> Implementing requested changes in diesel_cli
 mod database_error;
 #[macro_use]
 mod database;
@@ -113,61 +119,50 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             println!("{:?}", result);
         }
         ("generate", Some(args)) => {
-            use std::io::Write;
-
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches).join(versioned_name);
-            let migration_type: Option<&str> = args.value_of("type");
+            let migration_type: Option<&str> = args.value_of("TYPE");
             fs::create_dir(&migration_dir).unwrap();
 
             let migration_dir_relative =
                 convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
 
             match migration_type {
-                Some("barrel") => {
-                    let migr_path = migration_dir.join("mod.rs");
-                    println!(
-                        "Creating {}",
-                        migration_dir_relative.join("mod.rs").display()
-                    );
-
-                    // TODO: Is there a nier way to print this?
-                    let mut barrel_migr = fs::File::create(migr_path).unwrap();
-                    barrel_migr.write(b"/// Handle up migrations \n").unwrap();
-                    barrel_migr
-                        .write(b"fn up(migr: &mut Migration) {} \n\n")
-                        .unwrap();
-                    barrel_migr.write(b"/// Handle down migrations \n").unwrap();
-                    barrel_migr
-                        .write(b"fn down(migr: &mut Migration) {} \n")
-                        .unwrap();
-                }
-                _ => {
-                    let up_path = migration_dir.join("up.sql");
-                    println!(
-                        "Creating {}",
-                        migration_dir_relative.join("up.sql").display()
-                    );
-                    let mut up = fs::File::create(up_path).unwrap();
-                    up.write_all(b"-- Your SQL goes here").unwrap();
-
-                    let down_path = migration_dir.join("down.sql");
-                    println!(
-                        "Creating {}",
-                        migration_dir_relative.join("down.sql").display()
-                    );
-                    let mut down = fs::File::create(down_path).unwrap();
-                    down.write_all(b"-- This file should undo anything in `up.sql`")
-                        .unwrap();
-                }
+                #[cfg(feature = "barrel")]
+                Some("barrel") => barrel::diesel::generate_initial(migration_dir),
+                _ => generate_sql_migration(migration_dir),
             }
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
 
     Ok(())
+}
+
+fn generate_sql_migration(path: PathBuf) {
+    use std::io::Write;
+
+    let migration_dir_relative =
+        convert_absolute_path_to_relative(&path, &env::current_dir().unwrap());
+
+    let up_path = path.join("up.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("up.sql").display()
+    );
+    let mut up = fs::File::create(up_path).unwrap();
+    up.write_all(b"-- Your SQL goes here").unwrap();
+
+    let down_path = path.join("down.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("down.sql").display()
+    );
+    let mut down = fs::File::create(down_path).unwrap();
+    down.write_all(b"-- This file should undo anything in `up.sql`")
+        .unwrap();
 }
 
 use std::fmt::Display;
