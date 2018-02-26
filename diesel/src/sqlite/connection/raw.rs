@@ -7,10 +7,11 @@ use std::{ptr, str};
 
 use result::*;
 use result::Error::DatabaseError;
+use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
-    pub internal_connection: *mut ffi::sqlite3,
+    pub(crate) internal_connection: NonNull<ffi::sqlite3>,
 }
 
 impl RawConnection {
@@ -21,9 +22,12 @@ impl RawConnection {
             unsafe { ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) };
 
         match connection_status {
-            ffi::SQLITE_OK => Ok(RawConnection {
-                internal_connection: conn_pointer,
-            }),
+            ffi::SQLITE_OK => {
+                let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
+                Ok(RawConnection {
+                    internal_connection: conn_pointer,
+                })
+            }
             err_code => {
                 let message = super::error_message(err_code);
                 Err(ConnectionError::BadConnection(message.into()))
@@ -38,7 +42,7 @@ impl RawConnection {
         let callback_arg = ptr::null_mut();
         unsafe {
             ffi::sqlite3_exec(
-                self.internal_connection,
+                self.internal_connection.as_ptr(),
                 query.as_ptr(),
                 callback_fn,
                 callback_arg,
@@ -56,16 +60,17 @@ impl RawConnection {
     }
 
     pub fn rows_affected_by_last_query(&self) -> usize {
-        unsafe { ffi::sqlite3_changes(self.internal_connection) as usize }
+        unsafe { ffi::sqlite3_changes(self.internal_connection.as_ptr()) as usize }
     }
 
     pub fn last_error_message(&self) -> String {
-        let c_str = unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(self.internal_connection)) };
+        let c_str =
+            unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(self.internal_connection.as_ptr())) };
         c_str.to_string_lossy().into_owned()
     }
 
     pub fn last_error_code(&self) -> libc::c_int {
-        unsafe { ffi::sqlite3_extended_errcode(self.internal_connection) }
+        unsafe { ffi::sqlite3_extended_errcode(self.internal_connection.as_ptr()) }
     }
 }
 
@@ -73,7 +78,7 @@ impl Drop for RawConnection {
     fn drop(&mut self) {
         use std::thread::panicking;
 
-        let close_result = unsafe { ffi::sqlite3_close(self.internal_connection) };
+        let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {

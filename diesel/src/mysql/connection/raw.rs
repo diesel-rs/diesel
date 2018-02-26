@@ -8,24 +8,24 @@ use std::sync::{Once, ONCE_INIT};
 use result::{ConnectionError, ConnectionResult, QueryResult};
 use super::url::ConnectionOptions;
 use super::stmt::Statement;
+use util::NonNull;
 
-pub struct RawConnection(*mut ffi::MYSQL);
+pub struct RawConnection(NonNull<ffi::MYSQL>);
 
 impl RawConnection {
     pub fn new() -> Self {
         perform_thread_unsafe_library_initialization();
         let raw_connection = unsafe { ffi::mysql_init(ptr::null_mut()) };
-        if raw_connection.is_null() {
-            // We're trusting https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html
-            // that null return always means OOM
-            panic!("Insufficient memory to allocate connection");
-        }
+        // We're trusting https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html
+        // that null return always means OOM
+        let raw_connection =
+            NonNull::new(raw_connection).expect("Insufficient memory to allocate connection");
         let result = RawConnection(raw_connection);
 
         // This is only non-zero for unrecognized options, which should never happen.
         let charset_result = unsafe {
             ffi::mysql_options(
-                result.0,
+                result.0.as_ptr(),
                 ffi::mysql_option::MYSQL_SET_CHARSET_NAME,
                 b"utf8mb4\0".as_ptr() as *const libc::c_void,
             )
@@ -50,7 +50,7 @@ impl RawConnection {
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_connect(
-                self.0,
+                self.0.as_ptr(),
                 host.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
                 user.as_ptr(),
                 password
@@ -74,7 +74,7 @@ impl RawConnection {
     }
 
     pub fn last_error_message(&self) -> String {
-        unsafe { CStr::from_ptr(ffi::mysql_error(self.0)) }
+        unsafe { CStr::from_ptr(ffi::mysql_error(self.0.as_ptr())) }
             .to_string_lossy()
             .into_owned()
     }
@@ -83,7 +83,7 @@ impl RawConnection {
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_query(
-                self.0,
+                self.0.as_ptr(),
                 query.as_ptr() as *const libc::c_char,
                 query.len() as libc::c_ulong,
             );
@@ -99,7 +99,7 @@ impl RawConnection {
     {
         unsafe {
             ffi::mysql_set_server_option(
-                self.0,
+                self.0.as_ptr(),
                 ffi::enum_mysql_set_option::MYSQL_OPTION_MULTI_STATEMENTS_ON,
             );
         }
@@ -109,7 +109,7 @@ impl RawConnection {
 
         unsafe {
             ffi::mysql_set_server_option(
-                self.0,
+                self.0.as_ptr(),
                 ffi::enum_mysql_set_option::MYSQL_OPTION_MULTI_STATEMENTS_OFF,
             );
         }
@@ -119,16 +119,16 @@ impl RawConnection {
     }
 
     pub fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0) };
+        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0.as_ptr()) };
         affected_rows as usize
     }
 
     pub fn prepare(&self, query: &str) -> QueryResult<Statement> {
-        let stmt = unsafe { ffi::mysql_stmt_init(self.0) };
+        let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
         // is because of OOM.
         // https://dev.mysql.com/doc/refman/5.7/en/mysql-stmt-init.html
-        assert!(!stmt.is_null(), "Out of memory creating prepared statement");
+        let stmt = NonNull::new(stmt).expect("Out of memory creating prepared statement");
         let stmt = Statement::new(stmt);
         try!(stmt.prepare(query));
         Ok(stmt)
@@ -163,7 +163,7 @@ impl RawConnection {
 
     fn consume_current_result(&self) -> QueryResult<()> {
         unsafe {
-            let res = ffi::mysql_store_result(self.0);
+            let res = ffi::mysql_store_result(self.0.as_ptr());
             if !res.is_null() {
                 ffi::mysql_free_result(res);
             }
@@ -174,7 +174,7 @@ impl RawConnection {
     /// Calls `mysql_next_result` and returns whether there are more results
     /// after this one.
     fn next_result(&self) -> QueryResult<bool> {
-        let more_results = unsafe { ffi::mysql_next_result(self.0) == 0 };
+        let more_results = unsafe { ffi::mysql_next_result(self.0.as_ptr()) == 0 };
         self.did_an_error_occur()?;
         Ok(more_results)
     }
@@ -183,7 +183,7 @@ impl RawConnection {
 impl Drop for RawConnection {
     fn drop(&mut self) {
         unsafe {
-            ffi::mysql_close(self.0);
+            ffi::mysql_close(self.0.as_ptr());
         }
     }
 }
