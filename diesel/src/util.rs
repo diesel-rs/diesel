@@ -7,6 +7,7 @@ pub trait TupleAppend<T> {
 }
 
 #[cfg(not(feature = "unstable"))]
+#[allow(dead_code)]
 mod polyfill {
     /// A polyfill for `std::ptr::NonNull`, which was stabilized in Rust 1.25.
     /// When our minimum supported version of Rust is >= 1.25, this should be
@@ -44,6 +45,7 @@ mod polyfill {
 }
 
 #[cfg(not(feature = "unstable"))]
+#[allow(unused_imports)]
 pub(crate) use self::polyfill::*;
 
 #[cfg(feature = "unstable")]
