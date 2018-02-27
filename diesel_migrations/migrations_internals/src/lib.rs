@@ -95,11 +95,10 @@ pub use self::migration::*;
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
-use diesel::migration::errors::*;
+use diesel::migration::*;
 use diesel::expression_methods::*;
 use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
-use self::migration::Migration;
 
 use std::env;
 use std::path::{Path, PathBuf};
