@@ -1,5 +1,4 @@
 //! Error types that represent migration errors.
-//! 
 //! These are split into multiple segments, depending on
 //! where in the migration process an error occurs.
 
