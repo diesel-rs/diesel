@@ -2,6 +2,34 @@ use diesel::connection::SimpleConnection;
 use diesel::migration::*;
 
 use std::path::{Path, PathBuf};
+use std::fmt;
+
+#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy)]
+pub struct MigrationName<'a> {
+    pub migration: &'a Migration,
+}
+
+pub fn name(migration: &Migration) -> MigrationName {
+    MigrationName {
+        migration: migration,
+    }
+}
+
+impl<'a> fmt::Display for MigrationName<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let file_name = self.migration
+            .file_path()
+            .and_then(|file_path| file_path.file_name())
+            .and_then(|file| file.to_str());
+        if let Some(name) = file_name {
+            f.write_str(name)?;
+        } else {
+            f.write_str(self.migration.version())?;
+        }
+        Ok(())
+    }
+}
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
