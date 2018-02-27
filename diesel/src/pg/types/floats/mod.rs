@@ -83,14 +83,14 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 
 impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        let sign = match *self {
+        let sign = match self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
             PgNumeric::NaN => 0xC000,
         };
         let empty_vec = Vec::new();
-        let digits = match *self {
-            PgNumeric::Positive { ref digits, .. } | PgNumeric::Negative { ref digits, .. } => {
+        let digits = match self {
+            PgNumeric::Positive { digits, .. } | PgNumeric::Negative { digits, .. } => {
                 digits
             }
             PgNumeric::NaN => &empty_vec,

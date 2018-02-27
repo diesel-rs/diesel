@@ -223,8 +223,8 @@ where
     T: QueryFragment<DB>,
 {
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
-        match *self {
-            Some(ref c) => c.walk_ast(out),
+        match self {
+            Some(c) => c.walk_ast(out),
             None => Ok(()),
         }
     }

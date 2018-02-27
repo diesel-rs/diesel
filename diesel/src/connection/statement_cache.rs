@@ -172,18 +172,18 @@ impl<'a, T> Deref for MaybeCached<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        match *self {
-            MaybeCached::CannotCache(ref x) => x,
-            MaybeCached::Cached(ref x) => &**x,
+        match self {
+            MaybeCached::CannotCache(x) => x,
+            MaybeCached::Cached(x) => x,
         }
     }
 }
 
 impl<'a, T> DerefMut for MaybeCached<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match *self {
-            MaybeCached::CannotCache(ref mut x) => x,
-            MaybeCached::Cached(ref mut x) => &mut **x,
+        match self {
+            MaybeCached::CannotCache(x) => x,
+            MaybeCached::Cached(x) => x,
         }
     }
 }
@@ -222,9 +222,9 @@ where
     }
 
     pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<str>> {
-        match *self {
+        match self {
             StatementCacheKey::Type(_) => Self::construct_sql(source).map(Cow::Owned),
-            StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
+            StatementCacheKey::Sql { sql, .. } => Ok(Cow::Borrowed(sql)),
         }
     }
 

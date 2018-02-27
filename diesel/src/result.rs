@@ -247,13 +247,13 @@ impl From<NulError> for Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
+        match self {
+            Error::InvalidCString(nul_err) => nul_err.fmt(f),
+            Error::DatabaseError(_, e) => write!(f, "{}", e.message()),
             Error::NotFound => f.write_str("NotFound"),
-            Error::QueryBuilderError(ref e) => e.fmt(f),
-            Error::DeserializationError(ref e) => e.fmt(f),
-            Error::SerializationError(ref e) => e.fmt(f),
+            Error::QueryBuilderError(e) => e.fmt(f),
+            Error::DeserializationError(e) => e.fmt(f),
+            Error::SerializationError(e) => e.fmt(f),
             Error::RollbackTransaction => write!(f, "{}", self.description()),
             Error::AlreadyInTransaction => write!(f, "{}", self.description()),
             Error::__Nonexhaustive => unreachable!(),
@@ -263,13 +263,13 @@ impl Display for Error {
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        match *self {
-            Error::InvalidCString(ref nul_err) => nul_err.description(),
-            Error::DatabaseError(_, ref e) => e.message(),
+        match self {
+            Error::InvalidCString(nul_err) => nul_err.description(),
+            Error::DatabaseError(_, e) => e.message(),
             Error::NotFound => "Record not found",
-            Error::QueryBuilderError(ref e) => e.description(),
-            Error::DeserializationError(ref e) => e.description(),
-            Error::SerializationError(ref e) => e.description(),
+            Error::QueryBuilderError(e) => e.description(),
+            Error::DeserializationError(e) => e.description(),
+            Error::SerializationError(e) => e.description(),
             Error::RollbackTransaction => "The current transaction was aborted",
             Error::AlreadyInTransaction => {
                 "Cannot perform this operation while a transaction is open"
@@ -279,11 +279,11 @@ impl StdError for Error {
     }
 
     fn cause(&self) -> Option<&StdError> {
-        match *self {
-            Error::InvalidCString(ref e) => Some(e),
-            Error::QueryBuilderError(ref e) => Some(&**e),
-            Error::DeserializationError(ref e) => Some(&**e),
-            Error::SerializationError(ref e) => Some(&**e),
+        match self {
+            Error::InvalidCString(e) => Some(e),
+            Error::QueryBuilderError(e) => Some(&**e),
+            Error::DeserializationError(e) => Some(&**e),
+            Error::SerializationError(e) => Some(&**e),
             _ => None,
         }
     }
@@ -291,11 +291,11 @@ impl StdError for Error {
 
 impl Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
-            ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
-            ConnectionError::CouldntSetupConfiguration(ref e) => e.fmt(f),
+        match self {
+            ConnectionError::InvalidCString(nul_err) => nul_err.fmt(f),
+            ConnectionError::BadConnection(s) => write!(f, "{}", s),
+            ConnectionError::InvalidConnectionUrl(s) => write!(f, "{}", s),
+            ConnectionError::CouldntSetupConfiguration(e) => e.fmt(f),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
@@ -303,19 +303,19 @@ impl Display for ConnectionError {
 
 impl StdError for ConnectionError {
     fn description(&self) -> &str {
-        match *self {
-            ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
-            ConnectionError::BadConnection(ref s) => s,
-            ConnectionError::InvalidConnectionUrl(ref s) => s,
-            ConnectionError::CouldntSetupConfiguration(ref e) => e.description(),
+        match self {
+            ConnectionError::InvalidCString(nul_err) => nul_err.description(),
+            ConnectionError::BadConnection(s) => s,
+            ConnectionError::InvalidConnectionUrl(s) => s,
+            ConnectionError::CouldntSetupConfiguration(e) => e.description(),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
-        match *self {
-            ConnectionError::InvalidCString(ref e) => Some(e),
-            ConnectionError::CouldntSetupConfiguration(ref e) => Some(e),
+        match self {
+            ConnectionError::InvalidCString(e) => Some(e),
+            ConnectionError::CouldntSetupConfiguration(e) => Some(e),
             _ => None,
         }
     }

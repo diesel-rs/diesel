@@ -106,8 +106,8 @@ macro_rules! impl_Sql {
             fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
-                match *self {
-                    V4(ref net) => {
+                match self {
+                    V4(net) => {
                         let mut data = [0u8;8];
                         let af = PGSQL_AF_INET;
                         let prefix = net.prefix();
@@ -119,7 +119,7 @@ macro_rules! impl_Sql {
                             .map(|_| IsNull::No)
                             .map_err(Into::into)
                     },
-                    V6(ref net) => {
+                    V6(net) => {
                         let mut data = [0u8;20];
                         let af = PGSQL_AF_INET6;
                         let prefix = net.prefix();
@@ -138,7 +138,6 @@ macro_rules! impl_Sql {
 
     }
 }
-
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
 

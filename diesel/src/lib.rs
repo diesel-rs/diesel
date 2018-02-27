@@ -92,6 +92,7 @@
 //! If you run into problems, Diesel has a very active Gitter room.
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+#![feature(match_default_bindings)]
 
 #![cfg_attr(feature = "large-tables",
             deprecated(since = "1.2.0",

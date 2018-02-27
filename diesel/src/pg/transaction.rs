@@ -317,7 +317,7 @@ enum IsolationLevel {
 impl QueryFragment<Pg> for IsolationLevel {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" ISOLATION LEVEL ");
-        match *self {
+        match self {
             IsolationLevel::ReadCommitted => out.push_sql("READ COMMITTED"),
             IsolationLevel::RepeatableRead => out.push_sql("REPEATABLE READ"),
             IsolationLevel::Serializable => out.push_sql("SERIALIZABLE"),
@@ -334,7 +334,7 @@ enum ReadMode {
 
 impl QueryFragment<Pg> for ReadMode {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        match *self {
+        match self {
             ReadMode::ReadOnly => out.push_sql(" READ ONLY"),
             ReadMode::ReadWrite => out.push_sql(" READ WRITE"),
         }
@@ -350,7 +350,7 @@ enum Deferrable {
 
 impl QueryFragment<Pg> for Deferrable {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        match *self {
+        match self {
             Deferrable::Deferrable => out.push_sql(" DEFERRABLE"),
             Deferrable::NotDeferrable => out.push_sql(" NOT DEFERRABLE"),
         }
