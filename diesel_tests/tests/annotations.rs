@@ -218,8 +218,8 @@ fn derive_identifiable_with_non_standard_pk() {
         foo_id: "there",
         foo: 3,
     };
-    assert_eq!(&"hi", foo1.id());
-    assert_eq!(&"there", foo2.id());
+    assert_eq!("hi", foo1.id());
+    assert_eq!("there", foo2.id());
     // Fails to compile if wrong table is generated.
     let _: posts::table = Foo::<'static>::table();
 }
@@ -251,8 +251,8 @@ fn derive_identifiable_with_composite_pk() {
         bar_id: 7,
         foo: 8,
     };
-    assert_eq!((&2, &3), foo1.id());
-    assert_eq!((&6, &7), foo2.id());
+    assert_eq!((2, 3), foo1.id());
+    assert_eq!((6, 7), foo2.id());
 }
 
 #[test]
