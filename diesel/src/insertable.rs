@@ -229,7 +229,7 @@ where
 
 impl<T, Tab> Insertable<Tab> for Vec<T>
 where
-    T: Insertable<Tab>,
+    T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,
 {
     type Values = OwnedBatchInsert<T::Values, Tab>;
 
