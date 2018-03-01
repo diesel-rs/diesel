@@ -111,6 +111,15 @@ where
     }
 }
 
+impl<T, Tab, DB> CanInsertInSingleQuery<DB> for OwnedBatchInsert<T, Tab>
+where
+    DB: Backend + SupportsDefaultKeyword,
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(self.values.len())
+    }
+}
+
 impl<T, U, DB> CanInsertInSingleQuery<DB> for ColumnInsertValue<T, U>
 where
     DB: Backend,
@@ -218,6 +227,20 @@ where
     }
 }
 
+impl<T, Tab> Insertable<Tab> for Vec<T>
+where
+    T: Insertable<Tab>,
+{
+    type Values = OwnedBatchInsert<T::Values, Tab>;
+
+    fn values(self) -> Self::Values {
+        OwnedBatchInsert {
+            values: self.into_iter().map(Insertable::values).collect(),
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl<T, Tab> Insertable<Tab> for Option<T>
 where
     T: Insertable<Tab>,
@@ -262,6 +285,32 @@ where
         for record in records {
             out.push_sql(", (");
             record.values.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct OwnedBatchInsert<V, Tab> {
+    pub(crate) values: Vec<V>,
+    _marker: PhantomData<Tab>,
+}
+
+impl<Tab, DB, Inner> QueryFragment<DB> for OwnedBatchInsert<ValuesClause<Inner, Tab>, Tab>
+where
+    DB: Backend + SupportsDefaultKeyword,
+    ValuesClause<Inner, Tab>: QueryFragment<DB>,
+    Inner: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        let mut values = self.values.iter();
+        if let Some(value) = values.next() {
+            value.walk_ast(out.reborrow())?;
+        }
+        for value in values {
+            out.push_sql(", (");
+            value.values.walk_ast(out.reborrow())?;
             out.push_sql(")");
         }
         Ok(())
