@@ -129,7 +129,7 @@ fn generate_sql_migration(path: &PathBuf) {
     use std::io::Write;
 
     let migration_dir_relative =
-        convert_absolute_path_to_relative(&path, &env::current_dir().unwrap());
+        convert_absolute_path_to_relative(path, &env::current_dir().unwrap());
 
     let up_path = path.join("up.sql");
     println!(
