@@ -132,7 +132,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             match migration_type {
                 #[cfg(feature = "barrel")]
                 Some("barrel") => barrel::diesel::generate_initial(migration_dir),
-                _ => generate_sql_migration(migration_dir),
+                _ => generate_sql_migration(&migration_dir),
             }
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
@@ -141,7 +141,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn generate_sql_migration(path: PathBuf) {
+fn generate_sql_migration(path: &PathBuf) {
     use std::io::Write;
 
     let migration_dir_relative =
