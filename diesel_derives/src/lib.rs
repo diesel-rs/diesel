@@ -75,7 +75,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_derive(input, query_id::derive)
 }
 
-#[proc_macro_derive(Queryable, attributes(column_name))]
+#[proc_macro_derive(Queryable, attributes(column_name, diesel))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive)
 }

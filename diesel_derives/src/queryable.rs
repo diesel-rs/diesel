@@ -8,11 +8,24 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let model = Model::from_item(&item)?;
 
     let struct_name = item.ident;
-    let field_ty = model.fields().iter().map(|f| &f.ty).collect::<Vec<_>>();
-    let field_ty = &field_ty;
+    let field_ty = &model
+        .fields()
+        .iter()
+        .filter_map(|f| {
+            if f.has_flag("default") {
+                None
+            } else {
+                Some(&f.ty)
+            }
+        })
+        .collect::<Vec<_>>();
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
-        let i = syn::Index::from(i);
-        f.name.assign(parse_quote!(row.#i))
+        if f.has_flag("default") {
+            f.name.assign(parse_quote!(Default::default()))
+        } else {
+            let i = syn::Index::from(i);
+            f.name.assign(parse_quote!(row.#i))
+        }
     });
 
     let (_, ty_generics, _) = item.generics.split_for_impl();
