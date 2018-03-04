@@ -248,6 +248,17 @@ where
 {
 }
 
+/// Marker trait to indicate that an expression does not include any aggregate
+/// functions. This trait should not be implemented directly. Implement
+/// [`ValidGrouping`] instead.
+pub trait NonAggregate {}
+
+impl<T> NonAggregate for T
+where
+    T: ValidGrouping<(), IsAggregate = NotAggregate>,
+{
+}
+
 #[allow(missing_docs)]
 pub trait ValidGrouping<GroupByClause> {
     type IsAggregate;
@@ -311,7 +322,7 @@ use query_builder::{QueryFragment, QueryId};
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
 ///
-/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool, IsAggregate = NotAggregate>> {
+/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool>> {
 ///     match search {
 ///         Search::Id(id) => Box::new(users::id.eq(id)),
 ///         Search::Name(name) => Box::new(users::name.eq(name)),
@@ -335,7 +346,7 @@ where
     DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS>,
-    Self: ValidGrouping<()>,
+    Self: NonAggregate,
     Self: QueryFragment<DB>,
 {
 }
@@ -345,15 +356,25 @@ where
     DB: Backend,
     T: Expression,
     T: SelectableExpression<QS>,
-    T: ValidGrouping<()>,
+    T: NonAggregate,
     T: QueryFragment<DB>,
 {
 }
 
-impl<'a, QS, ST, IA, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST, IsAggregate = IA> + 'a {
+impl<'a, QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> + 'a {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+// We need this impl because while `NonAggregate` is a supertrait of
+// `BoxableExpression`, and it's implemented for all types which have this impl
+// on them, that impl is not implied to the compiler by `BoxableExpression`. If
+// we made `ValidGrouping` a supertrait of `BoxableExpression`, you'd always
+// have to specify `IsAggregate` which we don't want. The overwhelmingly common
+// case is non-aggregate expressions when there is no group by clause.
+impl<'a, QS, ST, DB> ValidGrouping<()> for BoxableExpression<QS, DB, SqlType = ST> + 'a {
+    type IsAggregate = NotAggregate;
 }
 
 /// Converts a tuple of values into a tuple of Diesel expressions.

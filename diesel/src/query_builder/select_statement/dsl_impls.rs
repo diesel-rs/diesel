@@ -92,7 +92,7 @@ where
 impl<F, S, D, W, O, L, Of, G, FU, Predicate> FilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Predicate: Expression<SqlType = Bool> + ValidGrouping<(), IsAggregate = NotAggregate>,
+    Predicate: Expression<SqlType = Bool> + NonAggregate,
     W: WhereAnd<Predicate>,
 {
     type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>;
@@ -115,7 +115,7 @@ where
 impl<F, S, D, W, O, L, Of, G, FU, Predicate> OrFilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, L, Of, G, FU>
 where
-    Predicate: Expression<SqlType = Bool> + ValidGrouping<(), IsAggregate = NotAggregate>,
+    Predicate: Expression<SqlType = Bool> + NonAggregate,
     W: WhereOr<Predicate>,
 {
     type Output = SelectStatement<F, S, D, W::Output, O, L, Of, G, FU>;

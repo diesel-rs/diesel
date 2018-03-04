@@ -8,7 +8,7 @@ use std::any::*;
 use std::marker::PhantomData;
 
 use backend::Backend;
-use expression::{Expression, ValidGrouping, NotAggregate, SelectableExpression};
+use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
 use insertable::*;
 #[cfg(feature = "mysql")]
@@ -261,7 +261,7 @@ where
 
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
-    Ret: Expression + SelectableExpression<T> + ValidGrouping<(), IsAggregate = NotAggregate>,
+    Ret: Expression + SelectableExpression<T> + NonAggregate,
 {
     type SqlType = Ret::SqlType;
 }
