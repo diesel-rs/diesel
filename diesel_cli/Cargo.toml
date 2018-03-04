@@ -25,7 +25,7 @@ migrations_internals = "~1.2.0"
 serde = { version = "1.0.0", features = ["derive"] }
 toml = "0.4.6"
 url = { version = "1.4.0", optional = true }
-barrel = { git = "https://github.com/spacekookie/barrel", optional = true, features = ["diesel"] }
+barrel = { version = "<= 0.2.0", optional = true, features = ["diesel_filled"] }
 
 [dev-dependencies]
 difference = "1.0"
