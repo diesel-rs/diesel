@@ -3,7 +3,7 @@ use helpers::*;
 use schema::*;
 
 #[test]
-fn named_struct() {
+fn named_ref_struct() {
     #[derive(AsChangeset)]
     struct User {
         name: String,
@@ -14,6 +14,32 @@ fn named_struct() {
 
     update(users::table.find(1))
         .set(&User {
+            name: String::from("Jim"),
+            hair_color: String::from("blue"),
+        })
+        .execute(&connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("Jim"), Some(String::from("blue"))),
+        (2, String::from("Tess"), Some(String::from("brown"))),
+    ];
+    let actual = users::table.order(users::id).load(&connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn named_struct() {
+    #[derive(AsChangeset)]
+    struct User {
+        name: String,
+        hair_color: String,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(User {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
         })
