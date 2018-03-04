@@ -3,7 +3,7 @@ use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId, Default, ValidGrouping)]
+#[derive(Debug, Copy, Clone, QueryId, Default)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {

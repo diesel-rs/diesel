@@ -97,7 +97,7 @@ where
 impl_selectable_expression!(Any<Expr>);
 
 #[doc(hidden)]
-#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct All<Expr> {
     expr: Expr,
 }

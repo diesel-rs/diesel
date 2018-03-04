@@ -10,7 +10,7 @@ impl DateTimeLike for Date {}
 impl DateTimeLike for Timestamp {}
 impl DateTimeLike for Timestamptz {}
 
-#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,

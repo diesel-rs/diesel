@@ -7,7 +7,7 @@ use sql_types::*;
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[derive(Debug, Copy, Clone, QueryId)]
 pub struct now;
 
 impl Expression for now {

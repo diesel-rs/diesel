@@ -33,7 +33,7 @@ pub fn exists<T>(query: T) -> Exists<T> {
     Exists(Subselect::new(query))
 }
 
-#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Exists<T>(Subselect<T, ()>);
 
 impl<T> Expression for Exists<T>

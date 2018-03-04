@@ -6,7 +6,7 @@ use sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
-        #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+        #[derive(Debug, Copy, Clone, QueryId)]
         pub struct $name<Lhs, Rhs> {
             lhs: Lhs,
             rhs: Rhs,

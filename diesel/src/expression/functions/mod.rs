@@ -9,7 +9,7 @@ macro_rules! sql_function_body {
         $helper_ty_docs:expr
     ) => {
         #[allow(non_camel_case_types)]
-        #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         #[doc(hidden)]
         pub struct $struct_name<$($arg_name),*> {
             $($arg_name: $arg_name),*
@@ -128,7 +128,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
-        #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
+        #[derive(Debug, Clone, Copy, QueryId)]
         pub struct $type_name;
 
         impl $crate::expression::Expression for $type_name {
