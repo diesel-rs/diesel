@@ -55,6 +55,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Queries that treat a subselect as a single value (e.g. `foo = (subselect)`)
   are now supported by calling [`.single_value()`].
 
+* `#[derive(Insertable)]` implements now `Insertable` also on the struct itself,
+  not only on references to the struct
+
 [`.single_value()`]: http://docs.diesel.rs/diesel/query_dsl/trait.QueryDsl.html#method.single_value
 
 * `ConnectionError` now implements `PartialEq`.
