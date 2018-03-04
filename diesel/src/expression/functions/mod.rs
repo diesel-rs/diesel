@@ -9,7 +9,7 @@ macro_rules! sql_function_body {
         $helper_ty_docs:expr
     ) => {
         #[allow(non_camel_case_types)]
-        #[derive(Debug, Clone, Copy, QueryId)]
+        #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
         #[doc(hidden)]
         pub struct $struct_name<$($arg_name),*> {
             $($arg_name: $arg_name),*
@@ -63,13 +63,6 @@ macro_rules! sql_function_body {
         #[allow(non_camel_case_types)]
         impl<$($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $struct_name<$($arg_name),*> where
             $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
-            $struct_name<$($arg_name),*>: $crate::expression::Expression,
-        {
-        }
-
-        #[allow(non_camel_case_types)]
-        impl<$($arg_name),*> $crate::expression::NonAggregate for $struct_name<$($arg_name),*> where
-            $($arg_name: $crate::expression::NonAggregate,)*
             $struct_name<$($arg_name),*>: $crate::expression::Expression,
         {
         }
@@ -135,7 +128,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
-        #[derive(Debug, Clone, Copy, QueryId)]
+        #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
         pub struct $type_name;
 
         impl $crate::expression::Expression for $type_name {
@@ -146,9 +139,6 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
         }
 
         impl<QS> $crate::expression::AppearsOnTable<QS> for $type_name {
-        }
-
-        impl $crate::expression::NonAggregate for $type_name {
         }
     }
 }

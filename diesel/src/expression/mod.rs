@@ -248,17 +248,31 @@ where
 {
 }
 
-/// Marker trait to indicate that an expression does not include any aggregate
-/// functions.
-///
-/// Used to ensure that aggregate expressions aren't mixed with
-/// non-aggregate expressions in a select clause, and that they're never
-/// included in a where clause.
-pub trait NonAggregate {}
+#[allow(missing_docs)]
+pub trait ValidGrouping<GroupByClause> {
+    type IsAggregate;
+}
 
-impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
+impl<GroupByClause, T> ValidGrouping<GroupByClause> for Box<T>
+where
+    T: ValidGrouping<GroupByClause> + ?Sized,
+{
+    type IsAggregate = T::IsAggregate;
+}
 
-impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
+impl<'a, GroupByClause, T> ValidGrouping<GroupByClause> for &'a T
+where
+    T: ValidGrouping<GroupByClause> + ?Sized,
+{
+    type IsAggregate = T::IsAggregate;
+}
+
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy)]
+pub struct IsAggregate;
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy)]
+pub struct NotAggregate;
 
 use query_builder::{QueryFragment, QueryId};
 
@@ -297,7 +311,7 @@ use query_builder::{QueryFragment, QueryId};
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
 ///
-/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool>> {
+/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool, IsAggregate = NotAggregate>> {
 ///     match search {
 ///         Search::Id(id) => Box::new(users::id.eq(id)),
 ///         Search::Name(name) => Box::new(users::name.eq(name)),
@@ -321,7 +335,7 @@ where
     DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS>,
-    Self: NonAggregate,
+    Self: ValidGrouping<()>,
     Self: QueryFragment<DB>,
 {
 }
@@ -331,12 +345,12 @@ where
     DB: Backend,
     T: Expression,
     T: SelectableExpression<QS>,
-    T: NonAggregate,
+    T: ValidGrouping<()>,
     T: QueryFragment<DB>,
 {
 }
 
-impl<'a, QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> + 'a {
+impl<'a, QS, ST, IA, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST, IsAggregate = IA> + 'a {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;

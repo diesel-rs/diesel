@@ -4,7 +4,7 @@ use query_builder::*;
 use result::QueryResult;
 use sql_types::IntoNullable;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, ValidGrouping)]
 pub struct Nullable<T>(T);
 
 impl<T> Nullable<T> {
@@ -44,11 +44,4 @@ impl<T: QueryId> QueryId for Nullable<T> {
     type QueryId = T::QueryId;
 
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
-}
-
-impl<T> NonAggregate for Nullable<T>
-where
-    T: NonAggregate,
-    Nullable<T>: Expression,
-{
 }

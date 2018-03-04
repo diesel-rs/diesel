@@ -1,4 +1,4 @@
-use expression::{AsExpression, Expression, NonAggregate};
+use expression::{AsExpression, Expression};
 use expression::subselect::Subselect;
 use pg::Pg;
 use query_builder::*;
@@ -64,7 +64,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct Any<Expr> {
     expr: Expr,
 }
@@ -96,14 +96,8 @@ where
 
 impl_selectable_expression!(Any<Expr>);
 
-impl<Expr> NonAggregate for Any<Expr>
-where
-    Expr: NonAggregate,
-{
-}
-
 #[doc(hidden)]
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct All<Expr> {
     expr: Expr,
 }
@@ -134,12 +128,6 @@ where
 }
 
 impl_selectable_expression!(All<Expr>);
-
-impl<Expr> NonAggregate for All<Expr>
-where
-    Expr: NonAggregate,
-{
-}
 
 pub trait AsArrayExpression<ST> {
     type Expression: Expression<SqlType = Array<ST>>;

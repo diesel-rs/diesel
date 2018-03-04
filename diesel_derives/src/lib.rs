@@ -36,6 +36,7 @@ mod query_id;
 mod queryable;
 mod queryable_by_name;
 mod sql_type;
+mod valid_grouping;
 
 use diagnostic_shim::*;
 
@@ -88,6 +89,11 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
     expand_derive(input, sql_type::derive)
+}
+
+#[proc_macro_derive(ValidGrouping)]
+pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
+    expand_derive(input, valid_grouping::derive)
 }
 
 fn expand_derive(

@@ -61,7 +61,9 @@ macro_rules! __diesel_column {
         {
         }
 
-        impl $crate::expression::NonAggregate for $column_name {}
+        impl $crate::expression::ValidGrouping<()> for $column_name {
+            type IsAggregate = $crate::expression::NotAggregate;
+        }
 
         impl $crate::query_source::Column for $column_name {
             type Table = $($table)::*;

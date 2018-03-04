@@ -414,7 +414,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     let order = "name";
-    /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
+    /// let ordering: Box<BoxableExpression<users, DB, SqlType=(), IsAggregate = NotAggregate>> =
     ///     if order == "name" {
     ///         Box::new(name.desc())
     ///     } else {

@@ -267,7 +267,7 @@ pub mod prelude {
     #[deprecated(since = "1.1.0", note = "Explicitly `use diesel::deserialize::Queryable")]
     pub use deserialize::Queryable;
     pub use expression::{AppearsOnTable, BoxableExpression, Expression, IntoSql,
-                         SelectableExpression};
+                         SelectableExpression, IsAggregate, NotAggregate};
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;

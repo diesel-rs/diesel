@@ -51,16 +51,19 @@ where
     type SqlType = Bool;
 }
 
-impl<T, U> NonAggregate for In<T, U>
+impl<GroupByClause, T, U> ValidGrouping<GroupByClause> for In<T, U>
 where
     In<T, U>: Expression,
 {
+    type IsAggregate = NotAggregate;
 }
 
-impl<T, U> NonAggregate for NotIn<T, U>
+
+impl<GroupByClause, T, U> ValidGrouping<GroupByClause> for NotIn<T, U>
 where
     NotIn<T, U>: Expression,
 {
+    type IsAggregate = NotAggregate;
 }
 
 impl<T, U, DB> QueryFragment<DB> for In<T, U>

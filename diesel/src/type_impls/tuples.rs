@@ -3,8 +3,7 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use deserialize::{self, FromSqlRow, Queryable, QueryableByName};
-use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate,
-                 SelectableExpression};
+use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;
@@ -68,7 +67,7 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
+            impl<$($T: Expression),+> Expression for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
@@ -112,7 +111,11 @@ macro_rules! tuple_impls {
                 const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 
-            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
+            impl<GroupByClause, IsAggregate, $($T),+> ValidGrouping<GroupByClause> for ($($T,)+)
+            where
+                $($T: ValidGrouping<GroupByClause, IsAggregate = IsAggregate>,)+
+            {
+                type IsAggregate = IsAggregate;
             }
 
             impl<$($T,)+ Tab> UndecoratedInsertRecord<Tab> for ($($T,)+)

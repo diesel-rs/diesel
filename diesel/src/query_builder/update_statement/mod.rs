@@ -6,7 +6,7 @@ pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
 use dsl::Filter;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, Expression, ValidGrouping, NotAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
@@ -168,7 +168,7 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
+    Ret: Expression + SelectableExpression<T> + ValidGrouping<(), IsAggregate = NotAggregate>,
 {
     type SqlType = Ret::SqlType;
 }

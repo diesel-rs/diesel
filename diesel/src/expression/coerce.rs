@@ -5,7 +5,7 @@ use expression::*;
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[doc(hidden)]
 /// Coerces an expression to be another type. No checks are performed to ensure
 /// that the new type is valid in all positions that the previous type was.
@@ -59,11 +59,4 @@ where
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }
-}
-
-impl<T, ST> NonAggregate for Coerce<T, ST>
-where
-    T: NonAggregate,
-    Coerce<T, ST>: Expression,
-{
 }

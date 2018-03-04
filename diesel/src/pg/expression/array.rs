@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, AsExpressionList, Expression, ValidGrouping, SelectableExpression};
 use query_builder::{AstPass, QueryFragment};
 use sql_types;
 
@@ -89,9 +89,10 @@ where
 {
 }
 
-impl<T, ST> NonAggregate for ArrayLiteral<T, ST>
+impl<GroupByClause, T, ST> ValidGrouping<GroupByClause> for ArrayLiteral<T, ST>
 where
-    T: NonAggregate,
+    T: ValidGrouping<GroupByClause>,
     ArrayLiteral<T, ST>: Expression,
 {
+    type IsAggregate = T::IsAggregate;
 }

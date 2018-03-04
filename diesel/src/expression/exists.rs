@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use expression::{AppearsOnTable, Expression, SelectableExpression};
 use expression::subselect::Subselect;
 use query_builder::*;
 use result::QueryResult;
@@ -33,7 +33,7 @@ pub fn exists<T>(query: T) -> Exists<T> {
     Exists(Subselect::new(query))
 }
 
-#[derive(Debug, Clone, Copy, QueryId)]
+#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct Exists<T>(Subselect<T, ()>);
 
 impl<T> Expression for Exists<T>
@@ -42,8 +42,6 @@ where
 {
     type SqlType = Bool;
 }
-
-impl<T> NonAggregate for Exists<T> {}
 
 impl<T, DB> QueryFragment<DB> for Exists<T>
 where

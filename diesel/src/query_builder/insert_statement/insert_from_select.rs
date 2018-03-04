@@ -1,5 +1,5 @@
 use backend::Backend;
-use expression::{Expression, NonAggregate, SelectableExpression};
+use expression::{Expression, ValidGrouping, NotAggregate, SelectableExpression};
 use insertable::*;
 use query_builder::*;
 use query_source::Table;
@@ -17,7 +17,7 @@ impl<Select, Columns> InsertFromSelect<Select, Columns> {
     pub fn new<T>(query: Select) -> Self
     where
         T: Table<AllColumns = Columns>,
-        Columns: SelectableExpression<T> + NonAggregate,
+        Columns: SelectableExpression<T> + ValidGrouping<(), IsAggregate = NotAggregate>,
     {
         Self {
             query,

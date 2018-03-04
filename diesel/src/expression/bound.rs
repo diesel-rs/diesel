@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use backend::Backend;
+use expression::{ValidGrouping, NotAggregate};
 use query_builder::*;
 use result::QueryResult;
 use serialize::ToSql;
@@ -55,8 +56,6 @@ where
 {
 }
 
-impl<T, U> NonAggregate for Bound<T, U>
-where
-    Bound<T, U>: Expression,
-{
+impl<GroupByClause, T, U> ValidGrouping<GroupByClause> for Bound<T, U> {
+    type IsAggregate = NotAggregate;
 }

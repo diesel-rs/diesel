@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-CLIPPY="lint"
+CLIPPY=""
 
 if [ "$1" = "integration" ]; then
   if [ "$2" ]; then

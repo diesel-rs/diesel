@@ -56,7 +56,9 @@ impl<QS, ST> SelectableExpression<QS> for SqlLiteral<ST> {}
 
 impl<QS, ST> AppearsOnTable<QS> for SqlLiteral<ST> {}
 
-impl<ST> NonAggregate for SqlLiteral<ST> {}
+impl<ST> ValidGrouping<()> for SqlLiteral<ST> {
+    type IsAggregate = NotAggregate;
+}
 
 /// Use literal SQL in the query builder
 ///

@@ -44,7 +44,9 @@ where
 {
 }
 
-impl<T, ST> NonAggregate for Subselect<T, ST> {}
+impl<T, ST> ValidGrouping<()> for Subselect<T, ST> {
+    type IsAggregate = NotAggregate;
+}
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>
 where
