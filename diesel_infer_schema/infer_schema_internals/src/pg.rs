@@ -31,6 +31,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         rust_name: capitalize(tpe),
         is_array: is_array,
         is_nullable: attr.nullable,
+        is_unsigned: false,
     })
 }
 
