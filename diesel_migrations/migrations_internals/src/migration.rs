@@ -33,7 +33,7 @@ impl<'a> fmt::Display for MigrationName<'a> {
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
-    match ::barrel::diesel::migration_from(&path) {
+    match ::barrel::integrations::diesel::migration_from(&path) {
         Some(migration) => return Ok(migration),
         None => {}
     }
