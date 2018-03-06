@@ -90,12 +90,11 @@ pub mod schema;
 pub use self::connection::MigrationConnection;
 #[doc(inline)]
 pub use self::migration::*;
-// pub use self::migration_error::*;
+pub use diesel::migration::*;
 
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
 
-use diesel::migration::*;
 use diesel::expression_methods::*;
 use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 use self::schema::__diesel_schema_migrations::dsl::*;
