@@ -78,6 +78,10 @@ extern crate migrations_macros;
 #[doc(hidden)]
 pub use migrations_macros::*;
 #[doc(inline)]
+pub use migrations_internals::Migration;
+#[doc(inline)]
+pub use migrations_internals::MigrationName;
+#[doc(inline)]
 pub use migrations_internals::MigrationConnection;
 #[doc(inline)]
 pub use migrations_internals::MigrationError;
@@ -113,8 +117,8 @@ pub use migrations_internals::find_migrations_directory;
 pub use migrations_internals::search_for_migrations_directory;
 #[doc(inline)]
 pub use migrations_internals::version_from_path;
-// #[doc(inline)]
-// pub use migrations_internals::name;
+#[doc(inline)]
+pub use migrations_internals::name;
 
 pub mod connection {
     #[doc(inline)]
