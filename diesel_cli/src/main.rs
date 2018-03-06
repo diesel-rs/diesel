@@ -117,7 +117,7 @@ fn run_migration_command(matches: &ArgMatches) {
 
             match migration_type {
                 #[cfg(feature = "barrel")]
-                Some("barrel") => barrel::diesel::generate_initial(migration_dir),
+                Some("barrel") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
                 _ => generate_sql_migration(&migration_dir),
             }
         }
