@@ -68,7 +68,7 @@ pub mod dsl {
 }
 
 #[doc(inline)]
-pub use self::sql_literal::SqlLiteral;
+pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use backend::Backend;
 use dsl::AsExprOf;

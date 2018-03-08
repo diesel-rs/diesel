@@ -230,7 +230,7 @@ pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
 
 #[derive(QueryId, Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
-/// Returned by the [`bind()`] method when binding a value to a fragment of SQL.
+/// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
 ///
 /// [`bind()`]: ./struct.SqlLiteral.html#method.bind
 pub struct UncheckedBind<Query, Value> {
