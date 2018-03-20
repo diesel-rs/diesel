@@ -204,7 +204,7 @@ struct PadAdapter<'a, 'b: 'a> {
 impl<'a, 'b: 'a> PadAdapter<'a, 'b> {
     fn new(fmt: &'a mut Formatter<'b>) -> PadAdapter<'a, 'b> {
         PadAdapter {
-            fmt: fmt,
+            fmt,
             on_newline: false,
         }
     }
