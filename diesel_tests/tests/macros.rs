@@ -5,9 +5,10 @@
 #![cfg(feature = "postgres")]
 use schema::*;
 use diesel::*;
-use diesel::sql_types::{BigInt, VarChar};
+use diesel::sql_types::{BigInt, VarChar, Int4};
 
 sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
+variant_sql_function!(my_lower_id, my_lower_t2, my_lower, (x: VarChar, y: Int4) -> VarChar);
 
 #[test]
 fn test_sql_function() {
@@ -19,6 +20,13 @@ fn test_sql_function() {
             "CREATE FUNCTION my_lower(varchar) RETURNS varchar
         AS $$ SELECT LOWER($1) $$
         LANGUAGE SQL",
+        )
+        .unwrap();
+    connection
+        .execute(
+            "CREATE FUNCTION my_lower(varchar, int) RETURNS varchar
+            AS $$ SELECT LOWER($1) WHERE ID = $2 $$
+            LANGUAGE SQL",
         )
         .unwrap();
     let sean = User::new(1, "Sean");
@@ -35,6 +43,13 @@ fn test_sql_function() {
         vec![tess],
         users
             .filter(my_lower(name).eq("tess"))
+            .load(&connection)
+            .unwrap()
+    );
+    assert_eq!(
+        vec![sean],
+        users
+            .filter(my_lower(name,1))
             .load(&connection)
             .unwrap()
     );
