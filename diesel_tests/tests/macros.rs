@@ -48,7 +48,7 @@ fn test_sql_function() {
     );
     assert_eq!(
         vec![sean],
-        users.filter(my_lower(name,1)).load(&connection).unwrap()
+        users.filter(my_lower_id(name, 1)).load(&connection).unwrap()
     );
 }
 
