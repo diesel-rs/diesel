@@ -140,6 +140,25 @@ macro_rules! sql_function {
 /// This will generate a rust function with the same name to construct the expression, and a helper
 /// type which represents the return type of that function. The function will automatically convert
 /// its arguments to expressions.
+///
+/// # Example
+///
+/// ```no_run
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::sql_types::Text;
+/// #
+/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// #
+/// sql_function!(btrim, btrim_t, (t: Text) -> Text);
+/// variant_sql_function!(btrim_custom, btrim_t2, btrim, (t: Text, s: Text) -> Text);
+///
+/// # fn main() {
+/// # use self::crates::dsl::*;
+/// let target_name = "diesel";
+/// crates.filter(btrim_custom(name, "_derives").eq("diesel"));
+/// # }
+/// ```
 macro_rules! variant_sql_function {
     ($fn_name:ident, $struct_name:ident, $sql_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
         variant_sql_function!($fn_name, $struct_name, $sql_name, ($($arg_name $arg_type),*) -> ());

@@ -5,10 +5,10 @@
 #![cfg(feature = "postgres")]
 use schema::*;
 use diesel::*;
-use diesel::sql_types::{BigInt, Int4, VarChar};
+use diesel::sql_types::{BigInt, Integer, VarChar};
 
-sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
-variant_sql_function!(my_lower_id, my_lower_t2, my_lower, (x: VarChar, y: Int4) -> VarChar);
+sql_function!(my_substring, my_substring_t, (x: VarChar, y: Integer) -> VarChar);
+variant_sql_function!(my_substring_with_length, my_substring_t2, my_substring, (x: VarChar, y: Integer, z: Integer) -> VarChar);
 
 #[test]
 fn test_sql_function() {
@@ -17,15 +17,15 @@ fn test_sql_function() {
     let connection = connection_with_sean_and_tess_in_users_table();
     connection
         .execute(
-            "CREATE FUNCTION my_lower(varchar) RETURNS varchar
-        AS $$ SELECT LOWER($1) $$
+            "CREATE FUNCTION my_substring(varchar, integer) RETURNS varchar
+        AS $$ SELECT SUBSTRING($1 from $2) $$
         LANGUAGE SQL",
         )
         .unwrap();
     connection
         .execute(
-            "CREATE FUNCTION my_lower(varchar, int) RETURNS varchar
-            AS $$ SELECT LOWER($1) WHERE ID = $2 $$
+            "CREATE FUNCTION my_substring(varchar, integer, integer) RETURNS varchar
+            AS $$ SELECT SUBSTRING($1 from $2 for $3)$$
             LANGUAGE SQL",
         )
         .unwrap();
@@ -35,20 +35,34 @@ fn test_sql_function() {
     assert_eq!(
         vec![sean],
         users
-            .filter(my_lower(name).eq("sean"))
+            .filter(my_substring(name, 3).eq("an"))
             .load(&connection)
             .unwrap()
     );
     assert_eq!(
         vec![tess],
         users
-            .filter(my_lower(name).eq("tess"))
+            .filter(my_substring(name, 3).eq("ss"))
+            .load(&connection)
+            .unwrap()
+    );
+
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+
+    assert_eq!(
+        vec![sean],
+        users
+            .filter(my_substring_with_length(name, 3, 1).eq("a"))
             .load(&connection)
             .unwrap()
     );
     assert_eq!(
-        vec![sean],
-        users.filter(my_lower_id(name, 1)).load(&connection).unwrap()
+        vec![tess],
+        users
+            .filter(my_substring_with_length(name, 2, 2).eq("es"))
+            .load(&connection)
+            .unwrap()
     );
 }
 
