@@ -5,7 +5,7 @@
 #![cfg(feature = "postgres")]
 use schema::*;
 use diesel::*;
-use diesel::sql_types::{BigInt, VarChar, Int4};
+use diesel::sql_types::{BigInt, Int4, VarChar};
 
 sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
 variant_sql_function!(my_lower_id, my_lower_t2, my_lower, (x: VarChar, y: Int4) -> VarChar);
@@ -48,10 +48,7 @@ fn test_sql_function() {
     );
     assert_eq!(
         vec![sean],
-        users
-            .filter(my_lower(name,1))
-            .load(&connection)
-            .unwrap()
+        users.filter(my_lower(name,1)).load(&connection).unwrap()
     );
 }
 

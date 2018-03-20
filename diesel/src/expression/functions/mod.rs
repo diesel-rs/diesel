@@ -131,7 +131,7 @@ macro_rules! sql_function {
 }
 
 #[macro_export]
-#[cfg(feature= "postgres" )]
+#[cfg(feature = "postgres")]
 /// Declare a variant of an already defined sql function for use in your code. Useful if you have
 /// your own SQL functions that you'd like to use that are overloaded. You can optionally provide a
 /// doc string as well. `$struct_name` and `$fn_name` should be unique names. You will not need to
@@ -142,15 +142,15 @@ macro_rules! sql_function {
 /// its arguments to expressions.
 macro_rules! variant_sql_function {
     ($fn_name:ident, $struct_name:ident, $sql_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
-        sql_function_variant!($fn_name, $struct_name, $sql_name, ($($arg_name $arg_type),*) -> ());
+        variant_sql_function!($fn_name, $struct_name, $sql_name, ($($arg_name $arg_type),*) -> ());
     };
 
     ($fn_name:ident, $struct_name:ident, $sql_name:ident, $args:tt -> $return_type:ty) => {
-        sql_function_variant!($fn_name, $struct_name, $sql_name, $args -> $return_type, "");
+        variant_sql_function!($fn_name, $struct_name, $sql_name, $args -> $return_type, "");
     };
 
     ($fn_name:ident, $struct_name:ident, $sql_name:ident, $args:tt -> $return_type:ty, $docs:expr) => {
-        sql_function_variant!($fn_name, $struct_name, $sql_name, $args -> $return_type, $docs, "");
+        variant_sql_function!($fn_name, $struct_name, $sql_name, $args -> $return_type, $docs, "");
     };
 
     ($fn_name:ident,
