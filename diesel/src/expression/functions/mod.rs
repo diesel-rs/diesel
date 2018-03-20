@@ -126,7 +126,7 @@ macro_rules! sql_function {
         $docs:expr,
         $helper_ty_docs:expr
     ) => {
-        sql_function_body!($fn_name, $fn_name, $struct_name, $args -> $return_type, $docs, $helper_ty_docs);
+        sql_function_body!($fn_name, $struct_name, $fn_name, $args -> $return_type, $docs, $helper_ty_docs);
     };
 }
 
