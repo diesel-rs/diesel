@@ -102,7 +102,7 @@ fn determine_type_name(sql_type_name: &str) -> Result<String, Box<Error>> {
         sql_type_name
     };
 
-    if result.to_lowercase().contains("unsigned") {
+    if determine_unsigned(result) {
         Ok(result
             .to_lowercase()
             .replace("unsigned", "")
