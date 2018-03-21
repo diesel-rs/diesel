@@ -34,7 +34,7 @@ impl FromSql<Tinyint, Mysql> for i8 {
 #[derive(Debug, Clone, Copy, Default, SqlType)]
 pub struct Unsigned<ST: NotNull + SingleValue + QueryId>(ST);
 
-impl ToSql<Unsigned<Integer>, Mysql> for u16 {
+impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         out.write_u16::<<Mysql as Backend>::ByteOrder>(*self)
             .map(|_| IsNull::No)
@@ -88,7 +88,7 @@ impl FromSql<Unsigned<Integer>, Mysql> for u32 {
     }
 }
 
-impl ToSql<Unsigned<Integer>, Mysql> for u64 {
+impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         out.write_u64::<<Mysql as Backend>::ByteOrder>(*self)
             .map(|_| IsNull::No)
