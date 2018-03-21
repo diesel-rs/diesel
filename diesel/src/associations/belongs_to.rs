@@ -8,6 +8,24 @@ use super::{HasTable, Identifiable};
 use std::borrow::Borrow;
 use std::hash::Hash;
 
+#[doc(hidden)]
+pub trait ForeignKey<T> {
+    type KeyType: Hash + ::std::cmp::Eq;
+
+    fn get_key(&self) -> Option<&Self::KeyType>;
+}
+
+impl<'a, T> ForeignKey<&'a T> for T
+where
+    T: Hash + ::std::cmp::Eq,
+{
+    type KeyType = T;
+
+    fn get_key(&self) -> Option<&Self::KeyType> {
+        Some(self)
+    }
+}
+
 /// Indicates that a type belongs to `Parent`
 ///
 /// Specifically, this means that this struct has fields
@@ -113,7 +131,8 @@ where
     Iter: IntoIterator<Item = Child>,
     Child: BelongsTo<Parent>,
     &'a Parent: Identifiable,
-    Id<&'a Parent>: Borrow<Child::ForeignKey>,
+    Child::ForeignKey: ForeignKey<Id<&'a Parent>>,
+    Id<&'a Parent>: Borrow<<Child::ForeignKey as ForeignKey<Id<&'a Parent>>>::KeyType>,
 {
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
         use std::collections::HashMap;
@@ -125,7 +144,11 @@ where
             .collect();
         let mut result = parents.iter().map(|_| Vec::new()).collect::<Vec<_>>();
         for child in self {
-            if let Some(index) = child.foreign_key().map(|i| id_indices[i]) {
+            if let Some(index) = child
+                .foreign_key()
+                .and_then(ForeignKey::get_key)
+                .map(|i| id_indices[i])
+            {
                 result[index].push(child);
             }
         }
