@@ -38,7 +38,17 @@ mod foreign_impls {
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
     #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Oid")]
+    struct U16Proxy(u16);
+
+    #[derive(FromSqlRow, AsExpression)]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Oid")]
     struct U32Proxy(u32);
+
+    #[derive(FromSqlRow, AsExpression)]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Oid")]
+    struct U64Proxy(u64);
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]

@@ -7,8 +7,7 @@ mod numeric;
 use std::io::Write;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
-use row::Row;
-use deserialize::{self, FromSql, FromSqlRow, Queryable};
+use deserialize::{self, FromSql};
 use backend::Backend;
 use mysql::{Mysql, MysqlType};
 use serialize::{self, IsNull, Output, ToSql};
@@ -200,34 +199,6 @@ impl QueryId for u32 {
 
 impl QueryId for u64 {
     type QueryId = ();
-}
-
-impl Queryable<Unsigned<SmallInt>, Mysql> for u16 {
-    type Row = u16;
-
-    fn build(row: Self::Row) -> Self {
-        row
-    }
-}
-
-impl Queryable<Unsigned<BigInt>, Mysql> for u64 {
-    type Row = u64;
-
-    fn build(row: Self::Row) -> Self {
-        row
-    }
-}
-
-impl FromSqlRow<Unsigned<SmallInt>, Mysql> for u16 {
-    fn build_from_row<T: Row<Mysql>>(row: &mut T) -> deserialize::Result<Self> {
-        Self::from_sql(row.take())
-    }
-}
-
-impl FromSqlRow<Unsigned<BigInt>, Mysql> for u64 {
-    fn build_from_row<T: Row<Mysql>>(row: &mut T) -> deserialize::Result<Self> {
-        Self::from_sql(row.take())
-    }
 }
 
 /// Represents the MySQL datetime type.
