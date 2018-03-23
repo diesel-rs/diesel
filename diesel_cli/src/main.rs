@@ -23,13 +23,11 @@ extern crate toml;
 #[cfg(feature = "url")]
 extern crate url;
 
-<<<<<<< HEAD
 mod config;
-=======
-#[cfg(feature = "barrel")]
+
+#[cfg(feature = "rust-migrations")]
 extern crate barrel;
 
->>>>>>> Implementing requested changes in diesel_cli
 mod database_error;
 #[macro_use]
 mod database;
@@ -130,8 +128,8 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
                 convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
 
             match migration_type {
-                #[cfg(feature = "barrel")]
-                Some("barrel") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
+                #[cfg(feature = "rust-migrations")]
+                Some("rust") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
                 _ => generate_sql_migration(&migration_dir),
             }
         }
