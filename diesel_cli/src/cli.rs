@@ -56,7 +56,7 @@ pub fn build_cli() -> App<'static, 'static> {
                     Arg::with_name("TYPE")
                         .long("type")
                         .short("t")
-                        .possible_values(&["sql", "barrel"])
+                        .possible_values(&["sql", "rust"])
                         .default_value("sql")
                         .takes_value(true)
                         .help("Specify the migration type."),

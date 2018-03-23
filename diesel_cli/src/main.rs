@@ -20,7 +20,7 @@ extern crate migrations_internals;
 #[cfg(feature = "url")]
 extern crate url;
 
-#[cfg(feature = "barrel")]
+#[cfg(feature = "rust-migrations")]
 extern crate barrel;
 
 mod database_error;
@@ -116,8 +116,8 @@ fn run_migration_command(matches: &ArgMatches) {
             fs::create_dir(&migration_dir).unwrap();
 
             match migration_type {
-                #[cfg(feature = "barrel")]
-                Some("barrel") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
+                #[cfg(feature = "rust-migrations")]
+                Some("rust") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
                 _ => generate_sql_migration(&migration_dir),
             }
         }
