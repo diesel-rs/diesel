@@ -44,6 +44,7 @@ impl Error for MigrationError {
             MigrationError::NoMigrationRun => {
                 "No migrations have been run. Did you forget `diesel migration run`?"
             }
+            MigrationError::__NonExhaustive => unreachable!()
         }
     }
 }
@@ -97,6 +98,7 @@ impl Error for RunMigrationsError {
             RunMigrationsError::MigrationError(ref error) => error.description(),
             RunMigrationsError::QueryError(ref error) => error.description(),
             RunMigrationsError::EmptyMigration => "Attempted to run an empty migration.",
+            RunMigrationsError::__NonExhaustive => unreachable!()
         }
     }
 }
