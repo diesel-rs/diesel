@@ -1,7 +1,7 @@
 //! Representation of migrations
 
 pub mod errors;
-pub use self::errors::*;
+pub use self::errors::{MigrationError, RunMigrationsError};
 
 use connection::SimpleConnection;
 use std::path::Path;

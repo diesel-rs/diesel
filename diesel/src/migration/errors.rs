@@ -22,6 +22,9 @@ pub enum MigrationError {
     UnknownMigrationVersion(String),
     /// No migrations had to be/ could be run
     NoMigrationRun,
+    /// 
+    #[doc(hidden)]
+    __NonExhaustive,
 }
 
 impl Error for MigrationError {
@@ -83,6 +86,9 @@ pub enum RunMigrationsError {
     QueryError(result::Error),
     /// The provided migration was empty
     EmptyMigration,
+    /// 
+    #[doc(hidden)]
+    __NonExhaustive,
 }
 
 impl Error for RunMigrationsError {
