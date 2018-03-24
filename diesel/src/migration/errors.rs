@@ -6,7 +6,9 @@ use std::convert::From;
 use std::{fmt, io};
 use std::path::PathBuf;
 use std::error::Error;
+
 use result;
+
 /// Errors that occur while preparing to run migrations
 #[derive(Debug)]
 pub enum MigrationError {
@@ -74,7 +76,7 @@ impl From<io::Error> for MigrationError {
     }
 }
 
-///Errors that occur while running migrations
+/// Errors that occur while running migrations
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]
 pub enum RunMigrationsError {
