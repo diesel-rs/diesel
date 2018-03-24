@@ -1,6 +1,6 @@
 //! Representation of migrations
 
-pub mod errors;
+mod errors;
 pub use self::errors::{MigrationError, RunMigrationsError};
 
 use connection::SimpleConnection;
