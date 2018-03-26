@@ -131,7 +131,7 @@ macro_rules! sql_function {
 }
 
 #[macro_export]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 /// Declare a variant of an already defined sql function for use in your code. Useful if you have
 /// your own SQL functions that you'd like to use that are overloaded. You can optionally provide a
 /// doc string as well. `$struct_name` and `$fn_name` should be unique names. You will not need to
