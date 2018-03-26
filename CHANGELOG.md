@@ -8,6 +8,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Added `SqlLiteral::bind()`.
+  This is intended to be used for binding values to small SQL fragments.
+  Use `sql_query` if you are writing full queries.
+
 * Added support for `INSERT INTO table (...) SELECT ...` queries. Tables, select
   select statements, and boxed select statements can now be used just like any
   other `Insertable` value.
