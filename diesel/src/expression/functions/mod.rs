@@ -4,6 +4,7 @@ macro_rules! sql_function_body {
     (
         $fn_name:ident,
         $struct_name:ident,
+        $sql_name:ident,
         ($($arg_name:ident: $arg_type:ty),*) -> $return_type:ty,
         $docs:expr,
         $helper_ty_docs:expr
@@ -45,7 +46,7 @@ macro_rules! sql_function_body {
             for <'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
         {
             fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                out.push_sql(concat!(stringify!($fn_name), "("));
+                out.push_sql(concat!(stringify!($sql_name), "("));
                 $crate::query_builder::QueryFragment::walk_ast(
                     &($(&self.$arg_name),*), out.reborrow())?;
                 out.push_sql(")");
@@ -106,16 +107,16 @@ macro_rules! sql_function_body {
 /// # }
 /// ```
 macro_rules! sql_function {
+    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
+        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
+    };
+
     ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty) => {
         sql_function!($fn_name, $struct_name, $args -> $return_type, "");
     };
 
     ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty, $docs:expr) => {
         sql_function!($fn_name, $struct_name, $args -> $return_type, $docs, "");
-    };
-
-    ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
-        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
     };
 
     (
@@ -125,7 +126,59 @@ macro_rules! sql_function {
         $docs:expr,
         $helper_ty_docs:expr
     ) => {
-        sql_function_body!($fn_name, $struct_name, $args -> $return_type, $docs, $helper_ty_docs);
+        sql_function_body!($fn_name, $struct_name, $fn_name, $args -> $return_type, $docs, $helper_ty_docs);
+    };
+}
+
+#[macro_export]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+/// Declare a variant of an already defined sql function for use in your code. Useful if you have
+/// your own SQL functions that you'd like to use that are overloaded. You can optionally provide a
+/// doc string as well. `$struct_name` and `$fn_name` should be unique names. You will not need to
+/// reference `$struct_name` in your code.
+///
+/// This will generate a rust function with the same name to construct the expression, and a helper
+/// type which represents the return type of that function. The function will automatically convert
+/// its arguments to expressions.
+///
+/// # Example
+///
+/// ```no_run
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::sql_types::Text;
+/// #
+/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// #
+/// sql_function!(btrim, btrim_t, (t: Text) -> Text);
+/// variant_sql_function!(btrim_custom, btrim_t2, btrim, (t: Text, s: Text) -> Text);
+///
+/// # fn main() {
+/// # use self::crates::dsl::*;
+/// let target_name = "diesel";
+/// crates.filter(btrim_custom(name, "_derives").eq("diesel"));
+/// # }
+/// ```
+macro_rules! variant_sql_function {
+    ($fn_name:ident, $struct_name:ident, $sql_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
+        variant_sql_function!($fn_name, $struct_name, $sql_name, ($($arg_name $arg_type),*) -> ());
+    };
+
+    ($fn_name:ident, $struct_name:ident, $sql_name:ident, $args:tt -> $return_type:ty) => {
+        variant_sql_function!($fn_name, $struct_name, $sql_name, $args -> $return_type, "");
+    };
+
+    ($fn_name:ident, $struct_name:ident, $sql_name:ident, $args:tt -> $return_type:ty, $docs:expr) => {
+        variant_sql_function!($fn_name, $struct_name, $sql_name, $args -> $return_type, $docs, "");
+    };
+
+    ($fn_name:ident,
+     $struct_name:ident,
+     $sql_name:ident,
+     $args:tt -> $return_type:ty,
+     $docs:expr,
+     $helper_ty_docs:expr) => {
+        sql_function_body!($fn_name, $struct_name, $sql_name, $args -> $return_type, $docs, $helper_ty_docs);
     };
 }
 
