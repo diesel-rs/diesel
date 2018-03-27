@@ -45,7 +45,7 @@ matrix:
   - rust: nightly-2018-02-02
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
-    - (cd diesel && cargo rustc --no-default-features --features "lint unstable sqlite postgres mysql extras" -- -Zno-trans)
+    - (cd diesel && cargo rustc --no-default-features --features "lint sqlite postgres mysql extras" -- -Zno-trans)
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_derives && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
