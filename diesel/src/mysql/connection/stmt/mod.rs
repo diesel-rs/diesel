@@ -11,14 +11,15 @@ use result::{DatabaseErrorKind, QueryResult};
 use self::iterator::*;
 use self::metadata::*;
 use super::bind::Binds;
+use util::NonNull;
 
 pub struct Statement {
-    stmt: *mut ffi::MYSQL_STMT,
+    stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<Binds>,
 }
 
 impl Statement {
-    pub fn new(stmt: *mut ffi::MYSQL_STMT) -> Self {
+    pub(crate) fn new(stmt: NonNull<ffi::MYSQL_STMT>) -> Self {
         Statement {
             stmt: stmt,
             input_binds: None,
@@ -28,7 +29,7 @@ impl Statement {
     pub fn prepare(&self, query: &str) -> QueryResult<()> {
         unsafe {
             ffi::mysql_stmt_prepare(
-                self.stmt,
+                self.stmt.as_ptr(),
                 query.as_ptr() as *const libc::c_char,
                 query.len() as libc::c_ulong,
             );
@@ -45,7 +46,7 @@ impl Statement {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
             unsafe {
-                ffi::mysql_stmt_bind_param(self.stmt, bind_ptr);
+                ffi::mysql_stmt_bind_param(self.stmt.as_ptr(), bind_ptr);
             }
         });
         self.input_binds = Some(input_binds);
@@ -56,15 +57,15 @@ impl Statement {
     /// have no return value. It should never be called on a statement on
     /// which `results` has previously been called?
     pub unsafe fn execute(&self) -> QueryResult<()> {
-        ffi::mysql_stmt_execute(self.stmt);
+        ffi::mysql_stmt_execute(self.stmt.as_ptr());
         self.did_an_error_occur()?;
-        ffi::mysql_stmt_store_result(self.stmt);
+        ffi::mysql_stmt_store_result(self.stmt.as_ptr());
         self.did_an_error_occur()?;
         Ok(())
     }
 
     pub fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.stmt) };
+        let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.stmt.as_ptr()) };
         affected_rows as usize
     }
 
@@ -83,7 +84,7 @@ impl Statement {
     }
 
     fn last_error_message(&self) -> String {
-        unsafe { CStr::from_ptr(ffi::mysql_stmt_error(self.stmt)) }
+        unsafe { CStr::from_ptr(ffi::mysql_stmt_error(self.stmt.as_ptr())) }
             .to_string_lossy()
             .into_owned()
     }
@@ -91,7 +92,7 @@ impl Statement {
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
     /// you must call this function again before calling `mysql_stmt_fetch`.
     pub unsafe fn bind_result(&self, binds: *mut ffi::MYSQL_BIND) -> QueryResult<()> {
-        ffi::mysql_stmt_bind_result(self.stmt, binds);
+        ffi::mysql_stmt_bind_result(self.stmt.as_ptr(), binds);
         self.did_an_error_occur()
     }
 
@@ -102,7 +103,7 @@ impl Statement {
         offset: usize,
     ) -> QueryResult<()> {
         ffi::mysql_stmt_fetch_column(
-            self.stmt,
+            self.stmt.as_ptr(),
             bind,
             idx as libc::c_uint,
             offset as libc::c_ulong,
@@ -113,7 +114,7 @@ impl Statement {
     fn metadata(&self) -> QueryResult<StatementMetadata> {
         use result::Error::DeserializationError;
 
-        let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt).as_mut() };
+        let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()).as_mut() };
         self.did_an_error_occur()?;
         result_ptr
             .map(StatementMetadata::new)
@@ -135,7 +136,7 @@ impl Statement {
     }
 
     fn last_error_type(&self) -> DatabaseErrorKind {
-        let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt) };
+        let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
         // These values are not exposed by the C API, but are documented
         // at https://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html
         // and are from the ANSI SQLSTATE standard
@@ -149,6 +150,6 @@ impl Statement {
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        unsafe { ffi::mysql_stmt_close(self.stmt) };
+        unsafe { ffi::mysql_stmt_close(self.stmt.as_ptr()) };
     }
 }
