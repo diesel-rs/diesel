@@ -286,6 +286,10 @@ pub struct Date;
 /// ### [`ToSql`](../serialize/trait.ToSql.html) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
+/// - [`std::time::Duration`](https://doc.rust-lang.org/std/time/struct.Duration.html)
+///   [^microseconds]
+/// - [`chrono::Duration`](/chrono/struct.Duration.html)
+///   [^microseconds] with `feature = "chrono"`
 ///
 /// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
 ///
@@ -293,6 +297,10 @@ pub struct Date;
 ///
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
+/// [^microseconds]:  Note: The conversion is done on microseconds basis,
+///   that means any timeshift (like leepseconds, daylaight saving,
+///   …) is ignored. Also this conversion will drop the microseconds fraction on
+///  if there is an overflow
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1186", array_oid = "1187")]
 pub struct Interval;

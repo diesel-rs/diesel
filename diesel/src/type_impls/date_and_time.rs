@@ -1,11 +1,16 @@
 #![allow(dead_code)]
 
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
 #[sql_type = "::sql_types::Timestamp"]
 struct SystemTimeProxy(SystemTime);
+
+#[derive(FromSqlRow, AsExpression)]
+#[diesel(foreign_derive)]
+#[cfg_attr(feature = "postgres", sql_type = "::sql_types::Interval")]
+struct SystemDurationProxy(Duration);
 
 #[cfg(feature = "chrono")]
 mod chrono {
@@ -34,4 +39,9 @@ mod chrono {
     #[diesel(foreign_derive)]
     #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Timestamptz")]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
+
+    #[derive(FromSqlRow, AsExpression)]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Interval")]
+    struct DurationProxy(Duration);
 }

@@ -59,6 +59,19 @@ fn duration_to_usecs(duration: Duration) -> u64 {
     seconds + u64::from(subseconds)
 }
 
+impl ToSql<sql_types::Interval, Pg> for Duration {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        use dsl::IntervalDsl;
+        let seconds = self.as_secs() as i64;
+        let pg_interval = seconds
+            .checked_mul(1000 * 1000)
+            .and_then(|v| v.checked_add(i64::from(self.subsec_nanos() / NANO_PER_USEC)))
+            .map(|v| v.microseconds())
+            .unwrap_or_else(|| seconds.seconds());
+        <_ as ToSql<sql_types::Interval, Pg>>::to_sql(&pg_interval, out)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate dotenv;
@@ -69,7 +82,7 @@ mod tests {
     use dsl::{now, sql};
     use prelude::*;
     use select;
-    use sql_types::Timestamp;
+    use sql_types::{Timestamp, Interval};
 
     fn connection() -> PgConnection {
         dotenv().ok();
@@ -104,6 +117,19 @@ mod tests {
 
         let time = SystemTime::now() - Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").gt(time));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+    }
+
+    #[test]
+    fn interval_encode_correctly() {
+        let connection = connection();
+
+        let seconds = Duration::from_secs(42);
+        let query = select(sql::<Interval>("'42 seconds'::interval").eq(seconds));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let millis = Duration::from_millis(42);
+        let query = select(sql::<Interval>("'42 milliseconds'::interval").eq(millis));
         assert!(query.get_result::<bool>(&connection).unwrap());
     }
 }

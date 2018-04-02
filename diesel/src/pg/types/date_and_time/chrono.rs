@@ -11,7 +11,7 @@ use super::{PgDate, PgTime, PgTimestamp};
 use deserialize::{self, FromSql};
 use pg::Pg;
 use serialize::{self, Output, ToSql};
-use sql_types::{Date, Time, Timestamp, Timestamptz};
+use sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -116,6 +116,16 @@ impl FromSql<Date, Pg> for NaiveDate {
     }
 }
 
+impl ToSql<Interval, Pg> for Duration {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        use dsl::IntervalDsl;
+        let pg_interval = self.num_microseconds()
+            .map(|v| v.microseconds())
+            .unwrap_or_else(|| self.num_seconds().seconds());
+        <_ as ToSql<Interval, Pg>>::to_sql(&pg_interval, out)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate chrono;
@@ -128,7 +138,7 @@ mod tests {
     use dsl::{now, sql};
     use prelude::*;
     use select;
-    use sql_types::{Date, Time, Timestamp, Timestamptz};
+    use sql_types::{Date, Interval, Time, Timestamp, Timestamptz};
 
     fn connection() -> PgConnection {
         dotenv().ok();
@@ -301,5 +311,64 @@ mod tests {
             Ok(distant_future),
             query.get_result::<NaiveDate>(&connection)
         );
+    }
+
+    #[test]
+    fn interval_encode_correctly() {
+        let connection = connection();
+
+        let weeks = Duration::weeks(42);
+        let query = select(sql::<Interval>("'42 weeks'::interval").eq(weeks));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let days = Duration::days(42);
+        let query = select(sql::<Interval>("'42 days'::interval").eq(days));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let hours = Duration::hours(42);
+        let query = select(sql::<Interval>("'42 hours'::interval").eq(hours));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let minutes = Duration::minutes(42);
+        let query = select(sql::<Interval>("'42 minutes'::interval").eq(minutes));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let seconds = Duration::seconds(42);
+        let query = select(sql::<Interval>("'42 seconds'::interval").eq(seconds));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let milliseconds = Duration::milliseconds(42);
+        let query = select(sql::<Interval>("'42 milliseconds'::interval").eq(milliseconds));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let microseconds = Duration::microseconds(42);
+        let query = select(sql::<Interval>("'42 microseconds'::interval").eq(microseconds));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let week_and_day = Duration::weeks(1) + Duration::days(1);
+        let query = select(sql::<Interval>("'8 days'::interval").eq(week_and_day));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let day_and_hour = Duration::days(1) + Duration::hours(1);
+        let query = select(sql::<Interval>("'25 hours'::interval").eq(day_and_hour));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let hour_and_minute = Duration::hours(1) + Duration::minutes(1);
+        let query = select(sql::<Interval>("'61 minutes'::interval").eq(hour_and_minute));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let minute_and_seconds = Duration::minutes(1) + Duration::seconds(1);
+        let query = select(sql::<Interval>("'61 seconds'::interval").eq(minute_and_seconds));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let second_and_millisecond = Duration::seconds(1) + Duration::milliseconds(1);
+        let query =
+            select(sql::<Interval>("'1001 milliseconds'::interval").eq(second_and_millisecond));
+        assert!(query.get_result::<bool>(&connection).unwrap());
+
+        let milli_and_microsecond = Duration::milliseconds(1) + Duration::microseconds(1);
+        let query =
+            select(sql::<Interval>("'1001 microseconds'::interval").eq(milli_and_microsecond));
+        assert!(query.get_result::<bool>(&connection).unwrap());
     }
 }
