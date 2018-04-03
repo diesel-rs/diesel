@@ -111,7 +111,7 @@ where
     }
 }
 
-impl<T, Tab, DB> CanInsertInSingleQuery<DB> for OwnedBatchInsert<T, Tab>
+impl<T, DB> CanInsertInSingleQuery<DB> for OwnedBatchInsert<T>
 where
     DB: Backend + SupportsDefaultKeyword,
 {
@@ -231,12 +231,11 @@ impl<T, Tab> Insertable<Tab> for Vec<T>
 where
     T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,
 {
-    type Values = OwnedBatchInsert<T::Values, Tab>;
+    type Values = OwnedBatchInsert<T::Values>;
 
     fn values(self) -> Self::Values {
         OwnedBatchInsert {
             values: self.into_iter().map(Insertable::values).collect(),
-            _marker: PhantomData,
         }
     }
 }
@@ -292,12 +291,11 @@ where
 }
 
 #[derive(Debug)]
-pub struct OwnedBatchInsert<V, Tab> {
+pub struct OwnedBatchInsert<V> {
     pub(crate) values: Vec<V>,
-    _marker: PhantomData<Tab>,
 }
 
-impl<Tab, DB, Inner> QueryFragment<DB> for OwnedBatchInsert<ValuesClause<Inner, Tab>, Tab>
+impl<Tab, DB, Inner> QueryFragment<DB> for OwnedBatchInsert<ValuesClause<Inner, Tab>>
 where
     DB: Backend + SupportsDefaultKeyword,
     ValuesClause<Inner, Tab>: QueryFragment<DB>,
