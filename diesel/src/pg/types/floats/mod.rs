@@ -55,12 +55,12 @@ impl Error for InvalidNumericSign {
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
-        let ndigits = try!(bytes.read_u16::<NetworkEndian>());
-        let mut digits = Vec::with_capacity(ndigits as usize);
+        let digit_count = try!(bytes.read_u16::<NetworkEndian>());
+        let mut digits = Vec::with_capacity(digit_count as usize);
         let weight = try!(bytes.read_i16::<NetworkEndian>());
         let sign = try!(bytes.read_u16::<NetworkEndian>());
         let scale = try!(bytes.read_u16::<NetworkEndian>());
-        for _ in 0..ndigits {
+        for _ in 0..digit_count {
             digits.push(try!(bytes.read_i16::<NetworkEndian>()));
         }
 

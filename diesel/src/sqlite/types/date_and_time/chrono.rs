@@ -87,8 +87,8 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
         }
 
         if let Ok(julian_days) = text.parse::<f64>() {
-            let epoch_in_julian_days = 2440587.5;
-            let seconds_in_day = 86400.0;
+            let epoch_in_julian_days = 2_440_587.5;
+            let seconds_in_day = 86_400.0;
             let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
             let seconds = timestamp as i64;
             let nanos = (timestamp.fract() * 1E9) as u32;
