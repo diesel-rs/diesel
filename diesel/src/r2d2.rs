@@ -57,18 +57,18 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::ConnectionError(ref e) => e.fmt(f),
-            Error::QueryError(ref e) => e.fmt(f),
+        match self {
+            Error::ConnectionError(e) => e.fmt(f),
+            Error::QueryError(e) => e.fmt(f),
         }
     }
 }
 
 impl ::std::error::Error for Error {
     fn description(&self) -> &str {
-        match *self {
-            Error::ConnectionError(ref e) => e.description(),
-            Error::QueryError(ref e) => e.description(),
+        match self {
+            Error::ConnectionError(e) => e.description(),
+            Error::QueryError(e) => e.description(),
         }
     }
 }
