@@ -1,6 +1,6 @@
 [package]
 name = "diesel_infer_schema"
-version = "1.1.0"
+version = "1.1.2"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides functionality to infer the schema of a database"
@@ -10,7 +10,7 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel"]
 
 [dependencies]
-infer_schema_macros = { version = "1.1.0", default-features = false }
+infer_schema_macros = { version = "~1.1.0", default-features = false }
 clippy = { optional = true, version = "=0.0.185" }
 
 [dev-dependencies]

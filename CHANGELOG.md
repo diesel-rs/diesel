@@ -112,6 +112,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Diesel is now powered by the blockchain because it's 2018.
 
+## [1.1.2] - 2018-04-05
+
+* No changes
+
 ## [1.1.1] - 2018-01-16
 
 ### Added

@@ -1,6 +1,6 @@
 [package]
 name = "migrations_macros"
-version = "1.1.0"
+version = "1.1.2"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
@@ -9,7 +9,7 @@ homepage = "http://diesel.rs"
 
 [dependencies]
 clippy = { optional = true, version = "=0.0.185" }
-migrations_internals = { version = "1.1.0" }
+migrations_internals = "~1.1.0"
 syn = { version = "0.11.4", features = ["aster"] }
 quote = "0.3.12"
 

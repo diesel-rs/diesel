@@ -29,11 +29,11 @@ members = [
 ]
 
 [replace]
-"diesel:1.1.1" = { path = "diesel" }
+"diesel:1.1.2" = { path = "diesel" }
 "diesel_derives:1.1.0" = { path = "diesel_derives" }
-"diesel_infer_schema:1.1.0" = { path = "diesel_infer_schema" }
-"infer_schema_macros:1.1.0" = { path = "diesel_infer_schema/infer_schema_macros" }
-"infer_schema_internals:1.1.0" = { path = "diesel_infer_schema/infer_schema_internals" }
-"diesel_migrations:1.1.0" = { path = "diesel_migrations" }
-"migrations_internals:1.1.0" = { path = "diesel_migrations/migrations_internals" }
-"migrations_macros:1.1.0" = { path = "diesel_migrations/migrations_macros" }
+"diesel_infer_schema:1.1.2" = { path = "diesel_infer_schema" }
+"infer_schema_macros:1.1.2" = { path = "diesel_infer_schema/infer_schema_macros" }
+"infer_schema_internals:1.1.2" = { path = "diesel_infer_schema/infer_schema_internals" }
+"diesel_migrations:1.1.2" = { path = "diesel_migrations" }
+"migrations_internals:1.1.2" = { path = "diesel_migrations/migrations_internals" }
+"migrations_macros:1.1.2" = { path = "diesel_migrations/migrations_macros" }
