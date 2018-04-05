@@ -21,4 +21,8 @@ fn main() {
     int_primary_key::table.find("1");
     //~^ ERROR Expression
     //~| ERROR E0277
+    // FIXME: It'd be nice if this mentioned `AsExpression`
+    string_primary_key::table.find(1);
+    //~^ ERROR Expression
+    //~| ERROR E0277
 }
