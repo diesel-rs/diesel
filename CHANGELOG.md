@@ -82,6 +82,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   rounding issues. This is primarily to support things like `avg(int_col)`,
   which we define as returning `Numeric`
 
+* `#[check_types]` has been added to help debug missing `Queryable` impls. See
+  [the docs][check_types-1.2.0] for details.
+
+[check_types-1.2.0]: http://docs.diesel.rs/diesel/deserialize/trait.Queryable.html#debugging
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer

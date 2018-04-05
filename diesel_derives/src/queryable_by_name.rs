@@ -25,7 +25,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
                 .predicates
                 .push(parse_quote!(#field_ty: QueryableByName<__DB>));
         } else {
-            let st = sql_type(field, &model);
+            let st = model.sql_type_of(field);
             where_clause
                 .predicates
                 .push(parse_quote!(#field_ty: diesel::deserialize::FromSql<#st, __DB>));
@@ -61,35 +61,9 @@ fn field_expr(field: &Field, model: &Model) -> syn::FieldValue {
             .assign(parse_quote!(QueryableByName::build(row)?))
     } else {
         let column_name = field.column_name();
-        let st = sql_type(field, model);
+        let st = model.sql_type_of(field);
         field
             .name
             .assign(parse_quote!(row.get::<#st, _>(stringify!(#column_name))?))
-    }
-}
-
-fn sql_type(field: &Field, model: &Model) -> syn::Type {
-    let table_name = model.table_name();
-    let column_name = field.column_name();
-
-    match field.sql_type {
-        Some(ref st) => st.clone(),
-        None => if model.has_table_name_attribute() {
-            parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
-        } else {
-            let field_name = match field.name {
-                FieldName::Named(ref x) => x.as_ref(),
-                _ => "field",
-            };
-            field
-                .span
-                .error(format!("Cannot determine the SQL type of {}", field_name))
-                .help(
-                    "Your struct must either be annotated with `#[table_name = \"foo\"]` \
-                     or have all of its fields annotated with `#[sql_type = \"Integer\"]`",
-                )
-                .emit();
-            parse_quote!(())
-        },
     }
 }

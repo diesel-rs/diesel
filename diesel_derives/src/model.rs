@@ -60,6 +60,32 @@ impl Model {
     pub fn has_table_name_attribute(&self) -> bool {
         self.table_name_from_attribute.is_some()
     }
+
+    pub fn sql_type_of(&self, field: &Field) -> syn::Type {
+        let table_name = self.table_name();
+        let column_name = field.column_name();
+
+        match field.sql_type {
+            Some(ref st) => st.clone(),
+            None => if self.has_table_name_attribute() {
+                parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
+            } else {
+                let field_name = match field.name {
+                    FieldName::Named(ref x) => x.as_ref(),
+                    _ => "field",
+                };
+                field
+                    .span
+                    .error(format!("Cannot determine the SQL type of {}", field_name))
+                    .help(
+                        "Your struct must either be annotated with `#[table_name = \"foo\"]` \
+                         or have all of its fields annotated with `#[sql_type = \"Integer\"]`",
+                    )
+                    .emit();
+                parse_quote!(())
+            },
+        }
+    }
 }
 
 pub fn camel_to_snake(name: &str) -> String {

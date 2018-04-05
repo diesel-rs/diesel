@@ -98,6 +98,93 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
+/// ```
+///
+/// # Debugging
+///
+/// When your struct has the wrong types for your query, the error messages
+/// can often be hard to interpret. For example, take this struct where
+/// `hair_color` and `updated_at` should both be `Option`s. Additionally,
+/// `created_at` and `updated_at` are in the wrong order.
+///
+/// ```ignore
+/// table! {
+///     users {
+///         id -> Integer,
+///         name -> Text,
+///         hair_color -> Nullable<Text>,
+///         created_at -> Timestamp,
+///         updated_at -> Nullable<Timestamp>,
+///     }
+/// }
+///
+/// #[derive(Queryable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+///     hair_color: String,
+///     updated_at: SystemTime,
+///     created_at: SystemTime,
+/// }
+/// ```
+///
+/// We get this error:
+///
+/// ```text
+///    |
+/// 28 |     users::table.load::<User>(&conn).unwrap();
+///    |                  ^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Timestamp>, diesel::pg::Pg>` is not implemented for `std::time::SystemTime`
+///
+///    |
+/// 28 |     users::table.load::<User>(&conn).unwrap();
+///    |                  ^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` is not implemented for `*const str`
+/// ```
+///
+/// While we could probably figure out what's wrong from this if we really
+/// needed to, it'd be nice if this told us which fields are the problem. Diesel
+/// provides `#[check_type]` to help with this. You'll need to provide the
+/// backend you plan to use, and either the table name you're querying or the
+/// SQL types you're expecting. By changing our struct definition to this:
+///
+/// ```ignore
+/// #[derive(Queryable)]
+/// #[check_types(backend = "diesel::pg::Pg")]
+/// #[table_name = "users"]
+/// struct User {
+///     id: i32,
+///     name: String,
+///     hair_color: String,
+///     updated_at: SystemTime,
+///     created_at: SystemTime,
+/// }
+/// ```
+///
+/// We get much more specific error messages:
+///
+/// ```text
+///    |
+/// 23 |     hair_color: String,
+///    |     ^^^^^^^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` is not implemented for `*const str`
+///
+///    |
+/// 24 |     updated_at: SystemTime,
+///    |     ^^^^^^^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Timestamp>, diesel::pg::Pg>` is not implemented for `std::time::SystemTime`
+///
+///   |
+/// 24| /     updated_at: SystemTime,
+///   |
+///   = note: expected type `users::columns::created_at`
+///              found type `users::columns::updated_at`
+///
+///   |
+/// 25| /     created_at: SystemTime,
+///   |
+///   = note: expected type `users::columns::updated_at`
+///              found type `users::columns::created_at`
+/// ```
+///
+/// Keep in mind that `#[check_types]` is only for debugging purposes. The impl
+/// it generates will cause an error at runtime.
 pub trait Queryable<ST, DB>
 where
     DB: Backend,

@@ -1,0 +1,54 @@
+error[E0277]: the trait bound `*const str: diesel::deserialize::FromSql<diesel::sql_types::Integer, diesel::pg::Pg>` is not satisfied
+  --> $DIR/derive_queryable_checked_sql_type.rs:17:5
+   |
+17 |     id: String,
+   |     ^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Integer, diesel::pg::Pg>` is not implemented for `*const str`
+   |
+   = help: the following implementations were found:
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Text, diesel::sqlite::Sqlite>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Text, DB>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Time, diesel::sqlite::Sqlite>>
+             <*const [u8] as diesel::deserialize::FromSql<diesel::sql_types::Binary, diesel::sqlite::Sqlite>>
+           and 3 others
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSql<diesel::sql_types::Integer, diesel::pg::Pg>` for `std::string::String`
+   = note: required because of the requirements on the impl of `diesel::Queryable<diesel::sql_types::Integer, diesel::pg::Pg>` for `std::string::String`
+
+error[E0277]: the trait bound `*const str: diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` is not satisfied
+  --> $DIR/derive_queryable_checked_sql_type.rs:18:5
+   |
+18 |     #[sql_type = "Nullable<Text>"]
+   |     ^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` is not implemented for `*const str`
+   |
+   = help: the following implementations were found:
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Text, diesel::sqlite::Sqlite>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Text, DB>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Time, diesel::sqlite::Sqlite>>
+             <*const [u8] as diesel::deserialize::FromSql<diesel::sql_types::Binary, diesel::sqlite::Sqlite>>
+           and 3 others
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSql<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` for `std::string::String`
+   = note: required because of the requirements on the impl of `diesel::Queryable<diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::pg::Pg>` for `std::string::String`
+
+error[E0308]: mismatched types
+ --> $DIR/derive_queryable_checked_sql_type.rs:33:5
+  |
+1 | | #[macro_use]
+  | |_^ expected struct `posts::columns::id`, found struct `posts::columns::user_id`
+...
+33| /     user_id: i32,
+  |
+  = note: expected type `posts::columns::id`
+             found type `posts::columns::user_id`
+
+error[E0308]: mismatched types
+ --> $DIR/derive_queryable_checked_sql_type.rs:34:5
+  |
+1 | | #[macro_use]
+  | |_^ expected struct `posts::columns::user_id`, found struct `posts::columns::id`
+...
+34| /     id: i32,
+  |
+  = note: expected type `posts::columns::user_id`
+             found type `posts::columns::id`
+
+error: aborting due to 4 previous errors
+
