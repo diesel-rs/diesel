@@ -132,6 +132,7 @@ pub trait MaybeEmpty {
 impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, FU>
 where
     Subselect<Self, ST>: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
 
