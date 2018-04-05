@@ -46,6 +46,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [`DeleteStatement::into_boxed`]: http://docs.diesel.rs/diesel/query_builder/struct.DeleteStatement.html#method.into_boxed
 
+* Update statements can now be boxed. This is useful for conditionally modifying
+  the where clause of a update statement. See [`UpdateStatement::into_boxed`]
+  for details.
+
+[`UpdateStatement::into_boxed`]: http://docs.diesel.rs/diesel/query_builder/struct.UpdateStatement.html#method.into_boxed
+
 * Added `order_by` as an alias for `order`.
 
 * Added `then_order_by`, which appends to an `ORDER BY` clause rather than

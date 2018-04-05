@@ -5,13 +5,13 @@ pub use self::changeset::AsChangeset;
 pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use backend::Backend;
-use dsl::Filter;
+use dsl::{Filter, IntoBoxed};
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
 use query_dsl::RunQueryDsl;
-use query_dsl::methods::FilterDsl;
+use query_dsl::methods::{BoxedDsl, FilterDsl};
 use query_source::Table;
 use result::Error::QueryBuilderError;
 use result::QueryResult;
@@ -65,6 +65,10 @@ pub struct UpdateStatement<T, U, V = SetNotCalled, Ret = NoReturningClause> {
     returning: Ret,
 }
 
+/// An `UPDATE` statement with a boxed `WHERE` clause.
+pub type BoxedUpdateStatement<'a, DB, T, V = SetNotCalled, Ret = NoReturningClause> =
+    UpdateStatement<T, BoxedWhereClause<'a, DB>, V, Ret>;
+
 impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// Adds the given predicate to the `WHERE` clause of the statement being
     /// constructed.
@@ -100,6 +104,59 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     {
         FilterDsl::filter(self, predicate)
     }
+
+    /// Boxes the `WHERE` clause of this update statement.
+    ///
+    /// This is useful for cases where you want to conditionally modify a query,
+    /// but need the type to remain the same. The backend must be specified as
+    /// part of this. It is not possible to box a query and have it be useable
+    /// on multiple backends.
+    ///
+    /// A boxed query will incur a minor performance penalty, as the query builder
+    /// can no longer be inlined by the compiler. For most applications this cost
+    /// will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::HashMap;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("tess_has_been_a_jerk", false);
+    /// let mut query = diesel::update(users)
+    ///     .set(name.eq("Jerk"))
+    ///     .into_boxed();
+    ///
+    /// if !params["tess_has_been_a_jerk"] {
+    ///     query = query.filter(name.ne("Tess"));
+    /// }
+    ///
+    /// let updated_rows = query.execute(&connection)?;
+    /// assert_eq!(1, updated_rows);
+    ///
+    /// let expected_names = vec!["Jerk", "Tess"];
+    /// let names = users.select(name).order(id).load::<String>(&connection)?;
+    ///
+    /// assert_eq!(expected_names, names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: BoxedDsl<'a, DB>,
+    {
+        BoxedDsl::internal_into_boxed(self)
+    }
 }
 
 impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
@@ -113,6 +170,22 @@ where
         UpdateStatement {
             table: self.table,
             where_clause: self.where_clause.and(predicate),
+            values: self.values,
+            returning: self.returning,
+        }
+    }
+}
+
+impl<'a, T, U, V, Ret, DB> BoxedDsl<'a, DB> for UpdateStatement<T, U, V, Ret>
+where
+    U: Into<BoxedWhereClause<'a, DB>>,
+{
+    type Output = BoxedUpdateStatement<'a, DB, T, V, Ret>;
+
+    fn internal_into_boxed(self) -> Self::Output {
+        UpdateStatement {
+            table: self.table,
+            where_clause: self.where_clause.into(),
             values: self.values,
             returning: self.returning,
         }

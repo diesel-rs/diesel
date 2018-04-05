@@ -12,6 +12,7 @@ use query_builder::insert_statement::InsertFromSelect;
 use query_builder::limit_clause::LimitClause;
 use query_builder::offset_clause::OffsetClause;
 use query_builder::order_clause::OrderClause;
+use query_builder::where_clause::*;
 use query_dsl::*;
 use query_dsl::methods::*;
 use query_source::joins::*;
@@ -24,7 +25,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     select: Box<QueryFragment<DB> + 'a>,
     from: QS,
     distinct: Box<QueryFragment<DB> + 'a>,
-    where_clause: Option<Box<QueryFragment<DB> + 'a>>,
+    where_clause: BoxedWhereClause<'a, DB>,
     order: Option<Box<QueryFragment<DB> + 'a>>,
     limit: Box<QueryFragment<DB> + 'a>,
     offset: Box<QueryFragment<DB> + 'a>,
@@ -38,7 +39,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         select: Box<QueryFragment<DB> + 'a>,
         from: QS,
         distinct: Box<QueryFragment<DB> + 'a>,
-        where_clause: Option<Box<QueryFragment<DB> + 'a>>,
+        where_clause: BoxedWhereClause<'a, DB>,
         order: Option<Box<QueryFragment<DB> + 'a>>,
         limit: Box<QueryFragment<DB> + 'a>,
         offset: Box<QueryFragment<DB> + 'a>,
@@ -90,12 +91,7 @@ where
         self.select.walk_ast(out.reborrow())?;
         out.push_sql(" FROM ");
         self.from.from_clause().walk_ast(out.reborrow())?;
-
-        if let Some(ref where_clause) = self.where_clause {
-            out.push_sql(" WHERE ");
-            where_clause.walk_ast(out.reborrow())?;
-        }
-
+        self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
 
         if let Some(ref order) = self.order {
@@ -117,12 +113,7 @@ where
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
         self.select.walk_ast(out.reborrow())?;
-
-        if let Some(ref where_clause) = self.where_clause {
-            out.push_sql(" WHERE ");
-            where_clause.walk_ast(out.reborrow())?;
-        }
-
+        self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit.walk_ast(out.reborrow())?;
@@ -194,37 +185,26 @@ where
 
 impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    DB: Backend + 'a,
+    BoxedWhereClause<'a, DB>: WhereAnd<Predicate, Output = BoxedWhereClause<'a, DB>>,
     Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
-    Predicate: QueryFragment<DB> + 'a,
 {
     type Output = Self;
 
     fn filter(mut self, predicate: Predicate) -> Self::Output {
-        use expression::operators::And;
-        self.where_clause = Some(match self.where_clause {
-            Some(where_clause) => Box::new(And::new(where_clause, predicate)),
-            None => Box::new(predicate),
-        });
+        self.where_clause = self.where_clause.and(predicate);
         self
     }
 }
 
 impl<'a, ST, QS, DB, Predicate> OrFilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    DB: Backend + 'a,
+    BoxedWhereClause<'a, DB>: WhereOr<Predicate, Output = BoxedWhereClause<'a, DB>>,
     Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
-    Predicate: QueryFragment<DB> + 'a,
 {
     type Output = Self;
 
     fn or_filter(mut self, predicate: Predicate) -> Self::Output {
-        use expression::operators::Or;
-        use expression::grouped::Grouped;
-        self.where_clause = Some(match self.where_clause {
-            Some(where_clause) => Box::new(Grouped(Or::new(where_clause, predicate))),
-            None => Box::new(predicate),
-        });
+        self.where_clause = self.where_clause.or(predicate);
         self
     }
 }
