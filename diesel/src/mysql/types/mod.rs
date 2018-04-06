@@ -8,33 +8,85 @@ use std::io::Write;
 use byteorder::WriteBytesExt;
 
 use deserialize::{self, FromSql};
-use mysql::Mysql;
+use mysql::{Mysql, MysqlType};
 use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use sql_types::*;
 
-impl ToSql<sql_types::Tinyint, Mysql> for i8 {
+impl ToSql<Tinyint, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
 
-impl FromSql<sql_types::Tinyint, Mysql> for i8 {
+impl FromSql<Tinyint, Mysql> for i8 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
     }
 }
 
-impl ToSql<sql_types::Bool, Mysql> for bool {
+/// Represents the MySQL unsigned type.
+#[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
+pub struct Unsigned<ST>(ST);
+
+impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let int_value = if *self { 1 } else { 0 };
-        <i32 as ToSql<sql_types::Integer, Mysql>>::to_sql(&int_value, out)
+        ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), out)
     }
 }
 
-impl FromSql<sql_types::Bool, Mysql> for bool {
+impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let signed: i16 = FromSql::<SmallInt, Mysql>::from_sql(bytes)?;
+        Ok(signed as u16)
+    }
+}
+
+impl ToSql<Unsigned<Integer>, Mysql> for u32 {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        ToSql::<Integer, Mysql>::to_sql(&(*self as i32), out)
+    }
+}
+
+impl FromSql<Unsigned<Integer>, Mysql> for u32 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
+        Ok(signed as u32)
+    }
+}
+
+impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        ToSql::<BigInt, Mysql>::to_sql(&(*self as i64), out)
+    }
+}
+
+impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
+        Ok(signed as u64)
+    }
+}
+
+impl ToSql<Bool, Mysql> for bool {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        let int_value = if *self { 1 } else { 0 };
+        <i32 as ToSql<Integer, Mysql>>::to_sql(&int_value, out)
+    }
+}
+
+impl FromSql<Bool, Mysql> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         Ok(not_none!(bytes).iter().any(|x| *x != 0))
+    }
+}
+
+impl<ST> HasSqlType<Unsigned<ST>> for Mysql
+where
+    Mysql: HasSqlType<ST>,
+{
+    fn metadata(lookup: &()) -> MysqlType {
+        <Mysql as HasSqlType<ST>>::metadata(lookup)
     }
 }
 
