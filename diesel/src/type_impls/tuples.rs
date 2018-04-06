@@ -410,7 +410,7 @@ tuple_impls! {
     }
 }
 
-#[cfg(feature = "32-column-tables")]
+#[cfg(feature = "x32-column-tables")]
 tuple_impls! {
     17 {
         (0) -> A, SA, TA,
@@ -838,7 +838,7 @@ tuple_impls! {
     }
 }
 
-#[cfg(feature = "64-column-tables")]
+#[cfg(feature = "x64-column-tables")]
 tuple_impls! {
     33 {
         (0) -> A, SA, TA,
@@ -2458,7 +2458,7 @@ tuple_impls! {
     }
 }
 
-#[cfg(feature = "128-column-tables")]
+#[cfg(feature = "x128-column-tables")]
 tuple_impls! {
     65 {
         (0) -> A, SA, TA,
