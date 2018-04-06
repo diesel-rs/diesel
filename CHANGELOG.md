@@ -77,6 +77,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[derive(AsChangeset)]` now implements `AsChangeset` on the struct itself,
   and not only on a reference to the struct
 
+* Added support for deserializing `Numeric` into `BigDecimal` on SQLite. SQLite
+  has no arbitrary precision type, so the result will still have floating point
+  rounding issues. This is primarily to support things like `avg(int_col)`,
+  which we define as returning `Numeric`
+
 ### Changed
 
 * The bounds on `impl ToSql for Cow<'a, T>` have been loosened to no longer
