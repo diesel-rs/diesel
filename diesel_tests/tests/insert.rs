@@ -32,6 +32,36 @@ fn insert_records() {
 }
 
 #[test]
+fn insert_records_as_vec() {
+    use schema::users::table as users;
+    let connection = connection();
+    let new_users = vec![
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(&connection)
+        .unwrap();
+    let actual_users = users.load::<User>(&connection).unwrap();
+
+    let expected_users = vec![
+        User {
+            id: actual_users[0].id,
+            name: "Sean".to_string(),
+            hair_color: Some("Black".to_string()),
+        },
+        User {
+            id: actual_users[1].id,
+            name: "Tess".to_string(),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_using_returning_clause() {
     use schema::users::table as users;
