@@ -22,6 +22,8 @@ pub enum MigrationError {
     UnknownMigrationVersion(String),
     /// No migrations had to be/ could be run
     NoMigrationRun,
+    /// Migration does not support embedding
+    MigrationNotEmbeddable,
     ///
     #[doc(hidden)]
     __NonExhaustive,
@@ -43,6 +45,10 @@ impl Error for MigrationError {
             }
             MigrationError::NoMigrationRun => {
                 "No migrations have been run. Did you forget `diesel migration run`?"
+            }
+            MigrationError::MigrationNotEmbeddable => {
+                "Attempted to embed a migration which does not support embedding. Perhaps you are
+                 using a migration plugin?"
             }
             MigrationError::__NonExhaustive => unreachable!(),
         }

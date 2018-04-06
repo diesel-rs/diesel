@@ -120,6 +120,7 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
+extern crate proc_macro;
 // This is required to make `diesel_derives` re-export, but clippy thinks its unused
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
