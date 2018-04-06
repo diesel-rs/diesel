@@ -11,6 +11,7 @@ mod network_address;
 mod integers;
 mod numeric;
 mod primitives;
+mod record;
 #[cfg(feature = "uuid")]
 mod uuid;
 #[cfg(feature = "serde_json")]
@@ -82,7 +83,7 @@ pub mod sql_types {
     /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
     /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
-    #[derive(Debug, Clone, Copy, Default, QueryId)]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Array<ST>(ST);
 
     /// The `Range` SQL type.
@@ -115,6 +116,46 @@ pub mod sql_types {
     pub type Tsrange = Range<::sql_types::Timestamp>;
     #[doc(hidden)]
     pub type Tstzrange = Range<::sql_types::Timestamptz>;
+
+    /// The `Record` (a.k.a. tuple) SQL type.
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - Any tuple which can be serialized to each of the elements
+    ///   (note: There are major caveats, see the section below)
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - Any tuple which can be deserialized from each of the elements.
+    ///
+    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
+    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    ///
+    /// ### Caveats about serialization
+    ///
+    /// Typically in the documentation for SQL types, we use "`FromSql` impls"
+    /// as a shorthand for "Rust types that you can use to represent this type".
+    /// For every other type, that means there is specifically an implementation
+    /// of the `FromSql` trait.
+    ///
+    /// However, PostgreSQL does not support transmission of anonymous record
+    /// types as bind parameters. It only supports transmission for named
+    /// composite types. For this reason, if you tried to do
+    /// `int_tuple_col.eq((1, 2))`, we will generate the SQL `int_tuple_col =
+    /// ($1, $2)` rather than `int_tuple_col = $1` as we would for anything
+    /// else.
+    ///
+    /// This should not be visible during normal usage. The only time this would
+    /// affect you is if you were attempting to use `sql_query` with tuples.
+    /// Your code would not compile in that case, as the `ToSql` trait itself is
+    /// not implemented.
+    ///
+    /// We do intend to provide an impl that can be used as a basis for named
+    /// composite types in the future, but there is no way for Diesel to
+    /// actually support a `ToSql` impl for anonymous record types.
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[postgres(oid = "2249", array_oid = "2287")]
+    pub struct Record<ST>(ST);
 
     /// Alias for `SmallInt`
     pub type SmallSerial = ::sql_types::SmallInt;

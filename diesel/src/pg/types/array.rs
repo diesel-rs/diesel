@@ -5,7 +5,7 @@ use std::io::Write;
 use deserialize::{self, FromSql};
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Array, HasSqlType, NotNull, Nullable, SingleValue};
+use sql_types::{Array, HasSqlType, Nullable};
 
 impl<T> HasSqlType<Array<T>> for Pg
 where
@@ -18,10 +18,6 @@ where
         }
     }
 }
-
-impl<T> NotNull for Array<T> {}
-
-impl<T> SingleValue for Array<T> {}
 
 impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
