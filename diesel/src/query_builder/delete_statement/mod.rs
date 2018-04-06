@@ -1,5 +1,3 @@
-mod boxed;
-
 use backend::Backend;
 use dsl::{Filter, IntoBoxed};
 use expression::{AppearsOnTable, SelectableExpression};
@@ -10,8 +8,6 @@ use query_dsl::RunQueryDsl;
 use query_dsl::methods::{BoxedDsl, FilterDsl};
 use query_source::Table;
 use result::QueryResult;
-
-pub use self::boxed::BoxedDeleteStatement;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 /// Represents a SQL `DELETE` statement.
@@ -29,6 +25,10 @@ pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
     where_clause: U,
     returning: Ret,
 }
+
+/// A `DELETE` statement with a boxed `WHERE` clause
+pub type BoxedDeleteStatement<'a, DB, T, Ret = NoReturningClause> =
+    DeleteStatement<T, BoxedWhereClause<'a, DB>, Ret>;
 
 impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     pub(crate) fn new(table: T, where_clause: U) -> Self {
@@ -144,12 +144,16 @@ where
 
 impl<'a, T, U, Ret, DB> BoxedDsl<'a, DB> for DeleteStatement<T, U, Ret>
 where
-    U: Into<Option<Box<QueryFragment<DB> + 'a>>>,
+    U: Into<BoxedWhereClause<'a, DB>>,
 {
     type Output = BoxedDeleteStatement<'a, DB, T, Ret>;
 
     fn internal_into_boxed(self) -> Self::Output {
-        BoxedDeleteStatement::new(self.table, self.where_clause.into(), self.returning)
+        DeleteStatement {
+            table: self.table,
+            where_clause: self.where_clause.into(),
+            returning: self.returning,
+        }
     }
 }
 
