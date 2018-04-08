@@ -8,7 +8,7 @@ pub use self::annotation::{MigrationAnnotation, AnnotatedMigration};
 
 use connection::SimpleConnection;
 use std::path::Path;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use proc_macro::TokenStream;
 
 /// Migration source
@@ -17,12 +17,20 @@ pub trait MigrationSource: Debug {
     /// May be a `Box<Migration>`.
     type MigrationEntry: Migration;
     /// Takes a snapshot of the migrations provided by this source
-    fn list_migrations(&self) -> Vec<Self::MigrationEntry>;
+    fn list_migrations(&self) -> Result<Vec<Self::MigrationEntry>, MigrationError>;
 }
 
-/// This is the entry-point for extensions to diesel's migration system
+// Allow using a migration source transparently through a reference
+impl<'a, T: MigrationSource + 'a> MigrationSource for &'a T {
+    type MigrationEntry = T::MigrationEntry;
+    fn list_migrations(&self) -> Result<Vec<Self::MigrationEntry>, MigrationError> {
+        T::list_migrations(*self)
+    }
+}
+
+/// This is the entry-point for extensions to the `MigrationsDirectory` type.
 /// It's not necessary to use this if you implement your own `MigrationSource`
-pub trait MigrationPlugin: Debug {
+pub trait MigrationsDirectoryPlugin: Debug + 'static {
     /// Attempt to load a `Migration` from a path using this plugin.
     /// Returns `UnknownMigrationFormat` if the plugin doesn't provide this type of migration.
     fn load_migration_from_path(&self, path: &Path) -> Result<Box<Migration>, MigrationError> {
@@ -36,9 +44,14 @@ pub trait MigrationPlugin: Debug {
 }
 
 /// Represents a migration that interacts with diesel
-pub trait Migration: Debug + Display {
+pub trait Migration: Debug {
     /// Get the migration version
     fn version(&self) -> &str;
+
+    /// Get the migration name
+    fn name(&self) -> &str {
+        self.version()
+    }
 
     /// Apply this migration
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
@@ -62,9 +75,13 @@ pub trait Migration: Debug + Display {
     }
 }
 
-impl Migration for Box<Migration> {
+impl<M: Migration> Migration for Box<M> {
     fn version(&self) -> &str {
         (&**self).version()
+    }
+
+    fn name(&self) -> &str {
+        (&**self).name()
     }
 
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
@@ -85,9 +102,13 @@ impl Migration for Box<Migration> {
     }
 }
 
-impl<'a> Migration for &'a Migration {
+impl<'a, M: Migration + 'a> Migration for &'a M {
     fn version(&self) -> &str {
         (&**self).version()
+    }
+
+    fn name(&self) -> &str {
+        (&**self).name()
     }
 
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {

@@ -67,18 +67,19 @@ impl AnnotatedMigration {
     pub fn annotate<T: MigrationAnnotation>(&mut self, annotation: T) {
         self.annotations.insert(TypeId::of::<T>(), Box::new(annotation));
     }
-}
-
-impl fmt::Display for AnnotatedMigration {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        // TODO: Allow annotations to customize the display somehow
-        fmt::Display::fmt(&self.migration, f)
+    /// Strip of the annotations
+    pub fn into_inner(self) -> Box<Migration> {
+        self.migration
     }
 }
 
 impl Migration for AnnotatedMigration {
     fn version(&self) -> &str {
         self.migration.version()
+    }
+
+    fn name(&self) -> &str {
+        self.migration.name()
     }
 
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
