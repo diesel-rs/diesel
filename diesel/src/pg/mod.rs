@@ -33,4 +33,5 @@ pub mod data_types {
     #[doc(inline)]
     pub use super::types::money::PgMoney;
     pub use super::types::money::PgMoney as Cents;
+    pub use super::types::geometric::PgPoint;
 }
