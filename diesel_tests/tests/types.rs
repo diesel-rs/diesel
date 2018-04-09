@@ -196,6 +196,120 @@ fn i32_to_sql_integer() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn u16_to_sql_integer() {
+    assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
+        "-1",
+        65535
+    ));
+    assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>("0", 0));
+    assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>("1", 1));
+    assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
+        "7000",
+        7000
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>("0", 1));
+    assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>(
+        "50000",
+        49999
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>(
+        "-1",
+        64434
+    ));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u16_from_sql() {
+    assert_eq!(0, query_single_value::<Unsigned<SmallInt>, u16>("0"));
+    assert_eq!(65535, query_single_value::<Unsigned<SmallInt>, u16>("-1"));
+    assert_ne!(65534, query_single_value::<Unsigned<SmallInt>, u16>("-1"));
+    assert_eq!(7000, query_single_value::<Unsigned<SmallInt>, u16>("7000"));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u32_to_sql_integer() {
+    assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
+        "-1",
+        4294967295
+    ));
+    assert!(query_to_sql_equality::<Unsigned<Integer>, u32>("0", 0));
+    assert!(query_to_sql_equality::<Unsigned<Integer>, u32>("1", 1));
+    assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
+        "70000",
+        70000
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>("0", 1));
+    assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>(
+        "70000",
+        69999
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>(
+        "-1",
+        4294967294
+    ));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u32_from_sql() {
+    assert_eq!(0, query_single_value::<Unsigned<Integer>, u32>("0"));
+    assert_eq!(
+        4294967295,
+        query_single_value::<Unsigned<Integer>, u32>("-1")
+    );
+    assert_ne!(
+        4294967294,
+        query_single_value::<Unsigned<Integer>, u32>("-1")
+    );
+    assert_eq!(70000, query_single_value::<Unsigned<Integer>, u32>("70000"));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u64_to_sql_integer() {
+    assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>(
+        "-1",
+        18446744073709551615
+    ));
+    assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>("0", 0));
+    assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>("1", 1));
+    assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>(
+        "700000",
+        700000
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>("0", 1));
+    assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>(
+        "70000",
+        69999
+    ));
+    assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>(
+        "-1",
+        18446744073709551614
+    ));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u64_from_sql() {
+    assert_eq!(0, query_single_value::<Unsigned<BigInt>, u64>("0"));
+    assert_eq!(
+        18446744073709551615,
+        query_single_value::<Unsigned<BigInt>, u64>("-1")
+    );
+    assert_ne!(
+        18446744073709551614,
+        query_single_value::<Unsigned<BigInt>, u64>("-1")
+    );
+    assert_eq!(
+        700000,
+        query_single_value::<Unsigned<BigInt>, u64>("700000")
+    );
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn i64_from_sql() {
     assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));

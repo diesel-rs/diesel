@@ -289,6 +289,9 @@ mod mysql_types {
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
+    test_round_trip!(u16_roundtrips, Unsigned<SmallInt>, u16);
+    test_round_trip!(u32_roundtrips, Unsigned<Integer>, u32);
+    test_round_trip!(u64_roundtrips, Unsigned<BigInt>, u64);
 }
 
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {

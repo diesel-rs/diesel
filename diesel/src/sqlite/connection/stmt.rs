@@ -11,10 +11,11 @@ use result::*;
 use result::Error::DatabaseError;
 use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
+use util::NonNull;
 
 pub struct Statement {
     raw_connection: Rc<RawConnection>,
-    inner_statement: *mut ffi::sqlite3_stmt,
+    inner_statement: NonNull<ffi::sqlite3_stmt>,
     bind_index: libc::c_int,
 }
 
@@ -24,7 +25,7 @@ impl Statement {
         let mut unused_portion = ptr::null();
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v2(
-                raw_connection.internal_connection,
+                raw_connection.internal_connection.as_ptr(),
                 try!(CString::new(sql)).as_ptr(),
                 sql.len() as libc::c_int,
                 &mut stmt,
@@ -34,7 +35,7 @@ impl Statement {
 
         ensure_sqlite_ok(prepare_result, raw_connection).map(|_| Statement {
             raw_connection: Rc::clone(raw_connection),
-            inner_statement: stmt,
+            inner_statement: unsafe { NonNull::new_unchecked(stmt) },
             bind_index: 0,
         })
     }
@@ -53,16 +54,16 @@ impl Statement {
         //   corresponding size.
         let result = unsafe {
             match (tpe, value) {
-                (_, None) => ffi::sqlite3_bind_null(self.inner_statement, self.bind_index),
+                (_, None) => ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), self.bind_index),
                 (SqliteType::Binary, Some(bytes)) => ffi::sqlite3_bind_blob(
-                    self.inner_statement,
+                    self.inner_statement.as_ptr(),
                     self.bind_index,
                     bytes.as_ptr() as *const libc::c_void,
                     bytes.len() as libc::c_int,
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 (SqliteType::Text, Some(bytes)) => ffi::sqlite3_bind_text(
-                    self.inner_statement,
+                    self.inner_statement.as_ptr(),
                     self.bind_index,
                     bytes.as_ptr() as *const libc::c_char,
                     bytes.len() as libc::c_int,
@@ -71,7 +72,7 @@ impl Statement {
                 (SqliteType::Float, Some(bytes)) => {
                     let value = *(bytes.as_ptr() as *const f32);
                     ffi::sqlite3_bind_double(
-                        self.inner_statement,
+                        self.inner_statement.as_ptr(),
                         self.bind_index,
                         libc::c_double::from(value),
                     )
@@ -79,7 +80,7 @@ impl Statement {
                 (SqliteType::Double, Some(bytes)) => {
                     let value = *(bytes.as_ptr() as *const f64);
                     ffi::sqlite3_bind_double(
-                        self.inner_statement,
+                        self.inner_statement.as_ptr(),
                         self.bind_index,
                         value as libc::c_double,
                     )
@@ -87,7 +88,7 @@ impl Statement {
                 (SqliteType::SmallInt, Some(bytes)) => {
                     let value = *(bytes.as_ptr() as *const i16);
                     ffi::sqlite3_bind_int(
-                        self.inner_statement,
+                        self.inner_statement.as_ptr(),
                         self.bind_index,
                         libc::c_int::from(value),
                     )
@@ -95,14 +96,14 @@ impl Statement {
                 (SqliteType::Integer, Some(bytes)) => {
                     let value = *(bytes.as_ptr() as *const i32);
                     ffi::sqlite3_bind_int(
-                        self.inner_statement,
+                        self.inner_statement.as_ptr(),
                         self.bind_index,
                         value as libc::c_int,
                     )
                 }
                 (SqliteType::Long, Some(bytes)) => {
                     let value = *(bytes.as_ptr() as *const i64);
-                    ffi::sqlite3_bind_int64(self.inner_statement, self.bind_index, value)
+                    ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), self.bind_index, value)
                 }
             }
         };
@@ -111,13 +112,13 @@ impl Statement {
     }
 
     fn num_fields(&self) -> usize {
-        unsafe { ffi::sqlite3_column_count(self.inner_statement) as usize }
+        unsafe { ffi::sqlite3_column_count(self.inner_statement.as_ptr()) as usize }
     }
 
     /// The lifetime of the returned CStr is shorter than self. This function
     /// should be tied to a lifetime that ends before the next call to `reset`
     unsafe fn field_name<'a>(&self, idx: usize) -> Option<&'a CStr> {
-        let ptr = ffi::sqlite3_column_name(self.inner_statement, idx as libc::c_int);
+        let ptr = ffi::sqlite3_column_name(self.inner_statement.as_ptr(), idx as libc::c_int);
         if ptr.is_null() {
             None
         } else {
@@ -126,7 +127,7 @@ impl Statement {
     }
 
     fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
-        match unsafe { ffi::sqlite3_step(self.inner_statement) } {
+        match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
             ffi::SQLITE_DONE => Ok(None),
             ffi::SQLITE_ROW => Ok(Some(SqliteRow::new(self.inner_statement))),
             _ => Err(last_error(&self.raw_connection)),
@@ -135,7 +136,7 @@ impl Statement {
 
     fn reset(&mut self) {
         self.bind_index = 0;
-        unsafe { ffi::sqlite3_reset(self.inner_statement) };
+        unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
     }
 }
 
@@ -164,7 +165,7 @@ impl Drop for Statement {
     fn drop(&mut self) {
         use std::thread::panicking;
 
-        let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement) };
+        let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
         if let Err(e) = ensure_sqlite_ok(finalize_result, &self.raw_connection) {
             if panicking() {
                 write!(

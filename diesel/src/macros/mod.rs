@@ -93,12 +93,14 @@ macro_rules! __diesel_column {
 /// (for example, for things like full text search)
 ///
 /// By default this allows a maximum of 32 columns per table.
-/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
-/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can increase this limit to 64 by enabling the `x64-column-tables` feature.
+/// You can increase it to 128 by enabling the `x128-column-tables` feature.
+/// (The leading `x` is due to a bug in crates.io and will be removed in a
+/// future release)
 /// You can decrease it to 16 columns,
 /// which improves compilation time,
 /// by disabling the default features of Diesel.
-/// Note that enabling 64-column tables or larger will substantially increase
+/// Note that enabling x64-column tables or larger will substantially increase
 /// the compile time of Diesel.
 ///
 /// Example usage
@@ -1014,6 +1016,29 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// assert_eq!(implicit_on_clause_sql, explicit_on_clause_sql);
 /// # }
+///
+/// ```
+///
+/// In the example above, the line `joinable!(posts -> users (user_id));`
+///
+/// specifies the relation of the tables and the ON clause in the following way:
+///
+/// `parent_table -> child_table (foreign_key)`
+///
+/// * `parent_table` is the Table with the Primary key.
+///
+/// * `child_table` is the Table with the Foreighn key.
+///
+/// So given the Table decaration from [Associations docs](http://docs.diesel.rs/diesel/associations/index.html)
+///
+/// * The parent table would be `User`
+/// * The child table would be `Post`
+/// * and the Foreighn key would be `Post.user_id`
+///
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
+/// the following on clause is generated implicitly:
+/// ```sql
+/// post JOIN users ON posts.user_id = users.id
 /// ```
 #[macro_export]
 macro_rules! joinable {

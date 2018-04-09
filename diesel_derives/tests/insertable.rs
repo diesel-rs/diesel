@@ -24,6 +24,32 @@ fn simple_struct_definition() {
         hair_color: "Black".into(),
     };
     insert_into(users::table)
+        .values(new_user)
+        .execute(&conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(&conn);
+    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn simple_reference_definition() {
+    #[derive(Insertable)]
+    #[table_name = "users"]
+    struct NewUser {
+        name: String,
+        hair_color: String,
+    }
+
+    let conn = connection();
+    let new_user = NewUser {
+        name: "Sean".into(),
+        hair_color: "Black".into(),
+    };
+    insert_into(users::table)
         .values(&new_user)
         .execute(&conn)
         .unwrap();

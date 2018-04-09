@@ -8,10 +8,11 @@ use std::os::raw as libc;
 use std::{ptr, str};
 
 use result::*;
+use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
-    internal_connection: *mut PGconn,
+    internal_connection: NonNull<PGconn>,
 }
 
 impl RawConnection {
@@ -23,9 +24,12 @@ impl RawConnection {
         let connection_status = unsafe { PQstatus(connection_ptr) };
 
         match connection_status {
-            CONNECTION_OK => Ok(RawConnection {
-                internal_connection: connection_ptr,
-            }),
+            CONNECTION_OK => {
+                let connection_ptr = unsafe { NonNull::new_unchecked(connection_ptr) };
+                Ok(RawConnection {
+                    internal_connection: connection_ptr,
+                })
+            }
             _ => {
                 let message = last_error_message(connection_ptr);
                 Err(ConnectionError::BadConnection(message))
@@ -34,13 +38,13 @@ impl RawConnection {
     }
 
     pub fn last_error_message(&self) -> String {
-        last_error_message(self.internal_connection)
+        last_error_message(self.internal_connection.as_ptr())
     }
 
     pub fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
             PQsetNoticeProcessor(
-                self.internal_connection,
+                self.internal_connection.as_ptr(),
                 Some(notice_processor),
                 ptr::null_mut(),
             );
@@ -48,7 +52,7 @@ impl RawConnection {
     }
 
     pub unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
-        RawResult::new(PQexec(self.internal_connection, query), self)
+        RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
     }
 
     pub unsafe fn exec_prepared(
@@ -61,7 +65,7 @@ impl RawConnection {
         result_format: libc::c_int,
     ) -> QueryResult<RawResult> {
         let ptr = PQexecPrepared(
-            self.internal_connection,
+            self.internal_connection.as_ptr(),
             stmt_name,
             param_count,
             param_values,
@@ -80,7 +84,7 @@ impl RawConnection {
         param_types: *const Oid,
     ) -> QueryResult<RawResult> {
         let ptr = PQprepare(
-            self.internal_connection,
+            self.internal_connection.as_ptr(),
             stmt_name,
             query,
             param_count,
@@ -94,7 +98,7 @@ pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
-        unsafe { PQfinish(self.internal_connection) };
+        unsafe { PQfinish(self.internal_connection.as_ptr()) };
     }
 }
 
@@ -112,29 +116,27 @@ fn last_error_message(conn: *const PGconn) -> String {
 ///
 /// If `Unique` is ever stabilized, we should use it here.
 #[allow(missing_debug_implementations)]
-pub struct RawResult(*mut PGresult);
+pub struct RawResult(NonNull<PGresult>);
 
 unsafe impl Send for RawResult {}
 unsafe impl Sync for RawResult {}
 
 impl RawResult {
     fn new(ptr: *mut PGresult, conn: &RawConnection) -> QueryResult<Self> {
-        if ptr.is_null() {
-            Err(Error::DatabaseError(
+        NonNull::new(ptr).map(RawResult).ok_or_else(|| {
+            Error::DatabaseError(
                 DatabaseErrorKind::UnableToSendCommand,
                 Box::new(conn.last_error_message()),
-            ))
-        } else {
-            Ok(RawResult(ptr))
-        }
+            )
+        })
     }
 
     pub fn as_ptr(&self) -> *mut PGresult {
-        self.0
+        self.0.as_ptr()
     }
 
     pub fn error_message(&self) -> &str {
-        let ptr = unsafe { PQresultErrorMessage(self.0) };
+        let ptr = unsafe { PQresultErrorMessage(self.0.as_ptr()) };
         let cstr = unsafe { CStr::from_ptr(ptr) };
         cstr.to_str().unwrap_or_default()
     }
@@ -142,6 +144,6 @@ impl RawResult {
 
 impl Drop for RawResult {
     fn drop(&mut self) {
-        unsafe { PQclear(self.0) }
+        unsafe { PQclear(self.0.as_ptr()) }
     }
 }

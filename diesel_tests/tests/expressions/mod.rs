@@ -1,7 +1,11 @@
+extern crate bigdecimal;
+
 mod date_and_time;
 mod ops;
 
-use schema::{connection, DropTable, NewUser, TestBackend};
+use self::bigdecimal::BigDecimal;
+use schema::{connection, connection_with_sean_and_tess_in_users_table, DropTable, NewUser,
+             TestBackend};
 use schema::users::dsl::*;
 use diesel::*;
 use diesel::backend::Backend;
@@ -325,6 +329,14 @@ fn test_avg() {
     assert_eq!(Ok(Some(3.5f64)), source.first(&connection));
     connection.execute("DELETE FROM precision_numbers").unwrap();
     assert_eq!(Ok(None::<f64>), source.first(&connection));
+}
+
+#[test]
+fn test_avg_integer() {
+    let conn = connection_with_sean_and_tess_in_users_table();
+    let avg_id = users.select(avg(id)).get_result(&conn);
+    let expected = "1.5".parse::<BigDecimal>().unwrap();
+    assert_eq!(Ok(Some(expected)), avg_id);
 }
 
 #[test]

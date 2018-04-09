@@ -175,6 +175,7 @@ pub type Float8 = Double;
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1700", array_oid = "1231")]
 #[mysql_type = "String"]
+#[sqlite_type = "Double"]
 pub struct Numeric;
 
 /// Alias for `Numeric`

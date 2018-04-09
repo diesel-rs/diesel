@@ -59,9 +59,9 @@ where
     }
 }
 
-impl<DB: Backend> Into<Option<Box<QueryFragment<DB>>>> for NoWhereClause {
-    fn into(self) -> Option<Box<QueryFragment<DB>>> {
-        None
+impl<DB> Into<BoxedWhereClause<'static, DB>> for NoWhereClause {
+    fn into(self) -> BoxedWhereClause<'static, DB> {
+        BoxedWhereClause::None
     }
 }
 
@@ -105,13 +105,13 @@ where
     }
 }
 
-impl<'a, DB, Predicate> Into<Option<Box<QueryFragment<DB> + 'a>>> for WhereClause<Predicate>
+impl<'a, DB, Predicate> Into<BoxedWhereClause<'a, DB>> for WhereClause<Predicate>
 where
     DB: Backend,
     Predicate: QueryFragment<DB> + 'a,
 {
-    fn into(self) -> Option<Box<QueryFragment<DB> + 'a>> {
-        Some(Box::new(self.0))
+    fn into(self) -> BoxedWhereClause<'a, DB> {
+        BoxedWhereClause::Where(Box::new(self.0))
     }
 }
 
@@ -125,4 +125,68 @@ impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr>
 where
     Expr: AppearsOnTable<QS>,
 {
+}
+
+#[allow(missing_debug_implementations)] // We can't...
+pub enum BoxedWhereClause<'a, DB> {
+    Where(Box<QueryFragment<DB> + 'a>),
+    None,
+}
+
+impl<'a, DB> QueryFragment<DB> for BoxedWhereClause<'a, DB>
+where
+    DB: Backend,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        match *self {
+            BoxedWhereClause::Where(ref where_clause) => {
+                out.push_sql(" WHERE ");
+                where_clause.walk_ast(out)
+            }
+            BoxedWhereClause::None => Ok(()),
+        }
+    }
+}
+
+impl<'a, DB> QueryId for BoxedWhereClause<'a, DB> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<'a, DB, Predicate> WhereAnd<Predicate> for BoxedWhereClause<'a, DB>
+where
+    DB: Backend + 'a,
+    Predicate: QueryFragment<DB> + 'a,
+{
+    type Output = Self;
+
+    fn and(self, predicate: Predicate) -> Self::Output {
+        use expression::operators::And;
+        use self::BoxedWhereClause::Where;
+
+        match self {
+            Where(where_clause) => Where(Box::new(And::new(where_clause, predicate))),
+            BoxedWhereClause::None => Where(Box::new(predicate)),
+        }
+    }
+}
+
+impl<'a, DB, Predicate> WhereOr<Predicate> for BoxedWhereClause<'a, DB>
+where
+    DB: Backend + 'a,
+    Predicate: QueryFragment<DB> + 'a,
+{
+    type Output = Self;
+
+    fn or(self, predicate: Predicate) -> Self::Output {
+        use expression::operators::Or;
+        use expression::grouped::Grouped;
+        use self::BoxedWhereClause::Where;
+
+        match self {
+            Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),
+            BoxedWhereClause::None => Where(Box::new(predicate)),
+        }
+    }
 }

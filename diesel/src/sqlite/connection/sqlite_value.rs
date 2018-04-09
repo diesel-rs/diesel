@@ -7,10 +7,11 @@ use std::{slice, str};
 
 use sqlite::Sqlite;
 use row::*;
+use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
-    inner_statement: *mut ffi::sqlite3_stmt,
+    inner_statement: NonNull<ffi::sqlite3_stmt>,
     col_index: Cell<libc::c_int>,
 }
 
@@ -20,7 +21,7 @@ pub struct SqliteRow {
 }
 
 impl SqliteValue {
-    pub fn new(inner_statement: *mut ffi::sqlite3_stmt) -> Self {
+    pub(crate) fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
         SqliteValue {
             inner_statement: inner_statement,
             col_index: Cell::new(0),
@@ -29,8 +30,9 @@ impl SqliteValue {
 
     pub fn read_text(&self) -> &str {
         unsafe {
-            let ptr = ffi::sqlite3_column_text(self.inner_statement, self.col_index.get());
-            let len = ffi::sqlite3_column_bytes(self.inner_statement, self.col_index.get());
+            let ptr = ffi::sqlite3_column_text(self.inner_statement.as_ptr(), self.col_index.get());
+            let len =
+                ffi::sqlite3_column_bytes(self.inner_statement.as_ptr(), self.col_index.get());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
             str::from_utf8_unchecked(bytes)
         }
@@ -38,32 +40,41 @@ impl SqliteValue {
 
     pub fn read_blob(&self) -> &[u8] {
         unsafe {
-            let ptr = ffi::sqlite3_column_blob(self.inner_statement, self.col_index.get());
-            let len = ffi::sqlite3_column_bytes(self.inner_statement, self.col_index.get());
+            let ptr = ffi::sqlite3_column_blob(self.inner_statement.as_ptr(), self.col_index.get());
+            let len =
+                ffi::sqlite3_column_bytes(self.inner_statement.as_ptr(), self.col_index.get());
             slice::from_raw_parts(ptr as *const u8, len as usize)
         }
     }
 
     pub fn read_integer(&self) -> i32 {
-        unsafe { ffi::sqlite3_column_int(self.inner_statement, self.col_index.get()) as i32 }
+        unsafe {
+            ffi::sqlite3_column_int(self.inner_statement.as_ptr(), self.col_index.get()) as i32
+        }
     }
 
     pub fn read_long(&self) -> i64 {
-        unsafe { ffi::sqlite3_column_int64(self.inner_statement, self.col_index.get()) as i64 }
+        unsafe {
+            ffi::sqlite3_column_int64(self.inner_statement.as_ptr(), self.col_index.get()) as i64
+        }
     }
 
     pub fn read_double(&self) -> f64 {
-        unsafe { ffi::sqlite3_column_double(self.inner_statement, self.col_index.get()) as f64 }
+        unsafe {
+            ffi::sqlite3_column_double(self.inner_statement.as_ptr(), self.col_index.get()) as f64
+        }
     }
 
     pub fn is_null(&self) -> bool {
-        let tpe = unsafe { ffi::sqlite3_column_type(self.inner_statement, self.col_index.get()) };
+        let tpe = unsafe {
+            ffi::sqlite3_column_type(self.inner_statement.as_ptr(), self.col_index.get())
+        };
         tpe == ffi::SQLITE_NULL
     }
 }
 
 impl SqliteRow {
-    pub fn new(inner_statement: *mut ffi::sqlite3_stmt) -> Self {
+    pub(crate) fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
         SqliteRow {
             value: SqliteValue::new(inner_statement),
             next_col_index: 0,
@@ -93,7 +104,7 @@ impl Row<Sqlite> for SqliteRow {
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| {
             let idx = self.next_col_index + i as libc::c_int;
-            let tpe = unsafe { ffi::sqlite3_column_type(self.value.inner_statement, idx) };
+            let tpe = unsafe { ffi::sqlite3_column_type(self.value.inner_statement.as_ptr(), idx) };
             tpe == ffi::SQLITE_NULL
         })
     }
