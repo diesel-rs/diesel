@@ -122,6 +122,17 @@ pub fn build_cli() -> App<'static, 'static> {
                 .help("Render documentation comments for tables and columns"),
         );
 
+    let config_arg = Arg::with_name("CONFIG_FILE")
+        .long("config-file")
+        .help(
+            "The location of the configuration file to use. Falls back to the \
+             `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults \
+             to `diesel.toml` in your project root. See \
+             diesel.rs/guides/configuring-diesel-cli for documentation on this file.",
+        )
+        .global(true)
+        .takes_value(true);
+
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
@@ -129,6 +140,7 @@ pub fn build_cli() -> App<'static, 'static> {
             "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
         )
         .arg(database_arg)
+        .arg(config_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)

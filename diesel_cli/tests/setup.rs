@@ -182,3 +182,63 @@ fn setup_works_with_migration_dir_by_env() {
     assert!(!p.has_file("migrations"));
     assert!(p.has_file("bar"));
 }
+
+#[test]
+fn setup_creates_config_file() {
+    let p = project("setup_creates_config_file").build();
+
+    // Make sure the project builder didn't create the file
+    assert!(!p.has_file("diesel.toml"));
+
+    let result = p.command("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(p.has_file("diesel.toml"));
+    assert!(
+        p.file_contents("diesel.toml")
+            .contains("diesel.rs/guides/configuring-diesel-cli")
+    );
+}
+
+#[test]
+fn setup_can_take_config_file_by_env() {
+    let p = project("setup_can_take_config_file_by_env").build();
+
+    // Make sure the project builder didn't create the file
+    assert!(!p.has_file("diesel.toml"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").env("DIESEL_CONFIG_FILE", "foo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("diesel.toml"));
+    assert!(p.has_file("foo"));
+    assert!(
+        p.file_contents("foo")
+            .contains("diesel.rs/guides/configuring-diesel-cli")
+    );
+}
+
+#[test]
+fn setup_can_take_config_file_by_param() {
+    let p = project("setup_can_take_config_file_by_param").build();
+
+    // Make sure the project builder didn't create the file
+    assert!(!p.has_file("diesel.toml"));
+    assert!(!p.has_file("foo"));
+    assert!(!p.has_file("bar"));
+
+    let result = p.command("setup")
+        .env("DIESEL_CONFIG_FILE", "foo")
+        .arg("--config-file=bar")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("diesel.toml"));
+    assert!(!p.has_file("foo"));
+    assert!(p.has_file("bar"));
+    assert!(
+        p.file_contents("bar")
+            .contains("diesel.rs/guides/configuring-diesel-cli")
+    );
+}

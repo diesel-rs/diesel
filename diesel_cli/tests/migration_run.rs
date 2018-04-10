@@ -311,3 +311,38 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_2() {
     );
     assert!(db.table_exists("users"));
 }
+
+#[test]
+fn migration_run_updates_schema_if_config_present() {
+    let p = project("migration_run_updates_schema_if_config_present")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            r#"
+[print_schema]
+file = "src/my_schema.rs"
+"#,
+        )
+        .build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    assert!(!p.has_file("src/my_schema.rs"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(p.has_file("src/my_schema.rs"));
+}
