@@ -4,6 +4,7 @@ extern crate dotenv;
 extern crate url;
 
 use std::fs::{self, File};
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
 
@@ -16,6 +17,7 @@ pub fn project(name: &str) -> ProjectBuilder {
 pub struct ProjectBuilder {
     name: String,
     folders: Vec<String>,
+    files: Vec<(PathBuf, String)>,
 }
 
 impl ProjectBuilder {
@@ -23,11 +25,17 @@ impl ProjectBuilder {
         ProjectBuilder {
             name: name.into(),
             folders: Vec::new(),
+            files: Vec::new(),
         }
     }
 
     pub fn folder(mut self, name: &str) -> Self {
         self.folders.push(name.into());
+        self
+    }
+
+    pub fn file(mut self, name: &str, contents: &str) -> Self {
+        self.files.push((name.into(), contents.into()));
         self
     }
 
@@ -38,6 +46,13 @@ impl ProjectBuilder {
 
         for folder in self.folders {
             fs::create_dir(tempdir.path().join(folder)).unwrap();
+        }
+
+        for (file, contents) in self.files {
+            fs::File::create(tempdir.path().join(file))
+                .unwrap()
+                .write_all(contents.as_bytes())
+                .unwrap()
         }
 
         Project {
@@ -116,6 +131,13 @@ impl Project {
 
     pub fn has_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.directory.path().join(path).exists()
+    }
+
+    pub fn file_contents<P: AsRef<Path>>(&self, path: P) -> String {
+        let mut f = File::open(self.directory.path().join(path)).expect("Could not open file");
+        let mut result = String::new();
+        f.read_to_string(&mut result).expect("Could not read file");
+        result
     }
 
     #[cfg(feature = "postgres")]

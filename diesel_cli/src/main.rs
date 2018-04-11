@@ -17,9 +17,13 @@ extern crate diesel;
 extern crate dotenv;
 extern crate infer_schema_internals;
 extern crate migrations_internals;
+#[macro_use]
+extern crate serde;
+extern crate toml;
 #[cfg(feature = "url")]
 extern crate url;
 
+mod config;
 mod database_error;
 #[macro_use]
 mod database;
@@ -32,10 +36,12 @@ use chrono::*;
 use clap::{ArgMatches, Shell};
 use migrations_internals::{self as migrations, MigrationConnection};
 use std::any::Any;
+use std::error::Error;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
+use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
 use migrations_internals::TIMESTAMP_FORMAT;
 
@@ -46,7 +52,7 @@ fn main() {
     let matches = cli::build_cli().get_matches();
 
     match matches.subcommand() {
-        ("migration", Some(matches)) => run_migration_command(matches),
+        ("migration", Some(matches)) => run_migration_command(matches).unwrap_or_else(handle_error),
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
@@ -55,7 +61,7 @@ fn main() {
     }
 }
 
-fn run_migration_command(matches: &ArgMatches) {
+fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     match matches.subcommand() {
         ("run", Some(_)) => {
             let database_url = database::database_url(matches);
@@ -63,7 +69,8 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(
                 database_url,
                 migrations::run_pending_migrations_in_directory(&dir, &mut stdout())
-            ).unwrap_or_else(handle_error);
+            )?;
+            regenerate_schema_if_file_specified(matches)?;
         }
         ("revert", Some(_)) => {
             let database_url = database::database_url(matches);
@@ -71,19 +78,20 @@ fn run_migration_command(matches: &ArgMatches) {
             call_with_conn!(
                 database_url,
                 migrations::revert_latest_migration_in_directory(&dir)
-            ).unwrap_or_else(handle_error);
+            )?;
+            regenerate_schema_if_file_specified(matches)?;
         }
         ("redo", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches);
             call_with_conn!(database_url, redo_latest_migration(&dir));
+            regenerate_schema_if_file_specified(matches)?;
         }
         ("list", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches);
             let mut migrations =
-                call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))
-                    .unwrap_or_else(handle_error);
+                call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))?;
 
             migrations.sort_by_key(|&(ref m, _)| m.version().to_string());
 
@@ -101,8 +109,8 @@ fn run_migration_command(matches: &ArgMatches) {
         }
         ("pending", Some(_)) => {
             let database_url = database::database_url(matches);
-            let result = call_with_conn!(database_url, migrations::any_pending_migrations);
-            println!("{:?}", result.unwrap());
+            let result = call_with_conn!(database_url, migrations::any_pending_migrations)?;
+            println!("{:?}", result);
         }
         ("generate", Some(args)) => {
             use std::io::Write;
@@ -111,10 +119,10 @@ fn run_migration_command(matches: &ArgMatches) {
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches).join(versioned_name);
-            fs::create_dir(&migration_dir).unwrap();
+            fs::create_dir(&migration_dir)?;
 
             let migration_dir_relative =
-                convert_absolute_path_to_relative(&migration_dir, &env::current_dir().unwrap());
+                convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
 
             let up_path = migration_dir.join("up.sql");
             println!(
@@ -129,12 +137,13 @@ fn run_migration_command(matches: &ArgMatches) {
                 "Creating {}",
                 migration_dir_relative.join("down.sql").display()
             );
-            let mut down = fs::File::create(down_path).unwrap();
-            down.write_all(b"-- This file should undo anything in `up.sql`")
-                .unwrap();
+            let mut down = fs::File::create(down_path)?;
+            down.write_all(b"-- This file should undo anything in `up.sql`")?;
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
-    }
+    };
+
+    Ok(())
 }
 
 use std::fmt::Display;
@@ -165,6 +174,7 @@ fn migrations_dir(matches: &ArgMatches) -> PathBuf {
 
 fn run_setup_command(matches: &ArgMatches) {
     let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
+    create_config_file(matches).unwrap_or_else(handle_error);
 
     database::setup_database(matches, &migrations_dir).unwrap_or_else(handle_error);
 }
@@ -185,6 +195,17 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
     }
 
     Ok(dir.to_owned())
+}
+
+fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
+    use std::io::Write;
+    let path = Config::file_path(matches);
+    if !path.exists() {
+        let mut file = fs::File::create(path)?;
+        file.write_all(include_bytes!("default_files/diesel.toml"))?;
+    }
+
+    Ok(())
 }
 
 fn run_database_command(matches: &ArgMatches) {
@@ -325,6 +346,22 @@ fn run_infer_schema(matches: &ArgMatches) {
         &filter,
         matches.is_present("with-docs"),
     ).map_err(handle_error::<_, ()>);
+}
+
+fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<Error>> {
+    use print_schema::*;
+
+    let config = Config::read(matches)?;
+    if let Some(path) = config.print_schema.file {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let database_url = database::database_url(matches);
+        let mut file = fs::File::create(path)?;
+        print_schema::output_schema(&database_url, None, &Filtering::None, false, &mut file)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

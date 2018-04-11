@@ -1,6 +1,7 @@
 use infer_schema_internals::*;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
+use std::io::{self, stdout};
 
 pub enum Filtering {
     Whitelist(Vec<TableName>),
@@ -26,6 +27,22 @@ pub fn run_print_schema(
     filtering: &Filtering,
     include_docs: bool,
 ) -> Result<(), Box<Error>> {
+    output_schema(
+        database_url,
+        schema_name,
+        filtering,
+        include_docs,
+        &mut stdout(),
+    )
+}
+
+pub fn output_schema<W: io::Write>(
+    database_url: &str,
+    schema_name: Option<&str>,
+    filtering: &Filtering,
+    include_docs: bool,
+    out: &mut W,
+) -> Result<(), Box<Error>> {
     let table_names = load_table_names(database_url, schema_name)?
         .into_iter()
         .filter(|t| !filtering.should_ignore_table(t))
@@ -44,9 +61,9 @@ pub fn run_print_schema(
     };
 
     if let Some(schema_name) = schema_name {
-        print!("{}", ModuleDefinition(schema_name, definitions));
+        write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
-        print!("{}", definitions);
+        write!(out, "{}", definitions)?;
     }
     Ok(())
 }
