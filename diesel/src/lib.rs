@@ -95,10 +95,19 @@
 
 #![cfg_attr(feature = "large-tables",
             deprecated(since = "1.2.0",
-                       note = "The large-tables feature has been renamed to x32-column-tables"))]
+                       note = "The large-tables feature has been renamed to 32-column-tables"))]
 #![cfg_attr(feature = "huge-tables",
             deprecated(since = "1.2.0",
-                       note = "The huge-tables feature has been renamed to x64-column-tables"))]
+                       note = "The huge-tables feature has been renamed to 64-column-tables"))]
+#![cfg_attr(feature = "x32-column-tables",
+            deprecated(since = "1.2.1",
+                       note = "The x32-column-tables feature has been reanmed to 32-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
+#![cfg_attr(feature = "x64-column-tables",
+            deprecated(since = "1.2.1",
+                       note = "The x64-column-tables feature has been reanmed to 64-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
+#![cfg_attr(feature = "x128-column-tables",
+            deprecated(since = "1.2.1",
+                       note = "The x128-column-tables feature has been reanmed to 128-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
