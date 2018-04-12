@@ -48,6 +48,8 @@ pub struct PrintSchema {
     pub filter: print_schema::Filtering,
     #[serde(default)]
     pub schema: Option<String>,
+    #[serde(default)]
+    pub patch_file: Option<PathBuf>,
 }
 
 impl PrintSchema {

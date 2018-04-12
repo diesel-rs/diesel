@@ -1,11 +1,15 @@
 use config;
 
 use infer_schema_internals::*;
-use std::error::Error;
-use std::fmt::{self, Display, Formatter, Write};
-use std::io::{self, stdout};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
+use std::error::Error;
+use std::fmt::{self, Display, Formatter, Write};
+use std::fs::File;
+use std::io::{self, stdout, Write as IoWrite};
+use std::path::Path;
+use std::process::Command;
+use tempfile::NamedTempFile;
 
 pub enum Filtering {
     Whitelist(Vec<TableName>),
@@ -35,14 +39,22 @@ pub fn run_print_schema(
     database_url: &str,
     config: &config::PrintSchema,
 ) -> Result<(), Box<Error>> {
-    output_schema(database_url, config, &mut stdout())
+    let tempfile = NamedTempFile::new()?;
+    output_schema(database_url, config, tempfile.path())?;
+
+    // patch "replaces" our tempfile, meaning the old handle
+    // does not include the patched output.
+    let mut file = File::open(tempfile.path())?;
+    io::copy(&mut file, &mut stdout())?;
+    Ok(())
 }
 
-pub fn output_schema<W: io::Write>(
+pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
-    out: &mut W,
+    out_path: &Path,
 ) -> Result<(), Box<Error>> {
+    let mut out = File::create(out_path)?;
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
@@ -65,6 +77,22 @@ pub fn output_schema<W: io::Write>(
     } else {
         write!(out, "{}", definitions)?;
     }
+
+    if let Some(ref patch_file) = config.patch_file {
+        let output = Command::new("patch")
+            .arg(out_path)
+            .arg(patch_file)
+            .output()?;
+        if !output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!(
+                "Failed to apply schema patch. stdout: {} stderr: {}",
+                stdout, stderr,
+            ).into());
+        }
+    }
+
     Ok(())
 }
 

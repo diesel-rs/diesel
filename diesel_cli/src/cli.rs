@@ -128,6 +128,12 @@ pub fn build_cli() -> App<'static, 'static> {
             Arg::with_name("with-docs")
                 .long("with-docs")
                 .help("Render documentation comments for tables and columns"),
+        )
+        .arg(
+            Arg::with_name("patch-file")
+                .long("patch-file")
+                .takes_value(true)
+                .help("A unified diff file to be applied to the final schema"),
         );
 
     let config_arg = Arg::with_name("CONFIG_FILE")

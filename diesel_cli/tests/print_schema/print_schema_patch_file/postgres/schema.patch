@@ -1,0 +1,12 @@
+@@ -5,8 +5,9 @@
+ }
+ 
+ table! {
+-    users2 (id) {
+-        id -> Int4,
++    users2 (myid) {
++        #[sql_name = "id"]
++        myid -> Int4,
+     }
+ }
+ 

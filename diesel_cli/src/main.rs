@@ -19,6 +19,7 @@ extern crate infer_schema_internals;
 extern crate migrations_internals;
 #[macro_use]
 extern crate serde;
+extern crate tempfile;
 extern crate toml;
 #[cfg(feature = "url")]
 extern crate url;
@@ -361,6 +362,10 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         config.with_docs = true;
     }
 
+    if let Some(path) = matches.value_of("patch-file") {
+        config.patch_file = Some(PathBuf::from(path));
+    }
+
     run_print_schema(&database_url, &config)?;
     Ok(())
 }
@@ -373,8 +378,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
         }
 
         let database_url = database::database_url(matches);
-        let mut file = fs::File::create(path)?;
-        print_schema::output_schema(&database_url, &config.print_schema, &mut file)?;
+        print_schema::output_schema(&database_url, &config.print_schema, path)?;
     }
     Ok(())
 }
