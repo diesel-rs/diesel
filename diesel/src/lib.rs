@@ -110,7 +110,7 @@
                        note = "The x128-column-tables feature has been reanmed to 128-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
+#![warn(missing_debug_implementations, missing_copy_implementations, missing_docs)]
 // Clippy lints
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
