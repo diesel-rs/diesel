@@ -175,6 +175,8 @@ pub mod mysql;
 pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
+#[cfg(feature = "sqlite")]
+pub extern crate libsqlite3_sys;
 
 mod type_impls;
 mod util;
