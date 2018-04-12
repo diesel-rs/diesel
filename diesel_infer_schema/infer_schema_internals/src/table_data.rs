@@ -82,3 +82,39 @@ pub struct TableData {
     pub column_data: Vec<ColumnDefinition>,
     pub docs: String,
 }
+
+#[cfg(feature = "serde")]
+mod serde_impls {
+    extern crate serde;
+
+    use self::serde::de::Visitor;
+    use self::serde::{de, Deserialize, Deserializer};
+    use std::fmt;
+    use super::TableName;
+
+    impl<'de> Deserialize<'de> for TableName {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            struct TableNameVisitor;
+
+            impl<'de> Visitor<'de> for TableNameVisitor {
+                type Value = TableName;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("A valid table name")
+                }
+
+                fn visit_str<E>(self, value: &str) -> Result<TableName, E>
+                where
+                    E: de::Error,
+                {
+                    value.parse().map_err(|_| unreachable!())
+                }
+            }
+
+            deserializer.deserialize_string(TableNameVisitor)
+        }
+    }
+}

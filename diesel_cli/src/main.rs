@@ -56,7 +56,7 @@ fn main() {
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
-        ("print-schema", Some(matches)) => run_infer_schema(matches),
+        ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -313,18 +313,22 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
     result.join(target_path.strip_prefix(current_path).unwrap())
 }
 
-fn run_infer_schema(matches: &ArgMatches) {
+fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
     use infer_schema_internals::TableName;
     use print_schema::*;
 
     let database_url = database::database_url(matches);
-    let schema_name = matches.value_of("schema");
+    let mut config = Config::read(matches)?.print_schema;
+
+    if let Some(schema_name) = matches.value_of("schema") {
+        config.schema = Some(String::from(schema_name))
+    }
 
     let filter = matches
         .values_of("table-name")
         .unwrap_or_default()
         .map(|table_name| {
-            if let Some(schema) = schema_name {
+            if let Some(schema) = config.schema_name() {
                 TableName::new(table_name, schema)
             } else {
                 table_name.parse().unwrap()
@@ -332,34 +336,30 @@ fn run_infer_schema(matches: &ArgMatches) {
         })
         .collect();
 
-    let filter = if matches.is_present("whitelist") {
-        Filtering::Whitelist(filter)
+    if matches.is_present("whitelist") {
+        config.filter = Filtering::Whitelist(filter)
     } else if matches.is_present("blacklist") {
-        Filtering::Blacklist(filter)
-    } else {
-        Filtering::None
-    };
+        config.filter = Filtering::Blacklist(filter)
+    }
 
-    let _ = run_print_schema(
-        &database_url,
-        schema_name,
-        &filter,
-        matches.is_present("with-docs"),
-    ).map_err(handle_error::<_, ()>);
+    if matches.is_present("with-docs") {
+        config.with_docs = true;
+    }
+
+    run_print_schema(&database_url, &config)?;
+    Ok(())
 }
 
 fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<Error>> {
-    use print_schema::*;
-
     let config = Config::read(matches)?;
-    if let Some(path) = config.print_schema.file {
+    if let Some(ref path) = config.print_schema.file {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
 
         let database_url = database::database_url(matches);
         let mut file = fs::File::create(path)?;
-        print_schema::output_schema(&database_url, None, &Filtering::None, false, &mut file)?;
+        print_schema::output_schema(&database_url, &config.print_schema, &mut file)?;
     }
     Ok(())
 }

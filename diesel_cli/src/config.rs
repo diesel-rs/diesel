@@ -7,8 +7,10 @@ use std::path::PathBuf;
 use toml;
 
 use super::{find_project_root, handle_error};
+use print_schema;
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
     pub print_schema: PrintSchema,
@@ -36,6 +38,20 @@ impl Config {
 }
 
 #[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PrintSchema {
+    #[serde(default)]
     pub file: Option<PathBuf>,
+    #[serde(default)]
+    pub with_docs: bool,
+    #[serde(default)]
+    pub filter: print_schema::Filtering,
+    #[serde(default)]
+    pub schema: Option<String>,
+}
+
+impl PrintSchema {
+    pub fn schema_name(&self) -> Option<&str> {
+        self.schema.as_ref().map(|s| &**s)
+    }
 }

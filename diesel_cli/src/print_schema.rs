@@ -1,12 +1,22 @@
+use config;
+
 use infer_schema_internals::*;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::{self, stdout};
+use serde::de::{self, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 
 pub enum Filtering {
     Whitelist(Vec<TableName>),
     Blacklist(Vec<TableName>),
     None,
+}
+
+impl Default for Filtering {
+    fn default() -> Self {
+        Filtering::None
+    }
 }
 
 impl Filtering {
@@ -23,31 +33,21 @@ impl Filtering {
 
 pub fn run_print_schema(
     database_url: &str,
-    schema_name: Option<&str>,
-    filtering: &Filtering,
-    include_docs: bool,
+    config: &config::PrintSchema,
 ) -> Result<(), Box<Error>> {
-    output_schema(
-        database_url,
-        schema_name,
-        filtering,
-        include_docs,
-        &mut stdout(),
-    )
+    output_schema(database_url, config, &mut stdout())
 }
 
 pub fn output_schema<W: io::Write>(
     database_url: &str,
-    schema_name: Option<&str>,
-    filtering: &Filtering,
-    include_docs: bool,
+    config: &config::PrintSchema,
     out: &mut W,
 ) -> Result<(), Box<Error>> {
-    let table_names = load_table_names(database_url, schema_name)?
+    let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
-        .filter(|t| !filtering.should_ignore_table(t))
+        .filter(|t| !config.filter.should_ignore_table(t))
         .collect::<Vec<_>>();
-    let foreign_keys = load_foreign_key_constraints(database_url, schema_name)?;
+    let foreign_keys = load_foreign_key_constraints(database_url, config.schema_name())?;
     let foreign_keys =
         remove_unsafe_foreign_keys_for_codegen(database_url, &foreign_keys, &table_names);
     let table_data = table_names
@@ -57,10 +57,10 @@ pub fn output_schema<W: io::Write>(
     let definitions = TableDefinitions {
         tables: table_data,
         fk_constraints: foreign_keys,
-        include_docs,
+        include_docs: config.with_docs,
     };
 
-    if let Some(schema_name) = schema_name {
+    if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
         write!(out, "{}", definitions)?;
@@ -253,5 +253,55 @@ impl<'a, 'b: 'a> Write for PadAdapter<'a, 'b> {
         }
 
         Ok(())
+    }
+}
+
+impl<'de> Deserialize<'de> for Filtering {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct FilteringVisitor;
+
+        impl<'de> Visitor<'de> for FilteringVisitor {
+            type Value = Filtering;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str("either a whitelist or a blacklist")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut whitelist = None;
+                let mut blacklist = None;
+                while let Some((key, value)) = map.next_entry()? {
+                    match key {
+                        "whitelist" => {
+                            if whitelist.is_some() {
+                                return Err(de::Error::duplicate_field("whitelist"));
+                            }
+                            whitelist = Some(value);
+                        }
+                        "blacklist" => {
+                            if blacklist.is_some() {
+                                return Err(de::Error::duplicate_field("blacklist"));
+                            }
+                            blacklist = Some(value);
+                        }
+                        _ => return Err(de::Error::unknown_field(key, &["whitelist", "blacklist"])),
+                    }
+                }
+                match (whitelist, blacklist) {
+                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("blacklist")),
+                    (Some(w), None) => Ok(Filtering::Whitelist(w)),
+                    (None, Some(b)) => Ok(Filtering::Blacklist(b)),
+                    (None, None) => Ok(Filtering::None),
+                }
+            }
+        }
+
+        deserializer.deserialize_map(FilteringVisitor)
     }
 }

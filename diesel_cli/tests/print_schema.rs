@@ -80,26 +80,48 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
     let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("print_schema")
-        .join(test_name)
-        .join(BACKEND);
+        .join(test_name);
+    let backend_path = test_path.join(BACKEND);
     let p = project(test_name).build();
     let db = database(&p.database_url());
 
     p.command("setup").run();
 
-    let schema = read_file(&test_path.join("schema.sql"));
+    let schema = read_file(&backend_path.join("schema.sql"));
     db.execute(&schema);
 
     let result = p.command("print-schema").args(args).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    let expected = read_file(&test_path.join("expected.rs"));
+    let expected = read_file(&backend_path.join("expected.rs"));
+
+    assert_diff!(&expected, result.stdout(), "\n", 0);
+
+    test_print_schema_config(test_name, &test_path, schema, expected);
+}
+
+fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, expected: String) {
+    let config = read_file(&test_path.join("diesel.toml"));
+    let p = project(&format!("{}_config", test_name))
+        .file("diesel.toml", &config)
+        .build();
+
+    p.command("setup").run();
+    p.create_migration("12345_create_schema", &schema, "");
+
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let schema = p.file_contents("src/schema.rs");
+    assert_diff!(&expected, &schema, "\n", 0);
+
+    let result = p.command("print-schema").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     assert_diff!(&expected, result.stdout(), "\n", 0);
 }
 
 fn read_file(path: &Path) -> String {
-    println!("{}", path.display());
     let mut file = File::open(path).expect(&format!("Could not open {}", path.display()));
     let mut string = String::new();
     file.read_to_string(&mut string).unwrap();
