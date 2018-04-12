@@ -4,6 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.2.2] - 2018-04-12
+
+### Changed
+
+* Warnings are now allowed inside the crate. The way we had attempted to
+  deprecate old feature names caused builds to break. We are still not happy
+  with how this deprecation gets communicated, and will revisit it in the
+  future.
+
 ## [1.2.1] - 2018-04-11
 
 ### Changed
@@ -1421,3 +1430,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.1.2]: https://github.com/diesel-rs/diesel/compare/v1.1.1...v1.1.2
 [1.2.0]: https://github.com/diesel-rs/diesel/compare/v1.1.2...v1.2.0
 [1.2.1]: https://github.com/diesel-rs/diesel/compare/v1.2.0...v1.2.1
+[1.2.2]: https://github.com/diesel-rs/diesel/compare/v1.2.1...v1.2.2
