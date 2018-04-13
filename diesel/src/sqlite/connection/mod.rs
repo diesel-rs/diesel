@@ -164,6 +164,51 @@ impl SqliteConnection {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
+    /// Return raw pointer to the underlying connection provided by the sqlite3 binding.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::libsqlite3_sys::sqlite3_profile;
+    /// use std::ffi::CStr;
+    /// use std::os::raw::{c_char, c_void};
+    ///
+    /// let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// let raw = conn.get_raw_conn();
+    ///
+    /// extern "C" fn sqlite3_profile_cb(
+    ///     _ctx: *mut c_void,
+    ///     sql_c_char: *const c_char,
+    ///     nanosecs: u64,
+    /// ) {
+    ///     let sql_cstr: &CStr = unsafe { CStr::from_ptr(sql_c_char) };
+    ///     let sql: &str = sql_cstr
+    ///         .to_str()
+    ///         .expect("unexpected callback parameter format");
+    ///     println!("sqlite3_profile [{:?}ms]: {:?}", nanosecs/1000000, sql);
+    /// }
+    /// unsafe {
+    ///     sqlite3_profile(
+    ///         conn.get_raw_conn(),
+    ///         Some(sqlite3_profile_cb),
+    ///         std::ptr::null_mut(),
+    ///     );
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_raw_conn(&self) -> *mut ffi::sqlite3 {
+        self.raw_connection.internal_connection.as_ptr()
+    }
+
     fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce() -> Result<T, E>,
