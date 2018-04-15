@@ -7,7 +7,7 @@ use schema::*;
 use diesel::*;
 use diesel::sql_types::{BigInt, VarChar};
 
-sql_function!(my_lower, my_lower_t, (x: VarChar) -> VarChar);
+sql_function!(fn my_lower(x: VarChar) -> VarChar);
 
 #[test]
 fn test_sql_function() {
@@ -40,8 +40,8 @@ fn test_sql_function() {
     );
 }
 
-sql_function!(setval, setval_t, (x: VarChar, y: BigInt));
-sql_function!(currval, currval_t, (x: VarChar) -> BigInt);
+sql_function!(fn setval(x: VarChar, y: BigInt));
+sql_function!(fn currval(x: VarChar) -> BigInt);
 
 #[test]
 fn sql_function_without_return_type() {

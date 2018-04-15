@@ -1,5 +1,7 @@
 #[macro_export]
 #[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "1.3.0", note = "The syntax of `sql_function!` and its output have changed significantly. This form has been deprecated. See the documentation of `sql_function!` for details on the new syntax.")]
 macro_rules! sql_function_body {
     (
         $fn_name:ident,
@@ -77,15 +79,154 @@ macro_rules! sql_function_body {
 }
 
 #[macro_export]
-/// Declare a sql function for use in your code. Useful if you have your own SQL functions that
-/// you'd like to use. You can optionally provide a doc string as well. `$struct_name` should just
-/// be any unique name. You will not need to reference it in your code, but it is required due to
-/// the fact that [`concat_idents!` is
-/// useless](https://github.com/rust-lang/rust/issues/29599#issuecomment-153927167).
+#[doc(hidden)]
+#[cfg(not(feature = "with-deprecated"))]
+macro_rules! sql_function_body {
+    ($($args:tt)*) => {
+        compile_error!("You are using a deprecated form of `sql_function!`. \
+        You must enable the `with-deprecated` feature on `diesel`.");
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_sql_function_body {
+    (
+        meta = ($($meta:tt)*),
+        fn_name = $fn_name:ident,
+        args = ($($arg_name:ident: $arg_type:ty),*),
+        return_type = $return_type:ty,
+    ) => {
+        $($meta)*
+        #[allow(non_camel_case_types)]
+        pub fn $fn_name<$($arg_name),*>($($arg_name: $arg_name),*)
+            -> $fn_name::HelperType<$($arg_name),*>
+        where
+            $($arg_name: $crate::expression::AsExpression<$arg_type>),+
+        {
+            $fn_name::$fn_name {
+                $($arg_name: $arg_name.as_expression()),+
+            }
+        }
+
+        #[doc(hidden)]
+        #[allow(non_camel_case_types, unused_imports)]
+        pub(crate) mod $fn_name {
+            use super::*;
+            use $crate::sql_types::*;
+
+            #[derive(Debug, Clone, Copy, QueryId)]
+            pub struct $fn_name<$($arg_name),*> {
+                $(pub(in super) $arg_name: $arg_name),*
+            }
+
+            pub type HelperType<$($arg_name),*> = $fn_name<$(
+                <$arg_name as $crate::expression::AsExpression<$arg_type>>::Expression
+            ),*>;
+
+            impl<$($arg_name),*> $crate::expression::Expression for $fn_name<$($arg_name),*> where
+                for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
+            {
+                type SqlType = $return_type;
+            }
+
+            impl<$($arg_name),*, DB> $crate::query_builder::QueryFragment<DB> for $fn_name<$($arg_name),*> where
+                DB: $crate::backend::Backend,
+                for<'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
+            {
+                fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                    out.push_sql(concat!(stringify!($fn_name), "("));
+                    $crate::query_builder::QueryFragment::walk_ast(
+                        &($(&self.$arg_name),*), out.reborrow())?;
+                    out.push_sql(")");
+                    Ok(())
+                }
+            }
+
+            impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $fn_name<$($arg_name),*>
+            where
+                $($arg_name: $crate::expression::SelectableExpression<QS>,)*
+                Self: $crate::expression::AppearsOnTable<QS>,
+            {
+            }
+
+            impl<$($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $fn_name<$($arg_name),*>
+            where
+                $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
+                Self: $crate::expression::Expression,
+            {
+            }
+
+            impl<$($arg_name),*> $crate::expression::NonAggregate for $fn_name<$($arg_name),*>
+            where
+                $($arg_name: $crate::expression::NonAggregate,)*
+                Self: $crate::expression::Expression,
+            {
+            }
+        }
+    }
+}
+
+#[macro_export]
+/// Declare a sql function for use in your code.
 ///
-/// This will generate a rust function with the same name to construct the expression, and a helper
-/// type which represents the return type of that function. The function will automatically convert
-/// its arguments to expressions.
+/// Diesel only provides support for a very small number of SQL functions.
+/// This macro enables you to add additional functions from the SQL standard,
+/// as well as any custom functions your application might have.
+///
+/// The syntax for this macro is very similar to that of a normal Rust function,
+/// except the argument and return types will be the SQL types being used.
+/// Typically these types will come from [`diesel::sql_types`].
+///
+/// This macro will generate two items. A function with the name that you've
+/// given, and a module with a helper type representing the return type of your
+/// function. For example, this invocation:
+///
+/// ```ignore
+/// sql_function!(fn lower(x: Text) -> Text);
+/// ```
+///
+/// will generate this code:
+///
+/// ```ignore
+/// pub fn lower<X>(x: X) -> lower::HelperType<X> {
+///     ...
+/// }
+///
+/// pub(crate) mod lower {
+///     pub type HelperType<X> = ...;
+/// }
+/// ```
+///
+/// If you are using this macro for part of a library, where the function is
+/// part of your public API, it is highly recommended that you re-export this
+/// helper type with the same name as your function. This is the standard
+/// structure:
+///
+/// ```ignore
+/// pub mod functions {
+///     use super::types::*;
+///     use diesel::sql_types::*;
+///
+///     sql_function! {
+///         /// Represents the Pg `LENGTH` function used with `tsvector`s.
+///         fn length(x: TsVector) -> Integer;
+///     }
+/// }
+///
+/// pub mod helper_types {
+///     /// The return type of `length(expr)`
+///     pub type Length<Expr> = functions::length::HelperType<Expr>;
+/// }
+///
+/// pub mod dsl {
+///     pub use functions::*;
+///     pub use helper_types::*;
+/// }
+/// ```
+///
+/// Any attributes given to this macro will be put on the generated function
+/// (including doc comments).
 ///
 /// # Example
 ///
@@ -95,7 +236,13 @@ macro_rules! sql_function_body {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// sql_function!(canon_crate_name, canon_crate_name_t, (a: sql_types::VarChar) -> sql_types::VarChar);
+/// use diesel::sql_types::Text;
+///
+/// sql_function! {
+///     /// Represents the `canon_crate_name` SQL function, created in
+///     /// migration ....
+///     fn canon_crate_name(a: Text) -> Text;
+/// }
 ///
 /// # fn main() {
 /// # use self::crates::dsl::*;
@@ -106,6 +253,19 @@ macro_rules! sql_function_body {
 /// # }
 /// ```
 macro_rules! sql_function {
+    ($(#[$meta:meta])* fn $fn_name:ident $args:tt $(;)*) => {
+        sql_function!($(#[$meta])* fn $fn_name $args -> ());
+    };
+
+    ($(#[$meta:meta])* fn $fn_name:ident $args:tt -> $return_type:ty $(;)*) => {
+        __diesel_sql_function_body!(
+            meta = ($(#[$meta])*),
+            fn_name = $fn_name,
+            args = $args,
+            return_type = $return_type,
+        );
+    };
+
     ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty) => {
         sql_function!($fn_name, $struct_name, $args -> $return_type, "");
     };
