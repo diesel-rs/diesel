@@ -34,7 +34,13 @@ impl fmt::Display for ColumnType {
         if self.is_array {
             write!(out, "Array<")?;
         }
+        if self.is_unsigned {
+            write!(out, "Unsigned<")?;
+        }
         write!(out, "{}", self.rust_name)?;
+        if self.is_unsigned {
+            write!(out, ">")?;
+        }
         if self.is_array {
             write!(out, ">")?;
         }
