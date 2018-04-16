@@ -434,6 +434,101 @@ fn filter_subselect_with_boxed_query() {
 }
 
 #[test]
+fn filter_subselect_with_nullable_column() {
+    use schema_dsl::*;
+    table!{
+        heros {
+            id -> Integer,
+            name -> Text,
+            home_world -> Nullable<Integer>,
+        }
+    }
+    table!{
+        home_worlds {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    #[derive(Debug, Queryable, PartialEq)]
+    struct Hero {
+        id: i32,
+        name: String,
+        home_world: Option<i32>,
+    }
+    let connection = connection();
+
+    create_table(
+        "home_worlds",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+        ),
+    ).execute(&connection)
+        .unwrap();
+
+    create_table(
+        "heros",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            integer("home_world"),
+        ),
+    ).execute(&connection)
+        .unwrap();
+
+    connection
+        .execute("INSERT INTO home_worlds (name) VALUES ('Tatooine');")
+        .unwrap();
+    connection
+        .execute(
+            "INSERT INTO heros(name, home_world) VALUES ('Luke Skywalker', 1), ('R2D2', NULL);",
+        )
+        .unwrap();
+
+    let expected = vec![Hero {
+        id: 1,
+        name: String::from("Luke Skywalker"),
+        home_world: Some(1),
+    }];
+
+    let query = heros::table
+        .filter(heros::home_world.eq_any(home_worlds::table.select(home_worlds::id).nullable()))
+        .load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+
+    let query = heros::table
+        .filter(
+            heros::home_world.eq_any(
+                home_worlds::table
+                    .select(home_worlds::id)
+                    .into_boxed()
+                    .nullable(),
+            ),
+        )
+        .load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+
+    let query = heros::table
+        .filter(
+            heros::home_world.eq_any(
+                home_worlds::table
+                    .select(home_worlds::id)
+                    .nullable()
+                    .into_boxed(),
+            ),
+        )
+        .load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn filter_subselect_with_pg_any() {
     use diesel::dsl::any;

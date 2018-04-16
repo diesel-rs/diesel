@@ -24,7 +24,7 @@ mod limit_clause;
 mod offset_clause;
 mod order_clause;
 mod returning_clause;
-mod select_clause;
+pub(crate) mod select_clause;
 mod select_statement;
 mod sql_query;
 mod where_clause;

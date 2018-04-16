@@ -1,6 +1,6 @@
 use backend::Backend;
-use expression::*;
 use expression::subselect::Subselect;
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;
@@ -129,12 +129,30 @@ pub trait MaybeEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, FU>
+use query_builder::select_clause::NotNullableSelectClause;
+use sql_types::{Nullable, NotNull};
+use query_builder::select_clause::NullableSelectClause;
+
+impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<ST> for SelectStatement<F, S, W, O, L, Of, G, FU>
 where
     Subselect<Self, ST>: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
+    S: NotNullableSelectClause,
 {
     type InExpression = Subselect<Self, ST>;
+
+    fn as_in_expression(self) -> Self::InExpression {
+        Subselect::new(self)
+    }
+}
+
+impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<Nullable<ST>> for SelectStatement<F, NullableSelectClause<S>, W, O, L, Of, G, FU>
+where
+    Subselect<Self, Nullable<ST>>: Expression<SqlType = Nullable<ST>>,
+    Self: SelectQuery<SqlType = Nullable<ST>>,
+    ST: NotNull,
+{
+    type InExpression = Subselect<Self, Nullable<ST>>;
 
     fn as_in_expression(self) -> Self::InExpression {
         Subselect::new(self)
