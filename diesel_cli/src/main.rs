@@ -124,9 +124,6 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             let migration_type: Option<&str> = args.value_of("TYPE");
             fs::create_dir(&migration_dir).unwrap();
 
-            let migration_dir_relative =
-                convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
-
             match migration_type {
                 #[cfg(feature = "rust-migrations")]
                 Some("rust") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
