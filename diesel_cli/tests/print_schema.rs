@@ -69,6 +69,12 @@ fn print_schema_column_renaming() {
     test_print_schema("print_schema_column_renaming", vec!["--with-docs"]);
 }
 
+#[test]
+#[cfg(feature = "mysql")]
+fn print_schema_unsigned() {
+    test_print_schema("print_schema_unsigned", vec!["--with-docs"]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

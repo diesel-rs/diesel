@@ -12,6 +12,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
 
+### Fixed
+
+* `diesel print-schema` and `infer_schema!` now properly handle unsigned types
+  in MySQL
+
 ## [1.2.2] - 2018-04-12
 
 ### Changed
