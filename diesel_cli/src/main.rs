@@ -23,8 +23,6 @@ extern crate toml;
 #[cfg(feature = "url")]
 extern crate url;
 
-mod config;
-
 #[cfg(feature = "rust-migrations")]
 extern crate barrel;
 
@@ -134,6 +132,30 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     };
 
     Ok(())
+}
+
+fn generate_sql_migration(path: &PathBuf) {
+    use std::io::Write;
+
+    let migration_dir_relative =
+        convert_absolute_path_to_relative(path, &env::current_dir().unwrap());
+
+    let up_path = path.join("up.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("up.sql").display()
+    );
+    let mut up = fs::File::create(up_path).unwrap();
+    up.write_all(b"-- Your SQL goes here").unwrap();
+
+    let down_path = path.join("down.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("down.sql").display()
+    );
+    let mut down = fs::File::create(down_path).unwrap();
+    down.write_all(b"-- This file should undo anything in `up.sql`")
+        .unwrap();
 }
 
 fn generate_sql_migration(path: &PathBuf) {
