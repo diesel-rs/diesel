@@ -1,17 +1,8 @@
 use diesel::connection::SimpleConnection;
-use super::{MigrationError, RunMigrationsError};
+use diesel::migration::*;
 
 use std::path::{Path, PathBuf};
 use std::fmt;
-
-pub trait Migration {
-    fn version(&self) -> &str;
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
-    fn file_path(&self) -> Option<&Path> {
-        None
-    }
-}
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]
@@ -41,45 +32,17 @@ impl<'a> fmt::Display for MigrationName<'a> {
 }
 
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
+    #[cfg(feature = "barrel")]
+    match ::barrel::integrations::diesel::migration_from(&path) {
+        Some(migration) => return Ok(migration),
+        None => {}
+    }
+
     if valid_sql_migration_directory(&path) {
         let version = try!(version_from_path(&path));
         Ok(Box::new(SqlFileMigration(path, version)))
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
-    }
-}
-
-impl Migration for Box<Migration> {
-    fn version(&self) -> &str {
-        (&**self).version()
-    }
-
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        (&**self).run(conn)
-    }
-
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        (&**self).revert(conn)
-    }
-    fn file_path(&self) -> Option<&Path> {
-        (&**self).file_path()
-    }
-}
-
-impl<'a> Migration for &'a Migration {
-    fn version(&self) -> &str {
-        (&**self).version()
-    }
-
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        (&**self).run(conn)
-    }
-
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        (&**self).revert(conn)
-    }
-    fn file_path(&self) -> Option<&Path> {
-        (&**self).file_path()
     }
 }
 

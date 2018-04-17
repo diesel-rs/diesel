@@ -77,10 +77,12 @@
 #[macro_use]
 extern crate diesel;
 
-mod migration;
+#[cfg(feature = "barrel")]
+extern crate barrel;
+
+pub mod migration;
 #[doc(hidden)]
 pub mod connection;
-mod migration_error;
 #[doc(hidden)]
 pub mod schema;
 
@@ -88,7 +90,7 @@ pub mod schema;
 pub use self::connection::MigrationConnection;
 #[doc(inline)]
 pub use self::migration::*;
-pub use self::migration_error::*;
+pub use diesel::migration::*;
 
 use std::fs::DirEntry;
 use std::io::{stdout, Write};

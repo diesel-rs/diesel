@@ -9,6 +9,7 @@ homepage = "http://diesel.rs"
 [dependencies]
 clippy = { optional = true, version = "=0.0.185" }
 diesel = { version = "~1.2.0", default-features = false }
+barrel = { version = "<= 0.2.0", optional = true, features = ["diesel-filled"] }
 
 [dev-dependencies]
 tempdir = "0.3.4"

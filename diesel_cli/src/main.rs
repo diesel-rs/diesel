@@ -24,6 +24,10 @@ extern crate toml;
 extern crate url;
 
 mod config;
+
+#[cfg(feature = "rust-migrations")]
+extern crate barrel;
+
 mod database_error;
 #[macro_use]
 mod database;
@@ -113,37 +117,47 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             println!("{:?}", result);
         }
         ("generate", Some(args)) => {
-            use std::io::Write;
-
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches).join(versioned_name);
-            fs::create_dir(&migration_dir)?;
+            let migration_type: Option<&str> = args.value_of("TYPE");
+            fs::create_dir(&migration_dir).unwrap();
 
-            let migration_dir_relative =
-                convert_absolute_path_to_relative(&migration_dir, &env::current_dir()?);
-
-            let up_path = migration_dir.join("up.sql");
-            println!(
-                "Creating {}",
-                migration_dir_relative.join("up.sql").display()
-            );
-            let mut up = fs::File::create(up_path).unwrap();
-            up.write_all(b"-- Your SQL goes here").unwrap();
-
-            let down_path = migration_dir.join("down.sql");
-            println!(
-                "Creating {}",
-                migration_dir_relative.join("down.sql").display()
-            );
-            let mut down = fs::File::create(down_path)?;
-            down.write_all(b"-- This file should undo anything in `up.sql`")?;
+            match migration_type {
+                #[cfg(feature = "rust-migrations")]
+                Some("rust") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
+                _ => generate_sql_migration(&migration_dir),
+            }
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
 
     Ok(())
+}
+
+fn generate_sql_migration(path: &PathBuf) {
+    use std::io::Write;
+
+    let migration_dir_relative =
+        convert_absolute_path_to_relative(path, &env::current_dir().unwrap());
+
+    let up_path = path.join("up.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("up.sql").display()
+    );
+    let mut up = fs::File::create(up_path).unwrap();
+    up.write_all(b"-- Your SQL goes here").unwrap();
+
+    let down_path = path.join("down.sql");
+    println!(
+        "Creating {}",
+        migration_dir_relative.join("down.sql").display()
+    );
+    let mut down = fs::File::create(down_path).unwrap();
+    down.write_all(b"-- This file should undo anything in `up.sql`")
+        .unwrap();
 }
 
 use std::fmt::Display;
