@@ -59,7 +59,10 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> where ST: NotNull{
+impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB>
+where
+    ST: NotNull,
+{
     pub fn nullable(self) -> BoxedSelectStatement<'a, Nullable<ST>, QS, DB> {
         BoxedSelectStatement {
             select: self.select,

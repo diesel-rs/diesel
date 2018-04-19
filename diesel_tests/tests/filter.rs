@@ -486,11 +486,13 @@ fn filter_subselect_with_nullable_column() {
         )
         .unwrap();
 
-    let expected = vec![Hero {
-        id: 1,
-        name: String::from("Luke Skywalker"),
-        home_world: Some(1),
-    }];
+    let expected = vec![
+        Hero {
+            id: 1,
+            name: String::from("Luke Skywalker"),
+            home_world: Some(1),
+        },
+    ];
 
     let query = heros::table
         .filter(heros::home_world.eq_any(home_worlds::table.select(home_worlds::id).nullable()))

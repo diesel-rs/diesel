@@ -130,7 +130,7 @@ pub trait MaybeEmpty {
 }
 
 use query_builder::select_clause::NotNullableSelectClause;
-use sql_types::{Nullable, NotNull};
+use sql_types::{NotNull, Nullable};
 use query_builder::select_clause::NullableSelectClause;
 
 impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<ST> for SelectStatement<F, S, W, O, L, Of, G, FU>
@@ -146,7 +146,8 @@ where
     }
 }
 
-impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<Nullable<ST>> for SelectStatement<F, NullableSelectClause<S>, W, O, L, Of, G, FU>
+impl<ST, S, F, W, O, L, Of, G, FU> AsInExpression<Nullable<ST>>
+    for SelectStatement<F, NullableSelectClause<S>, W, O, L, Of, G, FU>
 where
     Subselect<Self, Nullable<ST>>: Expression<SqlType = Nullable<ST>>,
     Self: SelectQuery<SqlType = Nullable<ST>>,
