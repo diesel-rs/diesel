@@ -178,6 +178,17 @@ impl RawConnection {
         self.did_an_error_occur()?;
         Ok(more_results)
     }
+
+    pub fn is_connected(&self) -> bool {
+        const CR_SERVER_GONE_ERROR: u32 = 2006;
+        const CR_SERVER_LOST: u32 = 2013;
+        match unsafe {
+            ffi::mysql_errno(self.0.as_ptr())
+        } {
+            CR_SERVER_GONE_ERROR | CR_SERVER_LOST => false,
+            _ => true
+        }
+    }
 }
 
 impl Drop for RawConnection {

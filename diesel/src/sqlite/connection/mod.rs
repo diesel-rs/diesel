@@ -101,6 +101,10 @@ impl Connection for SqliteConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
+
+    fn is_connected(&self) -> bool {
+        true
+    }
 }
 
 impl SqliteConnection {
@@ -172,13 +176,15 @@ impl SqliteConnection {
         let transaction_manager = self.transaction_manager();
 
         transaction_manager.begin_transaction_sql(self, sql)?;
+
+        let tx = ScopedTransaction::new(transaction_manager, self);
         match f() {
             Ok(value) => {
-                transaction_manager.commit_transaction(self)?;
+                tx.commit()?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self)?;
+                tx.rollback()?;
                 Err(e)
             }
         }

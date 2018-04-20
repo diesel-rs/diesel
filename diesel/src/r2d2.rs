@@ -90,8 +90,8 @@ where
             .map_err(Error::QueryError)
     }
 
-    fn has_broken(&self, _conn: &mut T) -> bool {
-        false
+    fn has_broken(&self, conn: &mut T) -> bool {
+        !conn.is_connected()
     }
 }
 

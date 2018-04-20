@@ -109,6 +109,10 @@ impl Connection for MysqlConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
+
+    fn is_connected(&self) -> bool {
+        self.raw_connection.is_connected()
+    }
 }
 
 impl MysqlConnection {

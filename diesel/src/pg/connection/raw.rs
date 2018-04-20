@@ -92,6 +92,12 @@ impl RawConnection {
         );
         RawResult::new(ptr, self)
     }
+
+    pub fn is_connected(&self) -> bool {
+        unsafe {
+            PQstatus(self.internal_connection.as_ptr()) == CONNECTION_OK
+        }
+    }
 }
 
 pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);
