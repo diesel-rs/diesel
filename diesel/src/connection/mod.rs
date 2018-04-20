@@ -11,7 +11,7 @@ use query_builder::{AsQuery, QueryFragment, QueryId};
 use result::*;
 use sql_types::HasSqlType;
 
-pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
+pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager, ScopedTransaction};
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
 
@@ -95,13 +95,15 @@ pub trait Connection: SimpleConnection + Sized + Send {
     {
         let transaction_manager = self.transaction_manager();
         try!(transaction_manager.begin_transaction(self));
+
+        let tx = ScopedTransaction::new(transaction_manager, self);
         match f() {
             Ok(value) => {
-                try!(transaction_manager.commit_transaction(self));
+                try!(tx.commit());
                 Ok(value)
             }
             Err(e) => {
-                try!(transaction_manager.rollback_transaction(self));
+                try!(tx.rollback());
                 Err(e)
             }
         }
@@ -186,4 +188,11 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager;
+
+    /// Returns `false` if the connection to the database has been lost.
+    /// Implementations are not required to recognise a "lost connection"
+    /// state, in which case this function will always return `true`.
+    fn is_connected(&self) -> bool {
+        true
+    }
 }

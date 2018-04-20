@@ -129,3 +129,39 @@ where
         self.transaction_depth.get() as u32
     }
 }
+
+/// Manages the state of a transaction, ensuring it is rolled back in the event of a panic
+#[allow(missing_debug_implementations)]
+pub struct ScopedTransaction<'a, Conn: Connection + 'a, T: TransactionManager<Conn> +'a> {
+    tx_manager: &'a T,
+    conn: &'a Conn,
+    closed: bool
+}
+
+impl <'a, Conn: Connection + 'a, T: TransactionManager<Conn> + 'a> ScopedTransaction<'a, Conn, T> {
+    /// Create a new scoped transaction. The transaction should have already been opened.
+    pub fn new(tx_manager: &'a T, conn: &'a Conn) -> Self {
+        ScopedTransaction { tx_manager, conn, closed: false }
+    }
+    /// Commit the transaction
+    pub fn commit(mut self) -> QueryResult<()> {
+        self.closed = true;
+        self.tx_manager.commit_transaction(self.conn)
+    }
+    /// Rollback the transaction
+    pub fn rollback(mut self) -> QueryResult<()> {
+        self.closed = true;
+        self.tx_manager.rollback_transaction(self.conn)
+    }
+}
+
+impl<'a, Conn: Connection + 'a, T: TransactionManager<Conn> + 'a> Drop for ScopedTransaction<'a, Conn, T> {
+    fn drop(&mut self) {
+        if !self.closed {
+            // If this fails, then either we got disconnected, in which case the transaction
+            // was rolled back anyway, or else the connection was in an invalid state already,
+            // and there was nothing we could have done.
+            let _ = self.tx_manager.rollback_transaction(self.conn);
+        }
+    }
+}

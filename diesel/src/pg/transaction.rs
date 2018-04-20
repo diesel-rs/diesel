@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use backend::Backend;
-use connection::TransactionManager;
+use connection::ScopedTransaction;
 use pg::Pg;
 use prelude::*;
 use query_builder::{AstPass, QueryBuilder, QueryFragment};
@@ -278,13 +278,15 @@ impl<'a> TransactionBuilder<'a> {
         let transaction_manager = self.connection.transaction_manager();
 
         transaction_manager.begin_transaction_sql(self.connection, &sql)?;
+
+        let tx = ScopedTransaction::new(transaction_manager, self.connection);
         match f() {
             Ok(value) => {
-                transaction_manager.commit_transaction(self.connection)?;
+                tx.commit()?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self.connection)?;
+                tx.rollback()?;
                 Err(e)
             }
         }
