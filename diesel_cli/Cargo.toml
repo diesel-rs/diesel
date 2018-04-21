@@ -39,7 +39,7 @@ lint = ["clippy"]
 postgres = ["diesel/postgres", "infer_schema_internals/postgres", "url"]
 sqlite = ["diesel/sqlite", "infer_schema_internals/sqlite"]
 mysql = ["diesel/mysql", "infer_schema_internals/mysql", "url"]
-rust-migrations = ["migrations_internals/barrel", "barrel"]
+barrel-migrations = ["migrations_internals/barrel", "barrel"]
 
 [[test]]
 name = "tests"

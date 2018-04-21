@@ -53,13 +53,12 @@ pub fn build_cli() -> App<'static, 'static> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::with_name("TYPE")
-                        .long("type")
-                        .short("t")
-                        .possible_values(&["sql", "rust"])
+                    Arg::with_name("MIGRATION_FORMAT")
+                        .long("format")
+                        .possible_values(&["sql", "barrel"])
                         .default_value("sql")
                         .takes_value(true)
-                        .help("Specify the migration type."),
+                        .help("The format of the migration to be generated."),
                 ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
