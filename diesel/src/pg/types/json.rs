@@ -28,9 +28,24 @@ impl FromSql<sql_types::Json, Pg> for serde_json::Value {
     }
 }
 
+impl FromSql<sql_types::Json, Pg> for Vec<u8> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let bytes = not_none!(bytes);
+        Ok(bytes.to_vec())
+    }
+}
+
 impl ToSql<sql_types::Json, Pg> for serde_json::Value {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         serde_json::to_writer(out, self)
+            .map(|_| IsNull::No)
+            .map_err(Into::into)
+    }
+}
+
+impl ToSql<sql_types::Json, Pg> for Vec<u8> {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        out.write_all(self.as_slice())
             .map(|_| IsNull::No)
             .map_err(Into::into)
     }
@@ -46,10 +61,25 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     }
 }
 
+impl FromSql<sql_types::Jsonb, Pg> for Vec<u8> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let bytes = not_none!(bytes);
+        Ok(bytes.to_vec())
+    }
+}
+
 impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         try!(out.write_all(&[1]));
         serde_json::to_writer(out, self)
+            .map(|_| IsNull::No)
+            .map_err(Into::into)
+    }
+}
+
+impl ToSql<sql_types::Jsonb, Pg> for Vec<u8> {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        out.write_all(self.as_slice())
             .map(|_| IsNull::No)
             .map_err(Into::into)
     }
@@ -64,11 +94,26 @@ fn json_to_sql() {
 }
 
 #[test]
+fn byte_slice_json_to_sql() {
+    let mut bytes = Output::test();
+    let test_json = b"true".to_vec();
+    ToSql::<sql_types::Json, Pg>::to_sql(&test_json, &mut bytes).unwrap();
+    assert_eq!(bytes, b"true");
+}
+
+#[test]
 fn some_json_from_sql() {
     let input_json = b"true";
     let output_json: serde_json::Value =
         FromSql::<sql_types::Json, Pg>::from_sql(Some(input_json)).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
+}
+
+#[test]
+fn byte_slice_some_json_from_sql() {
+    let input_json = b"true";
+    let output_json: Vec<u8> = FromSql::<sql_types::Json, Pg>::from_sql(Some(input_json)).unwrap();
+    assert_eq!(output_json, input_json.to_vec());
 }
 
 #[test]
@@ -96,11 +141,26 @@ fn jsonb_to_sql() {
 }
 
 #[test]
+fn byte_slice_jsonb_to_sql() {
+    let mut bytes = Output::test();
+    let test_json = b"true".to_vec();
+    ToSql::<sql_types::Jsonb, Pg>::to_sql(&test_json, &mut bytes).unwrap();
+    assert_eq!(bytes, b"true");
+}
+
+#[test]
 fn some_jsonb_from_sql() {
     let input_json = b"\x01true";
     let output_json: serde_json::Value =
         FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(input_json)).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
+}
+
+#[test]
+fn byte_slice_some_jsonb_from_sql() {
+    let input_json = b"true";
+    let output_json: Vec<u8> = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(input_json)).unwrap();
+    assert_eq!(output_json, input_json.to_vec());
 }
 
 #[test]
