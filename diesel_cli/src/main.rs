@@ -25,7 +25,7 @@ extern crate url;
 
 mod config;
 
-#[cfg(feature = "rust-migrations")]
+#[cfg(feature = "barrel-migrations")]
 extern crate barrel;
 
 mod database_error;
@@ -121,13 +121,14 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches).join(versioned_name);
-            let migration_type: Option<&str> = args.value_of("TYPE");
             fs::create_dir(&migration_dir).unwrap();
 
-            match migration_type {
-                #[cfg(feature = "rust-migrations")]
-                Some("rust") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
-                _ => generate_sql_migration(&migration_dir),
+            match args.value_of("MIGRATION_FORMAT") {
+                #[cfg(feature = "barrel-migrations")]
+                Some("barrel") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
+                Some("sql") => generate_sql_migration(&migration_dir),
+                Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
+                None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
         }
         _ => unreachable!("The cli parser should prevent reaching here"),
