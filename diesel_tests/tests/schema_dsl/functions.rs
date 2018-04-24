@@ -18,6 +18,10 @@ pub fn timestamp<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
     Column::new(name, "TIMESTAMP")
 }
 
+pub fn timestamptz<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+    Column::new(name, "TIMESTAMPTZ")
+}
+
 pub fn time<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
     Column::new(name, "TIME")
 }

@@ -323,6 +323,18 @@ fn setup_test_table(conn: &TestConnection) {
         .unwrap();
 
     create_table(
+        "has_timestampstz",
+        (
+            integer("id").primary_key().auto_increment(),
+            timestamptz("created_at").not_null(),
+            timestamptz("updated_at")
+                .not_null()
+                .default("CURRENT_TIMESTAMP"),
+        ),
+    ).execute(conn)
+        .unwrap();
+
+    create_table(
         "has_time",
         (
             integer("id").primary_key().auto_increment(),
@@ -336,6 +348,7 @@ fn setup_test_table(conn: &TestConnection) {
         (
             integer("id").primary_key().auto_increment(),
             timestamp("timestamp"),
+            timestamptz("timestamptz"),
             time("time"),
             date("date"),
         ),
