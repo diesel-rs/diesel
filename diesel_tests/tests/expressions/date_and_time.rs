@@ -13,6 +13,14 @@ table! {
 }
 
 table! {
+    has_timestamptzs {
+        id -> Integer,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+table! {
     has_time {
         id -> Integer,
         time -> Time,
@@ -23,6 +31,7 @@ table! {
     nullable_date_and_time {
         id -> Integer,
         timestamp -> Nullable<Timestamp>,
+        timestamptz -> Nullable<Timestamptz>,
         time -> Nullable<Time>,
         date -> Nullable<Date>,
     }
@@ -228,6 +237,30 @@ fn adding_interval_to_timestamp() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn adding_interval_to_timestamptz() {
+    use self::has_timestamps::dsl::*;
+    use diesel::dsl::sql;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_timestamptzs (created_at, updated_at) VALUES
+                       ('2015-11-15 06:07:41+0000', '2015-11-15 20:07:41+0000')",
+        )
+        .unwrap();
+
+    let expected_data = select(sql::<sql_types::Timestamptz>(
+        "'2015-11-16 06:07:41+0000'::timestamp",
+    )).get_result::<PgTimestamp>(&connection);
+    let actual_data = has_timestamps
+        .select(created_at + 1.day())
+        .first::<PgTimestamp>(&connection);
+    assert_eq!(expected_data, actual_data);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn adding_interval_to_nullable_things() {
     use self::nullable_date_and_time::dsl::*;
     use diesel::dsl::sql;
@@ -236,8 +269,8 @@ fn adding_interval_to_nullable_things() {
     setup_test_table(&connection);
     connection
         .execute(
-            "INSERT INTO nullable_date_and_time (timestamp, date, time) VALUES
-                       ('2017-08-20 18:13:37', '2017-08-20', '18:13:37')",
+            "INSERT INTO nullable_date_and_time (timestamp, timestamptz, date, time) VALUES
+                       ('2017-08-20 18:13:37', '2017-08-20 18:13:37+0000', '2017-08-20', '18:13:37')",
         )
         .unwrap();
 
@@ -246,6 +279,14 @@ fn adding_interval_to_nullable_things() {
     )).get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(timestamp + 1.day())
+        .first::<Option<PgTimestamp>>(&connection);
+    assert_eq!(expected_data, actual_data);
+
+    let expected_data = select(sql::<Nullable<sql_types::Timestampyz>>(
+        "'2017-08-21 18:13:37+0000'::timestamp",
+    )).get_result::<Option<PgTimestamp>>(&connection);
+    let actual_data = nullable_date_and_time
+        .select(timestampyz + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
