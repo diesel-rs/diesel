@@ -306,6 +306,30 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+// FIXME: Replace this with an actual timestamptz expression
+fn now_can_be_operated_as_timestamptz() {
+    use self::has_timestamps::dsl::*;
+    use diesel::sql_types::Timestamptz;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES \
+             (NOW())",
+        )
+        .unwrap();
+
+    let created_at_tz = sql::<Timestamptz>("created_at");
+    let before_now = has_timestamps
+        .select(id)
+        .filter(created_at_tz.gt(now - 1.day()))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_now);
+}
+
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
