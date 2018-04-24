@@ -12,6 +12,7 @@ table! {
     }
 }
 
+#[cfg(feature = "postgres")]
 table! {
     has_timestamptzs {
         id -> Integer,
@@ -27,11 +28,22 @@ table! {
     }
 }
 
+#[cfg(feature = "postgres")]
 table! {
     nullable_date_and_time {
         id -> Integer,
         timestamp -> Nullable<Timestamp>,
         timestamptz -> Nullable<Timestamptz>,
+        time -> Nullable<Time>,
+        date -> Nullable<Date>,
+    }
+}
+
+#[cfg(not(feature = "postgres"))]
+table! {
+    nullable_date_and_time {
+        id -> Integer,
+        timestamp -> Nullable<Timestamp>,
         time -> Nullable<Time>,
         date -> Nullable<Date>,
     }
@@ -330,7 +342,46 @@ fn now_can_be_operated_as_timestamptz() {
     assert_eq!(Ok(vec![1]), before_now);
 }
 
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+}
+
+#[cfg(not(or(feature = "mysql", feature = "postgres")))] // FIXME: Figure out how to handle tests that modify schema
+fn setup_test_table(conn: &TestConnection) {
+    use schema_dsl::*;
+
+    create_table(
+        "has_timestamps",
+        (
+            integer("id").primary_key().auto_increment(),
+            timestamp("created_at").not_null(),
+            timestamp("updated_at")
+                .not_null()
+                .default("CURRENT_TIMESTAMP"),
+        ),
+    ).execute(conn)
+        .unwrap();
+
+    create_table(
+        "has_time",
+        (
+            integer("id").primary_key().auto_increment(),
+            time("time").not_null(),
+        ),
+    ).execute(conn)
+        .unwrap();
+
+    create_table(
+        "nullable_date_and_time",
+        (
+            integer("id").primary_key().auto_increment(),
+            timestamp("timestamp"),
+            time("time"),
+            date("date"),
+        ),
+    ).execute(conn)
+        .unwrap();
+}
+
+#[cfg(feature = "postgres")]
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
