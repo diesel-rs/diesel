@@ -342,9 +342,7 @@ fn now_can_be_operated_as_timestamptz() {
     assert_eq!(Ok(vec![1]), before_now);
 }
 
-}
-
-#[cfg(not(or(feature = "mysql", feature = "postgres")))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "postgres")))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
