@@ -282,11 +282,11 @@ fn adding_interval_to_nullable_things() {
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
-    let expected_data = select(sql::<Nullable<sql_types::Timestampyz>>(
+    let expected_data = select(sql::<Nullable<sql_types::Timestamptz>>(
         "'2017-08-21 18:13:37+0000'::timestamp",
     )).get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
-        .select(timestampyz + 1.day())
+        .select(timestamptz + 1.day())
         .first::<Option<PgTimestamp>>(&connection);
     assert_eq!(expected_data, actual_data);
 
