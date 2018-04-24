@@ -398,7 +398,7 @@ fn setup_test_table(conn: &TestConnection) {
         .unwrap();
 
     create_table(
-        "has_timestampstz",
+        "has_timestamptzs",
         (
             integer("id").primary_key().auto_increment(),
             timestamptz("created_at").not_null(),
