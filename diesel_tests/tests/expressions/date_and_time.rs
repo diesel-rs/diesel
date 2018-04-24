@@ -250,7 +250,7 @@ fn adding_interval_to_timestamp() {
 #[test]
 #[cfg(feature = "postgres")]
 fn adding_interval_to_timestamptz() {
-    use self::has_timestamps::dsl::*;
+    use self::has_timestamptzs::dsl::*;
     use diesel::dsl::sql;
 
     let connection = connection();
@@ -265,7 +265,7 @@ fn adding_interval_to_timestamptz() {
     let expected_data = select(sql::<sql_types::Timestamptz>(
         "'2015-11-16 06:07:41+0000'::timestamp",
     )).get_result::<PgTimestamp>(&connection);
-    let actual_data = has_timestamps
+    let actual_data = has_timestamptzs
         .select(created_at + 1.day())
         .first::<PgTimestamp>(&connection);
     assert_eq!(expected_data, actual_data);
