@@ -20,9 +20,9 @@ pub trait ForUpdateDsl {
 }
 
 impl<T> ForUpdateDsl for T
-    where
-        T: Table + AsQuery,
-        T::Query: ForUpdateDsl,
+where
+    T: Table + AsQuery,
+    T::Query: ForUpdateDsl,
 {
     type Output = <T::Query as ForUpdateDsl>::Output;
 
@@ -30,7 +30,6 @@ impl<T> ForUpdateDsl for T
         self.as_query().for_update()
     }
 }
-
 
 /// The `for_no_key_update` method
 ///
@@ -52,9 +51,9 @@ pub trait ForNoKeyUpdateDsl {
 }
 
 impl<T> ForNoKeyUpdateDsl for T
-    where
-        T: Table + AsQuery,
-        T::Query: ForNoKeyUpdateDsl,
+where
+    T: Table + AsQuery,
+    T::Query: ForNoKeyUpdateDsl,
 {
     type Output = <T::Query as ForNoKeyUpdateDsl>::Output;
 
@@ -62,7 +61,6 @@ impl<T> ForNoKeyUpdateDsl for T
         self.as_query().for_no_key_update()
     }
 }
-
 
 /// The `for_share` method
 ///
@@ -83,9 +81,9 @@ pub trait ForShareDsl {
 }
 
 impl<T> ForShareDsl for T
-    where
-        T: Table + AsQuery,
-        T::Query: ForShareDsl,
+where
+    T: Table + AsQuery,
+    T::Query: ForShareDsl,
 {
     type Output = <T::Query as ForShareDsl>::Output;
 
@@ -93,7 +91,6 @@ impl<T> ForShareDsl for T
         self.as_query().for_share()
     }
 }
-
 
 /// The `for_key_share` method
 ///
@@ -115,9 +112,9 @@ pub trait ForKeyShareDsl {
 }
 
 impl<T> ForKeyShareDsl for T
-    where
-        T: Table + AsQuery,
-        T::Query: ForKeyShareDsl,
+where
+    T: Table + AsQuery,
+    T::Query: ForKeyShareDsl,
 {
     type Output = <T::Query as ForKeyShareDsl>::Output;
 

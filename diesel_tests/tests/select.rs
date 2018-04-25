@@ -387,15 +387,18 @@ fn select_for_no_key_update_modifiers() {
 
     // Add a foreign key
     conn_1
-        .execute("ALTER TABLE users_fk_for_no_key_update ADD CONSTRAINT users_fk \
-        FOREIGN KEY (users_fk) REFERENCES users_select_for_no_key_update(id)")
+        .execute(
+            "ALTER TABLE users_fk_for_no_key_update ADD CONSTRAINT users_fk \
+             FOREIGN KEY (users_fk) REFERENCES users_select_for_no_key_update(id)",
+        )
         .unwrap();
 
     // Add some test data
     conn_1
-        .execute("INSERT INTO users_select_for_no_key_update (name) VALUES ('Sean'), ('Tess'), ('Will')")
+        .execute(
+            "INSERT INTO users_select_for_no_key_update (name) VALUES ('Sean'), ('Tess'), ('Will')",
+        )
         .unwrap();
-
 
     conn_1.begin_test_transaction().unwrap();
 
@@ -408,8 +411,10 @@ fn select_for_no_key_update_modifiers() {
 
     // Try to add an object referencing the "Sean" row
     conn_2
-        .execute("INSERT INTO users_fk_for_no_key_update (users_fk) \
-        SELECT id FROM users_select_for_no_key_update where name='Sean'")
+        .execute(
+            "INSERT INTO users_fk_for_no_key_update (users_fk) \
+             SELECT id FROM users_select_for_no_key_update where name='Sean'",
+        )
         .unwrap();
 
     // Check that it was successfully added
@@ -439,9 +444,10 @@ fn select_for_no_key_update_modifiers() {
     assert_eq!(will.name, "Will");
 
     conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
-    let result = conn_2
-        .execute("INSERT INTO users_fk_for_no_key_update (users_fk) \
-        SELECT id FROM users_select_for_no_key_update where name='Will'");
+    let result = conn_2.execute(
+        "INSERT INTO users_fk_for_no_key_update (users_fk) \
+         SELECT id FROM users_select_for_no_key_update where name='Will'",
+    );
 
     // Times out instead of inserting row
     assert!(result.is_err());

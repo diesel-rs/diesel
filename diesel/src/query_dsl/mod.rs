@@ -62,11 +62,8 @@ pub mod methods {
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
-    pub use super::locking_dsl::{
-        ForUpdateDsl, ForNoKeyUpdateDsl,
-        ForShareDsl, ForKeyShareDsl,
-        NoWaitDsl, SkipLockedDsl
-    };
+    pub use super::locking_dsl::{ForKeyShareDsl, ForNoKeyUpdateDsl, ForShareDsl, ForUpdateDsl,
+                                 NoWaitDsl, SkipLockedDsl};
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
@@ -824,8 +821,8 @@ pub trait QueryDsl: Sized {
     /// users.for_no_key_update().load(&connection)
     /// ```
     fn for_no_key_update(self) -> ForNoKeyUpdate<Self>
-        where
-            Self: methods::ForNoKeyUpdateDsl,
+    where
+        Self: methods::ForNoKeyUpdateDsl,
     {
         methods::ForNoKeyUpdateDsl::for_no_key_update(self)
     }
@@ -869,8 +866,8 @@ pub trait QueryDsl: Sized {
     /// users.for_key_share().load(&connection)
     /// ```
     fn for_key_share(self) -> ForKeyShare<Self>
-        where
-            Self: methods::ForKeyShareDsl,
+    where
+        Self: methods::ForKeyShareDsl,
     {
         methods::ForKeyShareDsl::for_key_share(self)
     }

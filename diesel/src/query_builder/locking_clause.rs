@@ -19,11 +19,16 @@ pub struct LockingClause<LockMode = ForUpdate, Modifier = NoModifier> {
 
 impl<LockMode, Modifier> LockingClause<LockMode, Modifier> {
     pub(crate) fn new(lock_mode: LockMode, modifier: Modifier) -> Self {
-        LockingClause { lock_mode, modifier }
+        LockingClause {
+            lock_mode,
+            modifier,
+        }
     }
 }
 
-impl<DB: Backend, L: QueryFragment<DB>, M: QueryFragment<DB>> QueryFragment<DB> for LockingClause<L, M> {
+impl<DB: Backend, L: QueryFragment<DB>, M: QueryFragment<DB>> QueryFragment<DB>
+    for LockingClause<L, M>
+{
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         self.lock_mode.walk_ast(out.reborrow())?;
         self.modifier.walk_ast(out.reborrow())
