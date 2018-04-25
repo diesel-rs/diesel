@@ -144,18 +144,6 @@ pub trait SkipLockedDsl {
     fn skip_locked(self) -> Self::Output;
 }
 
-impl<T> SkipLockedDsl for T
-where
-    T: Table + AsQuery,
-    T::Query: SkipLockedDsl,
-{
-    type Output = <T::Query as SkipLockedDsl>::Output;
-
-    fn skip_locked(self) -> Self::Output {
-        self.as_query().skip_locked()
-    }
-}
-
 /// The `no_wait` method
 ///
 /// This trait should not be relied on directly by most apps. Its behavior is
@@ -172,16 +160,4 @@ pub trait NoWaitDsl {
 
     /// See the trait level documentation
     fn no_wait(self) -> Self::Output;
-}
-
-impl<T> NoWaitDsl for T
-where
-    T: Table + AsQuery,
-    T::Query: NoWaitDsl,
-{
-    type Output = <T::Query as NoWaitDsl>::Output;
-
-    fn no_wait(self) -> Self::Output {
-        self.as_query().no_wait()
-    }
 }
