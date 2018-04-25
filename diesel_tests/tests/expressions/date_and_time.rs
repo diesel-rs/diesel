@@ -318,7 +318,7 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(not(any(feature = "mysql", feature = "postgres")))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
     use schema_dsl::*;
 
@@ -334,43 +334,7 @@ fn setup_test_table(conn: &TestConnection) {
     ).execute(conn)
         .unwrap();
 
-    create_table(
-        "has_time",
-        (
-            integer("id").primary_key().auto_increment(),
-            time("time").not_null(),
-        ),
-    ).execute(conn)
-        .unwrap();
-
-    create_table(
-        "nullable_date_and_time",
-        (
-            integer("id").primary_key().auto_increment(),
-            timestamp("timestamp"),
-            time("time"),
-            date("date"),
-        ),
-    ).execute(conn)
-        .unwrap();
-}
-
-#[cfg(feature = "postgres")]
-fn setup_test_table(conn: &TestConnection) {
-    use schema_dsl::*;
-
-    create_table(
-        "has_timestamps",
-        (
-            integer("id").primary_key().auto_increment(),
-            timestamp("created_at").not_null(),
-            timestamp("updated_at")
-                .not_null()
-                .default("CURRENT_TIMESTAMP"),
-        ),
-    ).execute(conn)
-        .unwrap();
-
+    #[cfg(feature = "postgres")]
     create_table(
         "has_timestamptzs",
         (
@@ -397,6 +361,7 @@ fn setup_test_table(conn: &TestConnection) {
         (
             integer("id").primary_key().auto_increment(),
             timestamp("timestamp"),
+            #[cfg(feature = "postgres")]
             timestamptz("timestamptz"),
             time("time"),
             date("date"),
