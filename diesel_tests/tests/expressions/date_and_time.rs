@@ -258,12 +258,12 @@ fn adding_interval_to_timestamptz() {
     connection
         .execute(
             "INSERT INTO has_timestamptzs (created_at, updated_at) VALUES
-                       ('2015-11-15 06:07:41+0000', '2015-11-15 20:07:41+0000')",
+                       ('2015-11-15 06:07:41+0100', '2015-11-15 20:07:41+0100')",
         )
         .unwrap();
 
     let expected_data = select(sql::<sql_types::Timestamptz>(
-        "'2015-11-16 06:07:41+0000'::timestamp",
+        "'2015-11-16 06:07:41+0100'::timestamptz",
     )).get_result::<PgTimestamp>(&connection);
     let actual_data = has_timestamptzs
         .select(created_at + 1.day())
@@ -282,7 +282,7 @@ fn adding_interval_to_nullable_things() {
     connection
         .execute(
             "INSERT INTO nullable_date_and_time (timestamp, timestamptz, date, time) VALUES
-                       ('2017-08-20 18:13:37', '2017-08-20 18:13:37+0000', '2017-08-20', '18:13:37')",
+                       ('2017-08-20 18:13:37', '2017-08-20 18:13:37+0100', '2017-08-20', '18:13:37')",
         )
         .unwrap();
 
@@ -295,7 +295,7 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamptz>>(
-        "'2017-08-21 18:13:37+0000'::timestamp",
+        "'2017-08-21 18:13:37+0100'::timestamptz",
     )).get_result::<Option<PgTimestamp>>(&connection);
     let actual_data = nullable_date_and_time
         .select(timestamptz + 1.day())
