@@ -91,46 +91,111 @@ macro_rules! sql_function_body {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_sql_function_body {
+    // Entry point. We need to search the meta items for our special attributes
     (
+        meta = $meta:tt,
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            unchecked_meta = $meta,
+            meta = (),
+            $($rest)*
+        }
+    };
+
+    // Searching for `#[aggregate]`, found it.
+    (
+        unchecked_meta = (#[aggregate] $($unchecked:tt)*),
+        meta = ($($meta:tt)*),
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = yes,
+            meta = ($($meta)* $($unchecked)*),
+            $($rest)*
+        }
+    };
+
+    // Searching for `#[aggregate]`. Didn't find it.
+    (
+        unchecked_meta = (#$checked:tt $($unchecked:tt)*),
+        meta = ($($meta:tt)*),
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            unchecked_meta = ($($unchecked)*),
+            meta = ($($meta)* #$checked),
+            $($rest)*
+        }
+    };
+
+    // Done searching for `#[aggregate]`.
+    (
+        unchecked_meta = (),
+        meta = $meta:tt,
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = no,
+            meta = $meta,
+            $($rest)*
+        }
+    };
+
+    (
+        aggregate = $aggregate:tt,
         meta = ($($meta:tt)*),
         fn_name = $fn_name:ident,
+        type_args = ($($type_args:ident,)*),
+        type_args_with_bounds = ($($type_args_bounds:tt)*),
         args = ($($arg_name:ident: $arg_type:ty),*),
         return_type = $return_type:ty,
     ) => {
         $($meta)*
         #[allow(non_camel_case_types)]
-        pub fn $fn_name<$($arg_name),*>($($arg_name: $arg_name),*)
-            -> $fn_name::HelperType<$($arg_name),*>
+        pub fn $fn_name<$($type_args_bounds)* $($arg_name),*>($($arg_name: $arg_name),*)
+            -> $fn_name::HelperType<$($type_args,)* $($arg_name),*>
         where
             $($arg_name: $crate::expression::AsExpression<$arg_type>),+
         {
             $fn_name::$fn_name {
-                $($arg_name: $arg_name.as_expression()),+
+                $($arg_name: $arg_name.as_expression(),)+
+                $($type_args: ::std::marker::PhantomData,)*
             }
         }
 
         #[doc(hidden)]
-        #[allow(non_camel_case_types, unused_imports)]
+        #[allow(non_camel_case_types, non_snake_case, unused_imports)]
         pub(crate) mod $fn_name {
             use super::*;
             use $crate::sql_types::*;
 
             #[derive(Debug, Clone, Copy, QueryId)]
-            pub struct $fn_name<$($arg_name),*> {
-                $(pub(in super) $arg_name: $arg_name),*
+            pub struct $fn_name<$($type_args,)* $($arg_name),*> {
+                $(pub(in super) $arg_name: $arg_name,)*
+                $(pub(in super) $type_args: ::std::marker::PhantomData<$type_args>,)*
             }
 
-            pub type HelperType<$($arg_name),*> = $fn_name<$(
-                <$arg_name as $crate::expression::AsExpression<$arg_type>>::Expression
-            ),*>;
+            pub type HelperType<$($type_args,)* $($arg_name),*> = $fn_name<
+                $($type_args,)*
+                $(
+                    <$arg_name as $crate::expression::AsExpression<$arg_type>>::Expression
+                ),*
+            >;
 
-            impl<$($arg_name),*> $crate::expression::Expression for $fn_name<$($arg_name),*> where
+            impl<$($type_args_bounds)* $($arg_name),*>
+                $crate::expression::Expression
+                for $fn_name<$($type_args,)* $($arg_name),*>
+            where
                 for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
             {
                 type SqlType = $return_type;
             }
 
-            impl<$($arg_name),*, DB> $crate::query_builder::QueryFragment<DB> for $fn_name<$($arg_name),*> where
+            impl<$($type_args_bounds)* $($arg_name),*, DB>
+                $crate::query_builder::QueryFragment<DB>
+                for $fn_name<$($type_args,)* $($arg_name),*>
+            where
                 DB: $crate::backend::Backend,
                 for<'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
             {
@@ -143,25 +208,35 @@ macro_rules! __diesel_sql_function_body {
                 }
             }
 
-            impl<$($arg_name),*, QS> $crate::expression::SelectableExpression<QS> for $fn_name<$($arg_name),*>
+            impl<$($type_args_bounds)* $($arg_name),*, QS>
+                $crate::expression::SelectableExpression<QS>
+                for $fn_name<$($type_args,)* $($arg_name),*>
             where
                 $($arg_name: $crate::expression::SelectableExpression<QS>,)*
                 Self: $crate::expression::AppearsOnTable<QS>,
             {
             }
 
-            impl<$($arg_name),*, QS> $crate::expression::AppearsOnTable<QS> for $fn_name<$($arg_name),*>
+            impl<$($type_args_bounds)* $($arg_name),*, QS>
+                $crate::expression::AppearsOnTable<QS>
+                for $fn_name<$($type_args,)* $($arg_name),*>
             where
                 $($arg_name: $crate::expression::AppearsOnTable<QS>,)*
                 Self: $crate::expression::Expression,
             {
             }
 
-            impl<$($arg_name),*> $crate::expression::NonAggregate for $fn_name<$($arg_name),*>
-            where
-                $($arg_name: $crate::expression::NonAggregate,)*
-                Self: $crate::expression::Expression,
-            {
+            static_cond! {
+                if $aggregate == no {
+                    impl<$($type_args_bounds)* $($arg_name),*>
+                        $crate::expression::NonAggregate
+                        for $fn_name<$($type_args,)* $($arg_name),*>
+                    where
+                        $($arg_name: $crate::expression::NonAggregate,)*
+                        Self: $crate::expression::Expression,
+                    {
+                    }
+                }
             }
         }
     }
@@ -225,7 +300,7 @@ macro_rules! __diesel_sql_function_body {
 /// }
 /// ```
 ///
-/// Any attributes given to this macro will be put on the generated function
+/// Most attributes given to this macro will be put on the generated function
 /// (including doc comments).
 ///
 /// # Example
@@ -252,15 +327,59 @@ macro_rules! __diesel_sql_function_body {
 /// // SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)
 /// # }
 /// ```
+///
+/// There are a handful of special attributes that Diesel will recognize. They
+/// are:
+///
+/// - `#[aggregate]`
+///   - Indicates that this is an aggregate function, and that `NonAggregate`
+///     should not be implemented.
+/// - `#[sql_name="name"]`
+///   - The SQL to be generated is different than the Rust name of the function.
+///     This can be used to represent functions which can take many argument
+///     types, or to capitalize function names.
+///
+/// Functions can also be generic. Take the definition of `sum` for an example
+/// of all of this:
+///
+/// ```no_run
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::*;
+/// #
+/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// #
+/// use diesel::sql_types::Foldable;
+///
+/// sql_function! {
+///     #[aggregate]
+///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
+/// }
+///
+/// # fn main() {
+/// # use self::crates::dsl::*;
+/// crates.select(sum(id));
+/// # }
+/// ```
 macro_rules! sql_function {
-    ($(#[$meta:meta])* fn $fn_name:ident $args:tt $(;)*) => {
+    ($(#$meta:tt)* fn $fn_name:ident $args:tt $(;)*) => {
         sql_function!($(#[$meta])* fn $fn_name $args -> ());
     };
 
-    ($(#[$meta:meta])* fn $fn_name:ident $args:tt -> $return_type:ty $(;)*) => {
+    ($(#$meta:tt)* fn $fn_name:ident $args:tt -> $return_type:ty $(;)*) => {
+        sql_function!($(#$meta)* fn $fn_name <> $args -> $return_type);
+    };
+
+    (
+        $(#$meta:tt)*
+        fn $fn_name:ident
+            <$($type_arg:ident $(: $bound:path)*),* $(,)*>
+            $args:tt -> $return_type:ty $(;)*
+    ) => {
         __diesel_sql_function_body!(
-            meta = ($(#[$meta])*),
+            meta = ($(#$meta)*),
             fn_name = $fn_name,
+            type_args = ($($type_arg,)*),
+            type_args_with_bounds = ($($type_arg $(: $bound)*,)*),
             args = $args,
             return_type = $return_type,
         );
