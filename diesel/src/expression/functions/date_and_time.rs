@@ -27,24 +27,25 @@ impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
-sql_function!(date, date_t, (expr: Timestamp) -> Date,
-"Represents the SQL `DATE` function. The argument should be a Timestamp
-expression, and the return value will be an expression of type Date.
+sql_function! {
+    /// Represents the SQL `DATE` function. The argument should be a Timestamp
+    /// expression, and the return value will be an expression of type Date.
 
-# Examples
+    /// # Examples
 
-```ignore
-# #[macro_use] extern crate diesel;
-# extern crate chrono;
-# include!(\"../../doctest_setup.rs\");
-# use diesel::dsl::*;
-#
-# fn main() {
-#     let connection = establish_connection();
-let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
-# }
-",
-"The return type of [`date(expr)`](../dsl/fn.date.html)");
+    /// ```ignore
+    /// # #[macro_use] extern crate diesel;
+    /// # extern crate chrono;
+    /// # include!(\"../../doctest_setup.rs\");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     let connection = establish_connection();
+    /// let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
+    /// # }
+    /// ```
+    fn date(expr: Timestamp) -> Date;
+}
 
 #[cfg(feature = "postgres")]
 use expression::AsExpression;

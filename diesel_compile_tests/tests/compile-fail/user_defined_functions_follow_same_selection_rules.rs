@@ -23,8 +23,8 @@ struct User {
     name: String,
 }
 
-sql_function!(foo, foo_t, (x: Integer) -> Integer);
-sql_function!(bar, bar_t, (x: VarChar) -> VarChar);
+sql_function!(fn foo(x: Integer) -> Integer);
+sql_function!(fn bar(x: VarChar) -> VarChar);
 
 fn main() {
     use self::users::name;

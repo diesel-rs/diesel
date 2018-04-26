@@ -12,10 +12,27 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
 
+### Changed
+
+* `sql_function!` has been redesigned. The syntax is now `sql_function!(fn
+  lower(x: Text) -> Text);`. The output of the new syntax is slightly different
+  than what was generated in the past. See [the documentation for
+  `sql_function!`][sql-function-1-3-0] for more details.
+
 ### Fixed
 
 * `diesel print-schema` and `infer_schema!` now properly handle unsigned types
   in MySQL
+
+### Deprecated
+
+* Uses of `sql_function!` in the form `sql_function!(foo, foo_t, (x: Integer))`
+  have been deprecated in favor of a new design (listed above). Note: Due to [a
+  bug in Rust](https://github.com/rust-lang/rust/issues/49912), you may not see
+  a deprecation warning from usage of the old form. As always, if you're
+  concerned about relying on deprecated code, we recommend attempting to build
+  your app with `default-features` turned off (specifically excluding the
+  `with-deprecated` feature).
 
 ## [1.2.2] - 2018-04-12
 

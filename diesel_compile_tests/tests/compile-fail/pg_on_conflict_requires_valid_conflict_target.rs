@@ -21,7 +21,7 @@ table! {
 #[table_name = "users"]
 pub struct NewUser(#[column_name = "name"] &'static str);
 
-sql_function!(lower, lower_t, (x: diesel::sql_types::Text) -> diesel::sql_types::Text);
+sql_function!(fn lower(x: diesel::sql_types::Text) -> diesel::sql_types::Text);
 
 fn main() {
     use self::users::dsl::*;
@@ -38,7 +38,7 @@ fn main() {
     let expression_using_column_from_other_table = insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(lower(posts::title));
-        //~^ ERROR the trait bound `lower_t<posts::columns::title>: diesel::Column` is not satisfied
+        //~^ ERROR the trait bound `lower::lower<posts::columns::title>: diesel::Column` is not satisfied
 
     let random_non_expression = insert_into(users)
         .values(&NewUser("Sean"))

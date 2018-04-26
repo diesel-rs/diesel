@@ -11,7 +11,7 @@ table! {
     }
 }
 
-sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[derive(Insertable)]
 #[table_name="users"]

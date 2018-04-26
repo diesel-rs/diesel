@@ -334,7 +334,7 @@ fn selecting_complex_expression_from_right_side_of_left_join() {
         .values(&new_posts)
         .execute(&connection)
         .unwrap();
-    sql_function!(lower, lower_t, (x: Text) -> Text);
+    sql_function!(fn lower(x: Text) -> Text);
 
     let titles = users::table
         .left_outer_join(posts::table)

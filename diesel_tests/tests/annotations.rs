@@ -1,4 +1,5 @@
 use diesel::*;
+use diesel::sql_types::{Integer, Text};
 use schema::*;
 
 #[test]
@@ -288,15 +289,15 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
     assert_eq!(Some(&User::new(123, "Bob")), bob);
 }
 
+sql_function!(fn nextval(a: Text) -> Integer);
+
 #[test]
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
-    use diesel::sql_types::{Serial, Text};
-    sql_function!(nextval, nextval_t, (a: Text) -> Serial);
     #[derive(Insertable)]
     #[table_name = "users"]
     struct NewUser {
-        id: nextval<&'static str>,
+        id: nextval::HelperType<&'static str>,
         name: &'static str,
     }
 

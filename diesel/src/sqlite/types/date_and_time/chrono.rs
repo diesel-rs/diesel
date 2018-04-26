@@ -121,9 +121,9 @@ mod tests {
     use prelude::*;
     use sql_types::{Date, Text, Time, Timestamp};
 
-    sql_function!(datetime, datetime_t, (x: Text) -> Timestamp);
-    sql_function!(time, time_t, (x: Text) -> Time);
-    sql_function!(date, date_t, (x: Text) -> Date);
+    sql_function!(fn datetime(x: Text) -> Timestamp);
+    sql_function!(fn time(x: Text) -> Time);
+    sql_function!(fn date(x: Text) -> Date);
 
     fn connection() -> SqliteConnection {
         dotenv().ok();

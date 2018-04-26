@@ -233,7 +233,7 @@ mod tests {
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
         let connection = connection();
 
-        sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+        sql_function!(fn lower(x: VarChar) -> VarChar);
         let hi = "HI".into_sql::<VarChar>();
         let query = ::select(hi).into_boxed::<Pg>();
         let query2 = ::select(lower(hi)).into_boxed::<Pg>();

@@ -366,7 +366,7 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
 }
 
 use diesel::sql_types::VarChar;
-sql_function!(lower, lower_t, (x: VarChar) -> VarChar);
+sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[test]
 fn filter_by_boxed_predicate() {

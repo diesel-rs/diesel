@@ -65,6 +65,10 @@ pub mod dsl {
 
     #[cfg(feature = "postgres")]
     pub use pg::expression::dsl::*;
+
+    /// The return type of [`date(expr)`](../dsl/fn.date.html)
+    #[allow(non_camel_case_types)]
+    pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
 }
 
 #[doc(inline)]
