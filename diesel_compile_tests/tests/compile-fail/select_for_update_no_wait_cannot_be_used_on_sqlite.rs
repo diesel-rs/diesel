@@ -17,5 +17,6 @@ fn main() {
         .no_wait()
         .load(&conn)
         //~^ ERROR: E0277
+        //~| ERROR: E0277
         .unwrap();
 }

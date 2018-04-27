@@ -17,5 +17,6 @@ fn main() {
         .skip_locked()
         .load(&conn)
         //~^ ERROR: E0277
+        //~| ERROR: E0277
         .unwrap();
 }

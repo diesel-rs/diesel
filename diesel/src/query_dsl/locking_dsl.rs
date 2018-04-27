@@ -38,7 +38,6 @@ where
 /// to call `for_no_key_update` from generic code.
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
-
 pub trait ForNoKeyUpdateDsl {
     /// The type returned by `for_no_key_update`. See [`dsl::ForNoKeyUpdate`] for
     /// convenient access to this type.
@@ -99,7 +98,6 @@ where
 /// to call `for_key_share` from generic code.
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
-
 pub trait ForKeyShareDsl {
     /// The type returned by `for_key_share`. See [`dsl::ForKeyShare`] for
     /// convenient access to this type.

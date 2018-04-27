@@ -16,5 +16,6 @@ fn main() {
         .for_update()
         .load(&conn)
         //~^ ERROR: E0277
+        //~| ERROR: E0277
         .unwrap();
 }
