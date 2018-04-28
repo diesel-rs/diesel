@@ -10,6 +10,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for PG tuples. See [`sql_types::Record`][record-1-3-0] for details.
 
+* Add a `nullable` method on `SelectStatement` and `BoxedSelectStatement` that allows to
+  use those queries in places that except only nullable types
+
 [record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
 
 * `sql_function!` now supports generic functions. See [the documentation for
