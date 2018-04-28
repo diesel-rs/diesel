@@ -134,6 +134,14 @@ pub fn build_cli() -> App<'static, 'static> {
                 .long("patch-file")
                 .takes_value(true)
                 .help("A unified diff file to be applied to the final schema"),
+        )
+        .arg(
+            Arg::with_name("import-types")
+                .long("import-types")
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(1)
+                .help("A list of types to import for every table, separated by commas"),
         );
 
     let config_arg = Arg::with_name("CONFIG_FILE")

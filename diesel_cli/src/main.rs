@@ -366,6 +366,11 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         config.patch_file = Some(PathBuf::from(path));
     }
 
+    if let Some(types) = matches.values_of("import-types") {
+        let types = types.map(String::from).collect();
+        config.import_types = Some(types);
+    }
+
     run_print_schema(&database_url, &config)?;
     Ok(())
 }
