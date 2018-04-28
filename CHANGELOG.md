@@ -12,12 +12,22 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
 
+* `sql_function!` now supports generic functions. See [the documentation for
+  `sql_function!`][sql-function-1-3-0] for more details.
+
+* `sql_function!` now supports aggregate functions like `sum` and `max`, by
+  annotating them with `#[aggregate]`. This skips the implementation of
+  `NonAggregate` for your function. See [the documentation for
+  `sql_function!`][sql-function-1-3-0] for more details.
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn
   lower(x: Text) -> Text);`. The output of the new syntax is slightly different
   than what was generated in the past. See [the documentation for
   `sql_function!`][sql-function-1-3-0] for more details.
+
+[sql-function-1-3-0]: http://docs.diesel.rs/diesel/macro.sql_function.html
 
 ### Fixed
 
