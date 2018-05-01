@@ -346,3 +346,31 @@ file = "src/my_schema.rs"
     );
     assert!(p.has_file("src/my_schema.rs"));
 }
+
+#[test]
+fn migrations_can_be_run_with_no_config_file() {
+    let p = project("migration_run_no_config_file")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.command("database").arg("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}

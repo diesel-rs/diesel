@@ -9,7 +9,7 @@ use toml;
 use super::{find_project_root, handle_error};
 use print_schema;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
@@ -31,9 +31,14 @@ impl Config {
 
     pub fn read(matches: &ArgMatches) -> Result<Self, Box<Error>> {
         let path = Self::file_path(matches);
-        let mut bytes = Vec::new();
-        fs::File::open(path)?.read_to_end(&mut bytes)?;
-        toml::from_slice(&bytes).map_err(Into::into)
+
+        if path.exists() {
+            let mut bytes = Vec::new();
+            fs::File::open(path)?.read_to_end(&mut bytes)?;
+            toml::from_slice(&bytes).map_err(Into::into)
+        } else {
+            Ok(Self::default())
+        }
     }
 }
 
