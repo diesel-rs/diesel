@@ -11,9 +11,9 @@ use query_builder::{AsQuery, QueryFragment, QueryId};
 use result::*;
 use sql_types::HasSqlType;
 
-pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
+pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 
 /// Perform simple operations on a backend.
 ///
@@ -186,4 +186,14 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager;
+}
+
+/// A connection to a database
+pub trait ClusteredConnection: Connection {
+    /// Establishes a replica connection to the database cluster
+    ///
+    /// The argument to this method varies by backend.
+    /// See the documentation for that backend's connection class
+    /// for details about what it accepts.
+    fn replica(&mut self, database_url: &str);
 }

@@ -3,15 +3,15 @@ mod raw;
 mod stmt;
 mod url;
 
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use result::*;
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use query_builder::bind_collector::RawBytesBindCollector;
+use query_builder::*;
+use result::*;
 use sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -21,6 +21,7 @@ pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Mysql, Statement>,
+    replicas: Vec<RawConnection>,
 }
 
 unsafe impl Send for MysqlConnection {}
@@ -46,6 +47,7 @@ impl Connection for MysqlConnection {
             raw_connection: raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
             statement_cache: StatementCache::new(),
+            replicas: Vec::new(),
         };
         try!(conn.set_config_options().map_err(CouldntSetupConfiguration));
         Ok(conn)
@@ -108,6 +110,15 @@ impl Connection for MysqlConnection {
     #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
+    }
+}
+
+impl ClusteredConnection for MysqlConnection {
+    fn replica(&mut self, database_url: &str) {
+        let raw_connection = RawConnection::new();
+        let connection_options = ConnectionOptions::parse(database_url).unwrap();
+        raw_connection.connect(&connection_options).unwrap();
+        &self.replicas.push(raw_connection);
     }
 }
 
