@@ -49,4 +49,5 @@ mod polyfill {
 pub(crate) use self::polyfill::*;
 
 #[cfg(feature = "unstable")]
+#[allow(dead_code)]
 pub(crate) type NonNull<T> = ::std::ptr::NonNull<T>;

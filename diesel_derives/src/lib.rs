@@ -24,6 +24,7 @@ mod diagnostic_shim;
 mod field;
 mod meta;
 mod model;
+mod resolved_at_shim;
 mod util;
 
 mod as_changeset;

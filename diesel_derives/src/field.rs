@@ -22,7 +22,8 @@ impl Field {
         let name = match field.ident {
             Some(mut x) => {
                 // https://github.com/rust-lang/rust/issues/47983#issuecomment-362817105
-                x.span = fix_span(x.span, Span::call_site());
+                let span = x.span();
+                x.set_span(fix_span(span, Span::call_site()));
                 FieldName::Named(x)
             }
             None => FieldName::Unnamed(syn::Index {
@@ -89,7 +90,7 @@ impl FieldName {
 
     pub fn span(&self) -> Span {
         match *self {
-            FieldName::Named(x) => x.span,
+            FieldName::Named(x) => x.span(),
             FieldName::Unnamed(ref x) => x.span,
         }
     }

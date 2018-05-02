@@ -44,6 +44,9 @@ impl Statement {
         self.step().map(|_| ())
     }
 
+    // We are always reading potentially misaligned pointers with
+    // `ptr::read_unaligned`
+    #[cfg_attr(feature = "clippy", allow(cast_ptr_alignment))]
     pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
         self.bind_index += 1;
         // This unsafe block assumes the following invariants:
@@ -70,7 +73,7 @@ impl Statement {
                     ffi::SQLITE_TRANSIENT(),
                 ),
                 (SqliteType::Float, Some(bytes)) => {
-                    let value = *(bytes.as_ptr() as *const f32);
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f32);
                     ffi::sqlite3_bind_double(
                         self.inner_statement.as_ptr(),
                         self.bind_index,
@@ -78,7 +81,7 @@ impl Statement {
                     )
                 }
                 (SqliteType::Double, Some(bytes)) => {
-                    let value = *(bytes.as_ptr() as *const f64);
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f64);
                     ffi::sqlite3_bind_double(
                         self.inner_statement.as_ptr(),
                         self.bind_index,
@@ -86,7 +89,7 @@ impl Statement {
                     )
                 }
                 (SqliteType::SmallInt, Some(bytes)) => {
-                    let value = *(bytes.as_ptr() as *const i16);
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i16);
                     ffi::sqlite3_bind_int(
                         self.inner_statement.as_ptr(),
                         self.bind_index,
@@ -94,7 +97,7 @@ impl Statement {
                     )
                 }
                 (SqliteType::Integer, Some(bytes)) => {
-                    let value = *(bytes.as_ptr() as *const i32);
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i32);
                     ffi::sqlite3_bind_int(
                         self.inner_statement.as_ptr(),
                         self.bind_index,
@@ -102,7 +105,7 @@ impl Statement {
                     )
                 }
                 (SqliteType::Long, Some(bytes)) => {
-                    let value = *(bytes.as_ptr() as *const i64);
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i64);
                     ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), self.bind_index, value)
                 }
             }

@@ -105,5 +105,5 @@ impl AssociationOptions {
 
 fn infer_foreign_key(name: syn::Ident) -> syn::Ident {
     let snake_case = camel_to_snake(name.as_ref());
-    syn::Ident::new(&format!("{}_id", snake_case), name.span)
+    syn::Ident::new(&format!("{}_id", snake_case), name.span())
 }

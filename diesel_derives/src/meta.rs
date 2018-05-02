@@ -3,6 +3,7 @@ use syn;
 use syn::spanned::Spanned;
 use syn::fold::Fold;
 
+use resolved_at_shim::*;
 use util::*;
 
 pub struct MetaItem {
@@ -136,7 +137,7 @@ impl MetaItem {
 
     pub fn ty_value(&self) -> Result<syn::Type, Diagnostic> {
         let str = self.lit_str_value()?;
-        str.parse().map_err(|_| str.span.error("Invalid Rust type"))
+        str.parse().map_err(|_| str.span().error("Invalid Rust type"))
     }
 
     pub fn expect_str_value(&self) -> String {
@@ -208,7 +209,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            Word(ident) => ident.span,
+            Word(ident) => ident.span(),
             List(ref meta) => meta.nested.span(),
             NameValue(ref meta) => meta.lit.span(),
         }
@@ -220,7 +221,7 @@ impl MetaItem {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2392
-pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta, Token![,]>);
+pub struct Nested<'a>(syn::punctuated::Iter<'a, syn::NestedMeta>);
 
 impl<'a> Iterator for Nested<'a> {
     type Item = MetaItem;

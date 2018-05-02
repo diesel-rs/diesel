@@ -125,7 +125,7 @@ impl<'a> Display for TableDefinitions<'a> {
             if is_first {
                 is_first = false;
             } else {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
             writeln!(
                 f,
@@ -139,7 +139,7 @@ impl<'a> Display for TableDefinitions<'a> {
         }
 
         if !self.fk_constraints.is_empty() {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         for foreign_key in &self.fk_constraints {
@@ -150,7 +150,7 @@ impl<'a> Display for TableDefinitions<'a> {
             write!(f, "\nallow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
-                write!(out, "\n")?;
+                writeln!(out)?;
                 for table in &self.tables {
                     writeln!(out, "{},", table.name.name)?;
                 }
@@ -173,13 +173,13 @@ impl<'a> Display for TableDefinition<'a> {
         write!(f, "table! {{")?;
         {
             let mut out = PadAdapter::new(f);
-            write!(out, "\n")?;
+            writeln!(out)?;
 
             if let Some(types) = self.import_types {
                 for import in types {
                     writeln!(out, "use {};", import)?;
                 }
-                write!(out, "\n")?;
+                writeln!(out)?;
             }
 
             if self.include_docs {
@@ -260,7 +260,7 @@ struct PadAdapter<'a, 'b: 'a> {
 impl<'a, 'b: 'a> PadAdapter<'a, 'b> {
     fn new(fmt: &'a mut Formatter<'b>) -> PadAdapter<'a, 'b> {
         PadAdapter {
-            fmt: fmt,
+            fmt,
             on_newline: false,
         }
     }

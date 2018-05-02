@@ -12,7 +12,7 @@ pub struct MigrationName<'a> {
 
 pub fn name(migration: &Migration) -> MigrationName {
     MigrationName {
-        migration: migration,
+        migration,
     }
 }
 

@@ -68,7 +68,7 @@ impl ColumnInformation {
         ColumnInformation {
             column_name: column_name.into(),
             type_name: type_name.into(),
-            nullable: nullable,
+            nullable,
         }
     }
 }
