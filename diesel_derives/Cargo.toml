@@ -9,10 +9,10 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 
 [dependencies]
-syn = { version = "0.12.11", features = ["full", "fold"] }
-quote = "0.4"
-clippy = { optional = true, version = "=0.0.185" }
-proc-macro2 = "0.2.0"
+syn = { version = "0.13.0", features = ["full", "fold"] }
+quote = "0.5.0"
+clippy = { optional = true, version = "=0.0.195" }
+proc-macro2 = "0.3.0"
 
 [dev-dependencies]
 cfg-if = "0.1.0"

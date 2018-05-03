@@ -11,28 +11,30 @@ error[E0433]: failed to resolve. Use of undeclared type or module `posts`
   | ^ Use of undeclared type or module `posts`
 
 error[E0412]: cannot find type `name` in module `users`
-  --> $DIR/insertable_missing_table_or_column.rs:24:5
+  --> $DIR/insertable_missing_table_or_column.rs:21:10
    |
-24 |     name: String
-   |     ^^^^ not found in `users`
+21 | #[derive(Insertable)]
+   |          ^^^^^^^^^^ not found in `users`
 
 error[E0425]: cannot find value `name` in module `users`
-  --> $DIR/insertable_missing_table_or_column.rs:24:5
+  --> $DIR/insertable_missing_table_or_column.rs:21:10
    |
-24 |     name: String
-   |     ^^^^ not found in `users`
+21 | #[derive(Insertable)]
+   |          ^^^^^^^^^^ not found in `users`
 
 error[E0412]: cannot find type `name` in module `users`
-  --> $DIR/insertable_missing_table_or_column.rs:30:21
+  --> $DIR/insertable_missing_table_or_column.rs:27:10
    |
-30 |     #[column_name = "name"]
-   |                     ^^^^^^ not found in `users`
+27 | #[derive(Insertable)]
+   |          ^^^^^^^^^^ not found in `users`
 
 error[E0425]: cannot find value `name` in module `users`
-  --> $DIR/insertable_missing_table_or_column.rs:30:21
+  --> $DIR/insertable_missing_table_or_column.rs:27:10
    |
-30 |     #[column_name = "name"]
-   |                     ^^^^^^ not found in `users`
+27 | #[derive(Insertable)]
+   |          ^^^^^^^^^^ not found in `users`
 
 error: aborting due to 6 previous errors
 
+Some errors occurred: E0412, E0425, E0433.
+For more information about an error, try `rustc --explain E0412`.

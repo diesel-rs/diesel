@@ -34,7 +34,11 @@ error[E0425]: cannot find value `name` in module `users`
 20 | struct UserTuple(#[column_name = "name"] String);
    |                                  ^^^^^^ not found in `users`
 
-error[E0601]: main function not found
+error[E0601]: `main` function not found in crate `as_changeset_bad_column_name`
+  |
+  = note: consider adding a `main` function to `$DIR/as_changeset_bad_column_name.rs`
 
 error: aborting due to 7 previous errors
 
+Some errors occurred: E0412, E0425, E0601.
+For more information about an error, try `rustc --explain E0412`.

@@ -71,7 +71,7 @@ pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Typ
 }
 
 pub fn fix_span(maybe_bad_span: Span, fallback: Span) -> Span {
-    let bad_span_debug = "Span(Span { lo: BytePos(0), hi: BytePos(0), ctxt: #0 })";
+    let bad_span_debug = "#0 bytes(0..0)";
     if format!("{:?}", maybe_bad_span) == bad_span_debug {
         fallback
     } else {

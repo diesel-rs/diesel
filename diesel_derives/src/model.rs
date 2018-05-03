@@ -4,6 +4,7 @@ use proc_macro2::Span;
 use diagnostic_shim::*;
 use field::*;
 use meta::*;
+use resolved_at_shim::*;
 
 pub struct Model {
     pub name: syn::Ident,
@@ -32,7 +33,7 @@ impl Model {
         self.table_name_from_attribute.unwrap_or_else(|| {
             syn::Ident::new(
                 &infer_table_name(self.name.as_ref()),
-                self.name.span.resolved_at(Span::call_site()),
+                self.name.span().resolved_at(Span::call_site()),
             )
         })
     }
@@ -52,7 +53,7 @@ impl Model {
             .find(|f| f.column_name() == column_name)
             .ok_or_else(|| {
                 column_name
-                    .span
+                    .span()
                     .error(format!("No field with column name {}", column_name))
             })
     }

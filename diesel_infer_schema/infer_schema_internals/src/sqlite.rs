@@ -43,7 +43,7 @@ pub fn load_table_names(
 ) -> Result<Vec<TableName>, Box<Error>> {
     use self::sqlite_master::dsl::*;
 
-    if !schema_name.is_none() {
+    if schema_name.is_some() {
         return Err("sqlite cannot infer schema for databases other than the \
                     main database"
             .into());

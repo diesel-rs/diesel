@@ -89,6 +89,8 @@ where
     /// done implicitly for references. For structs with lifetimes it must be
     /// done explicitly. This method matches the semantics of what Rust would do
     /// implicitly if you were passing a mutable reference
+    // Clippy is wrong, this cannot be expressed with pointer casting
+    #[cfg_attr(feature = "clippy", allow(transmute_ptr_to_ptr))]
     pub fn reborrow(&mut self) -> AstPass<DB> {
         use self::AstPassInternals::*;
         let internals = match self.internals {
