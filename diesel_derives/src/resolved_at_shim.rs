@@ -7,9 +7,7 @@ pub trait ResolvedAtExt {
 #[cfg(feature = "nightly")]
 impl ResolvedAtExt for Span {
     fn resolved_at(self, span: Span) -> Span {
-        self.unstable()
-            .resolved_at(span.unstable())
-            .into()
+        self.unstable().resolved_at(span.unstable()).into()
     }
 }
 

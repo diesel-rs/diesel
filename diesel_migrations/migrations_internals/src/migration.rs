@@ -11,9 +11,7 @@ pub struct MigrationName<'a> {
 }
 
 pub fn name(migration: &Migration) -> MigrationName {
-    MigrationName {
-        migration,
-    }
+    MigrationName { migration }
 }
 
 impl<'a> fmt::Display for MigrationName<'a> {
