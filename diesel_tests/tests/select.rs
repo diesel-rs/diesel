@@ -191,6 +191,21 @@ table! {
     }
 }
 
+table! {
+    users_select_for_no_key_update {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+table! {
+    users_fk_for_no_key_update {
+        id -> Integer,
+        users_fk -> Integer,
+    }
+}
+
 #[cfg(not(feature = "sqlite"))]
 #[test]
 fn select_for_update_locks_selected_rows() {
@@ -262,6 +277,183 @@ fn select_for_update_locks_selected_rows() {
     let next_selected_name = recv.recv_timeout(timeout).unwrap();
     // Dropping conn_1 unblocks conn_2
     assert_eq!("Sean", next_selected_name);
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn select_for_update_modifiers() {
+    use self::users_select_for_update::dsl::*;
+
+    // We need to actually commit some data for the
+    // test
+    let conn_1 = connection_without_transaction();
+    let conn_2 = connection();
+    let conn_3 = connection();
+
+    // Recreate the table
+    conn_1
+        .execute("DROP TABLE IF EXISTS users_select_for_update")
+        .unwrap();
+    create_table(
+        "users_select_for_update",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            string("hair_color"),
+        ),
+    ).execute(&conn_1)
+        .unwrap();
+
+    // Add some test data
+    conn_1
+        .execute("INSERT INTO users_select_for_update (name) VALUES ('Sean'), ('Tess')")
+        .unwrap();
+
+    // Now both connections have begun a transaction
+    conn_1.begin_test_transaction().unwrap();
+
+    // Lock the "Sean" row
+    let _sean = users_select_for_update
+        .order(name)
+        .for_update()
+        .first::<User>(&conn_1)
+        .unwrap();
+
+    // Try to access the "Sean" row with `NOWAIT`
+    conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
+    let result = users_select_for_update
+        .order(name)
+        .for_update()
+        .no_wait()
+        .first::<User>(&conn_2);
+
+    // Make sure we errored in the correct way (without timing out)
+    assert!(result.is_err());
+    if !format!("{:?}", result).contains("could not obtain lock on row") {
+        panic!("{:?}", result);
+    }
+
+    // Try to access the "Sean" row with `SKIP LOCKED`
+    let tess = users_select_for_update
+        .order(name)
+        .for_update()
+        .skip_locked()
+        .first::<User>(&conn_3)
+        .unwrap();
+
+    // Make sure got back "Tess"
+    assert_eq!(tess.name, "Tess");
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn select_for_no_key_update_modifiers() {
+    use self::users_select_for_no_key_update::dsl::*;
+    use self::users_fk_for_no_key_update::dsl::*;
+
+    // We need to actually commit some data for the
+    // test
+    let conn_1 = connection_without_transaction();
+    let conn_2 = connection();
+    let conn_3 = connection();
+    let conn_4 = connection();
+
+    // Recreate the table
+    conn_1
+        .execute("DROP TABLE IF EXISTS users_fk_for_no_key_update")
+        .unwrap();
+    conn_1
+        .execute("DROP TABLE IF EXISTS users_select_for_no_key_update")
+        .unwrap();
+
+    create_table(
+        "users_select_for_no_key_update",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            string("hair_color"),
+        ),
+    ).execute(&conn_1)
+        .unwrap();
+
+    create_table(
+        "users_fk_for_no_key_update",
+        (
+            integer("id").primary_key().auto_increment(),
+            integer("users_fk").not_null(),
+        ),
+    ).execute(&conn_1)
+        .unwrap();
+
+    // Add a foreign key
+    conn_1
+        .execute(
+            "ALTER TABLE users_fk_for_no_key_update ADD CONSTRAINT users_fk \
+             FOREIGN KEY (users_fk) REFERENCES users_select_for_no_key_update(id)",
+        )
+        .unwrap();
+
+    // Add some test data
+    conn_1
+        .execute(
+            "INSERT INTO users_select_for_no_key_update (name) VALUES ('Sean'), ('Tess'), ('Will')",
+        )
+        .unwrap();
+
+    conn_1.begin_test_transaction().unwrap();
+
+    // Lock the "Sean" row, except the key
+    let _sean = users_select_for_no_key_update
+        .order(name)
+        .for_no_key_update()
+        .first::<User>(&conn_1)
+        .unwrap();
+
+    // Try to add an object referencing the "Sean" row
+    conn_2
+        .execute(
+            "INSERT INTO users_fk_for_no_key_update (users_fk) \
+             SELECT id FROM users_select_for_no_key_update where name='Sean'",
+        )
+        .unwrap();
+
+    // Check that it was successfully added
+    let expected_data = vec![(1, 1)];
+    let actual_data: Vec<(i32, i32)> = users_fk_for_no_key_update.load(&conn_2).unwrap();
+    assert_eq!(expected_data, actual_data);
+
+    // Try to access the "Sean" row with `for no key update` and `SKIP LOCKED`
+    let tess = users_select_for_no_key_update
+        .order(name)
+        .for_no_key_update()
+        .skip_locked()
+        .first::<User>(&conn_3)
+        .unwrap();
+
+    // Make sure got back "Tess"
+    assert_eq!(tess.name, "Tess");
+
+    // Lock the "Will" row completely
+    let will = users_select_for_no_key_update
+        .order(name)
+        .for_update()
+        .skip_locked()
+        .first::<User>(&conn_4)
+        .unwrap();
+
+    assert_eq!(will.name, "Will");
+
+    conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
+    let result = conn_2.execute(
+        "INSERT INTO users_fk_for_no_key_update (users_fk) \
+         SELECT id FROM users_select_for_no_key_update where name='Will'",
+    );
+
+    // Times out instead of inserting row
+    assert!(result.is_err());
+    if !format!("{:?}", result).contains("canceling statement due to statement timeout") {
+        panic!("{:?}", result);
+    }
 }
 
 #[test]

@@ -39,7 +39,7 @@ where
             self.limit,
             self.offset,
             self.group_by,
-            self.for_update,
+            self.locking,
         )
     }
 }

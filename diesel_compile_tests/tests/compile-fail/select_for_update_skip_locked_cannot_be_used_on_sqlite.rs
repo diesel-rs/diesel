@@ -14,6 +14,7 @@ fn main() {
     let conn = SqliteConnection::establish("").unwrap();
     users::table
         .for_update()
+        .skip_locked()
         .load(&conn)
         //~^ ERROR: E0277
         //~| ERROR: E0277
