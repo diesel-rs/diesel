@@ -20,6 +20,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `NonAggregate` for your function. See [the documentation for
   `sql_function!`][sql-function-1-3-0] for more details.
 
+* Added `sqlite-bundled` feature to `diesel_cli` to make installing on
+  some platforms easier.
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn
@@ -85,9 +88,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for specifying `ISOLATION LEVEL`, `DEFERRABLE`, and `READ ONLY`
   on PG transactions. See [`PgConnection::build_transaction`] for details.
-
-* Added `sqlite-bundled` feature to `diesel_cli` to make installing on
-  some platforms easier. 
 
 [`PgConnection::build_transaction`]: http://docs.diesel.rs/diesel/pg/struct.PgConnection.html#method.build_transaction
 
