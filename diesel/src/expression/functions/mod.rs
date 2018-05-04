@@ -91,6 +91,28 @@ macro_rules! sql_function_body {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_sql_function_body {
+    // Entry point with type arguments. Pull out the rest of the body.
+    (
+        data = (
+            meta = $meta:tt,
+            fn_name = $fn_name:tt,
+        ),
+        type_args = $type_args:tt,
+        type_args_with_bounds = $type_args_with_bounds:tt,
+        unparsed_tokens = (
+            $args:tt -> $return_type:ty $(;)*
+        ),
+    ) => {
+        __diesel_sql_function_body! {
+            meta = $meta,
+            fn_name = $fn_name,
+            type_args = $type_args,
+            type_args_with_bounds = $type_args_with_bounds,
+            args = $args,
+            return_type = $return_type,
+        }
+    };
+
     // Entry point. We need to search the meta items for our special attributes
     (
         meta = $meta:tt,
@@ -372,16 +394,16 @@ macro_rules! sql_function {
     (
         $(#$meta:tt)*
         fn $fn_name:ident
-            <$($type_arg:ident $(: $bound:path)*),* $(,)*>
-            $args:tt -> $return_type:ty $(;)*
+        <
+        $($tokens:tt)*
     ) => {
-        __diesel_sql_function_body!(
-            meta = ($(#$meta)*),
-            fn_name = $fn_name,
-            type_args = ($($type_arg,)*),
-            type_args_with_bounds = ($($type_arg $(: $bound)*,)*),
-            args = $args,
-            return_type = $return_type,
+        __diesel_parse_type_args!(
+            data = (
+                meta = ($(#$meta)*),
+                fn_name = $fn_name,
+            ),
+            callback = __diesel_sql_function_body,
+            tokens = ($($tokens)*),
         );
     };
 

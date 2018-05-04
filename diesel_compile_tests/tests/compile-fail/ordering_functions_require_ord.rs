@@ -12,7 +12,9 @@ table! {
 
 fn main() {
     let source = stuff::table.select(max(stuff::b));
-    //~^ ERROR E0277
+    //~^ ERROR SqlOrd
+    //~| ERROR E0277
     let source = stuff::table.select(min(stuff::b));
-    //~^ ERROR E0277
+    //~^ ERROR SqlOrd
+    //~| ERROR E0277
 }
