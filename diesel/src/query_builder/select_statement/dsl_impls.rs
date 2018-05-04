@@ -288,124 +288,22 @@ where
     }
 }
 
-impl<F, S, W, O, L, Of> ForUpdateDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
-    type Output = SelectStatement<
-        F,
-        S,
-        NoDistinctClause,
-        W,
-        O,
-        L,
-        Of,
-        NoGroupByClause,
-        LockingClause<ForUpdate, NoModifier>,
-    >;
-
-    fn for_update(self) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-            LockingClause::new(ForUpdate, NoModifier),
-        )
-    }
-}
-
-impl<F, S, W, O, L, Of> ForNoKeyUpdateDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
-    type Output = SelectStatement<
-        F,
-        S,
-        NoDistinctClause,
-        W,
-        O,
-        L,
-        Of,
-        NoGroupByClause,
-        LockingClause<ForNoKeyUpdate, NoModifier>,
-    >;
-
-    fn for_no_key_update(self) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-            LockingClause::new(ForNoKeyUpdate, NoModifier),
-        )
-    }
-}
-
-impl<F, S, W, O, L, Of> ForShareDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
-    type Output = SelectStatement<
-        F,
-        S,
-        NoDistinctClause,
-        W,
-        O,
-        L,
-        Of,
-        NoGroupByClause,
-        LockingClause<ForShare, NoModifier>,
-    >;
-
-    fn for_share(self) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-            LockingClause::new(ForShare, NoModifier),
-        )
-    }
-}
-
-impl<F, S, W, O, L, Of> ForKeyShareDsl for SelectStatement<F, S, NoDistinctClause, W, O, L, Of> {
-    type Output = SelectStatement<
-        F,
-        S,
-        NoDistinctClause,
-        W,
-        O,
-        L,
-        Of,
-        NoGroupByClause,
-        LockingClause<ForKeyShare, NoModifier>,
-    >;
-
-    fn for_key_share(self) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit,
-            self.offset,
-            self.group_by,
-            LockingClause::new(ForKeyShare, NoModifier),
-        )
-    }
-}
-
-impl<F, S, D, W, O, L, Of, G, LM> SkipLockedDsl
-    for SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LM, NoModifier>>
+impl<F, S, W, O, L, Of, Lock> LockingDsl<Lock>
+    for SelectStatement<F, S, NoDistinctClause, W, O, L, Of>
 {
-    type Output = SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LM, SkipLocked>>;
+    type Output = SelectStatement<
+        F,
+        S,
+        NoDistinctClause,
+        W,
+        O,
+        L,
+        Of,
+        NoGroupByClause,
+        LockingClause<Lock, NoModifier>,
+    >;
 
-    fn skip_locked(self) -> Self::Output {
+    fn with_lock(self, lock: Lock) -> Self::Output {
         SelectStatement::new(
             self.select,
             self.from,
@@ -415,17 +313,17 @@ impl<F, S, D, W, O, L, Of, G, LM> SkipLockedDsl
             self.limit,
             self.offset,
             self.group_by,
-            LockingClause::new(self.locking.lock_mode, SkipLocked),
+            LockingClause::new(lock, NoModifier),
         )
     }
 }
 
-impl<F, S, D, W, O, L, Of, G, LM> NoWaitDsl
-    for SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LM, NoModifier>>
+impl<F, S, D, W, O, L, Of, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
+    for SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LC, LM>>
 {
-    type Output = SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LM, NoWait>>;
+    type Output = SelectStatement<F, S, D, W, O, L, Of, G, LockingClause<LC, Modifier>>;
 
-    fn no_wait(self) -> Self::Output {
+    fn modify_lock(self, modifier: Modifier) -> Self::Output {
         SelectStatement::new(
             self.select,
             self.from,
@@ -435,7 +333,7 @@ impl<F, S, D, W, O, L, Of, G, LM> NoWaitDsl
             self.limit,
             self.offset,
             self.group_by,
-            LockingClause::new(self.locking.lock_mode, NoWait),
+            LockingClause::new(self.locking.lock_mode, modifier),
         )
     }
 }

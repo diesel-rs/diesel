@@ -18,6 +18,7 @@ use connection::Connection;
 use expression::Expression;
 use expression::count::CountStar;
 use helper_types::*;
+use query_builder::locking_clause as lock;
 use query_source::{joins, Table};
 use result::{first_or_not_found, QueryResult};
 
@@ -62,8 +63,10 @@ pub mod methods {
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
-    pub use super::locking_dsl::{ForKeyShareDsl, ForNoKeyUpdateDsl, ForShareDsl, ForUpdateDsl,
-                                 NoWaitDsl, SkipLockedDsl};
+    pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
+    #[cfg(feature = "with-deprecated")]
+    #[allow(deprecated)]
+    pub use super::locking_dsl::ForUpdateDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
@@ -797,11 +800,36 @@ pub trait QueryDsl: Sized {
     /// // Executes `SELECT * FROM users FOR UPDATE`
     /// users.for_update().load(&connection)
     /// ```
+    #[cfg(feature = "with-deprecated")]
+    #[allow(deprecated)]
     fn for_update(self) -> ForUpdate<Self>
     where
         Self: methods::ForUpdateDsl,
     {
         methods::ForUpdateDsl::for_update(self)
+    }
+
+    /// Adds `FOR UPDATE` to the end of the select statement.
+    ///
+    /// This method is only available for MySQL and PostgreSQL. SQLite does not
+    /// provide any form of row locking.
+    ///
+    /// Additionally, `.for_update` cannot be used on queries with a distinct
+    /// clause, group by clause, having clause, or any unions. Queries with
+    /// a `FOR UPDATE` clause cannot be boxed.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Executes `SELECT * FROM users FOR UPDATE`
+    /// users.for_update().load(&connection)
+    /// ```
+    #[cfg(not(feature = "with-deprecated"))]
+    fn for_update(self) -> ForUpdate<Self>
+    where
+        Self: methods::LockingDsl<lock::ForUpdate>,
+    {
+        methods::LockingDsl::with_lock(self, lock::ForUpdate)
     }
 
     /// Adds `FOR NO KEY UPDATE` to the end of the select statement.
@@ -822,9 +850,9 @@ pub trait QueryDsl: Sized {
     /// ```
     fn for_no_key_update(self) -> ForNoKeyUpdate<Self>
     where
-        Self: methods::ForNoKeyUpdateDsl,
+        Self: methods::LockingDsl<lock::ForNoKeyUpdate>,
     {
-        methods::ForNoKeyUpdateDsl::for_no_key_update(self)
+        methods::LockingDsl::with_lock(self, lock::ForNoKeyUpdate)
     }
 
     /// Adds `FOR SHARE` to the end of the select statement.
@@ -844,9 +872,9 @@ pub trait QueryDsl: Sized {
     /// ```
     fn for_share(self) -> ForShare<Self>
     where
-        Self: methods::ForShareDsl,
+        Self: methods::LockingDsl<lock::ForShare>,
     {
-        methods::ForShareDsl::for_share(self)
+        methods::LockingDsl::with_lock(self, lock::ForShare)
     }
 
     /// Adds `FOR KEY SHARE` to the end of the select statement.
@@ -867,9 +895,9 @@ pub trait QueryDsl: Sized {
     /// ```
     fn for_key_share(self) -> ForKeyShare<Self>
     where
-        Self: methods::ForKeyShareDsl,
+        Self: methods::LockingDsl<lock::ForKeyShare>,
     {
-        methods::ForKeyShareDsl::for_key_share(self)
+        methods::LockingDsl::with_lock(self, lock::ForKeyShare)
     }
 
     /// Adds `SKIP LOCKED` to the end of a `FOR UPDATE` clause.
@@ -884,9 +912,9 @@ pub trait QueryDsl: Sized {
     /// ```
     fn skip_locked(self) -> SkipLocked<Self>
     where
-        Self: methods::SkipLockedDsl,
+        Self: methods::ModifyLockDsl<lock::SkipLocked>,
     {
-        methods::SkipLockedDsl::skip_locked(self)
+        methods::ModifyLockDsl::modify_lock(self, lock::SkipLocked)
     }
 
     /// Adds `NOWAIT` to the end of a `FOR UPDATE` clause.
@@ -901,9 +929,9 @@ pub trait QueryDsl: Sized {
     /// ```
     fn no_wait(self) -> NoWait<Self>
     where
-        Self: methods::NoWaitDsl,
+        Self: methods::ModifyLockDsl<lock::NoWait>,
     {
-        methods::NoWaitDsl::no_wait(self)
+        methods::ModifyLockDsl::modify_lock(self, lock::NoWait)
     }
 
     /// Boxes the pieces of a query into a single type.

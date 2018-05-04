@@ -206,6 +206,7 @@ pub mod helper_types {
     //! DslName<OtherTypes>>::Output`. So the return type of
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
+    use super::query_builder::locking_clause as lock;
     use super::query_dsl::*;
     use super::query_dsl::methods::*;
     use super::query_source::joins;
@@ -223,22 +224,28 @@ pub mod helper_types {
     pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
     /// Represents the return type of `.for_update()`
+    #[cfg(feature = "with-deprecated")]
+    #[allow(deprecated)]
     pub type ForUpdate<Source> = <Source as ForUpdateDsl>::Output;
 
+    /// Represents the return type of `.for_update()`
+    #[cfg(not(feature = "with-deprecated"))]
+    pub type ForUpdate<Source> = <Source as LockingDsl<lock::ForUpdate>>::Output;
+
     /// Represents the return type of `.for_no_key_update()`
-    pub type ForNoKeyUpdate<Source> = <Source as ForNoKeyUpdateDsl>::Output;
+    pub type ForNoKeyUpdate<Source> = <Source as LockingDsl<lock::ForNoKeyUpdate>>::Output;
 
     /// Represents the return type of `.for_share()`
-    pub type ForShare<Source> = <Source as ForShareDsl>::Output;
+    pub type ForShare<Source> = <Source as LockingDsl<lock::ForShare>>::Output;
 
     /// Represents the return type of `.for_key_share()`
-    pub type ForKeyShare<Source> = <Source as ForKeyShareDsl>::Output;
+    pub type ForKeyShare<Source> = <Source as LockingDsl<lock::ForKeyShare>>::Output;
 
     /// Represents the return type of `.skip_locked()`
-    pub type SkipLocked<Source> = <Source as SkipLockedDsl>::Output;
+    pub type SkipLocked<Source> = <Source as ModifyLockDsl<lock::SkipLocked>>::Output;
 
     /// Represents the return type of `.no_wait()`
-    pub type NoWait<Source> = <Source as NoWaitDsl>::Output;
+    pub type NoWait<Source> = <Source as ModifyLockDsl<lock::NoWait>>::Output;
 
     /// Represents the return type of `.find(pk)`
     pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
