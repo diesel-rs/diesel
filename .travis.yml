@@ -55,7 +55,7 @@ matrix:
     script:
     - cargo install rustfmt-nightly --vers 0.3.7 --force
     - cargo fmt --all -- --write-mode=diff
-  - rust: nightly
+  - rust: stable
     env:
     - SQLITE_BUNDLED=YESPLEASE
     - SQLITE_DATABASE_URL=/tmp/test.db
