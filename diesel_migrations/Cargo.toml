@@ -3,7 +3,7 @@ name = "diesel_migrations"
 version = "1.2.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
-description = "Migratation managment for diesel"
+description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "http://diesel.rs"
 
