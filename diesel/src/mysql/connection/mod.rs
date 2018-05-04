@@ -10,6 +10,7 @@ use super::backend::Mysql;
 use super::bind_collector::MysqlBindCollector;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use query_builder::*;
 use result::*;
 use sql_types::HasSqlType;
@@ -31,6 +32,8 @@ impl SimpleConnection for MysqlConnection {
             .enable_multi_statements(|| self.raw_connection.execute(query))
     }
 }
+
+impl MigrationConnection for MysqlConnection {}
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;

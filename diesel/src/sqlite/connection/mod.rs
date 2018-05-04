@@ -17,6 +17,7 @@ use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::*;
@@ -44,6 +45,8 @@ impl SimpleConnection for SqliteConnection {
         self.raw_connection.exec(query)
     }
 }
+
+impl MigrationConnection for SqliteConnection {}
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;

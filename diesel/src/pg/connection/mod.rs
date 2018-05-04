@@ -14,6 +14,7 @@ use self::result::PgResult;
 use self::stmt::Statement;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use migration::MigrationConnection;
 use pg::{Pg, PgMetadataLookup, TransactionBuilder};
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
@@ -106,6 +107,8 @@ impl Connection for PgConnection {
         &self.transaction_manager
     }
 }
+
+impl MigrationConnection for PgConnection {}
 
 impl PgConnection {
     /// Build a transaction, specifying additional details such as isolation level
