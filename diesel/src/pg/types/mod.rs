@@ -513,5 +513,4 @@ mod ops {
         type Rhs = Nullable<Interval>;
         type Output = Nullable<Timestamptz>;
     }
-
 }
