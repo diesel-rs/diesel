@@ -16,6 +16,7 @@ sql_function! {
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
     /// # }
+    #[aggregate]
     fn max<ST: SqlOrd + IntoNullable>(expr: ST) -> ST::Nullable;
 }
 
@@ -35,5 +36,6 @@ sql_function! {
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
     /// # }
+    #[aggregate]
     fn min<ST: SqlOrd + IntoNullable>(expr: ST) -> ST::Nullable;
 }
