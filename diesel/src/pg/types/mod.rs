@@ -1,23 +1,23 @@
 //! PostgreSQL specific types
 
 mod array;
-mod ranges;
 #[doc(hidden)]
 pub mod date_and_time;
 #[doc(hidden)]
 pub mod floats;
-#[cfg(feature = "network-address")]
-mod network_address;
 mod integers;
-mod numeric;
-mod primitives;
-mod record;
-#[cfg(feature = "uuid")]
-mod uuid;
 #[cfg(feature = "serde_json")]
 mod json;
 #[doc(hidden)]
 pub mod money;
+#[cfg(feature = "network-address")]
+mod network_address;
+mod numeric;
+mod primitives;
+mod ranges;
+mod record;
+#[cfg(feature = "uuid")]
+mod uuid;
 
 /// PostgreSQL specific SQL types
 ///
@@ -487,4 +487,30 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "650", array_oid = "651")]
     pub struct Cidr;
+}
+
+mod ops {
+    use super::sql_types::*;
+    use sql_types::ops::*;
+    use sql_types::{Interval, Nullable};
+
+    impl Add for Timestamptz {
+        type Rhs = Interval;
+        type Output = Timestamptz;
+    }
+
+    impl Add for Nullable<Timestamptz> {
+        type Rhs = Nullable<Interval>;
+        type Output = Nullable<Timestamptz>;
+    }
+
+    impl Sub for Timestamptz {
+        type Rhs = Interval;
+        type Output = Timestamptz;
+    }
+
+    impl Sub for Nullable<Timestamptz> {
+        type Rhs = Nullable<Interval>;
+        type Output = Nullable<Timestamptz>;
+    }
 }
