@@ -60,8 +60,8 @@ matrix:
     - SQLITE_BUNDLED=YESPLEASE
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
-    - (cd diesel_cli && travis-cargo test --no-default-features --features "sqlite-bundled")
-  
+    - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
+
 env:
   matrix:
     - BACKEND=sqlite
