@@ -492,25 +492,15 @@ pub mod sql_types {
 mod ops {
     use super::sql_types::*;
     use sql_types::ops::*;
-    use sql_types::{Interval, Nullable};
+    use sql_types::Interval;
 
     impl Add for Timestamptz {
         type Rhs = Interval;
         type Output = Timestamptz;
     }
 
-    impl Add for Nullable<Timestamptz> {
-        type Rhs = Nullable<Interval>;
-        type Output = Nullable<Timestamptz>;
-    }
-
     impl Sub for Timestamptz {
         type Rhs = Interval;
         type Output = Timestamptz;
-    }
-
-    impl Sub for Nullable<Timestamptz> {
-        type Rhs = Nullable<Interval>;
-        type Output = Nullable<Timestamptz>;
     }
 }

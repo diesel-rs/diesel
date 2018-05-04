@@ -23,6 +23,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `sqlite-bundled` feature to `diesel_cli` to make installing on
   some platforms easier.
 
+* All functions and operators provided by Diesel can now be used with numeric
+  operators if the SQL type supports it.
+
+* `PgInterval` can now be used with `-`, `*`, and `/`.
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn

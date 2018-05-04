@@ -3,7 +3,7 @@ use expression::{Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId, Default)]
+#[derive(Debug, Copy, Clone, QueryId, Default, DieselNumericOps)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {

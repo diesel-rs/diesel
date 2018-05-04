@@ -5,7 +5,7 @@ use expression::*;
 use query_builder::*;
 use result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, DieselNumericOps)]
 #[doc(hidden)]
 /// Coerces an expression to be another type. No checks are performed to ensure
 /// that the new type is valid in all positions that the previous type was.
