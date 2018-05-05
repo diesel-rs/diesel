@@ -17,6 +17,9 @@
 #[macro_use]
 #[doc(hidden)]
 pub mod ops;
+#[doc(hidden)]
+#[macro_use]
+pub mod functions;
 
 #[doc(hidden)]
 pub mod array_comparison;
@@ -28,9 +31,6 @@ pub mod coerce;
 pub mod count;
 #[doc(hidden)]
 pub mod exists;
-#[doc(hidden)]
-#[macro_use]
-pub mod functions;
 #[doc(hidden)]
 pub mod grouped;
 #[doc(hidden)]
@@ -47,9 +47,12 @@ pub mod sql_literal;
 pub mod subselect;
 
 #[doc(hidden)]
+#[allow(non_camel_case_types)]
 pub mod dsl {
+    use dsl::SqlTypeOf;
+
     #[doc(inline)]
-    pub use super::count::{count, count_star};
+    pub use super::count::*;
     #[doc(inline)]
     pub use super::exists::exists;
     #[doc(inline)]
@@ -66,8 +69,13 @@ pub mod dsl {
     #[cfg(feature = "postgres")]
     pub use pg::expression::dsl::*;
 
+    /// The return type of [`count(expr)`](../dsl/fn.count.html)
+    pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+
+    /// The return type of [`count_star)(`](../dsl/fn.count_star.html)
+    pub type count_star = super::count::CountStar;
+
     /// The return type of [`date(expr)`](../dsl/fn.date.html)
-    #[allow(non_camel_case_types)]
     pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
 }
 

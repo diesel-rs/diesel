@@ -4,27 +4,28 @@ use result::QueryResult;
 use super::Expression;
 use sql_types::BigInt;
 
-/// Creates a SQL `COUNT` expression
-///
-/// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::dsl::count`, or glob import
-/// `diesel::dsl::*`
-///
-/// # Examples
-///
-/// ```rust
-/// # #[macro_use] extern crate diesel;
-/// # include!("../doctest_setup.rs");
-/// # use diesel::dsl::*;
-/// #
-/// # fn main() {
-/// #     use schema::animals::dsl::*;
-/// #     let connection = establish_connection();
-/// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
-/// # }
-/// ```
-pub fn count<T: Expression>(t: T) -> Count<T> {
-    Count { target: t }
+sql_function! {
+    /// Creates a SQL `COUNT` expression
+    ///
+    /// As with most bare functions, this is not exported by default. You can import
+    /// it specifically as `diesel::dsl::count`, or glob import
+    /// `diesel::dsl::*`
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
+    /// # }
+    /// ```
+    #[aggregate]
+    fn count<T>(expr: T) -> BigInt;
 }
 
 /// Creates a SQL `COUNT(*)` expression
@@ -53,27 +54,6 @@ pub fn count<T: Expression>(t: T) -> Count<T> {
 pub fn count_star() -> CountStar {
     CountStar
 }
-
-#[derive(Debug, Clone, Copy, QueryId)]
-#[doc(hidden)]
-pub struct Count<T> {
-    target: T,
-}
-
-impl<T: Expression> Expression for Count<T> {
-    type SqlType = BigInt;
-}
-
-impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Count<T> {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("COUNT(");
-        self.target.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
-
-impl_selectable_expression!(Count<T>);
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
