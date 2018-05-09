@@ -117,7 +117,7 @@ Thank you! We'll try to respond as quickly as possible.
    Since this requires the nightly compiler, you can run the tests on stable with
    the following:
    ```bash
-   bin/test --no-clippy
+   bin/test
    ```
 
 [rustup]: https://www.rustup.rs
