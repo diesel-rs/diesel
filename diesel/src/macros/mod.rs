@@ -156,8 +156,7 @@ macro_rules! __diesel_column {
 /// ```
 ///
 /// If you are using types that aren't from Diesel's core types, you can specify
-/// which types to import. Note that the path given has to be an absolute path
-/// relative to the crate root. You cannot use `self` or `super`.
+/// which types to import.
 ///
 /// ```
 /// #[macro_use] extern crate diesel;
@@ -180,7 +179,6 @@ macro_rules! __diesel_column {
 /// }
 /// # fn main() {}
 /// ```
-///
 ///
 /// If you want to add documentation to the generated code you can use the
 /// following syntax:
