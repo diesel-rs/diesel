@@ -12,8 +12,8 @@ use std::process::Command;
 use tempfile::NamedTempFile;
 
 pub enum Filtering {
-    Whitelist(Vec<TableName>),
-    Blacklist(Vec<TableName>),
+    OnlyTables(Vec<TableName>),
+    ExceptTables(Vec<TableName>),
     None,
 }
 
@@ -28,8 +28,8 @@ impl Filtering {
         use self::Filtering::*;
 
         match *self {
-            Whitelist(ref names) => !names.contains(name),
-            Blacklist(ref names) => names.contains(name),
+            OnlyTables(ref names) => !names.contains(name),
+            ExceptTables(ref names) => names.contains(name),
             None => false,
         }
     }
@@ -306,36 +306,41 @@ impl<'de> Deserialize<'de> for Filtering {
             type Value = Filtering;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("either a whitelist or a blacklist")
+                f.write_str("either only-tables or except-tables")
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
                 V: MapAccess<'de>,
             {
-                let mut whitelist = None;
-                let mut blacklist = None;
+                let mut only_tables = None;
+                let mut except_tables = None;
                 while let Some((key, value)) = map.next_entry()? {
                     match key {
-                        "whitelist" => {
-                            if whitelist.is_some() {
-                                return Err(de::Error::duplicate_field("whitelist"));
+                        "only-tables" => {
+                            if only_tables.is_some() {
+                                return Err(de::Error::duplicate_field("only-tables"));
                             }
-                            whitelist = Some(value);
+                            only_tables = Some(value);
                         }
-                        "blacklist" => {
-                            if blacklist.is_some() {
-                                return Err(de::Error::duplicate_field("blacklist"));
+                        "except-tables" => {
+                            if except_tables.is_some() {
+                                return Err(de::Error::duplicate_field("except-tables"));
                             }
-                            blacklist = Some(value);
+                            except_tables = Some(value);
                         }
-                        _ => return Err(de::Error::unknown_field(key, &["whitelist", "blacklist"])),
+                        _ => {
+                            return Err(de::Error::unknown_field(
+                                key,
+                                &["only-tables", "except-tables"],
+                            ))
+                        }
                     }
                 }
-                match (whitelist, blacklist) {
-                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("blacklist")),
-                    (Some(w), None) => Ok(Filtering::Whitelist(w)),
-                    (None, Some(b)) => Ok(Filtering::Blacklist(b)),
+                match (only_tables, except_tables) {
+                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except-tables")),
+                    (Some(w), None) => Ok(Filtering::OnlyTables(w)),
+                    (None, Some(b)) => Ok(Filtering::ExceptTables(b)),
                     (None, None) => Ok(Filtering::None),
                 }
             }

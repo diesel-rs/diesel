@@ -352,10 +352,14 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         })
         .collect();
 
-    if matches.is_present("whitelist") {
-        config.filter = Filtering::Whitelist(filter)
-    } else if matches.is_present("blacklist") {
-        config.filter = Filtering::Blacklist(filter)
+    if matches.is_present("whitelist") || matches.is_present("blacklist") {
+        eprintln!("Deprecation warning: whitelist/blacklist will be removed in a future version, use only-tables/except-tables instead.");
+    }
+
+    if matches.is_present("only-tables") || matches.is_present("whitelist") {
+        config.filter = Filtering::Include(filter)
+    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
+        config.filter = Filtering::Exclude(filter)
     }
 
     if matches.is_present("with-docs") {
