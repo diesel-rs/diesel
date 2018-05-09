@@ -15,6 +15,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `DatabaseErrorKind::ReadOnlyTransaction` to allow applications to
   handle errors caused by writing when only allowed to read.
 
+* Migrations can now opt out of being wrapped in a transaction by adding
+  `metadata.toml` to their directory with `run_in_transaction = false`.
+
 ### Removed
 
 * All previously deprecated items have been removed.

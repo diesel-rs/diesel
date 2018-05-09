@@ -85,6 +85,7 @@
 //! ```
 #[macro_use]
 extern crate diesel;
+extern crate toml;
 
 #[cfg(feature = "barrel")]
 extern crate barrel;
@@ -328,7 +329,7 @@ fn run_migration<Conn>(
 where
     Conn: MigrationConnection,
 {
-    conn.transaction(|| {
+    let mut run_migration = || {
         if migration.version() != "00000000000000" {
             writeln!(output, "Running migration {}", name(&migration))?;
         }
@@ -342,7 +343,26 @@ where
         }
         conn.insert_new_migration(migration.version())?;
         Ok(())
-    })
+    };
+
+    let run_in_transaction = migration
+        .metadata()
+        .and_then(|m| m.get("run_in_transaction"));
+    let run_in_transaction = match run_in_transaction.as_ref().map(|s| s.as_ref()) {
+        Some("true") => true,
+        Some("false") | None => false,
+        Some(_) => {
+            return Err(MigrationError::InvalidMetadata(
+                "run_in_transaction must be a boolean".into(),
+            ).into())
+        }
+    };
+
+    if run_in_transaction {
+        conn.transaction(run_migration)
+    } else {
+        run_migration().map_err(Into::into)
+    }
 }
 
 fn revert_migration<Conn: Connection>(

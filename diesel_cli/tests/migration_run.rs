@@ -508,3 +508,41 @@ fn verify_schema_errors_if_schema_file_would_change() {
     );
     assert!(p.has_file("src/my_schema.rs"));
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn migrations_can_be_run_without_transactions() {
+    let p = project("migration_run_without_transaction").build();
+    let db = database(&p.database_url());
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        "DROP TABLE users",
+    );
+
+    // CREATE INDEX CONCURRENTLY cannot be run inside a transaction.
+    // It also can't be run in a multiline statement, so it needs its own
+    // migration.
+    p.create_migration(
+        "12346_index_users_table",
+        "CREATE UNIQUE INDEX CONCURRENTLY idx ON users (name)",
+        "DROP INDEX idx",
+    );
+    p.add_migration_metadata("12346_index_users_table", "run_in_transaction = false");
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12346"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
