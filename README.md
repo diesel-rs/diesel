@@ -23,6 +23,11 @@ Find our extensive Getting Started tutorial at
 [https://diesel.rs/guides/getting-started](https://diesel.rs/guides/getting-started).
 Guides on more specific features are coming soon.
 
+## Getting help
+If you run into problems, Diesel has a very active Gitter room.
+You can come ask for help at
+[gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+
 ## Code of conduct
 
 Anyone who interacts with Diesel in any space, including but not limited to
