@@ -1,8 +1,12 @@
 use diesel::connection::SimpleConnection;
 use diesel::migration::*;
 
-use std::path::{Path, PathBuf};
+use std::borrow::Cow;
 use std::fmt;
+use std::fs::File;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use toml;
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]
@@ -38,7 +42,7 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
 
     if valid_sql_migration_directory(&path) {
         let version = try!(version_from_path(&path));
-        Ok(Box::new(SqlFileMigration(path, version)))
+        SqlFileMigration::new(path, version).map(|m| Box::new(m) as _)
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
     }
@@ -82,26 +86,53 @@ pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
 }
 
-use std::fs::File;
-use std::io::Read;
+struct SqlFileMigration {
+    directory: PathBuf,
+    version: String,
+    metadata: Option<TomlMetadata>,
+}
 
-struct SqlFileMigration(PathBuf, String);
+impl SqlFileMigration {
+    fn new(directory: PathBuf, version: String) -> Result<Self, MigrationError> {
+        let metadata_path = directory.join("metadata.toml");
+        let metadata = if metadata_path.exists() {
+            let mut buf = Vec::new();
+            let mut file = File::open(metadata_path)?;
+            file.read_to_end(&mut buf)?;
+            let value =
+                toml::from_slice(&buf).map_err(|e| MigrationError::InvalidMetadata(e.into()))?;
+            Some(TomlMetadata(value))
+        } else {
+            None
+        };
+
+        Ok(Self {
+            directory,
+            version,
+            metadata,
+        })
+    }
+}
 
 impl Migration for SqlFileMigration {
     fn file_path(&self) -> Option<&Path> {
-        Some(self.0.as_path())
+        Some(&self.directory)
     }
 
     fn version(&self) -> &str {
-        &self.1
+        &self.version
     }
 
     fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        run_sql_from_file(conn, &self.0.join("up.sql"))
+        run_sql_from_file(conn, &self.directory.join("up.sql"))
     }
 
     fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-        run_sql_from_file(conn, &self.0.join("down.sql"))
+        run_sql_from_file(conn, &self.directory.join("down.sql"))
+    }
+
+    fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref().map(|m| m as _)
     }
 }
 
@@ -116,6 +147,18 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
 
     try!(conn.batch_execute(&sql));
     Ok(())
+}
+
+struct TomlMetadata(toml::Value);
+
+impl Metadata for TomlMetadata {
+    fn get(&self, key: &str) -> Option<Cow<str>> {
+        self.0.get(key).map(|v| {
+            v.as_str()
+                .map(Into::into)
+                .unwrap_or_else(|| v.to_string().into())
+        })
+    }
 }
 
 #[cfg(test)]

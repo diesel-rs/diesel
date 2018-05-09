@@ -23,6 +23,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `sqlite-bundled` feature to `diesel_cli` to make installing on
   some platforms easier.
 
+* Migrations can now opt out of being wrapped in a transaction by adding
+  `metadata.toml` to their directory with `run_in_transaction = false`.
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn

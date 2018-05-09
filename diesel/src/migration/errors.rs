@@ -14,15 +14,22 @@ use result;
 pub enum MigrationError {
     /// The migration directory wasn't found
     MigrationDirectoryNotFound,
+
     /// Provided migration was in an unknown format
     UnknownMigrationFormat(PathBuf),
+
     /// General system IO error
     IoError(io::Error),
+
     /// Provided migration had an incompatible version number
     UnknownMigrationVersion(String),
+
     /// No migrations had to be/ could be run
     NoMigrationRun,
-    ///
+
+    /// The metadatafile for a given migration was invalid
+    InvalidMetadata(Box<Error>),
+
     #[doc(hidden)]
     __NonExhaustive,
 }
@@ -33,18 +40,39 @@ impl Error for MigrationError {
             MigrationError::MigrationDirectoryNotFound => {
                 "Unable to find migrations directory in this directory or any parent directories."
             }
+
             MigrationError::UnknownMigrationFormat(_) => {
                 "Invalid migration directory, the directory's name should be \
                  <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql."
             }
+
             MigrationError::IoError(ref error) => error.description(),
+
             MigrationError::UnknownMigrationVersion(_) => {
                 "Unable to find migration version to revert in the migrations directory."
             }
+
             MigrationError::NoMigrationRun => {
                 "No migrations have been run. Did you forget `diesel migration run`?"
             }
+
+            MigrationError::InvalidMetadata(_) => "Migration metadata was invalid",
+
             MigrationError::__NonExhaustive => unreachable!(),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            MigrationError::IoError(ref err) => Some(err),
+
+            MigrationError::InvalidMetadata(ref err) => Some(&**err),
+
+            MigrationError::MigrationDirectoryNotFound
+            | MigrationError::UnknownMigrationFormat(_)
+            | MigrationError::UnknownMigrationVersion(_)
+            | MigrationError::NoMigrationRun
+            | MigrationError::__NonExhaustive => None,
         }
     }
 }
@@ -83,11 +111,13 @@ impl From<io::Error> for MigrationError {
 pub enum RunMigrationsError {
     /// A general migration error occured
     MigrationError(MigrationError),
+
     /// The provided migration included an invalid query
     QueryError(result::Error),
+
     /// The provided migration was empty
     EmptyMigration,
-    ///
+
     #[doc(hidden)]
     __NonExhaustive,
 }

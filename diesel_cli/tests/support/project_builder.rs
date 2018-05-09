@@ -166,6 +166,17 @@ impl Project {
         let mut down_file = fs::File::create(&migration_path.join("down.sql")).unwrap();
         down_file.write_all(down.as_bytes()).unwrap();
     }
+
+    #[cfg(feature = "postgres")]
+    pub fn add_migration_metadata(&self, name: &str, metadata: &str) {
+        use std::io::Write;
+
+        let migration_path = self.directory.path().join("migrations").join(name);
+        let mut file = fs::File::create(&migration_path.join("metadata.toml"))
+            .expect("Could not create migration metadata file");
+        file.write_all(metadata.as_bytes())
+            .expect("Could not write to migration metadata file");
+    }
 }
 
 #[cfg(not(feature = "sqlite"))]
