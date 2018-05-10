@@ -1,6 +1,5 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::os::raw as libc;
 use std::{slice, str};
@@ -11,28 +10,31 @@ use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
-    inner_statement: NonNull<ffi::sqlite3_stmt>,
-    col_index: Cell<libc::c_int>,
+    value: ffi::sqlite3_value,
 }
 
 pub struct SqliteRow {
-    value: SqliteValue,
+    stmt: NonNull<ffi::sqlite3_stmt>,
     next_col_index: libc::c_int,
 }
 
 impl SqliteValue {
-    pub(crate) fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
-        SqliteValue {
-            inner_statement: inner_statement,
-            col_index: Cell::new(0),
-        }
+    pub(crate) unsafe fn new<'a>(inner: *mut ffi::sqlite3_value) -> Option<&'a Self>  {
+        (inner as *const _ as *const Self).as_ref()
+            .and_then(|v| {
+                if v.is_null() {
+                    None
+                } else {
+                    Some(v)
+                }
+            })
     }
 
     pub fn read_text(&self) -> &str {
         unsafe {
-            let ptr = ffi::sqlite3_column_text(self.inner_statement.as_ptr(), self.col_index.get());
+            let ptr = ffi::sqlite3_value_text(self.value());
             let len =
-                ffi::sqlite3_column_bytes(self.inner_statement.as_ptr(), self.col_index.get());
+                ffi::sqlite3_value_bytes(self.value());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
             str::from_utf8_unchecked(bytes)
         }
@@ -40,50 +42,54 @@ impl SqliteValue {
 
     pub fn read_blob(&self) -> &[u8] {
         unsafe {
-            let ptr = ffi::sqlite3_column_blob(self.inner_statement.as_ptr(), self.col_index.get());
+            let ptr = ffi::sqlite3_value_blob(self.value());
             let len =
-                ffi::sqlite3_column_bytes(self.inner_statement.as_ptr(), self.col_index.get());
+                ffi::sqlite3_value_bytes(self.value());
             slice::from_raw_parts(ptr as *const u8, len as usize)
         }
     }
 
     pub fn read_integer(&self) -> i32 {
         unsafe {
-            ffi::sqlite3_column_int(self.inner_statement.as_ptr(), self.col_index.get()) as i32
+            ffi::sqlite3_value_int(self.value()) as i32
         }
     }
 
     pub fn read_long(&self) -> i64 {
         unsafe {
-            ffi::sqlite3_column_int64(self.inner_statement.as_ptr(), self.col_index.get()) as i64
+            ffi::sqlite3_value_int64(self.value()) as i64
         }
     }
 
     pub fn read_double(&self) -> f64 {
         unsafe {
-            ffi::sqlite3_column_double(self.inner_statement.as_ptr(), self.col_index.get()) as f64
+            ffi::sqlite3_value_double(self.value()) as f64
         }
     }
 
     pub fn is_null(&self) -> bool {
         let tpe = unsafe {
-            ffi::sqlite3_column_type(self.inner_statement.as_ptr(), self.col_index.get())
+            ffi::sqlite3_value_type(self.value())
         };
         tpe == ffi::SQLITE_NULL
+    }
+
+    fn value(&self) -> *mut ffi::sqlite3_value {
+        &self.value as *const _ as _
     }
 }
 
 impl SqliteRow {
     pub(crate) fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
         SqliteRow {
-            value: SqliteValue::new(inner_statement),
+            stmt: inner_statement,
             next_col_index: 0,
         }
     }
 
     pub fn into_named<'a>(self, indices: &'a HashMap<&'a str, usize>) -> SqliteNamedRow<'a> {
         SqliteNamedRow {
-            value: self.value,
+            stmt: self.stmt,
             column_indices: indices,
         }
     }
@@ -91,27 +97,26 @@ impl SqliteRow {
 
 impl Row<Sqlite> for SqliteRow {
     fn take(&mut self) -> Option<&SqliteValue> {
-        let is_null = self.next_is_null(1);
-        self.value.col_index.set(self.next_col_index);
+        let col_index = self.next_col_index;
         self.next_col_index += 1;
-        if is_null {
-            None
-        } else {
-            Some(&self.value)
+
+        unsafe {
+            let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), col_index);
+            SqliteValue::new(ptr)
         }
     }
 
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| {
             let idx = self.next_col_index + i as libc::c_int;
-            let tpe = unsafe { ffi::sqlite3_column_type(self.value.inner_statement.as_ptr(), idx) };
+            let tpe = unsafe { ffi::sqlite3_column_type(self.stmt.as_ptr(), idx) };
             tpe == ffi::SQLITE_NULL
         })
     }
 }
 
 pub struct SqliteNamedRow<'a> {
-    value: SqliteValue,
+    stmt: NonNull<ffi::sqlite3_stmt>,
     column_indices: &'a HashMap<&'a str, usize>,
 }
 
@@ -121,11 +126,9 @@ impl<'a> NamedRow<Sqlite> for SqliteNamedRow<'a> {
     }
 
     fn get_raw_value(&self, idx: usize) -> Option<&SqliteValue> {
-        self.value.col_index.set(idx as libc::c_int);
-        if self.value.is_null() {
-            None
-        } else {
-            Some(&self.value)
+        unsafe {
+            let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), idx as libc::c_int);
+            SqliteValue::new(ptr)
         }
     }
 }
