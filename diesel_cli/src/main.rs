@@ -357,9 +357,9 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
     }
 
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
-        config.filter = Filtering::Include(filter)
+        config.filter = Filtering::OnlyTables(filter)
     } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
-        config.filter = Filtering::Exclude(filter)
+        config.filter = Filtering::ExceptTables(filter)
     }
 
     if matches.is_present("with-docs") {
