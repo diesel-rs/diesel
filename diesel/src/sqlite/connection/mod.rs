@@ -9,7 +9,6 @@ mod sqlite_value;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
-use std::rc::Rc;
 
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
@@ -27,7 +26,7 @@ use sqlite::Sqlite;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
-    raw_connection: Rc<RawConnection>,
+    raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
 }
 
@@ -49,7 +48,7 @@ impl Connection for SqliteConnection {
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         RawConnection::establish(database_url).map(|conn| SqliteConnection {
             statement_cache: StatementCache::new(),
-            raw_connection: Rc::new(conn),
+            raw_connection: conn,
             transaction_manager: AnsiTransactionManager::new(),
         })
     }
