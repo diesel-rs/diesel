@@ -19,22 +19,20 @@ pub struct SqliteRow {
 }
 
 impl SqliteValue {
-    pub(crate) unsafe fn new<'a>(inner: *mut ffi::sqlite3_value) -> Option<&'a Self>  {
-        (inner as *const _ as *const Self).as_ref()
-            .and_then(|v| {
-                if v.is_null() {
-                    None
-                } else {
-                    Some(v)
-                }
-            })
+    pub(crate) unsafe fn new<'a>(inner: *mut ffi::sqlite3_value) -> Option<&'a Self> {
+        (inner as *const _ as *const Self).as_ref().and_then(|v| {
+            if v.is_null() {
+                None
+            } else {
+                Some(v)
+            }
+        })
     }
 
     pub fn read_text(&self) -> &str {
         unsafe {
             let ptr = ffi::sqlite3_value_text(self.value());
-            let len =
-                ffi::sqlite3_value_bytes(self.value());
+            let len = ffi::sqlite3_value_bytes(self.value());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
             str::from_utf8_unchecked(bytes)
         }
@@ -43,34 +41,25 @@ impl SqliteValue {
     pub fn read_blob(&self) -> &[u8] {
         unsafe {
             let ptr = ffi::sqlite3_value_blob(self.value());
-            let len =
-                ffi::sqlite3_value_bytes(self.value());
+            let len = ffi::sqlite3_value_bytes(self.value());
             slice::from_raw_parts(ptr as *const u8, len as usize)
         }
     }
 
     pub fn read_integer(&self) -> i32 {
-        unsafe {
-            ffi::sqlite3_value_int(self.value()) as i32
-        }
+        unsafe { ffi::sqlite3_value_int(self.value()) as i32 }
     }
 
     pub fn read_long(&self) -> i64 {
-        unsafe {
-            ffi::sqlite3_value_int64(self.value()) as i64
-        }
+        unsafe { ffi::sqlite3_value_int64(self.value()) as i64 }
     }
 
     pub fn read_double(&self) -> f64 {
-        unsafe {
-            ffi::sqlite3_value_double(self.value()) as f64
-        }
+        unsafe { ffi::sqlite3_value_double(self.value()) as f64 }
     }
 
     pub fn is_null(&self) -> bool {
-        let tpe = unsafe {
-            ffi::sqlite3_value_type(self.value())
-        };
+        let tpe = unsafe { ffi::sqlite3_value_type(self.value()) };
         tpe == ffi::SQLITE_NULL
     }
 

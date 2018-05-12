@@ -23,6 +23,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `sqlite-bundled` feature to `diesel_cli` to make installing on
   some platforms easier.
 
+* Custom SQL functions can now be used with SQLite. See [the
+  docs][sql-function-sqlite-1-3-0] for details.
+
+[sql-function-sqlite-1-3-0]: http://docs.diesel.rs/diesel/macro.sql_function.html#use-with-sqlite
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn

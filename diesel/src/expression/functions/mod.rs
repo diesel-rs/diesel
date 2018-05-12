@@ -260,8 +260,92 @@ macro_rules! __diesel_sql_function_body {
                     }
                 }
             }
+
+            __diesel_sqlite_register_fn! {
+                type_args = ($($type_args)*),
+                fn_name = $fn_name,
+                args = ($($arg_name,)+),
+                sql_args = ($($arg_type,)+),
+                ret = $return_type,
+            }
         }
     }
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "sqlite")]
+macro_rules! __diesel_sqlite_register_fn {
+    // We can't handle generic functions for SQLite
+    (
+        type_args = ($($type_args:tt)+),
+        $($rest:tt)*
+    ) => {
+    };
+
+    (
+        type_args = (),
+        fn_name = $fn_name:ident,
+        args = ($($args:ident,)+),
+        sql_args = $sql_args:ty,
+        ret = $ret:ty,
+    ) => {
+        #[allow(dead_code)]
+        /// Registers an implementation for this function on the given connection
+        ///
+        /// This function must be called for every `SqliteConnection` before
+        /// this SQL function can be used on SQLite. The implementation must be
+        /// deterministic (returns the same result given the same arguments). If
+        /// the function is nondeterministic, call
+        /// `register_nondeterministic_impl` instead.
+        pub fn register_impl<F, Ret, $($args,)+>(
+            conn: &$crate::SqliteConnection,
+            f: F,
+        ) -> $crate::QueryResult<()>
+        where
+            F: Fn($($args,)+) -> Ret + Send + 'static,
+            ($($args,)+): $crate::deserialize::Queryable<$sql_args, $crate::sqlite::Sqlite>,
+            Ret: $crate::serialize::ToSql<$ret, $crate::sqlite::Sqlite>,
+        {
+            conn.register_sql_function::<$sql_args, $ret, _, _, _>(
+                stringify!($fn_name),
+                true,
+                move |($($args,)+)| f($($args),+),
+            )
+        }
+
+        #[allow(dead_code)]
+        /// Registers an implementation for this function on the given connection
+        ///
+        /// This function must be called for every `SqliteConnection` before
+        /// this SQL function can be used on SQLite.
+        /// `register_nondeterministic_impl` should only be used if your
+        /// function can return different results with the same arguments (e.g.
+        /// `random`). If your function is deterministic, you should call
+        /// `register_impl` instead.
+        pub fn register_nondeterministic_impl<F, Ret, $($args,)+>(
+            conn: &$crate::SqliteConnection,
+            mut f: F,
+        ) -> $crate::QueryResult<()>
+        where
+            F: FnMut($($args,)+) -> Ret + Send + 'static,
+            ($($args,)+): $crate::deserialize::Queryable<$sql_args, $crate::sqlite::Sqlite>,
+            Ret: $crate::serialize::ToSql<$ret, $crate::sqlite::Sqlite>,
+        {
+            conn.register_sql_function::<$sql_args, $ret, _, _, _>(
+                stringify!($fn_name),
+                false,
+                move |($($args,)+)| f($($args),+),
+            )
+        }
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "sqlite"))]
+macro_rules! __diesel_sqlite_register_fn {
+    ($($token:tt)*) => {};
 }
 
 #[macro_export]
@@ -325,7 +409,7 @@ macro_rules! __diesel_sql_function_body {
 /// Most attributes given to this macro will be put on the generated function
 /// (including doc comments).
 ///
-/// # Example
+/// # Adding Doc Comments
 ///
 /// ```no_run
 /// # #[macro_use] extern crate diesel;
@@ -349,6 +433,8 @@ macro_rules! __diesel_sql_function_body {
 /// // SELECT * FROM crates WHERE canon_crate_name(crates.name) = canon_crate_name($1)
 /// # }
 /// ```
+///
+/// # Special Attributes
 ///
 /// There are a handful of special attributes that Diesel will recognize. They
 /// are:
@@ -380,6 +466,49 @@ macro_rules! __diesel_sql_function_body {
 /// # fn main() {
 /// # use self::crates::dsl::*;
 /// crates.select(sum(id));
+/// # }
+/// ```
+///
+/// # Use with SQLite
+///
+/// On most backends, the implementation of the function is defined in a
+/// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
+/// Rust instead. You must call `register_impl` or
+/// `register_nondeterministic_impl` with every connection before you can use
+/// the function.
+///
+/// These functions will only be generated if the `sqlite` feature is enabled,
+/// and the function is not generic. Generic functions and variadic functions
+/// are not supported on SQLite.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # use diesel::*;
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// # }
+/// #
+/// use diesel::sql_types::{Integer, Double};
+/// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
+///
+/// # #[cfg(feature = "sqlite")]
+/// # fn run_test() -> Result<(), Box<::std::error::Error>> {
+/// let connection = SqliteConnection::establish(":memory:")?;
+///
+/// add_mul::register_impl(&connection, |x: i32, y: i32, z: f64| {
+///     (x + y) as f64 * z
+/// })?;
+///
+/// let result = select(add_mul(1, 2, 1.5))
+///     .get_result::<f64>(&connection)?;
+/// assert_eq!(4.5, result);
+/// #     Ok(())
 /// # }
 /// ```
 macro_rules! sql_function {

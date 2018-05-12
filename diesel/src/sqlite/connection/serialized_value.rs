@@ -41,39 +41,72 @@ impl SerializedValue {
                 ),
                 (SqliteType::Float, Some(bytes)) => {
                     let value = ptr::read_unaligned(bytes.as_ptr() as *const f32);
-                    ffi::sqlite3_bind_double(
-                        stmt.as_ptr(),
-                        idx,
-                        libc::c_double::from(value),
-                    )
+                    ffi::sqlite3_bind_double(stmt.as_ptr(), idx, libc::c_double::from(value))
                 }
                 (SqliteType::Double, Some(bytes)) => {
                     let value = ptr::read_unaligned(bytes.as_ptr() as *const f64);
-                    ffi::sqlite3_bind_double(
-                        stmt.as_ptr(),
-                        idx,
-                        value as libc::c_double,
-                    )
+                    ffi::sqlite3_bind_double(stmt.as_ptr(), idx, value as libc::c_double)
                 }
                 (SqliteType::SmallInt, Some(bytes)) => {
                     let value = ptr::read_unaligned(bytes.as_ptr() as *const i16);
-                    ffi::sqlite3_bind_int(
-                        stmt.as_ptr(),
-                        idx,
-                        libc::c_int::from(value),
-                    )
+                    ffi::sqlite3_bind_int(stmt.as_ptr(), idx, libc::c_int::from(value))
                 }
                 (SqliteType::Integer, Some(bytes)) => {
                     let value = ptr::read_unaligned(bytes.as_ptr() as *const i32);
-                    ffi::sqlite3_bind_int(
-                        stmt.as_ptr(),
-                        idx,
-                        value as libc::c_int,
-                    )
+                    ffi::sqlite3_bind_int(stmt.as_ptr(), idx, value as libc::c_int)
                 }
                 (SqliteType::Long, Some(bytes)) => {
                     let value = ptr::read_unaligned(bytes.as_ptr() as *const i64);
                     ffi::sqlite3_bind_int64(stmt.as_ptr(), idx, value)
+                }
+            }
+        }
+    }
+
+    // We are always reading potentially misaligned pointers with
+    // `ptr::read_unaligned`
+    #[cfg_attr(feature = "clippy", allow(cast_ptr_alignment))]
+    pub fn result_of(self, ctx: *mut ffi::sqlite3_context) {
+        // This unsafe block assumes the following invariants:
+        //
+        // - `ctx` points to valid memory
+        // - If `self.ty` is anything other than `Binary` or `Text`, the appropriate
+        //   number of bytes were written to `self.data` for an integer of the
+        //   corresponding size.
+        unsafe {
+            match (self.ty, self.data) {
+                (_, None) => ffi::sqlite3_result_null(ctx),
+                (SqliteType::Binary, Some(bytes)) => ffi::sqlite3_result_blob(
+                    ctx,
+                    bytes.as_ptr() as *const libc::c_void,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_TRANSIENT(),
+                ),
+                (SqliteType::Text, Some(bytes)) => ffi::sqlite3_result_text(
+                    ctx,
+                    bytes.as_ptr() as *const libc::c_char,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_TRANSIENT(),
+                ),
+                (SqliteType::Float, Some(bytes)) => {
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f32);
+                    ffi::sqlite3_result_double(ctx, libc::c_double::from(value))
+                }
+                (SqliteType::Double, Some(bytes)) => {
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f64);
+                    ffi::sqlite3_result_double(ctx, value as libc::c_double)
+                }
+                (SqliteType::SmallInt, Some(bytes)) => {
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i16);
+                    ffi::sqlite3_result_int(ctx, libc::c_int::from(value))
+                }
+                (SqliteType::Integer, Some(bytes)) => {
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i32);
+                    ffi::sqlite3_result_int(ctx, value as libc::c_int)
+                }
+                (SqliteType::Long, Some(bytes)) => {
+                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i64);
+                    ffi::sqlite3_result_int64(ctx, value)
                 }
             }
         }
