@@ -1021,17 +1021,17 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// specifies the relation of the tables and the ON clause in the following way:
 ///
-/// `parent_table -> child_table (foreign_key)`
+/// `child_table -> parent_table (foreign_key)`
 ///
 /// * `parent_table` is the Table with the Primary key.
 ///
-/// * `child_table` is the Table with the Foreighn key.
+/// * `child_table` is the Table with the Foreign key.
 ///
 /// So given the Table decaration from [Associations docs](http://docs.diesel.rs/diesel/associations/index.html)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
-/// * and the Foreighn key would be `Post.user_id`
+/// * and the Foreign key would be `Post.user_id`
 ///
 /// For joins that do not explicitly use on clauses via [`JoinOnDsl`](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
 /// the following on clause is generated implicitly:
