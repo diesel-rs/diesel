@@ -2,6 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 #[doc(hidden)]
 pub mod raw;
+mod serialized_value;
 mod stmt;
 mod statement_iterator;
 mod sqlite_value;
