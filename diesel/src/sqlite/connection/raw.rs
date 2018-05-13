@@ -62,16 +62,6 @@ impl RawConnection {
     pub fn rows_affected_by_last_query(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.internal_connection.as_ptr()) as usize }
     }
-
-    pub fn last_error_message(&self) -> String {
-        let c_str =
-            unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(self.internal_connection.as_ptr())) };
-        c_str.to_string_lossy().into_owned()
-    }
-
-    pub fn last_error_code(&self) -> libc::c_int {
-        unsafe { ffi::sqlite3_extended_errcode(self.internal_connection.as_ptr()) }
-    }
 }
 
 impl Drop for RawConnection {
