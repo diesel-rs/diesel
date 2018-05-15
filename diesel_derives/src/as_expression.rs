@@ -98,6 +98,14 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
                         Bound::new(self)
                     }
                 }
+
+                impl#impl_generics diesel::associations::ForeignKey<#sql_type> for #struct_ty {
+                    type KeyType = #struct_ty;
+
+                    fn key(&self) -> Option<&Self::KeyType> {
+                        Some(self)
+                    }
+                }
             )
         } else {
             tokens
