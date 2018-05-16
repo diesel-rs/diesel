@@ -1057,7 +1057,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html) where the number of
     /// affected rows is often enough information.
     ///
-    /// When asking the database to return data from a query, [`load`](fn.load.html) should
+    /// When asking the database to return data from a query, [`load`](#method.load) should
     /// probably be used instead.
     ///
     /// # Example
