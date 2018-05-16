@@ -4,7 +4,7 @@ use query_builder::*;
 use result::QueryResult;
 use sql_types::IntoNullable;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DieselNumericOps)]
 pub struct Nullable<T>(T);
 
 impl<T> Nullable<T> {

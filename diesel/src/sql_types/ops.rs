@@ -31,6 +31,8 @@
 //! satisfied all constraints, Rust would not know which one to use, and there
 //! would be no way for the user to specify which one should be used.
 
+use super::*;
+
 /// Represents SQL types which can be added.
 pub trait Add {
     /// The SQL type which can be added to this one
@@ -66,44 +68,24 @@ pub trait Div {
 macro_rules! numeric_type {
     ($($tpe: ident),*) => {
         $(
-        impl Add for super::$tpe {
-            type Rhs = super::$tpe;
-            type Output = super::$tpe;
+        impl Add for $tpe {
+            type Rhs = $tpe;
+            type Output = $tpe;
         }
 
-        impl Add for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::$tpe>;
-            type Output = super::Nullable<super::$tpe>;
+        impl Sub for $tpe {
+            type Rhs = $tpe;
+            type Output = $tpe;
         }
 
-        impl Sub for super::$tpe {
-            type Rhs = super::$tpe;
-            type Output = super::$tpe;
+        impl Mul for $tpe {
+            type Rhs = $tpe;
+            type Output = $tpe;
         }
 
-        impl Sub for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::$tpe>;
-            type Output = super::Nullable<super::$tpe>;
-        }
-
-        impl Mul for super::$tpe {
-            type Rhs = super::$tpe;
-            type Output = super::$tpe;
-        }
-
-        impl Mul for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::$tpe>;
-            type Output = super::Nullable<super::$tpe>;
-        }
-
-        impl Div for super::$tpe {
-            type Rhs = super::$tpe;
-            type Output = super::$tpe;
-        }
-
-        impl Div for super::Nullable<super::$tpe> {
-            type Rhs = super::Nullable<super::$tpe>;
-            type Output = super::Nullable<super::$tpe>;
+        impl Div for $tpe {
+            type Rhs = $tpe;
+            type Output = $tpe;
         }
         )*
     }
@@ -111,62 +93,92 @@ macro_rules! numeric_type {
 
 numeric_type!(SmallInt, Integer, BigInt, Float, Double, Numeric);
 
-impl Add for super::Time {
-    type Rhs = super::Interval;
-    type Output = super::Time;
+impl Add for Time {
+    type Rhs = Interval;
+    type Output = Time;
 }
 
-impl Add for super::Nullable<super::Time> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Time>;
+impl Sub for Time {
+    type Rhs = Interval;
+    type Output = Time;
 }
 
-impl Sub for super::Time {
-    type Rhs = super::Interval;
-    type Output = super::Time;
+impl Add for Date {
+    type Rhs = Interval;
+    type Output = Timestamp;
 }
 
-impl Sub for super::Nullable<super::Time> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Time>;
+impl Sub for Date {
+    type Rhs = Interval;
+    type Output = Timestamp;
 }
 
-impl Add for super::Date {
-    type Rhs = super::Interval;
-    type Output = super::Timestamp;
+impl Add for Timestamp {
+    type Rhs = Interval;
+    type Output = Timestamp;
 }
 
-impl Add for super::Nullable<super::Date> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Timestamp>;
+impl Sub for Timestamp {
+    type Rhs = Interval;
+    type Output = Timestamp;
 }
 
-impl Sub for super::Date {
-    type Rhs = super::Interval;
-    type Output = super::Timestamp;
+impl Add for Interval {
+    type Rhs = Interval;
+    type Output = Interval;
 }
 
-impl Sub for super::Nullable<super::Date> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Timestamp>;
+impl Sub for Interval {
+    type Rhs = Interval;
+    type Output = Interval;
 }
 
-impl Add for super::Timestamp {
-    type Rhs = super::Interval;
-    type Output = super::Timestamp;
+impl Mul for Interval {
+    type Rhs = Integer;
+    type Output = Interval;
 }
 
-impl Add for super::Nullable<super::Timestamp> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Timestamp>;
+impl Div for Interval {
+    type Rhs = Integer;
+    type Output = Interval;
 }
 
-impl Sub for super::Timestamp {
-    type Rhs = super::Interval;
-    type Output = super::Timestamp;
+impl<T> Add for Nullable<T>
+where
+    T: Add + NotNull,
+    T::Rhs: NotNull,
+    T::Output: NotNull,
+{
+    type Rhs = Nullable<T::Rhs>;
+    type Output = Nullable<T::Output>;
 }
 
-impl Sub for super::Nullable<super::Timestamp> {
-    type Rhs = super::Nullable<super::Interval>;
-    type Output = super::Nullable<super::Timestamp>;
+impl<T> Sub for Nullable<T>
+where
+    T: Sub + NotNull,
+    T::Rhs: NotNull,
+    T::Output: NotNull,
+{
+    type Rhs = Nullable<T::Rhs>;
+    type Output = Nullable<T::Output>;
+}
+
+impl<T> Mul for Nullable<T>
+where
+    T: Mul + NotNull,
+    T::Rhs: NotNull,
+    T::Output: NotNull,
+{
+    type Rhs = Nullable<T::Rhs>;
+    type Output = Nullable<T::Output>;
+}
+
+impl<T> Div for Nullable<T>
+where
+    T: Div + NotNull,
+    T::Rhs: NotNull,
+    T::Output: NotNull,
+{
+    type Rhs = Nullable<T::Rhs>;
+    type Output = Nullable<T::Output>;
 }

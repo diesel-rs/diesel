@@ -6,7 +6,7 @@ use query_builder::*;
 use query_dsl::RunQueryDsl;
 use result::QueryResult;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, DieselNumericOps)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`sql()`] function.
 ///
