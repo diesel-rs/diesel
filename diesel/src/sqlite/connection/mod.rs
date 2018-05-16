@@ -319,12 +319,9 @@ mod tests {
     #[test]
     fn register_multiarg_function() {
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(&connection, |x: i32, y: i32| {
-            x + y
-        }).unwrap();
+        my_add::register_impl(&connection, |x: i32, y: i32| x + y).unwrap();
 
-        let added = ::select(my_add(1, 2))
-            .get_result::<i32>(&connection);
+        let added = ::select(my_add(1, 2)).get_result::<i32>(&connection);
         assert_eq!(Ok(3), added);
     }
 
