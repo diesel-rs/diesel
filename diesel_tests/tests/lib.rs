@@ -6,6 +6,7 @@ extern crate assert_matches;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
+#[allow(deprecated)]
 extern crate diesel_infer_schema;
 #[cfg(feature = "sqlite")]
 #[macro_use]
