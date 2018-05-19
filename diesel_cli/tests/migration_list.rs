@@ -16,7 +16,7 @@ fn migration_list_lists_pending_applied_migrations() {
 
     p.create_migration(
         "12345_create_users_table",
-        "CREATE TABLE users ( id INTEGER )",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
         "DROP TABLE users",
     );
 

@@ -5,7 +5,7 @@ fn migration_redo_runs_the_last_migration_down_and_up() {
     let p = project("migration_redo").folder("migrations").build();
     p.create_migration(
         "12345_create_users_table",
-        "CREATE TABLE users (id INTEGER);",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         "DROP TABLE users;",
     );
 
@@ -34,7 +34,7 @@ fn migration_redo_respects_migration_dir_var() {
     p.create_migration_in_directory(
         "foo",
         "12345_create_users_table",
-        "CREATE TABLE users (id INTEGER);",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         "DROP TABLE users;",
     );
 
@@ -66,7 +66,7 @@ fn migration_redo_respects_migration_dir_env() {
     p.create_migration_in_directory(
         "bar",
         "12345_create_users_table",
-        "CREATE TABLE users (id INTEGER);",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         "DROP TABLE users;",
     );
 
