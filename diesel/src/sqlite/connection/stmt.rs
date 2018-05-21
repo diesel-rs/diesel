@@ -10,6 +10,7 @@ use result::*;
 use result::Error::DatabaseError;
 use super::raw::RawConnection;
 use super::sqlite_value::SqliteRow;
+use super::serialized_value::SerializedValue;
 use util::NonNull;
 
 pub struct Statement {
@@ -43,72 +44,13 @@ impl Statement {
         self.step().map(|_| ())
     }
 
-    // We are always reading potentially misaligned pointers with
-    // `ptr::read_unaligned`
-    #[cfg_attr(feature = "clippy", allow(cast_ptr_alignment))]
     pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
         self.bind_index += 1;
-        // This unsafe block assumes the following invariants:
-        //
-        // - `self.inner_statement` points to valid memory
-        // - If `tpe` is anything other than `Binary` or `Text`, the appropriate
-        //   number of bytes were written to `value` for an integer of the
-        //   corresponding size.
-        let result = unsafe {
-            match (tpe, value) {
-                (_, None) => ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), self.bind_index),
-                (SqliteType::Binary, Some(bytes)) => ffi::sqlite3_bind_blob(
-                    self.inner_statement.as_ptr(),
-                    self.bind_index,
-                    bytes.as_ptr() as *const libc::c_void,
-                    bytes.len() as libc::c_int,
-                    ffi::SQLITE_TRANSIENT(),
-                ),
-                (SqliteType::Text, Some(bytes)) => ffi::sqlite3_bind_text(
-                    self.inner_statement.as_ptr(),
-                    self.bind_index,
-                    bytes.as_ptr() as *const libc::c_char,
-                    bytes.len() as libc::c_int,
-                    ffi::SQLITE_TRANSIENT(),
-                ),
-                (SqliteType::Float, Some(bytes)) => {
-                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f32);
-                    ffi::sqlite3_bind_double(
-                        self.inner_statement.as_ptr(),
-                        self.bind_index,
-                        libc::c_double::from(value),
-                    )
-                }
-                (SqliteType::Double, Some(bytes)) => {
-                    let value = ptr::read_unaligned(bytes.as_ptr() as *const f64);
-                    ffi::sqlite3_bind_double(
-                        self.inner_statement.as_ptr(),
-                        self.bind_index,
-                        value as libc::c_double,
-                    )
-                }
-                (SqliteType::SmallInt, Some(bytes)) => {
-                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i16);
-                    ffi::sqlite3_bind_int(
-                        self.inner_statement.as_ptr(),
-                        self.bind_index,
-                        libc::c_int::from(value),
-                    )
-                }
-                (SqliteType::Integer, Some(bytes)) => {
-                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i32);
-                    ffi::sqlite3_bind_int(
-                        self.inner_statement.as_ptr(),
-                        self.bind_index,
-                        value as libc::c_int,
-                    )
-                }
-                (SqliteType::Long, Some(bytes)) => {
-                    let value = ptr::read_unaligned(bytes.as_ptr() as *const i64);
-                    ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), self.bind_index, value)
-                }
-            }
+        let value = SerializedValue {
+            ty: tpe,
+            data: value,
         };
+        let result = value.bind_to(self.inner_statement, self.bind_index);
 
         ensure_sqlite_ok(result, self.raw_connection())
     }

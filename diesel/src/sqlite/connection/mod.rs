@@ -1,7 +1,9 @@
 extern crate libsqlite3_sys as ffi;
 
+mod functions;
 #[doc(hidden)]
 pub mod raw;
+mod serialized_value;
 mod stmt;
 mod statement_iterator;
 mod sqlite_value;
@@ -18,6 +20,7 @@ use result::*;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+use serialize::ToSql;
 use sql_types::HasSqlType;
 use sqlite::Sqlite;
 
@@ -208,6 +211,22 @@ impl SqliteConnection {
             Statement::prepare(&self.raw_connection, sql)
         })
     }
+
+    #[doc(hidden)]
+    pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
+        &self,
+        fn_name: &str,
+        deterministic: bool,
+        f: F,
+    ) -> QueryResult<()>
+    where
+        F: FnMut(Args) -> Ret + Send + 'static,
+        Args: Queryable<ArgsSqlType, Sqlite>,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register(&self.raw_connection, fn_name, deterministic, f)
+    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -268,5 +287,57 @@ mod tests {
 
         assert_eq!(Ok(true), query.get_result(&connection));
         assert_eq!(1, connection.statement_cache.len());
+    }
+
+    use sql_types::Text;
+    sql_function!(fn fun_case(x: Text) -> Text);
+
+    #[test]
+    fn register_custom_function() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        fun_case::register_impl(&connection, |x: String| {
+            x.chars()
+                .enumerate()
+                .map(|(i, c)| {
+                    if i % 2 == 0 {
+                        c.to_lowercase().to_string()
+                    } else {
+                        c.to_uppercase().to_string()
+                    }
+                })
+                .collect::<String>()
+        }).unwrap();
+
+        let mapped_string = ::select(fun_case("foobar"))
+            .get_result::<String>(&connection)
+            .unwrap();
+        assert_eq!("fOoBaR", mapped_string);
+    }
+
+    sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
+
+    #[test]
+    fn register_multiarg_function() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        my_add::register_impl(&connection, |x: i32, y: i32| x + y).unwrap();
+
+        let added = ::select(my_add(1, 2)).get_result::<i32>(&connection);
+        assert_eq!(Ok(3), added);
+    }
+
+    sql_function!(fn add_counter(x: Integer) -> Integer);
+
+    #[test]
+    fn register_nondeterministic_function() {
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let mut y = 0;
+        add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
+            y += 1;
+            x + y
+        }).unwrap();
+
+        let added = ::select((add_counter(1), add_counter(1), add_counter(1)))
+            .get_result::<(i32, i32, i32)>(&connection);
+        assert_eq!(Ok((2, 3, 4)), added);
     }
 }
