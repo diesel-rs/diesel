@@ -352,8 +352,12 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         })
         .collect();
 
-    if matches.is_present("whitelist") || matches.is_present("blacklist") {
-        eprintln!("Deprecation warning: whitelist/blacklist will be removed in a future version, use only-tables/except-tables instead.");
+    if matches.is_present("whitelist") {
+        eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
+    }
+
+    if matches.is_present("blacklist") {
+        eprintln!("The `whitelist` option has been deprecated and renamed to `except-tables`.");
     }
 
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
