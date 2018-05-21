@@ -9,6 +9,8 @@
             warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
                  unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
 
+#![deprecated(since = "1.3.0", note = "Diesel CLI can be configured to automatically run `print-schema` after running migrations. See diesel.rs/guides/configuring-diesel-cli for details.")]
+
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
