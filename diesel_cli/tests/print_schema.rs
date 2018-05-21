@@ -15,17 +15,17 @@ fn run_infer_schema() {
 }
 
 #[test]
-fn run_infer_schema_whitelist() {
+fn run_infer_schema_include() {
     test_print_schema(
-        "print_schema_whitelist",
+        "print_schema_only_tables",
         vec!["--with-docs", "-w", "users1"],
     );
 }
 
 #[test]
-fn run_infer_schema_blacklist() {
+fn run_infer_schema_exclude() {
     test_print_schema(
-        "print_schema_blacklist",
+        "print_schema_except_tables",
         vec!["--with-docs", "-b", "users1"],
     );
 }

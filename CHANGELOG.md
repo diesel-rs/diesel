@@ -54,6 +54,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   concerned about relying on deprecated code, we recommend attempting to build
   your app with `default-features` turned off (specifically excluding the
   `with-deprecated` feature).
+* The `--whitelist` and `--blacklist` options to `diesel print-schema` have been
+  deprecated and renamed `--only-tables` and `--exclude-tables`.
 
 ## [1.2.2] - 2018-04-12
 

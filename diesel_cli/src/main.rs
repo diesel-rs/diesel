@@ -353,9 +353,17 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         .collect();
 
     if matches.is_present("whitelist") {
-        config.filter = Filtering::Whitelist(filter)
-    } else if matches.is_present("blacklist") {
-        config.filter = Filtering::Blacklist(filter)
+        eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
+    }
+
+    if matches.is_present("blacklist") {
+        eprintln!("The `whitelist` option has been deprecated and renamed to `except-tables`.");
+    }
+
+    if matches.is_present("only-tables") || matches.is_present("whitelist") {
+        config.filter = Filtering::OnlyTables(filter)
+    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
+        config.filter = Filtering::ExceptTables(filter)
     }
 
     if matches.is_present("with-docs") {

@@ -1,4 +1,4 @@
 [print_schema]
 file = "src/schema.rs"
 with_docs = true
-filter = { blacklist = ["users1"] }
+filter = { only-tables = ["users1"] }

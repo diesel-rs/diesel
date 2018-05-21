@@ -108,21 +108,39 @@ pub fn build_cli() -> App<'static, 'static> {
                 .index(1)
                 .takes_value(true)
                 .multiple(true)
-                .help("Table names to filter (default whitelist if not empty)"),
+                .help("Table names to filter (default only-tables if not empty)"),
+        )
+        .arg(
+            Arg::with_name("only-tables")
+                .short("o")
+                .long("only-tables")
+                .help("Only include tables from table-name")
+                .conflicts_with("except-tables")
+                .conflicts_with("blacklist"),
         )
         .arg(
             Arg::with_name("whitelist")
                 .short("w")
                 .long("whitelist")
-                .help("Use table list as whitelist")
-                .conflicts_with("blacklist"),
+                .hidden(true)
+                .conflicts_with("blacklist")
+                .conflicts_with("except-tables"),
+        )
+        .arg(
+            Arg::with_name("except-tables")
+                .short("e")
+                .long("except-tables")
+                .help("Exclude tables from table-name")
+                .conflicts_with("only-tables")
+                .conflicts_with("whitelist"),
         )
         .arg(
             Arg::with_name("blacklist")
                 .short("b")
                 .long("blacklist")
-                .help("Use table list as blacklist")
-                .conflicts_with("whitelist"),
+                .hidden(true)
+                .conflicts_with("whitelist")
+                .conflicts_with("only-tables"),
         )
         .arg(
             Arg::with_name("with-docs")
