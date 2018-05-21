@@ -192,7 +192,7 @@ macro_rules! __diesel_sql_function_body {
             use super::*;
             use $crate::sql_types::*;
 
-            #[derive(Debug, Clone, Copy, QueryId)]
+            #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
             pub struct $fn_name<$($type_args,)* $($arg_name),*> {
                 $(pub(in super) $arg_name: $arg_name,)*
                 $(pub(in super) $type_args: ::std::marker::PhantomData<$type_args>,)*
@@ -209,7 +209,7 @@ macro_rules! __diesel_sql_function_body {
                 $crate::expression::Expression
                 for $fn_name<$($type_args,)* $($arg_name),*>
             where
-                for <'a> ($(&'a $arg_name),*): $crate::expression::Expression,
+                ($($arg_name),*): $crate::expression::Expression,
             {
                 type SqlType = $return_type;
             }

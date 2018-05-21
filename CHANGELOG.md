@@ -26,7 +26,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Custom SQL functions can now be used with SQLite. See [the
   docs][sql-function-sqlite-1-3-0] for details.
 
-[sql-function-sqlite-1-3-0]: http://docs.diesel.rs/diesel/macro.sql_function.html#use-with-sqlite
+* All functions and operators provided by Diesel can now be used with numeric
+  operators if the SQL type supports it.
+
+* `PgInterval` can now be used with `-`, `*`, and `/`.
 
 ### Changed
 

@@ -93,7 +93,7 @@ migrations if it created the internal table.
 
 #### `database reset`
 Drops the database specified in your DATABASE_URL if it can, and then runs
-`database database setup`.
+`diesel database setup`.
 
 ## `diesel migration`
 #### `migration generate`
