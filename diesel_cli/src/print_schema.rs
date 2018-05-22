@@ -306,7 +306,7 @@ impl<'de> Deserialize<'de> for Filtering {
             type Value = Filtering;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("either only-tables or except-tables")
+                f.write_str("either only_tables or except_tables")
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
@@ -317,28 +317,28 @@ impl<'de> Deserialize<'de> for Filtering {
                 let mut except_tables = None;
                 while let Some((key, value)) = map.next_entry()? {
                     match key {
-                        "only-tables" => {
+                        "only_tables" => {
                             if only_tables.is_some() {
-                                return Err(de::Error::duplicate_field("only-tables"));
+                                return Err(de::Error::duplicate_field("only_tables"));
                             }
                             only_tables = Some(value);
                         }
-                        "except-tables" => {
+                        "except_tables" => {
                             if except_tables.is_some() {
-                                return Err(de::Error::duplicate_field("except-tables"));
+                                return Err(de::Error::duplicate_field("except_tables"));
                             }
                             except_tables = Some(value);
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
                                 key,
-                                &["only-tables", "except-tables"],
+                                &["only_tables", "except_tables"],
                             ))
                         }
                     }
                 }
                 match (only_tables, except_tables) {
-                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except-tables")),
+                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except_tables")),
                     (Some(w), None) => Ok(Filtering::OnlyTables(w)),
                     (None, Some(b)) => Ok(Filtering::ExceptTables(b)),
                     (None, None) => Ok(Filtering::None),
