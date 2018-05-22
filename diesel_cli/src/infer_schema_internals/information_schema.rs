@@ -10,7 +10,7 @@ use diesel::pg::Pg;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 
-use table_data::TableName;
+use super::table_data::TableName;
 use super::data_structures::*;
 
 pub trait UsesInformationSchema: Backend {

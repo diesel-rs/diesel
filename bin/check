@@ -15,10 +15,6 @@ check() {
     check "unstable extras" &&
     echo "✔ diesel core crate looks good!")
 
-(cd diesel_infer_schema &&
-    check &&
-    echo "✔ infer schema crate looks good!")
-
 (cd diesel_migrations &&
      check &&
      echo "✔ migrations crate looks good!")
