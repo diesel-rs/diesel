@@ -42,6 +42,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
 
+* Added support for a wider range of locking clauses, including `FOR SHARE`,
+  `SKIP LOCKED`, `NO WAIT`, and more. See [`QueryDsl`][locking-clause-1-3-0] for details.
+
+[locking-clause-1-3-0]: http://docs.diesel.rs/diesel/query_dsl/trait.QueryDsl.html#method.for_update
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn
@@ -54,10 +59,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel's minimum supported Rust version is 1.24.0. This was already true, but
   it is now tested and enforced. Any future changes to our minimum supported
   version will be listed in this change log.
-
-* Diesel now provides experimental support for Barrel. This feature is not
-  maintained by the Diesel team. Any issues with this should be opened on the
-  Barrel repository, not Diesel.
 
 ### Fixed
 
