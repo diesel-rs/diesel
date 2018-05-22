@@ -1,4 +1,4 @@
 [print_schema]
 file = "src/schema.rs"
 with_docs = true
-filter = { only-tables = ["users1"] }
+filter = { only_tables = ["users1"] }
