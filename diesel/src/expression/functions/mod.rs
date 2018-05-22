@@ -263,6 +263,7 @@ macro_rules! __diesel_sql_function_body {
 
             __diesel_sqlite_register_fn! {
                 type_args = ($($type_args)*),
+                aggregate = $aggregate,
                 fn_name = $fn_name,
                 args = ($($arg_name,)+),
                 sql_args = ($($arg_type,)+),
@@ -283,8 +284,17 @@ macro_rules! __diesel_sqlite_register_fn {
     ) => {
     };
 
+    // We don't currently support aggregate functions for SQLite
+    (
+        type_args = $ignored:tt,
+        aggregate = yes,
+        $($rest:tt)*
+    ) => {
+    };
+
     (
         type_args = (),
+        aggregate = no,
         fn_name = $fn_name:ident,
         args = ($($args:ident,)+),
         sql_args = $sql_args:ty,
