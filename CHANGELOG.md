@@ -40,6 +40,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [sql-function-1-3-0]: http://docs.diesel.rs/diesel/macro.sql_function.html
 
+* Diesel's minimum supported Rust version is 1.24.0. This was already true, but
+  it is now tested and enforced. Any future changes to our minimum supported
+  version will be listed in this change log.
+
 ### Fixed
 
 * `diesel print-schema` and `infer_schema!` now properly handle unsigned types
