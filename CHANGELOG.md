@@ -20,6 +20,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `NonAggregate` for your function. See [the documentation for
   `sql_function!`][sql-function-1-3-0] for more details.
 
+* `sql_function!` now supports renaming the function by annotating it with
+  `#[sql_name = "SOME_FUNCTION"]`. This can be used to support functions with
+  multiple signatures such as coalesce, by defining multiple rust functions
+  (with different names) that have the same `#[sql_name]`.
+
 * Added `sqlite-bundled` feature to `diesel_cli` to make installing on
   some platforms easier.
 

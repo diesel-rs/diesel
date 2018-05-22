@@ -125,7 +125,7 @@ macro_rules! __diesel_sql_function_body {
         }
     };
 
-    // Searching for `#[aggregate]`, found it.
+    // Searching for `#[aggregate]`, found it. Search for `sql_name`.
     (
         unchecked_meta = (#[aggregate] $($unchecked:tt)*),
         meta = ($($meta:tt)*),
@@ -133,7 +133,8 @@ macro_rules! __diesel_sql_function_body {
     ) => {
         __diesel_sql_function_body! {
             aggregate = yes,
-            meta = ($($meta)* $($unchecked)*),
+            unchecked_meta = ($($meta)* $($unchecked)*),
+            meta = (),
             $($rest)*
         }
     };
@@ -151,7 +152,7 @@ macro_rules! __diesel_sql_function_body {
         }
     };
 
-    // Done searching for `#[aggregate]`.
+    // Done searching for `#[aggregate]`. Search for `sql_name`
     (
         unchecked_meta = (),
         meta = $meta:tt,
@@ -159,13 +160,62 @@ macro_rules! __diesel_sql_function_body {
     ) => {
         __diesel_sql_function_body! {
             aggregate = no,
+            unchecked_meta = $meta,
+            meta = (),
+            $($rest)*
+        }
+    };
+
+    // Searching for `#[sql_name]`, found it.
+    (
+        aggregate = $aggregate:tt,
+        unchecked_meta = (#[sql_name = $sql_name:expr] $($unchecked:tt)*),
+        meta = ($($meta:tt)*),
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = $aggregate,
+            sql_name = $sql_name,
+            meta = ($($meta)* $($unchecked)*),
+            $($rest)*
+        }
+    };
+
+    // Searching for `#[sql_name]`. Didn't find it.
+    (
+        aggregate = $aggregate:tt,
+        unchecked_meta = (#$checked:tt $($unchecked:tt)*),
+        meta = ($($meta:tt)*),
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = $aggregate,
+            unchecked_meta = ($($unchecked)*),
+            meta = ($($meta)* #$checked),
+            $($rest)*
+        }
+    };
+
+    // Done searching for `#[sql_name]`.
+    (
+        aggregate = $aggregate:tt,
+        unchecked_meta = (),
+        meta = $meta:tt,
+        fn_name = $fn_name:ident,
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = $aggregate,
+            sql_name = stringify!($fn_name),
             meta = $meta,
+            fn_name = $fn_name,
             $($rest)*
         }
     };
 
     (
         aggregate = $aggregate:tt,
+        sql_name = $sql_name:expr,
         meta = ($($meta:tt)*),
         fn_name = $fn_name:ident,
         type_args = ($($type_args:ident,)*),
@@ -222,7 +272,7 @@ macro_rules! __diesel_sql_function_body {
                 for<'a> ($(&'a $arg_name),*): $crate::query_builder::QueryFragment<DB>,
             {
                 fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                    out.push_sql(concat!(stringify!($fn_name), "("));
+                    out.push_sql(concat!($sql_name, "("));
                     $crate::query_builder::QueryFragment::walk_ast(
                         &($(&self.$arg_name),*), out.reborrow())?;
                     out.push_sql(")");
@@ -460,6 +510,7 @@ macro_rules! __diesel_sqlite_register_fn {
 ///
 /// sql_function! {
 ///     #[aggregate]
+///     #[sql_name = "SUM"]
 ///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 /// }
 ///
