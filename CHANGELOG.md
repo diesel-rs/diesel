@@ -8,9 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-* Added support for PG tuples. See [`sql_types::Record`][record-1-3-0] for details.
-
-[record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
+* Diesel CLI now supports a configuration file. See
+  diesel.rs/guides/configuring-diesel-cli for details.
 
 * `sql_function!` now supports generic functions. See [the documentation for
   `sql_function!`][sql-function-1-3-0] for more details.
@@ -36,6 +35,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `PgInterval` can now be used with `-`, `*`, and `/`.
 
+* `Vec<T>` is now `Insertable`. It is no longer required to always place an `&`
+  in front of `.values`.
+
+* Added support for PG tuples. See [`sql_types::Record`][record-1-3-0] for details.
+
+[record-1-3-0]: http://docs.diesel.rs/diesel/pg/types/sql_types/struct.Record.html
+
 ### Changed
 
 * `sql_function!` has been redesigned. The syntax is now `sql_function!(fn
@@ -48,6 +54,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel's minimum supported Rust version is 1.24.0. This was already true, but
   it is now tested and enforced. Any future changes to our minimum supported
   version will be listed in this change log.
+
+* Diesel now provides experimental support for Barrel. This feature is not
+  maintained by the Diesel team. Any issues with this should be opened on the
+  Barrel repository, not Diesel.
 
 ### Fixed
 
