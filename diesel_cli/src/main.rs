@@ -357,7 +357,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
     }
 
     if matches.is_present("blacklist") {
-        eprintln!("The `whitelist` option has been deprecated and renamed to `except-tables`.");
+        eprintln!("The `blacklist` option has been deprecated and renamed to `except-tables`.");
     }
 
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
