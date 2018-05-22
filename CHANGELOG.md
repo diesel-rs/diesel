@@ -51,6 +51,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Deprecated
 
+* `diesel_infer_schema` has been deprecated. `diesel print-schema` is now the
+  only way to generate database schema. Diesel CLI can be configured to
+  automatically regenerate your schema file when migrations are run. See
+  diesel.rs/guides/configuring-diesel-cli for details.
+
 * Uses of `sql_function!` in the form `sql_function!(foo, foo_t, (x: Integer))`
   have been deprecated in favor of a new design (listed above). Note: Due to [a
   bug in Rust](https://github.com/rust-lang/rust/issues/49912), you may not see
@@ -58,6 +63,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   concerned about relying on deprecated code, we recommend attempting to build
   your app with `default-features` turned off (specifically excluding the
   `with-deprecated` feature).
+
 * The `--whitelist` and `--blacklist` options to `diesel print-schema` have been
   deprecated and renamed `--only-tables` and `--exclude-tables`.
 
