@@ -17,8 +17,7 @@ fn querying_basic_schemas() {
 
     let users = table("users");
     let id = users.column::<Integer, _>("id");
-    let ids = users.select(id)
-        .load::<i32>(&conn);
+    let ids = users.select(id).load::<i32>(&conn);
     assert_eq!(Ok(vec![1]), ids);
 }
 
@@ -35,8 +34,7 @@ fn querying_multiple_types() {
     let users = table("users");
     let id = users.column::<Integer, _>("id");
     let name = users.column::<Text, _>("name");
-    let users = users.select((id, name))
-        .load::<(i32, String)>(&conn);
+    let users = users.select((id, name)).load::<(i32, String)>(&conn);
     assert_eq!(Ok(vec![(1, "Sean".into()), (2, "Tess".into())]), users);
 }
 
@@ -53,7 +51,8 @@ fn columns_used_in_where_clause() {
     let users = table("users");
     let id = users.column::<Integer, _>("id");
     let name = users.column::<Text, _>("name");
-    let users = users.select((id, name))
+    let users = users
+        .select((id, name))
         .filter(name.eq("Sean"))
         .load::<(i32, String)>(&conn);
     assert_eq!(Ok(vec![(1, "Sean".into())]), users);

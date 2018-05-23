@@ -1,4 +1,4 @@
-use diesel::expression::{AppearsOnTable, Expression, SelectableExpression, NonAggregate};
+use diesel::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 
 #[doc(hidden)]
 pub struct DummyExpression;
@@ -9,15 +9,12 @@ impl DummyExpression {
     }
 }
 
-impl<QS> SelectableExpression<QS> for DummyExpression {
-}
+impl<QS> SelectableExpression<QS> for DummyExpression {}
 
-impl<QS> AppearsOnTable<QS> for DummyExpression {
-}
+impl<QS> AppearsOnTable<QS> for DummyExpression {}
 
 impl Expression for DummyExpression {
     type SqlType = ();
 }
 
-impl NonAggregate for DummyExpression {
-}
+impl NonAggregate for DummyExpression {}
