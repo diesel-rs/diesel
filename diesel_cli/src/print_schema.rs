@@ -39,22 +39,23 @@ pub fn run_print_schema(
     database_url: &str,
     config: &config::PrintSchema,
 ) -> Result<(), Box<Error>> {
-    let tempfile = NamedTempFile::new()?;
-    output_schema(database_url, config, tempfile.path())?;
+    let mut tempfile = NamedTempFile::new()?;
+    let path = tempfile.path().to_path_buf();
+    let file = tempfile.as_file_mut();
+    output_schema(database_url, config, file, path.as_path())?;
 
     // patch "replaces" our tempfile, meaning the old handle
     // does not include the patched output.
-    let mut file = File::open(tempfile.path())?;
-    io::copy(&mut file, &mut stdout())?;
+    io::copy(file, &mut stdout())?;
     Ok(())
 }
 
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
+    out: &mut File,
     out_path: &Path,
 ) -> Result<(), Box<Error>> {
-    let mut out = File::create(out_path)?;
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))

@@ -391,7 +391,8 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
         }
 
         let database_url = database::database_url(matches);
-        print_schema::output_schema(&database_url, &config.print_schema, path)?;
+        let mut file = fs::File::create(path)?;
+        print_schema::output_schema(&database_url, &config.print_schema, &mut file, path)?;
     }
     Ok(())
 }
