@@ -40,7 +40,8 @@ pub fn run_print_schema(
     config: &config::PrintSchema,
 ) -> Result<(), Box<Error>> {
     let tempfile = NamedTempFile::new()?;
-    output_schema(database_url, config, tempfile.path())?;
+    let file = tempfile.reopen()?;
+    output_schema(database_url, config, file, tempfile.path())?;
 
     // patch "replaces" our tempfile, meaning the old handle
     // does not include the patched output.
@@ -52,9 +53,9 @@ pub fn run_print_schema(
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
+    mut out: File,
     out_path: &Path,
 ) -> Result<(), Box<Error>> {
-    let mut out = File::create(out_path)?;
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
