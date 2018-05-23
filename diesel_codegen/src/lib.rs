@@ -31,10 +31,9 @@ extern crate diesel;
 extern crate quote;
 extern crate proc_macro;
 extern crate syn;
+#[macro_use]
 extern crate serde;
 extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 
 mod as_changeset;
 mod associations;
@@ -99,7 +98,7 @@ pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
-    self::check_version::check_version();
+    let _ = self::check_version::check_version();
     let item = parse_derive_input(&input.to_string()).unwrap();
     f(item).to_string().parse().unwrap()
 }

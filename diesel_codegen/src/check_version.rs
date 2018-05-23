@@ -1,4 +1,3 @@
-
 use std::process::Command;
 
 #[derive(Deserialize)]
@@ -11,22 +10,23 @@ struct Package {
     name: String,
     version: String,
 }
+
 #[allow(warnings)]
-pub fn check_version() {
+pub fn check_version() -> Result<(), ()> {
     let contents = String::from_utf8(
         Command::new("cargo")
             .arg("metadata")
             .output()
-            .unwrap()
+            .map_err(|_| ())?
             .stdout,
-    ).unwrap();
+    ).map_err(|_| ())?;
 
-    let data: Metadata = ::serde_json::from_str(&contents).unwrap();
+    let data: Metadata = ::serde_json::from_str(&contents).map_err(|_| ())?;
 
     let diesel = data.packages
         .into_iter()
-        .filter(|p| p.name == "diesel")
-        .collect::<Vec<_>>();
+        .filter(|p| p.name == "diesel");
+
     for d in diesel {
         if d.version.starts_with("1.") || d.version.starts_with("0.99") {
             panic!(
@@ -39,4 +39,5 @@ pub fn check_version() {
             );
         }
     }
+    Ok(())
 }
