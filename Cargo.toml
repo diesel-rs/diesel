@@ -1,0 +1,13 @@
+[package]
+name = "diesel-dynamic-schema"
+version = "1.0.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+
+[dependencies]
+diesel = "1.0.0"
+
+[[test]]
+name = "integration_tests"
+path = "tests/lib.rs"
+harness = true
+required-features = ["diesel/sqlite"]
