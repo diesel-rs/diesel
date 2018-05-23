@@ -45,7 +45,7 @@ pub fn run_print_schema(
 
     // patch "replaces" our tempfile, meaning the old handle
     // does not include the patched output.
-    let mut file = tempfile.reopen()?;
+    let mut file = File::open(tempfile.path())?;
     io::copy(&mut file, &mut stdout())?;
     Ok(())
 }
