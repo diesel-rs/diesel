@@ -3,7 +3,8 @@ extern crate diesel_dynamic_schema;
 
 use diesel::*;
 use diesel::sql_types::*;
-use diesel_dynamic_schema::table;
+use diesel::sqlite::Sqlite;
+use diesel_dynamic_schema::{schema, table};
 
 #[test]
 fn querying_basic_schemas() {
@@ -56,6 +57,13 @@ fn columns_used_in_where_clause() {
         .filter(name.eq("Sean"))
         .load::<(i32, String)>(&conn);
     assert_eq!(Ok(vec![(1, "Sean".into())]), users);
+}
+
+#[test]
+fn providing_custom_schema_name() {
+    let table = schema("information_schema").table("users");
+    let sql = debug_query::<Sqlite, _>(&table);
+    assert_eq!("`information_schema`.`users` -- binds: []", sql.to_string());
 }
 
 fn establish_connection() -> SqliteConnection {
