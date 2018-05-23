@@ -125,8 +125,6 @@
                  used_underscore_binding))]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
-#![recursion_limit = "256"]
-
 #[cfg(feature = "postgres")]
 #[macro_use]
 extern crate bitflags;
