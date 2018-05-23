@@ -20,7 +20,6 @@ clap = "2.27"
 clippy = { optional = true, version = "=0.0.195" }
 diesel = { version = "~1.3.0", default-features = false }
 dotenv = ">=0.8, <0.11"
-infer_schema_internals = { version = "~1.3.0", features = ["serde"] }
 migrations_internals = "~1.3.0"
 serde = { version = "1.0.0", features = ["derive"] }
 tempfile = "3.0.0"
@@ -38,11 +37,12 @@ url = { version = "1.4.0" }
 [features]
 default = ["postgres", "sqlite", "mysql"]
 lint = ["clippy"]
-postgres = ["diesel/postgres", "infer_schema_internals/postgres", "url"]
-sqlite = ["diesel/sqlite", "infer_schema_internals/sqlite"]
-mysql = ["diesel/mysql", "infer_schema_internals/mysql", "url"]
+postgres = ["diesel/postgres", "url", "uses_information_schema"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql", "url", "uses_information_schema"]
 barrel-migrations = ["migrations_internals/barrel", "barrel"]
 sqlite-bundled = ["sqlite", "libsqlite3-sys/bundled"]
+uses_information_schema = []
 
 [[test]]
 name = "tests"

@@ -26,9 +26,6 @@ script:
   fi &&
   (cd "examples/$BACKEND" && ./test_all) &&
   (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema/infer_schema_internals && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema/infer_schema_macros && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_infer_schema && travis-cargo test -- --no-default-features --features "dotenv_macro $BACKEND") &&
   (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
   (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
   (cd diesel_migrations/ && travis-cargo test -- --features "$BACKEND" ) &&
@@ -48,7 +45,6 @@ matrix:
     - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_derives && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_infer_schema && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
   - rust: nightly-2018-03-15
     env: RUSTFMT=YESPLEASE

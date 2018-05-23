@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::{stderr, Write};
 
-use data_structures::*;
+use super::data_structures::*;
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with('_');

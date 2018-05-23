@@ -2,9 +2,9 @@ use diesel::*;
 use diesel::mysql::Mysql;
 use std::error::Error;
 
-use information_schema::UsesInformationSchema;
-use data_structures::*;
-use table_data::TableName;
+use super::information_schema::UsesInformationSchema;
+use super::data_structures::*;
+use super::table_data::TableName;
 
 mod information_schema {
     table! {

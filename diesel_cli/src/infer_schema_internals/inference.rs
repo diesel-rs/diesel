@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use diesel::prelude::*;
 use diesel::result::Error::NotFound;
 
-use table_data::*;
-use data_structures::*;
+use super::table_data::*;
+use super::data_structures::*;
+use database::InferConnection;
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
@@ -14,78 +14,20 @@ static RESERVED_NAMES: &[&str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
-pub(crate) enum InferConnection {
-    #[cfg(feature = "sqlite")]
-    Sqlite(SqliteConnection),
-    #[cfg(feature = "postgres")]
-    Pg(PgConnection),
-    #[cfg(feature = "mysql")]
-    Mysql(MysqlConnection),
-}
-
 pub fn load_table_names(
     database_url: &str,
     schema_name: Option<&str>,
 ) -> Result<Vec<TableName>, Box<Error>> {
-    let connection = try!(establish_connection(database_url));
+    let connection = try!(InferConnection::establish(database_url));
 
     match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(c) => ::sqlite::load_table_names(&c, schema_name),
+        InferConnection::Sqlite(c) => super::sqlite::load_table_names(&c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => ::information_schema::load_table_names(&c, schema_name),
+        InferConnection::Pg(c) => super::information_schema::load_table_names(&c, schema_name),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(c) => ::information_schema::load_table_names(&c, schema_name),
+        InferConnection::Mysql(c) => super::information_schema::load_table_names(&c, schema_name),
     }
-}
-
-pub(crate) fn establish_connection(database_url: &str) -> Result<InferConnection, Box<Error>> {
-    match database_url {
-        #[cfg(feature = "postgres")]
-        _ if database_url.starts_with("postgres://")
-            || database_url.starts_with("postgresql://") =>
-        {
-            establish_real_connection(database_url).map(InferConnection::Pg)
-        }
-        #[cfg(feature = "mysql")]
-        _ if database_url.starts_with("mysql://") =>
-        {
-            establish_real_connection(database_url).map(InferConnection::Mysql)
-        }
-        #[cfg(feature = "sqlite")]
-        _ => establish_real_connection(database_url).map(InferConnection::Sqlite),
-        #[cfg(all(feature = "postgres", not(feature = "sqlite")))]
-        _ => Err(format!(
-            "{} is not a valid PG database URL. \
-             It must start with postgres:// or postgresql://",
-            database_url,
-        ).into()),
-        #[cfg(all(feature = "mysql", not(any(feature = "sqlite", feature = "postgres"))))]
-        _ => Err(format!(
-            "{} is not a valid MySQL database URL. \
-             It must start with mysql://",
-            database_url,
-        ).into()),
-        #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
-        _ => compile_error!(
-            "At least one backend must be specified for use with this crate.\n \
-             In Cargo.toml, please specify `features = [\"postgresql\"]`, \
-             `features = [\"mysql\"]`, or `features = [\"sqlite\"]`\n\n \
-             ex. `infer_schema_internals { features = [\"postgres\"] }`\n "
-        ),
-    }
-}
-
-fn establish_real_connection<Conn>(database_url: &str) -> Result<Conn, Box<Error>>
-where
-    Conn: Connection,
-{
-    Conn::establish(database_url).map_err(|error| {
-        format!(
-            "Failed to establish a database connection at {}. Error: {:?}",
-            database_url, error,
-        ).into()
-    })
 }
 
 fn get_column_information(
@@ -94,11 +36,11 @@ fn get_column_information(
 ) -> Result<Vec<ColumnInformation>, Box<Error>> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => ::sqlite::get_table_data(c, table),
+        InferConnection::Sqlite(ref c) => super::sqlite::get_table_data(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::information_schema::get_table_data(c, table),
+        InferConnection::Pg(ref c) => super::information_schema::get_table_data(c, table),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref c) => ::information_schema::get_table_data(c, table),
+        InferConnection::Mysql(ref c) => super::information_schema::get_table_data(c, table),
     };
     if let Err(NotFound) = column_info {
         Err(format!("no table exists named {}", table.to_string()).into())
@@ -113,11 +55,11 @@ fn determine_column_type(
 ) -> Result<ColumnType, Box<Error>> {
     match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(_) => ::sqlite::determine_column_type(attr),
+        InferConnection::Sqlite(_) => super::sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => ::pg::determine_column_type(attr),
+        InferConnection::Pg(_) => super::pg::determine_column_type(attr),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(_) => ::mysql::determine_column_type(attr),
+        InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
     }
 }
 
@@ -127,11 +69,11 @@ pub(crate) fn get_primary_keys(
 ) -> Result<Vec<String>, Box<Error>> {
     let primary_keys: Vec<String> = try!(match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => ::sqlite::get_primary_keys(c, table),
+        InferConnection::Sqlite(ref c) => super::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => ::information_schema::get_primary_keys(c, table),
+        InferConnection::Pg(ref c) => super::information_schema::get_primary_keys(c, table),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref c) => ::information_schema::get_primary_keys(c, table),
+        InferConnection::Mysql(ref c) => super::information_schema::get_primary_keys(c, table),
     });
     if primary_keys.is_empty() {
         Err(format!(
@@ -158,18 +100,19 @@ pub fn load_foreign_key_constraints(
     database_url: &str,
     schema_name: Option<&str>,
 ) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
-    let connection = try!(establish_connection(database_url));
+    let connection = try!(InferConnection::establish(database_url));
 
     let constraints = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(c) => ::sqlite::load_foreign_key_constraints(&c, schema_name),
+        InferConnection::Sqlite(c) => super::sqlite::load_foreign_key_constraints(&c, schema_name),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(c) => {
-            ::information_schema::load_foreign_key_constraints(&c, schema_name).map_err(Into::into)
+            super::information_schema::load_foreign_key_constraints(&c, schema_name)
+                .map_err(Into::into)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => {
-            ::mysql::load_foreign_key_constraints(&c, schema_name).map_err(Into::into)
+            super::mysql::load_foreign_key_constraints(&c, schema_name).map_err(Into::into)
         }
     };
 
@@ -190,7 +133,7 @@ macro_rules! doc_comment {
 }
 
 pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<Error>> {
-    let connection = establish_connection(database_url)?;
+    let connection = InferConnection::establish(database_url)?;
     let docs = doc_comment!(
         "Representation of the `{}` table.
 

@@ -4,7 +4,7 @@ use diesel::deserialize::FromSqlRow;
 use std::fmt;
 use std::str::FromStr;
 
-use data_structures::ColumnDefinition;
+use super::data_structures::ColumnDefinition;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableName {
@@ -31,6 +31,7 @@ impl TableName {
         }
     }
 
+    #[cfg(feature = "uses_information_schema")]
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
         if self.schema.as_ref().map(|s| &**s) == Some(schema) {
             self.schema = None;
@@ -83,7 +84,6 @@ pub struct TableData {
     pub docs: String,
 }
 
-#[cfg(feature = "serde")]
 mod serde_impls {
     extern crate serde;
 

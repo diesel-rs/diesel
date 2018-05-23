@@ -4,7 +4,7 @@ use diesel::*;
 use diesel::dsl::sql;
 use diesel::sqlite::{Sqlite, SqliteConnection};
 
-use table_data::TableName;
+use super::table_data::TableName;
 use super::data_structures::*;
 
 table! {
