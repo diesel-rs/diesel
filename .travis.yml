@@ -95,6 +95,7 @@ branches:
   only:
     - master
     - ಠ_ಠ
+    - 1.3.x
 notifications:
   webhooks:
     urls:
