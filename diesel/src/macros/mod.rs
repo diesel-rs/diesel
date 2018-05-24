@@ -1,10 +1,14 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
-    ($($table:ident)::*, $column_name:ident -> ($($Type:tt)*),  $sql_name:expr, $($doc:expr),*) => {
-        $(
-            #[doc=$doc]
-        )*
+    (
+        table = $table:ident,
+        name = $column_name:ident,
+        sql_name = $sql_name:expr,
+        ty = ($($Type:tt)*),
+        meta = [$($meta:tt)*],
+    ) => {
+        $($meta)*
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy, QueryId, Default)]
         pub struct $column_name;
@@ -15,20 +19,20 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            <$($table)::* as QuerySource>::FromClause: QueryFragment<DB>,
+            <$table as QuerySource>::FromClause: QueryFragment<DB>,
         {
             fn walk_ast(&self, mut out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                $($table)::*.from_clause().walk_ast(out.reborrow())?;
+                $table.from_clause().walk_ast(out.reborrow())?;
                 out.push_sql(".");
                 out.push_identifier($sql_name)
             }
         }
 
-        impl SelectableExpression<$($table)::*> for $column_name {
+        impl SelectableExpression<$table> for $column_name {
         }
 
         impl<QS> AppearsOnTable<QS> for $column_name where
-            QS: AppearsInFromClause<$($table)::*, Count=Once>,
+            QS: AppearsInFromClause<$table, Count=Once>,
         {
         }
 
@@ -36,8 +40,8 @@ macro_rules! __diesel_column {
             Join<Left, Right, LeftOuter>,
         > for $column_name where
             $column_name: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-            Left: AppearsInFromClause<$($table)::*, Count=Once>,
-            Right: AppearsInFromClause<$($table)::*, Count=Never>,
+            Left: AppearsInFromClause<$table, Count=Once>,
+            Right: AppearsInFromClause<$table, Count=Never>,
         {
         }
 
@@ -45,7 +49,7 @@ macro_rules! __diesel_column {
             Join<Left, Right, Inner>,
         > for $column_name where
             $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
-            Join<Left, Right, Inner>: AppearsInFromClause<$($table)::*, Count=Once>,
+            Join<Left, Right, Inner>: AppearsInFromClause<$table, Count=Once>,
         {
         }
 
@@ -64,7 +68,7 @@ macro_rules! __diesel_column {
         impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {
-            type Table = $($table)::*;
+            type Table = $table;
 
             const NAME: &'static str = $sql_name;
         }
@@ -262,447 +266,336 @@ macro_rules! __diesel_column {
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
-        __diesel_table_impl!($($tokens)*);
+        __diesel_parse_table! {
+            tokens = [$($tokens)*],
+            imports = [],
+            meta = [],
+            sql_name = unknown,
+            name = unknown,
+            schema = public,
+            primary_key = (id),
+        }
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_invalid_table_syntax {
+    () => {
+        compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
+        `https://docs.diesel.rs/diesel/macro.table.html`");
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_parse_table {
+    // Found an import
+    (
+        tokens = [use $($import:tt)::+; $($rest:tt)*],
+        imports = [$($imports:tt)*],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = [$($imports)* use $($import)::+;],
+            $($args)*
+        }
+    };
+
+    // Found sql_name attribute, override whatever we had before
+    (
+        tokens = [#[sql_name = $sql_name:expr] $($rest:tt)*],
+        imports = $imports:tt,
+        meta = $meta:tt,
+        sql_name = $ignore:tt,
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = $imports,
+            meta = $meta,
+            sql_name = $sql_name,
+            $($args)*
+        }
+    };
+
+    // Meta item other than sql_name, attach it to the table struct
+    (
+        tokens = [#$new_meta:tt $($rest:tt)*],
+        imports = $imports:tt,
+        meta = [$($meta:tt)*],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = $imports,
+            meta = [$($meta)* #$new_meta],
+            $($args)*
+        }
+    };
+
+    // Found a schema name, override whatever we had before
+    (
+        tokens = [$schema:ident . $($rest:tt)*],
+        imports = $imports:tt,
+        meta = $meta:tt,
+        sql_name = $sql_name:tt,
+        name = $name:tt,
+        schema = $ignore:tt,
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = $imports,
+            meta = $meta,
+            sql_name = $sql_name,
+            name = $name,
+            schema = $schema,
+            $($args)*
+        }
+    };
+
+    // Found a table name, override whatever we had before
+    (
+        tokens = [$name:ident $($rest:tt)*],
+        imports = $imports:tt,
+        meta = $meta:tt,
+        sql_name = $sql_name:tt,
+        name = $ignore:tt,
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = $imports,
+            meta = $meta,
+            sql_name = $sql_name,
+            name = $name,
+            $($args)*
+        }
+    };
+
+    // Found a primary key, override whatever we had before
+    (
+        tokens = [($($pk:ident),+ $(,)*) $($rest:tt)*],
+        imports = $imports:tt,
+        meta = $meta:tt,
+        sql_name = $sql_name:tt,
+        name = $name:tt,
+        schema = $schema:tt,
+        primary_key = $ignore:tt,
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [$($rest)*],
+            imports = $imports,
+            meta = $meta,
+            sql_name = $sql_name,
+            name = $name,
+            schema = $schema,
+            primary_key = ($($pk),+),
+            $($args)*
+        }
+    };
+
+    // Reached columns with no imports, set a default
+    (
+        tokens = [{$($columns:tt)*}],
+        imports = [],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [{$($columns)*}],
+            imports = [use $crate::sql_types::*;],
+            $($args)*
+        }
+    };
+
+    // Reached columns with no sql_name, set a default
+    (
+        tokens = [{$($columns:tt)*}],
+        imports = $imports:tt,
+        meta = $meta:tt,
+        sql_name = unknown,
+        name = $name:tt,
+        $($args:tt)*
+    ) => {
+        __diesel_parse_table! {
+            tokens = [{$($columns)*}],
+            imports = $imports,
+            meta = $meta,
+            sql_name = stringify!($name),
+            name = $name,
+            $($args)*
+        }
+    };
+
+    // Parse the columns
+    (
+        tokens = [{$($columns:tt)*}],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            tokens = [$($columns)*],
+            table = { $($args)* },
+            columns = [],
+        }
+    };
+
+    // Invalid syntax
+    ($($tokens:tt)*) => {
+        __diesel_invalid_table_syntax!();
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_parse_columns {
+    // No column being parsed, start a new one.
+    // Attempt to capture the type as separate tokens if at all possible.
+    (
+        tokens = [
+            $(#$meta:tt)*
+            $name:ident -> $($ty:tt)::* $(<$($ty_params:tt)::*>)*,
+            $($rest:tt)*
+        ],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            current_column = {
+                unchecked_meta = [$(#$meta)*],
+                name = $name,
+                sql_name = stringify!($name),
+                ty = ($($ty)::* $(<$($ty_params)::*>)*),
+                meta = [],
+            },
+            tokens = [$($rest)*],
+            $($args)*
+        }
+    };
+
+    // No column being parsed, start a new one. Couldn't keep the `ty` separate.
+    (
+        tokens = [
+            $(#$meta:tt)*
+            $name:ident -> $ty:ty,
+            $($rest:tt)*
+        ],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            current_column = {
+                unchecked_meta = [$(#$meta)*],
+                name = $name,
+                sql_name = stringify!($name),
+                ty = ($ty),
+                meta = [],
+            },
+            tokens = [$($rest)*],
+            $($args)*
+        }
+    };
+
+
+    // Found #[sql_name]
+    (
+        current_column = {
+            unchecked_meta = [#[sql_name = $sql_name:expr] $($meta:tt)*],
+            name = $name:tt,
+            sql_name = $ignore:expr,
+            $($current_column:tt)*
+        },
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            current_column = {
+                unchecked_meta = [$($meta)*],
+                name = $name,
+                sql_name = $sql_name,
+                $($current_column)*
+            },
+            $($args)*
+        }
+    };
+
+    // Meta item other than #[sql_name]
+    (
+        current_column = {
+            unchecked_meta = [#$new_meta:tt $($unchecked_meta:tt)*],
+            name = $name:tt,
+            sql_name = $sql_name:expr,
+            ty = $ty:tt,
+            meta = [$($meta:tt)*],
+            $($current_column:tt)*
+        },
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            current_column = {
+                unchecked_meta = [$($unchecked_meta)*],
+                name = $name,
+                sql_name = $sql_name,
+                ty = $ty,
+                meta = [$($meta)* #$new_meta],
+                $($current_column)*
+            },
+            $($args)*
+        }
+    };
+
+    // Done parsing this column
+    (
+        current_column = {
+            unchecked_meta = [],
+            $($current_column:tt)*
+        },
+        tokens = $tokens:tt,
+        table = $table:tt,
+        columns = [$($columns:tt,)*],
+        $($args:tt)*
+    ) => {
+        __diesel_parse_columns! {
+            tokens = $tokens,
+            table = $table,
+            columns = [$($columns,)* { $($current_column)* },],
+            $($args)*
+        }
+    };
+
+    // Done parsing all columns
+    (
+        tokens = [],
+        $($args:tt)*
+    ) => {
+        __diesel_table_impl!($($args)*);
+    };
+
+    // Invalid syntax
+    ($($tokens:tt)*) => {
+        __diesel_invalid_table_syntax!();
     }
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_table_impl {
-    // Put imports into the import field
     (
-        @parse
-        import = [$(use $($import:tt)::+;)*];
-        table_doc = [];
-        table_sql_name = [];
-        use $($new_import:tt)::+; $($rest:tt)+
+        table = {
+            imports = [$($imports:tt)*],
+            meta = [$($meta:tt)*],
+            sql_name = $sql_name:expr,
+            name = $table_name:ident,
+            schema = $schema:ident,
+            primary_key = $primary_key:tt,
+        },
+        columns = [$({
+            name = $column_name:ident,
+            sql_name = $column_sql_name:expr,
+            ty = ($($column_ty:tt)*),
+            $($column:tt)*
+        },)+],
     ) => {
-        table! {
-            @parse
-            import = [$(use $($import)::+;)* use $($new_import)::+;];
-            table_doc = [];
-            table_sql_name = [];
-            $($rest)+
-        }
-    };
-
-    // Put doc annotation into the doc field
-    (
-        @parse
-        import = [$(use $($import:tt)::+;)*];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        #[doc=$new_doc:expr] $($rest:tt)+
-    ) => {
-        table! {
-            @parse
-            import = [$(use $($import)::+;)*];
-            table_doc = [$($doc,)*$new_doc,];
-            table_sql_name = [$($table_sql_name)*];
-            $($rest)+
-        }
-    };
-
-    // Parse the sql_name attribute if present
-    (
-        @parse
-        import = [$(use $($import:tt)::+;)*];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [];
-        #[sql_name=$new_sql_name:expr] $($rest:tt)+
-    ) => {
-        table! {
-            @parse
-            import = [$(use $($import)::+;)*];
-            table_doc = [$($doc,)*];
-            table_sql_name = [$new_sql_name];
-            $($rest)+
-        }
-    };
-
-    // We are finished parsing the import list and the table documentation
-    // Now we forward the remaining tokens to parse the body of the table
-    // definition
-    (
-        @parse
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        $($rest:tt)+
-    ) => {
-        table! {
-            @parse_body
-            import = [$(use $($import)::+;)*];
-            table_doc = [$($doc,)*];
-            table_sql_name = [$($table_sql_name)*];
-            $($rest)+
-        }
-    };
-
-    // We are finished parsing the import list and the table documentation
-    // Because the import list is empty we add a default import (diesel::sql_types::*)
-    // After that we forward the remaining tokens to parse the body of the table
-    // definition
-    (
-        @parse
-        import = [];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        $($rest:tt)+
-    ) => {
-        table! {
-            @parse_body
-            import = [use $crate::sql_types::*;];
-            table_doc = [$($doc,)*];
-            table_sql_name = [$($table_sql_name)*];
-            $($rest)+
-        }
-    };
-
-    // Add the primary key if it's not present
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        $($table_name:ident).+ {$($body:tt)*}
-    ) => {
-        table! {
-            @parse_body
-            import = [$(use $($import)::+;)+];
-            table_doc = [$($doc,)*];
-            table_sql_name = [$($table_sql_name)*];
-            $($table_name).+ (id) {$($body)*}
-        }
-    };
-
-    // Add the schema name if it's not present
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        $name:ident $(($($pk:ident),+))* {$($body:tt)*}
-    ) => {
-        table! {
-            @parse_body
-            import = [$(use $($import)::+;)+];
-            table_doc = [$($doc,)*];
-            table_sql_name = [$($table_sql_name)*];
-            public . $name $(($($pk),+))* {$($body)*}
-        }
-    };
-
-    // Add a table name if it's not specified
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [];
-        $schema: ident . $name: ident $($rest:tt)+
-    ) => {
-        table! {
-            @parse_body
-            import = [$(use $($import)::+;)+];
-            table_doc = [$($doc,)*];
-            table_sql_name = [stringify!($name)];
-            $schema . $name $($rest)+
-        }
-    };
-
-    // Terminal with single-column pk
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$table_sql_name:expr];
-        $schema_name:ident . $name:ident ($pk:ident) $body:tt
-    ) => {
-        table_body! {
-            $schema_name . $name ($pk) $body
-            import = [$(use $($import)::+;)+];
-            table_doc = [$($doc)*];
-            table_sql_name = $table_sql_name;
-        }
-    };
-
-    // Terminal with composite pk (add a trailing comma)
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$table_sql_name:expr];
-        $schema_name:ident . $name:ident ($pk:ident, $($composite_pk:ident),+) $body:tt
-    ) => {
-        table_body! {
-            $schema_name . $name ($pk, $($composite_pk,)+) $body
-            import = [$(use $($import)::+;)+];
-            table_doc = [$($doc)*];
-            table_sql_name = $table_sql_name;
-        }
-    };
-
-    // Terminal with invalid syntax
-    // This is needed to prevent unbounded recursion on for example
-    // table! {
-    //     something strange
-    // }
-    (
-        @parse_body
-        import = [$(use $($import:tt)::+;)*];
-        table_doc = [$($doc:expr,)*];
-        table_sql_name = [$($table_sql_name:expr)*];
-        $($rest:tt)*
-    ) => {
-        compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-        `https://docs.diesel.rs/diesel/macro.table.html`");
-    };
-
-    // Put a parse annotation and empty fields for imports and documentation on top
-    // This is the entry point for parsing the table dsl
-    ($($rest:tt)+) => {
-        table! {
-            @parse
-            import = [];
-            table_doc = [];
-            table_sql_name = [];
-            $($rest)+
-        }
-    }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! table_body {
-    // Parse the documentation of a table column and store it in current_column_doc
-    // Forward the remaining table body to further instances of this macro
-    (
-        schema_name = $schema_name:ident,
-        table_name = $name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [$($column_doc:expr)*],
-        current_column_sql_name = [$($current_column_sql_name:expr)*],
-        #[doc=$new_doc:expr]
-        $($body:tt)*
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = $primary_key_ty,
-            primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [$($column_doc)*$new_doc],
-            current_column_sql_name = [$($current_column_sql_name)*],
-            $($body)*
-        }
-    };
-
-    // Parse the sql_name attribute and forward the remaining table body to further instances of
-    // this macro
-    (
-        schema_name = $schema_name:ident,
-        table_name = $name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [$($column_doc:expr)*],
-        current_column_sql_name = [],
-        #[sql_name=$new_sql_name:expr]
-        $($body:tt)*
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = $primary_key_ty,
-            primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [$($column_doc)*],
-            current_column_sql_name = [$new_sql_name],
-            $($body)*
-        }
-    };
-
-    // Parse a table column definition
-    // Forward any remaining table column to further instances
-    // of this macro
-    //
-    // This case will attempt to keep the type destructured so we can match
-    // on it to determine if the column is numeric, later. The next branch
-    // will catch any types which don't match this structure
-    (
-        schema_name = $schema_name:ident,
-        table_name = $name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [$($column_doc:expr)*],
-        current_column_sql_name = [$new_sql_name:expr],
-        $new_column_name:ident -> $($ty_path:tt)::* $(<$($ty_params:tt)::*>)*,
-        $($body:tt)*
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = $primary_key_ty,
-            primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
-                       $new_column_name -> ($($ty_path)::*$(<$($ty_params)::*>)*); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [],
-            current_column_sql_name = [],
-            $($body)*
-        }
-    };
-
-    // Parse a table column definition with a complex type
-    //
-    // This is identical to the previous branch, but we are capturing the whole
-    // thing as a `ty` token.
-    (
-        schema_name = $schema_name:ident,
-        table_name = $name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [$($column_doc:expr)*],
-        current_column_sql_name = [$new_sql_name:expr],
-        $new_column_name:ident -> $new_column_ty:ty,
-        $($body:tt)*
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = $primary_key_ty,
-            primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*
-                       $new_column_name -> ($new_column_ty); doc = [$($column_doc)*]; sql_name = $new_sql_name,],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [],
-            current_column_sql_name = [],
-            $($body)*
-        }
-    };
-
-    // Parse the table name  and the primary keys
-    // Forward the table body to further parsing layers that parses
-    // the column definitions
-    (
-        $schema_name:ident . $name:ident ($pk:ident) {
-            $($body:tt)+
-        }
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($table_doc:expr)*];
-        table_sql_name = $table_sql_name:expr;
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = columns::$pk,
-            primary_key_expr = columns::$pk,
-            columns = [],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [],
-            current_column_sql_name = [],
-            $($body)+
-        }
-    };
-
-    // Add a sql_name arg if we find a column definition without any sql_name attribute before
-    (
-        schema_name = $schema_name:ident,
-        table_name = $name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> $Type:tt; doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)*],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [$($column_doc:expr)*],
-        current_column_sql_name = [],
-        $new_column_name:ident ->
-        $($body:tt)*
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = $primary_key_ty,
-            primary_key_expr = $primary_key_expr,
-            columns = [$($column_name -> $Type; doc = [$($doc)*]; sql_name = $sql_name,)*],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [$($column_doc)*],
-            current_column_sql_name = [stringify!($new_column_name)],
-            $new_column_name -> $($body)*
-        }
-    };
-
-    (
-        $schema_name:ident . $name:ident ($($pk:ident,)+) {
-            $($body:tt)+
-        }
-        import = [$(use $($import:tt)::+;)+];
-        table_doc = [$($table_doc:expr)*];
-        table_sql_name = $table_sql_name:expr;
-    ) => {
-        table_body! {
-            schema_name = $schema_name,
-            table_name = $name,
-            table_sql_name = $table_sql_name,
-            primary_key_ty = ($(columns::$pk,)+),
-            primary_key_expr = ($(columns::$pk,)+),
-            columns = [],
-            imports = ($($($import)::+),+),
-            table_doc = [$($table_doc)*],
-            current_column_doc = [],
-            current_column_sql_name = [],
-            $($body)+
-        }
-    };
-
-    // Finish parsing the table dsl. Now expand the parsed informations into
-    // the corresponding rust code
-    (
-        schema_name = $schema_name:ident,
-        table_name = $table_name:ident,
-        table_sql_name = $table_sql_name:expr,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-        columns = [$($column_name:ident -> ($($column_ty:tt)*); doc = [$($doc:expr)*]; sql_name = $sql_name:expr,)+],
-        imports = ($($($import:tt)::+),+),
-        table_doc = [$($table_doc:expr)*],
-        current_column_doc = [],
-        current_column_sql_name = [],
-    ) => {
-        $(
-            #[doc=$table_doc]
-        )*
+        $($meta)*
         pub mod $table_name {
             #![allow(dead_code)]
             use $crate::{
@@ -716,7 +609,7 @@ macro_rules! table_body {
             use $crate::query_builder::nodes::Identifier;
             use $crate::query_source::{AppearsInFromClause, Once, Never};
             use $crate::query_source::joins::{Join, JoinOn};
-            $(use $($import)::+;)+
+            $($imports)*
             pub use self::columns::*;
 
             /// Re-exports all of the columns of this table, as well as the
@@ -771,7 +664,7 @@ macro_rules! table_body {
             /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
-            __diesel_table_query_source_impl!(table, $schema_name, $table_sql_name);
+            __diesel_table_query_source_impl!(table, $schema, $sql_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
@@ -783,11 +676,11 @@ macro_rules! table_body {
             }
 
             impl Table for table {
-                type PrimaryKey = $primary_key_ty;
+                type PrimaryKey = $primary_key;
                 type AllColumns = ($($column_name,)+);
 
                 fn primary_key(&self) -> Self::PrimaryKey {
-                    $primary_key_expr
+                    $primary_key
                 }
 
                 fn all_columns() -> Self::AllColumns {
@@ -899,7 +792,7 @@ macro_rules! table_body {
                 use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
                 use $crate::query_source::{AppearsInFromClause, Once, Never};
                 use $crate::result::QueryResult;
-                $(use $($import)::+;)+
+                $($imports)*
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy)]
@@ -929,7 +822,13 @@ macro_rules! table_body {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column!(table, $column_name -> ($($column_ty)*), $sql_name, $($doc),*);)+
+                $(__diesel_column! {
+                    table = table,
+                    name = $column_name,
+                    sql_name = $column_sql_name,
+                    ty = ($($column_ty)*),
+                    $($column)*
+                })+
             }
         }
     }
