@@ -116,106 +116,75 @@ macro_rules! __diesel_sql_function_body {
     // Entry point. We need to search the meta items for our special attributes
     (
         meta = $meta:tt,
-        $($rest:tt)*
-    ) => {
-        __diesel_sql_function_body! {
-            unchecked_meta = $meta,
-            meta = (),
-            $($rest)*
-        }
-    };
-
-    // Searching for `#[aggregate]`, found it. Search for `sql_name`.
-    (
-        unchecked_meta = (#[aggregate] $($unchecked:tt)*),
-        meta = ($($meta:tt)*),
-        $($rest:tt)*
-    ) => {
-        __diesel_sql_function_body! {
-            aggregate = yes,
-            unchecked_meta = ($($meta)* $($unchecked)*),
-            meta = (),
-            $($rest)*
-        }
-    };
-
-    // Searching for `#[aggregate]`. Didn't find it.
-    (
-        unchecked_meta = (#$checked:tt $($unchecked:tt)*),
-        meta = ($($meta:tt)*),
-        $($rest:tt)*
-    ) => {
-        __diesel_sql_function_body! {
-            unchecked_meta = ($($unchecked)*),
-            meta = ($($meta)* #$checked),
-            $($rest)*
-        }
-    };
-
-    // Done searching for `#[aggregate]`. Search for `sql_name`
-    (
-        unchecked_meta = (),
-        meta = $meta:tt,
+        fn_name = $fn_name:ident,
         $($rest:tt)*
     ) => {
         __diesel_sql_function_body! {
             aggregate = no,
+            sql_name = stringify!($fn_name),
             unchecked_meta = $meta,
             meta = (),
+            fn_name = $fn_name,
             $($rest)*
         }
     };
 
-    // Searching for `#[sql_name]`, found it.
+    // Found #[aggregate]
     (
         aggregate = $aggregate:tt,
+        sql_name = $sql_name:expr,
+        unchecked_meta = (#[aggregate] $($unchecked:tt)*),
+        meta = $meta:tt,
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = yes,
+            sql_name = $sql_name,
+            unchecked_meta = ($($unchecked)*),
+            meta = $meta,
+            $($rest)*
+        }
+    };
+
+    // Found #[sql_name].
+    (
+        aggregate = $aggregate:tt,
+        sql_name = $ignored:expr,
         unchecked_meta = (#[sql_name = $sql_name:expr] $($unchecked:tt)*),
+        meta = $meta:tt,
+        $($rest:tt)*
+    ) => {
+        __diesel_sql_function_body! {
+            aggregate = $aggregate,
+            sql_name = $sql_name,
+            unchecked_meta = ($($unchecked)*),
+            meta = $meta,
+            $($rest)*
+        }
+    };
+
+    // Didn't find a special attribute
+    (
+        aggregate = $aggregate:tt,
+        sql_name = $sql_name:expr,
+        unchecked_meta = (#$checked:tt $($unchecked:tt)*),
         meta = ($($meta:tt)*),
         $($rest:tt)*
     ) => {
         __diesel_sql_function_body! {
             aggregate = $aggregate,
             sql_name = $sql_name,
-            meta = ($($meta)* $($unchecked)*),
-            $($rest)*
-        }
-    };
-
-    // Searching for `#[sql_name]`. Didn't find it.
-    (
-        aggregate = $aggregate:tt,
-        unchecked_meta = (#$checked:tt $($unchecked:tt)*),
-        meta = ($($meta:tt)*),
-        $($rest:tt)*
-    ) => {
-        __diesel_sql_function_body! {
-            aggregate = $aggregate,
             unchecked_meta = ($($unchecked)*),
             meta = ($($meta)* #$checked),
             $($rest)*
         }
     };
 
-    // Done searching for `#[sql_name]`.
-    (
-        aggregate = $aggregate:tt,
-        unchecked_meta = (),
-        meta = $meta:tt,
-        fn_name = $fn_name:ident,
-        $($rest:tt)*
-    ) => {
-        __diesel_sql_function_body! {
-            aggregate = $aggregate,
-            sql_name = stringify!($fn_name),
-            meta = $meta,
-            fn_name = $fn_name,
-            $($rest)*
-        }
-    };
-
+    // Done searching for special attributes
     (
         aggregate = $aggregate:tt,
         sql_name = $sql_name:expr,
+        unchecked_meta = (),
         meta = ($($meta:tt)*),
         fn_name = $fn_name:ident,
         type_args = ($($type_args:ident,)*),
