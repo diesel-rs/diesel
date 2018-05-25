@@ -41,7 +41,8 @@ Please post as much of your database schema as necessary. If you are using `infe
 ## Checklist
 
 - [ ] I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) for similar issues.
-- [ ] This issue can be reproduced on Rust's stable channel.
+- [ ] This issue can be reproduced on Rust's stable channel. (Your issue will be
+  closed if this is not the case)
 
 <!--
 Thank you for your submission!  You're helping make Diesel more robust 🎉
