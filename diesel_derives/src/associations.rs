@@ -40,13 +40,11 @@ fn derive_belongs_to(
     let foreign_key_field = model.find_column(foreign_key)?;
     let struct_name = model.name;
     let foreign_key_access = foreign_key_field.name.access();
-    let foreign_key_ty = inner_of_option_ty(&foreign_key_field.ty);
+    let foreign_key_ty = &foreign_key_field.ty;
     let table_name = model.table_name();
-
-    let foreign_key_expr = if is_option_ty(&foreign_key_field.ty) {
-        quote!(self#foreign_key_access.as_ref())
-    } else {
-        quote!(std::option::Option::Some(&self#foreign_key_access))
+    let foreign_key_trait = quote!{
+        <#foreign_key_ty
+            as diesel::associations::ForeignKey<diesel::dsl::SqlTypeOf<#table_name::#foreign_key>>>
     };
 
     Ok(quote! {
@@ -54,11 +52,11 @@ fn derive_belongs_to(
             for #struct_name #ty_generics
         #where_clause
         {
-            type ForeignKey = #foreign_key_ty;
+            type ForeignKey = #foreign_key_trait::KeyType;
             type ForeignKeyColumn = #table_name::#foreign_key;
 
             fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
-                #foreign_key_expr
+                #foreign_key_trait::key(&self#foreign_key_access)
             }
 
             fn foreign_key_column() -> Self::ForeignKeyColumn {

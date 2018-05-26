@@ -329,7 +329,7 @@ use std::hash::Hash;
 
 use query_source::Table;
 
-pub use self::belongs_to::{BelongsTo, GroupedBy};
+pub use self::belongs_to::{BelongsTo, GroupedBy, ForeignKey};
 
 /// This trait indicates that a struct is associated with a single database table.
 ///

@@ -2,6 +2,7 @@ use dsl::{Eq, EqAny, Filter, FindBy};
 use expression::AsExpression;
 use expression::array_comparison::AsInExpression;
 use query_dsl::methods::FilterDsl;
+use sql_types::{NotNull, Nullable};
 use prelude::*;
 use super::{HasTable, Identifiable};
 
@@ -26,6 +27,23 @@ pub trait BelongsTo<Parent> {
     fn foreign_key(&self) -> Option<&Self::ForeignKey>;
     /// Returns the foreign key column of this struct's table
     fn foreign_key_column() -> Self::ForeignKeyColumn;
+}
+
+/// A trait to abstract which types could be used in a foreign key context.
+///
+/// The use case of this trait is to abstract away wrapper types used for example
+/// to represent if a foreign key could be null.
+///
+/// You will not need to interact with this trait, unless you are writing an
+/// implementation of custom type wrapper that could be used in foreign key position
+pub trait ForeignKey<ST> {
+    /// The (rust) type of the primary key that is referenced by the foreign key
+    type KeyType;
+
+    /// A helper function to extract the foreign key value from the wrapper struct.
+    ///
+    /// Returns `None` if the value is null otherwise `Some(value)`.
+    fn key(&self) -> Option<&Self::KeyType>;
 }
 
 /// The `grouped_by` function groups records by their parent.
@@ -172,5 +190,18 @@ where
 
     fn belonging_to(parents: &'a Vec<Parent>) -> Self::Output {
         Self::belonging_to(&**parents)
+    }
+}
+
+impl<T, ST> ForeignKey<Nullable<ST>> for Option<T>
+where
+    T: Hash + ::std::cmp::Eq,
+    Option<T>: AsExpression<Nullable<ST>>,
+    ST: NotNull,
+{
+    type KeyType = T;
+
+    fn key(&self) -> Option<&Self::KeyType> {
+        self.as_ref()
     }
 }
