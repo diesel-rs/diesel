@@ -4,6 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Added
+
+* A helper trait has been added for implementing `ToSql` for PG composite types.
+  See [`WriteTuple`][write-tuple-1-4-0] for details.
+
+[write-tuple-1-4-0]: docs.diesel.rs/diesel/serialize/trait.WriteTuple.html
+
 ## [1.3.1] - 2018-05-23
 
 ### Fixed
