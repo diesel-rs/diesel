@@ -10,6 +10,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `embed_migrations!` will no longer emit an unused import warning
 
+### Added
+
+* A helper trait has been added for implementing `ToSql` for PG composite types.
+  See [`WriteTuple`][write-tuple-1-4-0] for details.
+
+[write-tuple-1-4-0]: docs.diesel.rs/diesel/serialize/trait.WriteTuple.html
+
 ## [1.3.1] - 2018-05-23
 
 ### Fixed

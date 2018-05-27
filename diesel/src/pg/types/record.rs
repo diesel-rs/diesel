@@ -1,11 +1,14 @@
-use byteorder::{NetworkEndian, ReadBytesExt};
+use byteorder::*;
+use std::io::Write;
+
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
 use pg::Pg;
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
 use row::Row;
-use sql_types::Record;
+use serialize::{self, IsNull, Output, ToSql, WriteTuple};
+use sql_types::{HasSqlType, Record};
 
 macro_rules! tuple_impls {
     ($(
@@ -94,6 +97,33 @@ macro_rules! tuple_impls {
                 )+))
             }
         }
+
+        impl<$($T,)+ $($ST,)+> WriteTuple<($($ST,)+)> for ($($T,)+)
+        where
+            $($T: ToSql<$ST, Pg>,)+
+            $(Pg: HasSqlType<$ST>),+
+        {
+            fn write_tuple<_W: Write>(&self, out: &mut Output<_W, Pg>) -> serialize::Result {
+                let mut buffer = out.with_buffer(Vec::new());
+                out.write_i32::<NetworkEndian>($Tuple)?;
+
+                $(
+                    let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid;
+                    out.write_u32::<NetworkEndian>(oid)?;
+                    let is_null = self.$idx.to_sql(&mut buffer)?;
+
+                    if let IsNull::No = is_null {
+                        out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
+                        out.write_all(&buffer)?;
+                        buffer.clear();
+                    } else {
+                        out.write_i32::<NetworkEndian>(-1)?;
+                    }
+                )+
+
+                Ok(IsNull::No)
+            }
+        }
     )+}
 }
 
@@ -144,6 +174,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use dsl::sql;
     use prelude::*;
     use sql_types::*;
@@ -193,6 +224,32 @@ mod tests {
         >("((4, NULL::text), NULL::int4)");
         let res = ::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
             .get_result(&conn);
+        assert_eq!(Ok(true), res);
+    }
+
+    #[test]
+    fn serializing_named_composite_types() {
+        #[derive(SqlType, QueryId, Debug, Clone, Copy)]
+        #[postgres(type_name = "my_type")]
+        struct MyType;
+
+        #[derive(Debug, AsExpression)]
+        #[sql_type = "MyType"]
+        struct MyStruct<'a>(i32, &'a str);
+
+        impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
+            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+                WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
+            }
+        }
+
+        let conn = pg_connection();
+
+        ::sql_query("CREATE TYPE my_type AS (i int4, t text)")
+            .execute(&conn)
+            .unwrap();
+        let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
+        let res = ::select(sql).get_result(&conn);
         assert_eq!(Ok(true), res);
     }
 }

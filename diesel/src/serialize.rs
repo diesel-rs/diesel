@@ -9,6 +9,9 @@ use std::result;
 use backend::Backend;
 use sql_types::TypeMetadata;
 
+#[cfg(feature = "postgres")]
+pub use pg::serialize::*;
+
 /// A specialized result type representing the result of serializing
 /// a value for the database.
 pub type Result = result::Result<IsNull, Box<Error + Send + Sync>>;
