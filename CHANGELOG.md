@@ -4,6 +4,14 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [0.16.1] - 2018-05-27
+
+### Changed
+
+* Report an error if someone tries to use `diesel_codegen` with a newer version of diesel.
+  0.16.0 is the last version that is supported by `diesel_codegen`. See the changelog
+  of diesel 0.99 for details.
+
 ## [0.16.0] - 2017-08-24
 
 ### Added
