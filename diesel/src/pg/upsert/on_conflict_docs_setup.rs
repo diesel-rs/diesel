@@ -1,4 +1,4 @@
-include!("src/doctest_setup.rs");
+include!("../../doctest_setup.rs");
 
 table! {
     users {

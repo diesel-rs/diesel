@@ -79,7 +79,7 @@ impl Statement {
                 ffi::sqlite3_bind_double(
                     self.inner_statement,
                     self.bind_index,
-                    value as libc::c_double,
+                    libc::c_double::from(value),
                 )
             }
             (SqliteType::Double, Some(bytes)) => {
@@ -95,7 +95,7 @@ impl Statement {
                 ffi::sqlite3_bind_int(
                     self.inner_statement,
                     self.bind_index,
-                    value as libc::c_int,
+                    libc::c_int::from(value),
                 )
             }
             (SqliteType::Integer, Some(bytes)) => {

@@ -69,7 +69,7 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
         mysql_time.hour = self.hour() as libc::c_uint;
         mysql_time.minute = self.minute() as libc::c_uint;
         mysql_time.second = self.second() as libc::c_uint;
-        mysql_time.second_part = self.timestamp_subsec_micros() as libc::c_ulong;
+        mysql_time.second_part = libc::c_ulong::from(self.timestamp_subsec_micros());
 
         <ffi::MYSQL_TIME as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, out)
     }

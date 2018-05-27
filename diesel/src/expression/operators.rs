@@ -135,7 +135,7 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
 /// #     users {

@@ -149,7 +149,7 @@ impl<T, U, Op> InsertStatement<T, U, Op, NoReturningClause> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
@@ -221,7 +221,7 @@ impl<T, U, Op> BatchInsertStatement<T, U, Op> {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("src/doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {

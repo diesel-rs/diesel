@@ -53,7 +53,7 @@ Foldable.
 
 ```rust
 # #[macro_use] extern crate diesel;
-# include!(\"src/doctest_setup.rs\");
+# include!(\"../../doctest_setup.rs\");
 # use diesel::expression::dsl::*;
 #
 # table! {
@@ -78,7 +78,7 @@ Foldable.
 
 ```rust
 # #[macro_use] extern crate diesel;
-# include!(\"src/doctest_setup.rs\");
+# include!(\"../../doctest_setup.rs\");
 # use diesel::expression::dsl::*;
 #
 # table! {

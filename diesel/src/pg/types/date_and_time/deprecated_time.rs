@@ -11,7 +11,7 @@ use types::{self, ToSql, ToSqlOutput, FromSql, IsNull, Timestamp};
 expression_impls!(Timestamp -> Timespec);
 queryable_impls!(Timestamp -> Timespec);
 
-const TIME_SEC_CONV: i64 = 946684800;
+const TIME_SEC_CONV: i64 = 946_684_800;
 
 impl ToSql<types::Timestamp, Pg> for Timespec {
     fn to_sql<W: Write>(&self, out: &mut ToSqlOutput<W, Pg>) -> Result<IsNull, Box<Error+Send+Sync>> {

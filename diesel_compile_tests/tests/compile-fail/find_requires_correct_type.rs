@@ -21,10 +21,8 @@ fn main() {
     //~^ ERROR no method named `first`
     //~| ERROR E0277
     //~| ERROR E0277
-    //~| ERROR E0277
     string_primary_key::table.find(1).first(&connection).unwrap();
     //~^ ERROR no method named `first`
-    //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
 }

@@ -1,3 +1,4 @@
+#[cfg(feature = "postgres")]
 extern crate url;
 
 use support::{database, project};

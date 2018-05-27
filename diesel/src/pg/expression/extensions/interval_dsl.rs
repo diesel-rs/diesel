@@ -12,7 +12,7 @@ use data_types::PgInterval;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../../../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
@@ -103,7 +103,7 @@ pub trait MicroIntervalDsl: Sized + Mul<Self, Output=Self> {
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("src/doctest_setup.rs");
+/// # include!("../../../doctest_setup.rs");
 /// # use diesel::expression::dsl::*;
 /// #
 /// # table! {
@@ -191,7 +191,7 @@ impl MicroIntervalDsl for i64 {
     }
 
     fn times(self, x: i32) -> i64 {
-        self * x as i64
+        self * i64::from(x)
     }
 }
 
@@ -201,7 +201,7 @@ impl MicroIntervalDsl for f64 {
     }
 
     fn times(self, x: i32) -> f64 {
-        self * x as f64
+        self * f64::from(x)
     }
 }
 
@@ -235,7 +235,7 @@ impl DayAndMonthIntervalDsl for f64 {
     }
 
     fn times(self, x: i32) -> f64 {
-        self * x as f64
+        self * f64::from(x)
     }
 }
 

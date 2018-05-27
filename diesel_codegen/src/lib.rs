@@ -22,7 +22,7 @@ macro_rules! t {
     };
 }
 
-#[cfg(feature = "dotenv")]
+#[cfg(all(feature = "dotenv", feature = "diesel_infer_schema"))]
 extern crate dotenv;
 #[cfg(feature = "diesel_infer_schema")]
 extern crate diesel_infer_schema;
@@ -31,6 +31,9 @@ extern crate diesel;
 extern crate quote;
 extern crate proc_macro;
 extern crate syn;
+#[macro_use]
+extern crate serde;
+extern crate serde_json;
 
 mod as_changeset;
 mod associations;
@@ -47,6 +50,7 @@ mod schema_inference;
 mod database_url;
 mod util;
 mod migrations;
+mod check_version;
 
 use proc_macro::TokenStream;
 use syn::parse_derive_input;
@@ -94,6 +98,7 @@ pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
 }
 
 fn expand_derive(input: TokenStream, f: fn(syn::DeriveInput) -> quote::Tokens) -> TokenStream {
+    let _ = self::check_version::check_version();
     let item = parse_derive_input(&input.to_string()).unwrap();
     f(item).to_string().parse().unwrap()
 }
