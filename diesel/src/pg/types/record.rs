@@ -178,7 +178,6 @@ mod tests {
     use sql_types::*;
     use dsl::sql;
     use prelude::*;
-    use super::*;
 
     #[test]
     fn record_deserializes_correctly() {
@@ -219,36 +218,6 @@ mod tests {
         >("((4, NULL::text), NULL::int4)");
         let res = ::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
             .get_result(&conn);
-        assert_eq!(Ok(true), res);
-    }
-
-    #[test]
-    fn serializing_named_composite_types() {
-        #[derive(SqlType, QueryId, Debug, Clone, Copy)]
-        #[postgres(type_name = "my_type")]
-        struct MyType;
-
-        #[derive(Debug, AsExpression)]
-        #[sql_type = "MyType"]
-        struct MyStruct<'a>(i32, &'a str);
-
-        impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-                WriteTuple::<(Integer, Text)>::write_tuple(
-                    &(self.0, self.1),
-                    out,
-                )
-            }
-        }
-
-        let conn = pg_connection();
-
-        ::sql_query("CREATE TYPE my_type AS (i int4, t text)")
-            .execute(&conn)
-            .unwrap();
-        let sql = sql::<Bool>("(1, 'hi')::my_type = ")
-            .bind::<MyType, _>(MyStruct(1, "hi"));
-        let res = ::select(sql).get_result(&conn);
         assert_eq!(Ok(true), res);
     }
 }
