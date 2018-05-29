@@ -1,19 +1,18 @@
-use diesel::*;
 use diesel::connection::SimpleConnection;
 use diesel::deserialize::{self, FromSql};
 use diesel::pg::Pg;
 use diesel::serialize::{self, IsNull, Output, ToSql, WriteTuple};
 use diesel::sql_types::{Integer, Record, Text};
+use diesel::*;
 use schema::*;
 use std::io::Write;
 
 table! {
     use diesel::sql_types::*;
-    use super::{MyEnumType, MyStructType};
-    custom_types {
+    use super::MyEnumType;
+    has_custom_enum {
         id -> Integer,
         custom_enum -> MyEnumType,
-        custom_struct -> MyStructType,
     }
 }
 
@@ -48,6 +47,54 @@ impl FromSql<MyEnumType, Pg> for MyEnum {
     }
 }
 
+#[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
+#[table_name = "has_custom_enum"]
+struct HasCustomEnum {
+    id: i32,
+    custom_enum: MyEnum,
+}
+
+#[test]
+fn custom_enum_round_trip() {
+    let data = vec![
+        HasCustomEnum {
+            id: 1,
+            custom_enum: MyEnum::Foo,
+        },
+        HasCustomEnum {
+            id: 2,
+            custom_enum: MyEnum::Bar,
+        },
+    ];
+    let connection = connection();
+    connection
+        .batch_execute(
+            r#"
+        CREATE TYPE my_enum_type AS ENUM ('foo', 'bar');
+        CREATE TABLE has_custom_enum (
+            id SERIAL PRIMARY KEY,
+            custom_enum my_enum_type NOT NULL
+        );
+    "#,
+        )
+        .unwrap();
+
+    let inserted = insert_into(has_custom_enum::table)
+        .values(&data)
+        .get_results(&connection)
+        .unwrap();
+    assert_eq!(data, inserted);
+}
+
+table! {
+    use diesel::sql_types::*;
+    use super::MyStructType;
+    has_custom_struct {
+        id -> Integer,
+        custom_struct -> MyStructType,
+    }
+}
+
 #[derive(SqlType)]
 #[postgres(type_name = "my_struct_type")]
 pub struct MyStructType;
@@ -58,10 +105,7 @@ pub struct MyStruct(i32, String);
 
 impl ToSql<MyStructType, Pg> for MyStruct {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        WriteTuple::<(Integer, Text)>::write_tuple(
-            &(self.0, self.1.as_str()),
-            out,
-        )
+        WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1.as_str()), out)
     }
 }
 
@@ -73,43 +117,38 @@ impl FromSql<MyStructType, Pg> for MyStruct {
 }
 
 #[derive(Insertable, Queryable, Identifiable, Debug, PartialEq)]
-#[table_name = "custom_types"]
-struct HasCustomTypes {
+#[table_name = "has_custom_struct"]
+struct HasCustomStruct {
     id: i32,
-    custom_enum: MyEnum,
     custom_struct: MyStruct,
 }
 
 #[test]
-fn custom_types_round_trip() {
+fn custom_struct_round_trip() {
     let data = vec![
-        HasCustomTypes {
+        HasCustomStruct {
             id: 1,
-            custom_enum: MyEnum::Foo,
-            custom_struct: MyStruct(1, "baz".into()),
+            custom_struct: MyStruct(1, "foo".into()),
         },
-        HasCustomTypes {
+        HasCustomStruct {
             id: 2,
-            custom_enum: MyEnum::Bar,
-            custom_struct: MyStruct(2, "quux".into()),
+            custom_struct: MyStruct(2, "bar".into()),
         },
     ];
     let connection = connection();
     connection
         .batch_execute(
             r#"
-        CREATE TYPE my_enum_type AS ENUM ('foo', 'bar');
         CREATE TYPE my_struct_type AS (i int4, t text);
-        CREATE TABLE custom_types (
+        CREATE TABLE has_custom_struct (
             id SERIAL PRIMARY KEY,
-            custom_enum my_enum_type NOT NULL,
             custom_struct my_struct_type NOT NULL
         );
     "#,
         )
         .unwrap();
 
-    let inserted = insert_into(custom_types::table)
+    let inserted = insert_into(has_custom_struct::table)
         .values(&data)
         .get_results(&connection)
         .unwrap();
