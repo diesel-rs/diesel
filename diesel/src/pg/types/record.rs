@@ -7,8 +7,8 @@ use pg::Pg;
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
 use row::Row;
-use serialize::{self, ToSql, Output, WriteTuple, IsNull};
-use sql_types::{Record, HasSqlType};
+use serialize::{self, IsNull, Output, ToSql, WriteTuple};
+use sql_types::{HasSqlType, Record};
 
 macro_rules! tuple_impls {
     ($(
@@ -234,10 +234,7 @@ mod tests {
 
         impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
             fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-                WriteTuple::<(Integer, Text)>::write_tuple(
-                    &(self.0, self.1),
-                    out,
-                )
+                WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
             }
         }
 
@@ -246,8 +243,7 @@ mod tests {
         ::sql_query("CREATE TYPE my_type AS (i int4, t text)")
             .execute(&conn)
             .unwrap();
-        let sql = sql::<Bool>("(1, 'hi')::my_type = ")
-            .bind::<MyType, _>(MyStruct(1, "hi"));
+        let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
         let res = ::select(sql).get_result(&conn);
         assert_eq!(Ok(true), res);
     }
