@@ -7,8 +7,8 @@ use pg::Pg;
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
 use row::Row;
-use serialize::{self, ToSql, Output, WriteTuple, IsNull};
-use sql_types::{Record, HasSqlType};
+use serialize::{self, IsNull, Output, ToSql, WriteTuple};
+use sql_types::{HasSqlType, Record};
 
 macro_rules! tuple_impls {
     ($(
