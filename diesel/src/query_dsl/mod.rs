@@ -49,6 +49,8 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::SaveChangesDsl;
+#[doc(hidden)]
+pub use self::save_changes_dsl::InternalSaveChangesDsl;
 
 /// The traits used by `QueryDsl`.
 ///
