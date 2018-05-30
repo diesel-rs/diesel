@@ -4,12 +4,12 @@
 extern crate bigdecimal;
 extern crate chrono;
 
-use schema::*;
-use diesel::*;
 use diesel::deserialize::FromSql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::sql_types::*;
+use diesel::*;
+use schema::*;
 
 use quickcheck::quickcheck;
 
@@ -199,23 +199,19 @@ fn i32_to_sql_integer() {
 #[cfg(feature = "mysql")]
 fn u16_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
-        "-1",
-        65535
+        "-1", 65535
     ));
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>("0", 0));
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>("1", 1));
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
-        "7000",
-        7000
+        "7000", 7000
     ));
     assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>("0", 1));
     assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>(
-        "50000",
-        49999
+        "50000", 49999
     ));
     assert!(!query_to_sql_equality::<Unsigned<SmallInt>, u16>(
-        "-1",
-        64434
+        "-1", 64434
     ));
 }
 
@@ -232,23 +228,19 @@ fn u16_from_sql() {
 #[cfg(feature = "mysql")]
 fn u32_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
-        "-1",
-        4294967295
+        "-1", 4294967295
     ));
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>("0", 0));
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>("1", 1));
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
-        "70000",
-        70000
+        "70000", 70000
     ));
     assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>("0", 1));
     assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>(
-        "70000",
-        69999
+        "70000", 69999
     ));
     assert!(!query_to_sql_equality::<Unsigned<Integer>, u32>(
-        "-1",
-        4294967294
+        "-1", 4294967294
     ));
 }
 
@@ -277,13 +269,11 @@ fn u64_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>("0", 0));
     assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>("1", 1));
     assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>(
-        "700000",
-        700000
+        "700000", 700000
     ));
     assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>("0", 1));
     assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>(
-        "70000",
-        69999
+        "70000", 69999
     ));
     assert!(!query_to_sql_equality::<Unsigned<BigInt>, u64>(
         "-1",
@@ -567,8 +557,7 @@ fn pg_specific_option_to_sql() {
         Some(true)
     ));
     assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
-        "NULL",
-        None
+        "NULL", None
     ));
     assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "NULL::bool",
@@ -583,8 +572,7 @@ fn option_to_sql() {
         Some(1)
     ));
     assert!(query_to_sql_equality::<Nullable<Integer>, Option<i32>>(
-        "NULL",
-        None
+        "NULL", None
     ));
     assert!(query_to_sql_equality::<Nullable<VarChar>, Option<String>>(
         "'Hello!'",
@@ -595,8 +583,7 @@ fn option_to_sql() {
         Some("".to_string())
     ));
     assert!(query_to_sql_equality::<Nullable<VarChar>, Option<String>>(
-        "NULL",
-        None
+        "NULL", None
     ));
 }
 
@@ -1126,9 +1113,9 @@ where
     select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
 
-use std::fmt::Debug;
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
+use std::fmt::Debug;
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
@@ -1167,8 +1154,8 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
 #[cfg(feature = "postgres")]
 #[test]
 fn test_range_from_sql() {
-    use std::collections::Bound;
     use diesel::dsl::sql;
+    use std::collections::Bound;
 
     let connection = connection();
 
@@ -1201,17 +1188,11 @@ fn test_range_to_sql() {
 
     let expected_value = "'[1,2]'::int4range";
     let value = (Bound::Included(1), Bound::Excluded(3));
-    assert!(query_to_sql_equality::<
-        Range<Int4>,
-        (Bound<i32>, Bound<i32>),
-    >(expected_value, value));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
 
     let expected_value = "'(1,2]'::int4range";
     let value = (Bound::Included(2), Bound::Excluded(3));
-    assert!(query_to_sql_equality::<
-        Range<Int4>,
-        (Bound<i32>, Bound<i32>),
-    >(expected_value, value));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
 }
 
 #[cfg(feature = "postgres")]

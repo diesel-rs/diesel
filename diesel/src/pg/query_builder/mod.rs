@@ -2,8 +2,8 @@ use super::backend::Pg;
 use query_builder::QueryBuilder;
 use result::QueryResult;
 
-mod query_fragment_impls;
 mod distinct_on;
+mod query_fragment_impls;
 pub use self::distinct_on::DistinctOnClause;
 
 /// The PostgreSQL query builder

@@ -4,12 +4,12 @@ extern crate diesel;
 extern crate serde_derive;
 extern crate serde_json;
 
-use diesel::prelude::*;
-use diesel::insert_into;
 #[cfg(test)]
 use diesel::debug_query;
+use diesel::insert_into;
 #[cfg(test)]
 use diesel::pg::Pg;
+use diesel::prelude::*;
 use std::error::Error;
 use std::time::SystemTime;
 

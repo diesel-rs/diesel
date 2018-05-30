@@ -8527,5 +8527,5 @@ macro_rules! __diesel_for_each_tuple {
                 (127) -> DX, SDX, TDX,
             }
         }
-    }
+    };
 }

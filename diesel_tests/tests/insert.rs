@@ -181,13 +181,11 @@ fn insert_with_defaults() {
         .execute(&connection)
         .unwrap();
 
-    let expected_users = vec![
-        User {
-            id: 1,
-            name: "Tess".to_string(),
-            hair_color: Some("Green".to_string()),
-        },
-    ];
+    let expected_users = vec![User {
+        id: 1,
+        name: "Tess".to_string(),
+        hair_color: Some("Green".to_string()),
+    }];
     let actual_users = users.load(&connection).unwrap();
 
     assert_eq!(expected_users, actual_users);
@@ -305,8 +303,8 @@ fn upsert_empty_slice() {
 #[test]
 #[cfg(feature = "postgres")]
 fn insert_only_default_values_with_returning() {
-    use schema::users::table as users;
     use schema::users::id;
+    use schema::users::table as users;
     use schema_dsl::*;
     let connection = connection();
 

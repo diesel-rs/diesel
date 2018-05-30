@@ -3,15 +3,15 @@ mod raw;
 mod stmt;
 mod url;
 
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use result::*;
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use query_builder::bind_collector::RawBytesBindCollector;
+use query_builder::*;
+use result::*;
 use sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]

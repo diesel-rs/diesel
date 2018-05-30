@@ -1,3 +1,5 @@
+#![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
@@ -282,8 +284,10 @@ macro_rules! table {
 #[doc(hidden)]
 macro_rules! __diesel_invalid_table_syntax {
     () => {
-        compile_error!("Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-        `https://docs.diesel.rs/diesel/macro.table.html`");
+        compile_error!(
+            "Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
+             `https://docs.diesel.rs/diesel/macro.table.html`"
+        );
     };
 }
 
@@ -854,8 +858,11 @@ macro_rules! __diesel_table_query_source_impl {
 
     ($table_struct:ident, $schema_name:ident, $table_name:expr) => {
         impl QuerySource for $table_struct {
-            type FromClause = $crate::query_builder::nodes::
-                InfixNode<'static, Identifier<'static>, Identifier<'static>>;
+            type FromClause = $crate::query_builder::nodes::InfixNode<
+                'static,
+                Identifier<'static>,
+                Identifier<'static>,
+            >;
             type DefaultSelection = <Self as Table>::AllColumns;
 
             fn from_clause(&self) -> Self::FromClause {
@@ -955,7 +962,8 @@ macro_rules! joinable_inner {
             right_table_expr = $right_table,
             foreign_key = $foreign_key,
             primary_key_ty = <$parent_table as $crate::query_source::Table>::PrimaryKey,
-            primary_key_expr = <$parent_table as $crate::query_source::Table>::primary_key(&$parent_table),
+            primary_key_expr =
+                <$parent_table as $crate::query_source::Table>::primary_key(&$parent_table),
         );
     };
 
@@ -977,10 +985,13 @@ macro_rules! joinable_inner {
             fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {
                 use $crate::{ExpressionMethods, NullableExpressionMethods};
 
-                (rhs, $foreign_key.nullable().eq($primary_key_expr.nullable()))
+                (
+                    rhs,
+                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
+                )
             }
         }
-    }
+    };
 }
 
 /// Allow two or more tables which are otherwise unrelated to be used together
@@ -1040,7 +1051,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
 macro_rules! __diesel_use_everything {
     () => {
         pub use $crate::*;
-    }
+    };
 }
 
 /// Gets the value out of an option, or returns an error.
@@ -1053,7 +1064,7 @@ macro_rules! not_none {
             Some(bytes) => bytes,
             None => return Err(Box::new($crate::result::UnexpectedNullError)),
         }
-    }
+    };
 }
 
 // The order of these modules is important (at least for those which have tests).

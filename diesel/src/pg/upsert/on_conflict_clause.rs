@@ -1,9 +1,9 @@
+use super::on_conflict_actions::*;
+use super::on_conflict_target::*;
 use insertable::*;
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
-use super::on_conflict_actions::*;
-use super::on_conflict_target::*;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]

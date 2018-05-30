@@ -1,8 +1,8 @@
-use query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
-use query_source::QuerySource;
 use super::on_conflict_actions::*;
 use super::on_conflict_clause::*;
 use super::on_conflict_target::*;
+use query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
+use query_source::QuerySource;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where

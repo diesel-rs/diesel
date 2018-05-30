@@ -1,9 +1,9 @@
 //! Types and traits related to serializing values for the database
 
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-use std::io::{self, Write};
 use std::error::Error;
+use std::fmt;
+use std::io::{self, Write};
+use std::ops::{Deref, DerefMut};
 use std::result;
 
 use backend::Backend;

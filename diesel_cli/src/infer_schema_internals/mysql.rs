@@ -1,9 +1,9 @@
-use diesel::*;
 use diesel::mysql::Mysql;
+use diesel::*;
 use std::error::Error;
 
-use super::information_schema::UsesInformationSchema;
 use super::data_structures::*;
+use super::information_schema::UsesInformationSchema;
 use super::table_data::TableName;
 
 mod information_schema {
@@ -38,8 +38,8 @@ pub fn load_foreign_key_constraints(
     connection: &MysqlConnection,
     schema_name: Option<&str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
-    use self::information_schema::table_constraints as tc;
     use self::information_schema::key_column_usage as kcu;
+    use self::information_schema::table_constraints as tc;
 
     let default_schema = Mysql::default_schema(connection)?;
     let schema_name = match schema_name {

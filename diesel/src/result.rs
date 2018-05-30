@@ -2,8 +2,8 @@
 
 use std::convert::From;
 use std::error::Error as StdError;
-use std::fmt::{self, Display};
 use std::ffi::NulError;
+use std::fmt::{self, Display};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "clippy", allow(enum_variant_names))]

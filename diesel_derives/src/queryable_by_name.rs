@@ -1,5 +1,5 @@
-use syn;
 use quote;
+use syn;
 
 use field::*;
 use model::*;

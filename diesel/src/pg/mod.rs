@@ -17,8 +17,8 @@ mod transaction;
 pub use self::backend::{Pg, PgTypeMetadata};
 pub use self::connection::PgConnection;
 pub use self::metadata_lookup::PgMetadataLookup;
-pub use self::query_builder::PgQueryBuilder;
 pub use self::query_builder::DistinctOnClause;
+pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;
 
 /// Data structures for PG types which have no corresponding Rust type

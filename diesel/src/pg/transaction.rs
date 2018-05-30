@@ -368,7 +368,7 @@ fn test_transaction_builder_generates_correct_sql() {
             $query.to_sql(&mut query_builder).unwrap();
             let sql = query_builder.finish();
             assert_eq!(sql, $sql);
-        }
+        };
     }
 
     let database_url = dotenv::var("PG_DATABASE_URL")

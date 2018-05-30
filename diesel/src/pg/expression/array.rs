@@ -1,8 +1,8 @@
-use std::marker::PhantomData;
 use backend::Backend;
 use expression::{AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression};
 use query_builder::{AstPass, QueryFragment};
 use sql_types;
+use std::marker::PhantomData;
 
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]

@@ -1,8 +1,8 @@
-use regex::Regex;
 use chrono::prelude::*;
+use regex::Regex;
 
-use support::project;
 use migrations_internals::TIMESTAMP_FORMAT;
+use support::project;
 
 #[test]
 fn migration_generate_creates_a_migration_with_the_proper_name() {

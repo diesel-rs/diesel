@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
+use mysql::{Mysql, MysqlType};
 use result::QueryResult;
 use row::*;
-use mysql::{Mysql, MysqlType};
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,

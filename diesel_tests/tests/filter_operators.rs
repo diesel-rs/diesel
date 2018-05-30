@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 fn filter_by_inequality() {
@@ -214,8 +214,8 @@ fn filter_by_ilike() {
 #[test]
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
-    use schema::users::dsl::*;
     use diesel::dsl::any;
+    use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");

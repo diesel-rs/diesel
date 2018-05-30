@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use expression::*;
 use expression::array_comparison::MaybeEmpty;
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 

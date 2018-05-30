@@ -2,8 +2,8 @@ use std::error::Error;
 
 use diesel::result::Error::NotFound;
 
-use super::table_data::*;
 use super::data_structures::*;
+use super::table_data::*;
 use database::InferConnection;
 
 static RESERVED_NAMES: &[&str] = &[

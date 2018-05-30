@@ -1,6 +1,6 @@
 use query_builder::AsQuery;
-use query_source::{JoinTo, QuerySource, Table};
 use query_source::joins::OnClauseWrapper;
+use query_source::{JoinTo, QuerySource, Table};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors

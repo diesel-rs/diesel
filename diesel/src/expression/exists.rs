@@ -1,6 +1,6 @@
 use backend::Backend;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use expression::subselect::Subselect;
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;

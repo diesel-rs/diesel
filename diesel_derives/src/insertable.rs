@@ -1,6 +1,6 @@
-use syn;
-use quote;
 use proc_macro2::Span;
+use quote;
+use syn;
 
 use field::*;
 use model::*;

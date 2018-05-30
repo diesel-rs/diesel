@@ -1,11 +1,11 @@
 use backend::Backend;
 use dsl::{Filter, IntoBoxed};
 use expression::{AppearsOnTable, SelectableExpression};
-use query_builder::*;
 use query_builder::returning_clause::*;
 use query_builder::where_clause::*;
-use query_dsl::RunQueryDsl;
+use query_builder::*;
 use query_dsl::methods::{BoxedDsl, FilterDsl};
+use query_dsl::RunQueryDsl;
 use query_source::Table;
 use result::QueryResult;
 

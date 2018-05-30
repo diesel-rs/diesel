@@ -1,7 +1,7 @@
 #[derive(StructOpt)]
 #[structopt(
     name = "blog",
-    after_help = "You can also run `blog SUBCOMMAND -h` to get more information about that subcommand.",
+    after_help = "You can also run `blog SUBCOMMAND -h` to get more information about that subcommand."
 )]
 pub enum Cli {
     /// Create a new wonderfully delighting blog post

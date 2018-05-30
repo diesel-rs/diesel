@@ -13,12 +13,12 @@
 //!
 //! Any backend specific types are re-exported through this module
 
+mod fold;
 pub mod ops;
 mod ord;
-mod fold;
 
-pub use self::ord::SqlOrd;
 pub use self::fold::Foldable;
+pub use self::ord::SqlOrd;
 
 /// The boolean SQL type.
 ///

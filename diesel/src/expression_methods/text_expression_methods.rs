@@ -1,5 +1,5 @@
-use expression::{AsExpression, Expression};
 use expression::operators::{Concat, Like, NotLike};
+use expression::{AsExpression, Expression};
 use sql_types::{Nullable, Text};
 
 /// Methods present on text expressions

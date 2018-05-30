@@ -4,8 +4,8 @@
 mod date_and_time;
 mod numeric;
 
-use std::io::Write;
 use byteorder::WriteBytesExt;
+use std::io::Write;
 
 use deserialize::{self, FromSql};
 use mysql::{Mysql, MysqlType};

@@ -1,10 +1,10 @@
 //! The types in this module are all shorthand for `PredicateType<Lhs,
 //! AsExpr<Rhs, Lhs>>`. Since we often need to return concrete types, instead of
 //! a boxed trait object, these can be useful for writing concise return types.
-use sql_types;
 use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
 use super::{AsExpression, Expression};
+use sql_types;
 
 /// The SQL type of an expression
 pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;

@@ -93,21 +93,39 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(feature = "large-tables",
-            deprecated(since = "1.2.0",
-                       note = "The large-tables feature has been renamed to 32-column-tables"))]
-#![cfg_attr(feature = "huge-tables",
-            deprecated(since = "1.2.0",
-                       note = "The huge-tables feature has been renamed to 64-column-tables"))]
-#![cfg_attr(feature = "x32-column-tables",
-            deprecated(since = "1.2.1",
-                       note = "The x32-column-tables feature has been reanmed to 32-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
-#![cfg_attr(feature = "x64-column-tables",
-            deprecated(since = "1.2.1",
-                       note = "The x64-column-tables feature has been reanmed to 64-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
-#![cfg_attr(feature = "x128-column-tables",
-            deprecated(since = "1.2.1",
-                       note = "The x128-column-tables feature has been reanmed to 128-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"))]
+#![cfg_attr(
+    feature = "large-tables",
+    deprecated(
+        since = "1.2.0", note = "The large-tables feature has been renamed to 32-column-tables"
+    )
+)]
+#![cfg_attr(
+    feature = "huge-tables",
+    deprecated(
+        since = "1.2.0", note = "The huge-tables feature has been renamed to 64-column-tables"
+    )
+)]
+#![cfg_attr(
+    feature = "x32-column-tables",
+    deprecated(
+        since = "1.2.1",
+        note = "The x32-column-tables feature has been reanmed to 32-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
+    )
+)]
+#![cfg_attr(
+    feature = "x64-column-tables",
+    deprecated(
+        since = "1.2.1",
+        note = "The x64-column-tables feature has been reanmed to 64-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
+    )
+)]
+#![cfg_attr(
+    feature = "x128-column-tables",
+    deprecated(
+        since = "1.2.1",
+        note = "The x128-column-tables feature has been reanmed to 128-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
+    )
+)]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
@@ -115,14 +133,21 @@
 #![cfg_attr(feature = "clippy", allow(unstable_features))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
-#![cfg_attr(feature = "clippy",
-            allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms,
-                  type_complexity, redundant_field_names))]
-#![cfg_attr(feature = "clippy",
-            warn(option_unwrap_used, result_unwrap_used, print_stdout,
-                 wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                 unicode_not_nfc, enum_glob_use, if_not_else, items_after_statements,
-                 used_underscore_binding))]
+#![cfg_attr(
+    feature = "clippy",
+    allow(
+        option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms, type_complexity,
+        redundant_field_names
+    )
+)]
+#![cfg_attr(
+    feature = "clippy",
+    warn(
+        option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention, mut_mut,
+        non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
+        items_after_statements, used_underscore_binding
+    )
+)]
 #![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
 #[cfg(feature = "postgres")]
@@ -166,9 +191,9 @@ pub mod result;
 pub mod serialize;
 #[macro_use]
 pub mod sql_types;
-pub mod types;
-pub mod row;
 pub mod migration;
+pub mod row;
+pub mod types;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
@@ -207,8 +232,8 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_builder::locking_clause as lock;
-    use super::query_dsl::*;
     use super::query_dsl::methods::*;
+    use super::query_dsl::*;
     use super::query_source::joins;
 
     #[doc(inline)]
@@ -314,12 +339,12 @@ pub mod prelude {
     pub use query_source::{Column, JoinTo, QuerySource, Table};
     pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
+    #[cfg(feature = "mysql")]
+    pub use mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
     pub use pg::PgConnection;
     #[cfg(feature = "sqlite")]
     pub use sqlite::SqliteConnection;
-    #[cfg(feature = "mysql")]
-    pub use mysql::MysqlConnection;
 }
 
 pub use prelude::*;

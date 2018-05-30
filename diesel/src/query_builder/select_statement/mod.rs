@@ -11,27 +11,27 @@
 //! LC: For Update Clause
 #![allow(missing_docs)] // The missing_docs lint triggers even though this is hidden
 
-mod dsl_impls;
 mod boxed;
+mod dsl_impls;
 
 pub use self::boxed::BoxedSelectStatement;
 
-use backend::Backend;
-use expression::*;
-use expression::subselect::ValidSubselect;
-use query_builder::SelectQuery;
-use query_source::*;
-use query_source::joins::{AppendSelection, Inner, Join};
-use result::QueryResult;
 use super::distinct_clause::NoDistinctClause;
-use super::locking_clause::NoLockingClause;
 use super::group_by_clause::NoGroupByClause;
 use super::limit_clause::NoLimitClause;
+use super::locking_clause::NoLockingClause;
 use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
+use backend::Backend;
+use expression::subselect::ValidSubselect;
+use expression::*;
+use query_builder::SelectQuery;
+use query_source::joins::{AppendSelection, Inner, Join};
+use query_source::*;
+use result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]

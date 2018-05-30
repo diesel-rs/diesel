@@ -1,5 +1,5 @@
-use diesel::*;
 use diesel::sql_types::{Integer, Text};
+use diesel::*;
 use schema::*;
 
 #[test]

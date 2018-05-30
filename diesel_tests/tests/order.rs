@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 fn order_by_column() {

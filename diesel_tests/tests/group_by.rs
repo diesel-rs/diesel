@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 // This test is a shim for a feature which is not sufficiently implemented. It

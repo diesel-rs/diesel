@@ -1,8 +1,8 @@
 extern crate diesel_migrations;
 
+use self::diesel_migrations::run_pending_migrations;
 use diesel::prelude::*;
 use dotenv;
-use self::diesel_migrations::run_pending_migrations;
 use std::sync::{Mutex, MutexGuard};
 
 pub fn connection() -> PgConnection {

@@ -1,6 +1,6 @@
-use query_source::Table;
 #[cfg(feature = "postgres")]
 use expression::SelectableExpression;
+use query_source::Table;
 
 /// The `distinct` method
 ///

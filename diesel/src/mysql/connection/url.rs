@@ -1,8 +1,8 @@
 extern crate url;
 
-use std::ffi::{CStr, CString};
-use self::url::{Host, Url};
 use self::url::percent_encoding::percent_decode;
+use self::url::{Host, Url};
+use std::ffi::{CStr, CString};
 
 use result::{ConnectionError, ConnectionResult};
 

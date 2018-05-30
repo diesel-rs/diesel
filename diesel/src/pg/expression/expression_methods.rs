@@ -1,7 +1,7 @@
 //! PostgreSQL specific expression methods
 
-use expression::{AsExpression, Expression};
 use super::operators::*;
+use expression::{AsExpression, Expression};
 use sql_types::{Array, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.

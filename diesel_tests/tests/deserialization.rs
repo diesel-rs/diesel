@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 use std::borrow::Cow;
 
 #[derive(Queryable, PartialEq, Debug)]

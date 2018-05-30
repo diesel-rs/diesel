@@ -3,14 +3,14 @@ extern crate mysqlclient_sys as ffi;
 mod iterator;
 mod metadata;
 
-use std::os::raw as libc;
 use std::ffi::CStr;
+use std::os::raw as libc;
 
-use mysql::MysqlType;
-use result::{DatabaseErrorKind, QueryResult};
 use self::iterator::*;
 use self::metadata::*;
 use super::bind::Binds;
+use mysql::MysqlType;
+use result::{DatabaseErrorKind, QueryResult};
 use util::NonNull;
 
 pub struct Statement {

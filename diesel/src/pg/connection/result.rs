@@ -5,9 +5,9 @@ use std::ffi::{CStr, CString};
 use std::os::raw as libc;
 use std::{slice, str};
 
-use result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
-use super::row::PgRow;
 use super::raw::RawResult;
+use super::row::PgRow;
+use result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 
 pub struct PgResult {
     internal_result: RawResult,
@@ -83,12 +83,11 @@ impl PgResult {
 
     pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
-            0
-                != PQgetisnull(
-                    self.internal_result.as_ptr(),
-                    row_idx as libc::c_int,
-                    col_idx as libc::c_int,
-                )
+            0 != PQgetisnull(
+                self.internal_result.as_ptr(),
+                row_idx as libc::c_int,
+                col_idx as libc::c_int,
+            )
         }
     }
 

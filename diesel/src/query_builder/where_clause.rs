@@ -1,10 +1,10 @@
+use super::*;
 use backend::Backend;
 use dsl::Or;
-use expression::*;
 use expression::operators::And;
+use expression::*;
 use expression_methods::*;
 use result::QueryResult;
-use super::*;
 use sql_types::Bool;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
@@ -162,8 +162,8 @@ where
     type Output = Self;
 
     fn and(self, predicate: Predicate) -> Self::Output {
-        use expression::operators::And;
         use self::BoxedWhereClause::Where;
+        use expression::operators::And;
 
         match self {
             Where(where_clause) => Where(Box::new(And::new(where_clause, predicate))),
@@ -180,9 +180,9 @@ where
     type Output = Self;
 
     fn or(self, predicate: Predicate) -> Self::Output {
-        use expression::operators::Or;
-        use expression::grouped::Grouped;
         use self::BoxedWhereClause::Where;
+        use expression::grouped::Grouped;
+        use expression::operators::Or;
 
         match self {
             Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),
