@@ -115,10 +115,11 @@ where
 /// #     Ok(())
 /// # }
 /// ```
-pub trait SaveChangesDsl<Conn>: Sized {
+pub trait SaveChangesDsl<Conn> {
     /// See the trait documentation.
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
     where
+        Self: Sized,
         Conn: InternalSaveChangesDsl<Self, T>,
     {
         connection.internal_save_changes(self)
