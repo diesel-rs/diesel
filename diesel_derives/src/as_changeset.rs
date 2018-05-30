@@ -1,6 +1,5 @@
-use quote;
+use proc_macro2::{self, Span};
 use syn;
-use proc_macro2::Span;
 
 use diagnostic_shim::*;
 use field::*;
@@ -8,7 +7,7 @@ use meta::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let treat_none_as_null = MetaItem::with_name(&item.attrs, "changeset_options")
         .map(|meta| {
             meta.warn_if_other_options(&["treat_none_as_null"]);
@@ -18,7 +17,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
         .unwrap_or(Ok(false))?;
     let model = Model::from_item(&item)?;
     let struct_name = &model.name;
-    let table_name = model.table_name();
+    let table_name = &model.table_name();
 
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
     let mut impl_generics = item.generics.clone();
@@ -91,9 +90,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 
 fn field_changeset_ty(
     field: &Field,
-    table_name: syn::Ident,
+    table_name: &syn::Ident,
     treat_none_as_null: bool,
-    lifetime: Option<quote::Tokens>,
+    lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
@@ -107,9 +106,9 @@ fn field_changeset_ty(
 
 fn field_changeset_expr(
     field: &Field,
-    table_name: syn::Ident,
+    table_name: &syn::Ident,
     treat_none_as_null: bool,
-    lifetime: Option<quote::Tokens>,
+    lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();
     let column_name = field.column_name();
