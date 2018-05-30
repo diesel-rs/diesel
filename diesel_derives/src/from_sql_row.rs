@@ -1,10 +1,9 @@
-use quote::Tokens;
-use syn;
-
 use meta::*;
+use proc_macro2::{self, Ident, Span};
+use syn;
 use util::*;
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<Tokens, Diagnostic> {
+pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let flags =
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
@@ -24,10 +23,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<Tokens, Diagnostic> {
     }
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-    let dummy_mod = format!(
-        "_impl_from_sql_row_for_{}",
-        item.ident.as_ref().to_lowercase()
-    ).into();
+    let dummy_mod = Ident::new(
+        &format!(
+            "_impl_from_sql_row_for_{}",
+            item.ident.to_string().to_lowercase()
+        ),
+        Span::call_site(),
+    );
     Ok(wrap_in_dummy_mod(
         dummy_mod,
         quote! {

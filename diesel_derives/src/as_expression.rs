@@ -1,13 +1,12 @@
-use quote;
-use syn;
-
 use meta::*;
+use proc_macro2::{self, Ident, Span};
+use syn;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let dummy_mod = format!(
         "_impl_as_expression_for_{}",
-        item.ident.as_ref().to_lowercase()
+        item.ident.to_string().to_lowercase()
     );
     let flags =
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
@@ -106,7 +105,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 
     if any_sql_types {
         Ok(wrap_in_dummy_mod(
-            dummy_mod.into(),
+            Ident::new(&dummy_mod, Span::call_site()),
             quote! {
                 use self::diesel::expression::AsExpression;
                 use self::diesel::expression::bound::Bound;

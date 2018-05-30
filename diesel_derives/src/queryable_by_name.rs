@@ -1,11 +1,10 @@
-use syn;
-use quote;
-
 use field::*;
 use model::*;
+use proc_macro2;
+use syn;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
 
     let struct_name = item.ident;
@@ -78,8 +77,8 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
             parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
         } else {
             let field_name = match field.name {
-                FieldName::Named(ref x) => x.as_ref(),
-                _ => "field",
+                FieldName::Named(ref x) => x.to_string(),
+                _ => "field".into(),
             };
             field
                 .span

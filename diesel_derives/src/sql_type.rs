@@ -1,11 +1,10 @@
-use quote;
-use syn;
-
 use meta::*;
+use proc_macro2::{self, Ident, Span};
+use syn;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
-    let struct_name = item.ident;
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
+    let struct_name = &item.ident;
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     let sqlite_tokens = sqlite_tokens(&item);
@@ -14,7 +13,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 
     let dummy_name = format!("_impl_sql_type_for_{}", item.ident);
     Ok(wrap_in_dummy_mod(
-        dummy_name.to_lowercase().into(),
+        Ident::new(dummy_name.to_lowercase().as_str(), Span::call_site()),
         quote! {
             impl #impl_generics diesel::sql_types::NotNull
                 for #struct_name #ty_generics
@@ -35,7 +34,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     ))
 }
 
-fn sqlite_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
+fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
     MetaItem::with_name(&item.attrs, "sqlite_type")
         .map(|attr| attr.expect_ident_value())
         .and_then(|ty| {
@@ -43,7 +42,7 @@ fn sqlite_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
                 return None;
             }
 
-            let struct_name = item.ident;
+            let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             Some(quote! {
@@ -59,7 +58,7 @@ fn sqlite_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
         })
 }
 
-fn mysql_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
+fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
     MetaItem::with_name(&item.attrs, "mysql_type")
         .map(|attr| attr.expect_ident_value())
         .and_then(|ty| {
@@ -67,7 +66,7 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
                 return None;
             }
 
-            let struct_name = item.ident;
+            let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             Some(quote! {
@@ -83,7 +82,7 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
         })
 }
 
-fn pg_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
+fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
     MetaItem::with_name(&item.attrs, "postgres")
         .and_then(|attr| {
             get_type_name(&attr)
@@ -101,7 +100,7 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
                 return None;
             }
 
-            let struct_name = item.ident;
+            let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             let metadata_fn = match ty {
