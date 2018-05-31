@@ -543,7 +543,7 @@ macro_rules! __diesel_sqlite_register_fn {
 /// ```
 macro_rules! sql_function {
     ($(#$meta:tt)* fn $fn_name:ident $args:tt $(;)*) => {
-        sql_function!($(#[$meta])* fn $fn_name $args -> ());
+        sql_function!($(#$meta)* fn $fn_name $args -> ());
     };
 
     ($(#$meta:tt)* fn $fn_name:ident $args:tt -> $return_type:ty $(;)*) => {
