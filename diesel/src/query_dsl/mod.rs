@@ -15,8 +15,8 @@
 
 use backend::Backend;
 use connection::Connection;
-use expression::count::CountStar;
 use expression::Expression;
+use expression::count::CountStar;
 use helper_types::*;
 use query_builder::locking_clause as lock;
 use query_source::{joins, Table};
@@ -48,9 +48,7 @@ pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
-pub use self::save_changes_dsl::SaveChangesDsl;
-#[doc(hidden)]
-pub use self::save_changes_dsl::InternalSaveChangesDsl;
+pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
 ///

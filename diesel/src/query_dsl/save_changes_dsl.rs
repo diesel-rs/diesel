@@ -1,6 +1,7 @@
 use associations::HasTable;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use associations::Identifiable;
+use connection::Connection;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use dsl::Find;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
@@ -12,21 +13,27 @@ use query_dsl::methods::{ExecuteDsl, FindDsl};
 use query_dsl::{LoadQuery, RunQueryDsl};
 use result::QueryResult;
 
-#[doc(hidden)]
-pub trait InternalSaveChangesDsl<T, U> {
-    fn internal_save_changes(&self, changeset: T) -> QueryResult<U>;
+/// A trait defining how to update a record and fetch the updated entry
+/// on a certain backend.
+///
+/// The only case where it is required to work with this trait is while
+/// implementing a new connection type.
+/// Otherwise use [`SaveChangesDsl`](trait.SaveChangesDsl.html)
+pub trait UpdateAndFetchResults<T, U>: Connection {
+    /// See the traits documentation.
+    fn update_and_fetch(&self, changeset: T) -> QueryResult<U>;
 }
 
 #[cfg(feature = "postgres")]
 use pg::PgConnection;
 
 #[cfg(feature = "postgres")]
-impl<T, U> InternalSaveChangesDsl<T, U> for PgConnection
+impl<T, U> UpdateAndFetchResults<T, U> for PgConnection
 where
     T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
     Update<T, T>: LoadQuery<PgConnection, U>,
 {
-    fn internal_save_changes(&self, changeset: T) -> QueryResult<U> {
+    fn update_and_fetch(&self, changeset: T) -> QueryResult<U> {
         ::update(changeset).set(changeset).get_result(self)
     }
 }
@@ -35,7 +42,7 @@ where
 use sqlite::SqliteConnection;
 
 #[cfg(feature = "sqlite")]
-impl<T, U> InternalSaveChangesDsl<T, U> for SqliteConnection
+impl<T, U> UpdateAndFetchResults<T, U> for SqliteConnection
 where
     T: Copy + Identifiable,
     T: AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
@@ -43,7 +50,7 @@ where
     Update<T, T>: ExecuteDsl<SqliteConnection>,
     Find<T::Table, T::Id>: LoadQuery<SqliteConnection, U>,
 {
-    fn internal_save_changes(&self, changeset: T) -> QueryResult<U> {
+    fn update_and_fetch(&self, changeset: T) -> QueryResult<U> {
         try!(::update(changeset).set(changeset).execute(self));
         T::table().find(changeset.id()).get_result(self)
     }
@@ -53,7 +60,7 @@ where
 use mysql::MysqlConnection;
 
 #[cfg(feature = "mysql")]
-impl<T, U> InternalSaveChangesDsl<T, U> for MysqlConnection
+impl<T, U> UpdateAndFetchResults<T, U> for MysqlConnection
 where
     T: Copy + Identifiable,
     T: AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget,
@@ -61,7 +68,7 @@ where
     Update<T, T>: ExecuteDsl<MysqlConnection>,
     Find<T::Table, T::Id>: LoadQuery<MysqlConnection, U>,
 {
-    fn internal_save_changes(&self, changeset: T) -> QueryResult<U> {
+    fn update_and_fetch(&self, changeset: T) -> QueryResult<U> {
         try!(::update(changeset).set(changeset).execute(self));
         T::table().find(changeset.id()).get_result(self)
     }
@@ -120,9 +127,9 @@ pub trait SaveChangesDsl<Conn> {
     fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
     where
         Self: Sized,
-        Conn: InternalSaveChangesDsl<Self, T>,
+        Conn: UpdateAndFetchResults<Self, T>,
     {
-        connection.internal_save_changes(self)
+        connection.update_and_fetch(self)
     }
 }
 
