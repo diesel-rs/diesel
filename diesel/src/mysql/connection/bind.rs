@@ -35,9 +35,13 @@ impl Binds {
     }
 
     pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
+        const UNSIGNED_FLAG: libc::c_uint = 32;
         let data = fields
             .iter()
-            .map(|field| field.type_)
+            .map(|field| {
+                let unsigned = field.flags & UNSIGNED_FLAG > 0;
+                (field.type_, unsigned as _)
+            })
             .map(BindData::for_output)
             .collect();
 
@@ -89,6 +93,7 @@ struct BindData {
     length: libc::c_ulong,
     is_null: ffi::my_bool,
     is_truncated: Option<ffi::my_bool>,
+    is_unsigned: ffi::my_bool,
 }
 
 impl BindData {
@@ -96,17 +101,19 @@ impl BindData {
         let is_null = if data.is_none() { 1 } else { 0 };
         let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
+        let (tpe, is_unsigned) = mysql_type_to_ffi_type(tpe);
 
         BindData {
-            tpe: mysql_type_to_ffi_type(tpe),
+            tpe,
             bytes: bytes,
             length: length,
             is_null: is_null,
             is_truncated: None,
+            is_unsigned,
         }
     }
 
-    fn for_output(tpe: ffi::enum_field_types) -> Self {
+    fn for_output((tpe, is_unsigned): (ffi::enum_field_types, ffi::my_bool)) -> Self {
         let bytes = known_buffer_size_for_ffi_type(tpe)
             .map(|len| vec![0; len])
             .unwrap_or_default();
@@ -118,6 +125,7 @@ impl BindData {
             length: length,
             is_null: 0,
             is_truncated: Some(0),
+            is_unsigned,
         }
     }
 
@@ -151,6 +159,7 @@ impl BindData {
         bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
         bind.length = &mut self.length;
         bind.is_null = &mut self.is_null;
+        bind.is_unsigned = self.is_unsigned;
 
         if let Some(ref mut is_truncated) = self.is_truncated {
             bind.error = is_truncated;
@@ -201,14 +210,14 @@ impl BindData {
     }
 }
 
-fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
+fn mysql_type_to_ffi_type(tpe: MysqlType) -> (ffi::enum_field_types, ffi::my_bool) {
     use self::ffi::enum_field_types::*;
 
-    match tpe {
-        MysqlType::Tiny => MYSQL_TYPE_TINY,
-        MysqlType::Short => MYSQL_TYPE_SHORT,
-        MysqlType::Long => MYSQL_TYPE_LONG,
-        MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
+    let ty = match tpe {
+        MysqlType::Tiny | MysqlType::UnsignedTiny => MYSQL_TYPE_TINY,
+        MysqlType::Short | MysqlType::UnsignedShort => MYSQL_TYPE_SHORT,
+        MysqlType::Long | MysqlType::UnsignedLong => MYSQL_TYPE_LONG,
+        MysqlType::LongLong | MysqlType::UnsignedLongLong => MYSQL_TYPE_LONGLONG,
         MysqlType::Float => MYSQL_TYPE_FLOAT,
         MysqlType::Double => MYSQL_TYPE_DOUBLE,
         MysqlType::Time => MYSQL_TYPE_TIME,
@@ -217,7 +226,8 @@ fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
         MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
         MysqlType::String => MYSQL_TYPE_STRING,
         MysqlType::Blob => MYSQL_TYPE_BLOB,
-    }
+    };
+    (ty, tpe.is_unsigned() as _)
 }
 
 fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
