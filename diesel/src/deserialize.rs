@@ -111,35 +111,6 @@ where
     fn build(row: Self::Row) -> Self;
 }
 
-// Reasons we can't write this:
-//
-// impl<T, ST, DB> Queryable<ST, DB> for T
-// where
-//     DB: Backend,
-//     T: FromSqlRow<ST, DB>,
-// {
-//     type Row = Self;
-//
-//     fn build(row: Self::Row) -> Self {
-//         row
-//     }
-// }
-//
-// (this is mostly a reference for @sgrif so he has a better reference every
-// time he thinks he has a breakthrough on this problem).
-//
-// See the comment under `FromSqlRow`. All of the same impls conflict there that
-// would here. If we had `#[derive(FromSqlRow)]`, we would also have that
-// implement `Queryable`. I know it doesn't look like the `Option` impl
-// conflicts, but it definitely does -- It covers types which implement
-// `Queryable` but not `FromSqlRow`, while this impl wouldn't.
-//
-// The same "we could remove one of these traits" applies. Really `FromSqlRow`
-// is the only trait that *needs* to exist. At the end of the day, `FromSql` is
-// meant to be "I only want to deal with deserializing a single field" case, and
-// `Queryable` is meant to be easier to implement by hand than `FromSqlRow`
-// would be.
-
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
 /// # Deriving
