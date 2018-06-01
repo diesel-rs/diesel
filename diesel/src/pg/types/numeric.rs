@@ -12,8 +12,8 @@ mod bigdecimal {
     use std::io::prelude::*;
 
     use deserialize::{self, FromSql};
-    use pg::Pg;
     use pg::data_types::PgNumeric;
+    use pg::Pg;
     use serialize::{self, Output, ToSql};
     use sql_types::Numeric;
 

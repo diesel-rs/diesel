@@ -2,8 +2,8 @@ use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 use std::mem;
 
-use backend::Backend;
 use super::{AstPass, QueryBuilder, QueryFragment};
+use backend::Backend;
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.

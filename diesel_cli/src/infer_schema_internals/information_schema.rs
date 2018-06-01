@@ -1,23 +1,23 @@
 use std::error::Error;
 
-use diesel::*;
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::expression::NonAggregate;
-use diesel::query_builder::{QueryFragment, QueryId};
-#[cfg(feature = "postgres")]
-use diesel::pg::Pg;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
+#[cfg(feature = "postgres")]
+use diesel::pg::Pg;
+use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::*;
 
-use super::table_data::TableName;
 use super::data_structures::*;
+use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
-        self::information_schema::columns::table,
-        SqlType = sql_types::Text,
-    >
+            self::information_schema::columns::table,
+            SqlType = sql_types::Text,
+        >
         + NonAggregate
         + QueryId
         + QueryFragment<Self>;
@@ -144,8 +144,8 @@ where
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
 {
-    use self::information_schema::table_constraints::{self, constraint_type};
     use self::information_schema::key_column_usage::dsl::*;
+    use self::information_schema::table_constraints::{self, constraint_type};
 
     let pk_query = table_constraints::table
         .select(table_constraints::constraint_name)
@@ -206,9 +206,9 @@ where
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
 {
-    use self::information_schema::table_constraints as tc;
-    use self::information_schema::referential_constraints as rc;
     use self::information_schema::key_column_usage as kcu;
+    use self::information_schema::referential_constraints as rc;
+    use self::information_schema::table_constraints as tc;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
     let schema_name = match schema_name {
@@ -264,8 +264,8 @@ mod tests {
     extern crate dotenv;
 
     use self::dotenv::dotenv;
-    use std::env;
     use super::*;
+    use std::env;
 
     fn connection() -> PgConnection {
         let _ = dotenv();

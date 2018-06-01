@@ -15,9 +15,9 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use backend::UsesAnsiSavepointSyntax;
+use connection::{AnsiTransactionManager, SimpleConnection};
 use deserialize::QueryableByName;
 use prelude::*;
-use connection::{AnsiTransactionManager, SimpleConnection};
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use sql_types::HasSqlType;
 
@@ -154,8 +154,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use std::sync::mpsc;
+    use std::sync::Arc;
     use std::thread;
 
     use r2d2::*;

@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 fn adding_literal_to_column() {

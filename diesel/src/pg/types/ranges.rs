@@ -3,8 +3,8 @@ use std::collections::Bound;
 use std::io::Write;
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::AsExpression;
 use expression::bound::Bound as SqlBound;
+use expression::AsExpression;
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;

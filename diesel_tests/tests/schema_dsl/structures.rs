@@ -68,15 +68,15 @@ pub struct Default<'a, Col> {
 }
 
 use diesel::backend::*;
+#[cfg(feature = "mysql")]
+use diesel::mysql::Mysql;
+#[cfg(feature = "postgres")]
+use diesel::pg::Pg;
 use diesel::query_builder::*;
 use diesel::result::QueryResult;
 use diesel::sql_types::Integer;
-#[cfg(feature = "postgres")]
-use diesel::pg::Pg;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
-#[cfg(feature = "mysql")]
-use diesel::mysql::Mysql;
 
 impl<'a, DB, Cols> QueryFragment<DB> for CreateTable<'a, Cols>
 where

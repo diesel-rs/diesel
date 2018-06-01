@@ -4,13 +4,13 @@ mod date_and_time;
 mod ops;
 
 use self::bigdecimal::BigDecimal;
+use diesel::backend::Backend;
+use diesel::dsl::*;
+use diesel::query_builder::*;
+use diesel::*;
+use schema::users::dsl::*;
 use schema::{connection, connection_with_sean_and_tess_in_users_table, DropTable, NewUser,
              TestBackend};
-use schema::users::dsl::*;
-use diesel::*;
-use diesel::backend::Backend;
-use diesel::query_builder::*;
-use diesel::dsl::*;
 
 #[test]
 fn test_count_counts_the_rows() {

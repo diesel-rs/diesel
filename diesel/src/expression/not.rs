@@ -1,6 +1,6 @@
-use helper_types::not;
-use expression::AsExpression;
 use expression::grouped::Grouped;
+use expression::AsExpression;
+use helper_types::not;
 use sql_types::Bool;
 
 /// Creates a SQL `NOT` expression

@@ -1,14 +1,20 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 macro_rules! assert_sets_eq {
     ($set1:expr, $set2:expr) => {
-        let set1 = {$set1};
-        let set2 = {$set2};
-        let s1r : Vec<_> = set1.iter().filter(|&si| !set2.contains(si)).collect();
-        assert!(s1r.len() == 0, format!("left set contains items not found in right set: {:?}", s1r));
-        let s2r : Vec<_> = set2.iter().filter(|&si| !set1.contains(si)).collect();
-        assert!(s2r.len() == 0, format!("right set contains items not found in left set: {:?}", s2r));
+        let set1 = { $set1 };
+        let set2 = { $set2 };
+        let s1r: Vec<_> = set1.iter().filter(|&si| !set2.contains(si)).collect();
+        assert!(
+            s1r.len() == 0,
+            format!("left set contains items not found in right set: {:?}", s1r)
+        );
+        let s2r: Vec<_> = set2.iter().filter(|&si| !set1.contains(si)).collect();
+        assert!(
+            s2r.len() == 0,
+            format!("right set contains items not found in left set: {:?}", s2r)
+        );
     };
 }
 
@@ -338,8 +344,8 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
 
 #[test]
 fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
-    use schema::users::dsl::*;
     use diesel::dsl::not;
+    use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users
@@ -353,8 +359,8 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
 
 #[test]
 fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
-    use schema::users::dsl::*;
     use diesel::dsl::not;
+    use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users

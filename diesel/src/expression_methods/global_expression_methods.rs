@@ -1,6 +1,6 @@
-use expression::{nullable, AsExpression, Expression};
 use expression::array_comparison::{AsInExpression, In, NotIn};
 use expression::operators::*;
+use expression::{nullable, AsExpression, Expression};
 use sql_types::SingleValue;
 
 /// Methods present on all expressions, except tuples

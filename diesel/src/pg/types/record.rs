@@ -1,11 +1,11 @@
-use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
 use byteorder::{NetworkEndian, ReadBytesExt};
-use pg::Pg;
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use sql_types::Record;
-use row::Row;
-use result::QueryResult;
+use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
+use pg::Pg;
 use query_builder::{AstPass, QueryFragment};
+use result::QueryResult;
+use row::Row;
+use sql_types::Record;
 
 macro_rules! tuple_impls {
     ($(
@@ -144,10 +144,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use test_helpers::*;
-    use sql_types::*;
     use dsl::sql;
     use prelude::*;
+    use sql_types::*;
+    use test_helpers::*;
 
     #[test]
     fn record_deserializes_correctly() {
@@ -161,8 +161,15 @@ mod tests {
             .get_result::<((i32, String), i32)>(&conn);
         assert_eq!(Ok(((2, String::from("bye")), 3)), tup);
 
-        let tup = sql::<Record<(Record<(Nullable<Integer>, Nullable<Text>)>, Nullable<Integer>)>>("SELECT ((4, NULL), NULL)")
-            .get_result::<((Option<i32>, Option<String>), Option<i32>)>(&conn);
+        let tup = sql::<
+            Record<(
+                Record<(Nullable<Integer>, Nullable<Text>)>,
+                Nullable<Integer>,
+            )>,
+        >("SELECT ((4, NULL), NULL)")
+            .get_result::<((Option<i32>, Option<String>), Option<i32>)>(
+            &conn,
+        );
         assert_eq!(Ok(((Some(4), None), None)), tup);
     }
 
@@ -179,12 +186,10 @@ mod tests {
         assert_eq!(Ok(true), res);
 
         let tup = sql::<
-            Record<
-                (
-                    Record<(Nullable<Integer>, Nullable<Text>)>,
-                    Nullable<Integer>,
-                ),
-            >,
+            Record<(
+                Record<(Nullable<Integer>, Nullable<Text>)>,
+                Nullable<Integer>,
+            )>,
         >("((4, NULL::text), NULL::int4)");
         let res = ::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
             .get_result(&conn);

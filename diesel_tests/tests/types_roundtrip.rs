@@ -2,15 +2,15 @@
 extern crate bigdecimal;
 extern crate chrono;
 
-pub use quickcheck::quickcheck;
 use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+pub use quickcheck::quickcheck;
 
-pub use schema::{connection_without_transaction, TestConnection};
-pub use diesel::*;
-pub use diesel::result::Error;
 pub use diesel::data_types::*;
+pub use diesel::result::Error;
 pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::HasSqlType;
+pub use diesel::*;
+pub use schema::{connection_without_transaction, TestConnection};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};
@@ -79,7 +79,7 @@ macro_rules! test_round_trip {
             quickcheck(round_trip as fn($tpe) -> bool);
             quickcheck(option_round_trip as fn(Option<$tpe>) -> bool);
         }
-    }
+    };
 }
 
 test_round_trip!(i16_roundtrips, SmallInt, i16);
@@ -114,8 +114,8 @@ mod pg_types {
     extern crate ipnetwork;
     extern crate uuid;
 
-    use super::*;
     use self::bigdecimal::BigDecimal;
+    use super::*;
 
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
@@ -219,14 +219,7 @@ mod pg_types {
     fn mk_ipv6(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnetwork::IpNetwork {
         use std::net::Ipv6Addr;
         let ip = Ipv6Addr::new(
-            data.0,
-            data.1,
-            data.2,
-            data.3,
-            data.4,
-            data.5,
-            data.6,
-            data.7,
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
         );
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
     }

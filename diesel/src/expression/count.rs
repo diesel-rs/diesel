@@ -1,7 +1,7 @@
+use super::Expression;
 use backend::Backend;
 use query_builder::*;
 use result::QueryResult;
-use super::Expression;
 use sql_types::BigInt;
 
 sql_function! {

@@ -7,9 +7,10 @@ pub(crate) use self::insert_from_select::InsertFromSelect;
 use std::any::*;
 use std::marker::PhantomData;
 
+use super::returning_clause::*;
 use backend::Backend;
-use expression::{Expression, NonAggregate, SelectableExpression};
 use expression::operators::Eq;
+use expression::{Expression, NonAggregate, SelectableExpression};
 use insertable::*;
 #[cfg(feature = "mysql")]
 use mysql::Mysql;
@@ -21,7 +22,6 @@ use query_source::{Column, Table};
 use result::QueryResult;
 #[cfg(feature = "sqlite")]
 use sqlite::{Sqlite, SqliteConnection};
-use super::returning_clause::*;
 
 /// The structure returned by [`insert_into`].
 ///

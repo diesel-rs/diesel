@@ -1,24 +1,24 @@
 mod cursor;
 pub mod raw;
-mod row;
 #[doc(hidden)]
 pub mod result;
+mod row;
 mod stmt;
 
 use std::ffi::CString;
 use std::os::raw as libc;
 
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataLookup, TransactionBuilder};
-use query_builder::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use result::*;
-use result::ConnectionError::CouldntSetupConfiguration;
 use self::cursor::*;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use pg::{Pg, PgMetadataLookup, TransactionBuilder};
+use query_builder::bind_collector::RawBytesBindCollector;
+use query_builder::*;
+use result::ConnectionError::CouldntSetupConfiguration;
+use result::*;
 use sql_types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
@@ -188,9 +188,9 @@ mod tests {
     use self::dotenv::dotenv;
     use std::env;
 
+    use super::*;
     use dsl::sql;
     use prelude::*;
-    use super::*;
     use sql_types::{Integer, VarChar};
 
     #[test]

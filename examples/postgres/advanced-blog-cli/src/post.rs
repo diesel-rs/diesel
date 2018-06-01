@@ -1,5 +1,5 @@
-use chrono::NaiveDateTime;
 use auth::User;
+use chrono::NaiveDateTime;
 use comment::Comment;
 
 use schema::posts;
@@ -21,9 +21,9 @@ pub enum Status {
     Published { at: NaiveDateTime },
 }
 
+use diesel::pg::Pg;
 use diesel::query_source::Queryable;
 use diesel::sql_types::{Nullable, Timestamp};
-use diesel::pg::Pg;
 
 impl Queryable<Nullable<Timestamp>, Pg> for Status {
     type Row = Option<NaiveDateTime>;

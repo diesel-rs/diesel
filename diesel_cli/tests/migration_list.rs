@@ -2,8 +2,8 @@ use chrono::Utc;
 use std::thread::sleep;
 use std::time::Duration;
 
-use support::{database, project};
 use migrations_internals::TIMESTAMP_FORMAT;
+use support::{database, project};
 
 #[test]
 fn migration_list_lists_pending_applied_migrations() {

@@ -44,9 +44,9 @@ mod tests {
     use self::dotenv::dotenv;
     use self::time::{Duration, Timespec};
 
-    use select;
     use dsl::{now, sql};
     use prelude::*;
+    use select;
     use sql_types::Timestamp;
 
     fn connection() -> PgConnection {

@@ -1,7 +1,10 @@
 #[macro_export]
 #[doc(hidden)]
 #[cfg(feature = "with-deprecated")]
-#[deprecated(since = "1.3.0", note = "The syntax of `sql_function!` and its output have changed significantly. This form has been deprecated. See the documentation of `sql_function!` for details on the new syntax.")]
+#[deprecated(
+    since = "1.3.0",
+    note = "The syntax of `sql_function!` and its output have changed significantly. This form has been deprecated. See the documentation of `sql_function!` for details on the new syntax."
+)]
 macro_rules! sql_function_body {
     (
         $fn_name:ident,
@@ -83,9 +86,11 @@ macro_rules! sql_function_body {
 #[cfg(not(feature = "with-deprecated"))]
 macro_rules! sql_function_body {
     ($($args:tt)*) => {
-        compile_error!("You are using a deprecated form of `sql_function!`. \
-        You must enable the `with-deprecated` feature on `diesel`.");
-    }
+        compile_error!(
+            "You are using a deprecated form of `sql_function!`. \
+             You must enable the `with-deprecated` feature on `diesel`."
+        );
+    };
 }
 
 #[macro_export]
@@ -602,15 +607,12 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
             type SqlType = $return_type;
         }
 
-        impl<QS> $crate::expression::SelectableExpression<QS> for $type_name {
-        }
+        impl<QS> $crate::expression::SelectableExpression<QS> for $type_name {}
 
-        impl<QS> $crate::expression::AppearsOnTable<QS> for $type_name {
-        }
+        impl<QS> $crate::expression::AppearsOnTable<QS> for $type_name {}
 
-        impl $crate::expression::NonAggregate for $type_name {
-        }
-    }
+        impl $crate::expression::NonAggregate for $type_name {}
+    };
 }
 
 #[macro_export]
@@ -672,7 +674,7 @@ macro_rules! no_arg_sql_function {
     };
 }
 
-pub mod aggregate_ordering;
 pub mod aggregate_folding;
+pub mod aggregate_ordering;
 pub mod date_and_time;
 pub mod helper_types;

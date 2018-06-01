@@ -4,15 +4,15 @@
 //! You should rely on the re-exports rather than this module directly. It is
 //! kept separate purely for documentation purposes.
 
+pub(crate) mod array;
 #[doc(hidden)]
 pub mod array_comparison;
-pub(crate) mod array;
 pub(crate) mod expression_methods;
 pub mod extensions;
 #[doc(hidden)]
-pub mod operators;
-#[doc(hidden)]
 pub mod helper_types;
+#[doc(hidden)]
+pub mod operators;
 
 mod date_and_time;
 

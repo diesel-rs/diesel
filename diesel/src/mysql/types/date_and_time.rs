@@ -41,7 +41,7 @@ macro_rules! mysql_time_impls {
                 }
             }
         }
-    }
+    };
 }
 
 mysql_time_impls!(Datetime);

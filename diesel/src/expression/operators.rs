@@ -1,3 +1,5 @@
+#![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_operator_body {

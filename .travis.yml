@@ -46,10 +46,10 @@ matrix:
     - (cd diesel_derives && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
     - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
     - (cd diesel_compile_tests && travis-cargo test)
-  - rust: nightly-2018-03-15
+  - rust: 1.26.1
     env: RUSTFMT=YESPLEASE
     script:
-    - cargo install rustfmt-nightly --vers 0.3.7 --force
+    - rustup component add rustfmt-preview
     - cargo fmt --all -- --write-mode=diff
   - rust: stable
     env:

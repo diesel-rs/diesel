@@ -1,5 +1,5 @@
-use expression::Expression;
 use expression::operators::And;
+use expression::Expression;
 use expression_methods::*;
 use sql_types::Bool;
 

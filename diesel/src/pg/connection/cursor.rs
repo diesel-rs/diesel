@@ -1,9 +1,9 @@
+use super::result::PgResult;
+use super::row::PgNamedRow;
 use deserialize::{FromSqlRow, Queryable, QueryableByName};
 use pg::Pg;
 use result::Error::DeserializationError;
 use result::QueryResult;
-use super::result::PgResult;
-use super::row::PgNamedRow;
 
 use std::marker::PhantomData;
 

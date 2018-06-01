@@ -3,15 +3,15 @@
 
 extern crate chrono;
 
-use std::io::Write;
-use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use self::chrono::naive::MAX_DATE;
+use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use std::io::Write;
 
+use super::{PgDate, PgTime, PgTimestamp};
 use deserialize::{self, FromSql};
 use pg::Pg;
 use serialize::{self, Output, ToSql};
 use sql_types::{Date, Time, Timestamp, Timestamptz};
-use super::{PgDate, PgTime, PgTimestamp};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -121,13 +121,13 @@ mod tests {
     extern crate chrono;
     extern crate dotenv;
 
-    use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
     use self::chrono::naive::MAX_DATE;
+    use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
     use self::dotenv::dotenv;
 
-    use select;
     use dsl::{now, sql};
     use prelude::*;
+    use select;
     use sql_types::{Date, Time, Timestamp, Timestamptz};
 
     fn connection() -> PgConnection {

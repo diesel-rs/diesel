@@ -6,10 +6,10 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
-use diesel::insert_into;
 #[cfg(test)]
 use diesel::debug_query;
+use diesel::insert_into;
+use diesel::prelude::*;
 #[cfg(test)]
 use diesel::sqlite::Sqlite;
 use std::error::Error;
@@ -400,8 +400,8 @@ fn examine_sql_from_insert_get_result() {
 }
 
 pub fn explicit_returning(conn: &SqliteConnection) -> QueryResult<i32> {
-    use schema::users::dsl::*;
     use diesel::result::Error;
+    use schema::users::dsl::*;
 
     conn.transaction::<_, Error, _>(|| {
         insert_into(users).values(name.eq("Ruby")).execute(conn)?;

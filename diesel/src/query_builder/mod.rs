@@ -13,23 +13,23 @@ mod ast_pass;
 pub mod bind_collector;
 mod debug_query;
 mod delete_statement;
+mod distinct_clause;
 #[doc(hidden)]
 pub mod functions;
+mod group_by_clause;
+mod insert_statement;
+mod limit_clause;
+pub(crate) mod locking_clause;
 #[doc(hidden)]
 pub mod nodes;
-mod distinct_clause;
-pub(crate) mod locking_clause;
-mod group_by_clause;
-mod limit_clause;
 mod offset_clause;
 mod order_clause;
 mod returning_clause;
 mod select_clause;
 mod select_statement;
 mod sql_query;
-mod where_clause;
-mod insert_statement;
 mod update_statement;
+mod where_clause;
 
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
@@ -42,12 +42,12 @@ pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::SqlQuery;
-#[doc(inline)]
-pub use self::update_statement::{AsChangeset, BoxedUpdateStatement, IntoUpdateTarget,
-                                 UpdateStatement, UpdateTarget};
 #[cfg(feature = "with-deprecated")]
 #[allow(deprecated)]
 pub use self::update_statement::IncompleteUpdateStatement;
+#[doc(inline)]
+pub use self::update_statement::{AsChangeset, BoxedUpdateStatement, IntoUpdateTarget,
+                                 UpdateStatement, UpdateTarget};
 
 pub(crate) use self::insert_statement::ColumnList;
 

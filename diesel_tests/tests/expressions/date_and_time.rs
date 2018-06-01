@@ -1,8 +1,8 @@
-use schema::{connection, TestConnection};
-use diesel::*;
 use diesel::data_types::*;
 use diesel::dsl::*;
 use diesel::sql_types::Nullable;
+use diesel::*;
+use schema::{connection, TestConnection};
 
 table! {
     has_timestamps {
@@ -203,14 +203,12 @@ fn interval_is_deserialized_properly() {
     use diesel::dsl::sql;
     let connection = connection();
 
-    let data = select(sql::<
-        (
-            sql_types::Interval,
-            sql_types::Interval,
-            sql_types::Interval,
-            sql_types::Interval,
-        ),
-    >(
+    let data = select(sql::<(
+        sql_types::Interval,
+        sql_types::Interval,
+        sql_types::Interval,
+        sql_types::Interval,
+    )>(
         "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval",
     )).first(&connection);

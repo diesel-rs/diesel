@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::os::raw as libc;
 use std::{slice, str};
 
-use sqlite::Sqlite;
 use row::*;
+use sqlite::Sqlite;
 use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]

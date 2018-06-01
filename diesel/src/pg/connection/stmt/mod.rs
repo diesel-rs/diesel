@@ -4,8 +4,8 @@ use std::ffi::CString;
 use std::os::raw as libc;
 use std::ptr;
 
-use pg::PgTypeMetadata;
 use super::result::PgResult;
+use pg::PgTypeMetadata;
 use result::QueryResult;
 
 pub use super::raw::RawConnection;

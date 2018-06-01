@@ -1,11 +1,11 @@
 use std::error::Error;
 
-use diesel::*;
 use diesel::dsl::sql;
 use diesel::sqlite::{Sqlite, SqliteConnection};
+use diesel::*;
 
-use super::table_data::TableName;
 use super::data_structures::*;
+use super::table_data::TableName;
 
 table! {
     sqlite_master (name) {

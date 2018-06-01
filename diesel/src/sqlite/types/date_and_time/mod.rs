@@ -2,9 +2,9 @@ use std::io::Write;
 
 use deserialize::{self, FromSql};
 use serialize::{self, Output, ToSql};
-use sqlite::Sqlite;
-use sqlite::connection::SqliteValue;
 use sql_types;
+use sqlite::connection::SqliteValue;
+use sqlite::Sqlite;
 
 #[cfg(feature = "chrono")]
 mod chrono;

@@ -4,22 +4,22 @@ mod functions;
 #[doc(hidden)]
 pub mod raw;
 mod serialized_value;
-mod stmt;
-mod statement_iterator;
 mod sqlite_value;
+mod statement_iterator;
+mod stmt;
 
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
 
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use result::*;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+use connection::*;
+use deserialize::{Queryable, QueryableByName};
+use query_builder::bind_collector::RawBytesBindCollector;
+use query_builder::*;
+use result::*;
 use serialize::ToSql;
 use sql_types::HasSqlType;
 use sqlite::Sqlite;
@@ -235,9 +235,9 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use dsl::sql;
     use prelude::*;
-    use super::*;
     use sql_types::Integer;
 
     #[test]

@@ -1,8 +1,8 @@
-use diesel::*;
 use diesel::connection::SimpleConnection;
 use diesel::deserialize::{self, FromSql};
 use diesel::pg::Pg;
 use diesel::serialize::{self, IsNull, Output, ToSql};
+use diesel::*;
 use schema::*;
 use std::io::Write;
 

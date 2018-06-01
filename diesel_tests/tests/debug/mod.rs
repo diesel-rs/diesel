@@ -1,5 +1,5 @@
-use schema::TestBackend;
 use diesel::*;
+use schema::TestBackend;
 
 #[test]
 fn test_debug_count_output() {

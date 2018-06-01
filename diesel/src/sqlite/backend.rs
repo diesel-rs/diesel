@@ -1,11 +1,11 @@
 //! The SQLite backend
 use byteorder::NativeEndian;
 
+use super::connection::SqliteValue;
+use super::query_builder::SqliteQueryBuilder;
 use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::TypeMetadata;
-use super::connection::SqliteValue;
-use super::query_builder::SqliteQueryBuilder;
 
 /// The SQLite backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]

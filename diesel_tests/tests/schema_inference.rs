@@ -2,9 +2,9 @@ extern crate chrono;
 
 #[cfg(feature = "sqlite")]
 mod sqlite {
+    use super::chrono::*;
     use diesel::*;
     use schema::*;
-    use super::chrono::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
     #[table_name = "infer_all_the_ints"]
@@ -191,10 +191,10 @@ mod sqlite {
 
 #[cfg(feature = "postgres")]
 mod postgres {
-    use diesel::*;
-    use diesel::data_types::PgNumeric;
-    use schema::*;
     use super::chrono::*;
+    use diesel::data_types::PgNumeric;
+    use diesel::*;
+    use schema::*;
     use std::collections::Bound;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]

@@ -3,9 +3,9 @@ extern crate mysqlclient_sys as ffi;
 use std::mem;
 use std::os::raw as libc;
 
+use super::stmt::Statement;
 use mysql::MysqlType;
 use result::QueryResult;
-use super::stmt::Statement;
 
 pub struct Binds {
     data: Vec<BindData>,
@@ -221,8 +221,8 @@ fn mysql_type_to_ffi_type(tpe: MysqlType) -> ffi::enum_field_types {
 }
 
 fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
-    use std::mem::size_of;
     use self::ffi::enum_field_types as t;
+    use std::mem::size_of;
 
     match tpe {
         t::MYSQL_TYPE_TINY => Some(1),

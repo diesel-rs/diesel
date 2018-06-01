@@ -1,7 +1,7 @@
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
-use diesel::sqlite::SqliteConnection;
 use diesel::sql_types::Bool;
+use diesel::sqlite::SqliteConnection;
 use diesel::{select, Connection, RunQueryDsl};
 
 use std::fs;
