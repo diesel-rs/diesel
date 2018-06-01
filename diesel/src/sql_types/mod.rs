@@ -401,17 +401,44 @@ pub trait HasSqlType<ST>: TypeMetadata {
     /// of this method should not do dynamic lookup unless absolutely necessary
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
-    /// Fetch the metadata for a tuple representing an entire row
-    ///
-    /// The default implementation of this method simply calls `Self::metadata`.
-    /// You generally should not need to override this method.
-    ///
-    /// However, if you are writing an implementation of `HasSqlType` that
-    /// simply delegates to an inner type (for example, `Nullable` does this),
-    /// then you should ensure that you delegate this method as well.
+    #[doc(hidden)]
+    #[cfg(feature = "with-deprecated")]
+    #[deprecated(
+        since = "1.4.0",
+        note = "This method is no longer used, and has been deprecated without replacement"
+    )]
     fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
         out.push(Self::metadata(lookup))
     }
+
+    #[doc(hidden)]
+    #[cfg(feature = "mysql")]
+    fn is_signed() -> IsSigned {
+        IsSigned::Signed
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "mysql")]
+    fn mysql_metadata(lookup: &Self::MetadataLookup) -> (Self::TypeMetadata, IsSigned) {
+        (Self::metadata(lookup), Self::is_signed())
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "mysql")]
+    fn mysql_row_metadata(
+        out: &mut Vec<(Self::TypeMetadata, IsSigned)>,
+        lookup: &Self::MetadataLookup,
+    ) {
+        out.push(Self::mysql_metadata(lookup))
+    }
+}
+
+#[doc(hidden)]
+#[cfg(feature = "mysql")]
+#[derive(Debug, Clone, Copy)]
+pub enum IsSigned {
+    Signed,
+    Unsigned,
 }
 
 /// Information about how a backend stores metadata about given SQL types

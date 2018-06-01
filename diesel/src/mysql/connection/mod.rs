@@ -7,9 +7,9 @@ use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use super::bind_collector::MysqlBindCollector;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
-use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::*;
 use sql_types::HasSqlType;
@@ -71,7 +71,7 @@ impl Connection for MysqlConnection {
 
         let mut stmt = try!(self.prepare_query(&source.as_query()));
         let mut metadata = Vec::new();
-        Mysql::row_metadata(&mut metadata, &());
+        Mysql::mysql_row_metadata(&mut metadata, &());
         let results = unsafe { stmt.results(metadata)? };
         results.map(|mut row| {
             U::Row::build_from_row(&mut row)
@@ -118,11 +118,9 @@ impl MysqlConnection {
     {
         let mut stmt = self.statement_cache
             .cached_statement(source, &[], |sql| self.raw_connection.prepare(sql))?;
-        let mut bind_collector = RawBytesBindCollector::<Mysql>::new();
+        let mut bind_collector = MysqlBindCollector::new();
         try!(source.collect_binds(&mut bind_collector, &()));
-        let metadata = bind_collector.metadata;
-        let binds = bind_collector.binds;
-        try!(stmt.bind(metadata.into_iter().zip(binds)));
+        try!(stmt.bind(bind_collector.binds));
         Ok(stmt)
     }
 
