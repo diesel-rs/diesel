@@ -13,83 +13,59 @@ pub trait EqAll<Rhs> {
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
 
-// FIXME: This is much easier to represent with a macro once macro types are stable
-// which appears to be slated for 1.13
-impl<L1, L2, R1, R2> EqAll<(R1, R2)> for (L1, L2)
-where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-{
-    type Output = And<<L1 as EqAll<R1>>::Output, <L2 as EqAll<R2>>::Output>;
+macro_rules! impl_eq_all {
+    // General case for 2+ elements
+    (
+        ($Left1:ident, $($Left:ident,)+)
+        ($Right1:ident, $($Right:ident,)+)
+    ) => {
+        #[allow(non_snake_case)]
+        impl<$Left1, $($Left,)+ $Right1, $($Right,)+>
+            EqAll<($Right1, $($Right,)+)> for ($Left1, $($Left,)+)
+        where
+            $Left1: EqAll<$Right1>,
+            ($($Left,)+): EqAll<($($Right,)+)>,
+        {
+            type Output = And<
+                <$Left1 as EqAll<$Right1>>::Output,
+                <($($Left,)+) as EqAll<($($Right,)+)>>::Output,
+            >;
 
-    fn eq_all(self, rhs: (R1, R2)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(self.1.eq_all(rhs.1))
-    }
+            fn eq_all(self, rhs: ($Right1, $($Right,)+)) -> Self::Output {
+                let ($Left1, $($Left,)+) = self;
+                let ($Right1, $($Right,)+) = rhs;
+                $Left1.eq_all($Right1).and(($($Left,)+).eq_all(($($Right,)+)))
+            }
+        }
+    };
+
+    // Special case for 1 element
+    (
+        ($Left:ident,) ($Right:ident,)
+    ) => {
+        impl<$Left, $Right> EqAll<($Right,)> for ($Left,)
+        where
+            $Left: EqAll<$Right>,
+        {
+            type Output = <$Left as EqAll<$Right>>::Output;
+
+            fn eq_all(self, rhs: ($Right,)) -> Self::Output {
+                self.0.eq_all(rhs.0)
+            }
+        }
+    };
 }
 
-impl<L1, L2, L3, R1, R2, R3> EqAll<(R1, R2, R3)> for (L1, L2, L3)
-where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-    L3: EqAll<R3>,
-{
-    type Output =
-        And<<L1 as EqAll<R1>>::Output, And<<L2 as EqAll<R2>>::Output, <L3 as EqAll<R3>>::Output>>;
-
-    fn eq_all(self, rhs: (R1, R2, R3)) -> Self::Output {
-        self.0
-            .eq_all(rhs.0)
-            .and(self.1.eq_all(rhs.1).and(self.2.eq_all(rhs.2)))
-    }
+macro_rules! impl_eq_all_for_all_tuples {
+    ($(
+        $unused1:tt {
+            $($unused2:tt -> $Left:ident, $Right:ident, $unused3:tt,)+
+        }
+    )+) => {
+        $(
+            impl_eq_all!(($($Left,)+) ($($Right,)+));
+        )+
+    };
 }
 
-impl<L1, L2, L3, L4, R1, R2, R3, R4> EqAll<(R1, R2, R3, R4)> for (L1, L2, L3, L4)
-where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-    L3: EqAll<R3>,
-    L4: EqAll<R4>,
-{
-    type Output = And<
-        <L1 as EqAll<R1>>::Output,
-        And<<L2 as EqAll<R2>>::Output, And<<L3 as EqAll<R3>>::Output, <L4 as EqAll<R4>>::Output>>,
-    >;
-
-    fn eq_all(self, rhs: (R1, R2, R3, R4)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(
-            self.1
-                .eq_all(rhs.1)
-                .and(self.2.eq_all(rhs.2).and(self.3.eq_all(rhs.3))),
-        )
-    }
-}
-
-impl<L1, L2, L3, L4, L5, R1, R2, R3, R4, R5> EqAll<(R1, R2, R3, R4, R5)> for (L1, L2, L3, L4, L5)
-where
-    L1: EqAll<R1>,
-    L2: EqAll<R2>,
-    L3: EqAll<R3>,
-    L4: EqAll<R4>,
-    L5: EqAll<R5>,
-{
-    type Output = And<
-        <L1 as EqAll<R1>>::Output,
-        And<
-            <L2 as EqAll<R2>>::Output,
-            And<
-                <L3 as EqAll<R3>>::Output,
-                And<<L4 as EqAll<R4>>::Output, <L5 as EqAll<R5>>::Output>,
-            >,
-        >,
-    >;
-
-    fn eq_all(self, rhs: (R1, R2, R3, R4, R5)) -> Self::Output {
-        self.0.eq_all(rhs.0).and(
-            self.1.eq_all(rhs.1).and(
-                self.2
-                    .eq_all(rhs.2)
-                    .and(self.3.eq_all(rhs.3).and(self.4.eq_all(rhs.4))),
-            ),
-        )
-    }
-}
+__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);
