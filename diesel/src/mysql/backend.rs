@@ -22,12 +22,20 @@ pub struct Mysql;
 pub enum MysqlType {
     /// Sets `buffer_type` to `MYSQL_TYPE_TINY`
     Tiny,
+    /// Sets `buffer_type` to `MYSQL_TYPE_TINY` and `is_unsigned` to `true`
+    UnsignedTiny,
     /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
     Short,
+    /// Sets `buffer_type` to `MYSQL_TYPE_SHORT` and `is_unsigned` to `true`
+    UnsignedShort,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
     Long,
+    /// Sets `buffer_type` to `MYSQL_TYPE_LONG` and `is_unsigned` to `true`
+    UnsignedLong,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
     LongLong,
+    /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG` and `is_unsigned` to `true`
+    UnsignedLongLong,
     /// Sets `buffer_type` to `MYSQL_TYPE_FLOAT`
     Float,
     /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
@@ -44,6 +52,19 @@ pub enum MysqlType {
     String,
     /// Sets `buffer_type` to `MYSQL_TYPE_BLOB`
     Blob,
+}
+
+impl MysqlType {
+    /// Is this an unsigned type?
+    pub fn is_unsigned(&self) -> bool {
+        match *self {
+            MysqlType::UnsignedTiny
+            | MysqlType::UnsignedShort
+            | MysqlType::UnsignedLong
+            | MysqlType::UnsignedLongLong => true,
+            _ => false,
+        }
+    }
 }
 
 impl Backend for Mysql {
