@@ -15,8 +15,8 @@
 
 use backend::Backend;
 use connection::Connection;
-use expression::Expression;
 use expression::count::CountStar;
+use expression::Expression;
 use helper_types::*;
 use query_builder::locking_clause as lock;
 use query_source::{joins, Table};
