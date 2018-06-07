@@ -12,6 +12,7 @@ mod backend;
 mod connection;
 mod metadata_lookup;
 mod query_builder;
+pub(crate) mod serialize;
 mod transaction;
 
 pub use self::backend::{Pg, PgTypeMetadata};
