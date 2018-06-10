@@ -3,7 +3,7 @@
 Diesel supports SQLite, PostgreSQL, and MySQL as database backends.
 By default, `diesel_cli`
 requires the client library of all three backends to be installed.
-If one is missing, then `cargo install diesel_cli` you will throw an error like:
+If one is missing, then `cargo install diesel_cli` will throw an error like:
 
 ```
 note: ld: library not found for -lmysqlclient
@@ -44,7 +44,7 @@ with various package managers.
 
 ### MySQL
 
-1. Install the following to add the MySQL APT repository. 
+1. Install the following to add the MySQL APT repository.
 
     ```
     wget https://dev.mysql.com/get/mysql-apt-config_0.8.7-1_all.deb
@@ -108,9 +108,9 @@ Already installed by default.
 
 ### PostgreSQL
 
-The simplest way to install PostgreSQL on Windows, it's to use the graphical installer of EnterpriseDB: https://www.postgresql.org/download/windows/ but you can also install it just with binaries : https://www.enterprisedb.com/download-postgresql-binaries 
+The simplest way to install PostgreSQL on Windows is to use the graphical installer of EnterpriseDB: https://www.postgresql.org/download/windows/, but you can also install it just with binaries: https://www.enterprisedb.com/download-postgresql-binaries.
 
-And finally, you can run `pg_env.bat` in `PostgreSQL\10` where PostgreSQL is install in your system, which does all the setup needed for you. If you use the graphical installer of EnterpriseDB, it should be in `C:\Program Files\`.
+And finally, you can run `pg_env.bat` in `PostgreSQL\10` where PostgreSQL is installed in your system, which does all the setup needed for you. If you use the graphical installer of EnterpriseDB, it should be in `C:\Program Files\`.
 
-Or you can add the `bin/` diretory of PostgreSQL to your PATH environment variable.
+Or you can add the `bin/` directory of PostgreSQL to your PATH environment variable.
 
