@@ -3,14 +3,14 @@
 Diesel supports SQLite, PostgreSQL, and MySQL as database backends.
 By default, `diesel_cli`
 requires the client library of all three backends to be installed.
-If one is missing, then `cargo install diesel_cli` you will throw an error like:
+If one is missing, then `cargo install diesel_cli` you will receive an error like:
 
 ```
 note: ld: library not found for -lmysqlclient
 clang: error: linker command failed with exit code 1 (use -v to see invocation)
 ```
 
-To install `diesel_cli` without all backends,
+To install Diesel CLI with only the backends you need,
 specify `--no-default-features`.
 Use cargo's `--features` option to specify `postgres`, `sqlite`, and/or `mysql`.
 For example, to install with sqlite only, run:
@@ -19,13 +19,12 @@ For example, to install with sqlite only, run:
 cargo install diesel_cli --no-default-features --features sqlite
 ```
 
-For projects that depend on diesel,
-you can specify which backends are required in the `Cargo.toml`.
+To install Diesel CLI with support for more than one backend,
+use spaces to separate the features.
 For example:
 
 ```
-[dependencies]
-diesel = { version = "X.X.X", features = ["sqlite"] }
+cargo install diesel_cli --no-default-features --features "sqlite postgres"
 ```
 
 Below are commands to run
