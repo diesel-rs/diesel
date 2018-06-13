@@ -11,6 +11,7 @@ use self::metadata::*;
 use super::bind::Binds;
 use mysql::MysqlType;
 use result::{DatabaseErrorKind, QueryResult};
+use sql_types::IsSigned;
 use util::NonNull;
 
 pub struct Statement {
@@ -39,7 +40,7 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, IsSigned, Option<Vec<u8>>)>,
     {
         let mut input_binds = Binds::from_input_data(binds);
         input_binds.with_mysql_binds(|bind_ptr| {
@@ -72,7 +73,10 @@ impl Statement {
     /// This function should be called instead of `execute` for queries which
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
-    pub unsafe fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
+    pub unsafe fn results(
+        &mut self,
+        types: Vec<(MysqlType, IsSigned)>,
+    ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
 
