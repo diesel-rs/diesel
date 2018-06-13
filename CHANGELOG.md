@@ -4,6 +4,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.3.2] - 2018-06-13
+
+### Fixed
+
+* The behavior of unsigned types in MySQL has been corrected to properly set the
+  `is_unsigned` flag.
+
+* Fixed an issue with `sql_function!` when `#[sql_name]` was used on functions
+  with no return type.
+
 ## [1.3.1] - 2018-05-23
 
 ### Fixed
@@ -1518,3 +1528,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.2.1]: https://github.com/diesel-rs/diesel/compare/v1.2.0...v1.2.1
 [1.2.2]: https://github.com/diesel-rs/diesel/compare/v1.2.1...v1.2.2
 [1.3.0]: https://github.com/diesel-rs/diesel/compare/v1.2.2...v1.3.0
+[1.3.1]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.3.1
+[1.3.2]: https://github.com/diesel-rs/diesel/compare/v1.3.1...v1.3.2
