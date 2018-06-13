@@ -10,6 +10,9 @@ use row::NamedRow;
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{HasSqlType, NotNull, Nullable};
 
+#[cfg(feature = "mysql")]
+use sql_types::IsSigned;
+
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
     DB: Backend + HasSqlType<T>,
@@ -19,8 +22,18 @@ where
         <DB as HasSqlType<T>>::metadata(lookup)
     }
 
+    #[cfg(feature = "with-deprecated")]
+    #[allow(deprecated)]
     fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
         <DB as HasSqlType<T>>::row_metadata(out, lookup)
+    }
+
+    #[cfg(feature = "mysql")]
+    fn mysql_row_metadata(
+        out: &mut Vec<(DB::TypeMetadata, IsSigned)>,
+        lookup: &DB::MetadataLookup,
+    ) {
+        <DB as HasSqlType<T>>::mysql_row_metadata(out, lookup)
     }
 }
 

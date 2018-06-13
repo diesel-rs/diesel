@@ -13,6 +13,9 @@ use row::*;
 use sql_types::{HasSqlType, NotNull};
 use util::TupleAppend;
 
+#[cfg(feature = "mysql")]
+use sql_types::IsSigned;
+
 macro_rules! tuple_impls {
     ($(
         $Tuple:tt {
@@ -28,8 +31,15 @@ macro_rules! tuple_impls {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
 
+                #[cfg(feature = "with-deprecated")]
+                #[allow(deprecated)]
                 fn row_metadata(out: &mut Vec<__DB::TypeMetadata>, lookup: &__DB::MetadataLookup) {
                     $(<__DB as HasSqlType<$T>>::row_metadata(out, lookup);)+
+                }
+
+                #[cfg(feature = "mysql")]
+                fn mysql_row_metadata(out: &mut Vec<(__DB::TypeMetadata, IsSigned)>, lookup: &__DB::MetadataLookup) {
+                    $(<__DB as HasSqlType<$T>>::mysql_row_metadata(out, lookup);)+
                 }
             }
 

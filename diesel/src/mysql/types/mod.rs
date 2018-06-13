@@ -88,6 +88,10 @@ where
     fn metadata(lookup: &()) -> MysqlType {
         <Mysql as HasSqlType<ST>>::metadata(lookup)
     }
+
+    fn is_signed() -> IsSigned {
+        IsSigned::Unsigned
+    }
 }
 
 /// Represents the MySQL datetime type.

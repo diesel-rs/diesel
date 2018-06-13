@@ -2,9 +2,9 @@
 
 use byteorder::NativeEndian;
 
+use super::bind_collector::MysqlBindCollector;
 use super::query_builder::MysqlQueryBuilder;
 use backend::*;
-use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::TypeMetadata;
 
 /// The MySQL backend
@@ -48,7 +48,7 @@ pub enum MysqlType {
 
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Mysql>;
+    type BindCollector = MysqlBindCollector;
     type RawValue = [u8];
     type ByteOrder = NativeEndian;
 }

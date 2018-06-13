@@ -6,6 +6,7 @@ use std::os::raw as libc;
 use super::stmt::Statement;
 use mysql::MysqlType;
 use result::QueryResult;
+use sql_types::IsSigned;
 
 pub struct Binds {
     data: Vec<BindData>,
@@ -14,20 +15,20 @@ pub struct Binds {
 impl Binds {
     pub fn from_input_data<Iter>(input: Iter) -> Self
     where
-        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, IsSigned, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
-            .map(|(tpe, bytes)| BindData::for_input(tpe, bytes))
+            .map(|(tpe, sign, bytes)| BindData::for_input(tpe, is_signed_to_my_bool(sign), bytes))
             .collect();
 
         Binds { data: data }
     }
 
-    pub fn from_output_types(types: Vec<MysqlType>) -> Self {
+    pub fn from_output_types(types: Vec<(MysqlType, IsSigned)>) -> Self {
         let data = types
             .into_iter()
-            .map(mysql_type_to_ffi_type)
+            .map(|(ty, sign)| (mysql_type_to_ffi_type(ty), is_signed_to_my_bool(sign)))
             .map(BindData::for_output)
             .collect();
 
@@ -37,7 +38,7 @@ impl Binds {
     pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
         let data = fields
             .iter()
-            .map(|field| field.type_)
+            .map(|field| (field.type_, is_field_unsigned(field)))
             .map(BindData::for_output)
             .collect();
 
@@ -89,10 +90,11 @@ struct BindData {
     length: libc::c_ulong,
     is_null: ffi::my_bool,
     is_truncated: Option<ffi::my_bool>,
+    is_unsigned: ffi::my_bool,
 }
 
 impl BindData {
-    fn for_input(tpe: MysqlType, data: Option<Vec<u8>>) -> Self {
+    fn for_input(tpe: MysqlType, is_unsigned: ffi::my_bool, data: Option<Vec<u8>>) -> Self {
         let is_null = if data.is_none() { 1 } else { 0 };
         let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
@@ -103,10 +105,11 @@ impl BindData {
             length: length,
             is_null: is_null,
             is_truncated: None,
+            is_unsigned,
         }
     }
 
-    fn for_output(tpe: ffi::enum_field_types) -> Self {
+    fn for_output((tpe, is_unsigned): (ffi::enum_field_types, ffi::my_bool)) -> Self {
         let bytes = known_buffer_size_for_ffi_type(tpe)
             .map(|len| vec![0; len])
             .unwrap_or_default();
@@ -118,6 +121,7 @@ impl BindData {
             length: length,
             is_null: 0,
             is_truncated: Some(0),
+            is_unsigned,
         }
     }
 
@@ -151,6 +155,7 @@ impl BindData {
         bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
         bind.length = &mut self.length;
         bind.is_null = &mut self.is_null;
+        bind.is_unsigned = self.is_unsigned;
 
         if let Some(ref mut is_truncated) = self.is_truncated {
             bind.error = is_truncated;
@@ -234,5 +239,17 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         | t::MYSQL_TYPE_DATETIME
         | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<ffi::MYSQL_TIME>()),
         _ => None,
+    }
+}
+
+fn is_field_unsigned(field: &ffi::MYSQL_FIELD) -> ffi::my_bool {
+    const UNSIGNED_FLAG: libc::c_uint = 32;
+    (field.flags & UNSIGNED_FLAG > 0) as _
+}
+
+fn is_signed_to_my_bool(sign: IsSigned) -> ffi::my_bool {
+    match sign {
+        IsSigned::Signed => false as _,
+        IsSigned::Unsigned => true as _,
     }
 }
