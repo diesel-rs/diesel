@@ -5,12 +5,12 @@ use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr;
 
-use sqlite::SqliteType;
-use result::*;
-use result::Error::DatabaseError;
 use super::raw::RawConnection;
-use super::sqlite_value::SqliteRow;
 use super::serialized_value::SerializedValue;
+use super::sqlite_value::SqliteRow;
+use result::Error::DatabaseError;
+use result::*;
+use sqlite::SqliteType;
 use util::NonNull;
 
 pub struct Statement {

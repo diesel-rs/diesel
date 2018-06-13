@@ -1,7 +1,7 @@
+use super::cursor::NamedCursor;
+use super::result::PgResult;
 use pg::Pg;
 use row::*;
-use super::result::PgResult;
-use super::cursor::NamedCursor;
 
 pub struct PgRow<'a> {
     db_result: &'a PgResult,

@@ -1,9 +1,9 @@
-use dsl::{Eq, EqAny, Filter, FindBy};
-use expression::AsExpression;
-use expression::array_comparison::AsInExpression;
-use query_dsl::methods::FilterDsl;
-use prelude::*;
 use super::{HasTable, Identifiable};
+use dsl::{Eq, EqAny, Filter, FindBy};
+use expression::array_comparison::AsInExpression;
+use expression::AsExpression;
+use prelude::*;
+use query_dsl::methods::FilterDsl;
 
 use std::borrow::Borrow;
 use std::hash::Hash;

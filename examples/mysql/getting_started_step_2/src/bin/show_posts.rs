@@ -1,9 +1,9 @@
 extern crate diesel;
 extern crate diesel_demo_step_2_mysql;
 
-use diesel_demo_step_2_mysql::*;
 use self::models::*;
 use diesel::prelude::*;
+use diesel_demo_step_2_mysql::*;
 
 fn main() {
     use self::schema::posts::dsl::*;

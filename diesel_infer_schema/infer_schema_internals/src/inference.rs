@@ -3,8 +3,8 @@ use std::error::Error;
 use diesel::prelude::*;
 use diesel::result::Error::NotFound;
 
-use table_data::*;
 use data_structures::*;
+use table_data::*;
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",

@@ -1,10 +1,10 @@
-use dsl::Select;
-use expression::Expression;
-use query_dsl::methods::SelectDsl;
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::{Insert, InsertOrIgnore, Replace};
 use super::{IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery,
             UpdateStatement};
+use dsl::Select;
+use expression::Expression;
+use query_dsl::methods::SelectDsl;
 
 /// Creates an `UPDATE` statement.
 ///

@@ -1,25 +1,25 @@
+use super::BoxedSelectStatement;
 use associations::HasTable;
 use backend::Backend;
 use dsl::AsExprOf;
 use expression::*;
 use insertable::Insertable;
 use query_builder::distinct_clause::*;
-use query_builder::locking_clause::*;
 use query_builder::group_by_clause::*;
 use query_builder::insert_statement::InsertFromSelect;
 use query_builder::limit_clause::*;
+use query_builder::locking_clause::*;
 use query_builder::offset_clause::*;
 use query_builder::order_clause::*;
 use query_builder::select_clause::*;
 use query_builder::update_statement::*;
 use query_builder::where_clause::*;
 use query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
-use query_dsl::*;
-use query_dsl::methods::*;
 use query_dsl::boxed_dsl::BoxedDsl;
-use query_source::QuerySource;
+use query_dsl::methods::*;
+use query_dsl::*;
 use query_source::joins::{Join, JoinOn, JoinTo};
-use super::BoxedSelectStatement;
+use query_source::QuerySource;
 use sql_types::{BigInt, Bool};
 
 impl<F, S, D, W, O, L, Of, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>

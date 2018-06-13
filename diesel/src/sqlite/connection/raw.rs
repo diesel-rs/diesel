@@ -5,9 +5,9 @@ use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::{ptr, slice, str};
 
-use result::*;
-use result::Error::DatabaseError;
 use super::serialized_value::SerializedValue;
+use result::Error::DatabaseError;
+use result::*;
 use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]

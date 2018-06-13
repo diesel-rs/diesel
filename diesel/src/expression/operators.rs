@@ -106,30 +106,18 @@ macro_rules! __diesel_operator_body {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_operator_to_sql {
-    (
-        notation = infix,
-        operator_expr = $op:expr,
-        field_exprs = ($left:expr, $right:expr),
-    ) => {
+    (notation = infix,operator_expr = $op:expr,field_exprs = ($left:expr, $right:expr),) => {
         $left;
         $op;
         $right;
     };
 
-    (
-        notation = postfix,
-        operator_expr = $op:expr,
-        field_exprs = ($expr:expr),
-    ) => {
+    (notation = postfix,operator_expr = $op:expr,field_exprs = ($expr:expr),) => {
         $expr;
         $op;
     };
 
-    (
-        notation = prefix,
-        operator_expr = $op:expr,
-        field_exprs = ($expr:expr),
-    ) => {
+    (notation = prefix,operator_expr = $op:expr,field_exprs = ($expr:expr),) => {
         $op;
         $expr;
     };
@@ -258,7 +246,7 @@ macro_rules! diesel_postfix_operator {
         diesel_postfix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
-    ($name:ident, $operator:expr, backend: $backend:ty) => {
+    ($name:ident, $operator:expr,backend: $backend:ty) => {
         diesel_postfix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
@@ -275,7 +263,7 @@ macro_rules! diesel_postfix_operator {
         );
     };
 
-    ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
+    ($name:ident, $operator:expr, $return_ty:ty,backend: $backend:ty) => {
         __diesel_operator_body!(
             notation = postfix,
             struct_name = $name,
@@ -303,7 +291,7 @@ macro_rules! diesel_prefix_operator {
         diesel_prefix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
-    ($name:ident, $operator:expr, backend: $backend:ty) => {
+    ($name:ident, $operator:expr,backend: $backend:ty) => {
         diesel_prefix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
@@ -320,7 +308,7 @@ macro_rules! diesel_prefix_operator {
         );
     };
 
-    ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
+    ($name:ident, $operator:expr, $return_ty:ty,backend: $backend:ty) => {
         __diesel_operator_body!(
             notation = prefix,
             struct_name = $name,

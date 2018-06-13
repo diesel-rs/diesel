@@ -1,6 +1,6 @@
 use dsl::AsExprOf;
-use expression::IntoSql;
 use expression::operators::{Escape, Like, NotLike};
+use expression::IntoSql;
 use sql_types::VarChar;
 
 /// Adds the `escape` method to `LIKE` and `NOT LIKE`. This is used to specify

@@ -517,12 +517,10 @@ fn selecting_four_tables_deep() {
         .inner_join(posts::table.inner_join(comments::table.inner_join(likes::table)))
         .order((users::id, posts::id, comments::id))
         .load(&connection);
-    let expected = vec![
-        (
-            sean.clone(),
-            (posts[0].clone(), (comments[0].clone(), likes[0].clone())),
-        ),
-    ];
+    let expected = vec![(
+        sean.clone(),
+        (posts[0].clone(), (comments[0].clone(), likes[0].clone())),
+    )];
     assert_eq!(Ok(expected), data);
 
     let data = users::table

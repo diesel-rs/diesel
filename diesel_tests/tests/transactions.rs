@@ -1,6 +1,6 @@
-use schema::*;
-use diesel::*;
 use diesel::result::Error;
+use diesel::*;
+use schema::*;
 
 #[test]
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:

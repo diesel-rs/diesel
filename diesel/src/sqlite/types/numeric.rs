@@ -5,9 +5,9 @@ extern crate bigdecimal;
 use self::bigdecimal::BigDecimal;
 
 use deserialize::{self, FromSql};
-use sqlite::Sqlite;
-use sqlite::connection::SqliteValue;
 use sql_types::{Double, Numeric};
+use sqlite::connection::SqliteValue;
+use sqlite::Sqlite;
 
 impl FromSql<Numeric, Sqlite> for BigDecimal {
     fn from_sql(bytes: Option<&SqliteValue>) -> deserialize::Result<Self> {

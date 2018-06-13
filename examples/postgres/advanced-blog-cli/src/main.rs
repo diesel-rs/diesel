@@ -31,9 +31,9 @@ use diesel::prelude::*;
 use std::error::Error;
 
 use self::cli::Cli;
-use self::schema::*;
-use self::post::*;
 use self::pagination::*;
+use self::post::*;
+use self::schema::*;
 
 fn main() {
     use structopt::StructOpt;
@@ -49,8 +49,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
 
     match cli {
         Cli::AllPosts { page, per_page } => {
-            use comment::*;
             use auth::User;
+            use comment::*;
 
             let mut query = posts::table
                 .order(posts::published_at.desc())
@@ -94,9 +94,9 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
             println!("Successfully created post with id {}", id);
         }
         Cli::EditPost { post_id, publish } => {
-            use schema::posts::dsl::*;
-            use post::Status::*;
             use diesel::dsl::now;
+            use post::Status::*;
+            use schema::posts::dsl::*;
 
             let user = current_user(&conn)?;
             let post = Post::belonging_to(&user)
@@ -129,8 +129,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
             println!("Created comment with ID {}", inserted);
         }
         Cli::EditComment { comment_id } => {
-            use schema::comments::dsl::*;
             use comment::Comment;
+            use schema::comments::dsl::*;
 
             let user = current_user(&conn)?;
 
@@ -180,8 +180,8 @@ fn current_user(conn: &PgConnection) -> Result<auth::User, Box<Error>> {
 
 fn register_user(conn: &PgConnection) -> Result<(), Box<Error>> {
     use auth::AuthenticationError as Auth;
-    use diesel::result::Error::DatabaseError;
     use diesel::result::DatabaseErrorKind::UniqueViolation;
+    use diesel::result::Error::DatabaseError;
 
     match auth::register_user_from_env(conn) {
         Ok(_) => Ok(()),

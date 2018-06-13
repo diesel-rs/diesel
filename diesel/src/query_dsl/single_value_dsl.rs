@@ -1,9 +1,9 @@
+use super::methods::LimitDsl;
 use dsl::Limit;
 use expression::grouped::Grouped;
 use expression::subselect::Subselect;
 use query_builder::SelectQuery;
 use sql_types::{IntoNullable, SingleValue};
-use super::methods::LimitDsl;
 
 /// The `single_value` method
 ///

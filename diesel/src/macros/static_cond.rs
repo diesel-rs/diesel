@@ -7,11 +7,12 @@
 #[doc(hidden)]
 macro_rules! static_cond {
     // private rule to define and call the local macro
-    (@go $lhs:tt $rhs:tt $arm1:tt $arm2:tt) => {        // note that the inner macro has no captures (it can't, because there's no way to escape `$`)
+    (@go $lhs:tt $rhs:tt $arm1:tt $arm2:tt) => {
+        // note that the inner macro has no captures (it can't, because there's no way to escape `$`)
         macro_rules! __static_cond {
-            ($lhs $lhs) => $arm1;
-            ($lhs $rhs) => $arm2
-        }
+                    ($lhs $lhs) => $arm1;
+                    ($lhs $rhs) => $arm2
+                }
 
         __static_cond!($lhs $rhs);
     };

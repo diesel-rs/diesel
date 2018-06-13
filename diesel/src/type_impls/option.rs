@@ -2,8 +2,8 @@ use std::io::Write;
 
 use backend::Backend;
 use deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
-use expression::*;
 use expression::bound::Bound;
+use expression::*;
 use query_builder::QueryId;
 use result::UnexpectedNullError;
 use row::NamedRow;
@@ -135,9 +135,9 @@ where
 }
 
 #[cfg(all(test, feature = "postgres"))]
-use sql_types;
-#[cfg(all(test, feature = "postgres"))]
 use pg::Pg;
+#[cfg(all(test, feature = "postgres"))]
+use sql_types;
 
 #[test]
 #[cfg(feature = "postgres")]

@@ -6,13 +6,13 @@ use pg::Pg;
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
 
-#[cfg(feature = "quickcheck")]
-mod quickcheck_impls;
-mod std_time;
 #[cfg(feature = "chrono")]
 mod chrono;
 #[cfg(feature = "deprecated-time")]
 mod deprecated_time;
+#[cfg(feature = "quickcheck")]
+mod quickcheck_impls;
+mod std_time;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
 #[sql_type = "Timestamp"]

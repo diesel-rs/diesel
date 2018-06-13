@@ -1,9 +1,9 @@
+use super::RunQueryDsl;
 use backend::Backend;
 use connection::Connection;
 use deserialize::Queryable;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use result::QueryResult;
-use super::RunQueryDsl;
 use sql_types::HasSqlType;
 
 /// The `load` method
@@ -38,8 +38,9 @@ where
 /// to call `execute` from generic code.
 ///
 /// [`RunQueryDsl`]: ../trait.RunQueryDsl.html
-pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Connection>::Backend>
-    : Sized {
+pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Connection>::Backend>:
+    Sized
+{
     /// Execute this command
     fn execute(query: Self, conn: &Conn) -> QueryResult<usize>;
 }

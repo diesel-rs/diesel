@@ -58,8 +58,8 @@ where
     }
 }
 
-use expression::AsExpression;
 use expression::bound::Bound;
+use expression::AsExpression;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
@@ -70,7 +70,7 @@ macro_rules! array_as_expression {
                 Bound::new(self)
             }
         }
-    }
+    };
 }
 
 array_as_expression!(&'a [T], Array<ST>);

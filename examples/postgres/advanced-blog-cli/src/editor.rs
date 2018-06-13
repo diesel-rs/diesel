@@ -1,9 +1,9 @@
 extern crate tempfile;
 
+use self::tempfile::NamedTempFile;
 use std::error::Error;
 use std::ffi::OsString;
 use std::io::prelude::*;
-use self::tempfile::NamedTempFile;
 use std::process::Command;
 
 pub fn edit_string(s: &str) -> Result<String, Box<Error>> {

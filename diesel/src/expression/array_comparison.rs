@@ -1,6 +1,6 @@
 use backend::Backend;
-use expression::*;
 use expression::subselect::Subselect;
+use expression::*;
 use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;

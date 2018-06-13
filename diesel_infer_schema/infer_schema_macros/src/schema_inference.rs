@@ -1,5 +1,5 @@
-use syn;
 use quote;
+use syn;
 
 use database_url::extract_database_url;
 use infer_schema_internals::*;

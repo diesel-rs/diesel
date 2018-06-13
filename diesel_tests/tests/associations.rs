@@ -1,5 +1,5 @@
-use schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 fn one_to_many_returns_query_source_for_association() {
@@ -39,8 +39,8 @@ fn eager_loading_associations_for_multiple_records() {
 }
 
 mod eager_loading_with_string_keys {
-    use diesel::*;
     use diesel::connection::SimpleConnection;
+    use diesel::*;
     use schema::{connection, drop_table_cascade};
 
     table! { users { id -> Text, } }
@@ -263,8 +263,8 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn custom_foreign_key() {
-    use diesel::*;
     use diesel::connection::SimpleConnection;
+    use diesel::*;
 
     table! {
         users1 {

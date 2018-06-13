@@ -1,21 +1,21 @@
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+use super::query_helper;
 use clap::ArgMatches;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::*;
 use migrations_internals as migrations;
-#[cfg(any(feature = "postgres", feature = "mysql"))]
-use super::query_helper;
 
 use database_error::{DatabaseError, DatabaseResult};
 
-use std::error::Error;
 use std::env;
-use std::io::stdout;
-use std::path::Path;
+use std::error::Error;
 #[cfg(feature = "postgres")]
 use std::fs::{self, File};
+use std::io::stdout;
 #[cfg(feature = "postgres")]
 use std::io::Write;
+use std::path::Path;
 
 enum Backend {
     #[cfg(feature = "postgres")]
@@ -226,8 +226,8 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         }
         #[cfg(feature = "sqlite")]
         Backend::Sqlite => {
-            use std::path::Path;
             use std::fs;
+            use std::path::Path;
 
             if Path::new(database_url).exists() {
                 println!("Dropping database: {}", database_url);

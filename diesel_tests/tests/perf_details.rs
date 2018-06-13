@@ -1,9 +1,9 @@
-use schema::users::dsl::*;
+use diesel::query_builder::AsQuery;
+use diesel::*;
 use schema::posts::dsl::{posts, title};
+use schema::users::dsl::*;
 use std::cmp::max;
 use std::mem;
-use diesel::*;
-use diesel::query_builder::AsQuery;
 
 #[test]
 fn complex_queries_with_no_data_have_no_size() {

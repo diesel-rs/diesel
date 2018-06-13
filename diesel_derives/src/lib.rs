@@ -6,9 +6,13 @@
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
-#![cfg_attr(feature = "clippy",
-            warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                 unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+#![cfg_attr(
+    feature = "clippy",
+    warn(
+        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
+        if_not_else, items_after_statements, used_underscore_binding
+    )
+)]
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 extern crate proc_macro;
@@ -41,8 +45,9 @@ mod sql_type;
 
 use diagnostic_shim::*;
 
-#[proc_macro_derive(AsChangeset,
-                    attributes(table_name, primary_key, column_name, changeset_options))]
+#[proc_macro_derive(
+    AsChangeset, attributes(table_name, primary_key, column_name, changeset_options)
+)]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_derive(input, as_changeset::derive)
 }

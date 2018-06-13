@@ -1,7 +1,7 @@
 //! Support for Money values under PostgreSQL.
 
-use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::io::prelude::*;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 use deserialize::{self, FromSql};
 use pg::Pg;

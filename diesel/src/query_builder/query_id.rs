@@ -1,5 +1,5 @@
-use std::any::{Any, TypeId};
 use super::QueryFragment;
+use std::any::{Any, TypeId};
 
 /// Uniquely identifies queries by their type for the purpose of prepared
 /// statement caching.
@@ -116,8 +116,8 @@ impl<DB> QueryId for QueryFragment<DB> {
 mod tests {
     use std::any::TypeId;
 
-    use prelude::*;
     use super::QueryId;
+    use prelude::*;
 
     table! {
         users {

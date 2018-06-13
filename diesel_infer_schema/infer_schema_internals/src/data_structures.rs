@@ -1,9 +1,9 @@
-use diesel::*;
-use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
+use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
+use diesel::*;
 
 #[cfg(feature = "uses_information_schema")]
 use super::information_schema::UsesInformationSchema;

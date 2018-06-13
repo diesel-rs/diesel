@@ -1,6 +1,6 @@
 use super::schema::*;
-use diesel::*;
 use diesel::connection::SimpleConnection;
+use diesel::*;
 use schema_dsl::*;
 
 #[test]
@@ -348,8 +348,8 @@ fn select_for_update_modifiers() {
 #[cfg(feature = "postgres")]
 #[test]
 fn select_for_no_key_update_modifiers() {
-    use self::users_select_for_no_key_update::dsl::*;
     use self::users_fk_for_no_key_update::dsl::*;
+    use self::users_select_for_no_key_update::dsl::*;
 
     // We need to actually commit some data for the
     // test

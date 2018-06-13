@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use backend::{Backend, SupportsDefaultKeyword};
 use expression::{AppearsOnTable, Expression};
-use result::QueryResult;
 use query_builder::{AstPass, InsertStatement, QueryFragment, UndecoratedInsertRecord, ValuesClause};
 use query_source::{Column, Table};
+use result::QueryResult;
 #[cfg(feature = "sqlite")]
 use sqlite::Sqlite;
 

@@ -11,9 +11,9 @@ extern crate test;
 
 mod schema;
 
-use self::test::Bencher;
 use self::schema::{comments, posts, users, Comment, NewComment, NewPost, NewUser, Post,
                    TestConnection, User};
+use self::test::Bencher;
 use diesel::*;
 
 #[cfg(not(feature = "sqlite"))]
@@ -36,28 +36,30 @@ macro_rules! bench_trivial_query {
         fn $name(b: &mut Bencher) {
             let conn = connection();
 
-            let data: Vec<_> = (0..$n).map(|i| {
-                NewUser::new(&format!("User {}", i), None)
-            }).collect();
-            insert_into(users::table).values(&data).execute(&conn).unwrap();
+            let data: Vec<_> = (0..$n)
+                .map(|i| NewUser::new(&format!("User {}", i), None))
+                .collect();
+            insert_into(users::table)
+                .values(&data)
+                .execute(&conn)
+                .unwrap();
 
-            b.iter(|| {
-                users::table.load::<User>(&conn).unwrap()
-            })
+            b.iter(|| users::table.load::<User>(&conn).unwrap())
         }
 
         #[bench]
         fn $name_boxed(b: &mut Bencher) {
             let conn = connection();
 
-            let data: Vec<_> = (0..$n).map(|i| {
-                NewUser::new(&format!("User {}", i), None)
-            }).collect();
-            insert_into(users::table).values(&data).execute(&conn).unwrap();
+            let data: Vec<_> = (0..$n)
+                .map(|i| NewUser::new(&format!("User {}", i), None))
+                .collect();
+            insert_into(users::table)
+                .values(&data)
+                .execute(&conn)
+                .unwrap();
 
-            b.iter(|| {
-                users::table.into_boxed().load::<User>(&conn).unwrap()
-            })
+            b.iter(|| users::table.into_boxed().load::<User>(&conn).unwrap())
         }
     };
 }
@@ -96,15 +98,21 @@ macro_rules! bench_medium_complex_query {
         fn $name(b: &mut Bencher) {
             let conn = connection();
 
-            let data: Vec<_> = (0..$n).map(|i| {
-                let hair_color = if i % 2 == 0 { "black" } else { "brown" };
-                NewUser::new(&format!("User {}", i), Some(hair_color))
-            }).collect();
-            insert_into(users::table).values(&data).execute(&conn).unwrap();
+            let data: Vec<_> = (0..$n)
+                .map(|i| {
+                    let hair_color = if i % 2 == 0 { "black" } else { "brown" };
+                    NewUser::new(&format!("User {}", i), Some(hair_color))
+                })
+                .collect();
+            insert_into(users::table)
+                .values(&data)
+                .execute(&conn)
+                .unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
-                let target = users.left_outer_join(posts::table)
+                let target = users
+                    .left_outer_join(posts::table)
                     .filter(hair_color.eq("black"))
                     .order(name.desc());
                 target.load::<(User, Option<Post>)>(&conn).unwrap()
@@ -115,15 +123,21 @@ macro_rules! bench_medium_complex_query {
         fn $name_boxed(b: &mut Bencher) {
             let conn = connection();
 
-            let data: Vec<_> = (0..$n).map(|i| {
-                let hair_color = if i % 2 == 0 { "black" } else { "brown" };
-                NewUser::new(&format!("User {}", i), Some(hair_color))
-            }).collect();
-            insert_into(users::table).values(&data).execute(&conn).unwrap();
+            let data: Vec<_> = (0..$n)
+                .map(|i| {
+                    let hair_color = if i % 2 == 0 { "black" } else { "brown" };
+                    NewUser::new(&format!("User {}", i), Some(hair_color))
+                })
+                .collect();
+            insert_into(users::table)
+                .values(&data)
+                .execute(&conn)
+                .unwrap();
 
             b.iter(|| {
                 use schema::users::dsl::*;
-                let target = users.left_outer_join(posts::table)
+                let target = users
+                    .left_outer_join(posts::table)
                     .filter(hair_color.eq("black"))
                     .order(name.desc())
                     .into_boxed();

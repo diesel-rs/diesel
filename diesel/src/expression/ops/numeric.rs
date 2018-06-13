@@ -21,7 +21,8 @@ macro_rules! numeric_operation {
             }
         }
 
-        impl<Lhs, Rhs> Expression for $name<Lhs, Rhs> where
+        impl<Lhs, Rhs> Expression for $name<Lhs, Rhs>
+        where
             Lhs: Expression,
             Lhs::SqlType: sql_types::ops::$name,
             Rhs: Expression,
@@ -29,7 +30,8 @@ macro_rules! numeric_operation {
             type SqlType = <Lhs::SqlType as sql_types::ops::$name>::Output;
         }
 
-        impl<Lhs, Rhs, DB> QueryFragment<DB> for $name<Lhs, Rhs> where
+        impl<Lhs, Rhs, DB> QueryFragment<DB> for $name<Lhs, Rhs>
+        where
             DB: Backend,
             Lhs: QueryFragment<DB>,
             Rhs: QueryFragment<DB>,
@@ -44,7 +46,8 @@ macro_rules! numeric_operation {
 
         impl_selectable_expression!($name<Lhs, Rhs>);
 
-        impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs> where
+        impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs>
+        where
             Lhs: NonAggregate,
             Rhs: NonAggregate,
             $name<Lhs, Rhs>: Expression,
@@ -52,7 +55,7 @@ macro_rules! numeric_operation {
         }
 
         generic_numeric_expr!($name, A, B);
-    }
+    };
 }
 
 numeric_operation!(Add, " + ");

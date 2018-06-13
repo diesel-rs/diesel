@@ -3,9 +3,9 @@
 //! where in the migration process an error occurs.
 
 use std::convert::From;
-use std::{fmt, io};
-use std::path::PathBuf;
 use std::error::Error;
+use std::path::PathBuf;
+use std::{fmt, io};
 
 use result;
 

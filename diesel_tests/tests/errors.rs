@@ -1,6 +1,6 @@
-use diesel::*;
-use diesel::result::Error::DatabaseError;
 use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, UniqueViolation};
+use diesel::result::Error::DatabaseError;
+use diesel::*;
 use schema::*;
 
 #[test]
@@ -46,12 +46,12 @@ fn unique_constraints_report_correct_constraint_name() {
 }
 
 macro_rules! try_no_coerce {
-    ($e:expr) => ({
+    ($e:expr) => {{
         match $e {
             Ok(e) => e,
             Err(e) => return Err(e),
         }
-    })
+    }};
 }
 
 #[test]

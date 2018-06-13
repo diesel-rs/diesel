@@ -15,8 +15,8 @@
 
 use backend::Backend;
 use connection::Connection;
-use expression::Expression;
 use expression::count::CountStar;
+use expression::Expression;
 use helper_types::*;
 use query_builder::locking_clause as lock;
 use query_source::{joins, Table};
@@ -26,6 +26,8 @@ mod belonging_to_dsl;
 #[doc(hidden)]
 pub mod boxed_dsl;
 mod distinct_dsl;
+#[doc(hidden)]
+pub mod filter_dsl;
 mod group_by_dsl;
 mod join_dsl;
 #[doc(hidden)]
@@ -33,21 +35,19 @@ pub mod limit_dsl;
 #[doc(hidden)]
 pub mod load_dsl;
 mod locking_dsl;
-#[doc(hidden)]
-pub mod select_dsl;
-#[doc(hidden)]
-pub mod filter_dsl;
-mod save_changes_dsl;
-mod single_value_dsl;
 mod offset_dsl;
 mod order_dsl;
+mod save_changes_dsl;
+#[doc(hidden)]
+pub mod select_dsl;
+mod single_value_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
 #[doc(hidden)]
-pub use self::load_dsl::LoadQuery;
-#[doc(hidden)]
 pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
+#[doc(hidden)]
+pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::SaveChangesDsl;
 
 /// The traits used by `QueryDsl`.
@@ -63,10 +63,10 @@ pub mod methods {
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
-    pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     #[cfg(feature = "with-deprecated")]
     #[allow(deprecated)]
     pub use super::locking_dsl::ForUpdateDsl;
+    pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;

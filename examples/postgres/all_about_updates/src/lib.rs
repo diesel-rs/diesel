@@ -3,11 +3,11 @@ extern crate diesel;
 
 use std::time::SystemTime;
 
-use diesel::prelude::*;
 #[cfg(test)]
 use diesel::debug_query;
 #[cfg(test)]
 use diesel::pg::Pg;
+use diesel::prelude::*;
 
 table! {
     posts {
@@ -47,8 +47,8 @@ fn examine_sql_from_publish_all_posts() {
 }
 
 pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
     use diesel::dsl::now;
+    use posts::dsl::*;
 
     diesel::update(posts)
         .filter(publish_at.lt(now))
@@ -58,8 +58,8 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_publish_pending_posts() {
-    use posts::dsl::*;
     use diesel::dsl::now;
+    use posts::dsl::*;
 
     let query = diesel::update(posts)
         .filter(publish_at.lt(now))

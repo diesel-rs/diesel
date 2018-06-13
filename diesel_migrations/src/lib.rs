@@ -5,9 +5,13 @@
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
-#![cfg_attr(feature = "clippy",
-            warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                 unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
+#![cfg_attr(
+    feature = "clippy",
+    warn(
+        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
+        if_not_else, items_after_statements, used_underscore_binding
+    )
+)]
 //! Provides functions for maintaining database schema.
 //!
 //! A database migration always provides procedures to update the schema, as well as to revert
@@ -75,18 +79,24 @@ extern crate migrations_internals;
 #[allow(unused_imports)]
 #[macro_use]
 extern crate migrations_macros;
-#[doc(hidden)]
-pub use migrations_macros::*;
 #[doc(inline)]
-pub use migrations_internals::Migration;
+pub use migrations_internals::any_pending_migrations;
 #[doc(inline)]
-pub use migrations_internals::MigrationName;
+pub use migrations_internals::find_migrations_directory;
 #[doc(inline)]
-pub use migrations_internals::MigrationConnection;
+pub use migrations_internals::mark_migrations_in_directory;
 #[doc(inline)]
-pub use migrations_internals::MigrationError;
+pub use migrations_internals::migration_from;
 #[doc(inline)]
-pub use migrations_internals::RunMigrationsError;
+pub use migrations_internals::migration_paths_in_directory;
+#[doc(inline)]
+pub use migrations_internals::name;
+#[doc(inline)]
+pub use migrations_internals::revert_latest_migration;
+#[doc(inline)]
+pub use migrations_internals::revert_latest_migration_in_directory;
+#[doc(inline)]
+pub use migrations_internals::revert_migration_with_version;
 #[doc(inline)]
 pub use migrations_internals::run_migration_with_version;
 #[doc(inline)]
@@ -96,29 +106,23 @@ pub use migrations_internals::run_pending_migrations;
 #[doc(inline)]
 pub use migrations_internals::run_pending_migrations_in_directory;
 #[doc(inline)]
-pub use migrations_internals::revert_latest_migration;
-#[doc(inline)]
-pub use migrations_internals::revert_latest_migration_in_directory;
-#[doc(inline)]
-pub use migrations_internals::revert_migration_with_version;
-#[doc(inline)]
-pub use migrations_internals::mark_migrations_in_directory;
-#[doc(inline)]
-pub use migrations_internals::any_pending_migrations;
+pub use migrations_internals::search_for_migrations_directory;
 #[doc(inline)]
 pub use migrations_internals::setup_database;
 #[doc(inline)]
-pub use migrations_internals::migration_paths_in_directory;
-#[doc(inline)]
-pub use migrations_internals::migration_from;
-#[doc(inline)]
-pub use migrations_internals::find_migrations_directory;
-#[doc(inline)]
-pub use migrations_internals::search_for_migrations_directory;
-#[doc(inline)]
 pub use migrations_internals::version_from_path;
 #[doc(inline)]
-pub use migrations_internals::name;
+pub use migrations_internals::Migration;
+#[doc(inline)]
+pub use migrations_internals::MigrationConnection;
+#[doc(inline)]
+pub use migrations_internals::MigrationError;
+#[doc(inline)]
+pub use migrations_internals::MigrationName;
+#[doc(inline)]
+pub use migrations_internals::RunMigrationsError;
+#[doc(hidden)]
+pub use migrations_macros::*;
 
 pub mod connection {
     #[doc(inline)]
@@ -177,12 +181,12 @@ macro_rules! embed_migrations {
         }
     };
 
-    ($migrations_path: expr) => {
+    ($migrations_path:expr) => {
         #[allow(dead_code)]
         mod embedded_migrations {
             #[derive(EmbedMigrations)]
             #[embed_migrations_options(migrations_path=$migrations_path)]
             struct _Dummy;
         }
-    }
+    };
 }

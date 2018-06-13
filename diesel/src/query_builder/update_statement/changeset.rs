@@ -1,6 +1,6 @@
 use backend::Backend;
-use expression::AppearsOnTable;
 use expression::operators::Eq;
+use expression::AppearsOnTable;
 use query_builder::*;
 use query_source::{Column, QuerySource};
 use result::QueryResult;

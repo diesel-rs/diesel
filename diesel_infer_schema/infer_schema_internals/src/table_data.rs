@@ -1,6 +1,6 @@
-use diesel::*;
 use diesel::backend::Backend;
 use diesel::deserialize::FromSqlRow;
+use diesel::*;
 use std::fmt;
 use std::str::FromStr;
 
@@ -89,8 +89,8 @@ mod serde_impls {
 
     use self::serde::de::Visitor;
     use self::serde::{de, Deserialize, Deserializer};
-    use std::fmt;
     use super::TableName;
+    use std::fmt;
 
     impl<'de> Deserialize<'de> for TableName {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

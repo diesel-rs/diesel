@@ -1,8 +1,8 @@
 use migrations_internals::search_for_migrations_directory;
 
-use std::path::{Path, PathBuf};
-use std::error::Error;
 use std::env;
+use std::error::Error;
+use std::path::{Path, PathBuf};
 
 pub fn migration_directory_from_given_path(
     given_path: Option<&str>,
@@ -35,9 +35,9 @@ mod tests {
     extern crate tempdir;
 
     use self::tempdir::TempDir;
+    use super::resolve_migrations_directory;
     use std::fs;
     use std::path::Path;
-    use super::resolve_migrations_directory;
 
     #[test]
     fn migrations_directory_resolved_relative_to_cargo_manifest_dir() {

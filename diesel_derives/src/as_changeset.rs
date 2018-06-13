@@ -1,6 +1,6 @@
+use proc_macro2::Span;
 use quote;
 use syn;
-use proc_macro2::Span;
 
 use diagnostic_shim::*;
 use field::*;

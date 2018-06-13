@@ -1,5 +1,5 @@
-use expression::{AsExpression, Expression, NonAggregate};
 use expression::subselect::Subselect;
+use expression::{AsExpression, Expression, NonAggregate};
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;

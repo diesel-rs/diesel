@@ -64,9 +64,9 @@ mod tests {
     use self::dotenv::dotenv;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    use select;
     use dsl::{now, sql};
     use prelude::*;
+    use select;
     use sql_types::Timestamp;
 
     fn connection() -> PgConnection {

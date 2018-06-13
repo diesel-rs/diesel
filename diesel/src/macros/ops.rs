@@ -5,10 +5,11 @@
 /// automatically implementing `Add` and other traits from `std::ops`, under its
 /// orphan rules.
 macro_rules! operator_allowed {
-    ($tpe: ty, $op: ident, $fn_name: ident) => {
-        impl<Rhs> ::std::ops::$op<Rhs> for $tpe where
+    ($tpe:ty, $op:ident, $fn_name:ident) => {
+        impl<Rhs> ::std::ops::$op<Rhs> for $tpe
+        where
             Rhs: $crate::expression::AsExpression<
-                <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs
+                <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,
             >,
         {
             type Output = $crate::expression::ops::$op<Self, Rhs::Expression>;
@@ -17,7 +18,7 @@ macro_rules! operator_allowed {
                 $crate::expression::ops::$op::new(self, rhs.as_expression())
             }
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -26,12 +27,12 @@ macro_rules! operator_allowed {
 /// type. Unfortunately, Rust disallows us from automatically implementing `Add`
 /// for types which implement `Expression`, under its orphan rules.
 macro_rules! numeric_expr {
-    ($tpe: ty) => {
+    ($tpe:ty) => {
         operator_allowed!($tpe, Add, add);
         operator_allowed!($tpe, Sub, sub);
         operator_allowed!($tpe, Div, div);
         operator_allowed!($tpe, Mul, mul);
-    }
+    };
 }
 
 #[macro_export]
@@ -67,10 +68,10 @@ macro_rules! __diesel_generate_ops_impls_if_numeric {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! date_time_expr {
-    ($tpe: ty) => {
+    ($tpe:ty) => {
         operator_allowed!($tpe, Add, add);
         operator_allowed!($tpe, Sub, sub);
-    }
+    };
 }
 
 #[macro_export]

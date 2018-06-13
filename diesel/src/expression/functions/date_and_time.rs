@@ -48,9 +48,9 @@ sql_function! {
 }
 
 #[cfg(feature = "postgres")]
-use expression::AsExpression;
-#[cfg(feature = "postgres")]
 use expression::coerce::Coerce;
+#[cfg(feature = "postgres")]
+use expression::AsExpression;
 
 #[cfg(feature = "postgres")]
 impl AsExpression<Timestamptz> for now {

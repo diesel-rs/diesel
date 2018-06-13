@@ -1,8 +1,8 @@
 use diesel::connection::SimpleConnection;
 use diesel::migration::*;
 
-use std::path::{Path, PathBuf};
 use std::fmt;
+use std::path::{Path, PathBuf};
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]

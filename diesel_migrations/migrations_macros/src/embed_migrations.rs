@@ -1,8 +1,8 @@
-use syn;
 use quote;
+use syn;
 
-use migrations_internals::{migration_paths_in_directory, version_from_path};
 use migrations::migration_directory_from_given_path;
+use migrations_internals::{migration_paths_in_directory, version_from_path};
 use std::error::Error;
 use std::path::Path;
 

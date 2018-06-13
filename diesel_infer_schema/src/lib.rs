@@ -5,11 +5,17 @@
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
-#![cfg_attr(feature = "clippy",
-            warn(wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names,
-                 unicode_not_nfc, if_not_else, items_after_statements, used_underscore_binding))]
-
-#![deprecated(since = "1.3.0", note = "Diesel CLI can be configured to automatically run `print-schema` after running migrations. See diesel.rs/guides/configuring-diesel-cli for details.")]
+#![cfg_attr(
+    feature = "clippy",
+    warn(
+        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
+        if_not_else, items_after_statements, used_underscore_binding
+    )
+)]
+#![deprecated(
+    since = "1.3.0",
+    note = "Diesel CLI can be configured to automatically run `print-schema` after running migrations. See diesel.rs/guides/configuring-diesel-cli for details."
+)]
 
 #[cfg_attr(feature = "clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
@@ -33,7 +39,7 @@ pub use infer_schema_macros::*;
 /// automatically be placed at the end of the name. For example, a column called
 /// `type` will be referenced as `type_` in the generated module.
 macro_rules! infer_schema {
-    ($database_url: expr) => {
+    ($database_url:expr) => {
         mod __diesel_infer_schema {
             #[derive(InferSchema)]
             #[infer_schema_options(database_url=$database_url)]
@@ -42,7 +48,7 @@ macro_rules! infer_schema {
         pub use self::__diesel_infer_schema::*;
     };
 
-    ($database_url: expr, $schema_name: expr) => {
+    ($database_url:expr, $schema_name:expr) => {
         mod __diesel_infer_schema {
             #[derive(InferSchema)]
             #[infer_schema_options(database_url=$database_url, schema_name=$schema_name)]
@@ -70,9 +76,9 @@ macro_rules! infer_schema {
 /// unexpectedly for a type listed in our docs.)
 ///
 macro_rules! infer_table_from_schema {
-    ($database_url: expr, $table_name: expr) => {
+    ($database_url:expr, $table_name:expr) => {
         #[derive(InferTableFromSchema)]
         #[infer_table_from_schema_options(database_url=$database_url, table_name=$table_name)]
         struct __DieselInferTableFromSchema;
-    }
+    };
 }

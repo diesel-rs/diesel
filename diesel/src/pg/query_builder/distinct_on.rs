@@ -1,8 +1,8 @@
-use pg::Pg;
-use query_dsl::methods::DistinctOnDsl;
-use query_builder::{AstPass, QueryFragment, SelectQuery, SelectStatement};
-use result::QueryResult;
 use expression::SelectableExpression;
+use pg::Pg;
+use query_builder::{AstPass, QueryFragment, SelectQuery, SelectStatement};
+use query_dsl::methods::DistinctOnDsl;
+use result::QueryResult;
 
 /// Represents `DISTINCT ON (...)`
 #[derive(Debug, Clone, Copy, QueryId)]

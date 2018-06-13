@@ -5,9 +5,9 @@ use std::os::raw as libc;
 use std::ptr;
 use std::sync::{Once, ONCE_INIT};
 
-use result::{ConnectionError, ConnectionResult, QueryResult};
-use super::url::ConnectionOptions;
 use super::stmt::Statement;
+use super::url::ConnectionOptions;
+use result::{ConnectionError, ConnectionResult, QueryResult};
 use util::NonNull;
 
 pub struct RawConnection(NonNull<ffi::MYSQL>);
