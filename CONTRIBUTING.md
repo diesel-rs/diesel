@@ -131,12 +131,10 @@ To run rustfmt tests locally:
    to the nightly version specified in Diesel's [.travis.yml](./.travis.yml)
    (see above).
 
-2. Install the nightly version of rustfmt used in
-   Diesel's continuous integration.
-   Look for and run the line from [.travis.yml](./.travis.yml) that looks like
+2. Install rustfmt by running
 
    ```
-   cargo install rustfmt-nightly --vers x.x.x
+   rustup component add rustfmt-preview
    ```
 
 3. Run rustfmt using cargo from the root of your diesel repo.
