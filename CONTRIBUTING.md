@@ -128,8 +128,8 @@ We follow the [Rust Style Guide](https://github.com/rust-lang-nursery/fmt-rfcs/b
 To run rustfmt tests locally:
 
 1. Use rustup to set rust toolchain
-   to the nightly version specified in Diesel's [.travis.yml](./.travis.yml)
-   (see above).
+   to the version specified in the [rust-toolchain](./rust-toolchain)
+   file.
 
 2. Install rustfmt by running
 
