@@ -1,6 +1,7 @@
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::{select, RunQueryDsl};
+use std::Path::Path;
 use support::{database, project};
 
 #[test]
@@ -353,6 +354,37 @@ fn migrations_can_be_run_with_no_config_file() {
         .folder("migrations")
         .build();
     let db = database(&p.database_url());
+
+    p.command("database").arg("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+#[test]
+fn migrations_can_be_run_with_no_cargo_toml() {
+    let p = project("migration_run_no_cargo_toml")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    let cargo_toml_path = Path::new("Cargo.toml");
+    p.delete_single_file(&cargo_toml_path);
 
     p.command("database").arg("setup").run();
 
