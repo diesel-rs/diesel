@@ -1,7 +1,7 @@
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::{select, RunQueryDsl};
-use std::Path::Path;
+use std::path::Path;
 use support::{database, project};
 
 #[test]
