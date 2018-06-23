@@ -6,7 +6,7 @@ use std::io::Read;
 use std::path::PathBuf;
 use toml;
 
-use super::{find_project_root, handle_error};
+use super::find_project_root;
 use print_schema;
 
 #[derive(Deserialize, Default)]
@@ -22,11 +22,7 @@ impl Config {
             .value_of("CONFIG_FILE")
             .map(PathBuf::from)
             .or_else(|| env::var_os("DIESEL_CONFIG_FILE").map(PathBuf::from))
-            .unwrap_or_else(|| {
-                find_project_root()
-                    .unwrap_or_else(handle_error)
-                    .join("diesel.toml")
-            })
+            .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }
 
     pub fn read(matches: &ArgMatches) -> Result<Self, Box<Error>> {
