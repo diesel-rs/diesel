@@ -125,8 +125,7 @@ macro_rules! __diesel_column {
 /// ```
 ///
 /// You may also specify a primary key if it's called something other than `id`.
-/// Tables with no primary key, or a composite primary key containing more than 5
-/// columns are not supported.
+/// Tables with no primary key are not supported.
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
