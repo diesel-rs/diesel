@@ -89,6 +89,11 @@ impl Project {
             .collect()
     }
 
+    pub fn delete_single_file<P: AsRef<Path>>(&self, path: P) {
+        let file = self.directory.path().join(path);
+        fs::remove_file(file).unwrap();
+    }
+
     #[cfg(any(feature = "postgres", feature = "mysql"))]
     fn database_url_from_env(&self, var: &str) -> url::Url {
         use self::dotenv::dotenv;
