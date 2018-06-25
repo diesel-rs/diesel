@@ -53,7 +53,7 @@ fn usecs_to_duration(usecs_passed: u64) -> Duration {
 
 fn duration_to_usecs(duration: Duration) -> u64 {
     let seconds = duration.as_secs() * USEC_PER_SEC;
-    let subseconds = duration.subsec_nanos() / NANO_PER_USEC;
+    let subseconds = duration.subsec_micros();
     seconds + u64::from(subseconds)
 }
 
