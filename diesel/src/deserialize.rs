@@ -25,7 +25,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// When this trait is derived, it will assume that the order of fields on your
 /// struct match the order of the fields in the query. This means that field
 /// order is significant if you are using `#[derive(Queryable)]`. Field name has
-/// no affect.
+/// no effect.
 ///
 /// # Examples
 ///
