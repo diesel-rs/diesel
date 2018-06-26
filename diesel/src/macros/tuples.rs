@@ -1,4 +1,5 @@
 #[macro_export]
+#[doc(hidden)]
 macro_rules! __diesel_for_each_tuple {
     ($callback:ident) => {
         $callback! {
