@@ -94,9 +94,7 @@ macro_rules! __diesel_column {
 /// Specifies that a table exists, and what columns it has. This will create a
 /// new public module, with the same name, as the name of the table. In this
 /// module, you'll find a unit struct named `table`, and a unit struct with the
-/// names of each of the columns. In the definition, you can also specify an
-/// additional set of columns which exist, but should not be selected by default
-/// (for example, for things like full text search)
+/// names of each of the columns.
 ///
 /// By default this allows a maximum of 32 columns per table.
 /// You can increase this limit to 64 by enabling the `64-column-tables` feature.
