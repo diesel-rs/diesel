@@ -4,7 +4,7 @@
 extern crate chrono;
 
 use self::chrono::naive::MAX_DATE;
-use self::chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use std::io::Write;
 
 use super::{PgDate, PgTime, PgTimestamp};
@@ -61,6 +61,13 @@ impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
+    }
+}
+
+impl FromSql<Timestamptz, Pg> for DateTime<Local> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
+        Ok(Local::from_utc_datetime(&Local, &naive_date_time))
     }
 }
 
