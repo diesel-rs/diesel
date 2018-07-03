@@ -1020,24 +1020,31 @@ macro_rules! joinable_inner {
 /// ```
 #[macro_export]
 macro_rules! allow_tables_to_appear_in_same_query {
-    ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
+    ($($table_mod:ident),* $(,)*) => {
+        allow_types_to_appear_in_same_query!($($table_mod::table,)*);
+    };
+}
+
+#[macro_export]
+macro_rules! allow_types_to_appear_in_same_query {
+    ($left_ty:ty, $($right_ty:ty),+ $(,)*) => {
         $(
-            impl $crate::query_source::AppearsInFromClause<$left_mod::table>
-                for $right_mod::table
+            impl $crate::query_source::AppearsInFromClause<$left_ty>
+                for $right_ty
             {
                 type Count = $crate::query_source::Never;
             }
 
-            impl $crate::query_source::AppearsInFromClause<$right_mod::table>
-                for $left_mod::table
+            impl $crate::query_source::AppearsInFromClause<$right_ty>
+                for $left_ty
             {
                 type Count = $crate::query_source::Never;
             }
         )+
-        allow_tables_to_appear_in_same_query!($($right_mod,)+);
+        allow_types_to_appear_in_same_query!($($right_ty,)+);
     };
 
-    ($last_table:ident,) => {};
+    ($last_ty:ty,) => {};
 
     () => {};
 }
@@ -1068,6 +1075,9 @@ macro_rules! not_none {
 // Utility macros which don't call any others need to come first.
 #[macro_use]
 mod internal;
+#[macro_use]
+#[cfg(diesel_experimental)]
+mod aliasing;
 #[macro_use]
 mod query_id;
 #[macro_use]

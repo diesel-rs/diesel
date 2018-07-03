@@ -22,6 +22,8 @@ use query_builder::locking_clause as lock;
 use query_source::{joins, Table};
 use result::{first_or_not_found, QueryResult};
 
+#[cfg(diesel_experimental)]
+mod aliased_dsl;
 mod belonging_to_dsl;
 #[doc(hidden)]
 pub mod boxed_dsl;
@@ -57,6 +59,8 @@ pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 /// However, generic code may need to include a where clause that references
 /// these traits.
 pub mod methods {
+    #[cfg(diesel_experimental)]
+    pub use super::aliased_dsl::AliasedDsl;
     pub use super::boxed_dsl::BoxedDsl;
     pub use super::distinct_dsl::*;
     #[doc(inline)]
@@ -1044,6 +1048,19 @@ pub trait QueryDsl: Sized {
         Self: methods::SingleValueDsl,
     {
         methods::SingleValueDsl::single_value(self)
+    }
+
+    #[cfg(diesel_experimental)]
+    /// Aliases the query, allowing tables to appear more than once in the same query or joining to
+    /// a subselect
+    ///
+    /// FIXME: Examples for joining to the same table twice, joining to subselects, self
+    /// referential subselects
+    fn aliased<T>(self, alias: T) -> Aliased<Self, T>
+    where
+        Self: methods::AliasedDsl<T>,
+    {
+        methods::AliasedDsl::aliased(self, alias)
     }
 }
 

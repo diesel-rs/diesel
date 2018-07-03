@@ -652,6 +652,34 @@ fn selecting_crazy_nested_joins() {
     assert_eq!(Ok(expected), data);
 }
 
+#[test]
+#[cfg(diesel_experimental)]
+fn joining_to_aliased_table() {
+    use diesel::sql_types::Bool;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", &connection);
+    let tess = find_user_by_name("Tess", &connection);
+
+    diesel_define_alias!(users2);
+    allow_types_to_appear_in_same_query!(users::table, users2);
+
+    let u2 = users::table.aliased(users2);
+    let (u2_id, ..) = u2.selection();
+    let all_users_twice = users::table.inner_join(u2.on(true.into_sql::<Bool>()))
+        .order((users::id, u2_id))
+        .load::<(User, User)>(&connection);
+
+    let expected = vec![
+        (sean.clone(), sean.clone()),
+        (sean.clone(), tess.clone()),
+        (tess.clone(), sean.clone()),
+        (tess.clone(), tess.clone()),
+    ];
+    assert_eq!(Ok(expected), all_users_twice);
+}
+
 fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
     let connection = connection_with_sean_and_tess_in_users_table();
 

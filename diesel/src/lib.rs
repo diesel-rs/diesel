@@ -319,6 +319,10 @@ pub mod helper_types {
 
     /// Represents the return type of `.single_value()`
     pub type SingleValue<Source> = <Source as SingleValueDsl>::Output;
+
+    /// Represents the return type of `.aliased(alias)`
+    #[cfg(diesel_experimental)]
+    pub type Aliased<Source, Alias> = <Source as AliasedDsl<Alias>>::Output;
 }
 
 pub mod prelude {

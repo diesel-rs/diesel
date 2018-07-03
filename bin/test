@@ -2,6 +2,7 @@
 set -e
 
 CLIPPY="lint"
+export RUSTFLAGS="$RUSTFLAGS --cfg diesel_experimental"
 
 if [ "$1" = "integration" ]; then
   if [ "$2" ]; then

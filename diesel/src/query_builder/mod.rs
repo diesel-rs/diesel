@@ -9,6 +9,8 @@ mod query_id;
 #[macro_use]
 mod clause_macro;
 
+#[cfg(diesel_experimental)]
+mod aliasing;
 mod ast_pass;
 pub mod bind_collector;
 mod debug_query;
@@ -31,6 +33,8 @@ mod sql_query;
 mod update_statement;
 mod where_clause;
 
+#[cfg(diesel_experimental)]
+pub use self::aliasing::Aliased;
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
