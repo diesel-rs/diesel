@@ -29,6 +29,31 @@ impl<'a> fmt::Display for MigrationName<'a> {
     }
 }
 
+#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy)]
+pub struct MigrationFileName<'a> {
+    pub migration: &'a Migration,
+    pub sql_file: &'a str,
+}
+
+pub fn file_name<'a>(migration: &'a Migration, sql_file: &'a str) -> MigrationFileName<'a> {
+    MigrationFileName {
+        migration,
+        sql_file,
+    }
+}
+
+impl<'a> fmt::Display for MigrationFileName<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let fpath = match self.migration.file_path() {
+            None => return Err(fmt::Error),
+            Some(v) => v.join(self.sql_file),
+        };
+        f.write_str(fpath.to_str().unwrap())?;
+        Ok(())
+    }
+}
+
 pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
     match ::barrel::integrations::diesel::migration_from(&path) {

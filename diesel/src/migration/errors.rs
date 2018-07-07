@@ -105,7 +105,7 @@ impl Error for RunMigrationsError {
 
 impl fmt::Display for RunMigrationsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
+        write!(f, "Failed with: {}", self.description())
     }
 }
 
