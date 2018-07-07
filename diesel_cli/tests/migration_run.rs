@@ -105,7 +105,47 @@ fn empty_migrations_are_not_valid() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result.stdout().contains("empty migration"));
+    assert!(
+        result
+            .stdout()
+            .contains("Failed with: Attempted to run an empty migration.")
+    );
+}
+
+#[test]
+fn error_migrations_fails() {
+    let p = project("run_error_migrations_fails")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration(
+        "run_error_migrations_fails",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY}",
+        "DROP TABLE users",
+    );
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(!result.is_success());
+    assert!(result.stdout().contains("Failed with: "));
+}
+
+#[test]
+fn output_contains_path_to_migration_script() {
+    let p = project("output_contains_path_to_migration_script")
+        .folder("migrations")
+        .build();
+
+    p.command("setup").run();
+
+    p.create_migration("output_contains_path_to_migration_script", "", "");
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(!result.is_success());
+    assert!(result.stdout().contains("up.sql"));
 }
 
 #[test]
