@@ -667,7 +667,8 @@ fn joining_to_aliased_table() {
 
     let u2 = users::table.aliased(users2);
     let (u2_id, ..) = u2.selection();
-    let all_users_twice = users::table.inner_join(u2.on(true.into_sql::<Bool>()))
+    let all_users_twice = users::table
+        .inner_join(u2.on(true.into_sql::<Bool>()))
         .order((users::id, u2_id))
         .load::<(User, User)>(&connection);
 

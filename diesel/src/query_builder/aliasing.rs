@@ -1,8 +1,8 @@
 use backend::Backend;
-use expression::{AppearsOnTable, Expression, SelectableExpression, NonAggregate};
-use query_source::{AppearsInFromClause, Column, QuerySource, Once, Never};
-use query_source::joins::{Join, JoinOn, Inner, LeftOuter};
+use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use query_builder::{AstPass, QueryFragment, SelectStatement};
+use query_source::joins::{Inner, Join, JoinOn, LeftOuter};
+use query_source::{AppearsInFromClause, Column, Never, Once, QuerySource};
 use result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -79,7 +79,9 @@ where
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.query.default_selection().from_aliased_table(self.alias)
+        self.query
+            .default_selection()
+            .from_aliased_table(self.alias)
     }
 }
 
@@ -145,7 +147,8 @@ impl<Col, Alias> ColumnFromAliasedTable<Col, Alias> {
     }
 }
 
-impl<Col, Query, Alias> SelectableExpression<Aliased<Query, Alias>> for ColumnFromAliasedTable<Col, Alias>
+impl<Col, Query, Alias> SelectableExpression<Aliased<Query, Alias>>
+    for ColumnFromAliasedTable<Col, Alias>
 where
     Self: AppearsOnTable<Aliased<Query, Alias>>,
     Col: SelectableExpression<Query>,
@@ -155,35 +158,39 @@ where
 impl<Col, Query, Alias> AppearsOnTable<Query> for ColumnFromAliasedTable<Col, Alias>
 where
     Self: Expression,
-    Query: AppearsInFromClause<Alias, Count=Once>,
+    Query: AppearsInFromClause<Alias, Count = Once>,
 {
 }
 
-impl<Left, Right, Col, Alias> SelectableExpression<
-    Join<Left, Right, LeftOuter>,
-> for ColumnFromAliasedTable<Col, Alias> where
+impl<Left, Right, Col, Alias> SelectableExpression<Join<Left, Right, LeftOuter>>
+    for ColumnFromAliasedTable<Col, Alias>
+where
     Self: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-    Left: AppearsInFromClause<Alias, Count=Once>,
-    Right: AppearsInFromClause<Alias, Count=Never>,
+    Left: AppearsInFromClause<Alias, Count = Once>,
+    Right: AppearsInFromClause<Alias, Count = Never>,
 {
 }
 
-impl<Left, Right, Col, Alias> SelectableExpression<
-    Join<Left, Right, Inner>,
-> for ColumnFromAliasedTable<Col, Alias> where
+impl<Left, Right, Col, Alias> SelectableExpression<Join<Left, Right, Inner>>
+    for ColumnFromAliasedTable<Col, Alias>
+where
     Self: AppearsOnTable<Join<Left, Right, Inner>>,
-    Join<Left, Right, Inner>: AppearsInFromClause<Alias, Count=Once>,
+    Join<Left, Right, Inner>: AppearsInFromClause<Alias, Count = Once>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<Join, On, Col, Alias> SelectableExpression<JoinOn<Join, On>> for ColumnFromAliasedTable<Col, Alias> where
+impl<Join, On, Col, Alias> SelectableExpression<JoinOn<Join, On>>
+    for ColumnFromAliasedTable<Col, Alias>
+where
     Self: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<From, Col, Alias> SelectableExpression<SelectStatement<From>> for ColumnFromAliasedTable<Col, Alias> where
+impl<From, Col, Alias> SelectableExpression<SelectStatement<From>>
+    for ColumnFromAliasedTable<Col, Alias>
+where
     Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>,
 {
 }
