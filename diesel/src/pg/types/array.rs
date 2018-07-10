@@ -34,13 +34,10 @@ where
         }
 
         let num_elements = try!(bytes.read_i32::<NetworkEndian>());
-        let lower_bound = try!(bytes.read_i32::<NetworkEndian>());
+        let _lower_bound = try!(bytes.read_i32::<NetworkEndian>());
 
         if num_dimensions != 1 {
             return Err("multi-dimensional arrays are not supported".into());
-        }
-        if lower_bound != 1 {
-            return Err("lower bound must be 1".into());
         }
 
         (0..num_elements)
