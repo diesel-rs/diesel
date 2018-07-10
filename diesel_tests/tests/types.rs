@@ -612,6 +612,23 @@ fn pg_array_from_sql() {
     );
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn pg_array_from_sql_non_one_lower_bound() {
+    assert_eq!(
+        vec![true, false, true],
+        query_single_value::<Array<Bool>, Vec<bool>>("'[0:2]={t, f, t}'::bool[]")
+    );
+    assert_eq!(
+        vec![true, false, true],
+        query_single_value::<Array<Bool>, Vec<bool>>("'[1:3]={t, f, t}'::bool[]")
+    );
+    assert_eq!(
+        vec![true, false, true],
+        query_single_value::<Array<Bool>, Vec<bool>>("'[2:4]={t, f, t}'::bool[]")
+    );
+}
+
 #[test]
 #[cfg(feature = "postgres")]
 fn to_sql_array() {
