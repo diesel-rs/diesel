@@ -1,3 +1,6 @@
+// FIXME: https://github.com/rust-lang-nursery/rust-clippy/issues/2910
+#![cfg_attr(feature = "clippy", allow(useless_attribute))]
+
 use clap::ArgMatches;
 use std::env;
 use std::error::Error;
