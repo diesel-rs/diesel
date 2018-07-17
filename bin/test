@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-CLIPPY="lint"
-
 if [ "$1" = "integration" ]; then
   if [ "$2" ]; then
     BACKEND="$2"
@@ -14,32 +12,32 @@ if [ "$1" = "integration" ]; then
   if [ "$BACKEND" = "mysql" ]; then
     export RUST_TEST_THREADS=1
   fi
-  (cd diesel_tests && cargo test --features "$CLIPPY $BACKEND" --no-default-features $*)
+  (cd diesel_tests && cargo test --features "$BACKEND" --no-default-features $*)
 elif [ "$1" = "compile" ]; then
   shift
   (cd diesel_compile_tests && cargo test $*)
 else
-  (cd diesel && cargo test --no-default-features --features "$CLIPPY extras sqlite postgres mysql" $*)
+  (cd diesel && cargo test --no-default-features --features "extras sqlite postgres mysql" $*)
 
-  (cd diesel_cli && cargo test --features "$CLIPPY sqlite" --no-default-features $*)
-  (cd diesel_migrations && cargo test --features "$CLIPPY sqlite" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY diesel/sqlite" $*)
-  (cd diesel_tests && cargo test --features "$CLIPPY sqlite" --no-default-features $*)
+  (cd diesel_cli && cargo test --features "sqlite" --no-default-features $*)
+  (cd diesel_migrations && cargo test --features "sqlite" $*)
+  (cd diesel_derives && cargo test --features "diesel/sqlite" $*)
+  (cd diesel_tests && cargo test --features "sqlite" --no-default-features $*)
 
-  (cd diesel_migrations && cargo test --features "$CLIPPY postgres" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY diesel/postgres" $*)
-  (cd diesel_cli && cargo test --features "$CLIPPY postgres" --no-default-features $*)
-  (cd diesel_tests && cargo test --features "$CLIPPY postgres" --no-default-features $*)
+  (cd diesel_migrations && cargo test --features "postgres" $*)
+  (cd diesel_derives && cargo test --features "diesel/postgres" $*)
+  (cd diesel_cli && cargo test --features "postgres" --no-default-features $*)
+  (cd diesel_tests && cargo test --features "postgres" --no-default-features $*)
 
   export RUST_TEST_THREADS=1
-  (cd diesel_migrations && cargo test --features "$CLIPPY mysql" $*)
-  (cd diesel_derives && cargo test --features "$CLIPPY diesel/mysql" $*)
-  (cd diesel_cli && cargo test --features "$CLIPPY mysql" --no-default-features $*)
-  (cd diesel_tests && cargo test --features "$CLIPPY mysql" --no-default-features $*)
+  (cd diesel_migrations && cargo test --features "mysql" $*)
+  (cd diesel_derives && cargo test --features "diesel/mysql" $*)
+  (cd diesel_cli && cargo test --features "mysql" --no-default-features $*)
+  (cd diesel_tests && cargo test --features "mysql" --no-default-features $*)
   unset RUST_TEST_THREADS
 
   (cd diesel_compile_tests && cargo test $*)
-  (cd diesel_migrations/migrations_internals && cargo test --features "$CLIPPY" $*)
-  (cd diesel_migrations/migrations_macros && cargo test --features "$CLIPPY" $*)
+  (cd diesel_migrations/migrations_internals && cargo test $*)
+  (cd diesel_migrations/migrations_macros && cargo test $*)
   (cd examples && ./test_all $*)
 fi;

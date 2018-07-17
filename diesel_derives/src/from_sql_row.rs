@@ -1,10 +1,10 @@
-use quote::Tokens;
+use proc_macro2::*;
 use syn;
 
 use meta::*;
 use util::*;
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<Tokens, Diagnostic> {
+pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let flags =
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
@@ -26,10 +26,10 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<Tokens, Diagnostic> {
 
     let dummy_mod = format!(
         "_impl_from_sql_row_for_{}",
-        item.ident.as_ref().to_lowercase()
-    ).into();
+        item.ident,
+    ).to_lowercase();
     Ok(wrap_in_dummy_mod(
-        dummy_mod,
+        Ident::new(&dummy_mod, Span::call_site()),
         quote! {
             use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable};
 

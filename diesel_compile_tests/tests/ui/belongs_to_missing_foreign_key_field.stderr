@@ -1,26 +1,14 @@
 error: No field with column name bar_id
- --> <macro expansion>:1:1
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:6:10
   |
-1 | #[belongs_to(Bar)]
-  | ^
+6 | #[derive(Associations)]
+  |          ^^^^^^^^^^^^
 
 error: No field with column name bar_id
- --> <macro expansion>:1:1
-  |
-1 | #[belongs_to(Bar, foreign_key = "bar_id")]
-  | ^
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:11:10
+   |
+11 | #[derive(Associations)]
+   |          ^^^^^^^^^^^^
 
-error: No field with column name bar_id
- --> <macro expansion>:1:1
-  |
-1 | #[belongs_to(Bar)]
-  | ^
-
-error: No field with column name bar_id
- --> <macro expansion>:1:1
-  |
-1 | #[belongs_to(Bar, foreign_key = "bar_id")]
-  | ^
-
-error: aborting due to 4 previous errors
+error: aborting due to 2 previous errors
 

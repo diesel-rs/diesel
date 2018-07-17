@@ -8,7 +8,6 @@ documentation = "http://docs.diesel.rs"
 homepage = "http://diesel.rs"
 
 [dependencies]
-clippy = { optional = true, version = "=0.0.195" }
 migrations_internals = "~1.3.0"
 syn = { version = "0.11.4", features = ["aster"] }
 quote = "0.3.12"
@@ -21,4 +20,3 @@ proc-macro = true
 
 [features]
 default = []
-lint = ["clippy"]

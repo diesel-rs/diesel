@@ -1,4 +1,4 @@
-use quote;
+use proc_macro2;
 use syn;
 
 use diagnostic_shim::*;
@@ -6,7 +6,7 @@ use meta::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
     let tokens = MetaItem::all_with_name(&item.attrs, "belongs_to")
         .into_iter()
@@ -30,15 +30,15 @@ fn derive_belongs_to(
     model: &Model,
     generics: &syn::Generics,
     meta: MetaItem,
-) -> Result<quote::Tokens, Diagnostic> {
+) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let AssociationOptions {
         parent_struct,
         foreign_key,
     } = AssociationOptions::from_meta(meta)?;
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let foreign_key_field = model.find_column(foreign_key)?;
-    let struct_name = model.name;
+    let foreign_key_field = model.find_column(&foreign_key)?;
+    let struct_name = &model.name;
     let foreign_key_access = foreign_key_field.name.access();
     let foreign_key_ty = inner_of_option_ty(&foreign_key_field.ty);
     let table_name = model.table_name();
@@ -86,7 +86,7 @@ impl AssociationOptions {
         let foreign_key = meta.nested_item("foreign_key")
             .ok()
             .map(|i| i.ident_value())
-            .unwrap_or_else(|| Ok(infer_foreign_key(parent_struct)))?;
+            .unwrap_or_else(|| Ok(infer_foreign_key(&parent_struct)))?;
 
         let unrecognized_options = meta.nested()?.skip(1).filter(|n| n.name() != "foreign_key");
         for ignored in unrecognized_options {
@@ -103,7 +103,7 @@ impl AssociationOptions {
     }
 }
 
-fn infer_foreign_key(name: syn::Ident) -> syn::Ident {
-    let snake_case = camel_to_snake(name.as_ref());
+fn infer_foreign_key(name: &syn::Ident) -> syn::Ident {
+    let snake_case = camel_to_snake(&name.to_string());
     syn::Ident::new(&format!("{}_id", snake_case), name.span())
 }

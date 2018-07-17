@@ -60,7 +60,7 @@ impl UsesInformationSchema for Mysql {
     }
 }
 
-#[cfg_attr(feature = "clippy", allow(module_inception))]
+#[cfg_attr(feature = "cargo-clippy", allow(module_inception))]
 mod information_schema {
     table! {
         information_schema.tables (table_schema, table_name) {
@@ -195,7 +195,7 @@ where
     Ok(table_names)
 }
 
-#[cfg_attr(feature = "clippy", allow(similar_names))]
+#[cfg_attr(feature = "cargo-clippy", allow(similar_names))]
 #[cfg(feature = "postgres")]
 pub fn load_foreign_key_constraints<Conn>(
     connection: &Conn,

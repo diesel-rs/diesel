@@ -1,26 +1,14 @@
 error: `sql_type` must be in the form `sql_type = "value"`
- --> <macro expansion>:1:1
+ --> $DIR/as_expression_bad_sql_type.rs:4:10
   |
-1 | #[sql_type(Foo)]
-  | ^
-
-error: `sql_type` must be in the form `sql_type = "value"`
- --> <macro expansion>:1:1
-  |
-1 | #[sql_type]
-  | ^
+4 | #[derive(AsExpression)]
+  |          ^^^^^^^^^^^^
 
 error: Invalid Rust type
- --> <macro expansion>:1:1
+ --> $DIR/as_expression_bad_sql_type.rs:4:10
   |
-1 | #[sql_type = "@%&&*"]
-  | ^
+4 | #[derive(AsExpression)]
+  |          ^^^^^^^^^^^^
 
-error: Invalid Rust type
- --> <macro expansion>:1:1
-  |
-1 | #[sql_type = "1omg"]
-  | ^
-
-error: aborting due to 4 previous errors
+error: aborting due to 2 previous errors
 

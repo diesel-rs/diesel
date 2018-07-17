@@ -1,13 +1,13 @@
-use quote;
+use proc_macro2;
 use syn;
 
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
 
-    let struct_name = item.ident;
+    let struct_name = &item.ident;
     let field_ty = model.fields().iter().map(|f| &f.ty).collect::<Vec<_>>();
     let field_ty = &field_ty;
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {

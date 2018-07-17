@@ -11,28 +11,28 @@ error: No field with column name id
    |          ^^^^^^^^^^^^
 
 error: No field with column name bar
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(bar)]
-  | ^
+  --> $DIR/identifiable_missing_pk_field.rs:22:10
+   |
+22 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
 
 error: No field with column name baz
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(baz)]
-  | ^
+  --> $DIR/identifiable_missing_pk_field.rs:28:10
+   |
+28 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
 
 error: No field with column name bar
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(foo, bar)]
-  | ^
+  --> $DIR/identifiable_missing_pk_field.rs:36:10
+   |
+36 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
 
 error: No field with column name bar
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(foo, bar)]
-  | ^
+  --> $DIR/identifiable_missing_pk_field.rs:43:10
+   |
+43 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
 
 error: aborting due to 6 previous errors
 

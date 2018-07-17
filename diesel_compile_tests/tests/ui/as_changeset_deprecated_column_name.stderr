@@ -1,8 +1,8 @@
 warning: The form `table_name(value)` is deprecated. Use `table_name = "value"` instead
- --> <macro expansion>:1:1
-  |
-1 | #[table_name(users)]
-  | ^
+  --> $DIR/as_changeset_deprecated_column_name.rs:11:10
+   |
+11 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 warning: The form `column_name(value)` is deprecated. Use `column_name = "value"` instead
   --> $DIR/as_changeset_deprecated_column_name.rs:15:7

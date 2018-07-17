@@ -34,7 +34,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
 }
 
 impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
-    #[cfg_attr(feature = "clippy", allow(too_many_arguments))]
+    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
     pub fn new(
         select: Box<QueryFragment<DB> + 'a>,
         from: QS,

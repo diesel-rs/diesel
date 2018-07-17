@@ -29,7 +29,6 @@ unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
 sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
 mysql = ["diesel/mysql", "diesel_infer_schema/mysql"]
-lint = ["diesel/lint"]
 
 [[test]]
 name = "integration_tests"

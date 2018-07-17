@@ -1,38 +1,38 @@
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options(treat_none_as_null("true"))]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:11:10
+   |
+11 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options(treat_none_as_null)]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:19:10
+   |
+19 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options(treat_none_as_null = "foo")]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:27:10
+   |
+27 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: Missing required option treat_none_as_null
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options()]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:35:10
+   |
+35 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: `changeset_options` must be in the form `changeset_options(...)`
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options = "treat_none_as_null"]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:43:10
+   |
+43 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: `changeset_options` must be in the form `changeset_options(...)`
- --> <macro expansion>:1:1
-  |
-1 | #[changeset_options]
-  | ^
+  --> $DIR/as_changeset_bad_options.rs:51:10
+   |
+51 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: aborting due to 6 previous errors
 

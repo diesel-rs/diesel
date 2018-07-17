@@ -1,12 +1,12 @@
 use proc_macro2::Span;
-use quote;
+use proc_macro2;
 use syn;
 
 use field::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
 
     if model.fields().is_empty() {
@@ -18,8 +18,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
             )));
     }
 
-    let table_name = model.table_name();
-    let struct_name = item.ident;
+    let table_name = &model.table_name();
+    let struct_name = &item.ident;
 
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
     let mut impl_generics = item.generics.clone();
@@ -85,7 +85,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     ))
 }
 
-fn field_ty(field: &Field, table_name: syn::Ident, lifetime: Option<quote::Tokens>) -> syn::Type {
+fn field_ty(field: &Field, table_name: &syn::Ident, lifetime: Option<proc_macro2::TokenStream>) -> syn::Type {
     if field.has_flag("embed") {
         let field_ty = &field.ty;
         parse_quote!(#lifetime #field_ty)
@@ -101,7 +101,7 @@ fn field_ty(field: &Field, table_name: syn::Ident, lifetime: Option<quote::Token
     }
 }
 
-fn field_expr(field: &Field, table_name: syn::Ident, lifetime: Option<quote::Tokens>) -> syn::Expr {
+fn field_expr(field: &Field, table_name: &syn::Ident, lifetime: Option<proc_macro2::TokenStream>) -> syn::Expr {
     let field_access = field.name.access();
     if field.has_flag("embed") {
         parse_quote!(#lifetime self#field_access)

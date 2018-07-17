@@ -1,12 +1,12 @@
-use quote;
+use proc_macro2;
 use syn;
 
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
-    let struct_name = model.name;
+    let struct_name = &model.name;
     let table_name = model.table_name();
 
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
@@ -17,7 +17,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let (field_ty, field_access): (Vec<_>, Vec<_>) = model
         .primary_key_names
         .iter()
-        .filter_map(|&pk| model.find_column(pk).emit_error())
+        .filter_map(|pk| model.find_column(pk).emit_error())
         .map(|f| (&f.ty, f.name.access()))
         .unzip();
 

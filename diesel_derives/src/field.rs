@@ -1,5 +1,5 @@
-use proc_macro2::Span;
-use quote;
+use proc_macro2::{self, Span, Ident};
+use quote::ToTokens;
 use syn;
 use syn::spanned::Spanned;
 
@@ -19,7 +19,7 @@ impl Field {
     pub fn from_struct_field(field: &syn::Field, index: usize) -> Self {
         let column_name_from_attribute =
             MetaItem::with_name(&field.attrs, "column_name").map(|m| m.expect_ident_value());
-        let name = match field.ident {
+        let name = match field.ident.clone() {
             Some(mut x) => {
                 // https://github.com/rust-lang/rust/issues/47983#issuecomment-362817105
                 let span = x.span();
@@ -50,15 +50,16 @@ impl Field {
 
     pub fn column_name(&self) -> syn::Ident {
         self.column_name_from_attribute
+            .clone()
             .unwrap_or_else(|| match self.name {
-                FieldName::Named(x) => x,
+                FieldName::Named(ref x) => x.clone(),
                 _ => {
                     self.span
                         .error(
                             "All fields of tuple structs must be annotated with `#[column_name]`",
                         )
                         .emit();
-                    "unknown_column".into()
+                    Ident::new("unknown_column", self.span)
                 }
             })
     }
@@ -81,7 +82,7 @@ impl FieldName {
         parse_quote!(#tokens)
     }
 
-    pub fn access(&self) -> quote::Tokens {
+    pub fn access(&self) -> proc_macro2::TokenStream {
         let span = self.span();
         // Span of the dot is important due to
         // https://github.com/rust-lang/rust/issues/47312
@@ -90,16 +91,16 @@ impl FieldName {
 
     pub fn span(&self) -> Span {
         match *self {
-            FieldName::Named(x) => x.span(),
+            FieldName::Named(ref x) => x.span(),
             FieldName::Unnamed(ref x) => x.span,
         }
     }
 }
 
-impl quote::ToTokens for FieldName {
-    fn to_tokens(&self, tokens: &mut quote::Tokens) {
+impl ToTokens for FieldName {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         match *self {
-            FieldName::Named(x) => x.to_tokens(tokens),
+            FieldName::Named(ref x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),
         }
     }

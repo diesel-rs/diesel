@@ -1,5 +1,5 @@
 use proc_macro2::Span;
-use quote;
+use proc_macro2;
 use syn;
 
 use diagnostic_shim::*;
@@ -8,7 +8,7 @@ use meta::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let treat_none_as_null = MetaItem::with_name(&item.attrs, "changeset_options")
         .map(|meta| {
             meta.warn_if_other_options(&["treat_none_as_null"]);
@@ -33,20 +33,20 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let ref_changeset_ty = fields_for_update.iter().map(|field| {
         field_changeset_ty(
             field,
-            table_name,
+            &table_name,
             treat_none_as_null,
             Some(quote!(&'update)),
         )
     });
     let ref_changeset_expr = fields_for_update
         .iter()
-        .map(|field| field_changeset_expr(field, table_name, treat_none_as_null, Some(quote!(&))));
+        .map(|field| field_changeset_expr(field, &table_name, treat_none_as_null, Some(quote!(&))));
     let direct_changeset_ty = fields_for_update
         .iter()
-        .map(|field| field_changeset_ty(field, table_name, treat_none_as_null, None));
+        .map(|field| field_changeset_ty(field, &table_name, treat_none_as_null, None));
     let direct_changeset_expr = fields_for_update
         .iter()
-        .map(|field| field_changeset_expr(field, table_name, treat_none_as_null, None));
+        .map(|field| field_changeset_expr(field, &table_name, treat_none_as_null, None));
 
     if fields_for_update.is_empty() {
         Span::call_site()
@@ -91,9 +91,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
 
 fn field_changeset_ty(
     field: &Field,
-    table_name: syn::Ident,
+    table_name: &syn::Ident,
     treat_none_as_null: bool,
-    lifetime: Option<quote::Tokens>,
+    lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
@@ -107,9 +107,9 @@ fn field_changeset_ty(
 
 fn field_changeset_expr(
     field: &Field,
-    table_name: syn::Ident,
+    table_name: &syn::Ident,
     treat_none_as_null: bool,
-    lifetime: Option<quote::Tokens>,
+    lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();
     let column_name = field.column_name();

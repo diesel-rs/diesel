@@ -1,10 +1,10 @@
-use quote;
+use proc_macro2::{self, Span, Ident};
 use syn;
 
 use util::*;
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
-    let struct_name = item.ident;
+pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
+    let struct_name = &item.ident;
 
     {
         let where_clause = item.generics
@@ -21,7 +21,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     let dummy_name = format!("_impl_diesel_numeric_ops_for_{}", item.ident);
 
     Ok(wrap_in_dummy_mod(
-        dummy_name.to_lowercase().into(),
+        Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
         quote! {
             use diesel::expression::{ops, Expression, AsExpression};
             use diesel::sql_types::ops::{Add, Sub, Mul, Div};

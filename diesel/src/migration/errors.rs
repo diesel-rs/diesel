@@ -79,7 +79,7 @@ impl From<io::Error> for MigrationError {
 
 /// Errors that occur while running migrations
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "clippy", allow(enum_variant_names))]
+#[cfg_attr(feature = "cargo-clippy", allow(enum_variant_names))]
 pub enum RunMigrationsError {
     /// A general migration error occured
     MigrationError(MigrationError),
