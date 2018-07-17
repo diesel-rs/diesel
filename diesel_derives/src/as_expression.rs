@@ -108,10 +108,10 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
         Ok(wrap_in_dummy_mod(
             dummy_mod.into(),
             quote! {
-                use self::diesel::expression::AsExpression;
-                use self::diesel::expression::bound::Bound;
-                use self::diesel::sql_types::Nullable;
-                use self::diesel::serialize::{self, ToSql, Output};
+                use diesel::expression::AsExpression;
+                use diesel::expression::bound::Bound;
+                use diesel::sql_types::Nullable;
+                use diesel::serialize::{self, ToSql, Output};
 
                 #(#tokens)*
             },

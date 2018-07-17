@@ -17,6 +17,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [write-tuple-1-4-0]: docs.diesel.rs/diesel/serialize/trait.WriteTuple.html
 
+### Changed
+
+* Diesel's derives now require that `extern crate diesel;` be at your crate root
+  (e.g. `src/lib.rs` or `src/main.rs`)
+
 ## [1.3.2] - 2018-06-13
 
 ### Fixed

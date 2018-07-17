@@ -32,7 +32,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("queryable"),
         quote! {
-            use self::diesel::Queryable;
+            use diesel::Queryable;
 
             impl #impl_generics Queryable<__ST, __DB> for #struct_name #ty_generics
             #where_clause

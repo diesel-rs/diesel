@@ -37,8 +37,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("queryable_by_name"),
         quote! {
-            use self::diesel::deserialize::{self, QueryableByName};
-            use self::diesel::row::NamedRow;
+            use diesel::deserialize::{self, QueryableByName};
+            use diesel::row::NamedRow;
 
             impl #impl_generics QueryableByName<__DB>
                 for #struct_name #ty_generics
