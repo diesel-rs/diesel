@@ -24,7 +24,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         dummy_mod.into(),
         quote! {
-            use self::diesel::query_builder::QueryId;
+            use diesel::query_builder::QueryId;
 
             #[allow(non_camel_case_types)]
             impl #impl_generics QueryId for #struct_name #ty_generics

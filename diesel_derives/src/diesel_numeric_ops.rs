@@ -23,10 +23,10 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         dummy_name.to_lowercase().into(),
         quote! {
-            use self::diesel::expression::{ops, Expression, AsExpression};
-            use self::diesel::sql_types::ops::{Add, Sub, Mul, Div};
+            use diesel::expression::{ops, Expression, AsExpression};
+            use diesel::sql_types::ops::{Add, Sub, Mul, Div};
 
-            impl #impl_generics self::std::ops::Add<__Rhs> for #struct_name #ty_generics
+            impl #impl_generics ::std::ops::Add<__Rhs> for #struct_name #ty_generics
             #where_clause
                 <Self as Expression>::SqlType: Add,
                 __Rhs: AsExpression<<<Self as Expression>::SqlType as Add>::Rhs>,
@@ -38,7 +38,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
                 }
             }
 
-            impl #impl_generics self::std::ops::Sub<__Rhs> for #struct_name #ty_generics
+            impl #impl_generics ::std::ops::Sub<__Rhs> for #struct_name #ty_generics
             #where_clause
                 <Self as Expression>::SqlType: Sub,
                 __Rhs: AsExpression<<<Self as Expression>::SqlType as Sub>::Rhs>,
@@ -50,7 +50,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
                 }
             }
 
-            impl #impl_generics self::std::ops::Mul<__Rhs> for #struct_name #ty_generics
+            impl #impl_generics ::std::ops::Mul<__Rhs> for #struct_name #ty_generics
             #where_clause
                 <Self as Expression>::SqlType: Mul,
                 __Rhs: AsExpression<<<Self as Expression>::SqlType as Mul>::Rhs>,
@@ -62,7 +62,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
                 }
             }
 
-            impl #impl_generics self::std::ops::Div<__Rhs> for #struct_name #ty_generics
+            impl #impl_generics ::std::ops::Div<__Rhs> for #struct_name #ty_generics
             #where_clause
                 <Self as Expression>::SqlType: Div,
                 __Rhs: AsExpression<<<Self as Expression>::SqlType as Div>::Rhs>,

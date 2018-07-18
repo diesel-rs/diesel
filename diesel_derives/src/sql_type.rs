@@ -121,7 +121,7 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<quote::Tokens> {
             };
 
             Some(quote! {
-                use self::diesel::pg::{PgMetadataLookup, PgTypeMetadata};
+                use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
 
                 impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
                     for diesel::pg::Pg

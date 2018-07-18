@@ -24,7 +24,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("identifiable"),
         quote! {
-            use self::diesel::associations::{HasTable, Identifiable};
+            use diesel::associations::{HasTable, Identifiable};
 
             impl #impl_generics HasTable for #struct_name #ty_generics
             #where_clause

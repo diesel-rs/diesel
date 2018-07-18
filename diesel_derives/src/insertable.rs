@@ -51,9 +51,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("insertable"),
         quote! {
-            use self::diesel::insertable::Insertable;
-            use self::diesel::query_builder::UndecoratedInsertRecord;
-            use self::diesel::prelude::*;
+            use diesel::insertable::Insertable;
+            use diesel::query_builder::UndecoratedInsertRecord;
+            use diesel::prelude::*;
 
             impl #impl_generics Insertable<#table_name::table> for #struct_name #ty_generics
                 #where_clause
