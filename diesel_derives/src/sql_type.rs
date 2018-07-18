@@ -1,5 +1,5 @@
-use proc_macro2::*;
 use proc_macro2;
+use proc_macro2::*;
 use syn;
 
 use meta::*;

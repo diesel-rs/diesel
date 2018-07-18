@@ -1,4 +1,4 @@
-use proc_macro2::{self, Span, Ident};
+use proc_macro2::{self, Ident, Span};
 use syn;
 
 use field::*;

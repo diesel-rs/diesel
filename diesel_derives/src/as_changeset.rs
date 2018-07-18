@@ -1,5 +1,5 @@
-use proc_macro2::Span;
 use proc_macro2;
+use proc_macro2::Span;
 use syn;
 
 use diagnostic_shim::*;

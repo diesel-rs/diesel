@@ -24,10 +24,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     }
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-    let dummy_mod = format!(
-        "_impl_from_sql_row_for_{}",
-        item.ident,
-    ).to_lowercase();
+    let dummy_mod = format!("_impl_from_sql_row_for_{}", item.ident,).to_lowercase();
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_mod, Span::call_site()),
         quote! {

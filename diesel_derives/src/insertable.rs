@@ -1,5 +1,5 @@
-use proc_macro2::Span;
 use proc_macro2;
+use proc_macro2::Span;
 use syn;
 
 use field::*;
@@ -85,7 +85,11 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     ))
 }
 
-fn field_ty(field: &Field, table_name: &syn::Ident, lifetime: Option<proc_macro2::TokenStream>) -> syn::Type {
+fn field_ty(
+    field: &Field,
+    table_name: &syn::Ident,
+    lifetime: Option<proc_macro2::TokenStream>,
+) -> syn::Type {
     if field.has_flag("embed") {
         let field_ty = &field.ty;
         parse_quote!(#lifetime #field_ty)
@@ -101,7 +105,11 @@ fn field_ty(field: &Field, table_name: &syn::Ident, lifetime: Option<proc_macro2
     }
 }
 
-fn field_expr(field: &Field, table_name: &syn::Ident, lifetime: Option<proc_macro2::TokenStream>) -> syn::Expr {
+fn field_expr(
+    field: &Field,
+    table_name: &syn::Ident,
+    lifetime: Option<proc_macro2::TokenStream>,
+) -> syn::Expr {
     let field_access = field.name.access();
     if field.has_flag("embed") {
         parse_quote!(#lifetime self#field_access)

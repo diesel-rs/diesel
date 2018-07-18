@@ -1,4 +1,4 @@
-use proc_macro2::{Span, Ident};
+use proc_macro2::{Ident, Span};
 use syn;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
