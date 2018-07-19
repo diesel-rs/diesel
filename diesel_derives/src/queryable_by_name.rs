@@ -1,14 +1,14 @@
-use quote;
+use proc_macro2::{self, Ident, Span};
 use syn;
 
 use field::*;
 use model::*;
 use util::*;
 
-pub fn derive(item: syn::DeriveInput) -> Result<quote::Tokens, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
 
-    let struct_name = item.ident;
+    let struct_name = &item.ident;
     let field_expr = model.fields().iter().map(|f| field_expr(f, &model));
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
@@ -78,8 +78,8 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
             parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
         } else {
             let field_name = match field.name {
-                FieldName::Named(ref x) => x.as_ref(),
-                _ => "field",
+                FieldName::Named(ref x) => x.clone(),
+                _ => Ident::new("field", Span::call_site()),
             };
             field
                 .span

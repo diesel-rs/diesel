@@ -2,18 +2,16 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![cfg_attr(feature = "clippy", allow(needless_pass_by_value))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
-#![cfg_attr(feature = "clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#![cfg_attr(feature = "cargo-clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
 #![cfg_attr(
-    feature = "clippy",
+    feature = "cargo-clippy",
     warn(
         wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
         if_not_else, items_after_statements, used_underscore_binding
     )
 )]
-#![cfg_attr(feature = "nightly", feature(proc_macro))]
+#![cfg_attr(feature = "nightly", feature(proc_macro_diagnostic, proc_macro_span))]
 
 extern crate proc_macro;
 extern crate proc_macro2;
@@ -104,7 +102,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 
 fn expand_derive(
     input: TokenStream,
-    f: fn(syn::DeriveInput) -> Result<quote::Tokens, Diagnostic>,
+    f: fn(syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic>,
 ) -> TokenStream {
     let item = syn::parse(input).unwrap();
     match f(item) {

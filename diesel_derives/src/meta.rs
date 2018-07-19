@@ -1,4 +1,4 @@
-use proc_macro2::Span;
+use proc_macro2::{Ident, Span};
 use syn;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
@@ -30,7 +30,7 @@ impl MetaItem {
     pub fn empty(name: &str) -> Self {
         Self {
             meta: syn::Meta::List(syn::MetaList {
-                ident: name.into(),
+                ident: Ident::new(name, Span::call_site()),
                 paren_token: Default::default(),
                 nested: Default::default(),
             }),
@@ -100,7 +100,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            Word(x) => Ok(x),
+            Word(ref x) => Ok(x.clone()),
             _ => {
                 let meta = &self.meta;
                 Err(self.span().error(format!(
@@ -197,7 +197,7 @@ impl MetaItem {
             Ok(x) => x,
             Err(_) => return,
         };
-        let unrecognized_options = nested.filter(|n| !options.contains(&n.name().as_ref()));
+        let unrecognized_options = nested.filter(|n| !options.iter().any(|&o| n.name() == o));
         for ignored in unrecognized_options {
             ignored
                 .span()
@@ -210,7 +210,7 @@ impl MetaItem {
         use syn::Meta::*;
 
         match self.meta {
-            Word(ident) => ident.span(),
+            Word(ref ident) => ident.span(),
             List(ref meta) => meta.nested.span(),
             NameValue(ref meta) => meta.lit.span(),
         }

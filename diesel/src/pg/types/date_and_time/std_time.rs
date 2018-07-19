@@ -51,6 +51,8 @@ fn usecs_to_duration(usecs_passed: u64) -> Duration {
     Duration::new(seconds, subseconds)
 }
 
+// FIXME: Remove this when our minimum Rust version is >= 1.27
+#[cfg_attr(feature = "cargo-clippy", allow(duration_subsec))]
 fn duration_to_usecs(duration: Duration) -> u64 {
     let seconds = duration.as_secs() * USEC_PER_SEC;
     let subseconds = duration.subsec_nanos() / NANO_PER_USEC;

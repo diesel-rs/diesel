@@ -130,32 +130,29 @@
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
 // Clippy lints
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(
-    feature = "clippy",
+    feature = "cargo-clippy",
     allow(
         option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms, type_complexity,
         redundant_field_names
     )
 )]
 #![cfg_attr(
-    feature = "clippy",
+    feature = "cargo-clippy",
     warn(
         option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention, mut_mut,
         non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
         items_after_statements, used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![cfg_attr(all(test, feature = "cargo-clippy"), allow(option_unwrap_used, result_unwrap_used))]
 
 #[cfg(feature = "postgres")]
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
-// This is required to make `diesel_derives` re-export, but clippy thinks its unused
-#[cfg_attr(feature = "clippy", allow(useless_attribute))]
+// This is required to make `diesel_derives` re-export, but cargo-clippy thinks its unused
+#[cfg_attr(feature = "cargo-clippy", allow(useless_attribute))]
 #[allow(unused_imports)]
 #[macro_use]
 extern crate diesel_derives;

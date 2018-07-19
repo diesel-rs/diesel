@@ -14,7 +14,7 @@ pub struct SerializedValue {
 impl SerializedValue {
     // We are always reading potentially misaligned pointers with
     // `ptr::read_unaligned`
-    #[cfg_attr(feature = "clippy", allow(cast_ptr_alignment))]
+    #[cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))]
     pub(crate) fn bind_to(self, stmt: NonNull<ffi::sqlite3_stmt>, idx: libc::c_int) -> libc::c_int {
         // This unsafe block assumes the following invariants:
         //
@@ -65,7 +65,7 @@ impl SerializedValue {
 
     // We are always reading potentially misaligned pointers with
     // `ptr::read_unaligned`
-    #[cfg_attr(feature = "clippy", allow(cast_ptr_alignment))]
+    #[cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))]
     pub fn result_of(self, ctx: *mut ffi::sqlite3_context) {
         // This unsafe block assumes the following invariants:
         //

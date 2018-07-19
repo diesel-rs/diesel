@@ -25,6 +25,6 @@ pub fn render(comments_and_post_title: &[(Comment, String)]) {
             comment.id
         );
         println!("{}", comment.body);
-        print!("===============\n\n");
+        println!("===============\n");
     }
 }

@@ -38,13 +38,11 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2018-04-19
+  - rust: nightly-2018-07-17
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
-    - (cd diesel && cargo rustc --no-default-features --features "lint sqlite postgres mysql extras" -- -Zno-trans)
-    - (cd diesel_cli && cargo rustc --no-default-features --features "lint sqlite postgres mysql" -- -Zno-trans)
-    - (cd diesel_derives && cargo rustc --no-default-features --features "lint" -- -Zno-trans)
-    - (cd diesel_migrations && cargo rustc --no-default-features --features "lint dotenv sqlite postgres mysql" -- -Zno-trans)
+    - rustup component add clippy-preview
+    - cargo clippy
     - (cd diesel_compile_tests && travis-cargo test)
   - rust: 1.26.1
     env: RUSTFMT=YESPLEASE

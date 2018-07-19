@@ -74,7 +74,7 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
 #[doc(hidden)]
 pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
     path.file_name()
-        .expect(&format!("Can't get file name from path `{:?}`", path))
+        .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
         .to_string_lossy()
         .split('_')
         .nth(0)

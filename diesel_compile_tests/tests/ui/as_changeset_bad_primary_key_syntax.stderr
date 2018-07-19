@@ -1,14 +1,14 @@
 error: Expected `bar` found `bar = "baz"`
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(id, bar = "baz", qux(id))]
-  | ^
+  --> $DIR/as_changeset_bad_primary_key_syntax.rs:11:10
+   |
+11 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: Expected `qux` found `qux ( id )`
- --> <macro expansion>:1:1
-  |
-1 | #[primary_key(id, bar = "baz", qux(id))]
-  | ^
+  --> $DIR/as_changeset_bad_primary_key_syntax.rs:11:10
+   |
+11 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
 
 error: aborting due to 2 previous errors
 

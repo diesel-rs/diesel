@@ -1,52 +1,52 @@
 error: Missing required options
- --> <macro expansion>:1:1
+ --> $DIR/sql_type_bad_options.rs:4:10
   |
-1 | #[postgres]
-  | ^
+4 | #[derive(SqlType)]
+  |          ^^^^^^^
   |
   = help: Valid options are `type_name` or `oid` and `array_oid`
 
 warning: Option oid has no effect
- --> <macro expansion>:1:1
+ --> $DIR/sql_type_bad_options.rs:8:10
   |
-1 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
-  | ^
+8 | #[derive(SqlType)]
+  |          ^^^^^^^
 
 warning: Option array_oid has no effect
- --> <macro expansion>:1:1
+ --> $DIR/sql_type_bad_options.rs:8:10
   |
-1 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
-  | ^
+8 | #[derive(SqlType)]
+  |          ^^^^^^^
 
 error: Missing required option array_oid
- --> <macro expansion>:1:1
-  |
-1 | #[postgres(oid = "2")]
-  | ^
+  --> $DIR/sql_type_bad_options.rs:12:10
+   |
+12 | #[derive(SqlType)]
+   |          ^^^^^^^
 
 error: Expected a number
- --> <macro expansion>:1:1
-  |
-1 | #[postgres(oid = "NaN", array_oid = "1")]
-  | ^
+  --> $DIR/sql_type_bad_options.rs:16:10
+   |
+16 | #[derive(SqlType)]
+   |          ^^^^^^^
 
 warning: Option ary_oid has no effect
- --> <macro expansion>:1:1
-  |
-1 | #[postgres(oid = "NaN", ary_oid = "1")]
-  | ^
+  --> $DIR/sql_type_bad_options.rs:20:10
+   |
+20 | #[derive(SqlType)]
+   |          ^^^^^^^
 
 error: Missing required option array_oid
- --> <macro expansion>:1:1
-  |
-1 | #[postgres(oid = "NaN", ary_oid = "1")]
-  | ^
+  --> $DIR/sql_type_bad_options.rs:20:10
+   |
+20 | #[derive(SqlType)]
+   |          ^^^^^^^
 
 error: Expected a number
- --> <macro expansion>:1:1
-  |
-1 | #[postgres(oid = "NaN", ary_oid = "1")]
-  | ^
+  --> $DIR/sql_type_bad_options.rs:20:10
+   |
+20 | #[derive(SqlType)]
+   |          ^^^^^^^
 
 error: aborting due to 5 previous errors
 

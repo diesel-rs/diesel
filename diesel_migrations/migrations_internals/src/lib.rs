@@ -1,22 +1,19 @@
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../../clippy.toml")))]
 #![cfg_attr(
-    feature = "clippy",
+    feature = "cargo-clippy",
     allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms, type_complexity)
 )]
 #![cfg_attr(
-    feature = "clippy",
+    feature = "cargo-clippy",
     warn(
         option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention, mut_mut,
         non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
         items_after_statements, used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![cfg_attr(all(test, feature = "cargo-clippy"), allow(option_unwrap_used, result_unwrap_used))]
 //! Provides functions for maintaining database schema.
 //!
 //! A database migration always provides procedures to update the schema, as well as to revert

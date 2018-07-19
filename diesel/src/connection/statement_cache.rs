@@ -108,7 +108,7 @@ pub struct StatementCache<DB: Backend, Statement> {
     pub cache: RefCell<HashMap<StatementCacheKey<DB>, Statement>>,
 }
 
-#[cfg_attr(feature = "clippy", allow(len_without_is_empty, new_without_default_derive))]
+#[cfg_attr(feature = "cargo-clippy", allow(len_without_is_empty, new_without_default_derive))]
 impl<DB, Statement> StatementCache<DB, Statement>
 where
     DB: Backend,
@@ -250,7 +250,7 @@ where
         Ok(x) => x,
         Err(e) => {
             error = Some(e);
-            #[cfg_attr(feature = "clippy", allow(invalid_ref))]
+            #[cfg_attr(feature = "cargo-clippy", allow(invalid_ref))]
             unsafe {
                 mem::uninitialized()
             }

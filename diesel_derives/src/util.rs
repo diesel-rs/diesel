@@ -1,14 +1,13 @@
-use proc_macro2::Span;
-use quote::Tokens;
+use proc_macro2::*;
 use syn::*;
 
 pub use diagnostic_shim::*;
 use meta::*;
 
-pub fn wrap_in_dummy_mod(const_name: Ident, item: Tokens) -> Tokens {
+pub fn wrap_in_dummy_mod(const_name: Ident, item: TokenStream) -> TokenStream {
     quote! {
         #[allow(non_snake_case, unused_extern_crates, unused_imports)]
-        mod #const_name {
+        fn #const_name() {
             // https://github.com/rust-lang/rust/issues/47314
             extern crate std;
             use diesel;
@@ -60,14 +59,20 @@ pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Typ
                 .error("foreign_derive can only be used with structs")),
         }
     } else {
-        let ident = item.ident;
+        let ident = &item.ident;
         let (_, ty_generics, ..) = item.generics.split_for_impl();
         Ok(parse_quote!(#ident #ty_generics))
     }
 }
 
-pub fn fix_span(maybe_bad_span: Span, fallback: Span) -> Span {
+pub fn fix_span(maybe_bad_span: Span, mut fallback: Span) -> Span {
     let bad_span_debug = "#0 bytes(0..0)";
+
+    if format!("{:?}", fallback) == bad_span_debug {
+        // On recent rust nightlies, even our fallback span is bad.
+        fallback = Span::call_site();
+    }
+
     if format!("{:?}", maybe_bad_span) == bad_span_debug {
         fallback
     } else {
