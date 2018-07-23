@@ -122,8 +122,9 @@ impl Drop for Statement {
     fn drop(&mut self) {
         use std::thread::panicking;
 
+        let conn = self.raw_connection();
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
-        if let Err(e) = ensure_sqlite_ok(finalize_result, self.raw_connection()) {
+        if let Err(e) = ensure_sqlite_ok(finalize_result, conn) {
             if panicking() {
                 write!(
                     stderr(),
