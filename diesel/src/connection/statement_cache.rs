@@ -239,25 +239,17 @@ where
 ///
 /// If we were in Haskell (and if `RefMut` were a functor), this would just be
 /// `sequenceA`.
-fn refmut_map_result<T, U, F>(refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
+fn refmut_map_result<T, U, F>(mut refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
 where
     F: FnOnce(&mut T) -> QueryResult<&mut U>,
 {
-    use std::mem;
-
-    let mut error = None;
-    let result = RefMut::map(refmut, |mutref| match mapper(mutref) {
-        Ok(x) => x,
-        Err(e) => {
-            error = Some(e);
-            #[cfg_attr(feature = "cargo-clippy", allow(invalid_ref))]
-            unsafe {
-                mem::uninitialized()
-            }
-        }
-    });
-    match error {
-        Some(e) => Err(e),
-        None => Ok(result),
-    }
+    // We can't just use `RefMut::map` here, since to lift the error out of that
+    // closure we'd need to return *something*.
+    //
+    // Instead we will very briefly convert to a raw pointer to eliminate
+    // lifetimes from the equation. Ultimately the cast is safe since the input
+    // and output lifetimes are identical. However, without the raw pointer
+    // we would have two live mutable references at the same time.
+    let ptr = mapper(&mut *refmut).map(|x| x as *mut _)?;
+    Ok(RefMut::map(refmut, |_| unsafe { &mut *ptr }))
 }
