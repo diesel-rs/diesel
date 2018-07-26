@@ -46,10 +46,10 @@ impl<T> ConnectionManager<T> {
         }
     }
 
-    pub fn new_with_init_queries<S: Into<String>>(database_url: S, init_queries: Option<Vec<String>>) -> Self {
     /// Returns a new connection manager,
     /// which establishes connections to the given database URL
     /// executing init_queries for new connections
+    pub fn new_with_init_queries<S: Into<String>>(database_url: S, init_queries: Option<Vec<String>>) -> Self {
         ConnectionManager {
             database_url: database_url.into(),
             init_queries: init_queries,
