@@ -29,6 +29,7 @@ use sql_types::HasSqlType;
 #[derive(Debug, Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
+    init_queries: Option<Vec<String>>,
     _marker: PhantomData<T>,
 }
 
@@ -40,6 +41,18 @@ impl<T> ConnectionManager<T> {
     pub fn new<S: Into<String>>(database_url: S) -> Self {
         ConnectionManager {
             database_url: database_url.into(),
+            init_queries: None,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Returns a new connection manager,
+    /// which establishes connections to the given database URL
+    /// executing init_queries for new connections
+    pub fn new_with_init_queries<S: Into<String>>(database_url: S, init_queries: Option<Vec<String>>) -> Self {
+        ConnectionManager {
+            database_url: database_url.into(),
+            init_queries: init_queries,
             _marker: PhantomData,
         }
     }
@@ -81,7 +94,17 @@ where
     type Error = Error;
 
     fn connect(&self) -> Result<T, Error> {
-        T::establish(&self.database_url).map_err(Error::ConnectionError)
+        let conn = T::establish(&self.database_url)
+            .map_err(Error::ConnectionError);
+        if let (&Some(ref init_queries), &Ok(ref connection)) = (&self.init_queries, &conn) {
+            for init_query in init_queries {
+                match connection.batch_execute(init_query) {
+                    Ok(_) => {},
+                    Err(err) => return Err(Error::QueryError(err))
+                }
+            }
+        }
+        conn
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
