@@ -170,3 +170,23 @@ fn reset_sanitize_database_name() {
         result.stdout()
     );
 }
+
+#[test]
+fn reset_updates_schema_if_config_present() {
+    let p = project("reset_updates_schema_if_config_present")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            r#"
+[print_schema]
+file = "src/my_schema.rs"
+"#,
+        )
+        .build();
+
+    let result = p.command("database").arg("reset").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(p.has_file("src/my_schema.rs"));
+}

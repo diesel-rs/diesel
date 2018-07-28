@@ -60,7 +60,7 @@ fn main() {
     match matches.subcommand() {
         ("migration", Some(matches)) => run_migration_command(matches).unwrap_or_else(handle_error),
         ("setup", Some(matches)) => run_setup_command(matches),
-        ("database", Some(matches)) => run_database_command(matches),
+        ("database", Some(matches)) => run_database_command(matches).unwrap_or_else(handle_error),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
         ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
@@ -227,19 +227,21 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
     Ok(())
 }
 
-fn run_database_command(matches: &ArgMatches) {
+fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
             let migrations_dir = migrations_dir(args);
-            database::setup_database(args, &migrations_dir).unwrap_or_else(handle_error)
+            database::setup_database(args, &migrations_dir)?;
         }
         ("reset", Some(args)) => {
             let migrations_dir = migrations_dir(args);
-            database::reset_database(args, &migrations_dir).unwrap_or_else(handle_error)
+            database::reset_database(args, &migrations_dir)?;
+            regenerate_schema_if_file_specified(matches)?;
         }
-        ("drop", Some(args)) => database::drop_database_command(args).unwrap_or_else(handle_error),
+        ("drop", Some(args)) => database::drop_database_command(args)?,
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
+    Ok(())
 }
 
 fn generate_bash_completion_command(_: &ArgMatches) {
