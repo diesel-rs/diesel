@@ -10,8 +10,6 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use models::NewPost;
-
 pub fn establish_connection() -> SqliteConnection {
     dotenv().ok();
 
@@ -23,13 +21,8 @@ pub fn establish_connection() -> SqliteConnection {
 pub fn create_post(conn: &SqliteConnection, title: &str, body: &str) -> usize {
     use schema::posts;
 
-    let new_post = NewPost {
-        title: title,
-        body: body,
-    };
-
     diesel::insert_into(posts::table)
-        .values(&new_post)
+        .values((posts::title.eq(title), posts::body.eq(body)))
         .execute(conn)
         .expect("Error saving new post")
 }
