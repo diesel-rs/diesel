@@ -178,9 +178,9 @@ fn reset_updates_schema_if_config_present() {
         .file(
             "diesel.toml",
             r#"
-[print_schema]
-file = "src/my_schema.rs"
-"#,
+            [print_schema]
+            file = "src/my_schema.rs"
+            "#,
         )
         .build();
 
