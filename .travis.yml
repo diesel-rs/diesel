@@ -43,7 +43,7 @@ matrix:
     script:
     - rustup component add clippy-preview
     - cargo clippy
-    - (cd diesel_compile_tests && travis-cargo test)
+    - (cd diesel_compile_tests && cargo update && cargo update -pproc-macro2 --precise "0.4.8" && travis-cargo test)
   - rust: 1.26.1
     env: RUSTFMT=YESPLEASE
     script:
