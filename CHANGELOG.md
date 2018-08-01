@@ -17,6 +17,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [write-tuple-1-4-0]: docs.diesel.rs/diesel/serialize/trait.WriteTuple.html
 
+* Added support for MySQL's `UNSIGNED TINYINT`
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
