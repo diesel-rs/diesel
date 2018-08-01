@@ -197,6 +197,26 @@ fn i32_to_sql_integer() {
 
 #[test]
 #[cfg(feature = "mysql")]
+fn u8_to_sql_integer() {
+    assert!(query_to_sql_equality::<Unsigned<Tinyint>, u8>("255", 255));
+    assert!(query_to_sql_equality::<Unsigned<Tinyint>, u8>("0", 0));
+    assert!(query_to_sql_equality::<Unsigned<Tinyint>, u8>("1", 1));
+    assert!(query_to_sql_equality::<Unsigned<Tinyint>, u8>("123", 123));
+    assert!(!query_to_sql_equality::<Unsigned<Tinyint>, u8>("0", 1));
+    assert!(!query_to_sql_equality::<Unsigned<Tinyint>, u8>("254", 255));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn u8_from_sql() {
+    assert_eq!(0, query_single_value::<Unsigned<Tinyint>, u8>("0"));
+    assert_eq!(255, query_single_value::<Unsigned<Tinyint>, u8>("255"));
+    assert_ne!(254, query_single_value::<Unsigned<Tinyint>, u8>("255"));
+    assert_eq!(123, query_single_value::<Unsigned<Tinyint>, u8>("123"));
+}
+
+#[test]
+#[cfg(feature = "mysql")]
 fn u16_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
         "65535", 65535

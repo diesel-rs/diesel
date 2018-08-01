@@ -29,6 +29,19 @@ impl FromSql<Tinyint, Mysql> for i8 {
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
 pub struct Unsigned<ST>(ST);
 
+impl ToSql<Unsigned<Tinyint>, Mysql> for u8 {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        ToSql::<Tinyint, Mysql>::to_sql(&(*self as i8), out)
+    }
+}
+
+impl FromSql<Unsigned<Tinyint>, Mysql> for u8 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let signed: i8 = FromSql::<Tinyint, Mysql>::from_sql(bytes)?;
+        Ok(signed as u8)
+    }
+}
+
 impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), out)
