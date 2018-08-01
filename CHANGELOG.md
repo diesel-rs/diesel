@@ -22,6 +22,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
   (e.g. `src/lib.rs` or `src/main.rs`)
 
+* `Tinyint` has been renamed to `TinyInt` and an alias has been created from `Tinyint` to `TinyInt`.
+
 ## [1.3.2] - 2018-06-13
 
 ### Fixed
