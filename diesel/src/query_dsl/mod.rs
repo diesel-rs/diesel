@@ -1304,9 +1304,11 @@ pub trait RunQueryDsl<Conn>: Sized {
 }
 
 // Note: We could have a blanket `AsQuery` impl here, which would apply to
-// everything we want it to. However, the entire point of this trait is to have
-// trait resolution succeed, and the where clause on the methods fail when the
-// query is invalid. So we need things to unconditionally implement this trait.
+// everything we want it to. However, when a query is invalid, we specifically
+// want the error to happen on the where clause of the method instead of trait
+// resolution. Otherwise our users will get an error saying `<3 page long type>:
+// ExecuteDsl is not satisfied` instead of a specific error telling them what
+// part of their query is wrong.
 impl<T, Conn> RunQueryDsl<Conn> for T
 where
     T: Table,
