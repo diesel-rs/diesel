@@ -1,7 +1,7 @@
 mod bind;
 mod raw;
 mod stmt;
-mod url;
+pub mod url;
 
 use self::raw::RawConnection;
 use self::stmt::Statement;

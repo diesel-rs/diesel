@@ -1,3 +1,32 @@
+//! The internal methods used to parse the database URL.
+//!
+//! Normally, you won't need to use this functionality, but
+//! it can be useful, for example to print the database credentials
+//! without the password.
+//!
+//! This struct uses "C" strings so that the system libraries for
+//! the mysql backend (written in "C") work correctly.
+//!
+//! # Examples
+//!
+//! ```rust
+//! // We can safely unwrap here as we have hard-coded a valid url.
+//! let opts = ConnectionOptions::parse("mysql://root:password@127.0.0.1:3306/db_name").unwrap();
+//! assert_eq!(opts.host, &CString::new("127.0.0.1"));
+//! assert_eq!(opts.user, &CString::new("root"));
+//! assert_eq!(opts.password, Some(&CString::new("password")));
+//! assert_eq!(opts.database, Some(&CString::new("db_name")));
+//! assert_eq!(opts.port, Some(3306));
+//! // prints the url without the password.
+//! // (We know this won't panic because we created the url, in general you'd
+//! // need to be more clever when handling percent-encoded urls and optional
+//! // parts).
+//! println!("mysql://{}:xxx@{}:{}/{}",
+//!          opts.user.to_str().unwrap(),
+//!          opts.host.to_str().unwrap(),
+//!          opts.port.unwrap(),
+//!          opts.database.unwrap().to_str().unwrap());
+//! ```
 extern crate url;
 
 use self::url::percent_encoding::percent_decode;
@@ -6,6 +35,10 @@ use std::ffi::{CStr, CString};
 
 use result::{ConnectionError, ConnectionResult};
 
+/// The connections options for a mysql connection.
+///
+/// The only way to create an instance of this struct is using
+/// `ConnectionOptions::parse`.
 pub struct ConnectionOptions {
     host: Option<CString>,
     user: CString,
@@ -15,6 +48,7 @@ pub struct ConnectionOptions {
 }
 
 impl ConnectionOptions {
+    /// Takes a connection string, and parses it into connection options.
     pub fn parse(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
