@@ -109,6 +109,33 @@ fn with_lifetime() {
 }
 
 #[test]
+fn with_mut_lifetime() {
+    #[derive(AsChangeset)]
+    #[table_name = "users"]
+    struct UserForm<'a> {
+        name: &'a str,
+        hair_color: &'a str,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&mut UserForm {
+            name: "Jim",
+            hair_color: "blue",
+        })
+        .execute(&connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("Jim"), Some(String::from("blue"))),
+        (2, String::from("Tess"), Some(String::from("brown"))),
+    ];
+    let actual = users::table.order(users::id).load(&connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
 fn with_multiple_lifetimes() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
