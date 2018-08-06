@@ -38,7 +38,18 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             Some(quote!(&'update)),
         )
     });
+    let mut_ref_changeset_ty = fields_for_update.iter().map(|field| {
+        field_changeset_ty(
+            field,
+            &table_name,
+            treat_none_as_null,
+            Some(quote!(&'update)),
+        )
+    });
     let ref_changeset_expr = fields_for_update
+        .iter()
+        .map(|field| field_changeset_expr(field, &table_name, treat_none_as_null, Some(quote!(&))));
+    let mut_ref_changeset_expr = fields_for_update
         .iter()
         .map(|field| field_changeset_expr(field, &table_name, treat_none_as_null, Some(quote!(&))));
     let direct_changeset_ty = fields_for_update
@@ -63,6 +74,17 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         quote!(
             use diesel::query_builder::AsChangeset;
             use diesel::prelude::*;
+
+            impl #impl_generics AsChangeset for &'update mut #struct_name #ty_generics
+            #where_clause
+            {
+                type Target = #table_name::table;
+                type Changeset = <(#(#mut_ref_changeset_ty,)*) as AsChangeset>::Changeset;
+
+                fn as_changeset(self) -> Self::Changeset {
+                    (#(#mut_ref_changeset_expr,)*).as_changeset()
+                }
+            }
 
             impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
             #where_clause
