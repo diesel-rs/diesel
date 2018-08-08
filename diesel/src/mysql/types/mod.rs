@@ -12,13 +12,13 @@ use mysql::{Mysql, MysqlType};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
 
-impl ToSql<Tinyint, Mysql> for i8 {
+impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
 
-impl FromSql<Tinyint, Mysql> for i8 {
+impl FromSql<TinyInt, Mysql> for i8 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
@@ -29,15 +29,15 @@ impl FromSql<Tinyint, Mysql> for i8 {
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
 pub struct Unsigned<ST>(ST);
 
-impl ToSql<Unsigned<Tinyint>, Mysql> for u8 {
+impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        ToSql::<Tinyint, Mysql>::to_sql(&(*self as i8), out)
+        ToSql::<TinyInt, Mysql>::to_sql(&(*self as i8), out)
     }
 }
 
-impl FromSql<Unsigned<Tinyint>, Mysql> for u8 {
+impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let signed: i8 = FromSql::<Tinyint, Mysql>::from_sql(bytes)?;
+        let signed: i8 = FromSql::<TinyInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u8)
     }
 }

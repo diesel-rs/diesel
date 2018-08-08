@@ -266,7 +266,7 @@ mod pg_types {
 mod mysql_types {
     use super::*;
 
-    test_round_trip!(i8_roundtrips, Tinyint, i8);
+    test_round_trip!(i8_roundtrips, TinyInt, i8);
     test_round_trip!(
         naive_datetime_roundtrips,
         Timestamp,

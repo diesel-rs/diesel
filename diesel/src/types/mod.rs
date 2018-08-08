@@ -15,8 +15,8 @@ pub use serialize::{IsNull, ToSql};
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Bool` instead")]
 pub type Bool = ::sql_types::Bool;
 
-#[deprecated(since = "1.1.0", note = "Use `sql_types::Tinyint` instead")]
-pub type Tinyint = ::sql_types::Tinyint;
+#[deprecated(since = "1.1.0", note = "Use `sql_types::TinyInt` instead")]
+pub type TinyInt = ::sql_types::TinyInt;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::SmallInt` instead")]
 pub type SmallInt = ::sql_types::SmallInt;

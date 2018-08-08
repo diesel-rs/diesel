@@ -44,7 +44,7 @@ pub struct Bool;
 ///
 /// This is only available on MySQL.
 /// Keep in mind that `infer_schema!` will see `TINYINT(1)` as `Bool`,
-/// not `Tinyint`.
+/// not `TinyInt`.
 ///
 /// ### [`ToSql`](../serialize/trait.ToSql.html) impls
 ///
@@ -57,7 +57,9 @@ pub struct Bool;
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[mysql_type = "Tiny"]
-pub struct Tinyint;
+pub struct TinyInt;
+#[doc(hidden)]
+pub type Tinyint = TinyInt;
 
 /// The small integer SQL type.
 ///
