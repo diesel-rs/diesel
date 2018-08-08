@@ -49,7 +49,7 @@ impl<'a> fmt::Display for MigrationFileName<'a> {
             None => return Err(fmt::Error),
             Some(v) => v.join(self.sql_file),
         };
-        f.write_str(fpath.to_str().unwrap())?;
+        f.write_str(fpath.to_str().unwrap_or("Invalid utf8 in filename"))?;
         Ok(())
     }
 }
