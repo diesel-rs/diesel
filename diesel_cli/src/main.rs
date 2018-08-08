@@ -270,7 +270,7 @@ fn search_for_cargo_toml_directory(path: &Path) -> DatabaseResult<PathBuf> {
     } else {
         path.parent()
             .map(search_for_cargo_toml_directory)
-            .unwrap_or(Err(DatabaseError::CargoTomlNotFound))
+            .unwrap_or_else(|| Err(DatabaseError::CargoTomlNotFound))
     }
 }
 
