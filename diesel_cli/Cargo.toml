@@ -9,6 +9,7 @@ documentation = "https://diesel.rs/guides/getting-started"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
+autotests = false
 
 [[bin]]
 name = "diesel"
