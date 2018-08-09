@@ -25,7 +25,7 @@ pub mod nodes;
 mod offset_clause;
 mod order_clause;
 mod returning_clause;
-mod select_clause;
+pub(crate) mod select_clause;
 mod select_statement;
 mod sql_query;
 mod update_statement;
@@ -48,6 +48,9 @@ pub use self::update_statement::IncompleteUpdateStatement;
 #[doc(inline)]
 pub use self::update_statement::{AsChangeset, BoxedUpdateStatement, IntoUpdateTarget,
                                  UpdateStatement, UpdateTarget};
+
+#[doc(hidden)]
+pub use self::select_clause::BoxSelectClause;
 
 pub(crate) use self::insert_statement::ColumnList;
 

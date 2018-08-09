@@ -26,12 +26,14 @@ use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
 use backend::Backend;
+use expression::nullable::Nullable;
 use expression::subselect::ValidSubselect;
 use expression::*;
 use query_builder::SelectQuery;
 use query_source::joins::{AppendSelection, Inner, Join};
 use query_source::*;
 use result::QueryResult;
+use sql_types::NotNull;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
@@ -98,6 +100,26 @@ impl<F> SelectStatement<F> {
             NoGroupByClause,
             NoLockingClause,
         )
+    }
+}
+
+impl<F, S, D, W, O, L, Of, G, LC> SelectStatement<F, S, D, W, O, L, Of, G, LC>
+where
+    S: SelectClauseExpression<F>,
+    S::SelectClauseSqlType: NotNull,
+{
+    pub fn nullable(self) -> SelectStatement<F, Nullable<S>, D, W, O, L, Of, G, LC> {
+        SelectStatement {
+            select: Nullable::new(self.select),
+            from: self.from,
+            distinct: self.distinct,
+            where_clause: self.where_clause,
+            order: self.order,
+            limit: self.limit,
+            offset: self.offset,
+            group_by: self.group_by,
+            locking: self.locking,
+        }
     }
 }
 

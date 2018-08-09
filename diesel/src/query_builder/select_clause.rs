@@ -50,3 +50,29 @@ where
         source.default_selection().walk_ast(pass)
     }
 }
+
+#[doc(hidden)]
+pub trait BoxSelectClause<'a, QS, DB: Backend> {
+    fn box_select_clause(self, qs: &QS) -> Box<QueryFragment<DB> + 'a>;
+}
+
+impl<'a, QS, DB, T> BoxSelectClause<'a, QS, DB> for SelectClause<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB> + SelectableExpression<QS> + 'a,
+{
+    fn box_select_clause(self, _: &QS) -> Box<QueryFragment<DB> + 'a> {
+        Box::new(self.0)
+    }
+}
+
+impl<'a, QS, DB> BoxSelectClause<'a, QS, DB> for DefaultSelectClause
+where
+    DB: Backend,
+    QS: QuerySource,
+    QS::DefaultSelection: QueryFragment<DB> + 'a,
+{
+    fn box_select_clause(self, qs: &QS) -> Box<QueryFragment<DB> + 'a> {
+        Box::new(qs.default_selection())
+    }
+}
