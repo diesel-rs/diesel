@@ -9,7 +9,7 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{NewPost, Post};
+use self::models::Post;
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -20,17 +20,12 @@ pub fn establish_connection() -> MysqlConnection {
 }
 
 pub fn create_post(conn: &MysqlConnection, title: &str, body: &str) -> Post {
-    use schema::posts::dsl::{id, posts};
+    use schema::posts;
 
-    let new_post = NewPost {
-        title: title,
-        body: body,
-    };
-
-    diesel::insert_into(posts)
-        .values(&new_post)
+    diesel::insert_into(posts::table)
+        .values((posts::title.eq(title), posts::body.eq(body)))
         .execute(conn)
         .expect("Error saving new post");
 
-    posts.order(id.desc()).first(conn).unwrap()
+    posts::table.order(posts::id.desc()).first(conn).unwrap()
 }

@@ -9,7 +9,7 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{NewPost, Post};
+use self::models::Post;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -21,13 +21,8 @@ pub fn establish_connection() -> PgConnection {
 pub fn create_post(conn: &PgConnection, title: &str, body: &str) -> Post {
     use schema::posts;
 
-    let new_post = NewPost {
-        title: title,
-        body: body,
-    };
-
     diesel::insert_into(posts::table)
-        .values(&new_post)
+        .values((posts::title.eq(title), posts::body.eq(body)))
         .get_result(conn)
         .expect("Error saving new post")
 }
