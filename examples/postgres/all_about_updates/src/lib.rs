@@ -72,8 +72,8 @@ fn examine_sql_from_publish_pending_posts() {
     );
 }
 
-pub fn publish_post(post: Post, conn: &PgConnection) -> QueryResult<usize> {
-    diesel::update(&post)
+pub fn publish_post(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+    diesel::update(post)
         .set(posts::draft.eq(false))
         .execute(conn)
 }
@@ -141,8 +141,8 @@ fn examine_sql_from_hide_everything() {
     );
 }
 
-pub fn update_from_post_fields(post: Post, conn: &PgConnection) -> QueryResult<usize> {
-    diesel::update(posts::table).set(&post).execute(conn)
+pub fn update_from_post_fields(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+    diesel::update(posts::table).set(post).execute(conn)
 }
 
 #[test]

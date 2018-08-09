@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
+autotests = false
 
 [build-dependencies]
 diesel = { path = "../diesel", default-features = false }

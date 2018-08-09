@@ -19,7 +19,7 @@ fn main() {
     let post: Post = posts
         .find(id)
         .first(&connection)
-        .expect(&format!("Unable to find post {}", id));
+        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
 
     diesel::update(posts.find(id))
         .set(published.eq(true))

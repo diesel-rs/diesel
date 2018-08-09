@@ -18,12 +18,12 @@ fn main() {
     let _ = diesel::update(posts.find(id))
         .set(published.eq(true))
         .execute(&connection)
-        .expect(&format!("Unable to find post {}", id));
+        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
 
     let post: models::Post = posts
         .find(id)
         .first(&connection)
-        .expect(&format!("Unable to find post {}", id));
+        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
 
     println!("Published post {}", post.title);
 }
