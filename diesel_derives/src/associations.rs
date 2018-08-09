@@ -35,7 +35,7 @@ fn derive_belongs_to(
         parent_struct,
         foreign_key,
     } = AssociationOptions::from_meta(meta)?;
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let (_, ty_generics, _) = generics.split_for_impl();
 
     let foreign_key_field = model.find_column(&foreign_key)?;
     let struct_name = &model.name;
@@ -43,18 +43,40 @@ fn derive_belongs_to(
     let foreign_key_ty = inner_of_option_ty(&foreign_key_field.ty);
     let table_name = model.table_name();
 
+    let mut generics = generics.clone();
+
+    // TODO: Remove this specialcasing as soon as we bump our minimal supported
+    // rust version to >= 1.30.0
+    // Then we could use the `&Option<T> -> `Option<&T>` from implementation in
+    // std lib
     let foreign_key_expr = if is_option_ty(&foreign_key_field.ty) {
-        quote!(self#foreign_key_access.as_ref())
+        quote!(self#foreign_key_access.as_ref().and_then(std::convert::Into::into))
     } else {
-        quote!(std::option::Option::Some(&self#foreign_key_access))
+        quote!(std::convert::Into::into(&self#foreign_key_access))
     };
+
+    generics.params.push(parse_quote!(__FK));
+    {
+        let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+        where_clause
+            .predicates
+            .push(parse_quote!(__FK: std::hash::Hash + std::cmp::Eq));
+        where_clause.predicates.push(
+            parse_quote!(for<'__a> &'__a #foreign_key_ty: std::convert::Into<::std::option::Option<&'__a __FK>>),
+        );
+        where_clause.predicates.push(
+            parse_quote!(for<'__a> &'__a #parent_struct: diesel::associations::Identifiable<Id = &'__a __FK>),
+        );
+    }
+
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(quote! {
         impl #impl_generics diesel::associations::BelongsTo<#parent_struct>
             for #struct_name #ty_generics
-        #where_clause
+            #where_clause
         {
-            type ForeignKey = #foreign_key_ty;
+            type ForeignKey = __FK;
             type ForeignKeyColumn = #table_name::#foreign_key;
 
             fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
