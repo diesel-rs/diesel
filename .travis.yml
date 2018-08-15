@@ -55,9 +55,9 @@ matrix:
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
     - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
-  - rust: 1.24.1
+  - rust: 1.27.0
     env:
-    - ENSURE_SUPPORTED_RUST_VERSION=1.24.1
+    - ENSURE_SUPPORTED_RUST_VERSION=1.27.0
     script:
     - cargo check --all
 
