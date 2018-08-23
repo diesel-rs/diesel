@@ -1,52 +1,52 @@
 error: Missing required options
- --> $DIR/sql_type_bad_options.rs:4:10
+ --> $DIR/sql_type_bad_options.rs:5:3
   |
-4 | #[derive(SqlType)]
-  |          ^^^^^^^
+5 | #[postgres]
+  |   ^^^^^^^^
   |
   = help: Valid options are `type_name` or `oid` and `array_oid`
 
 warning: Option oid has no effect
- --> $DIR/sql_type_bad_options.rs:8:10
+ --> $DIR/sql_type_bad_options.rs:9:31
   |
-8 | #[derive(SqlType)]
-  |          ^^^^^^^
+9 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+  |                               ^^^
 
 warning: Option array_oid has no effect
- --> $DIR/sql_type_bad_options.rs:8:10
+ --> $DIR/sql_type_bad_options.rs:9:42
   |
-8 | #[derive(SqlType)]
-  |          ^^^^^^^
+9 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+  |                                          ^^^^^^^^^
 
 error: Missing required option array_oid
-  --> $DIR/sql_type_bad_options.rs:12:10
+  --> $DIR/sql_type_bad_options.rs:13:3
    |
-12 | #[derive(SqlType)]
-   |          ^^^^^^^
+13 | #[postgres(oid = "2")]
+   |   ^^^^^^^^
 
 error: Expected a number
-  --> $DIR/sql_type_bad_options.rs:16:10
+  --> $DIR/sql_type_bad_options.rs:17:18
    |
-16 | #[derive(SqlType)]
-   |          ^^^^^^^
+17 | #[postgres(oid = "NaN", array_oid = "1")]
+   |                  ^^^^^
 
 warning: Option ary_oid has no effect
-  --> $DIR/sql_type_bad_options.rs:20:10
+  --> $DIR/sql_type_bad_options.rs:21:25
    |
-20 | #[derive(SqlType)]
-   |          ^^^^^^^
+21 | #[postgres(oid = "NaN", ary_oid = "1")]
+   |                         ^^^^^^^
 
 error: Missing required option array_oid
-  --> $DIR/sql_type_bad_options.rs:20:10
+  --> $DIR/sql_type_bad_options.rs:21:3
    |
-20 | #[derive(SqlType)]
-   |          ^^^^^^^
+21 | #[postgres(oid = "NaN", ary_oid = "1")]
+   |   ^^^^^^^^
 
 error: Expected a number
-  --> $DIR/sql_type_bad_options.rs:20:10
+  --> $DIR/sql_type_bad_options.rs:21:18
    |
-20 | #[derive(SqlType)]
-   |          ^^^^^^^
+21 | #[postgres(oid = "NaN", ary_oid = "1")]
+   |                  ^^^^^
 
 error: aborting due to 5 previous errors
 

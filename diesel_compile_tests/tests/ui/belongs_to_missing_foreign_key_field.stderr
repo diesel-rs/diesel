@@ -1,14 +1,26 @@
 error: No field with column name bar_id
- --> $DIR/belongs_to_missing_foreign_key_field.rs:6:10
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:7:14
   |
-6 | #[derive(Associations)]
-  |          ^^^^^^^^^^^^
+7 | #[belongs_to(Bar)]
+  |              ^^^
 
 error: No field with column name bar_id
-  --> $DIR/belongs_to_missing_foreign_key_field.rs:11:10
-   |
-11 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:8:33
+  |
+8 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  |                                 ^^^^^^^^
 
-error: aborting due to 2 previous errors
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:12:14
+   |
+12 | #[belongs_to(Bar)]
+   |              ^^^
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:13:33
+   |
+13 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^
+
+error: aborting due to 4 previous errors
 

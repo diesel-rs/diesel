@@ -1,34 +1,48 @@
 error: `belongs_to` must be in the form `belongs_to(...)`
-  --> $DIR/belongs_to_invalid_option_syntax.rs:22:10
+  --> $DIR/belongs_to_invalid_option_syntax.rs:23:3
    |
-22 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+23 | #[belongs_to]
+   |   ^^^^^^^^^^
+
+error: `belongs_to` must be in the form `belongs_to(...)`
+  --> $DIR/belongs_to_invalid_option_syntax.rs:24:3
+   |
+24 | #[belongs_to = "Bar"]
+   |   ^^^^^^^^^^
 
 error: Expected a struct name
-  --> $DIR/belongs_to_invalid_option_syntax.rs:22:10
+  --> $DIR/belongs_to_invalid_option_syntax.rs:25:3
    |
-22 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+25 | #[belongs_to()]
+   |   ^^^^^^^^^^
+   |
+   = help: e.g. `#[belongs_to(User)]`
+
+error: Expected a struct name
+  --> $DIR/belongs_to_invalid_option_syntax.rs:26:14
+   |
+26 | #[belongs_to(foreign_key = "bar_id")]
+   |              ^^^^^^^^^^^
    |
    = help: e.g. `#[belongs_to(User)]`
 
 error: `foreign_key` must be in the form `foreign_key = "value"`
-  --> $DIR/belongs_to_invalid_option_syntax.rs:22:10
+  --> $DIR/belongs_to_invalid_option_syntax.rs:27:19
    |
-22 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+27 | #[belongs_to(Bar, foreign_key)]
+   |                   ^^^^^^^^^^^
 
 warning: The form `foreign_key(value)` is deprecated. Use `foreign_key = "value"` instead
-  --> $DIR/belongs_to_invalid_option_syntax.rs:22:10
+  --> $DIR/belongs_to_invalid_option_syntax.rs:28:19
    |
-22 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+28 | #[belongs_to(Bar, foreign_key(bar_id))]
+   |                   ^^^^^^^^^^^
 
 warning: Unrecognized option random_option
-  --> $DIR/belongs_to_invalid_option_syntax.rs:22:10
+  --> $DIR/belongs_to_invalid_option_syntax.rs:29:43
    |
-22 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^
+29 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
+   |                                           ^^^^^^^^^^^^^
 
-error: aborting due to 3 previous errors
+error: aborting due to 5 previous errors
 

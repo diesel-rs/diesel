@@ -1,38 +1,38 @@
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
-  --> $DIR/as_changeset_bad_options.rs:11:10
+  --> $DIR/as_changeset_bad_options.rs:13:21
    |
-11 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+13 | #[changeset_options(treat_none_as_null("true"))]
+   |                     ^^^^^^^^^^^^^^^^^^
 
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
-  --> $DIR/as_changeset_bad_options.rs:19:10
+  --> $DIR/as_changeset_bad_options.rs:21:21
    |
-19 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+21 | #[changeset_options(treat_none_as_null)]
+   |                     ^^^^^^^^^^^^^^^^^^
 
 error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
-  --> $DIR/as_changeset_bad_options.rs:27:10
+  --> $DIR/as_changeset_bad_options.rs:29:21
    |
-27 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+29 | #[changeset_options(treat_none_as_null = "foo")]
+   |                     ^^^^^^^^^^^^^^^^^^
 
 error: Missing required option treat_none_as_null
-  --> $DIR/as_changeset_bad_options.rs:35:10
+  --> $DIR/as_changeset_bad_options.rs:37:3
    |
-35 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+37 | #[changeset_options()]
+   |   ^^^^^^^^^^^^^^^^^
 
 error: `changeset_options` must be in the form `changeset_options(...)`
-  --> $DIR/as_changeset_bad_options.rs:43:10
+  --> $DIR/as_changeset_bad_options.rs:45:3
    |
-43 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+45 | #[changeset_options = "treat_none_as_null"]
+   |   ^^^^^^^^^^^^^^^^^
 
 error: `changeset_options` must be in the form `changeset_options(...)`
-  --> $DIR/as_changeset_bad_options.rs:51:10
+  --> $DIR/as_changeset_bad_options.rs:53:3
    |
-51 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^
+53 | #[changeset_options]
+   |   ^^^^^^^^^^^^^^^^^
 
 error: aborting due to 6 previous errors
 
