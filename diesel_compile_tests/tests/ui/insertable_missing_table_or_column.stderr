@@ -5,10 +5,10 @@ error[E0433]: failed to resolve. Use of undeclared type or module `posts`
    |        ^^^^ Use of undeclared type or module `posts`
 
 error[E0433]: failed to resolve. Use of undeclared type or module `posts`
-  --> $DIR/insertable_missing_table_or_column.rs:15:10
+  --> $DIR/insertable_missing_table_or_column.rs:16:16
    |
-15 | #[derive(Insertable)]
-   |          ^^^^^^^^^^ Use of undeclared type or module `posts`
+16 | #[table_name = "posts"]
+   |                ^^^^^^^ Use of undeclared type or module `posts`
 
 error[E0412]: cannot find type `name` in module `users`
   --> $DIR/insertable_missing_table_or_column.rs:21:10

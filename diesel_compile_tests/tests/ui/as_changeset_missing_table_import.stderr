@@ -5,10 +5,10 @@ error[E0433]: failed to resolve. Use of undeclared type or module `users`
   |        ^^^^ Use of undeclared type or module `users`
 
 error[E0433]: failed to resolve. Use of undeclared type or module `users`
-  --> $DIR/as_changeset_missing_table_import.rs:10:10
+  --> $DIR/as_changeset_missing_table_import.rs:11:16
    |
-10 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^ Use of undeclared type or module `users`
+11 | #[table_name = "users"]
+   |                ^^^^^^^ Use of undeclared type or module `users`
 
 error: aborting due to 2 previous errors
 

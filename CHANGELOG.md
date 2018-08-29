@@ -26,6 +26,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `Tinyint` has been renamed to `TinyInt` and an alias has been created from `Tinyint` to `TinyInt`.
 
+* The minimal officially supported rustc version is now 1.27.0
+
 ## [1.3.2] - 2018-06-13
 
 ### Fixed

@@ -38,12 +38,12 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2018-07-17
+  - rust: nightly-2018-08-17
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - rustup component add clippy-preview
     - cargo clippy
-    - (cd diesel_compile_tests && cargo update && cargo update -pproc-macro2 --precise "0.4.8" && travis-cargo test)
+    - (cd diesel_compile_tests && travis-cargo test)
   - rust: 1.26.1
     env: RUSTFMT=YESPLEASE
     script:
@@ -55,9 +55,9 @@ matrix:
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
     - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
-  - rust: 1.24.1
+  - rust: 1.27.0
     env:
-    - ENSURE_SUPPORTED_RUST_VERSION=1.24.1
+    - ENSURE_SUPPORTED_RUST_VERSION=1.27.0
     script:
     - cargo check --all
 
