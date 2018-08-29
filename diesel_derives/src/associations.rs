@@ -45,28 +45,34 @@ fn derive_belongs_to(
 
     let mut generics = generics.clone();
 
-    // TODO: Remove this specialcasing as soon as we bump our minimal supported
+    // TODO: Remove this special casing as soon as we bump our minimal supported
     // rust version to >= 1.30.0 because this version will add
     // `impl<'a, T> From<&'a Option<T>> for Option<&'a T>` to the std-lib
-    let foreign_key_expr = if is_option_ty(&foreign_key_field.ty) {
-        quote!(self#foreign_key_access.as_ref().and_then(std::convert::Into::into))
+    let (foreign_key_expr, foreign_key_ty) = if is_option_ty(&foreign_key_field.ty) {
+        (
+            quote!(self#foreign_key_access.as_ref()),
+            quote!(#foreign_key_ty),
+        )
     } else {
-        quote!(std::convert::Into::into(&self#foreign_key_access))
-    };
+        generics.params.push(parse_quote!(__FK));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__FK: std::hash::Hash + std::cmp::Eq));
+            where_clause.predicates.push(
+                parse_quote!(for<'__a> &'__a #foreign_key_ty: std::convert::Into<::std::option::Option<&'__a __FK>>),
+            );
+            where_clause.predicates.push(
+                parse_quote!(for<'__a> &'__a #parent_struct: diesel::associations::Identifiable<Id = &'__a __FK>),
+            );
+        }
 
-    generics.params.push(parse_quote!(__FK));
-    {
-        let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-        where_clause
-            .predicates
-            .push(parse_quote!(__FK: std::hash::Hash + std::cmp::Eq));
-        where_clause.predicates.push(
-            parse_quote!(for<'__a> &'__a #foreign_key_ty: std::convert::Into<::std::option::Option<&'__a __FK>>),
-        );
-        where_clause.predicates.push(
-            parse_quote!(for<'__a> &'__a #parent_struct: diesel::associations::Identifiable<Id = &'__a __FK>),
-        );
-    }
+        (
+            quote!(std::convert::Into::into(&self#foreign_key_access)),
+            quote!(__FK),
+        )
+    };
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -75,7 +81,7 @@ fn derive_belongs_to(
             for #struct_name #ty_generics
         #where_clause
         {
-            type ForeignKey = __FK;
+            type ForeignKey = #foreign_key_ty;
             type ForeignKeyColumn = #table_name::#foreign_key;
 
             fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
