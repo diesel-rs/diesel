@@ -435,11 +435,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
-    /// let starts_with_s = users
+    /// let starts_with_s = animals
     ///     .select(name)
-    ///     .filter(name.ilike("s%"))
+    ///     .filter(name.ilike("s%").or(species.ilike("s%")))
     ///     .get_results::<String>(&connection)?;
     /// assert_eq!(vec!["Sean"], starts_with_s);
     /// #     Ok(())
