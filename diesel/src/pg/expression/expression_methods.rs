@@ -2,7 +2,7 @@
 
 use super::operators::*;
 use expression::{AsExpression, Expression};
-use sql_types::{Array, Text};
+use sql_types::{Array, Text, Nullable};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -421,7 +421,7 @@ impl<T> PgSortExpressionMethods for Asc<T> {}
 impl<T> PgSortExpressionMethods for Desc<T> {}
 
 /// PostgreSQL specific methods present on text expressions.
-pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
+pub trait PgTextExpressionMethods: Expression + Sized {
     /// Creates a  PostgreSQL `ILIKE` expression
     ///
     /// # Example
@@ -477,4 +477,18 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     }
 }
 
-impl<T: Expression<SqlType = Text>> PgTextExpressionMethods for T {}
+#[doc(hidden)]
+/// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
+/// types. Once coherence takes associated types into account, we can remove
+/// this trait.
+pub trait TextOrNullableText {}
+
+impl TextOrNullableText for Text {}
+impl TextOrNullableText for Nullable<Text> {}
+
+impl<T> PgTextExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: TextOrNullableText,
+{
+}
