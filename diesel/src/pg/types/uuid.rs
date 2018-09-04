@@ -3,7 +3,7 @@ extern crate uuid;
 use std::io::prelude::*;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::Uuid;
 
@@ -14,8 +14,8 @@ use sql_types::Uuid;
 struct UuidProxy(uuid::Uuid);
 
 impl FromSql<Uuid, Pg> for uuid::Uuid {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none_pg!(bytes);
         uuid::Uuid::from_bytes(bytes).map_err(|e| e.into())
     }
 }

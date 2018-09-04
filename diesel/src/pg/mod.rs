@@ -15,7 +15,7 @@ mod query_builder;
 pub(crate) mod serialize;
 mod transaction;
 
-pub use self::backend::{Pg, PgTypeMetadata};
+pub use self::backend::{Pg, PgTypeMetadata, PgValue};
 pub use self::connection::PgConnection;
 pub use self::metadata_lookup::PgMetadataLookup;
 pub use self::query_builder::DistinctOnClause;

@@ -1,6 +1,6 @@
 use super::cursor::NamedCursor;
 use super::result::PgResult;
-use pg::Pg;
+use pg::{Pg, PgValue};
 use row::*;
 
 pub struct PgRow<'a> {
@@ -20,7 +20,7 @@ impl<'a> PgRow<'a> {
 }
 
 impl<'a> Row<Pg> for PgRow<'a> {
-    fn take(&mut self) -> Option<&[u8]> {
+    fn take(&mut self) -> Option<&PgValue> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
         self.db_result.get(self.row_idx, current_idx)
@@ -43,7 +43,7 @@ impl<'a> PgNamedRow<'a> {
 }
 
 impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
-    fn get_raw_value(&self, index: usize) -> Option<&[u8]> {
+    fn get_raw_value(&self, index: usize) -> Option<&PgValue> {
         self.cursor.get_value(self.idx, index)
     }
 

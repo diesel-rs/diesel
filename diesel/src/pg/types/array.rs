@@ -3,7 +3,7 @@ use std::fmt;
 use std::io::Write;
 
 use deserialize::{self, FromSql};
-use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
+use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{Array, HasSqlType, Nullable};
 
@@ -23,8 +23,8 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+        let mut bytes = not_none_pg!(bytes);
         let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
         let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
         let _oid = try!(bytes.read_i32::<NetworkEndian>());
@@ -48,7 +48,10 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(Some(elem_bytes))
+                    T::from_sql(Some(&PgValue {
+                        data: elem_bytes.to_vec(),
+                        oid: 1, //TODO FIXFIXFIX
+                    }))
                 }
             })
             .collect()

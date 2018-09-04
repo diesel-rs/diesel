@@ -13,6 +13,11 @@ use sql_types::{Oid, TypeMetadata};
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Pg;
 
+pub struct PgValue {
+    pub data: Vec<u8>,
+    pub oid: u32,
+}
+
 /// The [OIDs] for a SQL type
 ///
 /// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
@@ -39,7 +44,7 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
-    type RawValue = [u8];
+    type RawValue = PgValue;
     type ByteOrder = NetworkEndian;
 }
 

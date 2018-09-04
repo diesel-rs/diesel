@@ -200,6 +200,7 @@ pub mod pg;
 pub mod sqlite;
 
 mod type_impls;
+
 mod util;
 
 pub mod dsl {

@@ -5,7 +5,7 @@ extern crate serde_json;
 use std::io::prelude::*;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
@@ -22,8 +22,8 @@ mod foreign_derives {
 }
 
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none_pg!(bytes);
         serde_json::from_slice(bytes).map_err(Into::into)
     }
 }
@@ -37,8 +37,8 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
 }
 
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none_pg!(bytes);
         if bytes[0] != 1 {
             return Err("Unsupported JSONB encoding version".into());
         }

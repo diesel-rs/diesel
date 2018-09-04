@@ -13,7 +13,7 @@ mod bigdecimal {
 
     use deserialize::{self, FromSql};
     use pg::data_types::PgNumeric;
-    use pg::Pg;
+    use pg::{Pg, PgValue};
     use serialize::{self, Output, ToSql};
     use sql_types::Numeric;
 
@@ -153,7 +153,7 @@ mod bigdecimal {
     }
 
     impl FromSql<Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
+        fn from_sql(numeric: Option<&PgValue>) -> deserialize::Result<Self> {
             // FIXME: Use the TryFrom impl when try_from is stable
             let numeric = PgNumeric::from_sql(numeric)?;
             pg_decimal_to_bigdecimal(&numeric)
