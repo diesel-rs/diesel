@@ -16,7 +16,7 @@ impl MetaItem {
             .iter()
             .filter_map(|attr| {
                 attr.interpret_meta()
-                    .map(|m| FixSpan(attr.pound_token.0[0]).fold_meta(m))
+                    .map(|m| FixSpan(attr.pound_token.spans[0]).fold_meta(m))
             })
             .filter(|m| m.name() == name)
             .map(|meta| Self { meta })
