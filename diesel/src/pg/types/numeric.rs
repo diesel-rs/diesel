@@ -94,7 +94,10 @@ mod bigdecimal {
 
             // Ensure that the decimal will always lie on a digit boundary
             for _ in 0..(4 - scale % 4) {
-                integer = integer * 10;
+                // NOTE: Assignment to `mul` is intended to avoid `#[deny(assign_op_pattern)]` on nightly
+                //       despite lack of `std::ops::MulAssign` impl for `BigInt`.
+                let mul = integer * 10;
+                integer = mul;
             }
             let integer = integer.to_biguint().expect("integer is always positive");
 
