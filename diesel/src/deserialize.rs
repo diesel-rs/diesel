@@ -133,6 +133,13 @@ where
 /// If a field is another struct which implements `QueryableByName`, instead of
 /// a column, you can annotate that struct with `#[diesel(embed)]`
 ///
+/// If the struct you are using contains only one field and this is the only 
+/// data being selected, then a single-element tuple should be used that has 
+/// slightly differing syntax from that of a multi-element tuple. For example, 
+/// to get the field `some_field` from table `some_table`, use  
+/// `.select((some_table::some_field,))`. Ensure the comma is present before 
+/// the closing parentheses. 
+///
 /// [`sql_query`]: ../fn.sql_query.html
 pub trait QueryableByName<DB>
 where
