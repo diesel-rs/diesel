@@ -483,13 +483,23 @@ fn filter_subselect_with_nullable_column() {
     ).execute(&connection)
         .unwrap();
 
-    connection
-        .execute("INSERT INTO home_worlds (name) VALUES ('Tatooine');")
+    ::diesel::insert_into(home_worlds::table)
+        .values(home_worlds::name.eq("Tatooine"))
+        .execute(&connection)
         .unwrap();
-    connection
-        .execute(
-            "INSERT INTO heros(name, home_world) VALUES ('Luke Skywalker', 1), ('R2D2', NULL);",
-        )
+    ::diesel::insert_into(heros::table)
+        .values((
+            heros::name.eq("Luke Skywalker"),
+            heros::home_world.eq(Some(1)),
+        ))
+        .execute(&connection)
+        .unwrap();
+    ::diesel::insert_into(heros::table)
+        .values((
+            heros::name.eq("R2D2"),
+            heros::home_world.eq::<Option<i32>>(None),
+        ))
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![Hero {

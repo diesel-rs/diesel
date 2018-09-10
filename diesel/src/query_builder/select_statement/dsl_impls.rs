@@ -2,6 +2,7 @@ use super::BoxedSelectStatement;
 use associations::HasTable;
 use backend::Backend;
 use dsl::AsExprOf;
+use expression::nullable::Nullable;
 use expression::*;
 use insertable::Insertable;
 use query_builder::distinct_clause::*;
@@ -19,7 +20,8 @@ use query_dsl::boxed_dsl::BoxedDsl;
 use query_dsl::methods::*;
 use query_dsl::*;
 use query_source::joins::{Join, JoinOn, JoinTo};
-use sql_types::{BigInt, Bool};
+use query_source::QuerySource;
+use sql_types::{BigInt, Bool, NotNull};
 
 impl<F, S, D, W, O, L, Of, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
@@ -337,11 +339,12 @@ impl<F, S, D, W, O, L, Of, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
     }
 }
 
-impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB> for SelectStatement<F, S, D, W, O, L, Of, G>
+impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
+    for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
 where
     Self: AsQuery,
     DB: Backend,
-    S: BoxSelectClause<'a, F, DB> + SelectClauseExpression<F>,
+    S: QueryFragment<DB> + SelectableExpression<F> + 'a,
     D: QueryFragment<DB> + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
     O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
@@ -349,11 +352,39 @@ where
     Of: QueryFragment<DB> + 'a,
     G: QueryFragment<DB> + 'a,
 {
-    type Output = BoxedSelectStatement<'a, S::SelectClauseSqlType, F, DB>;
+    type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
-            self.select.box_select_clause(&self.from),
+            Box::new(self.select.0),
+            self.from,
+            Box::new(self.distinct),
+            self.where_clause.into(),
+            self.order.into(),
+            Box::new(self.limit),
+            Box::new(self.offset),
+            Box::new(self.group_by),
+        )
+    }
+}
+impl<'a, F, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
+    for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
+where
+    Self: AsQuery,
+    DB: Backend,
+    F: QuerySource,
+    F::DefaultSelection: QueryFragment<DB> + 'a,
+    D: QueryFragment<DB> + 'a,
+    W: Into<BoxedWhereClause<'a, DB>>,
+    O: Into<Option<Box<QueryFragment<DB> + 'a>>>,
+    L: QueryFragment<DB> + 'a,
+    Of: QueryFragment<DB> + 'a,
+    G: QueryFragment<DB> + 'a,
+{
+    type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
+    fn internal_into_boxed(self) -> Self::Output {
+        BoxedSelectStatement::new(
+            Box::new(self.from.default_selection()),
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
@@ -436,5 +467,53 @@ where
 
     fn values(self) -> Self::Values {
         InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, F, S, D, W, O, L, Of, G> NullableSelectDsl
+    for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
+where
+    SelectClause<S>: SelectClauseExpression<F>,
+    <SelectClause<S> as SelectClauseExpression<F>>::SelectClauseSqlType: NotNull,
+{
+    type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, L, Of, G>;
+
+    fn nullable(self) -> Self::Output {
+        SelectStatement::new(
+            SelectClause(Nullable::new(self.select.0)),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.locking,
+        )
+    }
+}
+
+impl<'a, F, D, W, O, L, Of, G> NullableSelectDsl
+    for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
+where
+    F: QuerySource,
+    DefaultSelectClause: SelectClauseExpression<F>,
+    <DefaultSelectClause as SelectClauseExpression<F>>::SelectClauseSqlType: NotNull,
+{
+    type Output =
+        SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, L, Of, G>;
+
+    fn nullable(self) -> Self::Output {
+        SelectStatement::new(
+            SelectClause(Nullable::new(self.from.default_selection())),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.locking,
+        )
     }
 }

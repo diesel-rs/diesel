@@ -35,6 +35,7 @@ pub mod limit_dsl;
 #[doc(hidden)]
 pub mod load_dsl;
 mod locking_dsl;
+mod nullable_select_dsl;
 mod offset_dsl;
 mod order_dsl;
 mod save_changes_dsl;
@@ -67,6 +68,7 @@ pub mod methods {
     #[allow(deprecated)]
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
+    pub use super::nullable_select_dsl::NullableSelectDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
@@ -1044,6 +1046,45 @@ pub trait QueryDsl: Sized {
         Self: methods::SingleValueDsl,
     {
         methods::SingleValueDsl::single_value(self)
+    }
+
+    /// Coerce the SQL type of the select clause to it's nullable equivalent.
+    ///
+    /// This is use full for writing queries that contain subselects on non null
+    /// fields comparing them to nullable fields.
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #    run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// table! {
+    ///     users {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         by_user -> Nullable<Text>,
+    ///     }
+    /// }
+    ///
+    /// # let _: Vec<(i32, Option<String>)> =
+    /// posts::table.filter(
+    ///    posts::by_user.eq_any(users::table.select(users::name).nullable())
+    /// ).load(&connection)?;
+    /// # }
+    fn nullable(self) -> NullableSelect<Self>
+    where
+        Self: methods::NullableSelectDsl,
+    {
+        methods::NullableSelectDsl::nullable(self)
     }
 }
 

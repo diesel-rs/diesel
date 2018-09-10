@@ -59,25 +59,6 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     }
 }
 
-impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB>
-where
-    ST: NotNull,
-{
-    pub fn nullable(self) -> BoxedSelectStatement<'a, Nullable<ST>, QS, DB> {
-        BoxedSelectStatement {
-            select: self.select,
-            from: self.from,
-            distinct: self.distinct,
-            where_clause: self.where_clause,
-            order: self.order,
-            limit: self.limit,
-            offset: self.offset,
-            group_by: self.group_by,
-            _marker: PhantomData,
-        }
-    }
-}
-
 impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB>
 where
     DB: Backend,
@@ -337,5 +318,26 @@ where
 
     fn values(self) -> Self::Values {
         InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, ST, QS, DB> NullableSelectDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    ST: NotNull,
+{
+    type Output = BoxedSelectStatement<'a, Nullable<ST>, QS, DB>;
+
+    fn nullable(self) -> Self::Output {
+        BoxedSelectStatement {
+            select: self.select,
+            from: self.from,
+            distinct: self.distinct,
+            where_clause: self.where_clause,
+            order: self.order,
+            limit: self.limit,
+            offset: self.offset,
+            group_by: self.group_by,
+            _marker: PhantomData,
+        }
     }
 }
