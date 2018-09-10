@@ -87,13 +87,25 @@ pub enum Error {
 pub enum DatabaseErrorKind {
     /// A unique constraint was violated.
     UniqueViolation,
+
     /// A foreign key constraint was violated.
     ForeignKeyViolation,
+
     /// The query could not be sent to the database due to a protocol violation.
     ///
     /// An example of a case where this would occur is if you attempted to send
     /// a query with more than 65000 bind parameters using PostgreSQL.
     UnableToSendCommand,
+
+    /// A serializable transaction failed to commit due to a read/write
+    /// dependency on a concurrent transaction.
+    ///
+    /// Corresponds to SQLSTATE code 40001
+    ///
+    /// This error is only detected for PostgreSQL, as we do not yet support
+    /// transaction isolation levels for other backends.
+    SerializationFailure,
+
     #[doc(hidden)]
     __Unknown, // Match against _ instead, more variants may be added in the future
 }
