@@ -12,6 +12,7 @@
 #![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
 
 extern crate chrono;
+#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate diesel;
@@ -245,12 +246,7 @@ fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
 }
 
 fn generate_completions_command(matches: &ArgMatches) {
-    let shell = match matches.subcommand() {
-        ("bash", _) => Shell::Bash,
-        ("fish", _) => Shell::Fish,
-        ("zsh", _) => Shell::Zsh,
-        _ => unreachable!("The cli parser should prevent reaching here"),
-    };
+    let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
     cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }
 
