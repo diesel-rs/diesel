@@ -62,6 +62,7 @@ fn main() {
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches).unwrap_or_else(handle_error),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
+        ("zsh-completion", Some(matches)) => generate_zsh_completion_command(matches),
         ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
@@ -246,6 +247,10 @@ fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
 
 fn generate_bash_completion_command(_: &ArgMatches) {
     cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
+}
+
+fn generate_zsh_completion_command(_: &ArgMatches) {
+    cli::build_cli().gen_completions_to("diesel", Shell::Zsh, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,

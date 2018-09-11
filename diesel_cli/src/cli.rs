@@ -93,6 +93,9 @@ pub fn build_cli() -> App<'static, 'static> {
     let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
         .about("Generate bash completion script for the diesel command.");
 
+    let generate_zsh_completion_subcommand = SubCommand::with_name("zsh-completion")
+        .about("Generate zsh completion script for the diesel command.");
+
     let infer_schema_subcommand = SubCommand::with_name("print-schema")
         .setting(AppSettings::VersionlessSubcommands)
         .about("Print table definitions for database schema.")
@@ -185,6 +188,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
         .subcommand(generate_bash_completion_subcommand)
+        .subcommand(generate_zsh_completion_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }
