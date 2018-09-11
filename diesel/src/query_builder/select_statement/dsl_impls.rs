@@ -2,6 +2,7 @@ use super::BoxedSelectStatement;
 use associations::HasTable;
 use backend::Backend;
 use dsl::AsExprOf;
+use expression::nullable::Nullable;
 use expression::*;
 use insertable::Insertable;
 use query_builder::distinct_clause::*;
@@ -382,7 +383,6 @@ where
     G: QueryFragment<DB> + 'a,
 {
     type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
-
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
             Box::new(self.from.default_selection()),
@@ -468,5 +468,48 @@ where
 
     fn values(self) -> Self::Values {
         InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, F, S, D, W, O, L, Of, G> SelectNullableDsl
+    for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
+{
+    type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, L, Of, G>;
+
+    fn nullable(self) -> Self::Output {
+        SelectStatement::new(
+            SelectClause(Nullable::new(self.select.0)),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.locking,
+        )
+    }
+}
+
+impl<'a, F, D, W, O, L, Of, G> SelectNullableDsl
+    for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
+where
+    F: QuerySource,
+{
+    type Output =
+        SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, L, Of, G>;
+
+    fn nullable(self) -> Self::Output {
+        SelectStatement::new(
+            SelectClause(Nullable::new(self.from.default_selection())),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.locking,
+        )
     }
 }

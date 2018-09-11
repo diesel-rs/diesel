@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::*;
 use query_builder::*;
+use query_source::Table;
 use result::QueryResult;
 use sql_types::IntoNullable;
 
@@ -50,5 +51,13 @@ impl<T> NonAggregate for Nullable<T>
 where
     T: NonAggregate,
     Nullable<T>: Expression,
+{
+}
+
+impl<T, QS> SelectableExpression<QS> for Nullable<T>
+where
+    Self: AppearsOnTable<QS>,
+    T: SelectableExpression<QS>,
+    QS: Table,
 {
 }

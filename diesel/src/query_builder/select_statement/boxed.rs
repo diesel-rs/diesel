@@ -18,7 +18,7 @@ use query_dsl::*;
 use query_source::joins::*;
 use query_source::{QuerySource, Table};
 use result::QueryResult;
-use sql_types::{BigInt, Bool};
+use sql_types::{BigInt, Bool, NotNull, Nullable};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
@@ -318,5 +318,26 @@ where
 
     fn values(self) -> Self::Values {
         InsertFromSelect::new(self)
+    }
+}
+
+impl<'a, ST, QS, DB> SelectNullableDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    ST: NotNull,
+{
+    type Output = BoxedSelectStatement<'a, Nullable<ST>, QS, DB>;
+
+    fn nullable(self) -> Self::Output {
+        BoxedSelectStatement {
+            select: self.select,
+            from: self.from,
+            distinct: self.distinct,
+            where_clause: self.where_clause,
+            order: self.order,
+            limit: self.limit,
+            offset: self.offset,
+            group_by: self.group_by,
+            _marker: PhantomData,
+        }
     }
 }
