@@ -90,11 +90,18 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
-    let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
-        .about("Generate bash completion script for the diesel command.");
-
-    let generate_zsh_completion_subcommand = SubCommand::with_name("zsh-completion")
-        .about("Generate zsh completion script for the diesel command.");
+    let generate_completions_subcommand = SubCommand::with_name("completions")
+        .about("Generate shell completion scripts for the diesel command.")
+        .subcommand(SubCommand::with_name("bash").about(
+            "Generate bash completions."
+        ))
+        .subcommand(SubCommand::with_name("fish").about(
+            "Generate fish completions."
+        ))
+        .subcommand(SubCommand::with_name("zsh").about(
+            "Generate zsh completions."
+        ))
+        .setting(AppSettings::SubcommandRequiredElseHelp);
 
     let infer_schema_subcommand = SubCommand::with_name("print-schema")
         .setting(AppSettings::VersionlessSubcommands)
@@ -187,8 +194,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
-        .subcommand(generate_bash_completion_subcommand)
-        .subcommand(generate_zsh_completion_subcommand)
+        .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }
