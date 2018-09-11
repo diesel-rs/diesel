@@ -21,7 +21,7 @@ use query_dsl::methods::*;
 use query_dsl::*;
 use query_source::joins::{Join, JoinOn, JoinTo};
 use query_source::QuerySource;
-use sql_types::{BigInt, Bool, NotNull};
+use sql_types::{BigInt, Bool};
 
 impl<F, S, D, W, O, L, Of, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
@@ -367,6 +367,7 @@ where
         )
     }
 }
+
 impl<'a, F, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
 where
@@ -470,11 +471,8 @@ where
     }
 }
 
-impl<'a, F, S, D, W, O, L, Of, G> NullableSelectDsl
+impl<'a, F, S, D, W, O, L, Of, G> SelectNullableDsl
     for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
-where
-    SelectClause<S>: SelectClauseExpression<F>,
-    <SelectClause<S> as SelectClauseExpression<F>>::SelectClauseSqlType: NotNull,
 {
     type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, L, Of, G>;
 
@@ -493,12 +491,10 @@ where
     }
 }
 
-impl<'a, F, D, W, O, L, Of, G> NullableSelectDsl
+impl<'a, F, D, W, O, L, Of, G> SelectNullableDsl
     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
 where
     F: QuerySource,
-    DefaultSelectClause: SelectClauseExpression<F>,
-    <DefaultSelectClause as SelectClauseExpression<F>>::SelectClauseSqlType: NotNull,
 {
     type Output =
         SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, L, Of, G>;

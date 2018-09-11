@@ -321,7 +321,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB> NullableSelectDsl for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB> SelectNullableDsl for BoxedSelectStatement<'a, ST, QS, DB>
 where
     ST: NotNull,
 {

@@ -318,7 +318,7 @@ pub mod helper_types {
     pub type SingleValue<Source> = <Source as SingleValueDsl>::Output;
 
     /// Represents the return type of `.nullable()`
-    pub type NullableSelect<Source> = <Source as NullableSelectDsl>::Output;
+    pub type NullableSelect<Source> = <Source as SelectNullableDsl>::Output;
 }
 
 pub mod prelude {

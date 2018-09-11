@@ -5,7 +5,7 @@
 /// to call `nullable` from generic code.
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html#method.nullable
-pub trait NullableSelectDsl {
+pub trait SelectNullableDsl {
     /// The return type of `nullable`
     type Output;
 

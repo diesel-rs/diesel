@@ -68,7 +68,7 @@ pub mod methods {
     #[allow(deprecated)]
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
-    pub use super::nullable_select_dsl::NullableSelectDsl;
+    pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
@@ -1061,6 +1061,7 @@ pub trait QueryDsl: Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = establish_connection();
     /// table! {
     ///     users {
     ///         id -> Integer,
@@ -1079,12 +1080,13 @@ pub trait QueryDsl: Sized {
     /// posts::table.filter(
     ///    posts::by_user.eq_any(users::table.select(users::name).nullable())
     /// ).load(&connection)?;
+    /// #     Ok(())
     /// # }
     fn nullable(self) -> NullableSelect<Self>
     where
-        Self: methods::NullableSelectDsl,
+        Self: methods::SelectNullableDsl,
     {
-        methods::NullableSelectDsl::nullable(self)
+        methods::SelectNullableDsl::nullable(self)
     }
 }
 
