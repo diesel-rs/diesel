@@ -247,7 +247,9 @@ fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
 }
 
 fn generate_bash_completion_command(_: &ArgMatches) {
-    eprintln!("WARNING: `diesel bash-completion` is deprecated, use `diesel completions bash` instead");
+    eprintln!(
+        "WARNING: `diesel bash-completion` is deprecated, use `diesel completions bash` instead"
+    );
     cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
 }
 

@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, Arg, SubCommand, Shell};
+use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
     let database_arg = Arg::with_name("DATABASE_URL")
@@ -95,10 +95,12 @@ pub fn build_cli() -> App<'static, 'static> {
 
     let generate_completions_subcommand = SubCommand::with_name("completions")
         .about("Generate shell completion scripts for the diesel command.")
-        .arg(Arg::with_name("SHELL")
-            .index(1)
-            .required(true)
-            .possible_values(&Shell::variants()));
+        .arg(
+            Arg::with_name("SHELL")
+                .index(1)
+                .required(true)
+                .possible_values(&Shell::variants()),
+        );
 
     let infer_schema_subcommand = SubCommand::with_name("print-schema")
         .setting(AppSettings::VersionlessSubcommands)
