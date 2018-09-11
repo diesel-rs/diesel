@@ -36,6 +36,9 @@ impl PgResult {
                         Some(error_codes::FOREIGN_KEY_VIOLATION) => {
                             DatabaseErrorKind::ForeignKeyViolation
                         }
+                        Some(error_codes::SERIALIZATION_FAILURE) => {
+                            DatabaseErrorKind::SerializationFailure
+                        }
                         _ => DatabaseErrorKind::__Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
@@ -162,4 +165,5 @@ mod error_codes {
     //! They are not exposed programmatically through libpq.
     pub const UNIQUE_VIOLATION: &str = "23505";
     pub const FOREIGN_KEY_VIOLATION: &str = "23503";
+    pub const SERIALIZATION_FAILURE: &str = "40001";
 }

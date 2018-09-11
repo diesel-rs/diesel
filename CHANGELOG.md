@@ -19,6 +19,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for MySQL's `UNSIGNED TINYINT`
 
+* `DatabaseErrorKind::SerializationFailure` has been added, corresponding to
+  SQLSTATE code 40001 (A `SERIALIZABLE` isolation level transaction failed to
+  commit due to a read/write dependency on another transaction). This error is
+  currently only detected on PostgreSQL.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root

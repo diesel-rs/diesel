@@ -101,3 +101,77 @@ fn foreign_key_violation_correct_constraint_name() {
         ),
     }
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn isolation_errors_are_detected() {
+    use diesel::result::DatabaseErrorKind::SerializationFailure;
+    use diesel::result::Error::DatabaseError;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+
+    table! {
+        #[sql_name = "isolation_errors_are_detected"]
+        isolation_example {
+            id -> Serial,
+            class -> Integer,
+        }
+    }
+
+    let conn = connection_without_transaction();
+
+    sql_query("DROP TABLE IF EXISTS isolation_errors_are_detected;")
+        .execute(&conn)
+        .unwrap();
+    sql_query(
+        r#"
+        CREATE TABLE isolation_errors_are_detected (
+            id SERIAL PRIMARY KEY,
+            class INTEGER NOT NULL
+        )
+    "#,
+    ).execute(&conn)
+        .unwrap();
+
+    insert_into(isolation_example::table)
+        .values(&vec![
+            isolation_example::class.eq(1),
+            isolation_example::class.eq(2),
+        ])
+        .execute(&conn)
+        .unwrap();
+
+    let barrier = Arc::new(Barrier::new(2));
+    let threads = (1..3)
+        .map(|i| {
+            let barrier = barrier.clone();
+            thread::spawn(move || {
+                let conn = connection_without_transaction();
+
+                conn.build_transaction().serializable().run(|| {
+                    let _ = isolation_example::table
+                        .filter(isolation_example::class.eq(i))
+                        .count()
+                        .execute(&conn)?;
+
+                    barrier.wait();
+
+                    let other_i = if i == 1 { 2 } else { 1 };
+                    insert_into(isolation_example::table)
+                        .values(isolation_example::class.eq(other_i))
+                        .execute(&conn)
+                })
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let mut results = threads
+        .into_iter()
+        .map(|t| t.join().unwrap())
+        .collect::<Vec<_>>();
+
+    results.sort_by_key(|r| r.is_err());
+
+    assert_matches!(results[0], Ok(_));
+    assert_matches!(results[1], Err(DatabaseError(SerializationFailure, _)));
+}
