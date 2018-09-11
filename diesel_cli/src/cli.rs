@@ -90,6 +90,9 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
+    let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
+        .about("DEPRECATED: Generate bash completion script for the diesel command.");
+
     let generate_completions_subcommand = SubCommand::with_name("completions")
         .about("Generate shell completion scripts for the diesel command.")
         .arg(Arg::with_name("SHELL")
@@ -188,6 +191,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
+        .subcommand(generate_bash_completion_subcommand)
         .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
