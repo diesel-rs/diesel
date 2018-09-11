@@ -13,9 +13,27 @@ use sql_types::{Oid, TypeMetadata};
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Pg;
 
+#[derive(Debug, Clone)]
 pub struct PgValue {
-    pub data: Vec<u8>,
-    pub oid: u32,
+    data: Vec<u8>,
+    oid: u32,
+}
+
+impl PgValue {
+    pub fn new(bytes: &[u8], oid: u32) -> PgValue {
+        PgValue {
+            data: bytes.to_vec(),
+            oid,
+        }
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn oid(&self) -> u32 {
+        self.oid
+    }
 }
 
 /// The [OIDs] for a SQL type

@@ -143,21 +143,18 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
 }
 
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
-    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
-        let bytes = not_none_pg!(bytes);
+    fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none!(value).bytes();
         Ok(PgInterval {
-            microseconds: try!(FromSql::<sql_types::BigInt, Pg>::from_sql(Some(&PgValue {
-                data: bytes[..8].to_vec(),
-                oid: 1, // TODO: FIX
-            }))),
-            days: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(&PgValue {
-                data: bytes[8..12].to_vec(),
-                oid: 1, // TODO: FIX
-            }))),
-            months: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(&PgValue {
-                data: bytes[12..16].to_vec(),
-                oid: 1, // TODO: FIX
-            }))),
+            microseconds: try!(FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
+                &PgValue::new(&bytes[..8], 1) // TODO FIXFIXFIX
+            ))),
+            days: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
+                &PgValue::new(&bytes[8..12], 1)
+            ))),
+            months: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
+                &PgValue::new(&bytes[12..16], 1)
+            ))),
         })
     }
 }

@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw as libc;
 use std::{slice, str};
 
-use pg::PgValue;
+//use pg::PgValue;
 
 use super::raw::RawResult;
 use super::row::PgRow;
@@ -68,7 +68,7 @@ impl PgResult {
         PgRow::new(self, idx)
     }
 
-    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&PgValue> {
+    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
         if self.is_null(row_idx, col_idx) {
             None
         } else {
@@ -78,10 +78,8 @@ impl PgResult {
                 let value_ptr =
                     PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx) as *const u8;
                 let num_bytes = PQgetlength(self.internal_result.as_ptr(), row_idx, col_idx);
-                Some(&PgValue {
-                    data: slice::from_raw_parts(value_ptr, num_bytes as usize).to_vec(),
-                    oid: 1, //TODO FIXFIXFIX
-                })
+
+                Some(slice::from_raw_parts(value_ptr, num_bytes as usize))
             }
         }
     }

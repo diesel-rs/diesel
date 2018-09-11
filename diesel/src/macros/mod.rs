@@ -1055,19 +1055,6 @@ macro_rules! not_none {
     };
 }
 
-/// Gets the value out of an option, or returns an error.
-///
-/// This is used by `FromSql` implementations for Postgres PgValue.
-#[macro_export]
-macro_rules! not_none_pg {
-    ($bytes:expr) => {
-        match $bytes {
-            Some(bytes) => bytes.data.as_slice(),
-            None => return Err(Box::new($crate::result::UnexpectedNullError)),
-        }
-    };
-}
-
 // The order of these modules is important (at least for those which have tests).
 // Utility macros which don't call any others need to come first.
 #[macro_use]
