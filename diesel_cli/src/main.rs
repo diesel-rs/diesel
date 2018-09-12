@@ -12,6 +12,7 @@
 #![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
 
 extern crate chrono;
+#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate diesel;
@@ -62,6 +63,7 @@ fn main() {
         ("setup", Some(matches)) => run_setup_command(matches),
         ("database", Some(matches)) => run_database_command(matches).unwrap_or_else(handle_error),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
+        ("completions", Some(matches)) => generate_completions_command(matches),
         ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
@@ -245,7 +247,15 @@ fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
 }
 
 fn generate_bash_completion_command(_: &ArgMatches) {
+    eprintln!(
+        "WARNING: `diesel bash-completion` is deprecated, use `diesel completions bash` instead"
+    );
     cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
+}
+
+fn generate_completions_command(matches: &ArgMatches) {
+    let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
+    cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
