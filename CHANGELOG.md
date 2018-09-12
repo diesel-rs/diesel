@@ -24,6 +24,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   commit due to a read/write dependency on another transaction). This error is
   currently only detected on PostgreSQL.
 
+* Diesel CLI can now generate completions for zsh and fish. See `diesel
+  completions --help` for details.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
