@@ -49,6 +49,35 @@
 //! The struct given to `#[belongs_to]` must be in scope,
 //! so you will need `use some_module::User` if `User` is defined in another module.
 //!
+//! If the parent record is generic over lifetimes, they can be written as `'_`.
+//! You will also need to wrap the type in quotes until
+//! `unrestricted_attribute_tokens` is stable.
+//!
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # include!("../doctest_setup.rs");
+//! # use schema::{posts, users};
+//! # use std::borrow::Cow;
+//! #
+//! #[derive(Identifiable)]
+//! #[table_name = "users"]
+//! pub struct User<'a> {
+//!     id: i32,
+//!     name: Cow<'a, str>,
+//! }
+//!
+//! #[derive(Associations)]
+//! #[belongs_to(parent = "User<'_>")]
+//! #[table_name = "posts"]
+//! pub struct Post {
+//!     id: i32,
+//!     user_id: i32,
+//!     title: String,
+//! }
+//! #
+//! # fn main() {}
+//! ```
+//!
 //! [`Identifiable`]: trait.Identifiable.html
 //!
 //! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.

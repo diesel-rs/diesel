@@ -1,0 +1,9 @@
+error[E0261]: use of undeclared lifetime name `'a`
+  --> $DIR/belongs_to_incorrect_lifetime_syntax.rs:25:23
+   |
+25 | #[belongs_to(parent = "Foo<'a>")]
+   |                       ^^^^^^^^^ undeclared lifetime
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0261`.
