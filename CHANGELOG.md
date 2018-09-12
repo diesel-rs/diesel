@@ -10,10 +10,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `embed_migrations!` will no longer emit an unused import warning
 
-* Fixed an issue that occurred with MySQL 8.0 when calling `.execute` or
-  `.batch_execute` with a single query that returned a result set (such as our
-  `SELECT 1` health check in `r2d2`).
-
 ### Added
 
 * A helper trait has been added for implementing `ToSql` for PG composite types.
@@ -36,6 +32,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `Tinyint` has been renamed to `TinyInt` and an alias has been created from `Tinyint` to `TinyInt`.
 
 * The minimal officially supported rustc version is now 1.27.0
+
+## [1.3.3] - 2018-09-12
+
+### Fixed
+
+* Fixed an issue that occurred with MySQL 8.0 when calling `.execute` or
+  `.batch_execute` with a single query that returned a result set (such as our
+  `SELECT 1` health check in `r2d2`).
 
 ## [1.3.2] - 2018-06-13
 
