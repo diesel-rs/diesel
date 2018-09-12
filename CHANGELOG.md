@@ -4,6 +4,14 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+### Fixed
+
+* Fixed an issue that occurred with MySQL 8.0 when calling `.execute` or
+  `.batch_execute` with a single query that returned a result set (such as our
+  `SELECT 1` health check in `r2d2`).
+
 ## [1.3.2] - 2018-06-13
 
 ### Fixed

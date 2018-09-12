@@ -152,12 +152,10 @@ impl RawConnection {
     fn flush_pending_results(&self) -> QueryResult<()> {
         // We may have a result to process before advancing
         self.consume_current_result()?;
-        while self.next_result()? {
+        while self.more_results() {
+            self.next_result()?;
             self.consume_current_result()?;
         }
-        // next_result returns whether we've advanced to the *last* one, not
-        // whether we're completely done.
-        self.consume_current_result()?;
         Ok(())
     }
 
@@ -171,12 +169,13 @@ impl RawConnection {
         self.did_an_error_occur()
     }
 
-    /// Calls `mysql_next_result` and returns whether there are more results
-    /// after this one.
-    fn next_result(&self) -> QueryResult<bool> {
-        let more_results = unsafe { ffi::mysql_next_result(self.0.as_ptr()) == 0 };
-        self.did_an_error_occur()?;
-        Ok(more_results)
+    fn more_results(&self) -> bool {
+        unsafe { ffi::mysql_more_results(self.0.as_ptr()) != 0 }
+    }
+
+    fn next_result(&self) -> QueryResult<()> {
+        unsafe { ffi::mysql_next_result(self.0.as_ptr()) };
+        self.did_an_error_occur()
     }
 }
 
