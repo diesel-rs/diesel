@@ -83,6 +83,8 @@ extern crate migrations_macros;
 #[doc(inline)]
 pub use migrations_internals::any_pending_migrations;
 #[doc(inline)]
+pub use migrations_internals::any_pending_migrations_from;
+#[doc(inline)]
 pub use migrations_internals::find_migrations_directory;
 #[doc(inline)]
 pub use migrations_internals::mark_migrations_in_directory;

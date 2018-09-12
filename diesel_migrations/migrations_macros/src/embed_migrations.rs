@@ -50,6 +50,10 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
                 unreachable!()
             }
         }
+
+        pub fn any_pending_migrations<C: MigrationConnection>(conn: &C) -> Result<bool, RunMigrationsError> {
+            any_pending_migrations_from(conn, ALL_MIGRATIONS.iter().map(|v| *v))
+        }
     );
 
     let run_fns = quote!(

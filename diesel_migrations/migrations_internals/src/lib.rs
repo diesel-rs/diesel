@@ -169,8 +169,8 @@ where
     Ok(migrations)
 }
 
-// Returns true if there are outstanding migrations in the migrations directory, otherwise
-// returns false. Returns an `Err` if there are problems with migration setup.
+/// Returns true if there are outstanding migrations in the migrations directory, otherwise
+/// returns false. Returns an `Err` if there are problems with migration setup.
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
@@ -181,9 +181,24 @@ where
     let migrations_dir = find_migrations_directory()?;
     let all_migrations = migrations_in_directory(&migrations_dir)?;
     setup_database(conn)?;
+
+    any_pending_migrations_from(conn, all_migrations)
+}
+
+/// Returns true if there are outstanding migrations in the list provided to the function,
+/// otherwise returns false. Returns an `Err` if there are problems with migration setup.
+///
+/// See the [module level documentation](index.html) for information on how migrations should be
+/// structured, and where Diesel will look for them by default.
+pub fn any_pending_migrations_from<Conn, List>(conn: &Conn, migrations: List) -> Result<bool, RunMigrationsError>
+where
+    Conn: MigrationConnection,
+    List: IntoIterator,
+    List::Item: Migration,
+{
     let already_run = conn.previously_run_migration_versions()?;
 
-    let pending = all_migrations
+    let pending = migrations
         .into_iter()
         .any(|m| !already_run.contains(&m.version().to_string()));
 
