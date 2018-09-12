@@ -130,7 +130,12 @@ impl MetaItem {
 
     pub fn has_flag(&self, flag: &str) -> bool {
         self.nested()
-            .map(|mut n| n.any(|m| m.expect_word() == flag))
+            .map(|mut n| {
+                n.any(|m| match m.word() {
+                    Ok(word) => word == flag,
+                    Err(_) => false,
+                })
+            })
             .unwrap_or_else(|e| {
                 e.emit();
                 false
