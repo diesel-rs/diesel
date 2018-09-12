@@ -16,7 +16,7 @@ error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
 29 | #[changeset_options(treat_none_as_null = "foo")]
    |                     ^^^^^^^^^^^^^^^^^^
 
-error: Missing required option treat_none_as_null
+error: Missing required option `treat_none_as_null`
   --> $DIR/as_changeset_bad_options.rs:37:3
    |
 37 | #[changeset_options()]
