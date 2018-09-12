@@ -10,6 +10,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `embed_migrations!` will no longer emit an unused import warning
 
+* Fixed an issue that occurred with MySQL 8.0 when calling `.execute` or
+  `.batch_execute` with a single query that returned a result set (such as our
+  `SELECT 1` health check in `r2d2`).
+
 ### Added
 
 * A helper trait has been added for implementing `ToSql` for PG composite types.
