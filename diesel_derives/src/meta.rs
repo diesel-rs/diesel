@@ -37,12 +37,14 @@ impl MetaItem {
         }
     }
 
-    pub fn nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
-        self.nested().and_then(|mut i| {
-            i.find(|n| n.name() == name).ok_or_else(|| {
-                self.span()
-                    .error(format!("Missing required option {}", name))
-            })
+    pub fn nested_item(&self, name: &str) -> Result<Option<Self>, Diagnostic> {
+        self.nested().map(|mut i| i.find(|n| n.name() == name))
+    }
+
+    pub fn required_nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
+        self.nested_item(name)?.ok_or_else(|| {
+            self.span()
+                .error(format!("Missing required option `{}`", name))
         })
     }
 

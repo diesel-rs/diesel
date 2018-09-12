@@ -136,8 +136,7 @@ impl AssociationOptions {
                 .last()
                 .expect("paths always have at least one segment")
                 .into_value();
-            meta.nested_item("foreign_key")
-                .ok()
+            meta.nested_item("foreign_key")?
                 .map(|i| i.ident_value())
                 .unwrap_or_else(|| Ok(infer_foreign_key(&parent_struct_name.ident)))?
         };

@@ -86,17 +86,18 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 
 fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
     MetaItem::with_name(&item.attrs, "postgres")
-        .and_then(|attr| {
-            get_type_name(&attr)
-                .or_else(|| get_oids(&attr))
-                .or_else(|| {
-                    attr.span()
-                        .error("Missing required options")
-                        .help("Valid options are `type_name` or `oid` and `array_oid`")
-                        .emit();
-                    None
-                })
+        .map(|attr| {
+            if let Some(x) = get_type_name(&attr)? {
+                Ok(x)
+            } else if let Some(x) = get_oids(&attr)? {
+                Ok(x)
+            } else {
+                Err(attr.span()
+                    .error("Missing required options")
+                    .help("Valid options are `type_name` or `oid` and `array_oid`"))
+            }
         })
+        .and_then(|res| res.map_err(|e| e.emit()).ok())
         .and_then(|ty| {
             if cfg!(not(feature = "postgres")) {
                 return None;
@@ -134,26 +135,25 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
         })
 }
 
-fn get_type_name(attr: &MetaItem) -> Option<PgType> {
-    attr.nested_item("type_name").ok().map(|ty| {
+fn get_type_name(attr: &MetaItem) -> Result<Option<PgType>, Diagnostic> {
+    Ok(attr.nested_item("type_name")?.map(|ty| {
         attr.warn_if_other_options(&["type_name"]);
         PgType::Lookup(ty.expect_str_value())
-    })
+    }))
 }
 
-fn get_oids(attr: &MetaItem) -> Option<PgType> {
-    attr.nested_item("oid").ok().map(|oid| {
+fn get_oids(attr: &MetaItem) -> Result<Option<PgType>, Diagnostic> {
+    if let Some(oid) = attr.nested_item("oid")? {
         attr.warn_if_other_options(&["oid", "array_oid"]);
-        let array_oid = attr.nested_item("array_oid")
-            .emit_error()
-            .map(|a| a.expect_int_value())
-            .unwrap_or(0);
+        let array_oid = attr.required_nested_item("array_oid")?.expect_int_value();
         let oid = oid.expect_int_value();
-        PgType::Fixed {
+        Ok(Some(PgType::Fixed {
             oid: oid as u32,
             array_oid: array_oid as u32,
-        }
-    })
+        }))
+    } else {
+        Ok(None)
+    }
 }
 
 enum PgType {
