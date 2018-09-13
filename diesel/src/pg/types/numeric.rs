@@ -1,5 +1,8 @@
 #[cfg(feature = "bigdecimal")]
 mod bigdecimal {
+    // NOTE: No `std::ops::MulAssign` impl for `BigInt`
+    #![cfg_attr(feature = "cargo-clippy", allow(assign_op_pattern))]
+
     extern crate bigdecimal;
     extern crate num_bigint;
     extern crate num_integer;
@@ -94,8 +97,6 @@ mod bigdecimal {
 
             // Ensure that the decimal will always lie on a digit boundary
             for _ in 0..(4 - scale % 4) {
-                // NOTE: No `std::ops::MulAssign` impl for `BigInt`
-                #[cfg_attr(feature = "cargo-clippy", allow(assign_op_pattern))]
                 integer = integer * 10;
             }
             let integer = integer.to_biguint().expect("integer is always positive");
