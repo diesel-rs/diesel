@@ -190,7 +190,10 @@ where
 ///
 /// See the [module level documentation](index.html) for information on how migrations should be
 /// structured, and where Diesel will look for them by default.
-pub fn any_pending_migrations_from<Conn, List>(conn: &Conn, migrations: List) -> Result<bool, RunMigrationsError>
+pub fn any_pending_migrations_from<Conn, List>(
+    conn: &Conn,
+    migrations: List,
+) -> Result<bool, RunMigrationsError>
 where
     Conn: MigrationConnection,
     List: IntoIterator,
