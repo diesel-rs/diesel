@@ -15,17 +15,25 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// Types which implement `Queryable` represent the result of a SQL query. This
 /// does not necessarily mean they represent a single database table.
 ///
-/// This trait can be derived automatically using `#[derive(Queryable)]`. This
-/// trait can only be derived for structs, not enums.
-///
 /// Diesel represents the return type of a query as a tuple. The purpose of this
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
+///
+/// # Deriving
+///
+/// This trait can be derived automatically using `#[derive(Queryable)]`. This
+/// trait can only be derived for structs, not enums.
 ///
 /// When this trait is derived, it will assume that the order of fields on your
 /// struct match the order of the fields in the query. This means that field
 /// order is significant if you are using `#[derive(Queryable)]`. Field name has
 /// no effect.
+///
+/// To provide custom deserialization behavior for a field, you can use
+/// `#[diesel(deserialize_as = "Type")]`. If this attribute is present, Diesel
+/// will deserialize into that type, rather than the type on your struct and
+/// call `.into` to convert it. This can be used to add custom behavior for a
+/// single field, or use types that are otherwise unsupported by Diesel.
 ///
 /// # Examples
 ///
@@ -55,8 +63,59 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # }
 /// ```
 ///
-/// If we want to do additional work during deserialization, we can implement
-/// the trait ourselves.
+/// If we want to do additional work during deserialization, we can use
+/// `deserialize_as` to use a different implementation.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("doctest_setup.rs");
+/// #
+/// # use schema::users;
+/// # use diesel::backend::Backend;
+/// # use diesel::deserialize::Queryable;
+/// #
+/// struct LowercaseString(String);
+///
+/// impl Into<String> for LowercaseString {
+///     fn into(self) -> String {
+///         self.0
+///     }
+/// }
+///
+/// impl<DB, ST> Queryable<ST, DB> for LowercaseString
+/// where
+///     DB: Backend,
+///     String: Queryable<ST, DB>,
+/// {
+///     type Row = <String as Queryable<ST, DB>>::Row;
+///
+///     fn build(row: Self::Row) -> Self {
+///         LowercaseString(String::build(row).to_lowercase())
+///     }
+/// }
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     #[diesel(deserialize_as = "LowercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
@@ -98,6 +157,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
+/// ```
 pub trait Queryable<ST, DB>
 where
     DB: Backend,
@@ -133,7 +193,97 @@ where
 /// If a field is another struct which implements `QueryableByName`, instead of
 /// a column, you can annotate that struct with `#[diesel(embed)]`
 ///
+/// To provide custom deserialization behavior for a field, you can use
+/// `#[diesel(deserialize_as = "Type")]`. If this attribute is present, Diesel
+/// will deserialize into that type, rather than the type on your struct and
+/// call `.into` to convert it. This can be used to add custom behavior for a
+/// single field, or use types that are otherwise unsupported by Diesel.
+///
 /// [`sql_query`]: ../fn.sql_query.html
+///
+/// # Examples
+///
+///
+/// If we just want to map a query to our struct, we can use `derive`.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("doctest_setup.rs");
+/// # use schema::users;
+/// # use diesel::sql_query;
+/// #
+/// #[derive(QueryableByName, PartialEq, Debug)]
+/// #[table_name = "users"]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
+///     .get_result(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If we want to do additional work during deserialization, we can use
+/// `deserialize_as` to use a different implementation.
+///
+/// ```rust
+/// # #[macro_use] extern crate diesel;
+/// # include!("doctest_setup.rs");
+/// # use diesel::sql_query;
+/// # use schema::users;
+/// # use diesel::backend::Backend;
+/// # use diesel::deserialize::{self, FromSql};
+/// #
+/// struct LowercaseString(String);
+///
+/// impl Into<String> for LowercaseString {
+///     fn into(self) -> String {
+///         self.0
+///     }
+/// }
+///
+/// impl<DB, ST> FromSql<ST, DB> for LowercaseString
+/// where
+///     DB: Backend,
+///     String: FromSql<ST, DB>,
+/// {
+///     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+///         String::from_sql(bytes)
+///             .map(|s| LowercaseString(s.to_lowercase()))
+///     }
+/// }
+///
+/// #[derive(QueryableByName, PartialEq, Debug)]
+/// #[table_name = "users"]
+/// struct User {
+///     id: i32,
+///     #[diesel(deserialize_as = "LowercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
+///     .get_result(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
 pub trait QueryableByName<DB>
 where
     Self: Sized,
