@@ -1,12 +1,12 @@
 use backend::Backend;
-use expression::{Expression, NonAggregate};
+use expression::Expression;
 use query_builder::*;
 use result::QueryResult;
 use sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
-        #[derive(Debug, Copy, Clone, QueryId)]
+        #[derive(Debug, Copy, Clone, QueryId, AppearsOnTable, SelectableExpression, NonAggregate)]
         pub struct $name<Lhs, Rhs> {
             lhs: Lhs,
             rhs: Rhs,
@@ -42,16 +42,6 @@ macro_rules! numeric_operation {
                 self.rhs.walk_ast(out.reborrow())?;
                 Ok(())
             }
-        }
-
-        impl_selectable_expression!($name<Lhs, Rhs>);
-
-        impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs>
-        where
-            Lhs: NonAggregate,
-            Rhs: NonAggregate,
-            $name<Lhs, Rhs>: Expression,
-        {
         }
 
         generic_numeric_expr!($name, A, B);

@@ -12,7 +12,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId, Default)]
+        #[derive(Debug, Clone, Copy, QueryId, Default, NonAggregate)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -66,8 +66,6 @@ macro_rules! __diesel_column {
             $column_name: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>,
         {
         }
-
-        impl $crate::expression::NonAggregate for $column_name {}
 
         impl $crate::query_source::Column for $column_name {
             type Table = $table;

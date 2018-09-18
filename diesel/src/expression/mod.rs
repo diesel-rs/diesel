@@ -219,6 +219,12 @@ impl<T> IntoSql for T {}
 /// SQL type doesn't matter (everything except `select` and `returning`). For
 /// places where nullability is important, `SelectableExpression` is used
 /// instead.
+///
+/// # Deriving
+///
+/// This trait can be automatically derived for all types. The resulting impl
+/// will have `T: AppearsOnTable<QS>` bounds for all type parameters, as well
+/// as `Self: Expression`.
 pub trait AppearsOnTable<QS: ?Sized>: Expression {}
 
 impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T>
@@ -244,6 +250,12 @@ where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
+///
+/// # Deriving
+///
+/// This trait can be automatically derived for all types. The resulting impl
+/// will have `T: SelectableExpression<QS>` bounds for every type parameter,
+/// as well as `Self: AppearsOnTable<QS>`
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
@@ -266,6 +278,11 @@ where
 /// Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
+///
+/// # Deriving
+///
+/// This trait can be automatically derived for all types. The resulting impl
+/// will have `T: NonAggregate` bounds for every type parameter.
 pub trait NonAggregate {}
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}

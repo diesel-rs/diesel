@@ -29,6 +29,7 @@ mod model;
 mod resolved_at_shim;
 mod util;
 
+mod appears_on_table;
 mod as_changeset;
 mod as_expression;
 mod associations;
@@ -36,12 +37,19 @@ mod diesel_numeric_ops;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
+mod non_aggregate;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
+mod selectable_expression;
 mod sql_type;
 
 use diagnostic_shim::*;
+
+#[proc_macro_derive(AppearsOnTable)]
+pub fn derive_appears_on_table(input: TokenStream) -> TokenStream {
+    expand_derive(input, appears_on_table::derive)
+}
 
 #[proc_macro_derive(
     AsChangeset, attributes(table_name, primary_key, column_name, changeset_options)
@@ -80,6 +88,11 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_derive(input, insertable::derive)
 }
 
+#[proc_macro_derive(NonAggregate)]
+pub fn derive_non_aggregate(input: TokenStream) -> TokenStream {
+    expand_derive(input, non_aggregate::derive)
+}
+
 #[proc_macro_derive(QueryId)]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_derive(input, query_id::derive)
@@ -93,6 +106,11 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable_by_name::derive)
+}
+
+#[proc_macro_derive(SelectableExpression)]
+pub fn derive_selectable_expression(input: TokenStream) -> TokenStream {
+    expand_derive(input, selectable_expression::derive)
 }
 
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]

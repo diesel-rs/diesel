@@ -5,13 +5,13 @@ use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, AppearsOnTable, SelectableExpression)]
 pub struct In<T, U> {
     left: T,
     values: U,
 }
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, AppearsOnTable, SelectableExpression)]
 pub struct NotIn<T, U> {
     left: T,
     values: U,
@@ -53,12 +53,14 @@ where
 
 impl<T, U> NonAggregate for In<T, U>
 where
+    T: NonAggregate,
     In<T, U>: Expression,
 {
 }
 
 impl<T, U> NonAggregate for NotIn<T, U>
 where
+    T: NonAggregate,
     NotIn<T, U>: Expression,
 {
 }
@@ -100,9 +102,6 @@ where
         Ok(())
     }
 }
-
-impl_selectable_expression!(In<T, U>);
-impl_selectable_expression!(NotIn<T, U>);
 
 use query_builder::{BoxedSelectStatement, SelectStatement};
 
@@ -152,7 +151,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SelectableExpression, AppearsOnTable, NonAggregate)]
 pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {
@@ -163,20 +162,6 @@ impl<T> MaybeEmpty for Many<T> {
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
-}
-
-impl<T, QS> SelectableExpression<QS> for Many<T>
-where
-    Many<T>: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
-{
-}
-
-impl<T, QS> AppearsOnTable<QS> for Many<T>
-where
-    Many<T>: Expression,
-    T: AppearsOnTable<QS>,
-{
 }
 
 impl<T, DB> QueryFragment<DB> for Many<T>
