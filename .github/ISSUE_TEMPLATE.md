@@ -1,4 +1,7 @@
 <!--
+Note that feature requests are not accepted on the issue tracker, and should be
+submitted to discourse.diesel.rs instead. See CONTRIBUTING.md for details
+
 If you want to report a bug, we added some points below you can fill out. If you want to request a feature, feel free to remove all the irrelevant text. In addition to this [issue tracker](https://github.com/diesel-rs/diesel/issues), you can also talk to Diesel maintainers and users on [Gitter](https://gitter.im/diesel-rs/diesel).
 -->
 
@@ -43,6 +46,8 @@ Please post as much of your database schema as necessary. If you are using `infe
 - [ ] I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) for similar issues.
 - [ ] This issue can be reproduced on Rust's stable channel. (Your issue will be
   closed if this is not the case)
+- [ ] This issue is not a feature request, or I was asked to open it by a member
+  of the Diesel team.
 
 <!--
 Thank you for your submission!  You're helping make Diesel more robust 🎉
