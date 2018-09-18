@@ -2,11 +2,11 @@ extern crate libsqlite3_sys as ffi;
 
 use std::collections::HashMap;
 use std::os::raw as libc;
+use std::ptr::NonNull;
 use std::{slice, str};
 
 use row::*;
 use sqlite::Sqlite;
-use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {

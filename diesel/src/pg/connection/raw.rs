@@ -5,10 +5,10 @@ extern crate pq_sys;
 use self::pq_sys::*;
 use std::ffi::{CStr, CString};
 use std::os::raw as libc;
+use std::ptr::NonNull;
 use std::{ptr, str};
 
 use result::*;
-use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {

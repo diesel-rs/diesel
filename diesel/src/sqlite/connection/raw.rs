@@ -3,12 +3,12 @@ extern crate libsqlite3_sys as ffi;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
+use std::ptr::NonNull;
 use std::{ptr, slice, str};
 
 use super::serialized_value::SerializedValue;
 use result::Error::DatabaseError;
 use result::*;
-use util::NonNull;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {

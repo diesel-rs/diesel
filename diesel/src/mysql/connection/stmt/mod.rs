@@ -5,6 +5,7 @@ mod metadata;
 
 use std::ffi::CStr;
 use std::os::raw as libc;
+use std::ptr::NonNull;
 
 use self::iterator::*;
 use self::metadata::*;
@@ -12,7 +13,6 @@ use super::bind::Binds;
 use mysql::MysqlType;
 use result::{DatabaseErrorKind, QueryResult};
 use sql_types::IsSigned;
-use util::NonNull;
 
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
