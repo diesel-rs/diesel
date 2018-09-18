@@ -132,5 +132,5 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("redo").run();
 
     assert!(!result.is_success());
-    assert!(result.stdout().contains("Failed with: "));
+    assert!(result.stderr().contains("Failed with: "));
 }

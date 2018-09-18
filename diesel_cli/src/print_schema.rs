@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::fs::File;
-use std::io::{self, stdout, Write as IoWrite};
+use std::io::{self, Write as IoWrite};
 use std::path::Path;
 use std::process::Command;
 use tempfile::NamedTempFile;
@@ -35,9 +35,10 @@ impl Filtering {
     }
 }
 
-pub fn run_print_schema(
+pub fn run_print_schema<W: IoWrite>(
     database_url: &str,
     config: &config::PrintSchema,
+    output: &mut W,
 ) -> Result<(), Box<Error>> {
     let tempfile = NamedTempFile::new()?;
     let file = tempfile.reopen()?;
@@ -46,7 +47,7 @@ pub fn run_print_schema(
     // patch "replaces" our tempfile, meaning the old handle
     // does not include the patched output.
     let mut file = File::open(tempfile.path())?;
-    io::copy(&mut file, &mut stdout())?;
+    io::copy(&mut file, output)?;
     Ok(())
 }
 

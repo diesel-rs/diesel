@@ -324,7 +324,7 @@ fn should_redo_migration_in_transaction(_t: &Any) -> bool {
 
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 fn handle_error<E: Display, T>(error: E) -> T {
-    println!("{}", error);
+    eprintln!("{}", error);
     ::std::process::exit(1);
 }
 
@@ -394,11 +394,13 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         config.import_types = Some(types);
     }
 
-    run_print_schema(&database_url, &config)?;
+    run_print_schema(&database_url, &config, &mut stdout())?;
     Ok(())
 }
 
 fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<Error>> {
+    use std::io::Read;
+
     let config = Config::read(matches)?;
     if let Some(ref path) = config.print_schema.file {
         if let Some(parent) = path.parent() {
@@ -406,8 +408,26 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
         }
 
         let database_url = database::database_url(matches);
-        let mut file = fs::File::create(path)?;
-        print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+
+        if matches.is_present("LOCKED_SCHEMA") {
+            let mut buf = Vec::new();
+            print_schema::run_print_schema(&database_url, &config.print_schema, &mut buf)?;
+
+            let mut old_buf = Vec::new();
+            let mut file = fs::File::open(path)?;
+            file.read_to_end(&mut old_buf)?;
+
+            if buf != old_buf {
+                return Err(format!(
+                    "Command would result in changes to {}. \
+                     Rerun the command locally, and commit the changes.",
+                    path.display()
+                ).into());
+            }
+        } else {
+            let mut file = fs::File::create(path)?;
+            print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+        }
     }
     Ok(())
 }

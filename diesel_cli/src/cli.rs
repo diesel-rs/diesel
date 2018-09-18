@@ -182,6 +182,17 @@ pub fn build_cli() -> App<'static, 'static> {
         .global(true)
         .takes_value(true);
 
+    let locked_schema_arg = Arg::with_name("LOCKED_SCHEMA")
+        .long("locked-schema")
+        .help("Require that the schema file is up to date")
+        .long_help(
+            "When `print_schema.file` is specified in your config file, this \
+             flag will cause Diesel CLI to error if any command would result in \
+             changes to that file. It is recommended that you use this flag when \
+             running migrations in CI or production.",
+        )
+        .global(true);
+
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
@@ -190,6 +201,7 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .arg(database_arg)
         .arg(config_arg)
+        .arg(locked_schema_arg)
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
