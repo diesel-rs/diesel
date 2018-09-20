@@ -2,7 +2,7 @@ use byteorder::*;
 use std::io::Write;
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
+use expression::{AsExpression, Expression};
 use pg::Pg;
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
@@ -129,7 +129,7 @@ macro_rules! tuple_impls {
 
 __diesel_for_each_tuple!(tuple_impls);
 
-#[derive(Debug, Clone, Copy, QueryId)]
+#[derive(Debug, Clone, Copy, QueryId, AppearsOnTable, SelectableExpression, NonAggregate)]
 pub struct PgTuple<T>(T);
 
 impl<T> QueryFragment<Pg> for PgTuple<T>
@@ -149,27 +149,6 @@ where
     T: Expression,
 {
     type SqlType = Record<T::SqlType>;
-}
-
-impl<T, QS> SelectableExpression<QS> for PgTuple<T>
-where
-    T: SelectableExpression<QS>,
-    Self: AppearsOnTable<QS>,
-{
-}
-
-impl<T, QS> AppearsOnTable<QS> for PgTuple<T>
-where
-    T: AppearsOnTable<QS>,
-    Self: Expression,
-{
-}
-
-impl<T> NonAggregate for PgTuple<T>
-where
-    T: NonAggregate,
-    Self: Expression,
-{
 }
 
 #[cfg(test)]

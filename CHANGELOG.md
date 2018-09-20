@@ -36,6 +36,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   example, if one of the fields has the type `Cow<'a, str>`). To define an
   association to such a type, write `#[belongs_to(parent = "User<'_>")]`
 
+* `SelectableExpression` can now be derived.
+
+* `AppearsOnTable` can now be derived.
+
+* `NonAggregate` can now be derived.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
