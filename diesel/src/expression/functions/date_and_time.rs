@@ -1,5 +1,6 @@
 use backend::Backend;
-use expression::{Expression, NonAggregate};
+use expression::coerce::Coerce;
+use expression::{AsExpression, Expression, NonAggregate};
 use query_builder::*;
 use result::QueryResult;
 use sql_types::*;
@@ -47,10 +48,13 @@ sql_function! {
     fn date(expr: Timestamp) -> Date;
 }
 
-#[cfg(feature = "postgres")]
-use expression::coerce::Coerce;
-#[cfg(feature = "postgres")]
-use expression::AsExpression;
+impl AsExpression<Nullable<Timestamp>> for now {
+    type Expression = Coerce<now, Nullable<Timestamp>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
 
 #[cfg(feature = "postgres")]
 impl AsExpression<Timestamptz> for now {
