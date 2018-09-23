@@ -5,7 +5,7 @@ use meta::*;
 use util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
-    let dummy_mod = format!("_impl_as_expression_for_{}", item.ident,).to_lowercase();
+    let dummy_mod = format!("_impl_as_expression_for_{}", item.ident,).to_uppercase();
     let flags =
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
     let is_sized = !flags.has_flag("not_sized");
@@ -25,54 +25,62 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         let lifetimes = &lifetimes;
         let ty_params = &ty_params;
         let tokens = quote!(
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)*>
+                diesel::expression::AsExpression<#sql_type>
                 for &'expr #struct_ty
             {
-                type Expression = Bound<#sql_type, Self>;
+                type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    diesel::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)*>
+                diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'expr #struct_ty
             {
-                type Expression = Bound<Nullable<#sql_type>, Self>;
+                type Expression =
+                    diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    diesel::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*>
+                diesel::expression::AsExpression<#sql_type>
                 for &'expr2 &'expr #struct_ty
             {
-                type Expression = Bound<#sql_type, Self>;
+                type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    diesel::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*>
+                diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'expr2 &'expr #struct_ty
             {
-                type Expression = Bound<Nullable<#sql_type>, Self>;
+                type Expression =
+                    diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
                 fn as_expression(self) -> Self::Expression {
-                    Bound::new(self)
+                    diesel::expression::bound::Bound::new(self)
                 }
             }
 
-            impl<#(#lifetimes,)* #(#ty_params,)* __DB> diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
+            impl<#(#lifetimes,)* #(#ty_params,)* __DB>
+                diesel::serialize::ToSql<diesel::sql_types::Nullable<#sql_type>, __DB>
                 for #struct_ty
             where
                 __DB: diesel::backend::Backend,
-                Self: ToSql<#sql_type, __DB>,
+                Self: diesel::serialize::ToSql<#sql_type, __DB>,
             {
-                fn to_sql<W: std::io::Write>(&self, out: &mut Output<W, __DB>) -> serialize::Result {
-                    ToSql::<#sql_type, __DB>::to_sql(self, out)
+                fn to_sql<W: std::io::Write>(&self, out: &mut diesel::serialize::Output<W, __DB>)
+                   -> diesel::serialize::Result {
+                    diesel::serialize::ToSql::<#sql_type, __DB>::to_sql(self, out)
                 }
             }
         );
@@ -80,19 +88,23 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             quote!(
                 #tokens
 
-                impl#impl_generics AsExpression<#sql_type> for #struct_ty {
-                    type Expression = Bound<#sql_type, Self>;
+                impl#impl_generics diesel::expression::AsExpression<#sql_type> for #struct_ty {
+                    type Expression = diesel::expression::bound::Bound<#sql_type, Self>;
 
                     fn as_expression(self) -> Self::Expression {
-                        Bound::new(self)
+                        diesel::expression::bound::Bound::new(self)
                     }
                 }
 
-                impl#impl_generics AsExpression<Nullable<#sql_type>> for #struct_ty {
-                    type Expression = Bound<Nullable<#sql_type>, Self>;
+                impl#impl_generics
+                    diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
+                    for #struct_ty
+                {
+                    type Expression =
+                        diesel::expression::bound::Bound<diesel::sql_types::Nullable<#sql_type>, Self>;
 
                     fn as_expression(self) -> Self::Expression {
-                        Bound::new(self)
+                        diesel::expression::bound::Bound::new(self)
                     }
                 }
             )
@@ -104,14 +116,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     if any_sql_types {
         Ok(wrap_in_dummy_mod(
             Ident::new(&dummy_mod, Span::call_site()),
-            quote! {
-                use diesel::expression::AsExpression;
-                use diesel::expression::bound::Bound;
-                use diesel::sql_types::Nullable;
-                use diesel::serialize::{self, ToSql, Output};
-
-                #(#tokens)*
-            },
+            quote!(#(#tokens)*),
         ))
     } else {
         Ok(quote!())

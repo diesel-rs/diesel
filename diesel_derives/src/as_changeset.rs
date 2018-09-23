@@ -61,28 +61,28 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("as_changeset"),
         quote!(
-            use diesel::query_builder::AsChangeset;
-            use diesel::prelude::*;
-
-            impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
+             impl #impl_generics diesel::query_builder::AsChangeset
+                for &'update #struct_name #ty_generics
             #where_clause
             {
                 type Target = #table_name::table;
-                type Changeset = <(#(#ref_changeset_ty,)*) as AsChangeset>::Changeset;
+                type Changeset = <(#(#ref_changeset_ty,)*)
+                    as diesel::query_builder::AsChangeset>::Changeset;
 
                 fn as_changeset(self) -> Self::Changeset {
-                    (#(#ref_changeset_expr,)*).as_changeset()
+                    <_ as diesel::query_builder::AsChangeset>::as_changeset((#(#ref_changeset_expr,)*))
                 }
             }
 
-            impl #impl_generics AsChangeset for #struct_name #ty_generics
+            impl #impl_generics diesel::query_builder::AsChangeset for #struct_name #ty_generics
             #where_clause
             {
                 type Target = #table_name::table;
-                type Changeset = <(#(#direct_changeset_ty,)*) as AsChangeset>::Changeset;
+                type Changeset = <(#(#direct_changeset_ty,)*) as
+                    diesel::query_builder::AsChangeset>::Changeset;
 
                 fn as_changeset(self) -> Self::Changeset {
-                    (#(#direct_changeset_expr,)*).as_changeset()
+                    <_ as diesel::query_builder::AsChangeset>::as_changeset((#(#direct_changeset_expr,)*))
                 }
             }
         ),
@@ -115,11 +115,21 @@ fn field_changeset_expr(
     let column_name = field.column_name();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         if lifetime.is_some() {
-            parse_quote!(self#field_access.as_ref().map(|x| #table_name::#column_name.eq(x)))
+            parse_quote!(self#field_access.as_ref().map(|x| {
+                <_ as diesel::expression_methods::ExpressionMethods>::eq(
+                    #table_name::#column_name, x
+                )
+            }))
         } else {
-            parse_quote!(self#field_access.map(|x| #table_name::#column_name.eq(x)))
+            parse_quote!(self#field_access.map(|x| {
+                <_ as diesel::expression_methods::ExpressionMethods>::eq(
+                    #table_name::#column_name, x
+                )
+            }))
         }
     } else {
-        parse_quote!(#table_name::#column_name.eq(#lifetime self#field_access))
+        parse_quote!(<_ as diesel::expression_methods::ExpressionMethods>::eq(
+            #table_name::#column_name,#lifetime self#field_access
+        ))
     }
 }

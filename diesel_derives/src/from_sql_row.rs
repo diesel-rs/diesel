@@ -20,27 +20,26 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
             .push(parse_quote!(__DB: diesel::backend::Backend));
         where_clause
             .predicates
-            .push(parse_quote!(Self: FromSql<__ST, __DB>));
+            .push(parse_quote!(Self: diesel::deserialize::FromSql<__ST, __DB>));
     }
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-    let dummy_mod = format!("_impl_from_sql_row_for_{}", item.ident,).to_lowercase();
+    let dummy_mod = format!("_impl_from_sql_row_for_{}", item.ident,).to_uppercase();
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_mod, Span::call_site()),
         quote! {
-            use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable};
 
-            impl #impl_generics FromSqlRow<__ST, __DB> for #struct_ty
+            impl #impl_generics diesel::deserialize::FromSqlRow<__ST, __DB> for #struct_ty
             #where_clause
             {
                 fn build_from_row<R: diesel::row::Row<__DB>>(row: &mut R)
-                    -> deserialize::Result<Self>
+                    -> diesel::deserialize::Result<Self>
                 {
-                    FromSql::<__ST, __DB>::from_sql(row.take())
+                    diesel::deserialize::FromSql::<__ST, __DB>::from_sql(row.take())
                 }
             }
 
-            impl #impl_generics Queryable<__ST, __DB> for #struct_ty
+            impl #impl_generics diesel::deserialize::Queryable<__ST, __DB> for #struct_ty
             #where_clause
             {
                 type Row = Self;

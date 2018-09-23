@@ -10,7 +10,9 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
         let where_clause = item.generics
             .where_clause
             .get_or_insert(parse_quote!(where));
-        where_clause.predicates.push(parse_quote!(Self: Expression));
+        where_clause
+            .predicates
+            .push(parse_quote!(Self: diesel::expression::Expression));
         where_clause.predicates.push_punct(Default::default());
     }
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
@@ -21,56 +23,66 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
     let dummy_name = format!("_impl_diesel_numeric_ops_for_{}", item.ident);
 
     Ok(wrap_in_dummy_mod(
-        Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
+        Ident::new(&dummy_name.to_uppercase(), Span::call_site()),
         quote! {
-            use diesel::expression::{ops, Expression, AsExpression};
-            use diesel::sql_types::ops::{Add, Sub, Mul, Div};
 
             impl #impl_generics ::std::ops::Add<__Rhs> for #struct_name #ty_generics
             #where_clause
-                <Self as Expression>::SqlType: Add,
-                __Rhs: AsExpression<<<Self as Expression>::SqlType as Add>::Rhs>,
+                <Self as diesel::expression::Expression>::SqlType: diesel::sql_types::ops::Add,
+                  __Rhs: diesel::expression::AsExpression<
+                    <<Self as diesel::expression::Expression>::SqlType
+                        as diesel::sql_types::ops::Add>::Rhs
+                >,
             {
-                type Output = ops::Add<Self, __Rhs::Expression>;
+                type Output = diesel::expression::ops::Add<Self, __Rhs::Expression>;
 
                 fn add(self, rhs: __Rhs) -> Self::Output {
-                    ops::Add::new(self, rhs.as_expression())
+                    diesel::expression::ops::Add::new(self, rhs.as_expression())
                 }
             }
 
             impl #impl_generics ::std::ops::Sub<__Rhs> for #struct_name #ty_generics
             #where_clause
-                <Self as Expression>::SqlType: Sub,
-                __Rhs: AsExpression<<<Self as Expression>::SqlType as Sub>::Rhs>,
+                <Self as diesel::expression::Expression>::SqlType: diesel::sql_types::ops::Sub,
+                __Rhs: diesel::expression::AsExpression<
+                    <<Self as diesel::expression::Expression>::SqlType
+                        as diesel::sql_types::ops::Sub>::Rhs
+                >,
             {
-                type Output = ops::Sub<Self, __Rhs::Expression>;
+                type Output = diesel::expression::ops::Sub<Self, __Rhs::Expression>;
 
                 fn sub(self, rhs: __Rhs) -> Self::Output {
-                    ops::Sub::new(self, rhs.as_expression())
+                    diesel::expression::ops::Sub::new(self, rhs.as_expression())
                 }
             }
 
             impl #impl_generics ::std::ops::Mul<__Rhs> for #struct_name #ty_generics
             #where_clause
-                <Self as Expression>::SqlType: Mul,
-                __Rhs: AsExpression<<<Self as Expression>::SqlType as Mul>::Rhs>,
+                <Self as diesel::expression::Expression>::SqlType: diesel::sql_types::ops::Mul,
+                __Rhs: diesel::expression::AsExpression<
+                    <<Self as diesel::expression::Expression>::SqlType
+                        as diesel::sql_types::ops::Mul>::Rhs
+                >,
             {
-                type Output = ops::Mul<Self, __Rhs::Expression>;
+                type Output = diesel::expression::ops::Mul<Self, __Rhs::Expression>;
 
                 fn mul(self, rhs: __Rhs) -> Self::Output {
-                    ops::Mul::new(self, rhs.as_expression())
+                    diesel::expression::ops::Mul::new(self, rhs.as_expression())
                 }
             }
 
             impl #impl_generics ::std::ops::Div<__Rhs> for #struct_name #ty_generics
             #where_clause
-                <Self as Expression>::SqlType: Div,
-                __Rhs: AsExpression<<<Self as Expression>::SqlType as Div>::Rhs>,
+                <Self as diesel::expression::Expression>::SqlType: diesel::sql_types::ops::Div,
+                __Rhs: diesel::expression::AsExpression<
+                    <<Self as diesel::expression::Expression>::SqlType
+                        as diesel::sql_types::ops::Div>::Rhs
+                >,
             {
-                type Output = ops::Div<Self, __Rhs::Expression>;
+                type Output = diesel::expression::ops::Div<Self, __Rhs::Expression>;
 
                 fn div(self, rhs: __Rhs) -> Self::Output {
-                    ops::Div::new(self, rhs.as_expression())
+                    diesel::expression::ops::Div::new(self, rhs.as_expression())
                 }
             }
         },

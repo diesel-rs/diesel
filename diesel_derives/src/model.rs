@@ -39,7 +39,7 @@ impl Model {
     }
 
     pub fn dummy_mod_name(&self, trait_name: &str) -> syn::Ident {
-        let name = format!("_impl_{}_for_{}", trait_name, self.name).to_lowercase();
+        let name = format!("_impl_{}_for_{}", trait_name, self.name).to_uppercase();
         Ident::new(&name, Span::call_site())
     }
 

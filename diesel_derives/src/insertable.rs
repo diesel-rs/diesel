@@ -51,32 +51,33 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("insertable"),
         quote! {
-            use diesel::insertable::Insertable;
-            use diesel::query_builder::UndecoratedInsertRecord;
-            use diesel::prelude::*;
 
-            impl #impl_generics Insertable<#table_name::table> for #struct_name #ty_generics
+            impl #impl_generics diesel::insertable::Insertable<#table_name::table>
+                for #struct_name #ty_generics
                 #where_clause
             {
-                type Values = <(#(#direct_field_ty,)*) as Insertable<#table_name::table>>::Values;
+                type Values = <(#(#direct_field_ty,)*) as
+                    diesel::insertable::Insertable<#table_name::table>>::Values;
 
                 fn values(self) -> Self::Values {
-                    (#(#direct_field_assign,)*).values()
+                    <_ as diesel::insertable::Insertable<_>>::values((#(#direct_field_assign,)*))
                 }
             }
 
-            impl #impl_generics Insertable<#table_name::table>
+            impl #impl_generics diesel::insertable::Insertable<#table_name::table>
                 for &'insert #struct_name #ty_generics
             #where_clause
             {
-                type Values = <(#(#ref_field_ty,)*) as Insertable<#table_name::table>>::Values;
+                type Values = <(#(#ref_field_ty,)*) as
+                    diesel::insertable::Insertable<#table_name::table>>::Values;
 
                 fn values(self) -> Self::Values {
-                    (#(#ref_field_assign,)*).values()
+                    <_ as diesel::insertable::Insertable<_>>::values((#(#ref_field_assign,)*))
                 }
             }
 
-            impl #impl_generics UndecoratedInsertRecord<#table_name::table>
+            impl #impl_generics
+                diesel::query_builder::UndecoratedInsertRecord<#table_name::table>
                 for #struct_name #ty_generics
             #where_clause
             {
@@ -118,12 +119,18 @@ fn field_expr(
         let column: syn::Expr = parse_quote!(#table_name::#column_name);
         if is_option_ty(&field.ty) {
             if lifetime.is_some() {
-                parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+                parse_quote!(self#field_access.as_ref().map(|x| {
+                    <_ as diesel::expression_methods::ExpressionMethods>::eq(#column, x)
+                }))
             } else {
-                parse_quote!(self#field_access.map(|x| #column.eq(x)))
+                parse_quote!(self#field_access.map(|x| {
+                    <_ as diesel::expression_methods::ExpressionMethods>::eq(#column, x)
+                }))
             }
         } else {
-            parse_quote!(std::option::Option::Some(#column.eq(#lifetime self#field_access)))
+            parse_quote!(std::option::Option::Some(
+                <_ as diesel::expression_methods::ExpressionMethods>::eq(#column, #lifetime self#field_access)
+            ))
         }
     }
 }

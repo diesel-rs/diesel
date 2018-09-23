@@ -15,7 +15,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     let dummy_name = format!("_impl_sql_type_for_{}", item.ident);
     Ok(wrap_in_dummy_mod(
-        Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
+        Ident::new(&dummy_name.to_uppercase(), Span::call_site()),
         quote! {
             impl #impl_generics diesel::sql_types::NotNull
                 for #struct_name #ty_generics
@@ -108,22 +108,21 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 
             let metadata_fn = match ty {
                 PgType::Fixed { oid, array_oid } => quote!(
-                    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-                        PgTypeMetadata {
+                    fn metadata(_: &diesel::pg::PgMetadataLookup) -> diesel::pg::PgTypeMetadata {
+                        diesel::pg::PgTypeMetadata {
                             oid: #oid,
                             array_oid: #array_oid,
                         }
                     }
                 ),
                 PgType::Lookup(type_name) => quote!(
-                    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
+                    fn metadata(lookup: &diesel::pg::PgMetadataLookup) -> diesel::pg::PgTypeMetadata {
                         lookup.lookup_type(#type_name)
                     }
                 ),
             };
 
             Some(quote! {
-                use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
 
                 impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
                     for diesel::pg::Pg

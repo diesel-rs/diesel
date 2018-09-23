@@ -2,6 +2,14 @@
 
 #[macro_export]
 #[doc(hidden)]
+macro_rules! __diesel_use_everything {
+    () => {
+        pub use $crate::*;
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
 macro_rules! __diesel_column {
     (
         table = $table:ident,

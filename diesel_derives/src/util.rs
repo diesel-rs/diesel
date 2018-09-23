@@ -7,13 +7,15 @@ use meta::*;
 pub fn wrap_in_dummy_mod(const_name: Ident, item: TokenStream) -> TokenStream {
     quote! {
         #[allow(non_snake_case, unused_extern_crates, unused_imports)]
-        fn #const_name() {
+        const #const_name: () = {
             // https://github.com/rust-lang/rust/issues/47314
             extern crate std;
-            use diesel;
+            mod diesel {
+                __diesel_use_everything!();
+            }
 
             #item
-        }
+        };
     }
 }
 
