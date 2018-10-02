@@ -9,7 +9,11 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let model = Model::from_item(&item)?;
 
     let struct_name = &item.ident;
-    let field_expr = model.fields().iter().map(|f| field_expr(f, &model));
+    let field_expr = model
+        .fields()
+        .iter()
+        .map(|f| field_expr(f, &model))
+        .collect::<Result<Vec<_>, _>>()?;
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
@@ -19,7 +23,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     for field in model.fields() {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-        let field_ty = &field.ty;
+        let field_ty = field.ty_for_deserialize()?;
         if field.has_flag("embed") {
             where_clause
                 .predicates
@@ -54,17 +58,18 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     ))
 }
 
-fn field_expr(field: &Field, model: &Model) -> syn::FieldValue {
+fn field_expr(field: &Field, model: &Model) -> Result<syn::FieldValue, Diagnostic> {
     if field.has_flag("embed") {
-        field
+        Ok(field
             .name
-            .assign(parse_quote!(QueryableByName::build(row)?))
+            .assign(parse_quote!(QueryableByName::build(row)?)))
     } else {
         let column_name = field.column_name();
+        let ty = field.ty_for_deserialize()?;
         let st = sql_type(field, model);
-        field
+        Ok(field
             .name
-            .assign(parse_quote!(row.get::<#st, _>(stringify!(#column_name))?))
+            .assign(parse_quote!(row.get::<#st, #ty>(stringify!(#column_name))?.into())))
     }
 }
 

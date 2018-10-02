@@ -1,10 +1,9 @@
 extern crate libsqlite3_sys as ffi;
 
 use std::os::raw as libc;
-use std::ptr;
+use std::ptr::{self, NonNull};
 
 use sqlite::SqliteType;
-use util::NonNull;
 
 pub struct SerializedValue {
     pub ty: SqliteType,

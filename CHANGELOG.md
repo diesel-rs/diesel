@@ -12,6 +12,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Diesel CLI can be configured to error if a command would result in changes
+  to your schema file by passing `--locked-schema`. This is intended for use
+  in CI and production deploys, to ensure that the committed schema file is
+  up to date.
+
 * A helper trait has been added for implementing `ToSql` for PG composite types.
   See [`WriteTuple`][write-tuple-1-4-0] for details.
 

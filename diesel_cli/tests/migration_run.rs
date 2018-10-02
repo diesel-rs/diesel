@@ -107,7 +107,7 @@ fn empty_migrations_are_not_valid() {
     assert!(!result.is_success());
     assert!(
         result
-            .stdout()
+            .stderr()
             .contains("Failed with: Attempted to run an empty migration.")
     );
 }
@@ -129,7 +129,7 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result.stdout().contains("Failed with: "));
+    assert!(result.stderr().contains("Failed with: "));
 }
 
 #[test]
@@ -445,4 +445,59 @@ fn migrations_can_be_run_with_no_cargo_toml() {
         result.stdout()
     );
     assert!(db.table_exists("users"));
+}
+
+#[test]
+fn verify_schema_errors_if_schema_file_would_change() {
+    let p = project("migration_run_verify_schema_errors")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [print_schema]
+            file = "src/my_schema.rs"
+            "#,
+        )
+        .build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    assert!(!p.has_file("src/my_schema.rs"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(p.has_file("src/my_schema.rs"));
+
+    p.create_migration(
+        "12346_create_posts_table",
+        "CREATE TABLE posts (id INTEGER PRIMARY KEY)",
+        "DROP TABLE posts",
+    );
+
+    let result = p.command("migration")
+        .arg("run")
+        .arg("--locked-schema")
+        .run();
+
+    assert!(
+        !result.is_success(),
+        "Result was successful, expected to fail {:?}",
+        result
+    );
+    assert!(
+        result
+            .stderr()
+            .contains("Command would result in changes to src/my_schema.rs"),
+        "Unexpected stderr {}",
+        result.stderr()
+    );
+    assert!(p.has_file("src/my_schema.rs"));
 }

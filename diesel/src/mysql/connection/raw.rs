@@ -2,13 +2,12 @@ extern crate mysqlclient_sys as ffi;
 
 use std::ffi::CStr;
 use std::os::raw as libc;
-use std::ptr;
+use std::ptr::{self, NonNull};
 use std::sync::{Once, ONCE_INIT};
 
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
 use result::{ConnectionError, ConnectionResult, QueryResult};
-use util::NonNull;
 
 pub struct RawConnection(NonNull<ffi::MYSQL>);
 

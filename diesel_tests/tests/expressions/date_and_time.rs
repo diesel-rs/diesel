@@ -124,6 +124,16 @@ fn now_can_be_used_as_nullable_timestamptz() {
 }
 
 #[test]
+fn now_can_be_used_as_nullable() {
+    use diesel::sql_types::Timestamp;
+
+    let nullable_timestamp = sql::<Nullable<Timestamp>>("CURRENT_TIMESTAMP");
+    let result = select(nullable_timestamp.eq(now)).get_result(&connection());
+
+    assert_eq!(Ok(true), result);
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
