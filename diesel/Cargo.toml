@@ -25,10 +25,10 @@ time = { version = "0.1", optional = true }
 url = { version = "1.4.0", optional = true }
 uuid = { version = ">=0.2.0, <0.8.0", optional = true, features = ["use_std"] }
 ipnetwork = { version = ">=0.12.2, <0.14.0", optional = true }
-num-bigint = { version = "0.1.41", optional = true }
+num-bigint = { version = ">=0.1.41, <0.3", optional = true }
 num-traits = { version = "0.2", optional = true }
 num-integer = { version = "0.1.32", optional = true }
-bigdecimal = { version = ">= 0.0.10, < 0.0.13", optional = true }
+bigdecimal = { version = ">= 0.0.10, < 0.0.15", optional = true }
 bitflags = { version = "1.0", optional = true }
 r2d2 = { version = ">= 0.8, < 0.9", optional = true }
 
