@@ -4,7 +4,7 @@ use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr::NonNull;
-use std::{ptr, slice, str};
+use std::{mem, ptr, slice, str};
 
 use super::serialized_value::SerializedValue;
 use result::Error::DatabaseError;
@@ -72,7 +72,9 @@ impl RawConnection {
         f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(&[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue> + Send + 'static,
+        F: FnMut(&Self, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+            + Send
+            + 'static,
     {
         let fn_name = CString::new(fn_name)?;
         let mut flags = ffi::SQLITE_UTF8;
@@ -143,9 +145,13 @@ extern "C" fn run_custom_function<F>(
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
-    F: FnMut(&[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue> + Send + 'static,
+    F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+        + Send
+        + 'static,
 {
-    const NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
+    static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
+    static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
+
     unsafe {
         let data_ptr = ffi::sqlite3_user_data(ctx);
         let data_ptr = data_ptr as *mut F;
@@ -162,19 +168,36 @@ extern "C" fn run_custom_function<F>(
         };
 
         let args = slice::from_raw_parts(value_ptr, num_args as _);
-        match f(args) {
+        let conn = match NonNull::new(ffi::sqlite3_context_db_handle(ctx)) {
+            Some(conn) => RawConnection {
+                internal_connection: conn,
+            },
+            None => {
+                ffi::sqlite3_result_error(
+                    ctx,
+                    NULL_DATA_ERR.as_ptr() as *const _ as *const _,
+                    NULL_DATA_ERR.len() as _,
+                );
+                return;
+            }
+        };
+        match f(&conn, args) {
             Ok(value) => value.result_of(ctx),
             Err(e) => {
                 let msg = e.to_string();
                 ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
             }
         }
+
+        mem::forget(conn);
     }
 }
 
 extern "C" fn destroy_boxed_fn<F>(data: *mut libc::c_void)
 where
-    F: FnMut(&[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue> + Send + 'static,
+    F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+        + Send
+        + 'static,
 {
     let ptr = data as *mut F;
     unsafe { Box::from_raw(ptr) };

@@ -38,6 +38,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `Nullable<Text>` now supports `ilike` expression on  in PostgreSQL.
 
+* `diesel_manage_updated_at('table_name')` is now available on SQLite. This
+  function can be called in your migrations to create a trigger which
+  automatically sets the `updated_at` column, unless that column was updated in
+  the query.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
