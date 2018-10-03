@@ -36,6 +36,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   example, if one of the fields has the type `Cow<'a, str>`). To define an
   association to such a type, write `#[belongs_to(parent = "User<'_>")]`
 
+* `diesel_manage_updated_at('table_name')` is now available on SQLite. This
+  function can be called in your migrations to create a trigger which
+  automatically sets the `updated_at` column, unless that column was updated in
+  the query.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
