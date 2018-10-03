@@ -38,3 +38,10 @@ foldable_impls! {
 
     sql_types::Interval => (sql_types::Interval, sql_types::Interval),
 }
+
+#[cfg(feature = "mysql")]
+foldable_impls! {
+    sql_types::Unsigned<sql_types::SmallInt> => (sql_types::Unsigned<sql_types::BigInt>, sql_types::Numeric),
+    sql_types::Unsigned<sql_types::Integer> => (sql_types::Unsigned<sql_types::BigInt>, sql_types::Numeric),
+    sql_types::Unsigned<sql_types::BigInt> => (sql_types::Numeric, sql_types::Numeric),
+}
