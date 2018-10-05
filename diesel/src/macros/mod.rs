@@ -225,7 +225,7 @@ macro_rules! __diesel_column {
 /// This simply re-exports the table, renamed to the same name as the module,
 /// and each of the columns. This is useful to glob import when you're dealing
 /// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
-/// instead of `users::table.filter(users::name.eq("Sean"))`.
+/// instead of `users::table.filter(users::columns::name.eq("Sean"))`.
 ///
 /// `all_columns`
 /// -----------
