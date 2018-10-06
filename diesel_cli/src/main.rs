@@ -188,9 +188,27 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 }
 
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
-    migrations_dir_from_cli(matches)
+    let dir_path = migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error))
+        .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error));
+
+    // This is a convenient cleanup code for when a user migrates from an
+    // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file
+    // TODO: remove this after a few releases
+    if let Some(dir_entry) = fs::read_dir(&dir_path).unwrap()
+        .filter(|x| x.is_ok())
+        .map(|x| x.unwrap())
+        .filter(|x| {
+            x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep"
+        })
+        .next()
+    {
+        fs::remove_file(dir_entry.path()).unwrap_or_else(|e| eprintln!(
+            "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}", e
+        ));
+    }
+
+    dir_path
 }
 
 fn run_setup_command(matches: &ArgMatches) {
@@ -260,12 +278,12 @@ fn generate_completions_command(matches: &ArgMatches) {
 
 /// Looks for a migrations directory in the current path and all parent paths,
 /// and creates one in the same directory as the Cargo.toml if it can't find
-/// one. It also sticks a .gitkeep in the directory so git will pick it up.
+/// one. It also sticks a `.keep` file in the directory so git will pick it up.
 /// Returns a `DatabaseError::CargoTomlNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir(path)?;
-    fs::File::create(path.join(".gitkeep"))?;
+   fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
