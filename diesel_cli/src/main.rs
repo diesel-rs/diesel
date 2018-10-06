@@ -283,7 +283,7 @@ fn generate_completions_command(matches: &ArgMatches) {
 fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir(path)?;
-   fs::File::create(path.join(".keep"))?;
+    fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
