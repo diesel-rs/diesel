@@ -26,5 +26,14 @@ fn main() {
     st.filter(b.eq(true)); //~ ERROR unused `diesel::query_builder::SelectStatement`
     st.filter(b.eq(true)).limit(1); //~ ERROR unused `diesel::query_builder::SelectStatement`
 
+    insert_into(stuff)
+        .values(b.eq(true)); //- ERROR unused `diesel::query_builder::InsertStatement`
+    insert_into(stuff)
+        .values(&vec![b.eq(true), b.eq(false)]); //~ ERROR unused `diesel::query_builder::InsertStatement`
+
+    update(stuff).set(b.eq(true)); //~ ERROR unused `diesel::query_builder::UpdateStatement`
+
+    delete(stuff); //~ ERROR unused `diesel::query_builder::DeleteStatement`
+
     let _thingies = st.filter(b.eq(true)); // No ERROR
 }
