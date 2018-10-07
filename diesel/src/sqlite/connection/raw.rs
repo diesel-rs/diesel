@@ -105,6 +105,10 @@ impl RawConnection {
             ))
         }
     }
+
+    pub fn enable_load_extension(&self) {
+        unsafe { ffi::enable_load_extension(self.internal_connection.as_ptr(), true) }
+    }
 }
 
 impl Drop for RawConnection {
