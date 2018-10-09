@@ -17,3 +17,10 @@ impl<T: SqlOrd + NotNull> SqlOrd for sql_types::Nullable<T> {}
 
 #[cfg(feature = "postgres")]
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
+
+#[cfg(feature = "mysql")]
+impl SqlOrd for sql_types::Unsigned<sql_types::SmallInt> {}
+#[cfg(feature = "mysql")]
+impl SqlOrd for sql_types::Unsigned<sql_types::Integer> {}
+#[cfg(feature = "mysql")]
+impl SqlOrd for sql_types::Unsigned<sql_types::BigInt> {}
