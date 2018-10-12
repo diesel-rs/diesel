@@ -1,0 +1,232 @@
+jobs:
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: macOS_sqlite
+    displayName: macOS SQLite
+    vmImage: macOS-10.13
+    variables:
+      BACKEND: sqlite
+      SQLITE_DATABASE_URL: /tmp/test.db
+    setup:
+      - bash: |
+          brew install sqlite
+        displayName: Install sqlite
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: macOS_postgres
+    displayName: macOS PostgreSQL
+    vmImage: macOS-10.13
+    variables:
+      BACKEND: postgres
+      PG_DATABASE_URL: postgres://postgres@localhost/
+      PG_EXAMPLE_DATABASE_URL: postgres://postgres@localhost/diesel_example
+    setup:
+      - bash: |
+          brew install postgres &&
+          brew services start postgres &&
+          sleep 3 &&
+          /usr/local/opt/postgres/bin/createuser -s postgres
+        displayName: Install postgresql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: macOS_mysql
+    displayName: macOS MySQL
+    vmImage: macOS-10.13
+    variables:
+      BACKEND: mysql
+      MYSQL_DATABASE_URL: mysql://root@localhost/diesel_test
+      MYSQL_EXAMPLE_DATABASE_URL: mysql://root@localhost/diesel_example
+      MYSQL_UNIT_TEST_DATABASE_URL: mysql://root@localhost/diesel_unit_test
+      RUST_TEST_THREADS: 1
+    setup:
+      - bash: |
+          brew install mysql &&
+          brew services start mysql &&
+          brew services stop mysql;sleep 3;brew services start mysql &&
+          sleep 1 &&
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+        displayName: Install mysql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Linux_sqlite
+    displayName: Linux SQLite
+    vmImage: ubuntu-16.04
+    variables:
+      BACKEND: sqlite
+      SQLITE_DATABASE_URL: /tmp/test.db
+    setup:
+      - bash: |
+          sudo apt-get -y install sqlite3 libsqlite3-dev
+        displayName: Install sqlite
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Linux_postgres
+    displayName: Linux PostgreSQL
+    vmImage: ubuntu-16.04
+    variables:
+      BACKEND: postgres
+      PG_DATABASE_URL: postgres://postgres:postgres@localhost/
+      PG_EXAMPLE_DATABASE_URL: postgres://postgres:postgres@localhost/diesel_example
+    setup:
+      - bash: |
+          sudo apt-get -y install postgresql libpq-dev &&
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/9.5/main/pg_hba.conf &&
+          sudo service postgresql restart && sleep 3 &&
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" &&
+          sudo service postgresql restart && sleep 3
+        displayName: Install postgresql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Linux_mysql
+    displayName: Linux MySQL
+    vmImage: ubuntu-16.04
+    variables:
+      BACKEND: mysql
+      MYSQL_DATABASE_URL: mysql://root:root@localhost/diesel_test
+      MYSQL_EXAMPLE_DATABASE_URL: mysql://root:root@localhost/diesel_example
+      MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:root@localhost/diesel_unit_test
+      RUST_TEST_THREADS: 1
+    setup:
+      - bash: |
+          sudo apt-get -y install mysql-server libmysqlclient-dev &&
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+        displayName: Install mysql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Windows_sqlite
+    displayName: Windows SQLite
+    vmImage: vs2017-win2016
+    variables:
+      BACKEND: sqlite
+      SQLITE_DATABASE_URL: test.db
+      SQLITE3_LIB_DIR: C:\sqlite
+    setup:
+      - script: |
+          choco install 7zip
+          mkdir C:\sqlite
+          CD /D C:\sqlite
+          curl -fsS --retry 3 --retry-connrefused -o sqlite3.zip https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip
+          7z e sqlite3.zip -y
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
+          set PATH=%PATH%;C:\sqlite
+          echo "##vso[task.setvariable variable=PATH;]%PATH%;C:\sqlite"
+        displayName: Install sqlite
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Windows_postgres
+    displayName: Windows PostgreSQL
+    vmImage: vs2017-win2016
+    variables:
+      BACKEND: postgres
+      PG_DATABASE_URL: postgres://postgres:password@localhost/
+      PG_EXAMPLE_DATABASE_URL: postgres://postgres:password@localhost/diesel_example
+      PQ_LIB_DIR: C:\Program Files\PostgreSQL\10\lib
+    setup:
+      - script: |
+          choco install postgresql10 --force --params '/Password:password'
+          set PATH=%PATH%;C:\Program Files\PostgreSQL\10\bin;C:\Program Files\PostgreSQL\10\lib"
+          echo "##vso[task.setvariable variable=PATH;]%PATH%;C:\Program Files\PostgreSQL\10\bin;C:\Program Files\PostgreSQL\10\lib"
+        displayName: Install postgresql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Windows_mysql
+    displayName: Windows MySQL
+    vmImage: vs2017-win2016
+    variables:
+      BACKEND: mysql
+      MYSQL_DATABASE_URL: mysql://root:password@localhost/diesel_test
+      MYSQL_EXAMPLE_DATABASE_URL: mysql://root:password@localhost/diesel_example
+      MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:password@localhost/diesel_unit_test
+      RUST_TEST_THREADS: 1
+      MYSQLCLIENT_LIB_DIR: C:\Program Files\MySQL\MySQL Server 8.0\lib
+    setup:
+      - script: |
+          choco install 7zip
+          mkdir C:\mysql
+          CD /D C:\mysql
+          curl -fsS --retry 3 --retry-connrefused -o mysql.msi https://cdn.mysql.com/archives/mysql-installer/mysql-installer-community-8.0.11.0.msi
+          msiexec /q /log install.txt /i mysql.msi datadir=C:\mysql installdir=C:\mysql
+          call "C:\Program Files (x86)\MySQL\MySQL Installer for Windows\MySQLInstallerConsole.exe" community install server;8.0.11;x64:*:port=3306;rootpasswd=password;servicename=MySQL -silent
+          netsh advfirewall firewall add rule name="Allow mysql" dir=in action=allow edge=yes remoteip=any protocol=TCP localport=80,8080,3306
+          "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on diesel_test.* to 'root'@localhost; grant all on diesel_unit_test.* to 'root'@localhost;" -uroot -ppassword
+        displayName: Install mysql
+
+- job: CLIPPY_AND_COMPILE_TESTS
+  displayName: Clippy and Compiletests
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - template: _build/install-rust.yml
+      parameters:
+        platform: Linux
+        rust_version: nightly-2018-08-17
+    - bash: |
+        rustup component add clippy-preview
+      displayName: Install clippy
+    - bash: |
+        sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      displayName: Install build dependencies
+    - bash: |
+        cargo clippy
+      displayName: Run clippy
+    - bash: |
+        (cd diesel_compile_tests && cargo test)
+      displayName: Run compile tests
+
+- job: RUSTFMT
+  displayName: Check rustfmt style using rustfmt from 1.26.1
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - template: _build/install-rust.yml
+      parameters:
+        platform: Linux
+        rust_version: 1.26.1
+    - bash: |
+        rustup component add rustfmt-preview
+      displayName: Install rustfmt
+    - bash: |
+        cargo fmt --all -- --write-mode=diff
+      displayName: Check style
+
+- job: SQLITE_BUNDLED
+  displayName: Check sqlite bundled
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - template: _build/install-rust.yml
+      parameters:
+        platform: Linux
+        rust_version: stable
+    - bash: |
+        sudo apt-get -y install sqlite3 libsqlite3-dev
+    - bash: |
+        (cd diesel_cli && cargo test --no-default-features --features "sqlite-bundled")
+      env:
+        SQLITE_DATABASE_URL: /tmp/test.db
+      displayName: Check sqlite bundled
+
+- job: MINIMAL_RUST_VERSION
+  displayName: Check minimal supported rust version
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - template: _build/install-rust.yml
+      parameters:
+        platform: Linux
+        rust_version: 1.27.0
+    - bash: |
+        sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      displayName: Install build dependencies
+    - bash: |
+        cargo check --all
+      displayName: Check building with rust 1.27.0
