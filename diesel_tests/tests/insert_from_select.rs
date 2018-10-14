@@ -207,7 +207,7 @@ fn insert_or_replace_with_select() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -233,7 +233,7 @@ fn on_conflict_do_nothing_with_select() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};

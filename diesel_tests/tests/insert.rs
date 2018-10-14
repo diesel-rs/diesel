@@ -290,7 +290,7 @@ fn insert_empty_slice_with_returning() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_empty_slice() {
     let connection = connection();
 

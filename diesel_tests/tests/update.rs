@@ -226,7 +226,7 @@ fn update_with_no_changes() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
@@ -246,7 +246,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
     #[table_name = "users"]
@@ -266,7 +266,7 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_sql_literal_for_target() {
     use crate::schema::users::dsl::*;
     use diesel::dsl::sql;
