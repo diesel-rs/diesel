@@ -141,7 +141,7 @@ impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
         }
     }
 
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     pub(crate) fn replace_values<F, V>(self, f: F) -> InsertStatement<T, V, Op, Ret>
     where
         F: FnOnce(U) -> V,

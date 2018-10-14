@@ -1,5 +1,5 @@
+use crate::backend::{Backend, SupportsOnConflictClause};
 use crate::expression::SqlLiteral;
-use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::query_source::Column;
 use crate::result::QueryResult;
@@ -15,7 +15,7 @@ use crate::result::QueryResult;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// use diesel::pg::upsert::*;
+/// use diesel::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
@@ -53,26 +53,34 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
-pub trait OnConflictTarget<Table>: QueryFragment<Pg> {}
+pub trait OnConflictTarget<DB, Table>: QueryFragment<DB>
+where
+    DB: Backend + SupportsOnConflictClause,
+{
+}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct NoConflictTarget;
 
-impl QueryFragment<Pg> for NoConflictTarget {
-    fn walk_ast(&self, _: AstPass<Pg>) -> QueryResult<()> {
+impl<DB: Backend + SupportsOnConflictClause> QueryFragment<DB> for NoConflictTarget {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
 }
 
-impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
+impl<DB, Table> OnConflictTarget<DB, Table> for NoConflictTarget where DB: Backend + SupportsOnConflictClause {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct ConflictTarget<T>(pub T);
 
-impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
+where
+    DB: Backend + SupportsOnConflictClause,
+    T: Column,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" (");
         out.push_identifier(T::NAME)?;
         out.push_sql(")");
@@ -80,41 +88,53 @@ impl<T: Column> QueryFragment<Pg> for ConflictTarget<T> {
     }
 }
 
-impl<T: Column> OnConflictTarget<T::Table> for ConflictTarget<T> {}
-
-impl<ST> QueryFragment<Pg> for ConflictTarget<SqlLiteral<ST>>
+impl<DB, T> OnConflictTarget<DB, T::Table> for ConflictTarget<T>
 where
-    SqlLiteral<ST>: QueryFragment<Pg>,
+    DB: Backend + SupportsOnConflictClause,
+    T: Column,
+{}
+
+impl<DB, ST> QueryFragment<DB> for ConflictTarget<SqlLiteral<ST>>
+where
+    DB: Backend + SupportsOnConflictClause,
+    SqlLiteral<ST>: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
 
-impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> where
-    ConflictTarget<SqlLiteral<ST>>: QueryFragment<Pg>
-{
-}
+impl<DB, Tab, ST> OnConflictTarget<DB, Tab> for ConflictTarget<SqlLiteral<ST>>
+where
+    DB: Backend + SupportsOnConflictClause,
+    ConflictTarget<SqlLiteral<ST>>: QueryFragment<DB>,
+{}
 
-impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+impl<'a, DB> QueryFragment<DB> for ConflictTarget<OnConstraint<'a>>
+where
+    DB: Backend + SupportsOnConflictClause,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" ON CONSTRAINT ");
         out.push_identifier(self.0.constraint_name)?;
         Ok(())
     }
 }
 
-impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {}
+impl<'a, DB, Table> OnConflictTarget<DB, Table> for ConflictTarget<OnConstraint<'a>> where
+    DB: Backend + SupportsOnConflictClause,
+{}
 
 macro_rules! on_conflict_tuples {
     ($($col:ident),+) => {
-        impl<T, $($col),+> QueryFragment<Pg> for ConflictTarget<(T, $($col),+)> where
+        impl<DB, T, $($col),+> QueryFragment<DB> for ConflictTarget<(T, $($col),+)> where
+            DB: Backend + SupportsOnConflictClause,
             T: Column,
             $($col: Column<Table=T::Table>,)+
         {
-            fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
                 out.push_sql(" (");
                 out.push_identifier(T::NAME)?;
                 $(
@@ -126,7 +146,8 @@ macro_rules! on_conflict_tuples {
             }
         }
 
-        impl<T, $($col),+> OnConflictTarget<T::Table> for ConflictTarget<(T, $($col),+)> where
+        impl<DB, T, $($col),+> OnConflictTarget<DB, T::Table> for ConflictTarget<(T, $($col),+)> where
+            DB: Backend + SupportsOnConflictClause,
             T: Column,
             $($col: Column<Table=T::Table>,)+
         {

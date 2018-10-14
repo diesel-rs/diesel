@@ -1,4 +1,4 @@
-//! Types and functions related to PG's `ON CONFLICT` clause
+//! Types and functions related to PG's Sqlite's `ON CONFLICT` clause
 //!
 //! See [the methods on `InsertStatement`](../../query_builder/struct.InsertStatement.html#impl-1)
 //! for usage examples.

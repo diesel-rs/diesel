@@ -1,3 +1,4 @@
+use crate::backend::{Backend, SupportsOnConflictClause};
 use super::on_conflict_actions::*;
 use super::on_conflict_clause::*;
 use super::on_conflict_target::*;
@@ -128,7 +129,7 @@ where
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
-    /// use diesel::pg::upsert::*;
+    /// use diesel::upsert::*;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("DROP TABLE users").unwrap();
@@ -159,14 +160,15 @@ where
     /// See the documentation for [`on_constraint`] and [`do_update`] for
     /// more examples.
     ///
-    /// [`on_constraint`]: ../pg/upsert/fn.on_constraint.html
-    /// [`do_update`]: ../pg/upsert/struct.IncompleteOnConflict.html#method.do_update
-    pub fn on_conflict<Target>(
+    /// [`on_constraint`]: ../upsert/fn.on_constraint.html
+    /// [`do_update`]: ../upsert/struct.IncompleteOnConflict.html#method.do_update
+    pub fn on_conflict<DB, Target>(
         self,
         target: Target,
     ) -> IncompleteOnConflict<Self, ConflictTarget<Target>>
     where
-        ConflictTarget<Target>: OnConflictTarget<T>,
+        DB: Backend + SupportsOnConflictClause,
+        ConflictTarget<Target>: OnConflictTarget<DB, T>,
     {
         IncompleteOnConflict {
             stmt: self,
@@ -271,7 +273,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
-    /// use diesel::pg::upsert::excluded;
+    /// use diesel::upsert::excluded;
     ///
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();

@@ -6,7 +6,6 @@
 
 pub mod expression;
 pub mod types;
-pub mod upsert;
 
 mod backend;
 mod connection;
