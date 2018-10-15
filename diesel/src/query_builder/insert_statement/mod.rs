@@ -32,7 +32,7 @@ use sqlite::{Sqlite, SqliteConnection};
 /// [`values`]: #method.values
 /// [`default_values`]: #method.default_values
 #[derive(Debug, Clone, Copy)]
-#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct IncompleteInsertStatement<T, Op> {
     target: T,
     operator: Op,
@@ -110,7 +110,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
 }
 
 #[derive(Debug, Copy, Clone)]
-#[must_use="Queries are only executed when calling `load`, `get_result` or similar."]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// A fully constructed insert statement.
 ///
 /// The parameters of this struct represent:
