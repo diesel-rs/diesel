@@ -11,10 +11,9 @@ table! {
     }
 }
 
-
 fn main() {
-    use stuff::table as st;
     use stuff::b;
+    use stuff::table as st;
 
     st.select(b); //~ ERROR unused `diesel::query_builder::SelectStatement`
     st.select(b).distinct(); //~ ERROR unused `diesel::query_builder::SelectStatement`
@@ -26,14 +25,12 @@ fn main() {
     st.filter(b.eq(true)); //~ ERROR unused `diesel::query_builder::SelectStatement`
     st.filter(b.eq(true)).limit(1); //~ ERROR unused `diesel::query_builder::SelectStatement`
 
-    insert_into(stuff)
-        .values(b.eq(true)); //- ERROR unused `diesel::query_builder::InsertStatement`
-    insert_into(stuff)
-        .values(&vec![b.eq(true), b.eq(false)]); //~ ERROR unused `diesel::query_builder::InsertStatement`
+    insert_into(st).values(b.eq(true)); //~ ERROR unused
+    insert_into(st).values(&vec![b.eq(true), b.eq(false)]); //~ ERROR unused
 
-    update(stuff).set(b.eq(true)); //~ ERROR unused `diesel::query_builder::UpdateStatement`
+    update(st).set(b.eq(true)); //~ ERROR unused
 
-    delete(stuff); //~ ERROR unused `diesel::query_builder::DeleteStatement`
+    delete(st); //~ ERROR unused
 
     let _thingies = st.filter(b.eq(true)); // No ERROR
 }
