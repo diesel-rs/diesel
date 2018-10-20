@@ -42,7 +42,7 @@ matrix:
     env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
     script:
     - rustup component add clippy-preview
-    - cargo clippy
+    - cargo +nightly-2018-08-17 clippy
     - (cd diesel_compile_tests && travis-cargo test)
   - rust: 1.26.1
     env: RUSTFMT=YESPLEASE
@@ -56,10 +56,9 @@ matrix:
     script:
     - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
   - rust: 1.27.0
-    env:
-    - ENSURE_SUPPORTED_RUST_VERSION=1.27.0
+    env: ENSURE_SUPPORTED_RUST_VERSION=1.27.0
     script:
-    - cargo check --all
+    - cargo +1.27.0 check --all
 
 env:
   matrix:
