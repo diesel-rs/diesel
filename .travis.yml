@@ -28,7 +28,7 @@ script:
   (cd diesel_cli && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "$BACKEND") &&
   (cd diesel_migrations/migrations_internals && cargo +$TRAVIS_RUST_VERSION test ) &&
   (cd diesel_migrations/migrations_macros && cargo +$TRAVIS_RUST_VERSION test ) &&
-  (cd diesel_migrations/ && cargo +$TRAVIS_RUST_VERSION test  --features "$BACKEND" ) &&
+  (cd diesel_migrations/ && cargo +$TRAVIS_RUST_VERSION test  --features "$BACKEND diesel/$BACKEND" ) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel_tests && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "unstable $BACKEND")
   else
