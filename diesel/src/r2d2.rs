@@ -1,4 +1,6 @@
-//! Connection pooling via r2d2
+//! Connection pooling via r2d2.
+//!
+//! Note: This module requires enabling the `r2d2` feature
 
 extern crate r2d2;
 
