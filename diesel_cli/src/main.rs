@@ -195,16 +195,18 @@ fn migrations_dir(matches: &ArgMatches) -> PathBuf {
     // This is a convenient cleanup code for when a user migrates from an
     // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file
     // TODO: remove this after a few releases
-    if let Some(dir_entry) = fs::read_dir(&dir_path).unwrap()
+    if let Some(dir_entry) = fs::read_dir(&dir_path)
+        .unwrap()
         .filter(|x| x.is_ok())
         .map(|x| x.unwrap())
-        .find(|x| {
-            x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep"
-        })
+        .find(|x| x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep")
     {
-        fs::remove_file(dir_entry.path()).unwrap_or_else(|e| eprintln!(
-            "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}", e
-        ));
+        fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
+            eprintln!(
+                "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
+                e
+            )
+        });
     }
 
     dir_path
