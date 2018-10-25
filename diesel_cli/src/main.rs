@@ -198,10 +198,9 @@ fn migrations_dir(matches: &ArgMatches) -> PathBuf {
     if let Some(dir_entry) = fs::read_dir(&dir_path).unwrap()
         .filter(|x| x.is_ok())
         .map(|x| x.unwrap())
-        .filter(|x| {
+        .find(|x| {
             x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep"
         })
-        .next()
     {
         fs::remove_file(dir_entry.path()).unwrap_or_else(|e| eprintln!(
             "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}", e
