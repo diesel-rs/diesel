@@ -8,6 +8,7 @@ extern crate dotenv;
 extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
+extern crate failure;
 
 #[cfg(test)]
 #[macro_use]

@@ -2,6 +2,7 @@ use bcrypt::*;
 use diesel::prelude::*;
 use diesel::{self, insert_into};
 use dotenv;
+use failure::{Fail, Compat};
 
 use schema::users;
 
@@ -10,7 +11,7 @@ pub enum AuthenticationError {
     IncorrectPassword,
     NoUsernameSet,
     NoPasswordSet,
-    EnvironmentError(dotenv::Error),
+    EnvironmentError(Compat<dotenv::Error>),
     BcryptError(BcryptError),
     DatabaseError(diesel::result::Error),
 }
@@ -98,12 +99,12 @@ fn if_not_present<T>(
     res: Result<T, dotenv::Error>,
     on_not_present: AuthenticationError,
 ) -> Result<T, AuthenticationError> {
-    use dotenv::ErrorKind::EnvVar;
+    use dotenv::Error::EnvVar;
     use std::env::VarError::NotPresent;
 
     res.map_err(|e| match e {
-        dotenv::Error(EnvVar(NotPresent), _) => on_not_present,
-        e => AuthenticationError::EnvironmentError(e),
+        EnvVar(NotPresent) => on_not_present,
+        e => AuthenticationError::EnvironmentError(e.compat()),
     })
 }
 
