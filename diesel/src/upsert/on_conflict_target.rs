@@ -53,11 +53,7 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
-pub trait OnConflictTarget<DB, Table>: QueryFragment<DB>
-where
-    DB: Backend + SupportsOnConflictClause,
-{
-}
+pub trait OnConflictTarget<Table> {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
@@ -69,7 +65,7 @@ impl<DB: Backend + SupportsOnConflictClause> QueryFragment<DB> for NoConflictTar
     }
 }
 
-impl<DB, Table> OnConflictTarget<DB, Table> for NoConflictTarget where DB: Backend + SupportsOnConflictClause {}
+impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
@@ -88,9 +84,8 @@ where
     }
 }
 
-impl<DB, T> OnConflictTarget<DB, T::Table> for ConflictTarget<T>
+impl<T> OnConflictTarget<T::Table> for ConflictTarget<T>
 where
-    DB: Backend + SupportsOnConflictClause,
     T: Column,
 {}
 
@@ -106,11 +101,7 @@ where
     }
 }
 
-impl<DB, Tab, ST> OnConflictTarget<DB, Tab> for ConflictTarget<SqlLiteral<ST>>
-where
-    DB: Backend + SupportsOnConflictClause,
-    ConflictTarget<SqlLiteral<ST>>: QueryFragment<DB>,
-{}
+impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 
 impl<'a, DB> QueryFragment<DB> for ConflictTarget<OnConstraint<'a>>
 where
@@ -123,9 +114,7 @@ where
     }
 }
 
-impl<'a, DB, Table> OnConflictTarget<DB, Table> for ConflictTarget<OnConstraint<'a>> where
-    DB: Backend + SupportsOnConflictClause,
-{}
+impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {}
 
 macro_rules! on_conflict_tuples {
     ($($col:ident),+) => {
@@ -146,8 +135,7 @@ macro_rules! on_conflict_tuples {
             }
         }
 
-        impl<DB, T, $($col),+> OnConflictTarget<DB, T::Table> for ConflictTarget<(T, $($col),+)> where
-            DB: Backend + SupportsOnConflictClause,
+        impl<T, $($col),+> OnConflictTarget<T::Table> for ConflictTarget<(T, $($col),+)> where
             T: Column,
             $($col: Column<Table=T::Table>,)+
         {
