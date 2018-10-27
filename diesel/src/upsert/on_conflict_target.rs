@@ -89,7 +89,8 @@ where
 impl<T> OnConflictTarget<T::Table> for ConflictTarget<T>
 where
     T: Column,
-{}
+{
+}
 
 impl<DB, ST> QueryFragment<DB> for ConflictTarget<SqlLiteral<ST>>
 where
