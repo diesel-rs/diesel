@@ -7,7 +7,7 @@
 pub mod expression;
 pub mod types;
 #[deprecated(since = "1.4.0", note = "Use `diesel::upsert` instead")]
-pub use upsert;
+pub use crate::upsert;
 
 mod backend;
 mod connection;
