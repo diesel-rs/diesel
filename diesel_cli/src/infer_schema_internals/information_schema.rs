@@ -239,7 +239,7 @@ where
                     .filter(kcu::constraint_schema.eq(&foreign_key_schema))
                     .filter(kcu::constraint_name.eq(&foreign_key_name))
                     .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                    .first::<(TableName, _)>(connection)?;
+                    .first::<(TableName, String)>(connection)?;
                 let (mut primary_key_table, primary_key_column) = kcu::table
                     .filter(kcu::constraint_schema.eq(primary_key_schema))
                     .filter(kcu::constraint_name.eq(primary_key_name))
@@ -252,7 +252,8 @@ where
                 Ok(ForeignKeyConstraint {
                     child_table: foreign_key_table,
                     parent_table: primary_key_table,
-                    foreign_key: foreign_key_column,
+                    foreign_key: foreign_key_column.clone(),
+                    foreign_key_rust_name: foreign_key_column,
                     primary_key: primary_key_column,
                 })
             },
@@ -462,12 +463,14 @@ mod tests {
             child_table: table_2.clone(),
             parent_table: table_1.clone(),
             foreign_key: "fk_one".into(),
+            foreign_key_rust_name: "fk_one".into(),
             primary_key: "id".into(),
         };
         let fk_two = ForeignKeyConstraint {
             child_table: table_3.clone(),
             parent_table: table_2.clone(),
             foreign_key: "fk_two".into(),
+            foreign_key_rust_name: "fk_two".into(),
             primary_key: "id".into(),
         };
         assert_eq!(

@@ -109,6 +109,12 @@ pub fn load_foreign_key_constraints(
 
     constraints.map(|mut ct| {
         ct.sort();
+        ct.iter_mut().for_each(|foreign_key_constraint| {
+            if RESERVED_NAMES.contains(&foreign_key_constraint.foreign_key_rust_name.as_str()) {
+                foreign_key_constraint.foreign_key_rust_name =
+                    format!("{}_", foreign_key_constraint.foreign_key_rust_name.as_str());
+            }
+        });
         ct
     })
 }
