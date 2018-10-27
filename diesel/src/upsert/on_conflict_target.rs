@@ -4,6 +4,7 @@ use crate::query_builder::*;
 use crate::query_source::Column;
 use crate::result::QueryResult;
 
+#[cfg(feature = "postgres")]
 /// Used to specify the constraint name for an upsert statement in the form `ON
 /// CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
 /// unique constraint, not the name of an index.
@@ -41,6 +42,7 @@ use crate::result::QueryResult;
 /// assert!(pk_conflict_result.is_err());
 /// # }
 /// ```
+#[cfg(feature = "postgres")]
 pub fn on_constraint(constraint_name: &str) -> OnConstraint {
     OnConstraint {
         constraint_name: constraint_name,
