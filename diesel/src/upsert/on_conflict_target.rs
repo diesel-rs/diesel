@@ -61,7 +61,10 @@ pub trait OnConflictTarget<Table> {}
 #[derive(Debug, Clone, Copy)]
 pub struct NoConflictTarget;
 
-impl<DB: Backend + SupportsOnConflictClause> QueryFragment<DB> for NoConflictTarget {
+impl<DB> QueryFragment<DB> for NoConflictTarget
+where
+    DB: Backend + SupportsOnConflictClause,
+{
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
     }
