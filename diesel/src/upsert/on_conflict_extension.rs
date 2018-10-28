@@ -51,14 +51,15 @@ where
     /// #     let conn = establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
-    /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
+    /// #[cfg(feature = "postgres")]
     /// let user = User { id: 1, name: "Sean", };
     ///
+    /// #[cfg(feature = "postgres")]
     /// let inserted_row_count = diesel::insert_into(users)
     ///     .values(&vec![user, user])
     ///     .on_conflict_do_nothing()
     ///     .execute(&conn);
+    /// #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
     /// ```
@@ -291,23 +292,26 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     let conn = establish_connection();
     /// #     #[cfg(feature = "postgres")]
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
-    /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     /// let user3 = User { id: 2, name: "Tess" };
     ///
+    /// #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
     ///
+    /// #[cfg(feature = "postgres")]
     /// let insert_count = diesel::insert_into(users)
     ///     .values(&vec![user2, user3])
     ///     .on_conflict(id)
     ///     .do_update()
     ///     .set(name.eq(excluded(name)))
     ///     .execute(&conn);
+    /// #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(2), insert_count);
     ///
+    /// #[cfg(feature = "postgres")]
     /// let users_in_db = users.load(&conn);
+    /// #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]), users_in_db);
     /// # }
     /// ```
