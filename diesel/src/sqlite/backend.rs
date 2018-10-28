@@ -53,7 +53,6 @@ impl TypeMetadata for Sqlite {
     type MetadataLookup = ();
 }
 
-impl SupportsDefaultKeyword for Sqlite {}
 impl SupportsReturningClause for Sqlite {}
 impl SupportsOnConflictClause for Sqlite {}
 impl UsesAnsiSavepointSyntax for Sqlite {}
