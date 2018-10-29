@@ -23,6 +23,7 @@ uuid = { version = ">=0.2.0, <0.7.0" }
 serde_json = { version=">=0.9, <2.0" }
 ipnetwork = ">=0.12.2, <0.14.0"
 bigdecimal = ">= 0.0.10, < 0.0.15"
+volkswagen = "0.1"
 
 [features]
 default = []
