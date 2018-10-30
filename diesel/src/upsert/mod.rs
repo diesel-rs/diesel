@@ -13,4 +13,4 @@ pub use self::on_conflict_extension::*;
 pub use self::on_conflict_target::{ConflictTarget, OnConflictTarget};
 
 #[cfg(feature = "postgres")]
-pub use self::on_conflict_target::on_constraint;
+pub use self::on_conflict_target::*;

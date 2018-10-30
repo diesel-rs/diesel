@@ -13,7 +13,10 @@ pub fn excluded<T>(excluded: T) -> Excluded<T> {
 #[derive(Debug, Clone, Copy)]
 pub struct DoNothing;
 
-impl<DB: Backend + SupportsOnConflictClause> QueryFragment<DB> for DoNothing {
+impl<DB> QueryFragment<DB> for DoNothing
+where
+    DB: Backend + SupportsOnConflictClause,
+{
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
         Ok(())

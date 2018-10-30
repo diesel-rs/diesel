@@ -4,18 +4,18 @@
 
 use pg::Pg;
 use query_builder::*;
-use upsert::{ConflictTarget};
+use upsert::{ConflictTarget, OnConflictTarget};
 use result::QueryResult;
 
 /// # Example
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("on_conflict_docs_setup.rs");
+/// # include!("../upsert/on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
 /// #     use users::dsl::*;
-/// use diesel::upsert::*;
+/// use diesel::pg::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
@@ -61,3 +61,5 @@ impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>>
         Ok(())
     }
 }
+
+impl<'a, Table> OnConflictTarget<Table> for ConflictTarget<OnConstraint<'a>> {}
