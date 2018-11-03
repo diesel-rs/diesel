@@ -4,8 +4,8 @@
 
 use pg::Pg;
 use query_builder::*;
-use upsert::{ConflictTarget, OnConflictTarget};
 use result::QueryResult;
+use upsert::{ConflictTarget, OnConflictTarget};
 
 /// # Example
 ///
@@ -53,8 +53,7 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
-impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>>
-{
+impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" ON CONSTRAINT ");
         try!(out.push_identifier(self.0.constraint_name));
