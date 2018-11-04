@@ -14,7 +14,7 @@ fn test_load_extension_fail() {
     let conn = conn();
 
     // try loading module without enabling extension loading
-    let result = diesel::sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
+    let result = sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn);
 
     assert!(result.is_err());
 }
@@ -26,8 +26,8 @@ fn test_load_extension_ok() {
     // enable loading
     conn.enable_load_extension();
 
-    // load mod_spatialite
-    let result = diesel::sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
+    // load libspatialite.so.5
+    let result = sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn);
 
     assert!(result.is_ok());
 }
@@ -53,8 +53,8 @@ fn test_extension_function() {
     // enable loading
     conn.enable_load_extension();
 
-    // load mod_spatialite
-    sql_query("SELECT load_extension('mod_spatialite');").execute(&conn).expect("Failed to load mod_spatialite");
+    // load libspatialite.so.5
+    sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn).expect("Failed to load libspatialite.so.5");
 
     // test module function
     let r: Vec<Foo> = sql_query("SELECT * FROM (SELECT 0 as id, AsText(ST_Point(25.2,54.2)) as bar) foo;")
