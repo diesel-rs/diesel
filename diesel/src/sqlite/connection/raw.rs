@@ -164,8 +164,8 @@ impl RawConnection {
         }
     }
 
-    pub fn enable_load_extension(&self) {
-        unsafe { ffi::enable_load_extension(self.internal_connection.as_ptr(), true) }
+    pub fn enable_load_extension(&self) -> i32 {
+        unsafe { ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), 1) }
     }
 }
 
