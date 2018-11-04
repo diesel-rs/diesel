@@ -20,7 +20,7 @@ pub mod bigdecimal {
 
     impl<MysqlLike> FromSql<Numeric, MysqlLike> for BigDecimal
         where MysqlLike: MysqlLikeBackend {
-        fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+        fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
             let bytes_ptr = <*const [u8] as FromSql<Binary, MysqlLike>>::from_sql(bytes)?;
             let bytes = unsafe { &*bytes_ptr };
             BigDecimal::parse_bytes(bytes, 10)

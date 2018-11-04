@@ -16,7 +16,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<TinyInt, MysqlLike> for i8 {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<TinyInt, MysqlLike> for i8 {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(bytes[0] as i8)
     }
@@ -33,7 +33,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<Unsigned<TinyInt>, MysqlLike> for u8 {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<Unsigned<TinyInt>, MysqlLike> for u8 {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let signed: i8 = FromSql::<TinyInt, MysqlLike>::from_sql(bytes)?;
         Ok(signed as u8)
     }
@@ -46,7 +46,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<Unsigned<SmallInt>, MysqlLike> for u16 {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<Unsigned<SmallInt>, MysqlLike> for u16 {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let signed: i16 = FromSql::<SmallInt, MysqlLike>::from_sql(bytes)?;
         Ok(signed as u16)
     }
@@ -59,7 +59,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<Unsigned<Integer>, MysqlLike> for u32 {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<Unsigned<Integer>, MysqlLike> for u32 {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let signed: i32 = FromSql::<Integer, MysqlLike>::from_sql(bytes)?;
         Ok(signed as u32)
     }
@@ -72,7 +72,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<Unsigned<BigInt>, MysqlLike> for u64 {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<Unsigned<BigInt>, MysqlLike> for u64 {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, MysqlLike>::from_sql(bytes)?;
         Ok(signed as u64)
     }
@@ -86,7 +86,7 @@ impl<MysqlLike: MysqlLikeBackend> ToSql<Bool, MysqlLike> for bool {
 }
 
 impl<MysqlLike: MysqlLikeBackend> FromSql<Bool, MysqlLike> for bool {
-    fn from_sql(bytes: Option<&MysqlLike::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         Ok(not_none!(bytes).iter().any(|x| *x != 0))
     }
 }
@@ -95,7 +95,7 @@ impl<MysqlLike, ST> HasSqlType<Unsigned<ST>> for MysqlLike
 where
     MysqlLike: MysqlLikeBackend + HasSqlType<ST>,
 {
-    fn metadata(lookup: &MysqlLike::MetadataLookup) -> MysqlLike::TypeMetadata {
+    fn metadata(lookup: &MysqlLike::MetadataLookup) -> <MysqlLike as TypeMetadata>::TypeMetadata {
         <MysqlLike as HasSqlType<ST>>::metadata(lookup)
     }
 
