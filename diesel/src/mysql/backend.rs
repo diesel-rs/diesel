@@ -4,6 +4,7 @@ use byteorder::NativeEndian;
 
 use super::bind_collector::MysqlBindCollector;
 use super::query_builder::MysqlQueryBuilder;
+use mysql_like::MysqlLikeBackend;
 use backend::*;
 use sql_types::TypeMetadata;
 
@@ -46,7 +47,7 @@ pub enum MysqlType {
     Blob,
 }
 
-impl Backend for Mysql {
+impl Backend for DB: MysqlLikeBackend {
     type QueryBuilder = MysqlQueryBuilder;
     type BindCollector = MysqlBindCollector;
     type RawValue = [u8];
@@ -57,6 +58,8 @@ impl TypeMetadata for Mysql {
     type TypeMetadata = MysqlType;
     type MetadataLookup = ();
 }
+
+impl MysqlLikeBackend for Mysql {}
 
 impl SupportsDefaultKeyword for Mysql {}
 impl UsesAnsiSavepointSyntax for Mysql {}

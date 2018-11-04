@@ -361,6 +361,9 @@ pub use pg::types::sql_types::*;
 #[cfg(feature = "mysql")]
 pub use mysql::types::*;
 
+#[cfg(feature = "mysql")]
+pub use mysql_like::types::*;
+
 /// Indicates that a SQL type exists for a backend.
 ///
 /// # Deriving

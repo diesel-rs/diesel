@@ -192,6 +192,10 @@ pub mod migration;
 pub mod row;
 pub mod types;
 
+
+#[cfg(feature = "mysql")]
+mod mysql_like;
+
 #[cfg(feature = "mysql")]
 pub mod mysql;
 #[cfg(feature = "postgres")]
