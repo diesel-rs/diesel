@@ -1,5 +1,7 @@
 //! The MySQL backend
 
+use mysql::bind_collector::MysqlBindCollector;
+use mysql::query_builder::MysqlQueryBuilder;
 use mysql_like::MysqlLikeBackend;
 
 /// The MySQL backend
@@ -43,5 +45,7 @@ pub enum MysqlType {
 
 impl MysqlLikeBackend for Mysql {
     type TypeMetadata = MysqlType;
+    type BindCollector = MysqlBindCollector;
+    type QueryBuilder = MysqlQueryBuilder;
 }
 

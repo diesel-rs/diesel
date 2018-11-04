@@ -1,18 +1,18 @@
 //! The MySQL backend
 use byteorder::NativeEndian;
 
-use mysql::bind_collector::MysqlBindCollector;
-use mysql::query_builder::MysqlQueryBuilder;
 use backend::*;
 use sql_types::TypeMetadata;
 
 pub trait MysqlLikeBackend {
     type TypeMetadata;
+    type QueryBuilder;
+    type BindCollector;
 }
 
 impl<DB: MysqlLikeBackend> Backend for DB {
-    type QueryBuilder = MysqlQueryBuilder;
-    type BindCollector = MysqlBindCollector;
+    type QueryBuilder = DB::QueryBuilder;
+    type BindCollector = DB::BindCollector;
     type RawValue = [u8];
     type ByteOrder = NativeEndian;
 }
