@@ -9,7 +9,7 @@ cache: cargo
 addons:
   postgresql: '9.5'
 before_script:
-  - apt update && apt install --no-install-recommends -y libspatialite5
+  - sudo apt update && sudo apt install --no-install-recommends -y libspatialite5
   - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
