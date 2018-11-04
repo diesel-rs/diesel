@@ -37,6 +37,8 @@ mod insert;
 mod insert_from_select;
 mod internal_details;
 mod joins;
+#[cfg(feature = "sqlite")]
+mod load_extension;
 mod macros;
 mod order;
 mod perf_details;
