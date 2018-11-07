@@ -78,7 +78,11 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
 }
 
 fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<Error>> {
-    try!(migration_paths_in_directory(path))
+    let mut migrations = migration_paths_in_directory(path)?;
+
+    migrations.sort_by_key(|a| a.path());
+
+    migrations
         .into_iter()
         .map(|e| migration_literal_from_path(&e.path()))
         .collect()
