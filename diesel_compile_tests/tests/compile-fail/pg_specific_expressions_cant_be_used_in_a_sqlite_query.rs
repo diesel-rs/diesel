@@ -31,4 +31,7 @@ fn main() {
     users.select(id).filter(now.eq(now.at_time_zone("UTC")))
         .load::<i32>(&connection);
     //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+    insert_into(users).values(&NewUser("Sean"))
+        .on_conflict(on_constraint("name"));
+    //~^ ERROR 35:22: 35:35: cannot find function `on_constraint` in this scope [E0425]
 }
