@@ -53,6 +53,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a complete `UPDATE` statement.
 ///
 /// See [`update`](../fn.update.html) for usage examples, or [the update

@@ -10,6 +10,7 @@ use query_source::Table;
 use result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a SQL `DELETE` statement.
 ///
 /// The type parameters on this struct represent:
