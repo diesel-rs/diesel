@@ -10,7 +10,4 @@ mod on_conflict_target;
 
 pub use self::on_conflict_actions::excluded;
 pub use self::on_conflict_extension::*;
-pub use self::on_conflict_target::{ConflictTarget, OnConflictTarget};
-
-#[cfg(feature = "postgres")]
 pub use self::on_conflict_target::*;
