@@ -1,7 +1,7 @@
 #[macro_use] extern crate diesel;
 
 use diesel::*;
-use diesel::pg::upsert::*;
+use diesel::upsert::*;
 
 table! {
     users {
