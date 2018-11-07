@@ -90,7 +90,6 @@ branches:
   only:
     - master
     - ಠ_ಠ
-    - sg-enable-load-extension
 notifications:
   webhooks:
     urls:
