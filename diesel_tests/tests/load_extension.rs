@@ -1,9 +1,4 @@
-use diesel::{
-    Connection,
-    SqliteConnection,
-    RunQueryDsl,
-    sql_query,
-};
+use diesel::{sql_query, Connection, RunQueryDsl, SqliteConnection};
 
 fn conn() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
@@ -24,7 +19,7 @@ fn test_load_extension_ok() {
     let conn = conn();
 
     // enable loading
-    conn.enable_load_extension();
+    conn.enable_load_extension().unwrap();
 
     // load libspatialite.so.5
     let result = sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn);
@@ -40,10 +35,10 @@ table! {
 }
 
 #[derive(QueryableByName)]
-#[table_name="foo"]
+#[table_name = "foo"]
 struct Foo {
     id: i32,
-    bar: String
+    bar: String,
 }
 
 #[test]
@@ -51,18 +46,20 @@ fn test_extension_function() {
     let conn = conn();
 
     // enable loading
-    conn.enable_load_extension();
+    conn.enable_load_extension().unwrap();
 
     // load libspatialite.so.5
-    sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn).expect("Failed to load libspatialite.so.5");
+    sql_query("SELECT load_extension('libspatialite.so.5');")
+        .execute(&conn)
+        .expect("Failed to load libspatialite.so.5");
 
     // test module function
-    let r: Vec<Foo> = sql_query("SELECT * FROM (SELECT 0 as id, AsText(ST_Point(25.2,54.2)) as bar) foo;")
-        .load(&conn)
-        .expect("Failed to query lib version");
+    let r: Vec<Foo> =
+        sql_query("SELECT * FROM (SELECT 0 as id, AsText(ST_Point(25.2,54.2)) as bar) foo;")
+            .load(&conn)
+            .expect("Failed to query lib version");
 
     for v in r {
         assert_eq!(&v.bar, "POINT(25.2 54.2)");
     }
 }
-
