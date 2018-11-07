@@ -15,7 +15,7 @@ use upsert::{ConflictTarget, OnConflictTarget};
 /// #
 /// # fn main() {
 /// #     use users::dsl::*;
-/// use diesel::pg::upsert::*;
+/// use diesel::upsert::*;
 ///
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
