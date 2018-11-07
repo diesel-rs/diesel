@@ -201,7 +201,7 @@
 //! Diesel provides support for doing this grouping, once the data has been
 //! loaded.
 //!
-//! [`grouped_by`] is called on a `Vec<Child>` with a `&[Parent]`.
+//! [`grouped_by`][grouped-by] is called on a `Vec<Child>` with a `&[Parent]`.
 //! The return value will be `Vec<Vec<Child>>` indexed to match their parent.
 //! Or to put it another way, the returned data can be passed to `zip`,
 //! and it will be combined with its parent.
