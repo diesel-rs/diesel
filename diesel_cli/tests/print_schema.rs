@@ -4,12 +4,6 @@ use std::path::{Path, PathBuf};
 
 use support::{database, project};
 
-#[cfg(not(windows))]
-const NEW_LINE: &'static str = "\n";
-
-#[cfg(windows)]
-const NEW_LINE: &'static str = "\r\n";
-
 #[test]
 fn run_infer_schema_without_docs() {
     test_print_schema("print_schema_simple_without_docs", vec![]);
@@ -128,9 +122,11 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
     let result = p.command("print-schema").args(args).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    let expected = read_file(&backend_file_path(test_name, "expected.rs"));
+    let expected = read_file(&backend_file_path(test_name, "expected.rs")).replace("\r\n", "\n");
 
-    assert_diff!(&expected, result.stdout(), NEW_LINE, 0);
+    let result = result.stdout().replace("\r\n", "\n");
+
+    assert_diff!(&expected, &result, "\n", 0);
 
     test_print_schema_config(test_name, &test_path, schema, expected);
 }
@@ -153,13 +149,14 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, e
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    let schema = p.file_contents("src/schema.rs");
-    assert_diff!(&expected, &schema, NEW_LINE, 0);
+    let schema = p.file_contents("src/schema.rs").replace("\r\n", "\n");
+    assert_diff!(&expected, &schema, "\n", 0);
 
     let result = p.command("print-schema").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    assert_diff!(&expected, result.stdout(), NEW_LINE, 0);
+    let result = result.stdout().replace("\r\n", "\n");
+    assert_diff!(&expected, &result, "\n", 0);
 }
 
 fn read_file(path: &Path) -> String {
