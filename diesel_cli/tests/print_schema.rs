@@ -76,6 +76,7 @@ fn print_schema_unsigned() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");
     let path = path_to_patch_file.display().to_string();
