@@ -59,6 +59,7 @@ jobs:
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
       - bash: |
+          sudo apt-get update &&
           sudo apt-get -y install sqlite3 libsqlite3-dev
         displayName: Install sqlite
 
@@ -73,6 +74,7 @@ jobs:
       PG_EXAMPLE_DATABASE_URL: postgres://postgres:postgres@localhost/diesel_example
     setup:
       - bash: |
+          sudo apt-get update &&
           sudo apt-get -y install postgresql libpq-dev &&
           echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/9.5/main/pg_hba.conf &&
           sudo service postgresql restart && sleep 3 &&
@@ -93,6 +95,7 @@ jobs:
       RUST_TEST_THREADS: 1
     setup:
       - bash: |
+          sudo apt-get update &&
           sudo apt-get -y install mysql-server libmysqlclient-dev &&
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
         displayName: Install mysql
@@ -173,6 +176,7 @@ jobs:
         rustup component add clippy-preview
       displayName: Install clippy
     - bash: |
+        sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
@@ -208,6 +212,7 @@ jobs:
         platform: Linux
         rust_version: stable
     - bash: |
+        sudo apt-get update &&
         sudo apt-get -y install sqlite3 libsqlite3-dev
     - bash: |
         (cd diesel_cli && cargo test --no-default-features --features "sqlite-bundled")
@@ -225,6 +230,7 @@ jobs:
         platform: Linux
         rust_version: 1.27.0
     - bash: |
+        sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
