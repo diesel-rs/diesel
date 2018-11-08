@@ -45,7 +45,7 @@ jobs:
           brew install mysql &&
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
-          sleep 1 &&
+          sleep 2 &&
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
         displayName: Install mysql
 
