@@ -8,7 +8,7 @@ use support::{database, project};
 const NEW_LINE: &'static str = "\n";
 
 #[cfg(windows)]
-const NEW_LINE: &'static str = "\n";
+const NEW_LINE: &'static str = "\r\n";
 
 #[test]
 fn run_infer_schema_without_docs() {
