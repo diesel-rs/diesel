@@ -12,7 +12,7 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::NamedTempFile;
 
-type Regex = RegexWrapper<regex::Regex>;
+type Regex = RegexWrapper<::regex::Regex>;
 
 pub enum Filtering {
     OnlyTables(Vec<TableName>),
