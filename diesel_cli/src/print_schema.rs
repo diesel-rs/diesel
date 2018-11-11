@@ -10,7 +10,7 @@ use std::io::Write as IoWrite;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
-type Regex = RegexWrapper<regex::Regex>;
+type Regex = RegexWrapper<::regex::Regex>;
 
 pub enum Filtering {
     OnlyTables(Vec<TableName>),
