@@ -3,15 +3,20 @@ use crate::config;
 use crate::infer_schema_internals::*;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
+use serde_regex::Serde as RegexWrapper;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
+type Regex = RegexWrapper<regex::Regex>;
+
 pub enum Filtering {
     OnlyTables(Vec<TableName>),
+    OnlyTableRegexes(Vec<Regex>),
     ExceptTables(Vec<TableName>),
+    ExceptTableRegexes(Vec<Regex>),
     None,
 }
 
@@ -27,7 +32,13 @@ impl Filtering {
 
         match *self {
             OnlyTables(ref names) => !names.contains(name),
+            OnlyTableRegexes(ref regexes) => {
+                !regexes.iter().any(|regex| regex.is_match(&name.sql_name))
+            }
             ExceptTables(ref names) => names.contains(name),
+            ExceptTableRegexes(ref regexes) => {
+                regexes.iter().any(|regex| regex.is_match(&name.sql_name))
+            }
             None => false,
         }
     }
@@ -311,42 +322,70 @@ impl<'de> Deserialize<'de> for Filtering {
             type Value = Filtering;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("either only_tables or except_tables")
+                f.write_str("either only_tables, only_table_regexes, except_tables, or except_table_regexes")
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
                 V: MapAccess<'de>,
             {
-                let mut only_tables = None;
-                let mut except_tables = None;
-                while let Some((key, value)) = map.next_entry()? {
+                let mut only_tables = None::<Vec<TableName>>;
+                let mut only_table_regexes = None::<Vec<Regex>>;
+                let mut except_tables = None::<Vec<TableName>>;
+                let mut except_table_regexes = None::<Vec<Regex>>;
+                while let Some(key) = map.next_key()? {
                     match key {
                         "only_tables" => {
                             if only_tables.is_some() {
                                 return Err(de::Error::duplicate_field("only_tables"));
                             }
-                            only_tables = Some(value);
+                            only_tables = Some(map.next_value()?);
+                        }
+                        "only_table_regexes" => {
+                            if only_table_regexes.is_some() {
+                                return Err(de::Error::duplicate_field("only_table_regexes"));
+                            }
+                            only_table_regexes = Some(map.next_value()?);
                         }
                         "except_tables" => {
                             if except_tables.is_some() {
                                 return Err(de::Error::duplicate_field("except_tables"));
                             }
-                            except_tables = Some(value);
+                            except_tables = Some(map.next_value()?);
+                        }
+                        "except_table_regexes" => {
+                            if except_table_regexes.is_some() {
+                                return Err(de::Error::duplicate_field("except_table_regexes"));
+                            }
+                            except_table_regexes = Some(map.next_value()?);
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
                                 key,
-                                &["only_tables", "except_tables"],
+                                &[
+                                    "only_tables",
+                                    "only_table_regexes",
+                                    "except_tables",
+                                    "except_table_regexes",
+                                ],
                             ))
                         }
                     }
                 }
-                match (only_tables, except_tables) {
-                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except_tables")),
-                    (Some(w), None) => Ok(Filtering::OnlyTables(w)),
-                    (None, Some(b)) => Ok(Filtering::ExceptTables(b)),
-                    (None, None) => Ok(Filtering::None),
+                match (
+                    only_tables,
+                    only_table_regexes,
+                    except_tables,
+                    except_table_regexes,
+                ) {
+                    (Some(t), None, None, None) => Ok(Filtering::OnlyTables(t)),
+                    (None, Some(t), None, None) => Ok(Filtering::OnlyTableRegexes(t)),
+                    (None, None, Some(t), None) => Ok(Filtering::ExceptTables(t)),
+                    (None, None, None, Some(t)) => Ok(Filtering::ExceptTableRegexes(t)),
+                    (None, None, None, None) => Ok(Filtering::None),
+                    _ => Err(de::Error::duplicate_field(
+                        "only_tables, only_table_regexes, except_tables, except_table_regexes",
+                    )),
                 }
             }
         }

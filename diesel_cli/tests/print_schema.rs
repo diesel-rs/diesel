@@ -23,9 +23,25 @@ fn run_infer_schema_include() {
 }
 
 #[test]
+fn run_infer_schema_include_regex() {
+    test_print_schema(
+        "print_schema_only_table_regexes",
+        vec!["--with-docs", "-w", "users1"],
+    );
+}
+
+#[test]
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
+        vec!["--with-docs", "-b", "users1"],
+    );
+}
+
+#[test]
+fn run_infer_schema_exclude_regex() {
+    test_print_schema(
+        "print_schema_except_table_regexes",
         vec!["--with-docs", "-b", "users1"],
     );
 }
