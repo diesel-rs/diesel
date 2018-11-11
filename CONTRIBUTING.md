@@ -99,6 +99,13 @@ Thank you! We'll try to respond as quickly as possible.
      ! echo 'CREATE DATABASE diesel_test;' | docker exec -i diesel.postgres psql -U postgres
    do :; done
    ```
+
+   If you want to use docker-compose, you can execute docker-compose command like this.
+
+    ```bash
+    $ docker-compose up
+    ```
+
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
