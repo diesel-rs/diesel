@@ -111,7 +111,7 @@ jobs:
     vmImage: vs2017-win2016
     variables:
       BACKEND: sqlite
-      SQLITE_DATABASE_URL: test.db
+      SQLITE_DATABASE_URL: C:\test.db
       SQLITE3_LIB_DIR: C:\sqlite
     setup:
       - script: |
