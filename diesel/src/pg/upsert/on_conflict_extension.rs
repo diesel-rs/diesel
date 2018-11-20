@@ -140,7 +140,7 @@ where
     /// conn.execute("CREATE UNIQUE INDEX users_name_hair_color ON users (name, hair_color)").unwrap();
     /// let user = User { id: 1, name: "Sean", hair_color: "black" };
     /// let same_name_different_hair_color = User { id: 2, name: "Sean", hair_color: "brown" };
-    /// let same_same_name_same_hair_color = User { id: 3, name: "Sean", hair_color: "black" };
+    /// let same_name_same_hair_color = User { id: 3, name: "Sean", hair_color: "black" };
     ///
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(&conn));
     ///
@@ -152,7 +152,7 @@ where
     /// assert_eq!(Ok(1), inserted_row_count);
     ///
     /// let inserted_row_count = diesel::insert_into(users)
-    ///     .values(&same_same_name_same_hair_color)
+    ///     .values(&same_name_same_hair_color)
     ///     .on_conflict((name, hair_color))
     ///     .do_nothing()
     ///     .execute(&conn);
