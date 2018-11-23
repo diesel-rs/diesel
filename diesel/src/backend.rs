@@ -6,6 +6,18 @@ use query_builder::bind_collector::BindCollector;
 use query_builder::QueryBuilder;
 use sql_types::{self, HasSqlType};
 
+use std::marker::PhantomData;
+
+pub trait FamilyLt<'a> {
+    type Out;
+}
+
+pub struct RefFamily<T: ?Sized>(PhantomData<T>);
+
+impl <'a, T: 'a + ?Sized> FamilyLt<'a> for RefFamily<T> {
+    type Out = &'a T;
+}
+
 /// A database backend
 ///
 /// This trait represents the concept of a backend (e.g. "MySQL" vs "SQLite").
@@ -45,7 +57,7 @@ where
     ///
     /// Since most backends transmit data as opaque blobs of bytes, this type
     /// is usually `[u8]`.
-    type RawValue: ?Sized;
+    type RawValue: for<'a> FamilyLt<'a>;
     /// What byte order is used to transmit integers?
     ///
     /// This type is only used if `RawValue` is `[u8]`.

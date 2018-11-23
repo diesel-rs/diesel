@@ -23,9 +23,7 @@ impl<'a> Row<Pg> for PgRow<'a> {
     fn take(&mut self) -> Option<&PgValue> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
-        self.db_result.get(self.row_idx, current_idx).map(
-            |bytes| &PgValue::new(bytes, 1) // TODO FIXFIXFIX
-        )
+        self.db_result.get(self.row_idx, current_idx).map(|result| &result)
     }
 
     fn next_is_null(&self, count: usize) -> bool {
@@ -45,10 +43,8 @@ impl<'a> PgNamedRow<'a> {
 }
 
 impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
-    fn get_raw_value(&self, index: usize) -> Option<&PgValue> {
-        self.cursor.get_value(self.idx, index).map(
-            |bytes| &PgValue::new(bytes, 1) // TODO FIXFIXFIX
-        )
+    fn get_raw_value<'b>(&'b self, index: usize) -> Option<&'b PgValue> {
+        self.cursor.get_value(self.idx, index)
     }
 
     fn index_of(&self, column_name: &str) -> Option<usize> {

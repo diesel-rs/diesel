@@ -24,7 +24,7 @@ where
     T: FromSql<ST, Pg>,
 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
         let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
         let _oid = try!(bytes.read_i32::<NetworkEndian>());
@@ -48,7 +48,7 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(Some(&PgValue::new(elem_bytes, _oid)))
+                    T::from_sql(Some(&PgValue::new(elem_bytes.as_ptr() as *mut u8, elem_bytes.len())))
                 }
             })
             .collect()

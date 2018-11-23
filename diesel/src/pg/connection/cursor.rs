@@ -1,7 +1,7 @@
 use super::result::PgResult;
 use super::row::PgNamedRow;
 use deserialize::{FromSqlRow, Queryable, QueryableByName};
-use pg::{Pg};
+use pg::{Pg, PgValue};
 use result::Error::DeserializationError;
 use result::QueryResult;
 
@@ -73,7 +73,7 @@ impl NamedCursor {
         self.db_result.field_number(column_name)
     }
 
-    pub fn get_value(&self, row: usize, column: usize) -> Option<&[u8]> {
+    pub fn get_value(&self, row: usize, column: usize) -> Option<PgValue> {
         self.db_result.get(row, column)
     }
 }

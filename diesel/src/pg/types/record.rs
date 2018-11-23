@@ -25,7 +25,7 @@ macro_rules! tuple_impls {
             // and `ptr::write`.
             #[cfg_attr(feature = "cargo-clippy", allow(eval_order_dependence))]
             fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-                let mut bytes = not_none!(value).bytes();
+                let mut bytes = not_none!(value).as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
                 if num_elements != $Tuple {
@@ -50,7 +50,7 @@ macro_rules! tuple_impls {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
                         $T::from_sql(Some(
-                            &PgValue::new(elem_bytes, 1) //TODO FIXFIXFIX
+                            &PgValue::new(elem_bytes.as_ptr() as *mut u8, elem_bytes.len()) //TODO FIXFIXFIX
                         ))?
                     }
                 },)+);

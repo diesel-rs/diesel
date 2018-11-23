@@ -9,31 +9,39 @@ use prelude::Queryable;
 use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::{Oid, TypeMetadata};
 
+use std::slice;
+use std::ptr::NonNull;
+
 /// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Pg;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PgValue {
-    data: Vec<u8>,
-    oid: u32,
+    raw_bytes: NonNull<[u8]>,
+    oid: i32,
 }
 
 impl PgValue {
-    pub fn new(bytes: &[u8], oid: u32) -> PgValue {
-        PgValue {
-            data: bytes.to_vec(),
-            oid,
+    pub unsafe fn new(value_ptr: *mut u8, byte_count: usize) -> PgValue {
+        let slice = slice::from_raw_parts_mut(value_ptr, byte_count);
+        Self {
+            raw_bytes: NonNull::new(slice).expect("Cannot be null"),
+            oid: 0 // TODO FIXFIXFIX
         }
     }
 
-    pub fn bytes(&self) -> &[u8] {
-        &self.data
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { self.raw_bytes.as_ref() }
     }
 
-    pub fn oid(&self) -> u32 {
+    pub fn oid(&self) -> i32 {
         self.oid
     }
+}
+
+impl<'a> FamilyLt<'a> for PgValue {
+    type Out = PgValue;
 }
 
 /// The [OIDs] for a SQL type
@@ -62,7 +70,7 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
-    type RawValue = PgValue;
+    type RawValue = RefFamily<PgValue>;
     type ByteOrder = NetworkEndian;
 }
 

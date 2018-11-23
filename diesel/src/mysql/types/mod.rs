@@ -3,6 +3,7 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;
+mod integers;
 
 use byteorder::WriteBytesExt;
 use std::io::Write;
@@ -104,6 +105,17 @@ where
 
     fn is_signed() -> IsSigned {
         IsSigned::Unsigned
+    }
+}
+
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<Binary, Mysql> for *const [u8] {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        Ok(not_none!(bytes) as *const _)
     }
 }
 

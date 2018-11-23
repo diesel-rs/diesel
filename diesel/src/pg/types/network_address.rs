@@ -62,7 +62,7 @@ macro_rules! assert_or_error {
 
 impl FromSql<MacAddr, Pg> for [u8; 6] {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let bytes = not_none!(value).bytes();
+        let bytes = not_none!(value).as_bytes();
         assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
         Ok([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]])
     }
@@ -80,7 +80,7 @@ macro_rules! impl_Sql {
         impl FromSql<$ty, Pg> for IpNetwork {
             fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
                 // https://github.com/postgres/postgres/blob/55c3391d1e6a201b5b891781d21fe682a8c64fe6/src/include/utils/inet.h#L23-L28
-                let bytes = not_none!(value).bytes();
+                let bytes = not_none!(value).as_bytes();
                 assert_or_error!(4 <= bytes.len(), "input is too short.");
                 let af = bytes[0];
                 let prefix = bytes[1];

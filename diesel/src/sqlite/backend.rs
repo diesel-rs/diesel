@@ -7,6 +7,8 @@ use backend::*;
 use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::TypeMetadata;
 
+use backend::RefFamily;
+
 /// The SQLite backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Sqlite;
@@ -41,7 +43,7 @@ pub enum SqliteType {
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
     type BindCollector = RawBytesBindCollector<Sqlite>;
-    type RawValue = SqliteValue;
+    type RawValue = RefFamily<SqliteValue>;
     type ByteOrder = NativeEndian;
 }
 

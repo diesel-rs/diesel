@@ -79,7 +79,7 @@ where
     T: FromSql<ST, Pg>,
 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         let flags: RangeFlags = RangeFlags::from_bits_truncate(bytes.read_u8()?);
         let mut lower_bound = Bound::Unbounded;
         let mut upper_bound = Bound::Unbounded;
@@ -89,7 +89,7 @@ where
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
             let value = T::from_sql(Some(
-                &PgValue::new(elem_bytes, 1) // TODO FIXFIXFIX
+                &PgValue::new(elem_bytes.as_ptr() as *mut u8, 1) // TODO FIXFIXFIX
             ))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
@@ -102,7 +102,7 @@ where
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
             let value = T::from_sql(Some(
-                &PgValue::new(bytes, 1) // TODO FIXFIXFIX
+                &PgValue::new(bytes.as_ptr() as *mut u8, 1) // TODO FIXFIXFIX
             ))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {

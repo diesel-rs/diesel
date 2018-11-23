@@ -9,7 +9,7 @@ use sql_types;
 
 impl FromSql<sql_types::SmallInt, Pg> for i16 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         debug_assert!(
             bytes.len() <= 2,
             "Received more than 2 bytes decoding i16. \
@@ -29,7 +29,7 @@ impl FromSql<sql_types::SmallInt, Pg> for i16 {
 
 impl FromSql<sql_types::Integer, Pg> for i32 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         debug_assert!(
             bytes.len() <= 4,
             "Received more than 4 bytes decoding i32. \
@@ -48,7 +48,7 @@ impl FromSql<sql_types::Integer, Pg> for i32 {
 
 impl FromSql<sql_types::BigInt, Pg> for i64 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes decoding i64. \
@@ -67,7 +67,7 @@ impl FromSql<sql_types::BigInt, Pg> for i64 {
 
 impl FromSql<sql_types::Oid, Pg> for u32 {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).bytes();
+        let mut bytes = not_none!(value).as_bytes();
         bytes.read_u32::<NetworkEndian>().map_err(|e| e.into())
     }
 }

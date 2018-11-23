@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
-use backend::Backend;
+use backend::{Backend, FamilyLt};
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{self, BigInt, Binary, Bool, Double, Float, Integer, NotNull, SmallInt, Text};
@@ -104,7 +104,7 @@ where
     DB: Backend,
     *const str: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql<'a>(bytes: Option<<<DB as Backend>::RawValue as FamilyLt<'a>>::Out>) -> deserialize::Result<Self> {
         let str_ptr = <*const str as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let string = unsafe { &*str_ptr };
@@ -117,13 +117,13 @@ where
 /// impl in terms of `String`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for *const str {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
-        use std::str;
-        let string = str::from_utf8(not_none!(bytes))?;
-        Ok(string as *const _)
-    }
-}
+// impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for *const str {
+//     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+//         use std::str;
+//         let string = str::from_utf8(not_none!(bytes))?;
+//         Ok(string as *const _)
+//     }
+// }
 
 impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
@@ -148,22 +148,11 @@ where
     DB: Backend,
     *const [u8]: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql<'a>(bytes: Option<<<DB as Backend>::RawValue as FamilyLt<'a>>::Out>) -> deserialize::Result<Self> {
         let slice_ptr = <*const [u8] as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let bytes = unsafe { &*slice_ptr };
         Ok(bytes.to_owned())
-    }
-}
-
-/// The returned pointer is *only* valid for the lifetime to the argument of
-/// `from_sql`. This impl is intended for uses where you want to write a new
-/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
-/// raw pointer instead of a reference with a lifetime due to the structure of
-/// `FromSql`
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Binary, DB> for *const [u8] {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
-        Ok(not_none!(bytes) as *const _)
     }
 }
 
@@ -204,7 +193,7 @@ where
     DB: Backend,
     T::Owned: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql<'b>(bytes: Option<<<DB as Backend>::RawValue as FamilyLt<'b>>::Out>) -> deserialize::Result<Self> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }

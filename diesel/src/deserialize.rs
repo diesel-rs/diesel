@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::result;
 
-use backend::Backend;
+use backend::{Backend, FamilyLt};
 use row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
@@ -166,7 +166,7 @@ where
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self>;
+    fn from_sql<'a>(bytes: Option<<DB::RawValue as FamilyLt<'a>>::Out>) -> Result<Self>;
 }
 
 /// Deserialize one or more fields.

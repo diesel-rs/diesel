@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use backend::Backend;
+use backend::{Backend, FamilyLt};
 use deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
 use expression::bound::Bound;
 use expression::*;
@@ -52,7 +52,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql<'a>(bytes: Option<<<DB as Backend>::RawValue as FamilyLt<'a>>::Out>) -> deserialize::Result<Self> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None),

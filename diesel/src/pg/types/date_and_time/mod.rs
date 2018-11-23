@@ -144,16 +144,16 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
 
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
     fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let bytes = not_none!(value).bytes();
+        let bytes = not_none!(value).as_bytes();
         Ok(PgInterval {
             microseconds: try!(FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
-                &PgValue::new(&bytes[..8], 1) // TODO FIXFIXFIX
+                &PgValue::new(bytes[..8].as_ptr() as *mut u8, 8)
             ))),
             days: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                &PgValue::new(&bytes[8..12], 1)
+                &PgValue::new(bytes[8..12].as_ptr() as *mut u8, 4)
             ))),
             months: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                &PgValue::new(&bytes[12..16], 1)
+                &PgValue::new(bytes[12..16].as_ptr() as *mut u8, 4)
             ))),
         })
     }

@@ -118,7 +118,7 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value(&self, idx: usize) -> Option<&[u8]> {
+    fn get_raw_value<'b>(&'b self, idx: usize) -> Option<&'b [u8]> {
         self.binds.field_data(idx)
     }
 }
