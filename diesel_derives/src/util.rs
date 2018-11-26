@@ -1,8 +1,8 @@
 pub use diagnostic_shim::{Diagnostic, DiagnosticShim, EmitErrorExt};
 
-use proc_macro2::{TokenStream, Span};
-use syn::{Ident, Type, DeriveInput, Data, GenericArgument};
 use meta::MetaItem;
+use proc_macro2::{Span, TokenStream};
+use syn::{Data, DeriveInput, GenericArgument, Ident, Type};
 
 pub fn wrap_in_dummy_mod(const_name: Ident, item: TokenStream) -> TokenStream {
     quote! {
