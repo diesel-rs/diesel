@@ -231,28 +231,30 @@ where
 
     constraint_names
         .into_iter()
-        .map(|(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
-            let (mut foreign_key_table, foreign_key_column) = kcu::table
-                .filter(kcu::constraint_schema.eq(&foreign_key_schema))
-                .filter(kcu::constraint_name.eq(&foreign_key_name))
-                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first::<(TableName, _)>(connection)?;
-            let (mut primary_key_table, primary_key_column) = kcu::table
-                .filter(kcu::constraint_schema.eq(primary_key_schema))
-                .filter(kcu::constraint_name.eq(primary_key_name))
-                .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                .first::<(TableName, _)>(connection)?;
+        .map(
+            |(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
+                let (mut foreign_key_table, foreign_key_column) = kcu::table
+                    .filter(kcu::constraint_schema.eq(&foreign_key_schema))
+                    .filter(kcu::constraint_name.eq(&foreign_key_name))
+                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
+                    .first::<(TableName, _)>(connection)?;
+                let (mut primary_key_table, primary_key_column) = kcu::table
+                    .filter(kcu::constraint_schema.eq(primary_key_schema))
+                    .filter(kcu::constraint_name.eq(primary_key_name))
+                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
+                    .first::<(TableName, _)>(connection)?;
 
-            foreign_key_table.strip_schema_if_matches(&default_schema);
-            primary_key_table.strip_schema_if_matches(&default_schema);
+                foreign_key_table.strip_schema_if_matches(&default_schema);
+                primary_key_table.strip_schema_if_matches(&default_schema);
 
-            Ok(ForeignKeyConstraint {
-                child_table: foreign_key_table,
-                parent_table: primary_key_table,
-                foreign_key: foreign_key_column,
-                primary_key: primary_key_column,
-            })
-        }).collect()
+                Ok(ForeignKeyConstraint {
+                    child_table: foreign_key_table,
+                    parent_table: primary_key_table,
+                    foreign_key: foreign_key_column,
+                    primary_key: primary_key_column,
+                })
+            },
+        ).collect()
 }
 
 #[cfg(all(test, feature = "postgres"))]
