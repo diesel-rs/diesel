@@ -44,7 +44,8 @@ fn migration_revert_respects_migration_dir_var() {
 
     assert!(db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("revert")
         .arg("--migration-dir=foo")
         .run();
@@ -75,7 +76,8 @@ fn migration_revert_respects_migration_dir_env() {
 
     assert!(db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("revert")
         .env("MIGRATION_DIRECTORY", "bar")
         .run();

@@ -33,14 +33,14 @@ impl StatementMetadata {
     }
 
     fn populate_column_indices(&mut self) {
-        self.column_indices = self.fields()
+        self.column_indices = self
+            .fields()
             .iter()
             .enumerate()
             .map(|(i, field)| {
                 let c_name = unsafe { CStr::from_ptr(field.name) };
                 (c_name.to_str().unwrap_or_default(), i)
-            })
-            .collect()
+            }).collect()
     }
 }
 

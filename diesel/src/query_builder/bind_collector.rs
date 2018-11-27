@@ -64,7 +64,9 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
         U: ToSql<T, DB>,
     {
         let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
-        let is_null = bind.to_sql(&mut to_sql_output).map_err(SerializationError)?;
+        let is_null = bind
+            .to_sql(&mut to_sql_output)
+            .map_err(SerializationError)?;
         let bytes = to_sql_output.into_inner();
         let metadata = <DB as HasSqlType<T>>::metadata(metadata_lookup);
         match is_null {

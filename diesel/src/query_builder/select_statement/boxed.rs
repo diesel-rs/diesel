@@ -73,11 +73,9 @@ where
     type SqlType = ST;
 }
 
-impl<'a, ST, QS, QS2, DB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB>
-where
-    Self: Query<SqlType = ST>,
-{
-}
+impl<'a, ST, QS, QS2, DB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB> where
+    Self: Query<SqlType = ST>
+{}
 
 impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB>
 where

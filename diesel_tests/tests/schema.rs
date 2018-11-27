@@ -2,9 +2,15 @@ use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
-#[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
+#[cfg(all(
+    feature = "postgres",
+    feature = "backend_specific_database_url"
+))]
 infer_schema!("dotenv:PG_DATABASE_URL");
-#[cfg(all(feature = "sqlite", feature = "backend_specific_database_url"))]
+#[cfg(all(
+    feature = "sqlite",
+    feature = "backend_specific_database_url"
+))]
 infer_schema!("dotenv:SQLITE_DATABASE_URL");
 #[cfg(all(feature = "mysql", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:MYSQL_DATABASE_URL");
@@ -16,8 +22,9 @@ mod test_infer_schema_works_on_empty_database {
     infer_schema!(":memory:");
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset,
-         QueryableByName)]
+#[derive(
+    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
+)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -76,6 +83,7 @@ pub struct Following {
     pub email_notifications: bool,
 }
 
+#[rustfmt::skip]
 #[cfg_attr(feature = "postgres", path = "postgres_specific_schema.rs")]
 #[cfg_attr(not(feature = "postgres"), path = "backend_specifics.rs")]
 mod backend_specifics;

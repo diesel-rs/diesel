@@ -62,12 +62,10 @@ impl<T, QS> SelectableExpression<QS> for Exists<T>
 where
     Self: AppearsOnTable<QS>,
     Subselect<T, ()>: SelectableExpression<QS>,
-{
-}
+{}
 
 impl<T, QS> AppearsOnTable<QS> for Exists<T>
 where
     Self: Expression,
     Subselect<T, ()>: AppearsOnTable<QS>,
-{
-}
+{}

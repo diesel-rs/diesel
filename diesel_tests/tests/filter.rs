@@ -129,8 +129,7 @@ fn filter_after_joining() {
         .execute(
             "INSERT INTO posts (id, title, user_id) VALUES
                        (1, 'Hello', 1), (2, 'World', 2)",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -403,8 +402,7 @@ fn filter_subselect_referencing_outer_table() {
         .values(&vec![
             sean.new_post("Hello", None),
             sean.new_post("Hello 2", None),
-        ])
-        .execute(&conn)
+        ]).execute(&conn)
         .unwrap();
 
     let expected = Ok(vec![sean]);
@@ -420,8 +418,7 @@ fn filter_subselect_referencing_outer_table() {
                     .select(posts::user_id)
                     .filter(posts::user_id.eq(users::id)),
             ),
-        )
-        .load(&conn);
+        ).load(&conn);
     assert_eq!(expected, users_with_published_posts);
 }
 
@@ -471,7 +468,7 @@ fn filter_subselect_with_nullable_column() {
             string("name").not_null(),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
 
     create_table(
         "heros",
@@ -481,7 +478,7 @@ fn filter_subselect_with_nullable_column() {
             integer("home_world"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
 
     ::diesel::insert_into(home_worlds::table)
         .values(home_worlds::name.eq("Tatooine"))
@@ -491,15 +488,13 @@ fn filter_subselect_with_nullable_column() {
         .values((
             heros::name.eq("Luke Skywalker"),
             heros::home_world.eq(Some(1)),
-        ))
-        .execute(&connection)
+        )).execute(&connection)
         .unwrap();
     ::diesel::insert_into(heros::table)
         .values((
             heros::name.eq("R2D2"),
             heros::home_world.eq::<Option<i32>>(None),
-        ))
-        .execute(&connection)
+        )).execute(&connection)
         .unwrap();
 
     let expected = vec![Hero {
@@ -523,8 +518,7 @@ fn filter_subselect_with_nullable_column() {
                     .into_boxed()
                     .nullable(),
             ),
-        )
-        .load::<Hero>(&connection)
+        ).load::<Hero>(&connection)
         .unwrap();
 
     assert_eq!(query, expected);
@@ -537,8 +531,7 @@ fn filter_subselect_with_nullable_column() {
                     .nullable()
                     .into_boxed(),
             ),
-        )
-        .load::<Hero>(&connection)
+        ).load::<Hero>(&connection)
         .unwrap();
 
     assert_eq!(query, expected);
@@ -556,8 +549,7 @@ fn filter_subselect_with_pg_any() {
         .values(&vec![
             sean.new_post("Hello", None),
             sean.new_post("Hello 2", None),
-        ])
-        .execute(&conn)
+        ]).execute(&conn)
         .unwrap();
 
     let users_with_published_posts = users::table
@@ -565,7 +557,6 @@ fn filter_subselect_with_pg_any() {
             users::id.eq(any(posts::table
                 .select(posts::user_id)
                 .filter(posts::user_id.eq(users::id)))),
-        )
-        .load(&conn);
+        ).load(&conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);
 }

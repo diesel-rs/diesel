@@ -322,22 +322,12 @@ where
     type SqlType = Q::SqlType;
 }
 
-impl<Query, Value> NonAggregate for UncheckedBind<Query, Value>
-where
-    Self: Expression,
-{
-}
+impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> where Self: Expression {}
 
-impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value>
-where
-    Self: AppearsOnTable<QS>,
-{
-}
+impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> where
+    Self: AppearsOnTable<QS>
+{}
 
-impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value>
-where
-    Self: Expression,
-{
-}
+impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 
 impl<Query, Value, Conn> RunQueryDsl<Conn> for UncheckedBind<Query, Value> {}

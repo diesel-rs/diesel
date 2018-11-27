@@ -92,8 +92,7 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
                 mysql_time.second as u32,
                 mysql_time.second_part as u32,
             )
-        })
-            .ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
+        }).ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
     }
 }
 

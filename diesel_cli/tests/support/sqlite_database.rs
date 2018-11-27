@@ -34,7 +34,7 @@ impl Database {
              AND name = '{}')",
             table
         ))).get_result(&self.conn())
-            .unwrap()
+        .unwrap()
     }
 
     pub fn conn(&self) -> SqliteConnection {

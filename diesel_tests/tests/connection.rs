@@ -26,8 +26,7 @@ fn managing_updated_at_for_table() {
         n INTEGER,
         updated_at TIMESTAMP
     );",
-        )
-        .unwrap();
+        ).unwrap();
     connection
         .execute("SELECT diesel_manage_updated_at('auto_time');")
         .unwrap();

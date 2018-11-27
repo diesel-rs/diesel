@@ -14,6 +14,7 @@ before_script:
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
 script:
 - |
+  export RUST_TOOLCHAIN=$TRAVIS_RUST_VERSION &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
     (cd diesel && travis-cargo test -- --no-default-features --features "unstable extras $BACKEND")
   else
@@ -39,25 +40,23 @@ matrix:
     - rust: nightly
   include:
   - rust: nightly-2018-08-17
-    env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
+    name: "Compile tests"
     script:
-    - rustup component add clippy-preview
-    - cargo clippy
     - (cd diesel_compile_tests && travis-cargo test)
-  - rust: 1.26.1
-    env: RUSTFMT=YESPLEASE
+  - rust: stable
+    name: "Rustfmt && Clippy"
     script:
-    - rustup component add rustfmt-preview
+    - rustup component add rustfmt-preview clippy-preview
+    - cargo clippy
     - cargo fmt --all -- --write-mode=diff
   - rust: stable
+    name: "Bundled Sqlite"
     env:
-    - SQLITE_BUNDLED=YESPLEASE
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
     - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
   - rust: 1.27.0
-    env:
-    - ENSURE_SUPPORTED_RUST_VERSION=1.27.0
+    name: "Minimal supported rust version == 1.27.0"
     script:
     - cargo check --all
 

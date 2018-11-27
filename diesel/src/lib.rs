@@ -96,13 +96,15 @@
 #![cfg_attr(
     feature = "large-tables",
     deprecated(
-        since = "1.2.0", note = "The large-tables feature has been renamed to 32-column-tables"
+        since = "1.2.0",
+        note = "The large-tables feature has been renamed to 32-column-tables"
     )
 )]
 #![cfg_attr(
     feature = "huge-tables",
     deprecated(
-        since = "1.2.0", note = "The huge-tables feature has been renamed to 64-column-tables"
+        since = "1.2.0",
+        note = "The huge-tables feature has been renamed to 64-column-tables"
     )
 )]
 #![cfg_attr(
@@ -128,24 +130,44 @@
 )]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations, missing_docs)]
+#![deny(
+    warnings,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    missing_docs
+)]
 // Clippy lints
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
-        option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms, type_complexity,
+        option_map_unwrap_or_else,
+        option_map_unwrap_or,
+        match_same_arms,
+        type_complexity,
         redundant_field_names
     )
 )]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
-        option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention, mut_mut,
-        non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
-        items_after_statements, used_underscore_binding
+        option_unwrap_used,
+        result_unwrap_used,
+        print_stdout,
+        wrong_pub_self_convention,
+        mut_mut,
+        non_ascii_literal,
+        similar_names,
+        unicode_not_nfc,
+        enum_glob_use,
+        if_not_else,
+        items_after_statements,
+        used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "cargo-clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![cfg_attr(
+    all(test, feature = "cargo-clippy"),
+    allow(option_unwrap_used, result_unwrap_used)
+)]
 
 #[cfg(feature = "postgres")]
 #[macro_use]
@@ -213,8 +235,9 @@ pub mod dsl {
     pub use expression::dsl::*;
 
     #[doc(inline)]
-    pub use query_builder::functions::{delete, insert_into, insert_or_ignore_into, replace_into,
-                                       select, sql_query, update};
+    pub use query_builder::functions::{
+        delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
+    };
 }
 
 pub mod helper_types {
@@ -325,10 +348,14 @@ pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
     pub use associations::{GroupedBy, Identifiable};
     pub use connection::Connection;
-    #[deprecated(since = "1.1.0", note = "Explicitly `use diesel::deserialize::Queryable")]
+    #[deprecated(
+        since = "1.1.0",
+        note = "Explicitly `use diesel::deserialize::Queryable"
+    )]
     pub use deserialize::Queryable;
-    pub use expression::{AppearsOnTable, BoxableExpression, Expression, IntoSql,
-                         SelectableExpression};
+    pub use expression::{
+        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
+    };
     pub use expression_methods::*;
     #[doc(inline)]
     pub use insertable::Insertable;
@@ -351,8 +378,9 @@ pub use prelude::*;
 #[doc(inline)]
 pub use query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{delete, insert_into, insert_or_ignore_into, replace_into,
-                                   select, sql_query, update};
+pub use query_builder::functions::{
+    delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
+};
 pub use result::Error::NotFound;
 
 pub(crate) mod diesel {

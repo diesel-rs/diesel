@@ -60,5 +60,8 @@ pub trait SupportsDefaultKeyword {}
 pub trait UsesAnsiSavepointSyntax {}
 
 #[cfg(feature = "with-deprecated")]
-#[deprecated(since = "1.1.0", note = "use `sql_types::TypeMetadata` instead")]
+#[deprecated(
+    since = "1.1.0",
+    note = "use `sql_types::TypeMetadata` instead"
+)]
 pub use sql_types::TypeMetadata;

@@ -3,8 +3,9 @@ use std::error::Error;
 use associations::BelongsTo;
 use backend::Backend;
 use deserialize::{self, FromSqlRow, Queryable, QueryableByName};
-use expression::{AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate,
-                 SelectableExpression};
+use expression::{
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate, SelectableExpression,
+};
 use insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use query_builder::*;
 use query_source::*;

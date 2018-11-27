@@ -62,15 +62,24 @@ pub type Datetime = ::sql_types::Datetime;
 #[cfg(feature = "postgres")]
 pub type Oid = ::sql_types::Oid;
 
-#[deprecated(since = "1.1.0", note = "Use `sql_types::Timestamptz` instead")]
+#[deprecated(
+    since = "1.1.0",
+    note = "Use `sql_types::Timestamptz` instead"
+)]
 #[cfg(feature = "postgres")]
 pub type Timestamptz = ::sql_types::Timestamptz;
 
-#[deprecated(since = "1.1.0", note = "Use `sql_types::Array<ST>(ST)` instead")]
+#[deprecated(
+    since = "1.1.0",
+    note = "Use `sql_types::Array<ST>(ST)` instead"
+)]
 #[cfg(feature = "postgres")]
 pub type Array<ST> = ::sql_types::Array<ST>;
 
-#[deprecated(since = "1.1.0", note = "Use `sql_types::Range<ST>(ST)` instead")]
+#[deprecated(
+    since = "1.1.0",
+    note = "Use `sql_types::Range<ST>(ST)` instead"
+)]
 #[cfg(feature = "postgres")]
 pub type Range<ST> = ::sql_types::Range<ST>;
 
@@ -102,7 +111,10 @@ pub type Inet = ::sql_types::Inet;
 #[cfg(feature = "postgres")]
 pub type Cidr = ::sql_types::Cidr;
 
-#[deprecated(since = "1.1.0", note = "Use `sql_types::Nullable<ST: NotNull>(ST)` instead")]
+#[deprecated(
+    since = "1.1.0",
+    note = "Use `sql_types::Nullable<ST: NotNull>(ST)` instead"
+)]
 pub type Nullable<ST> = ::sql_types::Nullable<ST>;
 
 #[deprecated(since = "1.1.0", note = "Use `serialize::Output` instead")]

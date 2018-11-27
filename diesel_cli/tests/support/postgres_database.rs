@@ -32,7 +32,7 @@ impl Database {
              WHERE table_name = '{}')",
             table
         ))).get_result(&self.conn())
-            .unwrap()
+        .unwrap()
     }
 
     pub fn conn(&self) -> PgConnection {
