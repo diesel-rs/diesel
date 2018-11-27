@@ -47,7 +47,7 @@ matrix:
     script:
     - rustup component add rustfmt-preview clippy-preview
     - cargo +$TRAVIS_RUST_VERSION clippy
-    - cargo +$TRAVIS_RUST_VERSION fmt --all -- --write-mode=diff
+    - cargo +$TRAVIS_RUST_VERSION fmt --all -- --check
   - rust: stable
     name: "Bundled Sqlite"
     env:
