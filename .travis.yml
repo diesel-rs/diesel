@@ -9,31 +9,31 @@ cache: cargo
 addons:
   postgresql: '9.5'
 before_script:
-  - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
 script:
 - |
   export RUST_TOOLCHAIN=$TRAVIS_RUST_VERSION &&
+  rustup show &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && travis-cargo test -- --no-default-features --features "unstable extras $BACKEND")
+    (cd diesel && cargo test --no-default-features --features "unstable extras $BACKEND")
   else
-    (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
+    (cd diesel && cargo test --no-default-features --features "extras $BACKEND")
   fi &&
-  (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
-  (cd diesel_derives && travis-cargo test -- --features "diesel/$BACKEND") &&
+  (cd diesel && cargo test --no-default-features --features "extras with-deprecated $BACKEND") &&
+  (cd diesel_derives && cargo test --features "diesel/$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_derives && travis-cargo test -- --features "diesel/unstable diesel/$BACKEND")
+    (cd diesel_derives && cargo test --features "diesel/unstable diesel/$BACKEND")
   fi &&
   (cd "examples/$BACKEND" && ./test_all) &&
-  (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
-  (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
-  (cd diesel_migrations/ && travis-cargo test -- --features "$BACKEND" ) &&
+  (cd diesel_cli && cargo test --no-default-features --features "$BACKEND") &&
+  (cd diesel_migrations/migrations_internals && cargo test ) &&
+  (cd diesel_migrations/migrations_macros && cargo test ) &&
+  (cd diesel_migrations/ && cargo test  --features "$BACKEND" ) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
+    (cd diesel_tests && cargo test --no-default-features --features "unstable $BACKEND")
   else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "$BACKEND")
+    (cd diesel_tests && cargo test --no-default-features --features "$BACKEND")
   fi
 matrix:
   allow_failures:
