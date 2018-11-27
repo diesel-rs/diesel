@@ -13,27 +13,26 @@ before_script:
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
 script:
 - |
-  export RUST_TOOLCHAIN=$TRAVIS_RUST_VERSION &&
-  rustup show &&
+  rustc +$TRAVIS_RUST_VERSION --version &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && cargo test --no-default-features --features "unstable extras $BACKEND")
+    (cd diesel && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "unstable extras $BACKEND")
   else
-    (cd diesel && cargo test --no-default-features --features "extras $BACKEND")
+    (cd diesel && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "extras $BACKEND")
   fi &&
-  (cd diesel && cargo test --no-default-features --features "extras with-deprecated $BACKEND") &&
-  (cd diesel_derives && cargo test --features "diesel/$BACKEND") &&
+  (cd diesel && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "extras with-deprecated $BACKEND") &&
+  (cd diesel_derives && cargo +$TRAVIS_RUST_VERSION test --features "diesel/$BACKEND") &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_derives && cargo test --features "diesel/unstable diesel/$BACKEND")
+    (cd diesel_derives && cargo +$TRAVIS_RUST_VERSION test --features "diesel/unstable diesel/$BACKEND")
   fi &&
   (cd "examples/$BACKEND" && ./test_all) &&
-  (cd diesel_cli && cargo test --no-default-features --features "$BACKEND") &&
-  (cd diesel_migrations/migrations_internals && cargo test ) &&
-  (cd diesel_migrations/migrations_macros && cargo test ) &&
-  (cd diesel_migrations/ && cargo test  --features "$BACKEND" ) &&
+  (cd diesel_cli && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "$BACKEND") &&
+  (cd diesel_migrations/migrations_internals && cargo +$TRAVIS_RUST_VERSION test ) &&
+  (cd diesel_migrations/migrations_macros && cargo +$TRAVIS_RUST_VERSION test ) &&
+  (cd diesel_migrations/ && cargo +$TRAVIS_RUST_VERSION test  --features "$BACKEND" ) &&
   if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && cargo test --no-default-features --features "unstable $BACKEND")
+    (cd diesel_tests && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "unstable $BACKEND")
   else
-    (cd diesel_tests && cargo test --no-default-features --features "$BACKEND")
+    (cd diesel_tests && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "$BACKEND")
   fi
 matrix:
   allow_failures:
@@ -42,23 +41,23 @@ matrix:
   - rust: nightly-2018-08-17
     name: "Compile tests"
     script:
-    - (cd diesel_compile_tests && travis-cargo test)
+    - (cd diesel_compile_tests && cargo +$TRAVIS_RUST_VERSION test)
   - rust: stable
     name: "Rustfmt && Clippy"
     script:
     - rustup component add rustfmt-preview clippy-preview
-    - cargo clippy
-    - cargo fmt --all -- --write-mode=diff
+    - cargo +$TRAVIS_RUST_VERSION clippy
+    - cargo +$TRAVIS_RUST_VERSION fmt --all -- --write-mode=diff
   - rust: stable
     name: "Bundled Sqlite"
     env:
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
-    - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
+    - (cd diesel_cli && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "sqlite-bundled")
   - rust: 1.27.0
     name: "Minimal supported rust version == 1.27.0"
     script:
-    - cargo check --all
+    - cargo +$TRAVIS_RUST_VERSION check --all
 
 env:
   matrix:
