@@ -1,78 +1,8 @@
 language: rust
-sudo: required
-dist: trusty
-rust:
-  - stable
-  - beta
-  - nightly
-cache: cargo
-addons:
-  postgresql: '9.5'
-before_script:
-  - pip install 'travis-cargo<0.2' --user
-  - export PATH=$HOME/.local/bin:$PATH
-  - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
-script:
-- |
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel && travis-cargo test -- --no-default-features --features "unstable extras $BACKEND")
-  else
-    (cd diesel && travis-cargo test -- --no-default-features --features "extras $BACKEND")
-  fi &&
-  (cd diesel && travis-cargo test -- --no-default-features --features "extras with-deprecated $BACKEND") &&
-  (cd diesel_derives && travis-cargo test -- --features "diesel/$BACKEND") &&
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_derives && travis-cargo test -- --features "diesel/unstable diesel/$BACKEND")
-  fi &&
-  (cd "examples/$BACKEND" && ./test_all) &&
-  (cd diesel_cli && travis-cargo test -- --no-default-features --features "$BACKEND") &&
-  (cd diesel_migrations/migrations_internals && travis-cargo test ) &&
-  (cd diesel_migrations/migrations_macros && travis-cargo test ) &&
-  (cd diesel_migrations/ && travis-cargo test -- --features "$BACKEND" ) &&
-  if [[ "$TRAVIS_RUST_VERSION" == nightly* ]]; then
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "unstable $BACKEND")
-  else
-    (cd diesel_tests && travis-cargo test -- --no-default-features --features "$BACKEND")
-  fi
-matrix:
-  allow_failures:
-    - rust: nightly
-  include:
-  - rust: nightly-2018-08-17
-    env: CLIPPY_AND_COMPILE_TESTS=YESPLEASE
-    script:
-    - rustup component add clippy-preview
-    - cargo clippy
-    - (cd diesel_compile_tests && travis-cargo test)
-  - rust: 1.26.1
-    env: RUSTFMT=YESPLEASE
-    script:
-    - rustup component add rustfmt-preview
-    - cargo fmt --all -- --write-mode=diff
-  - rust: stable
-    env:
-    - SQLITE_BUNDLED=YESPLEASE
-    - SQLITE_DATABASE_URL=/tmp/test.db
-    script:
-    - (cd diesel_cli && travis-cargo test -- --no-default-features --features "sqlite-bundled")
-  - rust: 1.27.0
-    env:
-    - ENSURE_SUPPORTED_RUST_VERSION=1.27.0
-    script:
-    - cargo check --all
 
-env:
-  matrix:
-    - BACKEND=sqlite
-      SQLITE_DATABASE_URL=/tmp/test.db
-    - BACKEND=postgres
-      PG_DATABASE_URL=postgres://postgres@localhost/
-      PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example
-    - BACKEND=mysql
-      MYSQL_DATABASE_URL=mysql://travis@localhost/diesel_test
-      MYSQL_EXAMPLE_DATABASE_URL=mysql://travis@localhost/diesel_example
-      MYSQL_UNIT_TEST_DATABASE_URL=mysql://travis@localhost/diesel_unit_test
-      RUST_TEST_THREADS=1
-  global:
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-    - secure: NmCM1VNEzid6bROA7tXV1R63n9S9KvY1etXsDzd1608cvjRnG3ZDAWXISbY1BxqrvleElreUJOvz/3TSQCHivpT2ezeyk2sntYtZpw0TWbz1SQMAPNWPTjP3bNQzpmNwfU4p6ui6qIOnQza4JxOu3SZSveNlehDBPkkS+52R7Zw/EPdwi9jTYJArV2+8pnEsQECAdRLttbtA2JBl3hZ4VHfGpHRZyeULn63UzyVbQVzQ3NVhqyQUKTPdpUciQTI3fZEkfaWuLV8QPPa5026/yJEEi2Fsl3r7fyY8ia67k4Zo9THlPVD0YOUlkWuZWwvkxNA8RQSVPv4FidEpwbxG8y6nAra4CjwiEChcpFhZJtrH7ZrXO/tJk7vtc5CFVWUsQtNX92QY1QFdPxwYNBSICLyUN+A+BQURwvQgxdcJsJyQmh5Ed7yuavcAinVq7fPeOyBWcPL5mt17no16aG1rzvXSUnD0aH7F3S3DHkoM9P9iHgJMLk+2YNmJtFescBxCeG8bA7t5bw0kQNH5KUWAD1uYpC9ikB3NVdlc+q17dKTAe4rcYA+sIO+UGudvpmLWT0lXtEMqDfxfCmyICDESs9bNfueCGJEAnfTBNunsJqR7rMUvjNndS2/Ssok6c/0Yfb9X8cM9nI4QLAj/+hClqdYphmpCjuC34bWxFSt/KJI=
+cache: cargo
+
+rust:
+  - nightly
+  - beta
+  - stable
