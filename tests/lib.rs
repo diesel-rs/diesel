@@ -1,9 +1,9 @@
 extern crate diesel;
 extern crate diesel_dynamic_schema;
 
-use diesel::*;
 use diesel::sql_types::*;
 use diesel::sqlite::Sqlite;
+use diesel::*;
 use diesel_dynamic_schema::{schema, table};
 
 #[test]

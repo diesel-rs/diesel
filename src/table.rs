@@ -1,25 +1,22 @@
+use diesel;
 use diesel::backend::Backend;
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use diesel::query_source::QuerySource;
-use diesel;
 use std::borrow::Borrow;
 
 use column::Column;
 use dummy_expression::*;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Table<T, U=T> {
+pub struct Table<T, U = T> {
     name: T,
     schema: Option<U>,
 }
 
 impl<T, U> Table<T, U> {
     pub(crate) fn new(name: T) -> Self {
-        Self {
-            name,
-            schema: None,
-        }
+        Self { name, schema: None }
     }
 
     pub(crate) fn with_schema(schema: U, name: T) -> Self {
