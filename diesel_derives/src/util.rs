@@ -1,5 +1,5 @@
 use proc_macro2::*;
-use syn::*;
+use syn;
 
 pub use diagnostic_shim::*;
 use meta::*;
@@ -17,24 +17,24 @@ pub fn wrap_in_dummy_mod(const_name: Ident, item: TokenStream) -> TokenStream {
     }
 }
 
-pub fn inner_of_option_ty(ty: &Type) -> &Type {
+pub fn inner_of_option_ty(ty: &syn::Type) -> &syn::Type {
     option_ty_arg(ty).unwrap_or(ty)
 }
 
-pub fn is_option_ty(ty: &Type) -> bool {
+pub fn is_option_ty(ty: &syn::Type) -> bool {
     option_ty_arg(ty).is_some()
 }
 
-fn option_ty_arg(ty: &Type) -> Option<&Type> {
+fn option_ty_arg(ty: &syn::Type) -> Option<&syn::Type> {
     use syn::PathArguments::AngleBracketed;
 
     match *ty {
-        Type::Path(ref ty) => {
+        syn::Type::Path(ref ty) => {
             let last_segment = ty.path.segments.iter().last().unwrap();
             match last_segment.arguments {
                 AngleBracketed(ref args) if last_segment.ident == "Option" => {
                     match args.args.iter().last() {
-                        Some(&GenericArgument::Type(ref ty)) => Some(ty),
+                        Some(&syn::GenericArgument::Type(ref ty)) => Some(ty),
                         _ => None,
                     }
                 }
@@ -45,10 +45,10 @@ fn option_ty_arg(ty: &Type) -> Option<&Type> {
     }
 }
 
-pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Type, Diagnostic> {
+pub fn ty_for_foreign_derive(item: &syn::DeriveInput, flags: &MetaItem) -> Result<syn::Type, Diagnostic> {
     if flags.has_flag("foreign_derive") {
         match item.data {
-            Data::Struct(ref body) => match body.fields.iter().nth(0) {
+            syn::Data::Struct(ref body) => match body.fields.iter().nth(0) {
                 Some(field) => Ok(field.ty.clone()),
                 None => Err(flags
                     .span()
