@@ -318,8 +318,7 @@ fn select_for_update_modifiers() {
             INSERT INTO users_select_for_update_modifieres (name)
             VALUES ('Sean'), ('Tess')
             ",
-        )
-        .unwrap();
+        ).unwrap();
 
     // Now both connections have begun a transaction
     conn_1.begin_test_transaction().unwrap();
