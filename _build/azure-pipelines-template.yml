@@ -57,5 +57,9 @@ jobs:
       fi
     displayName: Run diesel tests
   - bash: |
-      (cd diesel && cargo doc --no-deps)
+      if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
+          (cd diesel && cargo doc --no-deps --features "$BACKEND unstable")
+      else
+          (cd diesel && cargo doc --no-deps --features "$BACKEND")
+      fi
     displayName: Run rustdoc
