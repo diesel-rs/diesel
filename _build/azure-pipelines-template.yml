@@ -56,3 +56,6 @@ jobs:
         (cd diesel_tests && cargo test --no-default-features --features "$BACKEND")
       fi
     displayName: Run diesel tests
+  - bash: |
+      (cd diesel && cargo doc --no-deps)
+    displayName: Run rustdoc
