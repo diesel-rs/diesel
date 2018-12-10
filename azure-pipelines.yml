@@ -207,7 +207,7 @@ jobs:
         cargo clippy
       displayName: Run clippy
     - bash: |
-        cargo fmt --all -- --write-mode=diff
+        cargo fmt --all -- --check
       displayName: Check style
 
 - job: SQLITE_BUNDLED
