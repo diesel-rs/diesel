@@ -167,41 +167,41 @@ jobs:
           "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on diesel_test.* to 'root'@localhost; grant all on diesel_unit_test.* to 'root'@localhost;" -uroot -ppassword
         displayName: Install mysql
 
-- job: CLIPPY_AND_COMPILE_TESTS
-  displayName: Clippy and Compiletests
+- job: COMPILE_TESTS
+  displayName: Compiletests
   pool:
     vmImage: ubuntu-16.04
   steps:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: nightly-2018-08-17
-    - bash: |
-        rustup component add clippy-preview
-      displayName: Install clippy
+        rust_version: nightly-2018-11-27
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
-        cargo clippy
-      displayName: Run clippy
-    - bash: |
         (cd diesel_compile_tests && cargo test)
       displayName: Run compile tests
 
-- job: RUSTFMT
-  displayName: Check rustfmt style using rustfmt from 1.26.1
+- job: RUSTFMT_AND_CLIPPY
+  displayName: Check rustfmt style && run clippy
   pool:
     vmImage: ubuntu-16.04
   steps:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.26.1
+        rust_version: 1.30.1
     - bash: |
         rustup component add rustfmt-preview
       displayName: Install rustfmt
+    - bash: |
+        rustup component add clippy-preview
+      displayName: Install clippy
+    - bash: |
+        cargo clippy
+      displayName: Run clippy
     - bash: |
         cargo fmt --all -- --write-mode=diff
       displayName: Check style
