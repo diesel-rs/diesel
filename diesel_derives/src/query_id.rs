@@ -12,11 +12,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
 
     let struct_name = &item.ident;
     let lifetimes = item.generics.lifetimes();
-    let query_id_ty_params = item.generics
+    let query_id_ty_params = item
+        .generics
         .type_params()
         .map(|ty_param| &ty_param.ident)
         .map(|ty_param| quote!(<#ty_param as QueryId>::QueryId));
-    let has_static_query_id = item.generics
+    let has_static_query_id = item
+        .generics
         .type_params()
         .map(|ty_param| &ty_param.ident)
         .map(|ty_param| quote!(<#ty_param as QueryId>::HAS_STATIC_QUERY_ID));

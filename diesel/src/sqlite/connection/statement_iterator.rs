@@ -51,11 +51,12 @@ impl<'a, T> NamedStatementIterator<'a, T> {
         let column_indices = (0..stmt.num_fields())
             .filter_map(|i| {
                 stmt.field_name(i).map(|column| {
-                    let column = column.to_str().map_err(|e| DeserializationError(e.into()))?;
+                    let column = column
+                        .to_str()
+                        .map_err(|e| DeserializationError(e.into()))?;
                     Ok((column, i))
                 })
-            })
-            .collect::<QueryResult<_>>()?;
+            }).collect::<QueryResult<_>>()?;
         Ok(NamedStatementIterator {
             stmt,
             column_indices,

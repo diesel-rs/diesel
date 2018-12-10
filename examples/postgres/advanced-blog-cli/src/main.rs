@@ -64,7 +64,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                 query = query.per_page(min(per_page, 25));
             }
 
-            let (posts_with_user, total_pages) = query.load_and_count_pages::<(Post, User)>(&conn)?;
+            let (posts_with_user, total_pages) =
+                query.load_and_count_pages::<(Post, User)>(&conn)?;
             let (posts, post_users): (Vec<_>, Vec<_>) = posts_with_user.into_iter().unzip();
 
             let comments = Comment::belonging_to(&posts)
@@ -88,8 +89,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                     posts::user_id.eq(user.id),
                     posts::title.eq(title),
                     posts::body.eq(body),
-                ))
-                .returning(posts::id)
+                )).returning(posts::id)
                 .get_result::<i32>(&conn)?;
             println!("Successfully created post with id {}", id);
         }
@@ -123,8 +123,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                     user_id.eq(current_user(&conn)?.id),
                     post_id.eq(given_post_id),
                     body.eq(editor::edit_string("")?),
-                ))
-                .returning(id)
+                )).returning(id)
                 .get_result::<i32>(&conn)?;
             println!("Created comment with ID {}", inserted);
         }

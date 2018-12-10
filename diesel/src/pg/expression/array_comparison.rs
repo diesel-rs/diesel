@@ -96,11 +96,7 @@ where
 
 impl_selectable_expression!(Any<Expr>);
 
-impl<Expr> NonAggregate for Any<Expr>
-where
-    Expr: NonAggregate,
-{
-}
+impl<Expr> NonAggregate for Any<Expr> where Expr: NonAggregate {}
 
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId)]
@@ -135,11 +131,7 @@ where
 
 impl_selectable_expression!(All<Expr>);
 
-impl<Expr> NonAggregate for All<Expr>
-where
-    Expr: NonAggregate,
-{
-}
+impl<Expr> NonAggregate for All<Expr> where Expr: NonAggregate {}
 
 pub trait AsArrayExpression<ST> {
     type Expression: Expression<SqlType = Array<ST>>;

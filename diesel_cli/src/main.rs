@@ -1,15 +1,27 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![cfg_attr(feature = "cargo-clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(option_map_unwrap_or_else, option_map_unwrap_or)
+)]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
-        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
-        if_not_else, items_after_statements, used_underscore_binding
+        wrong_pub_self_convention,
+        mut_mut,
+        non_ascii_literal,
+        similar_names,
+        unicode_not_nfc,
+        if_not_else,
+        items_after_statements,
+        used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
+#![cfg_attr(
+    all(test, feature = "cargo-clippy"),
+    allow(result_unwrap_used)
+)]
 
 extern crate chrono;
 #[macro_use]
@@ -364,8 +376,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
             } else {
                 table_name.parse().unwrap()
             }
-        })
-        .collect();
+        }).collect();
 
     if matches.is_present("whitelist") {
         eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");

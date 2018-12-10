@@ -112,7 +112,8 @@ struct AssociationOptions {
 
 impl AssociationOptions {
     fn from_meta(meta: MetaItem) -> Result<Self, Diagnostic> {
-        let parent_struct = meta.nested()?
+        let parent_struct = meta
+            .nested()?
             .find(|m| m.word().is_ok() || m.name() == "parent")
             .ok_or_else(|| meta.span())
             .and_then(|m| {
@@ -120,12 +121,10 @@ impl AssociationOptions {
                     .map(|i| parse_quote!(#i))
                     .or_else(|_| m.ty_value())
                     .map_err(|_| m.span())
-            })
-            .and_then(|ty| match ty {
+            }).and_then(|ty| match ty {
                 syn::Type::Path(ty_path) => Ok(ty_path),
                 _ => Err(ty.span()),
-            })
-            .map_err(|span| {
+            }).map_err(|span| {
                 span.error("Expected a struct name")
                     .help("e.g. `#[belongs_to(User)]` or `#[belongs_to(parent = \"User<'_>\")]")
             })?;

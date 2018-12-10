@@ -2,12 +2,21 @@
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
-#![cfg_attr(feature = "cargo-clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(option_map_unwrap_or_else, option_map_unwrap_or)
+)]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
-        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
-        if_not_else, items_after_statements, used_underscore_binding
+        wrong_pub_self_convention,
+        mut_mut,
+        non_ascii_literal,
+        similar_names,
+        unicode_not_nfc,
+        if_not_else,
+        items_after_statements,
+        used_underscore_binding
     )
 )]
 //! Provides functions for maintaining database schema.

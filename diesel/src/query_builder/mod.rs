@@ -36,8 +36,9 @@ pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
 #[doc(inline)]
-pub use self::insert_statement::{IncompleteInsertStatement, InsertStatement,
-                                 UndecoratedInsertRecord, ValuesClause};
+pub use self::insert_statement::{
+    IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
+};
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
@@ -46,8 +47,9 @@ pub use self::sql_query::SqlQuery;
 #[allow(deprecated)]
 pub use self::update_statement::IncompleteUpdateStatement;
 #[doc(inline)]
-pub use self::update_statement::{AsChangeset, BoxedUpdateStatement, IntoUpdateTarget,
-                                 UpdateStatement, UpdateTarget};
+pub use self::update_statement::{
+    AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
+};
 
 pub(crate) use self::insert_statement::ColumnList;
 

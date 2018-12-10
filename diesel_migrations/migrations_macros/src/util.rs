@@ -23,8 +23,7 @@ pub fn get_options_from_input(
                 .map(|o| match *o {
                     NestedMetaItem::MetaItem(ref m) => m.clone(),
                     _ => on_bug(),
-                })
-                .collect(),
+                }).collect(),
         ),
         Some(_) => on_bug(),
         None => None,

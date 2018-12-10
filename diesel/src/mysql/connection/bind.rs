@@ -49,7 +49,8 @@ impl Binds {
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        let mut binds = self.data
+        let mut binds = self
+            .data
             .iter_mut()
             .map(|x| unsafe { x.mysql_bind() })
             .collect::<Vec<_>>();

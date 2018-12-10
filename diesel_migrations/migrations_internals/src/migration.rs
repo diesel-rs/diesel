@@ -16,7 +16,8 @@ pub fn name(migration: &Migration) -> MigrationName {
 
 impl<'a> fmt::Display for MigrationName<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let file_name = self.migration
+        let file_name = self
+            .migration
             .file_path()
             .and_then(|file_path| file_path.file_name())
             .and_then(|file| file.to_str());
@@ -88,12 +89,10 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
                     original_os_string
                 ),
             }
-        })
-        .filter(|file_name| match *file_name {
+        }).filter(|file_name| match *file_name {
             Ok(ref name) => !name.starts_with('.'),
             _ => true,
-        })
-        .collect()
+        }).collect()
 }
 
 #[doc(hidden)]

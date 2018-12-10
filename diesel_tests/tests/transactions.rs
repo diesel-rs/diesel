@@ -19,8 +19,7 @@ fn transaction_executes_fn_in_a_sql_transaction() {
             assert_eq!(1, get_count(&conn1));
             assert_eq!(0, get_count(&conn2));
             Ok(())
-        })
-        .unwrap();
+        }).unwrap();
 
     assert_eq!(1, get_count(&conn1));
     assert_eq!(1, get_count(&conn2));
@@ -131,5 +130,5 @@ fn count_test_table(connection: &TestConnection, table_name: &str) -> i64 {
         "COUNT(*) FROM {}",
         table_name
     ))).first(connection)
-        .unwrap()
+    .unwrap()
 }

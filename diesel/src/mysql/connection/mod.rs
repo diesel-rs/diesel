@@ -116,7 +116,8 @@ impl MysqlConnection {
     where
         T: QueryFragment<Mysql> + QueryId,
     {
-        let mut stmt = self.statement_cache
+        let mut stmt = self
+            .statement_cache
             .cached_statement(source, &[], |sql| self.raw_connection.prepare(sql))?;
         let mut bind_collector = MysqlBindCollector::new();
         try!(source.collect_binds(&mut bind_collector, &()));

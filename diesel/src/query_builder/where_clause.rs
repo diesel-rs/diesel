@@ -121,11 +121,7 @@ pub trait ValidWhereClause<QS> {}
 
 impl<QS> ValidWhereClause<QS> for NoWhereClause {}
 
-impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr>
-where
-    Expr: AppearsOnTable<QS>,
-{
-}
+impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr> where Expr: AppearsOnTable<QS> {}
 
 #[allow(missing_debug_implementations)] // We can't...
 pub enum BoxedWhereClause<'a, DB> {

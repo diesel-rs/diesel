@@ -92,8 +92,7 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
                 .help(
                     "Your struct must either be annotated with `#[table_name = \"foo\"]` \
                      or have all of its fields annotated with `#[sql_type = \"Integer\"]`",
-                )
-                .emit();
+                ).emit();
             parse_quote!(())
         },
     }

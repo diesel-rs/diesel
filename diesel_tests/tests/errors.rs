@@ -131,14 +131,13 @@ fn isolation_errors_are_detected() {
         )
     "#,
     ).execute(&conn)
-        .unwrap();
+    .unwrap();
 
     insert_into(isolation_example::table)
         .values(&vec![
             isolation_example::class.eq(1),
             isolation_example::class.eq(2),
-        ])
-        .execute(&conn)
+        ]).execute(&conn)
         .unwrap();
 
     let barrier = Arc::new(Barrier::new(2));
@@ -162,8 +161,7 @@ fn isolation_errors_are_detected() {
                         .execute(&conn)
                 })
             })
-        })
-        .collect::<Vec<_>>();
+        }).collect::<Vec<_>>();
 
     let mut results = threads
         .into_iter()

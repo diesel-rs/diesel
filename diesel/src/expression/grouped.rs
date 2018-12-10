@@ -21,8 +21,4 @@ impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
 
 impl_selectable_expression!(Grouped<T>);
 
-impl<T: NonAggregate> NonAggregate for Grouped<T>
-where
-    Grouped<T>: Expression,
-{
-}
+impl<T: NonAggregate> NonAggregate for Grouped<T> where Grouped<T>: Expression {}
