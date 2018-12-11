@@ -1,0 +1,65 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  variables:
+    ${{ insert }}: ${{ parameters.variables }}
+  strategy:
+    # 10 parallel builds are free, so use 10
+    maxParallel: 10
+    matrix:
+      stable:
+        rustup_toolchain: stable
+      beta:
+        rustup_toolchain: beta
+      nightly:
+        rustup_toolchain: nightly
+  steps:
+  - ${{ parameters.setup }}
+  - template: install-rust.yml
+    parameters:
+      platform: ${{parameters.name}}
+      rust_version: $(RUSTUP_TOOLCHAIN)
+  - bash: |
+      echo $PATH
+      echo $MYSQLCLIENT_LIB_DIR
+    displayName: Sanity check path
+  - bash: |
+      if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
+        (cd diesel && cargo test --no-default-features --features "unstable extras $BACKEND")
+      else
+        (cd diesel && cargo test --no-default-features --features "extras $BACKEND")
+      fi &&
+      (cd diesel && cargo test --no-default-features --features "extras with-deprecated $BACKEND")
+    displayName: Test diesel
+  - bash: |
+      (cd diesel_derives && cargo test --features "diesel/$BACKEND") &&
+      if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
+        (cd diesel_derives && cargo test --features "diesel/unstable diesel/$BACKEND")
+      fi
+    displayName: Test diesel-derives
+  - bash: |
+      (cd "examples/$BACKEND" && ./test_all)
+    displayName: Test diesel examples
+  - bash: |
+      (cd diesel_cli && cargo test --no-default-features --features "$BACKEND")
+    displayName: Test diesel-cli
+  - bash: |
+      (cd diesel_migrations/migrations_internals && cargo test  ) &&
+      (cd diesel_migrations/migrations_macros && cargo test ) &&
+      (cd diesel_migrations/ && cargo test --features "$BACKEND diesel/$BACKEND" )
+    displayName: Test diesel-migrations
+  - bash: |
+      if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
+        (cd diesel_tests && cargo test --no-default-features --features "unstable $BACKEND")
+      else
+        (cd diesel_tests && cargo test --no-default-features --features "$BACKEND")
+      fi
+    displayName: Run diesel tests
+  - bash: |
+      if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
+          (cd diesel && cargo doc --no-deps --features "$BACKEND unstable")
+      else
+          (cd diesel && cargo doc --no-deps --features "$BACKEND")
+      fi
+    displayName: Run rustdoc

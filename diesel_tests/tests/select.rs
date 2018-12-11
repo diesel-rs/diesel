@@ -184,6 +184,14 @@ fn selection_using_subselect() {
 }
 
 table! {
+    users_select_for_update_modifieres {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+table! {
     users_select_for_update {
         id -> Integer,
         name -> Text,
@@ -281,7 +289,7 @@ fn select_for_update_locks_selected_rows() {
 #[cfg(feature = "postgres")]
 #[test]
 fn select_for_update_modifiers() {
-    use self::users_select_for_update::dsl::*;
+    use self::users_select_for_update_modifieres::dsl::*;
 
     // We need to actually commit some data for the
     // test
@@ -291,10 +299,10 @@ fn select_for_update_modifiers() {
 
     // Recreate the table
     conn_1
-        .execute("DROP TABLE IF EXISTS users_select_for_update")
+        .execute("DROP TABLE IF EXISTS users_select_for_update_modifieres")
         .unwrap();
     create_table(
-        "users_select_for_update",
+        "users_select_for_update_modifieres",
         (
             integer("id").primary_key().auto_increment(),
             string("name").not_null(),
@@ -305,14 +313,18 @@ fn select_for_update_modifiers() {
 
     // Add some test data
     conn_1
-        .execute("INSERT INTO users_select_for_update (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
+        .execute(
+            "
+            INSERT INTO users_select_for_update_modifieres (name)
+            VALUES ('Sean'), ('Tess')
+            ",
+        ).unwrap();
 
     // Now both connections have begun a transaction
     conn_1.begin_test_transaction().unwrap();
 
     // Lock the "Sean" row
-    let _sean = users_select_for_update
+    let _sean = users_select_for_update_modifieres
         .order(name)
         .for_update()
         .first::<User>(&conn_1)
@@ -320,7 +332,7 @@ fn select_for_update_modifiers() {
 
     // Try to access the "Sean" row with `NOWAIT`
     conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
-    let result = users_select_for_update
+    let result = users_select_for_update_modifieres
         .order(name)
         .for_update()
         .no_wait()
@@ -333,7 +345,7 @@ fn select_for_update_modifiers() {
     }
 
     // Try to access the "Sean" row with `SKIP LOCKED`
-    let tess = users_select_for_update
+    let tess = users_select_for_update_modifieres
         .order(name)
         .for_update()
         .skip_locked()

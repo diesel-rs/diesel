@@ -76,6 +76,7 @@ fn print_schema_unsigned() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");
     let path = path_to_patch_file.display().to_string();
@@ -122,9 +123,11 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
     let result = p.command("print-schema").args(args).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    let expected = read_file(&backend_file_path(test_name, "expected.rs"));
+    let expected = read_file(&backend_file_path(test_name, "expected.rs")).replace("\r\n", "\n");
 
-    assert_diff!(&expected, result.stdout(), "\n", 0);
+    let result = result.stdout().replace("\r\n", "\n");
+
+    assert_diff!(&expected, &result, "\n", 0);
 
     test_print_schema_config(test_name, &test_path, schema, expected);
 }
@@ -147,13 +150,14 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, e
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    let schema = p.file_contents("src/schema.rs");
+    let schema = p.file_contents("src/schema.rs").replace("\r\n", "\n");
     assert_diff!(&expected, &schema, "\n", 0);
 
     let result = p.command("print-schema").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    assert_diff!(&expected, result.stdout(), "\n", 0);
+    let result = result.stdout().replace("\r\n", "\n");
+    assert_diff!(&expected, &result, "\n", 0);
 }
 
 fn read_file(path: &Path) -> String {
