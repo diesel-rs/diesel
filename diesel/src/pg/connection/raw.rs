@@ -19,7 +19,7 @@ impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         use self::ConnStatusType::*;
 
-        let connection_string = try!(CString::new(database_url));
+        let connection_string = CString::new(database_url)?;
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };
 

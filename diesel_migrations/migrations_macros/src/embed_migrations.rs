@@ -90,7 +90,7 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<E
 }
 
 fn migration_literal_from_path(path: &Path) -> Result<quote::Tokens, Box<Error>> {
-    let version = try!(version_from_path(path));
+    let version = version_from_path(path)?;
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();
 

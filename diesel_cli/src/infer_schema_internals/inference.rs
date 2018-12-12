@@ -18,7 +18,7 @@ pub fn load_table_names(
     database_url: &str,
     schema_name: Option<&str>,
 ) -> Result<Vec<TableName>, Box<Error>> {
-    let connection = try!(InferConnection::establish(database_url));
+    let connection = InferConnection::establish(database_url)?;
 
     match connection {
         #[cfg(feature = "sqlite")]
@@ -67,14 +67,14 @@ pub(crate) fn get_primary_keys(
     conn: &InferConnection,
     table: &TableName,
 ) -> Result<Vec<String>, Box<Error>> {
-    let primary_keys: Vec<String> = try!(match *conn {
+    let primary_keys: Vec<String> = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => super::sqlite::get_primary_keys(c, table),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => super::information_schema::get_primary_keys(c, table),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref c) => super::information_schema::get_primary_keys(c, table),
-    });
+    }?;
     if primary_keys.is_empty() {
         Err(format!(
             "Diesel only supports tables with primary keys. \
@@ -91,7 +91,7 @@ pub fn load_foreign_key_constraints(
     database_url: &str,
     schema_name: Option<&str>,
 ) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
-    let connection = try!(InferConnection::establish(database_url));
+    let connection = InferConnection::establish(database_url)?;
 
     let constraints = match connection {
         #[cfg(feature = "sqlite")]

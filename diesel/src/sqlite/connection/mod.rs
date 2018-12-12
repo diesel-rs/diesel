@@ -59,7 +59,7 @@ impl Connection for SqliteConnection {
 
     #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize> {
-        try!(self.batch_execute(query));
+        self.batch_execute(query)?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -71,7 +71,7 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        let mut statement = try!(self.prepare_query(&source.as_query()));
+        let mut statement = self.prepare_query(&source.as_query())?;
         let statement_use = StatementUse::new(&mut statement);
         let iter = StatementIterator::new(statement_use);
         iter.collect()
@@ -94,9 +94,9 @@ impl Connection for SqliteConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let mut statement = try!(self.prepare_query(source));
+        let mut statement = self.prepare_query(source)?;
         let mut statement_use = StatementUse::new(&mut statement);
-        try!(statement_use.run());
+        statement_use.run()?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -191,14 +191,14 @@ impl SqliteConnection {
         &self,
         source: &T,
     ) -> QueryResult<MaybeCached<Statement>> {
-        let mut statement = try!(self.cached_prepared_statement(source));
+        let mut statement = self.cached_prepared_statement(source)?;
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        try!(source.collect_binds(&mut bind_collector, &()));
+        source.collect_binds(&mut bind_collector, &())?;
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         for (tpe, value) in metadata.into_iter().zip(binds) {
-            try!(statement.bind(tpe, value));
+            statement.bind(tpe, value)?;
         }
 
         Ok(statement)

@@ -273,7 +273,7 @@ fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
 }
 
 fn find_project_root() -> DatabaseResult<PathBuf> {
-    search_for_cargo_toml_directory(&try!(env::current_dir()))
+    search_for_cargo_toml_directory(&env::current_dir()?)
 }
 
 /// Searches for the directory that holds the project's Cargo.toml, and returns
@@ -296,10 +296,8 @@ where
     Conn: MigrationConnection + Any,
 {
     let migration_inner = || {
-        let reverted_version = try!(migrations::revert_latest_migration_in_directory(
-            conn,
-            migrations_dir
-        ));
+        let reverted_version =
+            migrations::revert_latest_migration_in_directory(conn, migrations_dir)?;
         migrations::run_migration_with_version(
             conn,
             migrations_dir,

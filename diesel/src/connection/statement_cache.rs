@@ -138,10 +138,10 @@ where
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = try!(StatementCacheKey::for_source(source, bind_types));
+        let cache_key = StatementCacheKey::for_source(source, bind_types)?;
 
         if !source.is_safe_to_cache_prepared()? {
-            let sql = try!(cache_key.sql(source));
+            let sql = cache_key.sql(source)?;
             return prepare_fn(&sql).map(MaybeCached::CannotCache);
         }
 
@@ -150,11 +150,11 @@ where
                 Occupied(entry) => Ok(entry.into_mut()),
                 Vacant(entry) => {
                     let statement = {
-                        let sql = try!(entry.key().sql(source));
+                        let sql = entry.key().sql(source)?;
                         prepare_fn(&sql)
                     };
 
-                    Ok(entry.insert(try!(statement)))
+                    Ok(entry.insert(statement?))
                 }
             }
         })
@@ -213,7 +213,7 @@ where
         match T::query_id() {
             Some(id) => Ok(StatementCacheKey::Type(id)),
             None => {
-                let sql = try!(Self::construct_sql(source));
+                let sql = Self::construct_sql(source)?;
                 Ok(StatementCacheKey::Sql {
                     sql: sql,
                     bind_types: bind_types.into(),
@@ -231,7 +231,7 @@ where
 
     fn construct_sql<T: QueryFragment<DB>>(source: &T) -> QueryResult<String> {
         let mut query_builder = DB::QueryBuilder::default();
-        try!(source.to_sql(&mut query_builder));
+        source.to_sql(&mut query_builder)?;
         Ok(query_builder.finish())
     }
 }

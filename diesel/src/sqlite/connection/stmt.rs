@@ -24,7 +24,7 @@ impl Statement {
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v2(
                 raw_connection.internal_connection.as_ptr(),
-                try!(CString::new(sql)).as_ptr(),
+                CString::new(sql)?.as_ptr(),
                 sql.len() as libc::c_int,
                 &mut stmt,
                 &mut unused_portion,

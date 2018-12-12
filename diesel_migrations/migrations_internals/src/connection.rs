@@ -46,9 +46,9 @@ where
     }
 
     fn insert_new_migration(&self, ver: &str) -> QueryResult<()> {
-        try!(::diesel::insert_into(__diesel_schema_migrations)
+        ::diesel::insert_into(__diesel_schema_migrations)
             .values(&version.eq(ver))
-            .execute(self));
+            .execute(self)?;
         Ok(())
     }
 }

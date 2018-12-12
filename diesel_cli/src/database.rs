@@ -121,7 +121,7 @@ macro_rules! call_with_conn {
 }
 
 pub fn reset_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
-    try!(drop_database(&database_url(args)));
+    drop_database(&database_url(args))?;
     setup_database(args, migrations_dir)
 }
 
@@ -147,7 +147,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
             if PgConnection::establish(database_url).is_err() {
                 let (database, postgres_url) = change_database_of_url(database_url, "postgres");
                 println!("Creating database: {}", database);
-                let conn = try!(PgConnection::establish(&postgres_url));
+                let conn = PgConnection::establish(&postgres_url)?;
                 query_helper::create_database(&database).execute(&conn)?;
             }
         }
@@ -155,7 +155,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
         Backend::Sqlite => {
             if !::std::path::Path::new(database_url).exists() {
                 println!("Creating database: {}", database_url);
-                try!(SqliteConnection::establish(database_url));
+                SqliteConnection::establish(database_url)?;
             }
         }
         #[cfg(feature = "mysql")]
@@ -164,7 +164,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
                 let (database, mysql_url) =
                     change_database_of_url(database_url, "information_schema");
                 println!("Creating database: {}", database);
-                let conn = try!(MysqlConnection::establish(&mysql_url));
+                let conn = MysqlConnection::establish(&mysql_url)?;
                 query_helper::create_database(&database).execute(&conn)?;
             }
         }
@@ -207,7 +207,7 @@ fn create_schema_table_and_run_migrations_if_needed(
     migrations_dir: &Path,
 ) -> DatabaseResult<()> {
     if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
-        try!(call_with_conn!(database_url, migrations::setup_database()));
+        call_with_conn!(database_url, migrations::setup_database())?;
         call_with_conn!(
             database_url,
             migrations::run_pending_migrations_in_directory(migrations_dir, &mut stdout())
@@ -224,8 +224,8 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
             let (database, postgres_url) = change_database_of_url(database_url, "postgres");
-            let conn = try!(PgConnection::establish(&postgres_url));
-            if try!(pg_database_exists(&conn, &database)) {
+            let conn = PgConnection::establish(&postgres_url)?;
+            if pg_database_exists(&conn, &database)? {
                 println!("Dropping database: {}", database);
                 query_helper::drop_database(&database)
                     .if_exists()
@@ -239,14 +239,14 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
 
             if Path::new(database_url).exists() {
                 println!("Dropping database: {}", database_url);
-                try!(fs::remove_file(&database_url));
+                fs::remove_file(&database_url)?;
             }
         }
         #[cfg(feature = "mysql")]
         Backend::Mysql => {
             let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
-            let conn = try!(MysqlConnection::establish(&mysql_url));
-            if try!(mysql_database_exists(&conn, &database)) {
+            let conn = MysqlConnection::establish(&mysql_url)?;
+            if mysql_database_exists(&conn, &database)? {
                 println!("Dropping database: {}", database);
                 query_helper::drop_database(&database)
                     .if_exists()

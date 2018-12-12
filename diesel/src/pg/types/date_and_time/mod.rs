@@ -132,12 +132,9 @@ impl FromSql<sql_types::Time, Pg> for PgTime {
 
 impl ToSql<sql_types::Interval, Pg> for PgInterval {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        try!(ToSql::<sql_types::BigInt, Pg>::to_sql(
-            &self.microseconds,
-            out
-        ));
-        try!(ToSql::<sql_types::Integer, Pg>::to_sql(&self.days, out));
-        try!(ToSql::<sql_types::Integer, Pg>::to_sql(&self.months, out));
+        ToSql::<sql_types::BigInt, Pg>::to_sql(&self.microseconds, out)?;
+        ToSql::<sql_types::Integer, Pg>::to_sql(&self.days, out)?;
+        ToSql::<sql_types::Integer, Pg>::to_sql(&self.months, out)?;
         Ok(IsNull::No)
     }
 }
@@ -146,15 +143,9 @@ impl FromSql<sql_types::Interval, Pg> for PgInterval {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         Ok(PgInterval {
-            microseconds: try!(FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
-                &bytes[..8]
-            ))),
-            days: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                &bytes[8..12]
-            ))),
-            months: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                &bytes[12..16]
-            ))),
+            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(&bytes[..8]))?,
+            days: FromSql::<sql_types::Integer, Pg>::from_sql(Some(&bytes[8..12]))?,
+            months: FromSql::<sql_types::Integer, Pg>::from_sql(Some(&bytes[12..16]))?,
         })
     }
 }

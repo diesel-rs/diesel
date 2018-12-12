@@ -55,8 +55,8 @@ impl Statement {
         name: Option<&str>,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
-        let name = try!(CString::new(name.unwrap_or("")));
-        let sql = try!(CString::new(sql));
+        let name = CString::new(name.unwrap_or(""))?;
+        let sql = CString::new(sql)?;
         let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
         let internal_result = unsafe {
@@ -67,7 +67,7 @@ impl Statement {
                 param_types_to_ptr(Some(&param_types_vec)),
             )
         };
-        try!(PgResult::new(internal_result?));
+        PgResult::new(internal_result?)?;
 
         Ok(Statement {
             name: name,

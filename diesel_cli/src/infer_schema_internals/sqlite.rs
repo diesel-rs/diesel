@@ -150,7 +150,7 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
-    let results = try!(sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn));
+    let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()
         .filter_map(|i| if i.primary_key { Some(i.name) } else { None })

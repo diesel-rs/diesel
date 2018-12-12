@@ -130,7 +130,7 @@ pub fn run_pending_migrations<Conn>(conn: &Conn) -> Result<(), RunMigrationsErro
 where
     Conn: MigrationConnection,
 {
-    let migrations_dir = try!(find_migrations_directory());
+    let migrations_dir = find_migrations_directory()?;
     run_pending_migrations_in_directory(conn, &migrations_dir, &mut stdout())
 }
 
@@ -143,7 +143,7 @@ pub fn run_pending_migrations_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    let all_migrations = try!(migrations_in_directory(migrations_dir));
+    let all_migrations = migrations_in_directory(migrations_dir)?;
     run_migrations(conn, all_migrations, output)
 }
 
@@ -198,7 +198,7 @@ pub fn revert_latest_migration<Conn>(conn: &Conn) -> Result<String, RunMigration
 where
     Conn: MigrationConnection,
 {
-    let migrations_dir = try!(find_migrations_directory());
+    let migrations_dir = find_migrations_directory()?;
     revert_latest_migration_in_directory(conn, &migrations_dir)
 }
 
@@ -209,7 +209,7 @@ pub fn revert_latest_migration_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    try!(setup_database(conn));
+    setup_database(conn)?;
     let latest_migration_version = conn
         .latest_run_migration_version()?
         .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
@@ -248,7 +248,7 @@ fn migration_with_version(
     migrations_dir: &Path,
     ver: &str,
 ) -> Result<Box<Migration>, MigrationError> {
-    let all_migrations = try!(migrations_in_directory(migrations_dir));
+    let all_migrations = migrations_in_directory(migrations_dir)?;
     let migration = all_migrations.into_iter().find(|m| m.version() == ver);
     match migration {
         Some(m) => Ok(m),
@@ -272,7 +272,7 @@ fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> Qu
 
 #[doc(hidden)]
 pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, MigrationError> {
-    try!(path.read_dir())
+    path.read_dir()?
         .filter_map(|entry| {
             let entry = match entry {
                 Ok(e) => e,
@@ -290,7 +290,7 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {
     use self::migration::migration_from;
 
-    try!(migration_paths_in_directory(path))
+    migration_paths_in_directory(path)?
         .iter()
         .map(|e| migration_from(e.path()))
         .collect()
@@ -308,8 +308,8 @@ where
     List: IntoIterator,
     List::Item: Migration,
 {
-    try!(setup_database(conn));
-    let already_run = try!(conn.previously_run_migration_versions());
+    setup_database(conn)?;
+    let already_run = conn.previously_run_migration_versions()?;
     let mut pending_migrations: Vec<_> = migrations
         .into_iter()
         .filter(|m| !already_run.contains(&m.version().to_string()))
@@ -317,7 +317,7 @@ where
 
     pending_migrations.sort_by(|a, b| a.version().cmp(b.version()));
     for migration in pending_migrations {
-        try!(run_migration(conn, &migration, output));
+        run_migration(conn, &migration, output)?;
     }
     Ok(())
 }
@@ -332,17 +332,17 @@ where
 {
     conn.transaction(|| {
         if migration.version() != "00000000000000" {
-            try!(writeln!(output, "Running migration {}", name(&migration)));
+            writeln!(output, "Running migration {}", name(&migration))?;
         }
         if let Err(e) = migration.run(conn) {
-            try!(writeln!(
+            writeln!(
                 output,
                 "Executing migration script {}",
                 file_name(&migration, "up.sql")
-            ));
+            )?;
             return Err(e);
         }
-        try!(conn.insert_new_migration(migration.version()));
+        conn.insert_new_migration(migration.version())?;
         Ok(())
     })
 }
@@ -353,21 +353,17 @@ fn revert_migration<Conn: Connection>(
     output: &mut Write,
 ) -> Result<(), RunMigrationsError> {
     conn.transaction(|| {
-        try!(writeln!(
-            output,
-            "Rolling back migration {}",
-            name(&migration)
-        ));
+        writeln!(output, "Rolling back migration {}", name(&migration))?;
         if let Err(e) = migration.revert(conn) {
-            try!(writeln!(
+            writeln!(
                 output,
                 "Executing migration script {}",
                 file_name(&migration, "down.sql")
-            ));
+            )?;
             return Err(e);
         }
         let target = __diesel_schema_migrations.filter(version.eq(migration.version()));
-        try!(::diesel::delete(target).execute(conn));
+        ::diesel::delete(target).execute(conn)?;
         Ok(())
     })
 }
@@ -377,7 +373,7 @@ fn revert_migration<Conn: Connection>(
 /// current directory, until it reaches the root directory.  Returns
 /// `MigrationError::MigrationDirectoryNotFound` if no directory is found.
 pub fn find_migrations_directory() -> Result<PathBuf, MigrationError> {
-    search_for_migrations_directory(&try!(env::current_dir()))
+    search_for_migrations_directory(&env::current_dir()?)
 }
 
 /// Searches for the migrations directory relative to the given path. See
