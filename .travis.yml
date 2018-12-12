@@ -45,7 +45,7 @@ matrix:
   - rust: 1.31.0
     name: "Rustfmt && Clippy"
     script:
-    - rustup component add rustfmt clippy-preview
+    - rustup component add rustfmt clippy
     - cargo +$TRAVIS_RUST_VERSION clippy
     - cargo +$TRAVIS_RUST_VERSION fmt --all -- --check
   - rust: stable
@@ -54,8 +54,8 @@ matrix:
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
     - (cd diesel_cli && cargo +$TRAVIS_RUST_VERSION test --no-default-features --features "sqlite-bundled")
-  - rust: 1.27.0
-    name: "Minimal supported rust version == 1.27.0"
+  - rust: 1.31.0
+    name: "Minimal supported rust version == 1.31.0"
     script:
     - cargo +$TRAVIS_RUST_VERSION check --all
 
