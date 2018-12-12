@@ -16,7 +16,7 @@ pub struct Statement {
 }
 
 impl Statement {
-    #[cfg_attr(feature = "cargo-clippy", allow(ptr_arg))]
+    #[allow(clippy::ptr_arg)]
     pub fn execute(
         &self,
         conn: &RawConnection,
@@ -48,7 +48,7 @@ impl Statement {
         PgResult::new(internal_res?)
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(ptr_arg))]
+    #[allow(clippy::ptr_arg)]
     pub fn prepare(
         conn: &RawConnection,
         sql: &str,

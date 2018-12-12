@@ -182,8 +182,7 @@ fn create_default_migration_if_needed(
         return Ok(());
     }
 
-    #[allow(unreachable_patterns)]
-    #[cfg_attr(feature = "cargo-clippy", allow(single_match))]
+    #[allow(unreachable_patterns, clippy::single_match)]
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
@@ -349,7 +348,7 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
     (database, new_url.into_string())
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn handle_error<E: Error, T>(error: E) -> T {
     println!("{}", error);
     ::std::process::exit(1);

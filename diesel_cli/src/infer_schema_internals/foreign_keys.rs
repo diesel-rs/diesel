@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(expect_fun_call))] // My calls are so fun
+#![allow(clippy::expect_fun_call)] // My calls are so fun
 
 use super::data_structures::ForeignKeyConstraint;
 use super::inference::get_primary_keys;

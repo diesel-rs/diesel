@@ -1,24 +1,18 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(option_map_unwrap_or_else, option_map_unwrap_or)
+#![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
+#![warn(
+    clippy::wrong_pub_self_convention,
+    clippy::mut_mut,
+    clippy::non_ascii_literal,
+    clippy::similar_names,
+    clippy::unicode_not_nfc,
+    clippy::if_not_else,
+    clippy::items_after_statements,
+    clippy::used_underscore_binding
 )]
-#![cfg_attr(
-    feature = "cargo-clippy",
-    warn(
-        wrong_pub_self_convention,
-        mut_mut,
-        non_ascii_literal,
-        similar_names,
-        unicode_not_nfc,
-        if_not_else,
-        items_after_statements,
-        used_underscore_binding
-    )
-)]
-#![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
+#![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
 extern crate chrono;
 #[macro_use]
@@ -79,7 +73,7 @@ fn main() {
 }
 
 // https://github.com/rust-lang-nursery/rust-clippy/issues/2927#issuecomment-405705595
-#[cfg_attr(feature = "cargo-clippy", allow(similar_names))]
+#[allow(clippy::similar_names)]
 fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     match matches.subcommand() {
         ("run", Some(_)) => {
@@ -331,7 +325,7 @@ fn should_redo_migration_in_transaction(_t: &Any) -> bool {
     true
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn handle_error<E: Display, T>(error: E) -> T {
     eprintln!("{}", error);
     ::std::process::exit(1);

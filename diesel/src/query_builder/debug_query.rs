@@ -82,7 +82,7 @@ where
     T: QueryFragment<DB>,
 {
     // Clippy is wrong, this cannot be expressed with pointer casting
-    #[cfg_attr(feature = "cargo-clippy", allow(transmute_ptr_to_ptr))]
+    #[allow(clippy::transmute_ptr_to_ptr)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut list = f.debug_list();
         {
