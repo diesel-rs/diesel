@@ -54,9 +54,10 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
             run_with_output(conn, &mut io::sink())
         }
 
-        pub fn run_with_output<C: MigrationConnection>(conn: &C, out: &mut io::Write)
-            -> Result<(), RunMigrationsError>
-        {
+        pub fn run_with_output<C: MigrationConnection>(
+            conn: &C,
+            out: &mut io::Write,
+        ) -> Result<(), RunMigrationsError> {
             run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
         }
     );

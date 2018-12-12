@@ -183,7 +183,8 @@ fn mix_and_match_all_numeric_ops() {
         .execute(
             "INSERT INTO users (id, name) VALUES
         (3, 'Jim'), (4, 'Bob')",
-        ).unwrap();
+        )
+        .unwrap();
 
     let expected_data = vec![4, 6, 7, 9];
     let data = users.select(id * 3 / 2 + 4 - 1).load(&connection);

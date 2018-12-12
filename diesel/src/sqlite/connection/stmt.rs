@@ -128,7 +128,8 @@ impl Drop for Statement {
                     stderr(),
                     "Error finalizing SQLite prepared statement: {:?}",
                     e
-                ).expect("Error writing to `stderr`");
+                )
+                .expect("Error writing to `stderr`");
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
             }

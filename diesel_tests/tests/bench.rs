@@ -103,7 +103,8 @@ macro_rules! bench_medium_complex_query {
                 .map(|i| {
                     let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                     NewUser::new(&format!("User {}", i), Some(hair_color))
-                }).collect();
+                })
+                .collect();
             insert_into(users::table)
                 .values(&data)
                 .execute(&conn)
@@ -127,7 +128,8 @@ macro_rules! bench_medium_complex_query {
                 .map(|i| {
                     let hair_color = if i % 2 == 0 { "black" } else { "brown" };
                     NewUser::new(&format!("User {}", i), Some(hair_color))
-                }).collect();
+                })
+                .collect();
             insert_into(users::table)
                 .values(&data)
                 .execute(&conn)
@@ -182,7 +184,8 @@ fn loading_associations_sequentially(b: &mut Bencher) {
         .map(|i| {
             let hair_color = if i % 2 == 0 { "black" } else { "brown" };
             NewUser::new(&format!("User {}", i), Some(hair_color))
-        }).collect();
+        })
+        .collect();
     insert_into(users::table)
         .values(&data)
         .execute(&conn)
@@ -196,7 +199,8 @@ fn loading_associations_sequentially(b: &mut Bencher) {
                 let title = format!("Post {} by user {}", i, user_id);
                 NewPost::new(user_id, &title, None)
             })
-        }).collect();
+        })
+        .collect();
     insert_into(posts::table)
         .values(&data)
         .execute(&conn)
@@ -210,7 +214,8 @@ fn loading_associations_sequentially(b: &mut Bencher) {
                 let title = format!("Comment {} on post {}", i, post_id);
                 (title, post_id)
             })
-        }).collect();
+        })
+        .collect();
     let comment_data: Vec<_> = data
         .iter()
         .map(|&(ref title, post_id)| NewComment(post_id, &title))

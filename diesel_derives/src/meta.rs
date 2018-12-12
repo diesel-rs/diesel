@@ -17,7 +17,8 @@ impl MetaItem {
             .filter_map(|attr| {
                 attr.interpret_meta()
                     .map(|m| FixSpan(attr.pound_token.spans[0]).fold_meta(m))
-            }).filter(|m| m.name() == name)
+            })
+            .filter(|m| m.name() == name)
             .map(|meta| Self { meta })
             .collect()
     }
@@ -56,7 +57,8 @@ impl MetaItem {
                     .error(format!(
                         "`{0}` must be in the form `{0} = \"true\"`",
                         self.name()
-                    )).emit();
+                    ))
+                    .emit();
                 false
             }
         }
@@ -78,7 +80,8 @@ impl MetaItem {
                     .warning(format!(
                         "The form `{0}(value)` is deprecated. Use `{0} = \"value\"` instead",
                         self.name(),
-                    )).emit();
+                    ))
+                    .emit();
                 Ok(x)
             }
             _ => Ok(syn::Ident::new(
@@ -133,7 +136,8 @@ impl MetaItem {
                     Ok(word) => word == flag,
                     Err(_) => false,
                 })
-            }).unwrap_or_else(|e| {
+            })
+            .unwrap_or_else(|e| {
                 e.emit();
                 false
             })

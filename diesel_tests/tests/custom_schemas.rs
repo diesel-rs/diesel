@@ -81,7 +81,8 @@ mod using_infer_table_from_schema_with_default_schema {
             .values(&NewUser {
                 id: 1,
                 name: "Sean",
-            }).execute(&conn)
+            })
+            .execute(&conn)
             .unwrap();
         let users = users::table.select(users::id).load(&conn);
 

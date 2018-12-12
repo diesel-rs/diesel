@@ -272,7 +272,8 @@ mod tests {
                             val.months == res.months
                                 && val.days == res.days
                                 && val.microseconds - res.microseconds.abs() <= 1
-                        }).unwrap_or(false)
+                        })
+                        .unwrap_or(false)
                 })
             }
 

@@ -50,7 +50,8 @@ where
                     bytes = new_bytes;
                     T::from_sql(Some(elem_bytes))
                 }
-            }).collect()
+            })
+            .collect()
     }
 }
 

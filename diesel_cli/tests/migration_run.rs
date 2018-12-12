@@ -49,7 +49,8 @@ fn migration_run_inserts_run_on_timestamps() {
 
     let migrations_done: bool = select(sql::<Bool>(
         "EXISTS (SELECT * FROM __diesel_schema_migrations WHERE version >= '1')",
-    )).get_result(&db.conn())
+    ))
+    .get_result(&db.conn())
     .unwrap();
     assert!(!migrations_done, "Migrations table should be empty");
 
@@ -66,7 +67,8 @@ fn migration_run_inserts_run_on_timestamps() {
         select(sql::<Bool>(
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < DATETIME('now', '+1 hour'))",
-        )).get_result(&db.conn())
+        ))
+        .get_result(&db.conn())
         .unwrap()
     }
 
@@ -75,7 +77,8 @@ fn migration_run_inserts_run_on_timestamps() {
         select(sql::<Bool>(
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL '1 hour')",
-        )).get_result(&db.conn())
+        ))
+        .get_result(&db.conn())
         .unwrap()
     }
 
@@ -84,7 +87,8 @@ fn migration_run_inserts_run_on_timestamps() {
         select(sql::<Bool>(
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL 1 HOUR)",
-        )).get_result(&db.conn())
+        ))
+        .get_result(&db.conn())
         .unwrap()
     }
 
@@ -105,11 +109,9 @@ fn empty_migrations_are_not_valid() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(
-        result
-            .stderr()
-            .contains("Failed with: Attempted to run an empty migration.")
-    );
+    assert!(result
+        .stderr()
+        .contains("Failed with: Attempted to run an empty migration."));
 }
 
 #[test]
@@ -367,7 +369,8 @@ fn migration_run_updates_schema_if_config_present() {
             [print_schema]
             file = "src/my_schema.rs"
             "#,
-        ).build();
+        )
+        .build();
 
     // Make sure the project is setup
     p.command("setup").run();
@@ -460,7 +463,8 @@ fn verify_schema_errors_if_schema_file_would_change() {
             [print_schema]
             file = "src/my_schema.rs"
             "#,
-        ).build();
+        )
+        .build();
 
     // Make sure the project is setup
     p.command("setup").run();

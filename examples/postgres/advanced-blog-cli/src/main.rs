@@ -89,7 +89,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                     posts::user_id.eq(user.id),
                     posts::title.eq(title),
                     posts::body.eq(body),
-                )).returning(posts::id)
+                ))
+                .returning(posts::id)
                 .get_result::<i32>(&conn)?;
             println!("Successfully created post with id {}", id);
         }
@@ -123,7 +124,8 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<Error>> {
                     user_id.eq(current_user(&conn)?.id),
                     post_id.eq(given_post_id),
                     body.eq(editor::edit_string("")?),
-                )).returning(id)
+                ))
+                .returning(id)
                 .get_result::<i32>(&conn)?;
             println!("Created comment with ID {}", inserted);
         }

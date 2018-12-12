@@ -305,8 +305,10 @@ mod tests {
                     } else {
                         c.to_uppercase().to_string()
                     }
-                }).collect::<String>()
-        }).unwrap();
+                })
+                .collect::<String>()
+        })
+        .unwrap();
 
         let mapped_string = ::select(fun_case("foobar"))
             .get_result::<String>(&connection)
@@ -334,7 +336,8 @@ mod tests {
         add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
             y += 1;
             x + y
-        }).unwrap();
+        })
+        .unwrap();
 
         let added = ::select((add_counter(1), add_counter(1), add_counter(1)))
             .get_result::<(i32, i32, i32)>(&connection);

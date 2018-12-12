@@ -56,7 +56,8 @@ impl<'a, T> NamedStatementIterator<'a, T> {
                         .map_err(|e| DeserializationError(e.into()))?;
                     Ok((column, i))
                 })
-            }).collect::<QueryResult<_>>()?;
+            })
+            .collect::<QueryResult<_>>()?;
         Ok(NamedStatementIterator {
             stmt,
             column_indices,

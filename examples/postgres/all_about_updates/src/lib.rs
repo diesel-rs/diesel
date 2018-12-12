@@ -122,7 +122,8 @@ pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
         .set((
             title.eq("[REDACTED]"),
             body.eq("This post has been classified"),
-        )).execute(conn)
+        ))
+        .execute(conn)
 }
 
 #[test]
@@ -189,7 +190,8 @@ pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
         .set(&PostForm {
             title: None,
             body: Some("My new post"),
-        }).execute(conn)
+        })
+        .execute(conn)
 }
 
 #[test]

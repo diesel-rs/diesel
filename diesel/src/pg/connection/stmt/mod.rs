@@ -28,7 +28,8 @@ impl Statement {
                 data.as_ref()
                     .map(|d| d.as_ptr() as *const libc::c_char)
                     .unwrap_or(ptr::null())
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
         let param_lengths = param_data
             .iter()
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))

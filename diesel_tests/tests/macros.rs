@@ -19,7 +19,8 @@ fn test_sql_function() {
             "CREATE FUNCTION my_lower(varchar) RETURNS varchar
         AS $$ SELECT LOWER($1) $$
         LANGUAGE SQL",
-        ).unwrap();
+        )
+        .unwrap();
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
 

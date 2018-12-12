@@ -80,7 +80,8 @@ fn register_user(
         .values((
             users::username.eq(username),
             users::hashed_password.eq(hashed_password),
-        )).returning((users::id, users::username))
+        ))
+        .returning((users::id, users::username))
         .get_result(conn)
         .map_err(AuthenticationError::DatabaseError)
 }

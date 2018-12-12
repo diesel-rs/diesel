@@ -225,13 +225,15 @@ impl<T: ?Sized, QS> AppearsOnTable<QS> for Box<T>
 where
     T: AppearsOnTable<QS>,
     Box<T>: Expression,
-{}
+{
+}
 
 impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T
 where
     T: AppearsOnTable<QS>,
     &'a T: Expression,
-{}
+{
+}
 
 /// Indicates that an expression can be selected from a source.
 ///
@@ -248,13 +250,15 @@ impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
 where
     T: SelectableExpression<QS>,
     Box<T>: AppearsOnTable<QS>,
-{}
+{
+}
 
 impl<'a, T: ?Sized, QS> SelectableExpression<QS> for &'a T
 where
     T: SelectableExpression<QS>,
     &'a T: AppearsOnTable<QS>,
-{}
+{
+}
 
 /// Marker trait to indicate that an expression does not include any aggregate
 /// functions.
@@ -341,7 +345,8 @@ where
     T: SelectableExpression<QS>,
     T: NonAggregate,
     T: QueryFragment<DB>,
-{}
+{
+}
 
 impl<'a, QS, ST, DB> QueryId for BoxableExpression<QS, DB, SqlType = ST> + 'a {
     type QueryId = ();

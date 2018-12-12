@@ -89,10 +89,12 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
                     original_os_string
                 ),
             }
-        }).filter(|file_name| match *file_name {
+        })
+        .filter(|file_name| match *file_name {
             Ok(ref name) => !name.starts_with('.'),
             _ => true,
-        }).collect()
+        })
+        .collect()
 }
 
 #[doc(hidden)]

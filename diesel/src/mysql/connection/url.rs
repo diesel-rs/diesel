@@ -75,11 +75,9 @@ impl ConnectionOptions {
 }
 
 fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
-    let decoded = try!(
-        percent_decode(s.as_bytes())
-            .decode_utf8()
-            .map_err(|_| connection_url_error())
-    );
+    let decoded = try!(percent_decode(s.as_bytes())
+        .decode_utf8()
+        .map_err(|_| connection_url_error()));
     CString::new(decoded.as_bytes()).map_err(Into::into)
 }
 

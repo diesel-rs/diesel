@@ -160,7 +160,8 @@ where
                     Ok(entry.insert(try!(statement)))
                 }
             }
-        }).map(MaybeCached::Cached)
+        })
+        .map(MaybeCached::Cached)
     }
 }
 

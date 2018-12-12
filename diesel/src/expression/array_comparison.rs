@@ -161,7 +161,8 @@ impl<T, QS> SelectableExpression<QS> for Many<T>
 where
     Many<T>: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
-{}
+{
+}
 
 impl<T, QS> AppearsOnTable<QS> for Many<T>
 where

@@ -60,5 +60,6 @@ fn main() {
         &connection(),
         &migrations_dir,
         &mut io::sink(),
-    ).unwrap();
+    )
+    .unwrap();
 }

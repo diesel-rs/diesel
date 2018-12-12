@@ -1,9 +1,5 @@
 // Built-in Lints
-#![deny(
-    warnings,
-    missing_debug_implementations,
-    missing_copy_implementations
-)]
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
 #![cfg_attr(
     feature = "cargo-clippy",
@@ -177,7 +173,8 @@ where
         .map(|m| {
             let applied = already_run.contains(&m.version().to_string());
             (m, applied)
-        }).collect();
+        })
+        .collect();
     Ok(migrations)
 }
 
@@ -295,7 +292,8 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
             } else {
                 Some(Ok(entry))
             }
-        }).collect()
+        })
+        .collect()
 }
 
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {

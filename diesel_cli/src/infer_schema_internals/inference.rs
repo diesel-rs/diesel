@@ -80,7 +80,8 @@ pub(crate) fn get_primary_keys(
             "Diesel only supports tables with primary keys. \
              Table {} has no primary key",
             table.to_string()
-        ).into())
+        )
+        .into())
     } else {
         Ok(primary_keys)
     }
@@ -139,7 +140,8 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
             } else {
                 k.clone()
             }
-        }).collect();
+        })
+        .collect();
 
     let column_data = get_column_information(&connection, &name)?
         .into_iter()
@@ -166,7 +168,8 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
                 ty,
                 rust_name,
             })
-        }).collect::<Result<_, Box<Error>>>()?;
+        })
+        .collect::<Result<_, Box<Error>>>()?;
 
     Ok(TableData {
         name,

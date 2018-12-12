@@ -20,10 +20,7 @@
         used_underscore_binding
     )
 )]
-#![cfg_attr(
-    feature = "nightly",
-    feature(proc_macro_diagnostic, proc_macro_span)
-)]
+#![cfg_attr(feature = "nightly", feature(proc_macro_diagnostic, proc_macro_span))]
 
 extern crate proc_macro;
 extern crate proc_macro2;
@@ -68,10 +65,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     expand_derive(input, as_expression::derive)
 }
 
-#[proc_macro_derive(
-    Associations,
-    attributes(belongs_to, column_name, table_name)
-)]
+#[proc_macro_derive(Associations, attributes(belongs_to, column_name, table_name))]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     expand_derive(input, associations::derive)
 }
@@ -86,10 +80,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     expand_derive(input, from_sql_row::derive)
 }
 
-#[proc_macro_derive(
-    Identifiable,
-    attributes(table_name, primary_key, column_name)
-)]
+#[proc_macro_derive(Identifiable, attributes(table_name, primary_key, column_name))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_derive(input, identifiable::derive)
 }
@@ -109,10 +100,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable::derive)
 }
 
-#[proc_macro_derive(
-    QueryableByName,
-    attributes(table_name, column_name, sql_type, diesel)
-)]
+#[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_derive(input, queryable_by_name::derive)
 }

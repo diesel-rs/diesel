@@ -139,4 +139,5 @@ pub trait SaveChangesDsl<Conn> {
 
 impl<T, Conn> SaveChangesDsl<Conn> for T where
     T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget
-{}
+{
+}

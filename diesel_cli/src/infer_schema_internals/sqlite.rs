@@ -81,8 +81,10 @@ pub fn load_foreign_key_constraints(
                         foreign_key: row.foreign_key,
                         primary_key: row.primary_key,
                     }
-                }).collect())
-        }).collect::<QueryResult<Vec<Vec<_>>>>()?;
+                })
+                .collect())
+        })
+        .collect::<QueryResult<Vec<Vec<_>>>>()?;
     Ok(rows.into_iter().flat_map(|x| x).collect())
 }
 

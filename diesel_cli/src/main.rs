@@ -18,10 +18,7 @@
         used_underscore_binding
     )
 )]
-#![cfg_attr(
-    all(test, feature = "cargo-clippy"),
-    allow(result_unwrap_used)
-)]
+#![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
 
 extern crate chrono;
 #[macro_use]
@@ -376,7 +373,8 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
             } else {
                 table_name.parse().unwrap()
             }
-        }).collect();
+        })
+        .collect();
 
     if matches.is_present("whitelist") {
         eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
@@ -433,7 +431,8 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
                     "Command would result in changes to {}. \
                      Rerun the command locally, and commit the changes.",
                     path.display()
-                ).into());
+                )
+                .into());
             }
         } else {
             let mut file = fs::File::create(path)?;

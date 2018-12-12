@@ -155,7 +155,8 @@ impl<T, QS> SelectableExpression<QS> for PgTuple<T>
 where
     T: SelectableExpression<QS>,
     Self: AppearsOnTable<QS>,
-{}
+{
+}
 
 impl<T, QS> AppearsOnTable<QS> for PgTuple<T>
 where
@@ -197,9 +198,7 @@ mod tests {
                 Nullable<Integer>,
             )>,
         >("SELECT ((4, NULL), NULL)")
-            .get_result::<((Option<i32>, Option<String>), Option<i32>)>(
-            &conn,
-        );
+        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(&conn);
         assert_eq!(Ok(((Some(4), None), None)), tup);
     }
 

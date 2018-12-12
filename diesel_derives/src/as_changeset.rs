@@ -14,7 +14,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             meta.warn_if_other_options(&["treat_none_as_null"]);
             meta.required_nested_item("treat_none_as_null")
                 .map(|m| m.expect_bool_value())
-        }).unwrap_or(Ok(false))?;
+        })
+        .unwrap_or(Ok(false))?;
     let model = Model::from_item(&item)?;
     let struct_name = &model.name;
     let table_name = model.table_name();
