@@ -249,7 +249,7 @@ where
 
 #[cfg(feature = "sqlite")]
 impl<T, U, Op> ExecuteDsl<SqliteConnection>
-    for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>>, Op>
+    for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>
 where
     InsertStatement<T, ValuesClause<U, T>, Op>: QueryFragment<Sqlite>,
     T: Copy,
@@ -406,7 +406,17 @@ impl<'a, T, Table> UndecoratedInsertRecord<Table> for BatchInsert<'a, T, Table> 
 {
 }
 
-impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T> where [T]: UndecoratedInsertRecord<Table> {}
+impl<T, Table> UndecoratedInsertRecord<Table> for OwnedBatchInsert<T, Table>
+where
+    T: UndecoratedInsertRecord<Table>,
+{
+}
+
+impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T>
+where
+    [T]: UndecoratedInsertRecord<Table>,
+{
+}
 
 impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
 
