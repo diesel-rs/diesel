@@ -79,7 +79,6 @@
 //! ```
 
 extern crate migrations_internals;
-#[macro_use]
 extern crate migrations_macros;
 #[doc(inline)]
 pub use migrations_internals::any_pending_migrations;
