@@ -1,5 +1,7 @@
 use backend::Backend;
-use expression::{AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression};
+use expression::{
+    AppearsOnTable, AsExpressionList, Expression, NonAggregate, SelectableExpression,
+};
 use query_builder::{AstPass, QueryFragment};
 use sql_types;
 use std::marker::PhantomData;
@@ -79,19 +81,16 @@ impl<T, ST, QS> SelectableExpression<QS> for ArrayLiteral<T, ST>
 where
     T: SelectableExpression<QS>,
     ArrayLiteral<T, ST>: AppearsOnTable<QS>,
-{
-}
+{}
 
 impl<T, ST, QS> AppearsOnTable<QS> for ArrayLiteral<T, ST>
 where
     T: AppearsOnTable<QS>,
     ArrayLiteral<T, ST>: Expression,
-{
-}
+{}
 
 impl<T, ST> NonAggregate for ArrayLiteral<T, ST>
 where
     T: NonAggregate,
     ArrayLiteral<T, ST>: Expression,
-{
-}
+{}

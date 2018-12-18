@@ -4,5 +4,5 @@ set -e
 SCRIPT_DIR=$(dirname "$0")
 ABSOLUTE_SCRIPT_DIR=$(cd "$SCRIPT_DIR" && pwd)
 BASE_DIR=$(dirname "$ABSOLUTE_SCRIPT_DIR")
-$(cd $BASE_DIR/diesel_cli && cargo build --quiet)
+$(cd $BASE_DIR/diesel_cli && cargo build --quiet --no-default-features --features "$BACKEND")
 $BASE_DIR/target/debug/diesel $@

@@ -183,8 +183,7 @@ pub fn insert_tuple_batch(conn: &PgConnection) -> QueryResult<usize> {
         .values(&vec![
             (name.eq("Sean"), hair_color.eq("Black")),
             (name.eq("Tess"), hair_color.eq("Brown")),
-        ])
-        .execute(conn)
+        ]).execute(conn)
 }
 
 #[test]
@@ -209,8 +208,7 @@ pub fn insert_tuple_batch_with_default(conn: &PgConnection) -> QueryResult<usize
         .values(&vec![
             (name.eq("Sean"), Some(hair_color.eq("Black"))),
             (name.eq("Ruby"), None),
-        ])
-        .execute(conn)
+        ]).execute(conn)
 }
 
 #[test]
@@ -271,8 +269,7 @@ fn insert_get_results_batch() {
             .values(&vec![
                 (id.eq(1), name.eq("Sean")),
                 (id.eq(2), name.eq("Tess")),
-            ])
-            .get_results(&conn)?;
+            ]).get_results(&conn)?;
 
         let expected_users = vec![
             User {

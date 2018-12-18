@@ -263,17 +263,16 @@ mod tests {
         ($tpe:ty, $test_name:ident, $units:ident) => {
             fn $test_name(val: $tpe) -> bool {
                 CONN.with(|connection| {
-                    let sql_str =
-                        format!(concat!("'{} ", stringify!($units), "'::interval"), val);
+                    let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
                     let query = select(sql::<sql_types::Interval>(&sql_str));
                     let val = val.$units();
                     query
                         .get_result::<PgInterval>(connection)
                         .map(|res| {
-                            val.months == res.months && val.days == res.days
+                            val.months == res.months
+                                && val.days == res.days
                                 && val.microseconds - res.microseconds.abs() <= 1
-                        })
-                        .unwrap_or(false)
+                        }).unwrap_or(false)
                 })
             }
 

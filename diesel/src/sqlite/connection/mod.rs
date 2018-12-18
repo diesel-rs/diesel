@@ -305,8 +305,7 @@ mod tests {
                     } else {
                         c.to_uppercase().to_string()
                     }
-                })
-                .collect::<String>()
+                }).collect::<String>()
         }).unwrap();
 
         let mapped_string = ::select(fun_case("foobar"))

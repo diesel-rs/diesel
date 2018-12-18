@@ -101,7 +101,8 @@ fn database_setup_respects_migration_dir_by_arg() {
     // sanity check
     assert!(!db.exists());
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("setup")
         .arg("--migration-dir=foo")
         .run();
@@ -132,7 +133,8 @@ fn database_setup_respects_migration_dir_by_env() {
     // sanity check
     assert!(!db.exists());
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("setup")
         .env("MIGRATION_DIRECTORY", "bar")
         .run();

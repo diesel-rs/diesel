@@ -55,16 +55,6 @@ Thank you! We'll try to respond as quickly as possible.
 1. Install Rust using [rustup], which allows you to easily switch between Rust
    versions. Diesel currently supports Rust Stable, Nightly, Rust Beta.
 
-   To run Diesel's test suite with _all_ supported features (extra
-   lints and compiletest), you should use the same nightly version as Diesel's
-   continuous integration. Find it by looking for a line like
-   `rust: nightly-2017-06-06` in the `.travis.yml` file. You can install and
-   set a custom nightly version for a project using
-
-   ```
-   rustup override add nightly-2017-09-20
-   ```
-
 2. Install the system libraries needed to interface with the database systems
    you wish to use.
 
@@ -113,13 +103,6 @@ Thank you! We'll try to respond as quickly as possible.
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
 
-   - One thing to note is that this script runs Clippy checks by default.
-   Since this requires the nightly compiler, you can run the tests on stable with
-   the following:
-   ```bash
-   bin/test
-   ```
-
 [rustup]: https://www.rustup.rs
 
 ### Coding Style
@@ -127,24 +110,27 @@ Thank you! We'll try to respond as quickly as possible.
 We follow the [Rust Style Guide](https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md), enforced using [rustfmt](https://github.com/rust-lang-nursery/rustfmt).
 To run rustfmt tests locally:
 
-1. Use rustup to set rust toolchain
-   to the nightly version specified in Diesel's [.travis.yml](./.travis.yml)
-   (see above).
+1. Use rustup to set rust toolchain to the version specified in the
+   [rust-toolchain file](./rust-toolchain).
 
-2. Install the nightly version of rustfmt used in
-   Diesel's continuous integration.
-   Look for and run the line from [.travis.yml](./.travis.yml) that looks like
-
+2. Install the rustfmt and clippy by running
    ```
-   cargo install rustfmt-nightly --vers x.x.x
+   rustup component add rustfmt-preview
+   rustup component add clippy-preview
    ```
 
-3. Run rustfmt using cargo from the root of your diesel repo.
-   
+3. Run clippy using cargo from the root of your diesel repo.
+   ```
+   cargo clippy
+   ```
+   Each PR needs to compile without warning.
+
+4. Run rustfmt using cargo from the root of your diesel repo.
+
    To see changes that need to be made, run
 
    ```
-   cargo fmt --all -- --write-mode=diff
+   cargo fmt --all -- --check
    ```
 
    If all code is properly formatted (e.g. if you have not made any changes),
@@ -153,7 +139,7 @@ To run rustfmt tests locally:
    you will see a diff between your code and properly formatted code.
    If you see code here that you didn't make any changes to
    then you are probably running the wrong version of rustfmt.
-   Once you are ready to apply the formatting changes, run 
+   Once you are ready to apply the formatting changes, run
 
    ```
    cargo fmt --all

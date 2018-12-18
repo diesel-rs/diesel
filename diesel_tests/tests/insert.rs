@@ -131,7 +131,7 @@ fn batch_insert_with_defaults() {
             string("hair_color").not_null().default("'Green'"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
 
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
@@ -175,7 +175,7 @@ fn insert_with_defaults() {
             string("hair_color").not_null().default("'Green'"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
     insert_into(users)
         .values(&NewUser::new("Tess", None))
         .execute(&connection)
@@ -204,8 +204,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )",
-        )
-        .unwrap();
+        ).unwrap();
     let new_users: &[_] = &[
         BaldUser {
             name: "Sean".to_string(),
@@ -221,8 +220,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     let second_count = insert_into(users)
         .values(&BaldUser {
             name: "Guy".to_string(),
-        })
-        .execute(&connection)
+        }).execute(&connection)
         .unwrap();
 
     assert_eq!(2, count);
@@ -317,7 +315,7 @@ fn insert_only_default_values_with_returning() {
             string("hair_color").not_null().default("'Green'"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
     let inserted_rows = insert_into(users)
         .default_values()
         .returning(id)
@@ -495,7 +493,7 @@ fn insert_optional_field_with_default() {
             string("hair_color").not_null().default("'Green'"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
 
     let new_users = vec![
         (name.eq("Sean"), Some(hair_color.eq("Brown"))),
@@ -529,7 +527,7 @@ fn insert_all_default_fields() {
             string("hair_color").not_null().default("'Green'"),
         ),
     ).execute(&connection)
-        .unwrap();
+    .unwrap();
 
     let new_users = vec![
         (Some(name.eq("Sean")), Some(hair_color.eq("Brown"))),

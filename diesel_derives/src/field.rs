@@ -58,8 +58,7 @@ impl Field {
                     self.span
                         .error(
                             "All fields of tuple structs must be annotated with `#[column_name]`",
-                        )
-                        .emit();
+                        ).emit();
                     Ident::new("unknown_column", self.span)
                 }
             })

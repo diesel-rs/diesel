@@ -228,7 +228,8 @@ fn setup_can_take_config_file_by_param() {
     assert!(!p.has_file("foo"));
     assert!(!p.has_file("bar"));
 
-    let result = p.command("setup")
+    let result = p
+        .command("setup")
         .env("DIESEL_CONFIG_FILE", "foo")
         .arg("--config-file=bar")
         .run();

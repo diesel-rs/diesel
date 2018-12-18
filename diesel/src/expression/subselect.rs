@@ -34,15 +34,13 @@ impl<T, ST, QS> SelectableExpression<QS> for Subselect<T, ST>
 where
     Subselect<T, ST>: AppearsOnTable<QS>,
     T: ValidSubselect<QS>,
-{
-}
+{}
 
 impl<T, ST, QS> AppearsOnTable<QS> for Subselect<T, ST>
 where
     Subselect<T, ST>: Expression,
     T: ValidSubselect<QS>,
-{
-}
+{}
 
 impl<T, ST> NonAggregate for Subselect<T, ST> {}
 

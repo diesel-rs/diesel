@@ -11,8 +11,7 @@ fn belongs_to() {
         (1, 1, 'Hello', 'Content'),
         (2, 2, 'World', NULL)
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -36,8 +35,7 @@ fn select_single_from_join() {
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let source = posts::table.inner_join(users::table);
     let select_name = source.select(users::name);
@@ -64,8 +62,7 @@ fn select_multiple_from_join() {
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let source = posts::table
         .inner_join(users::table)
@@ -90,8 +87,7 @@ fn join_boxed_query() {
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let source = posts::table
         .into_boxed()
@@ -135,8 +131,7 @@ fn left_outer_joins() {
         (1, 1, 'Hello'),
         (2, 1, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -164,8 +159,7 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         (1, 'Hello'),
         (1, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Hello".to_string())),
@@ -190,8 +184,7 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
         (1, 'Hello'),
         (1, 'World')
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let expected_data = vec![("Sean".to_string(), Some("Hello".to_string()))];
     let source = users::table
@@ -213,8 +206,7 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let expected_data = vec![
         Some(("Hello".to_string(), Some("Content".to_string()))),
@@ -240,8 +232,7 @@ fn select_complex_from_left_join() {
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -272,8 +263,7 @@ fn select_right_side_with_nullable_column_first() {
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -368,8 +358,7 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
                 .concat(" wrote ")
                 .concat(posts::title)
                 .nullable(),
-        )
-        .order((users::id, posts::id))
+        ).order((users::id, posts::id))
         .load(&connection);
     let expected_data = vec![
         Some("Sean wrote Post One".to_string()),
@@ -596,8 +585,7 @@ fn selecting_crazy_nested_joins() {
             posts::table
                 .left_join(comments::table.left_join(likes::table))
                 .left_join(followings::table),
-        )
-        .order((users::id, posts::id, comments::id))
+        ).order((users::id, posts::id, comments::id))
         .load(&connection);
     let expected = vec![
         (

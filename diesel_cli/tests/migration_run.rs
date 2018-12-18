@@ -50,7 +50,7 @@ fn migration_run_inserts_run_on_timestamps() {
     let migrations_done: bool = select(sql::<Bool>(
         "EXISTS (SELECT * FROM __diesel_schema_migrations WHERE version >= '1')",
     )).get_result(&db.conn())
-        .unwrap();
+    .unwrap();
     assert!(!migrations_done, "Migrations table should be empty");
 
     let result = p.command("migration").arg("run").run();
@@ -67,7 +67,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < DATETIME('now', '+1 hour'))",
         )).get_result(&db.conn())
-            .unwrap()
+        .unwrap()
     }
 
     #[cfg(feature = "postgres")]
@@ -76,7 +76,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL '1 hour')",
         )).get_result(&db.conn())
-            .unwrap()
+        .unwrap()
     }
 
     #[cfg(feature = "mysql")]
@@ -85,7 +85,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL 1 HOUR)",
         )).get_result(&db.conn())
-            .unwrap()
+        .unwrap()
     }
 
     assert!(
@@ -234,7 +234,8 @@ fn migration_run_runs_pending_migrations_custom_database_url_1() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command_without_database_url("migration")
+    let result = p
+        .command_without_database_url("migration")
         .arg("run")
         .arg("--database-url")
         .arg(db_url)
@@ -268,7 +269,8 @@ fn migration_run_runs_pending_migrations_custom_database_url_2() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command_without_database_url("migration")
+    let result = p
+        .command_without_database_url("migration")
         .arg("--database-url")
         .arg(db_url)
         .arg("run")
@@ -303,7 +305,8 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("run")
         .arg("--migration-dir")
         .arg(p.migration_dir_in_directory("custom_migrations"))
@@ -338,7 +341,8 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_2() {
 
     assert!(!db.table_exists("users"));
 
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("--migration-dir")
         .arg(p.migration_dir_in_directory("custom_migrations"))
         .arg("run")
@@ -363,8 +367,7 @@ fn migration_run_updates_schema_if_config_present() {
             [print_schema]
             file = "src/my_schema.rs"
             "#,
-        )
-        .build();
+        ).build();
 
     // Make sure the project is setup
     p.command("setup").run();
@@ -457,8 +460,7 @@ fn verify_schema_errors_if_schema_file_would_change() {
             [print_schema]
             file = "src/my_schema.rs"
             "#,
-        )
-        .build();
+        ).build();
 
     // Make sure the project is setup
     p.command("setup").run();
@@ -482,7 +484,8 @@ fn verify_schema_errors_if_schema_file_would_change() {
         "DROP TABLE posts",
     );
 
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("run")
         .arg("--locked-schema")
         .run();

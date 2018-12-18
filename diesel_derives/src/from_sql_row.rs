@@ -12,7 +12,8 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     item.generics.params.push(parse_quote!(__ST));
     item.generics.params.push(parse_quote!(__DB));
     {
-        let where_clause = item.generics
+        let where_clause = item
+            .generics
             .where_clause
             .get_or_insert(parse_quote!(where));
         where_clause

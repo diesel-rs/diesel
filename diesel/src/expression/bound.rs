@@ -43,20 +43,8 @@ impl<T: QueryId, U> QueryId for Bound<T, U> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<T, U, QS> SelectableExpression<QS> for Bound<T, U>
-where
-    Bound<T, U>: AppearsOnTable<QS>,
-{
-}
+impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where Bound<T, U>: AppearsOnTable<QS> {}
 
-impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U>
-where
-    Bound<T, U>: Expression,
-{
-}
+impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U> where Bound<T, U>: Expression {}
 
-impl<T, U> NonAggregate for Bound<T, U>
-where
-    Bound<T, U>: Expression,
-{
-}
+impl<T, U> NonAggregate for Bound<T, U> where Bound<T, U>: Expression {}

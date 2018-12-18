@@ -135,11 +135,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     }
 }
 
-impl<T: Expression> PgTimestampExpressionMethods for T
-where
-    T::SqlType: DateTimeLike,
-{
-}
+impl<T: Expression> PgTimestampExpressionMethods for T where T::SqlType: DateTimeLike {}
 
 /// PostgreSQL specific methods present on array expressions.
 pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
@@ -304,11 +300,7 @@ pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized 
     }
 }
 
-impl<T, ST> PgArrayExpressionMethods<ST> for T
-where
-    T: Expression<SqlType = Array<ST>>,
-{
-}
+impl<T, ST> PgArrayExpressionMethods<ST> for T where T: Expression<SqlType = Array<ST>> {}
 
 use expression::operators::{Asc, Desc};
 
