@@ -84,6 +84,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             call_with_conn!(database_url, redo_latest_migration(&dir));
             regenerate_schema_if_file_specified(matches)?;
+
         }
         ("list", Some(_)) => {
             let database_url = database::database_url(matches);
@@ -415,8 +416,13 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
         config.filter = Filtering::OnlyTables(filter)
-    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
+    } else if matches.is_present("only-table-regexes") {
+        config.filter = Filtering::OnlyTableRegexes(filter)
+    }
+    else if matches.is_present("except-tables") || matches.is_present("blacklist") {
         config.filter = Filtering::ExceptTables(filter)
+    } else if matches.is_present("except-table-regexes") {
+        config.filter = Filtering::ExceptTableRegexes(filter)
     }
 
     if matches.is_present("with-docs") {
