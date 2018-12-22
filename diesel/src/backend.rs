@@ -18,6 +18,8 @@ impl <'a, T: 'a + ?Sized> FamilyLt<'a> for RefFamily<T> {
     type Out = &'a T;
 }
 
+pub type RawValue<'a, DB> = <<DB as Backend>::RawValue as FamilyLt<'a>>::Out;
+
 /// A database backend
 ///
 /// This trait represents the concept of a backend (e.g. "MySQL" vs "SQLite").
