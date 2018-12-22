@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::result;
 
-use backend::{Backend, FamilyLt, RawValue};
+use backend::{Backend, RawValue};
 use row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing

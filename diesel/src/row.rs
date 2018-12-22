@@ -1,6 +1,6 @@
 //! Contains the `Row` trait
 
-use backend::{Backend, FamilyLt, RawValue};
+use backend::{Backend, RawValue};
 use deserialize::{self, FromSql};
 
 /// Represents a single database row.

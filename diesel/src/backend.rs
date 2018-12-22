@@ -8,16 +8,20 @@ use sql_types::{self, HasSqlType};
 
 use std::marker::PhantomData;
 
+#[doc(hidden)]
 pub trait FamilyLt<'a> {
     type Out;
 }
 
+#[doc(hidden)]
+#[derive(Debug)]
 pub struct RefFamily<T: ?Sized>(PhantomData<T>);
 
 impl <'a, T: 'a + ?Sized> FamilyLt<'a> for RefFamily<T> {
     type Out = &'a T;
 }
 
+#[doc(hidden)]
 pub type RawValue<'a, DB> = <<DB as Backend>::RawValue as FamilyLt<'a>>::Out;
 
 /// A database backend
