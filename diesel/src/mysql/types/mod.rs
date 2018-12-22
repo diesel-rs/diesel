@@ -95,6 +95,34 @@ impl FromSql<Bool, Mysql> for bool {
     }
 }
 
+impl FromSql<Float, Mysql> for f32 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let mut bytes = not_none!(bytes);
+        debug_assert!(
+            bytes.len() <= 4,
+            "Received more than 4 bytes while decoding \
+             an f32. Was a double accidentally marked as float?"
+        );
+        bytes
+            .read_f32::<DB::ByteOrder>()
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+    }
+}
+
+impl FromSql<Double, Mysql> for f64 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let mut bytes = not_none!(bytes);
+        debug_assert!(
+            bytes.len() <= 8,
+            "Received more than 8 bytes while decoding \
+             an f64. Was a numeric accidentally marked as double?"
+        );
+        bytes
+            .read_f64::<DB::ByteOrder>()
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+    }
+}
+
 impl<ST> HasSqlType<Unsigned<ST>> for Mysql
 where
     Mysql: HasSqlType<ST>,

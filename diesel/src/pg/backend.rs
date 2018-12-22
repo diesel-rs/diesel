@@ -17,9 +17,9 @@ use std::ptr::NonNull;
 pub struct Pg;
 
 #[derive(Debug)]
-pub struct PgValue {
-    raw_bytes: NonNull<[u8]>,
-    oid: i32,
+pub struct PgValue<'a> {
+    raw_bytes: &'a [u8],
+    oid: u32,
 }
 
 impl PgValue {
@@ -41,7 +41,7 @@ impl PgValue {
 }
 
 impl<'a> FamilyLt<'a> for PgValue {
-    type Out = PgValue;
+    type Out = PgValue<'a>;
 }
 
 /// The [OIDs] for a SQL type
@@ -70,7 +70,7 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
-    type RawValue = RefFamily<PgValue>;
+    type RawValue = PgValue;
     type ByteOrder = NetworkEndian;
 }
 
