@@ -9,8 +9,9 @@ use diesel::dsl::*;
 use diesel::query_builder::*;
 use diesel::*;
 use schema::users::dsl::*;
-use schema::{connection, connection_with_sean_and_tess_in_users_table, DropTable, NewUser,
-             TestBackend};
+use schema::{
+    connection, connection_with_sean_and_tess_in_users_table, DropTable, NewUser, TestBackend,
+};
 
 #[test]
 fn test_count_counts_the_rows() {
@@ -97,8 +98,7 @@ fn test_min_max_of_array() {
             na.eq(vec![1, 1, 100]),
             na.eq(vec![1, 5, 5]),
             na.eq(vec![5, 0]),
-        ])
-        .execute(&connection)
+        ]).execute(&connection)
         .unwrap();
 
     let max_query = number_arrays.select(max(na));

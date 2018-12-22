@@ -129,8 +129,7 @@ fn filter_after_joining() {
         .execute(
             "INSERT INTO posts (id, title, user_id) VALUES
                        (1, 'Hello', 1), (2, 'World', 2)",
-        )
-        .unwrap();
+        ).unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -403,8 +402,7 @@ fn filter_subselect_referencing_outer_table() {
         .values(&vec![
             sean.new_post("Hello", None),
             sean.new_post("Hello 2", None),
-        ])
-        .execute(&conn)
+        ]).execute(&conn)
         .unwrap();
 
     let expected = Ok(vec![sean]);
@@ -420,8 +418,7 @@ fn filter_subselect_referencing_outer_table() {
                     .select(posts::user_id)
                     .filter(posts::user_id.eq(users::id)),
             ),
-        )
-        .load(&conn);
+        ).load(&conn);
     assert_eq!(expected, users_with_published_posts);
 }
 
@@ -440,6 +437,107 @@ fn filter_subselect_with_boxed_query() {
 }
 
 #[test]
+fn filter_subselect_with_nullable_column() {
+    use schema_dsl::*;
+    table!{
+        heros {
+            id -> Integer,
+            name -> Text,
+            home_world -> Nullable<Integer>,
+        }
+    }
+    table!{
+        home_worlds {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    #[derive(Debug, Queryable, PartialEq)]
+    struct Hero {
+        id: i32,
+        name: String,
+        home_world: Option<i32>,
+    }
+    let connection = connection();
+
+    create_table(
+        "home_worlds",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+        ),
+    ).execute(&connection)
+    .unwrap();
+
+    create_table(
+        "heros",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            integer("home_world"),
+        ),
+    ).execute(&connection)
+    .unwrap();
+
+    ::diesel::insert_into(home_worlds::table)
+        .values(home_worlds::name.eq("Tatooine"))
+        .execute(&connection)
+        .unwrap();
+    ::diesel::insert_into(heros::table)
+        .values((
+            heros::name.eq("Luke Skywalker"),
+            heros::home_world.eq(Some(1)),
+        )).execute(&connection)
+        .unwrap();
+    ::diesel::insert_into(heros::table)
+        .values((
+            heros::name.eq("R2D2"),
+            heros::home_world.eq::<Option<i32>>(None),
+        )).execute(&connection)
+        .unwrap();
+
+    let expected = vec![Hero {
+        id: 1,
+        name: String::from("Luke Skywalker"),
+        home_world: Some(1),
+    }];
+
+    let query = heros::table
+        .filter(heros::home_world.eq_any(home_worlds::table.select(home_worlds::id).nullable()))
+        .load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+
+    let query = heros::table
+        .filter(
+            heros::home_world.eq_any(
+                home_worlds::table
+                    .select(home_worlds::id)
+                    .into_boxed()
+                    .nullable(),
+            ),
+        ).load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+
+    let query = heros::table
+        .filter(
+            heros::home_world.eq_any(
+                home_worlds::table
+                    .select(home_worlds::id)
+                    .nullable()
+                    .into_boxed(),
+            ),
+        ).load::<Hero>(&connection)
+        .unwrap();
+
+    assert_eq!(query, expected);
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn filter_subselect_with_pg_any() {
     use diesel::dsl::any;
@@ -451,8 +549,7 @@ fn filter_subselect_with_pg_any() {
         .values(&vec![
             sean.new_post("Hello", None),
             sean.new_post("Hello 2", None),
-        ])
-        .execute(&conn)
+        ]).execute(&conn)
         .unwrap();
 
     let users_with_published_posts = users::table
@@ -460,7 +557,6 @@ fn filter_subselect_with_pg_any() {
             users::id.eq(any(posts::table
                 .select(posts::user_id)
                 .filter(posts::user_id.eq(users::id)))),
-        )
-        .load(&conn);
+        ).load(&conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);
 }

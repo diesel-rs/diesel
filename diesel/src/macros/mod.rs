@@ -99,8 +99,6 @@ macro_rules! __diesel_column {
 /// By default this allows a maximum of 32 columns per table.
 /// You can increase this limit to 64 by enabling the `64-column-tables` feature.
 /// You can increase it to 128 by enabling the `128-column-tables` feature.
-/// (The leading `x` is due to a bug in crates.io and will be removed in a
-/// future release)
 /// You can decrease it to 16 columns,
 /// which improves compilation time,
 /// by disabling the default features of Diesel.

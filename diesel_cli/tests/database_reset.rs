@@ -65,7 +65,8 @@ fn reset_handles_postgres_urls_with_username_and_password() {
         new_url.to_string()
     };
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("reset")
         .env("DATABASE_URL", &database_url)
         .run();
@@ -106,7 +107,8 @@ fn reset_works_with_migration_dir_by_arg() {
     assert!(db.table_exists("posts"));
     assert!(db.table_exists("users"));
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("reset")
         .arg("--migration-dir=foo")
         .run();
@@ -136,7 +138,8 @@ fn reset_works_with_migration_dir_by_env() {
     assert!(db.table_exists("posts"));
     assert!(db.table_exists("users"));
 
-    let result = p.command("database")
+    let result = p
+        .command("database")
         .arg("reset")
         .env("MIGRATION_DIRECTORY", "bar")
         .run();
@@ -169,4 +172,23 @@ fn reset_sanitize_database_name() {
         "Unexpected stdout {}",
         result.stdout()
     );
+}
+
+#[test]
+fn reset_updates_schema_if_config_present() {
+    let p = project("reset_updates_schema_if_config_present")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [print_schema]
+            file = "src/my_schema.rs"
+            "#,
+        ).build();
+
+    let result = p.command("database").arg("reset").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(p.has_file("src/my_schema.rs"));
 }

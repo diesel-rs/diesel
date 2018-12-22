@@ -50,8 +50,7 @@ where
                     bytes = new_bytes;
                     T::from_sql(Some(&PgValue::new(elem_bytes.as_ptr() as *mut u8, elem_bytes.len())))
                 }
-            })
-            .collect()
+            }).collect()
     }
 }
 

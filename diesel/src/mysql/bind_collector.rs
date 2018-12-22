@@ -25,7 +25,9 @@ impl BindCollector<Mysql> for MysqlBindCollector {
         U: ToSql<T, Mysql>,
     {
         let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
-        let is_null = bind.to_sql(&mut to_sql_output).map_err(SerializationError)?;
+        let is_null = bind
+            .to_sql(&mut to_sql_output)
+            .map_err(SerializationError)?;
         let bytes = match is_null {
             IsNull::No => Some(to_sql_output.into_inner()),
             IsNull::Yes => None,

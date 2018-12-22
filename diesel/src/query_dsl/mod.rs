@@ -35,6 +35,7 @@ pub mod limit_dsl;
 #[doc(hidden)]
 pub mod load_dsl;
 mod locking_dsl;
+mod nullable_select_dsl;
 mod offset_dsl;
 mod order_dsl;
 mod save_changes_dsl;
@@ -67,6 +68,7 @@ pub mod methods {
     #[allow(deprecated)]
     pub use super::locking_dsl::ForUpdateDsl;
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
+    pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
@@ -1045,6 +1047,47 @@ pub trait QueryDsl: Sized {
     {
         methods::SingleValueDsl::single_value(self)
     }
+
+    /// Coerce the SQL type of the select clause to it's nullable equivalent.
+    ///
+    /// This is use full for writing queries that contain subselects on non null
+    /// fields comparing them to nullable fields.
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #    run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = establish_connection();
+    /// table! {
+    ///     users {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         by_user -> Nullable<Text>,
+    ///     }
+    /// }
+    ///
+    /// # let _: Vec<(i32, Option<String>)> =
+    /// posts::table.filter(
+    ///    posts::by_user.eq_any(users::table.select(users::name).nullable())
+    /// ).load(&connection)?;
+    /// #     Ok(())
+    /// # }
+    fn nullable(self) -> NullableSelect<Self>
+    where
+        Self: methods::SelectNullableDsl,
+    {
+        methods::SelectNullableDsl::nullable(self)
+    }
 }
 
 impl<T: Table> QueryDsl for T {}
@@ -1309,8 +1352,4 @@ pub trait RunQueryDsl<Conn>: Sized {
 // resolution. Otherwise our users will get an error saying `<3 page long type>:
 // ExecuteDsl is not satisfied` instead of a specific error telling them what
 // part of their query is wrong.
-impl<T, Conn> RunQueryDsl<Conn> for T
-where
-    T: Table,
-{
-}
+impl<T, Conn> RunQueryDsl<Conn> for T where T: Table {}

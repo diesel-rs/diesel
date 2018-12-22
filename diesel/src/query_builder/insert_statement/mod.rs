@@ -32,6 +32,7 @@ use sqlite::{Sqlite, SqliteConnection};
 /// [`values`]: #method.values
 /// [`default_values`]: #method.default_values
 #[derive(Debug, Clone, Copy)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct IncompleteInsertStatement<T, Op> {
     target: T,
     operator: Op,
@@ -109,6 +110,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// A fully constructed insert statement.
 ///
 /// The parameters of this struct represent:
@@ -200,7 +202,10 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-#[deprecated(since = "1.2.0", note = "Use `<&'a [U] as Insertable<T>>::Values` instead")]
+#[deprecated(
+    since = "1.2.0",
+    note = "Use `<&'a [U] as Insertable<T>>::Values` instead"
+)]
 impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
 where
     &'a U: Insertable<T>,
@@ -385,53 +390,29 @@ impl QueryFragment<Mysql> for Replace {
 /// from compiling.
 pub trait UndecoratedInsertRecord<Table> {}
 
-impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T
-where
-    T: ?Sized + UndecoratedInsertRecord<Tab>,
-{
-}
+impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
+    T: ?Sized + UndecoratedInsertRecord<Tab>
+{}
 
-impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U>
-where
-    T: Column,
-{
-}
+impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
 
-impl<T, Table> UndecoratedInsertRecord<Table> for [T]
-where
-    T: UndecoratedInsertRecord<Table>,
-{
-}
+impl<T, Table> UndecoratedInsertRecord<Table> for [T] where T: UndecoratedInsertRecord<Table> {}
 
-impl<'a, T, Table> UndecoratedInsertRecord<Table> for BatchInsert<'a, T, Table>
-where
-    T: UndecoratedInsertRecord<Table>,
-{
-}
+impl<'a, T, Table> UndecoratedInsertRecord<Table> for BatchInsert<'a, T, Table> where
+    T: UndecoratedInsertRecord<Table>
+{}
 
-impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T>
-where
-    [T]: UndecoratedInsertRecord<Table>,
-{
-}
+impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T> where [T]: UndecoratedInsertRecord<Table> {}
 
-impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs>
-where
-    Lhs: Column,
-{
-}
+impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
 
-impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>>
-where
-    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>,
-{
-}
+impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>> where
+    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
+{}
 
-impl<T, Table> UndecoratedInsertRecord<Table> for ValuesClause<T, Table>
-where
-    T: UndecoratedInsertRecord<Table>,
-{
-}
+impl<T, Table> UndecoratedInsertRecord<Table> for ValuesClause<T, Table> where
+    T: UndecoratedInsertRecord<Table>
+{}
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]

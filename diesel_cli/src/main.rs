@@ -1,17 +1,30 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![cfg_attr(feature = "cargo-clippy", allow(option_map_unwrap_or_else, option_map_unwrap_or))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(option_map_unwrap_or_else, option_map_unwrap_or)
+)]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
-        wrong_pub_self_convention, mut_mut, non_ascii_literal, similar_names, unicode_not_nfc,
-        if_not_else, items_after_statements, used_underscore_binding
+        wrong_pub_self_convention,
+        mut_mut,
+        non_ascii_literal,
+        similar_names,
+        unicode_not_nfc,
+        if_not_else,
+        items_after_statements,
+        used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "cargo-clippy"), allow(result_unwrap_used))]
+#![cfg_attr(
+    all(test, feature = "cargo-clippy"),
+    allow(result_unwrap_used)
+)]
 
 extern crate chrono;
+#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate diesel;
@@ -60,8 +73,9 @@ fn main() {
     match matches.subcommand() {
         ("migration", Some(matches)) => run_migration_command(matches).unwrap_or_else(handle_error),
         ("setup", Some(matches)) => run_setup_command(matches),
-        ("database", Some(matches)) => run_database_command(matches),
+        ("database", Some(matches)) => run_database_command(matches).unwrap_or_else(handle_error),
         ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
+        ("completions", Some(matches)) => generate_completions_command(matches),
         ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
@@ -227,23 +241,33 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
     Ok(())
 }
 
-fn run_database_command(matches: &ArgMatches) {
+fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
             let migrations_dir = migrations_dir(args);
-            database::setup_database(args, &migrations_dir).unwrap_or_else(handle_error)
+            database::setup_database(args, &migrations_dir)?;
         }
         ("reset", Some(args)) => {
             let migrations_dir = migrations_dir(args);
-            database::reset_database(args, &migrations_dir).unwrap_or_else(handle_error)
+            database::reset_database(args, &migrations_dir)?;
+            regenerate_schema_if_file_specified(matches)?;
         }
-        ("drop", Some(args)) => database::drop_database_command(args).unwrap_or_else(handle_error),
+        ("drop", Some(args)) => database::drop_database_command(args)?,
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
+    Ok(())
 }
 
 fn generate_bash_completion_command(_: &ArgMatches) {
+    eprintln!(
+        "WARNING: `diesel bash-completion` is deprecated, use `diesel completions bash` instead"
+    );
     cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
+}
+
+fn generate_completions_command(matches: &ArgMatches) {
+    let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
+    cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
@@ -312,7 +336,7 @@ fn should_redo_migration_in_transaction(_t: &Any) -> bool {
 
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 fn handle_error<E: Display, T>(error: E) -> T {
-    println!("{}", error);
+    eprintln!("{}", error);
     ::std::process::exit(1);
 }
 
@@ -352,8 +376,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
             } else {
                 table_name.parse().unwrap()
             }
-        })
-        .collect();
+        }).collect();
 
     if matches.is_present("whitelist") {
         eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
@@ -382,11 +405,13 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
         config.import_types = Some(types);
     }
 
-    run_print_schema(&database_url, &config)?;
+    run_print_schema(&database_url, &config, &mut stdout())?;
     Ok(())
 }
 
 fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<Error>> {
+    use std::io::Read;
+
     let config = Config::read(matches)?;
     if let Some(ref path) = config.print_schema.file {
         if let Some(parent) = path.parent() {
@@ -394,8 +419,26 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
         }
 
         let database_url = database::database_url(matches);
-        let mut file = fs::File::create(path)?;
-        print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+
+        if matches.is_present("LOCKED_SCHEMA") {
+            let mut buf = Vec::new();
+            print_schema::run_print_schema(&database_url, &config.print_schema, &mut buf)?;
+
+            let mut old_buf = Vec::new();
+            let mut file = fs::File::open(path)?;
+            file.read_to_end(&mut old_buf)?;
+
+            if buf != old_buf {
+                return Err(format!(
+                    "Command would result in changes to {}. \
+                     Rerun the command locally, and commit the changes.",
+                    path.display()
+                ).into());
+            }
+        } else {
+            let mut file = fs::File::create(path)?;
+            print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+        }
     }
     Ok(())
 }

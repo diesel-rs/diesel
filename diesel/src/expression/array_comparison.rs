@@ -51,17 +51,9 @@ where
     type SqlType = Bool;
 }
 
-impl<T, U> NonAggregate for In<T, U>
-where
-    In<T, U>: Expression,
-{
-}
+impl<T, U> NonAggregate for In<T, U> where In<T, U>: Expression {}
 
-impl<T, U> NonAggregate for NotIn<T, U>
-where
-    NotIn<T, U>: Expression,
-{
-}
+impl<T, U> NonAggregate for NotIn<T, U> where NotIn<T, U>: Expression {}
 
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
 where
@@ -169,8 +161,7 @@ impl<T, QS> SelectableExpression<QS> for Many<T>
 where
     Many<T>: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
-{
-}
+{}
 
 impl<T, QS> AppearsOnTable<QS> for Many<T>
 where

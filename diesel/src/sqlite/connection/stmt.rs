@@ -3,7 +3,7 @@ extern crate libsqlite3_sys as ffi;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
-use std::ptr;
+use std::ptr::{self, NonNull};
 
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
@@ -11,7 +11,6 @@ use super::sqlite_value::SqliteRow;
 use result::Error::DatabaseError;
 use result::*;
 use sqlite::SqliteType;
-use util::NonNull;
 
 pub struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,

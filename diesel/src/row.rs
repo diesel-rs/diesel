@@ -48,7 +48,8 @@ pub trait NamedRow<DB: Backend> {
     where
         T: FromSql<ST, DB>,
     {
-        let idx = self.index_of(column_name)
+        let idx = self
+            .index_of(column_name)
             .ok_or_else(|| format!("Column `{}` was not present in query", column_name).into());
         let idx = match idx {
             Ok(x) => x,

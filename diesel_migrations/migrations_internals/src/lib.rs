@@ -1,19 +1,40 @@
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+#![deny(
+    warnings,
+    missing_debug_implementations,
+    missing_copy_implementations
+)]
 // Clippy lints
 #![cfg_attr(
     feature = "cargo-clippy",
-    allow(option_map_unwrap_or_else, option_map_unwrap_or, match_same_arms, type_complexity)
+    allow(
+        option_map_unwrap_or_else,
+        option_map_unwrap_or,
+        match_same_arms,
+        type_complexity
+    )
 )]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
-        option_unwrap_used, result_unwrap_used, print_stdout, wrong_pub_self_convention, mut_mut,
-        non_ascii_literal, similar_names, unicode_not_nfc, enum_glob_use, if_not_else,
-        items_after_statements, used_underscore_binding
+        option_unwrap_used,
+        result_unwrap_used,
+        print_stdout,
+        wrong_pub_self_convention,
+        mut_mut,
+        non_ascii_literal,
+        similar_names,
+        unicode_not_nfc,
+        enum_glob_use,
+        if_not_else,
+        items_after_statements,
+        used_underscore_binding
     )
 )]
-#![cfg_attr(all(test, feature = "cargo-clippy"), allow(option_unwrap_used, result_unwrap_used))]
+#![cfg_attr(
+    all(test, feature = "cargo-clippy"),
+    allow(option_unwrap_used, result_unwrap_used)
+)]
 //! Provides functions for maintaining database schema.
 //!
 //! A database migration always provides procedures to update the schema, as well as to revert
@@ -156,8 +177,7 @@ where
         .map(|m| {
             let applied = already_run.contains(&m.version().to_string());
             (m, applied)
-        })
-        .collect();
+        }).collect();
     Ok(migrations)
 }
 
@@ -202,7 +222,8 @@ where
     Conn: MigrationConnection,
 {
     try!(setup_database(conn));
-    let latest_migration_version = conn.latest_run_migration_version()?
+    let latest_migration_version = conn
+        .latest_run_migration_version()?
         .ok_or_else(|| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
     revert_migration_with_version(conn, path, &latest_migration_version, &mut stdout())
         .map(|_| latest_migration_version)
@@ -274,8 +295,7 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
             } else {
                 Some(Ok(entry))
             }
-        })
-        .collect()
+        }).collect()
 }
 
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<Migration>>, MigrationError> {

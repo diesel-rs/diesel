@@ -25,7 +25,8 @@ use sql_types::HasSqlType;
 use sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
-/// for SQLite are file paths or special identifiers like `:memory`.
+/// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
+/// identifiers like `:memory:`.
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
@@ -304,8 +305,7 @@ mod tests {
                     } else {
                         c.to_uppercase().to_string()
                     }
-                })
-                .collect::<String>()
+                }).collect::<String>()
         }).unwrap();
 
         let mapped_string = ::select(fun_case("foobar"))

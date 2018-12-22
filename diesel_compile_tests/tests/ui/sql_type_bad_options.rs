@@ -21,4 +21,8 @@ struct Type4;
 #[postgres(oid = "NaN", ary_oid = "1")]
 struct Type5;
 
+#[derive(SqlType)]
+#[postgres = "foo"]
+struct Type6;
+
 fn main() {}

@@ -2,7 +2,7 @@
 
 use super::operators::*;
 use expression::{AsExpression, Expression};
-use sql_types::{Array, Text};
+use sql_types::{Array, Nullable, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -135,11 +135,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     }
 }
 
-impl<T: Expression> PgTimestampExpressionMethods for T
-where
-    T::SqlType: DateTimeLike,
-{
-}
+impl<T: Expression> PgTimestampExpressionMethods for T where T::SqlType: DateTimeLike {}
 
 /// PostgreSQL specific methods present on array expressions.
 pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
@@ -304,11 +300,7 @@ pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized 
     }
 }
 
-impl<T, ST> PgArrayExpressionMethods<ST> for T
-where
-    T: Expression<SqlType = Array<ST>>,
-{
-}
+impl<T, ST> PgArrayExpressionMethods<ST> for T where T: Expression<SqlType = Array<ST>> {}
 
 use expression::operators::{Asc, Desc};
 
@@ -421,7 +413,7 @@ impl<T> PgSortExpressionMethods for Asc<T> {}
 impl<T> PgSortExpressionMethods for Desc<T> {}
 
 /// PostgreSQL specific methods present on text expressions.
-pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
+pub trait PgTextExpressionMethods: Expression + Sized {
     /// Creates a  PostgreSQL `ILIKE` expression
     ///
     /// # Example
@@ -435,13 +427,13 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
-    /// let starts_with_s = users
-    ///     .select(name)
-    ///     .filter(name.ilike("s%"))
+    /// let starts_with_s = animals
+    ///     .select(species)
+    ///     .filter(name.ilike("s%").or(species.ilike("s%")))
     ///     .get_results::<String>(&connection)?;
-    /// assert_eq!(vec!["Sean"], starts_with_s);
+    /// assert_eq!(vec!["spider"], starts_with_s);
     /// #     Ok(())
     /// # }
     /// ```
@@ -462,13 +454,13 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use schema::animals::dsl::*;
     /// #     let connection = establish_connection();
-    /// let doesnt_start_with_s = users
-    ///     .select(name)
-    ///     .filter(name.not_ilike("s%"))
+    /// let doesnt_start_with_s = animals
+    ///     .select(species)
+    ///     .filter(name.not_ilike("s%").and(species.not_ilike("s%")))
     ///     .get_results::<String>(&connection)?;
-    /// assert_eq!(vec!["Tess"], doesnt_start_with_s);
+    /// assert_eq!(vec!["dog"], doesnt_start_with_s);
     /// #     Ok(())
     /// # }
     /// ```
@@ -477,4 +469,18 @@ pub trait PgTextExpressionMethods: Expression<SqlType = Text> + Sized {
     }
 }
 
-impl<T: Expression<SqlType = Text>> PgTextExpressionMethods for T {}
+#[doc(hidden)]
+/// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
+/// types. Once coherence takes associated types into account, we can remove
+/// this trait.
+pub trait TextOrNullableText {}
+
+impl TextOrNullableText for Text {}
+impl TextOrNullableText for Nullable<Text> {}
+
+impl<T> PgTextExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: TextOrNullableText,
+{
+}

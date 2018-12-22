@@ -53,7 +53,8 @@ impl AddAssign for PgMoney {
     ///
     /// Performs a checked addition, and will `panic!` on overflow in both `debug` and `release`.
     fn add_assign(&mut self, rhs: PgMoney) {
-        self.0 = self.0
+        self.0 = self
+            .0
             .checked_add(rhs.0)
             .expect("overflow adding money amounts")
     }
@@ -77,7 +78,8 @@ impl SubAssign for PgMoney {
     ///
     /// Performs a checked subtraction, and will `panic!` on underflow in both `debug` and `release`.
     fn sub_assign(&mut self, rhs: PgMoney) {
-        self.0 = self.0
+        self.0 = self
+            .0
             .checked_sub(rhs.0)
             .expect("underflow subtracting money amounts")
     }

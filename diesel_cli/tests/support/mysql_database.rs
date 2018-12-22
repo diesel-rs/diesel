@@ -33,7 +33,7 @@ impl Database {
                  AND table_schema = DATABASE())",
             table
         ))).get_result(&self.conn())
-            .unwrap()
+        .unwrap()
     }
 
     pub fn conn(&self) -> MysqlConnection {

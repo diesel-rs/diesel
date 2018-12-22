@@ -1,50 +1,50 @@
 error[E0412]: cannot find type `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:12:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:13:14
    |
-12 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+13 | #[belongs_to(Bar)]
+   |              ^^^ not found in `foo`
 
 error[E0425]: cannot find value `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:12:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:13:14
    |
-12 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+13 | #[belongs_to(Bar)]
+   |              ^^^ not found in `foo`
 
 error[E0412]: cannot find type `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:19:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:20:33
    |
-19 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+20 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^ not found in `foo`
 
 error[E0425]: cannot find value `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:19:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:20:33
    |
-19 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+20 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^ not found in `foo`
 
 error[E0412]: cannot find type `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:26:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:27:14
    |
-26 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+27 | #[belongs_to(Bar)]
+   |              ^^^ not found in `foo`
 
 error[E0425]: cannot find value `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:26:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:27:14
    |
-26 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+27 | #[belongs_to(Bar)]
+   |              ^^^ not found in `foo`
 
 error[E0412]: cannot find type `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:34:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:35:33
    |
-34 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+35 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^ not found in `foo`
 
 error[E0425]: cannot find value `bar_id` in module `foo`
-  --> $DIR/belongs_to_missing_foreign_key_column.rs:34:10
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:35:33
    |
-34 | #[derive(Associations)]
-   |          ^^^^^^^^^^^^ not found in `foo`
+35 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^ not found in `foo`
 
 error: aborting due to 8 previous errors
 

@@ -71,7 +71,8 @@ fn migration_generate_creates_a_migration_with_initial_contents() {
 #[test]
 fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name").folder("migrations").build();
-    let result = p.command_without_database_url("migration")
+    let result = p
+        .command_without_database_url("migration")
         .arg("generate")
         .arg("hello")
         .run();
@@ -82,7 +83,8 @@ fn migration_generate_doesnt_require_database_url_to_be_set() {
 #[test]
 fn migration_version_can_be_specified_on_creation() {
     let p = project("migration_name").folder("migrations").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("hello")
         .arg("--version=1234")
@@ -104,7 +106,8 @@ Creating migrations.1234_hello.down.sql
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
     let p = project("migration_name").folder("foo").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("stuff")
         .arg("--version=12345")
@@ -127,7 +130,8 @@ Creating foo.12345_stuff.down.sql
 #[test]
 fn migration_directory_can_be_specified_for_generate_by_env_var() {
     let p = project("migration_name").folder("bar").build();
-    let result = p.command("migration")
+    let result = p
+        .command("migration")
         .arg("generate")
         .arg("stuff")
         .arg("--version=12345")

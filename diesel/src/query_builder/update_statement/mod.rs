@@ -18,7 +18,10 @@ use result::QueryResult;
 
 /// The type returned by [`update`](../fn.update.html). The only thing you can do
 /// with this type is call `set` on it.
-#[deprecated(since = "1.2.0", note = "Use `UpdateStatement<T, U>` instead")]
+#[deprecated(
+    since = "1.2.0",
+    note = "Use `UpdateStatement<T, U>` instead"
+)]
 #[cfg(feature = "with-deprecated")]
 pub type IncompleteUpdateStatement<T, U> = UpdateStatement<T, U>;
 
@@ -53,6 +56,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a complete `UPDATE` statement.
 ///
 /// See [`update`](../fn.update.html) for usage examples, or [the update

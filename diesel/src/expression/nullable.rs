@@ -1,6 +1,7 @@
 use backend::Backend;
 use expression::*;
 use query_builder::*;
+use query_source::Table;
 use result::QueryResult;
 use sql_types::IntoNullable;
 
@@ -37,8 +38,7 @@ impl<T, QS> AppearsOnTable<QS> for Nullable<T>
 where
     T: AppearsOnTable<QS>,
     Nullable<T>: Expression,
-{
-}
+{}
 
 impl<T: QueryId> QueryId for Nullable<T> {
     type QueryId = T::QueryId;
@@ -52,3 +52,10 @@ where
     Nullable<T>: Expression,
 {
 }
+
+impl<T, QS> SelectableExpression<QS> for Nullable<T>
+where
+    Self: AppearsOnTable<QS>,
+    T: SelectableExpression<QS>,
+    QS: Table,
+{}

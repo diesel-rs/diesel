@@ -49,6 +49,35 @@
 //! The struct given to `#[belongs_to]` must be in scope,
 //! so you will need `use some_module::User` if `User` is defined in another module.
 //!
+//! If the parent record is generic over lifetimes, they can be written as `'_`.
+//! You will also need to wrap the type in quotes until
+//! `unrestricted_attribute_tokens` is stable.
+//!
+//! ```rust
+//! # #[macro_use] extern crate diesel;
+//! # include!("../doctest_setup.rs");
+//! # use schema::{posts, users};
+//! # use std::borrow::Cow;
+//! #
+//! #[derive(Identifiable)]
+//! #[table_name = "users"]
+//! pub struct User<'a> {
+//!     id: i32,
+//!     name: Cow<'a, str>,
+//! }
+//!
+//! #[derive(Associations)]
+//! #[belongs_to(parent = "User<'_>")]
+//! #[table_name = "posts"]
+//! pub struct Post {
+//!     id: i32,
+//!     user_id: i32,
+//!     title: String,
+//! }
+//! #
+//! # fn main() {}
+//! ```
+//!
 //! [`Identifiable`]: trait.Identifiable.html
 //!
 //! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.
@@ -172,7 +201,7 @@
 //! Diesel provides support for doing this grouping, once the data has been
 //! loaded.
 //!
-//! [`grouped_by`] is called on a `Vec<Child>` with a `&[Parent]`.
+//! [`grouped_by`][grouped-by] is called on a `Vec<Child>` with a `&[Parent]`.
 //! The return value will be `Vec<Vec<Child>>` indexed to match their parent.
 //! Or to put it another way, the returned data can be passed to `zip`,
 //! and it will be combined with its parent.

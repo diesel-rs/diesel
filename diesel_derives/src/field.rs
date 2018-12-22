@@ -1,5 +1,6 @@
 use proc_macro2::{self, Ident, Span};
 use quote::ToTokens;
+use std::borrow::Cow;
 use syn;
 use syn::spanned::Spanned;
 
@@ -57,8 +58,7 @@ impl Field {
                     self.span
                         .error(
                             "All fields of tuple structs must be annotated with `#[column_name]`",
-                        )
-                        .emit();
+                        ).emit();
                     Ident::new("unknown_column", self.span)
                 }
             })
@@ -66,6 +66,14 @@ impl Field {
 
     pub fn has_flag(&self, flag: &str) -> bool {
         self.flags.has_flag(flag)
+    }
+
+    pub fn ty_for_deserialize(&self) -> Result<Cow<syn::Type>, Diagnostic> {
+        if let Some(meta) = self.flags.nested_item("deserialize_as")? {
+            meta.ty_value().map(Cow::Owned)
+        } else {
+            Ok(Cow::Borrowed(&self.ty))
+        }
     }
 }
 

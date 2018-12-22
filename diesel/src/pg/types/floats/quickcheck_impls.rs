@@ -43,7 +43,8 @@ fn gen_vec_of_appropriate_length_valid_digits<G: Gen>(
     scale: u16,
 ) -> Vec<i16> {
     let max_digits = ::std::cmp::min(weight, scale);
-    let mut digits = Vec::<Digit>::arbitrary(g).into_iter()
+    let mut digits = Vec::<Digit>::arbitrary(g)
+        .into_iter()
         .map(|d| d.0)
         .skip_while(|d| d == &0) // drop leading zeros
         .take(max_digits as usize)

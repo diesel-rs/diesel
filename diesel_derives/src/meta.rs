@@ -16,9 +16,8 @@ impl MetaItem {
             .iter()
             .filter_map(|attr| {
                 attr.interpret_meta()
-                    .map(|m| FixSpan(attr.pound_token.0[0]).fold_meta(m))
-            })
-            .filter(|m| m.name() == name)
+                    .map(|m| FixSpan(attr.pound_token.spans[0]).fold_meta(m))
+            }).filter(|m| m.name() == name)
             .map(|meta| Self { meta })
             .collect()
     }
@@ -37,12 +36,14 @@ impl MetaItem {
         }
     }
 
-    pub fn nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
-        self.nested().and_then(|mut i| {
-            i.find(|n| n.name() == name).ok_or_else(|| {
-                self.span()
-                    .error(format!("Missing required option {}", name))
-            })
+    pub fn nested_item(&self, name: &str) -> Result<Option<Self>, Diagnostic> {
+        self.nested().map(|mut i| i.find(|n| n.name() == name))
+    }
+
+    pub fn required_nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
+        self.nested_item(name)?.ok_or_else(|| {
+            self.span()
+                .error(format!("Missing required option `{}`", name))
         })
     }
 
@@ -55,8 +56,7 @@ impl MetaItem {
                     .error(format!(
                         "`{0}` must be in the form `{0} = \"true\"`",
                         self.name()
-                    ))
-                    .emit();
+                    )).emit();
                 false
             }
         }
@@ -78,8 +78,7 @@ impl MetaItem {
                     .warning(format!(
                         "The form `{0}(value)` is deprecated. Use `{0} = \"value\"` instead",
                         self.name(),
-                    ))
-                    .emit();
+                    )).emit();
                 Ok(x)
             }
             _ => Ok(syn::Ident::new(
@@ -117,7 +116,8 @@ impl MetaItem {
 
         match self.meta {
             List(ref list) => Ok(Nested(list.nested.iter())),
-            _ => Err(self.span()
+            _ => Err(self
+                .span()
                 .error(format!("`{0}` must be in the form `{0}(...)`", self.name()))),
         }
     }
@@ -128,8 +128,12 @@ impl MetaItem {
 
     pub fn has_flag(&self, flag: &str) -> bool {
         self.nested()
-            .map(|mut n| n.any(|m| m.expect_word() == flag))
-            .unwrap_or_else(|e| {
+            .map(|mut n| {
+                n.any(|m| match m.word() {
+                    Ok(word) => word == flag,
+                    Err(_) => false,
+                })
+            }).unwrap_or_else(|e| {
                 e.emit();
                 false
             })

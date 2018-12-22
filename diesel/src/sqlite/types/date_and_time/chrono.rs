@@ -32,13 +32,8 @@ impl FromSql<Time, Sqlite> for NaiveTime {
         let text = unsafe { &*text_ptr };
         let valid_time_formats = &[
             // Most likely
-            "%T%.f",
-            // All other valid formats in order of documentation
-            "%R",
-            "%RZ",
-            "%T%.fZ",
-            "%R%:z",
-            "%T%.f%:z",
+            "%T%.f", // All other valid formats in order of documentation
+            "%R", "%RZ", "%T%.fZ", "%R%:z", "%T%.f%:z",
         ];
 
         for format in valid_time_formats {

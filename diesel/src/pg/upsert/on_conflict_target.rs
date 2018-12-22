@@ -94,11 +94,9 @@ where
     }
 }
 
-impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>>
-where
-    ConflictTarget<SqlLiteral<ST>>: QueryFragment<Pg>,
-{
-}
+impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> where
+    ConflictTarget<SqlLiteral<ST>>: QueryFragment<Pg>
+{}
 
 impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {

@@ -86,7 +86,10 @@ macro_rules! impl_Sql {
                 let prefix = bytes[1];
                 let net_type = bytes[2];
                 let len = bytes[3];
-                assert_or_error!(net_type == $net_type, format!("returned type isn't a {}", stringify!($ty)));
+                assert_or_error!(
+                    net_type == $net_type,
+                    format!("returned type isn't a {}", stringify!($ty))
+                );
                 if af == PGSQL_AF_INET {
                     assert_or_error!(bytes.len() == 8);
                     assert_or_error!(len == 4, "the data isn't the size of ipv4");
@@ -98,10 +101,10 @@ macro_rules! impl_Sql {
                     assert_or_error!(bytes.len() == 20);
                     assert_or_error!(len == 16, "the data isn't the size of ipv6");
                     let b = &bytes[4..];
-                    let addr = Ipv6Addr::from([b[0],  b[1],  b[2],  b[3],
-                                               b[4],  b[5],  b[6],  b[7],
-                                               b[8],  b[9],  b[10], b[11],
-                                               b[12], b[13], b[14], b[15]]);
+                    let addr = Ipv6Addr::from([
+                        b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11],
+                        b[12], b[13], b[14], b[15],
+                    ]);
                     let inet = Ipv6Network::new(addr, prefix)?;
                     Ok(IpNetwork::V6(inet))
                 } else {
@@ -116,35 +119,35 @@ macro_rules! impl_Sql {
                 let net_type = $net_type;
                 match *self {
                     V4(ref net) => {
-                        let mut data = [0u8;8];
+                        let mut data = [0u8; 8];
                         let af = PGSQL_AF_INET;
                         let prefix = net.prefix();
                         let len: u8 = 4;
                         let addr = net.ip().octets();
-                        data[0] = af; data[1] = prefix; data[2] = net_type; data[3] = len;
+                        data[0] = af;
+                        data[1] = prefix;
+                        data[2] = net_type;
+                        data[3] = len;
                         data[4..].copy_from_slice(&addr);
-                        out.write_all(&data)
-                            .map(|_| IsNull::No)
-                            .map_err(Into::into)
-                    },
+                        out.write_all(&data).map(|_| IsNull::No).map_err(Into::into)
+                    }
                     V6(ref net) => {
-                        let mut data = [0u8;20];
+                        let mut data = [0u8; 20];
                         let af = PGSQL_AF_INET6;
                         let prefix = net.prefix();
                         let len: u8 = 16;
                         let addr = net.ip().octets();
-                        data[0] = af; data[1] = prefix; data[2] = net_type; data[3] = len;
+                        data[0] = af;
+                        data[1] = prefix;
+                        data[2] = net_type;
+                        data[3] = len;
                         data[4..].copy_from_slice(&addr);
-                        out.write_all(&data)
-                            .map(|_| IsNull::No)
-                            .map_err(Into::into)
-
-                    },
+                        out.write_all(&data).map(|_| IsNull::No).map_err(Into::into)
+                    }
                 }
             }
         }
-
-    }
+    };
 }
 
 impl_Sql!(Inet, 0);
@@ -197,9 +200,8 @@ fn v6address_to_sql() {
     macro_rules! test_to_sql {
         ($ty:ty, $net_type:expr) => {
             let mut bytes = Output::test();
-            let test_address = IpNetwork::V6(
-                Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
-            );
+            let test_address =
+                IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             assert_eq!(
                 bytes,
@@ -237,9 +239,8 @@ fn v6address_to_sql() {
 fn some_v6address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty:ty) => {
-            let input_address = IpNetwork::V6(
-                Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
-            );
+            let input_address =
+                IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();

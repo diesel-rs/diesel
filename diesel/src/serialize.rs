@@ -156,6 +156,35 @@ where
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
+///
+/// ### Examples
+///
+/// Most implementations of this trait will be defined in terms of an existing
+/// implementation.
+///
+/// ```rust
+/// # use diesel::backend::Backend;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output};
+/// # use std::io::Write;
+/// #
+/// #[repr(i32)]
+/// #[derive(Debug, Clone, Copy)]
+/// pub enum MyEnum {
+///     A = 1,
+///     B = 2,
+/// }
+///
+/// impl<DB> ToSql<Integer, DB> for MyEnum
+/// where
+///     DB: Backend,
+///     i32: ToSql<Integer, DB>,
+/// {
+///     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+///         (*self as i32).to_sql(out)
+///     }
+/// }
+/// ```
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> Result;

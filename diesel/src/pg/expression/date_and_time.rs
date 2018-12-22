@@ -34,11 +34,7 @@ where
     type SqlType = Timestamp;
 }
 
-impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz>
-where
-    AtTimeZone<Ts, Tz>: Expression,
-{
-}
+impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz> where AtTimeZone<Ts, Tz>: Expression {}
 
 impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz>
 where

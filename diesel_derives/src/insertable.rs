@@ -34,8 +34,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 (field_ty(f, table_name, None)),
                 (field_expr(f, table_name, None)),
             )
-        })
-        .unzip();
+        }).unzip();
 
     let (ref_field_ty, ref_field_assign): (Vec<_>, Vec<_>) = model
         .fields()
@@ -45,8 +44,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 (field_ty(f, table_name, Some(quote!(&'insert)))),
                 (field_expr(f, table_name, Some(quote!(&)))),
             )
-        })
-        .unzip();
+        }).unzip();
 
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("insertable"),
