@@ -53,8 +53,9 @@ impl Error for InvalidNumericSign {
 }
 
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(value).as_bytes();
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = value.bytes();
         let digit_count = try!(bytes.read_u16::<NetworkEndian>());
         let mut digits = Vec::with_capacity(digit_count as usize);
         let weight = try!(bytes.read_i16::<NetworkEndian>());
@@ -115,30 +116,31 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
     }
 }
 
-impl FromSql<Float, Pg> for f32 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+impl FromSql<sql_types::Float, Pg> for f32 {
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = value.bytes();
         debug_assert!(
             bytes.len() <= 4,
             "Received more than 4 bytes while decoding \
              an f32. Was a double accidentally marked as float?"
         );
         bytes
-            .read_f32::<DB::ByteOrder>()
+            .read_f32::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
 
-impl FromSql<Double, Pg> for f64 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
-        debug_assert!(
+impl FromSql<sql_types::Double, Pg> for f64 {
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = value.bytes();        debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes while decoding \
              an f64. Was a numeric accidentally marked as double?"
         );
         bytes
-            .read_f64::<DB::ByteOrder>()
+            .read_f64::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }

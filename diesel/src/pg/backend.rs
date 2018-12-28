@@ -10,37 +10,53 @@ use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::{Oid, TypeMetadata};
 
 use std::slice;
-use std::ptr::NonNull;
 
 /// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Pg;
 
+/// The raw value representation of the postgres backend
 #[derive(Debug)]
 pub struct PgValue<'a> {
     raw_bytes: &'a [u8],
     oid: u32,
 }
 
-impl PgValue {
-    pub unsafe fn new(value_ptr: *mut u8, byte_count: usize) -> PgValue {
-        let slice = slice::from_raw_parts_mut(value_ptr, byte_count);
-        Self {
-            raw_bytes: NonNull::new(slice).expect("Cannot be null"),
-            oid: 0 // TODO FIXFIXFIX
+impl<'a> PgValue<'a> {
+    pub(crate) fn new(value_ptr: *mut u8, byte_count: usize) -> PgValue<'a> {
+        unsafe {
+            Self {
+                raw_bytes: slice::from_raw_parts_mut(value_ptr, byte_count),
+                oid: 0
+            }
         }
     }
 
-    pub fn as_bytes(&self) -> &[u8] {
-        unsafe { self.raw_bytes.as_ref() }
+    pub(crate) fn with_oid(value_ptr: *mut u8, byte_count: usize, oid: u32) -> PgValue<'a> {
+        unsafe {
+            Self {
+                raw_bytes: slice::from_raw_parts_mut(value_ptr, byte_count),
+                oid
+            }
+        }
     }
 
-    pub fn oid(&self) -> i32 {
+    /// Get the bytes associated with this raw value
+    pub fn bytes(&self) -> &[u8] {
+        &self.raw_bytes
+    }
+
+    /// Get the type oid of the value represented by this raw value
+    pub fn oid(&self) -> u32 {
         self.oid
     }
 }
 
-impl<'a> FamilyLt<'a> for PgValue {
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
+pub struct PgValueProxy;
+
+impl<'a> FamilyLt<'a> for PgValueProxy {
     type Out = PgValue<'a>;
 }
 
@@ -70,7 +86,7 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
-    type RawValue = PgValue;
+    type RawValue = PgValueProxy;
     type ByteOrder = NetworkEndian;
 }
 

@@ -27,7 +27,7 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for SystemTime {
-    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         let usecs_passed = try!(<i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes));
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);

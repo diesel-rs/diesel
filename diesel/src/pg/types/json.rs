@@ -22,8 +22,9 @@ mod foreign_derives {
 }
 
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
-    fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let bytes = not_none!(value).as_bytes();
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = value.bytes();        
         serde_json::from_slice(bytes).map_err(Into::into)
     }
 }
@@ -37,8 +38,9 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
 }
 
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
-    fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-        let bytes = not_none!(value).as_bytes();
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = value.bytes();        
         if bytes[0] != 1 {
             return Err("Unsupported JSONB encoding version".into());
         }

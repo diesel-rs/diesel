@@ -155,7 +155,7 @@ mod bigdecimal {
     }
 
     impl FromSql<Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<&PgValue>) -> deserialize::Result<Self> {
+        fn from_sql(numeric: Option<PgValue>) -> deserialize::Result<Self> {
             // FIXME: Use the TryFrom impl when try_from is stable
             let numeric = PgNumeric::from_sql(numeric)?;
             pg_decimal_to_bigdecimal(&numeric)

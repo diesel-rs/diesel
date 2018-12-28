@@ -24,8 +24,9 @@ macro_rules! tuple_impls {
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
             #[cfg_attr(feature = "cargo-clippy", allow(eval_order_dependence))]
-            fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
-                let mut bytes = not_none!(value).as_bytes();
+            fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+                let value = not_none!(value);
+                let mut bytes = value.bytes(); 
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
                 if num_elements != $Tuple {
@@ -41,7 +42,7 @@ macro_rules! tuple_impls {
                     // ignores cases like text vs varchar where the
                     // representation is the same and we don't care which we
                     // got.
-                    let _oid = bytes.read_u32::<NetworkEndian>()?;
+                    let oid = bytes.read_u32::<NetworkEndian>()?;
                     let num_bytes = bytes.read_i32::<NetworkEndian>()?;
 
                     if num_bytes == -1 {
@@ -50,7 +51,7 @@ macro_rules! tuple_impls {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
                         $T::from_sql(Some(
-                            &PgValue::new(elem_bytes.as_ptr() as *mut u8, elem_bytes.len()) //TODO FIXFIXFIX
+                            PgValue::with_oid(elem_bytes.as_ptr() as *mut u8, elem_bytes.len(), oid)
                         ))?
                     }
                 },)+);

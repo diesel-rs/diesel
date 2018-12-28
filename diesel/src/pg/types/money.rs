@@ -24,7 +24,7 @@ use sql_types::{BigInt, Money};
 pub struct PgMoney(pub i64);
 
 impl FromSql<Money, Pg> for PgMoney {
-    fn from_sql(bytes: Option<&PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         FromSql::<BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }

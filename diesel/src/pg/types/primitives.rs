@@ -6,9 +6,9 @@ use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
 impl FromSql<sql_types::Bool, Pg> for bool {
-    fn from_sql(value: Option<&PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
         match value {
-            Some(value) => Ok(value.as_bytes()[0] != 0),
+            Some(value) => Ok(value.bytes()[0] != 0),
             None => Ok(false),
         }
     }
