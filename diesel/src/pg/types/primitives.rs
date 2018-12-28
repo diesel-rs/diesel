@@ -5,6 +5,20 @@ use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<sql_types::Text, Pg> for *const str {
+    fn from_sql<'a>(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        use std::str;
+        let value = not_none!(bytes);
+        let string = str::from_utf8(value.bytes())?;
+        Ok(string as *const _)
+    }
+}
+
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
         match value {

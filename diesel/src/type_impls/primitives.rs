@@ -124,19 +124,6 @@ where
     }
 }
 
-/// The returned pointer is *only* valid for the lifetime to the argument of
-/// `from_sql`. This impl is intended for uses where you want to write a new
-/// impl in terms of `String`, but don't want to allocate. We have to return a
-/// raw pointer instead of a reference with a lifetime due to the structure of
-/// `FromSql`
-// impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Text, DB> for *const str {
-//     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
-//         use std::str;
-//         let string = str::from_utf8(not_none!(bytes))?;
-//         Ok(string as *const _)
-//     }
-// }
-
 impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
