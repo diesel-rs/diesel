@@ -35,9 +35,9 @@ unsafe impl Send for PgConnection {}
 
 impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        let query = try!(CString::new(query));
+        let query = CString::new(query)?;
         let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
-        try!(PgResult::new(inner_result?));
+        PgResult::new(inner_result?)?;
         Ok(())
     }
 }
@@ -72,7 +72,7 @@ impl Connection for PgConnection {
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
-        let (query, params) = try!(self.prepare_query(&source.as_query()));
+        let (query, params) = self.prepare_query(&source.as_query())?;
         query
             .execute(&self.raw_connection, &params)
             .and_then(|r| Cursor::new(r).collect())
@@ -95,7 +95,7 @@ impl Connection for PgConnection {
     where
         T: QueryFragment<Pg> + QueryId,
     {
-        let (query, params) = try!(self.prepare_query(source));
+        let (query, params) = self.prepare_query(source)?;
         query
             .execute(&self.raw_connection, &params)
             .map(|r| r.rows_affected())
@@ -136,13 +136,13 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
+    #[allow(clippy::type_complexity)]
     fn prepare_query<T: QueryFragment<Pg> + QueryId>(
         &self,
         source: &T,
     ) -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        try!(source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self)));
+        source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self))?;
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
@@ -167,7 +167,7 @@ impl PgConnection {
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
-        let query = try!(Statement::prepare(&self.raw_connection, query, None, &[]));
+        let query = Statement::prepare(&self.raw_connection, query, None, &[])?;
         query.execute(&self.raw_connection, &Vec::new())
     }
 

@@ -16,7 +16,7 @@ pub struct Statement {
 }
 
 impl Statement {
-    #[cfg_attr(feature = "cargo-clippy", allow(ptr_arg))]
+    #[allow(clippy::ptr_arg)]
     pub fn execute(
         &self,
         conn: &RawConnection,
@@ -28,7 +28,8 @@ impl Statement {
                 data.as_ref()
                     .map(|d| d.as_ptr() as *const libc::c_char)
                     .unwrap_or(ptr::null())
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
         let param_lengths = param_data
             .iter()
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))
@@ -47,15 +48,15 @@ impl Statement {
         PgResult::new(internal_res?)
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(ptr_arg))]
+    #[allow(clippy::ptr_arg)]
     pub fn prepare(
         conn: &RawConnection,
         sql: &str,
         name: Option<&str>,
         param_types: &[PgTypeMetadata],
     ) -> QueryResult<Self> {
-        let name = try!(CString::new(name.unwrap_or("")));
-        let sql = try!(CString::new(sql));
+        let name = CString::new(name.unwrap_or(""))?;
+        let sql = CString::new(sql)?;
         let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
         let internal_result = unsafe {
@@ -66,7 +67,7 @@ impl Statement {
                 param_types_to_ptr(Some(&param_types_vec)),
             )
         };
-        try!(PgResult::new(internal_result?));
+        PgResult::new(internal_result?)?;
 
         Ok(Statement {
             name: name,

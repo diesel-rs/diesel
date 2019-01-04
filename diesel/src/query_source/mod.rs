@@ -14,16 +14,10 @@ pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
 #[cfg(feature = "with-deprecated")]
-#[deprecated(
-    since = "1.1.0",
-    note = "Use `deserialize::Queryable` instead"
-)]
+#[deprecated(since = "1.1.0", note = "Use `deserialize::Queryable` instead")]
 pub use deserialize::Queryable;
 #[cfg(feature = "with-deprecated")]
-#[deprecated(
-    since = "1.1.0",
-    note = "Use `deserialize::QueryableByName` instead"
-)]
+#[deprecated(since = "1.1.0", note = "Use `deserialize::QueryableByName` instead")]
 pub use deserialize::QueryableByName;
 
 /// Represents a type which can appear in the `FROM` clause. Apps should not

@@ -36,7 +36,7 @@ where
     DB: Backend,
 {
     #[doc(hidden)]
-    #[cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_sql(query_builder: &'a mut DB::QueryBuilder) -> Self {
         AstPass {
             internals: AstPassInternals::ToSql(query_builder),
@@ -90,7 +90,7 @@ where
     /// done explicitly. This method matches the semantics of what Rust would do
     /// implicitly if you were passing a mutable reference
     // Clippy is wrong, this cannot be expressed with pointer casting
-    #[cfg_attr(feature = "cargo-clippy", allow(transmute_ptr_to_ptr))]
+    #[allow(clippy::transmute_ptr_to_ptr)]
     pub fn reborrow(&mut self) -> AstPass<DB> {
         use self::AstPassInternals::*;
         let internals = match self.internals {

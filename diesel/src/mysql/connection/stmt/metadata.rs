@@ -40,7 +40,8 @@ impl StatementMetadata {
             .map(|(i, field)| {
                 let c_name = unsafe { CStr::from_ptr(field.name) };
                 (c_name.to_str().unwrap_or_default(), i)
-            }).collect()
+            })
+            .collect()
     }
 }
 

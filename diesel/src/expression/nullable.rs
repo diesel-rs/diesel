@@ -38,7 +38,8 @@ impl<T, QS> AppearsOnTable<QS> for Nullable<T>
 where
     T: AppearsOnTable<QS>,
     Nullable<T>: Expression,
-{}
+{
+}
 
 impl<T: QueryId> QueryId for Nullable<T> {
     type QueryId = T::QueryId;
@@ -58,4 +59,5 @@ where
     Self: AppearsOnTable<QS>,
     T: SelectableExpression<QS>,
     QS: Table,
-{}
+{
+}

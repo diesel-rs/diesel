@@ -33,7 +33,8 @@ impl Database {
              WHERE type = 'table' \
              AND name = '{}')",
             table
-        ))).get_result(&self.conn())
+        )))
+        .get_result(&self.conn())
         .unwrap()
     }
 

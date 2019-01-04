@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(expect_fun_call))] // My calls are so fun
+#![allow(clippy::expect_fun_call)] // My calls are so fun
 
 use super::data_structures::ForeignKeyConstraint;
 use super::inference::get_primary_keys;
@@ -22,7 +22,8 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
                 .filter(|fk| tables == &fk.ordered_tables())
                 .count();
             dup_count > 1
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     foreign_keys
         .iter()
@@ -35,7 +36,8 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
                 fk.parent_table
             ));
             pk_columns.len() == 1 && pk_columns[0] == fk.primary_key
-        }).filter(|fk| !duplicates.contains(&fk.ordered_tables()))
+        })
+        .filter(|fk| !duplicates.contains(&fk.ordered_tables()))
         .cloned()
         .collect()
 }

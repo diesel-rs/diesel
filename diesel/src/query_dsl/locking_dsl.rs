@@ -11,10 +11,7 @@ use query_source::Table;
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
 #[cfg(feature = "with-deprecated")]
-#[deprecated(
-    since = "1.3.0",
-    note = "use `LockingDsl<ForUpdate>` instead"
-)]
+#[deprecated(since = "1.3.0", note = "use `LockingDsl<ForUpdate>` instead")]
 pub trait ForUpdateDsl {
     /// The type returned by `for_update`. See [`dsl::ForUpdate`] for
     /// convenient access to this type.

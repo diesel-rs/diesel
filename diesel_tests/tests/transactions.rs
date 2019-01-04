@@ -15,11 +15,12 @@ fn transaction_executes_fn_in_a_sql_transaction() {
         .transaction::<_, Error, _>(|| {
             assert_eq!(0, get_count(&conn1));
             assert_eq!(0, get_count(&conn2));
-            try!(conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
+            conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))?;
             assert_eq!(1, get_count(&conn1));
             assert_eq!(0, get_count(&conn2));
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
 
     assert_eq!(1, get_count(&conn1));
     assert_eq!(1, get_count(&conn2));
@@ -94,7 +95,7 @@ fn test_transaction_always_rolls_back() {
     setup_test_table(&connection, test_name);
 
     let result = connection.test_transaction::<_, Error, _>(|| {
-        try!(connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name)));
+        connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))?;
         assert_eq!(1, count_test_table(&connection, test_name));
         Ok("success")
     });
@@ -129,6 +130,7 @@ fn count_test_table(connection: &TestConnection, table_name: &str) -> i64 {
     select(sql::<sql_types::BigInt>(&format!(
         "COUNT(*) FROM {}",
         table_name
-    ))).first(connection)
+    )))
+    .first(connection)
     .unwrap()
 }

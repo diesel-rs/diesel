@@ -25,16 +25,16 @@ where
 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
-        let num_dimensions = try!(bytes.read_i32::<NetworkEndian>());
-        let has_null = try!(bytes.read_i32::<NetworkEndian>()) != 0;
-        let _oid = try!(bytes.read_i32::<NetworkEndian>());
+        let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
+        let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
+        let _oid = bytes.read_i32::<NetworkEndian>()?;
 
         if num_dimensions == 0 {
             return Ok(Vec::new());
         }
 
-        let num_elements = try!(bytes.read_i32::<NetworkEndian>());
-        let _lower_bound = try!(bytes.read_i32::<NetworkEndian>());
+        let num_elements = bytes.read_i32::<NetworkEndian>()?;
+        let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
 
         if num_dimensions != 1 {
             return Err("multi-dimensional arrays are not supported".into());
@@ -42,7 +42,7 @@ where
 
         (0..num_elements)
             .map(|_| {
-                let elem_size = try!(bytes.read_i32::<NetworkEndian>());
+                let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {
                     T::from_sql(None)
                 } else {
@@ -50,7 +50,8 @@ where
                     bytes = new_bytes;
                     T::from_sql(Some(elem_bytes))
                 }
-            }).collect()
+            })
+            .collect()
     }
 }
 
@@ -87,25 +88,25 @@ where
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let num_dimensions = 1;
-        try!(out.write_i32::<NetworkEndian>(num_dimensions));
+        out.write_i32::<NetworkEndian>(num_dimensions)?;
         let flags = 0;
-        try!(out.write_i32::<NetworkEndian>(flags));
+        out.write_i32::<NetworkEndian>(flags)?;
         let element_oid = Pg::metadata(out.metadata_lookup()).oid;
-        try!(out.write_u32::<NetworkEndian>(element_oid));
-        try!(out.write_i32::<NetworkEndian>(self.len() as i32));
+        out.write_u32::<NetworkEndian>(element_oid)?;
+        out.write_i32::<NetworkEndian>(self.len() as i32)?;
         let lower_bound = 1;
-        try!(out.write_i32::<NetworkEndian>(lower_bound));
+        out.write_i32::<NetworkEndian>(lower_bound)?;
 
         let mut buffer = out.with_buffer(Vec::new());
         for elem in self.iter() {
-            let is_null = try!(elem.to_sql(&mut buffer));
+            let is_null = elem.to_sql(&mut buffer)?;
             if let IsNull::No = is_null {
-                try!(out.write_i32::<NetworkEndian>(buffer.len() as i32));
-                try!(out.write_all(&buffer));
+                out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
+                out.write_all(&buffer)?;
                 buffer.clear();
             } else {
                 // https://github.com/postgres/postgres/blob/82f8107b92c9104ec9d9465f3f6a4c6dab4c124a/src/backend/utils/adt/arrayfuncs.c#L1461
-                try!(out.write_i32::<NetworkEndian>(-1));
+                out.write_i32::<NetworkEndian>(-1)?;
             }
         }
 

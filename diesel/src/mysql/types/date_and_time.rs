@@ -26,7 +26,7 @@ macro_rules! mysql_time_impls {
 
         impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
             // ptr::copy_nonoverlapping does not require aligned pointers
-            #[cfg_attr(feature = "cargo-clippy", allow(cast_ptr_alignment))]
+            #[allow(clippy::cast_ptr_alignment)]
             fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 let bytes = not_none!(bytes);
                 let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
@@ -85,14 +85,16 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ).and_then(|v| {
+        )
+        .and_then(|v| {
             v.and_hms_micro_opt(
                 mysql_time.hour as u32,
                 mysql_time.minute as u32,
                 mysql_time.second as u32,
                 mysql_time.second_part as u32,
             )
-        }).ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
+        })
+        .ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
     }
 }
 
@@ -115,7 +117,8 @@ impl FromSql<Time, Mysql> for NaiveTime {
             mysql_time.hour as u32,
             mysql_time.minute as u32,
             mysql_time.second as u32,
-        ).ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
+        )
+        .ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
     }
 }
 
@@ -138,7 +141,8 @@ impl FromSql<Date, Mysql> for NaiveDate {
             mysql_time.year as i32,
             mysql_time.month as u32,
             mysql_time.day as u32,
-        ).ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
+        )
+        .ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
     }
 }
 

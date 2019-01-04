@@ -48,7 +48,7 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
 
 impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        try!(out.write_all(&[1]));
+        out.write_all(&[1])?;
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
             .map_err(Into::into)

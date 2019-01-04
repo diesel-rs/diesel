@@ -18,7 +18,7 @@ pub struct RawConnection {
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
-        let database_url = try!(CString::new(database_url));
+        let database_url = CString::new(database_url)?;
         let connection_status =
             unsafe { ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) };
 
@@ -38,7 +38,7 @@ impl RawConnection {
 
     pub fn exec(&self, query: &str) -> QueryResult<()> {
         let mut err_msg = ptr::null_mut();
-        let query = try!(CString::new(query));
+        let query = CString::new(query)?;
         let callback_fn = None;
         let callback_arg = ptr::null_mut();
         unsafe {
@@ -119,7 +119,8 @@ impl Drop for RawConnection {
                     stderr(),
                     "Error closing SQLite connection: {}",
                     error_message
-                ).expect("Error writing to `stderr`");
+                )
+                .expect("Error writing to `stderr`");
             } else {
                 panic!("Error closing SQLite connection: {}", error_message);
             }

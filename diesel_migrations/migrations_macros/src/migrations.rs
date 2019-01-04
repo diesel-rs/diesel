@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 pub fn migration_directory_from_given_path(
     given_path: Option<&str>,
 ) -> Result<PathBuf, Box<Error>> {
-    let cargo_toml_directory = try!(env::var("CARGO_MANIFEST_DIR"));
+    let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR")?;
     let cargo_manifest_path = Path::new(&cargo_toml_directory);
     let migrations_path = given_path.as_ref().map(Path::new);
     resolve_migrations_directory(cargo_manifest_path, migrations_path)
@@ -23,7 +23,7 @@ fn resolve_migrations_directory(
             // People commonly put their migrations in src/migrations
             // so start the search there rather than the project root
             let src_dir = cargo_manifest_dir.join("src");
-            try!(search_for_migrations_directory(&src_dir))
+            search_for_migrations_directory(&src_dir)?
         }
     };
 

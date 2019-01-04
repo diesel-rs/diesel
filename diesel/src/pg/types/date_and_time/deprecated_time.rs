@@ -21,14 +21,14 @@ impl ToSql<sql_types::Timestamp, Pg> for Timespec {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = *self - pg_epoch;
-        let t = try!(duration.num_microseconds().ok_or("Overflow error"));
+        let t = duration.num_microseconds().ok_or("Overflow error")?;
         ToSql::<sql_types::BigInt, Pg>::to_sql(&t, out)
     }
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for Timespec {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let t = try!(<i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes));
+        let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);
         let out = pg_epoch + duration;
