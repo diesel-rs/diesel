@@ -13,8 +13,9 @@ jobs:
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
       - bash: |
-          brew update &&
-          brew install sqlite
+          brew update
+          brew upgrade
+          brew install sqlite --HEAD
         displayName: Install sqlite
 
 - template: _build/azure-pipelines-template.yml
