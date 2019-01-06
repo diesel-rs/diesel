@@ -2,7 +2,7 @@ use proc_macro2;
 use proc_macro2::*;
 use syn;
 
-use util::*;
+use crate::util::*;
 
 pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     for ty_param in item.generics.type_params_mut() {

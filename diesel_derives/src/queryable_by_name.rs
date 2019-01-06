@@ -1,9 +1,9 @@
 use proc_macro2::{self, Ident, Span};
 use syn;
 
-use field::*;
-use model::*;
-use util::*;
+use crate::field::*;
+use crate::model::*;
+use crate::util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;

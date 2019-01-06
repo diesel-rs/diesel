@@ -2,8 +2,8 @@ use proc_macro2;
 use proc_macro2::*;
 use syn;
 
-use meta::*;
-use util::*;
+use crate::meta::*;
+use crate::util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let struct_name = &item.ident;

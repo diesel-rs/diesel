@@ -3,8 +3,8 @@ use syn;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
 
-use resolved_at_shim::*;
-use util::*;
+use crate::resolved_at_shim::*;
+use crate::util::*;
 
 pub struct MetaItem {
     meta: syn::Meta,

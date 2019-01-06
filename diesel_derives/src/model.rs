@@ -1,10 +1,10 @@
 use proc_macro2::{Ident, Span};
 use syn;
 
-use diagnostic_shim::*;
-use field::*;
-use meta::*;
-use resolved_at_shim::*;
+use crate::diagnostic_shim::*;
+use crate::field::*;
+use crate::meta::*;
+use crate::resolved_at_shim::*;
 
 pub struct Model {
     pub name: syn::Ident,

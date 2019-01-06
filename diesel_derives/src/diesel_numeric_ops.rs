@@ -1,7 +1,7 @@
 use proc_macro2::{self, Ident, Span};
 use syn;
 
-use util::*;
+use crate::util::*;
 
 pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let struct_name = &item.ident;

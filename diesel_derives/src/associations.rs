@@ -4,10 +4,10 @@ use syn;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
 
-use diagnostic_shim::*;
-use meta::*;
-use model::*;
-use util::*;
+use crate::diagnostic_shim::*;
+use crate::meta::*;
+use crate::model::*;
+use crate::util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;

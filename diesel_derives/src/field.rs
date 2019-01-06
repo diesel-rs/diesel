@@ -4,8 +4,8 @@ use std::borrow::Cow;
 use syn;
 use syn::spanned::Spanned;
 
-use meta::*;
-use util::*;
+use crate::meta::*;
+use crate::util::*;
 
 pub struct Field {
     pub ty: syn::Type,

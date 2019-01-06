@@ -1,8 +1,8 @@
 use proc_macro2::{self, Ident, Span};
 use syn;
 
-use meta::*;
-use util::*;
+use crate::meta::*;
+use crate::util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let dummy_mod = format!("_impl_as_expression_for_{}", item.ident,).to_lowercase();

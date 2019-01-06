@@ -1,8 +1,8 @@
 use proc_macro2::*;
 use syn;
 
-use meta::*;
-use util::*;
+use crate::meta::*;
+use crate::util::*;
 
 pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let flags =

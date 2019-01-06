@@ -2,11 +2,11 @@ use proc_macro2;
 use proc_macro2::Span;
 use syn;
 
-use diagnostic_shim::*;
-use field::*;
-use meta::*;
-use model::*;
-use util::*;
+use crate::diagnostic_shim::*;
+use crate::field::*;
+use crate::meta::*;
+use crate::model::*;
+use crate::util::*;
 
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let treat_none_as_null = MetaItem::with_name(&item.attrs, "changeset_options")
