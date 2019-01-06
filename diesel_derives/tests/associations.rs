@@ -1,5 +1,5 @@
-use diesel::*;
 use super::helpers::*;
+use diesel::*;
 
 type Backend = <TestConnection as Connection>::Backend;
 

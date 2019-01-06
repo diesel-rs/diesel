@@ -2,7 +2,9 @@ use byteorder::*;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
-use crate::expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
+use crate::expression::{
+    AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression,
+};
 use crate::pg::Pg;
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;

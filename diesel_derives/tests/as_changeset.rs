@@ -1,6 +1,6 @@
-use diesel::*;
 use super::helpers::*;
 use super::schema::*;
+use diesel::*;
 
 #[test]
 fn named_ref_struct() {
