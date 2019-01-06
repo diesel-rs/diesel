@@ -72,7 +72,6 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// #
 /// # use self::schema::users;
 /// # use diesel::backend::Backend;
-/// # use diesel::deserialize::Queryable;
 /// #
 /// struct LowercaseString(String);
 ///
@@ -122,7 +121,6 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # include!("doctest_setup.rs");
 /// #
 /// use self::schema::users;
-/// use diesel::deserialize::Queryable;
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;

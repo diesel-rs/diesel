@@ -1,10 +1,8 @@
-extern crate dotenv;
-#[macro_use] extern crate cfg_if;
-
 use diesel::prelude::*;
-use self::dotenv::dotenv;
+use diesel::{Identifiable, Queryable, Associations};
+use dotenv::dotenv;
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "postgres")] {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
@@ -104,7 +102,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id INTEGER NOT NULL,
@@ -161,7 +159,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 post_id INTEGER NOT NULL,
@@ -197,7 +195,7 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 
 
 mod schema {
-    table! {
+    diesel::table! {
         animals {
             id -> Integer,
             species -> VarChar,
@@ -206,7 +204,7 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         comments {
             id -> Integer,
             post_id -> Integer,
@@ -214,7 +212,7 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         posts {
             id -> Integer,
             user_id -> Integer,
@@ -222,13 +220,13 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> VarChar,
         }
     }
 
-    joinable!(posts -> users (user_id));
-    allow_tables_to_appear_in_same_query!(animals, comments, posts, users);
+    diesel::joinable!(posts -> users (user_id));
+    diesel::allow_tables_to_appear_in_same_query!(animals, comments, posts, users);
 }

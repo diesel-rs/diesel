@@ -5,7 +5,6 @@
 //! Unlike other ORMs, Diesel has no concept of `#[has_many`]
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! use self::schema::{posts, users};
 //!
