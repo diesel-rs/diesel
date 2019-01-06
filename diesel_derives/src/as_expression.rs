@@ -20,6 +20,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
     let ty_params = item.generics.type_params().collect::<Vec<_>>();
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
+    let diesel = imp_root();
 
     let tokens = sql_types.map(|sql_type| {
         let lifetimes = &lifetimes;
@@ -65,10 +66,10 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl<#(#lifetimes,)* #(#ty_params,)* __DB> diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
+            impl<#(#lifetimes,)* #(#ty_params,)* __DB> #diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
                 for #struct_ty
             where
-                __DB: diesel::backend::Backend,
+                __DB: #diesel::backend::Backend,
                 Self: ToSql<#sql_type, __DB>,
             {
                 fn to_sql<W: std::io::Write>(&self, out: &mut Output<W, __DB>) -> serialize::Result {
@@ -105,10 +106,10 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         Ok(wrap_in_dummy_mod(
             Ident::new(&dummy_mod, Span::call_site()),
             quote! {
-                use diesel::expression::AsExpression;
-                use diesel::expression::bound::Bound;
-                use diesel::sql_types::Nullable;
-                use diesel::serialize::{self, ToSql, Output};
+                use #diesel::expression::AsExpression;
+                use #diesel::expression::bound::Bound;
+                use #diesel::sql_types::Nullable;
+                use #diesel::serialize::{self, ToSql, Output};
 
                 #(#tokens)*
             },

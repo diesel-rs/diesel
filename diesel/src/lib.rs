@@ -370,7 +370,3 @@ pub use self::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
 };
 pub use self::result::Error::NotFound;
-
-pub(crate) mod diesel {
-    pub use super::*;
-}

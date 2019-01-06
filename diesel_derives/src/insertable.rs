@@ -48,12 +48,14 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         })
         .unzip();
 
+    let diesel = imp_root();
+
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("insertable"),
         quote! {
-            use diesel::insertable::Insertable;
-            use diesel::query_builder::UndecoratedInsertRecord;
-            use diesel::prelude::*;
+            use #diesel::insertable::Insertable;
+            use #diesel::query_builder::UndecoratedInsertRecord;
+            use #diesel::prelude::*;
 
             impl #impl_generics Insertable<#table_name::table> for #struct_name #ty_generics
                 #where_clause
@@ -90,6 +92,8 @@ fn field_ty(
     table_name: &syn::Ident,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
+    let diesel = imp_root();
+
     if field.has_flag("embed") {
         let field_ty = &field.ty;
         parse_quote!(#lifetime #field_ty)
@@ -97,7 +101,7 @@ fn field_ty(
         let inner_ty = inner_of_option_ty(&field.ty);
         let column_name = field.column_name();
         parse_quote!(
-            std::option::Option<diesel::dsl::Eq<
+            std::option::Option<#diesel::dsl::Eq<
                 #table_name::#column_name,
                 #lifetime #inner_ty,
             >>

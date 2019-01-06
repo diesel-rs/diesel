@@ -10,8 +10,6 @@ pub fn wrap_in_dummy_mod(const_name: Ident, item: TokenStream) -> TokenStream {
         fn #const_name() {
             // https://github.com/rust-lang/rust/issues/47314
             extern crate std;
-            use diesel;
-
             #item
         }
     }
@@ -77,5 +75,16 @@ pub fn fix_span(maybe_bad_span: Span, mut fallback: Span) -> Span {
         fallback
     } else {
         maybe_bad_span
+    }
+}
+
+// Returns the name used to import modules from diesel.
+// This is definitely a hack. Can be removed once
+// https://github.com/rust-lang/rust/issues/56409 is stable.
+pub fn imp_root() -> TokenStream {
+    if std::env::var("CARGO_PKG_NAME").unwrap() == "diesel" {
+        quote!(crate)
+    } else {
+        quote!(::diesel)
     }
 }

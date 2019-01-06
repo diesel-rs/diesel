@@ -12,18 +12,19 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let sqlite_tokens = sqlite_tokens(&item);
     let mysql_tokens = mysql_tokens(&item);
     let pg_tokens = pg_tokens(&item);
+    let diesel = imp_root();
 
     let dummy_name = format!("_impl_sql_type_for_{}", item.ident);
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
         quote! {
-            impl #impl_generics diesel::sql_types::NotNull
+            impl #impl_generics #diesel::sql_types::NotNull
                 for #struct_name #ty_generics
             #where_clause
             {
             }
 
-            impl #impl_generics diesel::sql_types::SingleValue
+            impl #impl_generics #diesel::sql_types::SingleValue
                 for #struct_name #ty_generics
             #where_clause
             {
@@ -37,6 +38,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 }
 
 fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
+    let diesel = imp_root();
     MetaItem::with_name(&item.attrs, "sqlite_type")
         .map(|attr| attr.expect_ident_value())
         .and_then(|ty| {
@@ -48,12 +50,12 @@ fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             Some(quote! {
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::sqlite::Sqlite
+                impl #impl_generics #diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                    for #diesel::sqlite::Sqlite
                 #where_clause
                 {
-                    fn metadata(_: &()) -> diesel::sqlite::SqliteType {
-                        diesel::sqlite::SqliteType::#ty
+                    fn metadata(_: &()) -> #diesel::sqlite::SqliteType {
+                        #diesel::sqlite::SqliteType::#ty
                     }
                 }
             })
@@ -61,6 +63,7 @@ fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 }
 
 fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
+    let diesel = imp_root();
     MetaItem::with_name(&item.attrs, "mysql_type")
         .map(|attr| attr.expect_ident_value())
         .and_then(|ty| {
@@ -72,12 +75,12 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             Some(quote! {
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::mysql::Mysql
+                impl #impl_generics #diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                    for #diesel::mysql::Mysql
                 #where_clause
                 {
-                    fn metadata(_: &()) -> diesel::mysql::MysqlType {
-                        diesel::mysql::MysqlType::#ty
+                    fn metadata(_: &()) -> #diesel::mysql::MysqlType {
+                        #diesel::mysql::MysqlType::#ty
                     }
                 }
             })
@@ -85,6 +88,7 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 }
 
 fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
+    let diesel = imp_root();
     MetaItem::with_name(&item.attrs, "postgres")
         .map(|attr| {
             if let Some(x) = get_type_name(&attr)? {
@@ -124,10 +128,10 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             };
 
             Some(quote! {
-                use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
+                use #diesel::pg::{PgMetadataLookup, PgTypeMetadata};
 
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::pg::Pg
+                impl #impl_generics #diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                    for #diesel::pg::Pg
                 #where_clause
                 {
                     #metadata_fn

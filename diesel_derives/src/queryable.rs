@@ -32,11 +32,12 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             .push(parse_quote!((#(#field_ty,)*): Queryable<__ST, __DB>));
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
+    let diesel = imp_root();
 
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("queryable"),
         quote! {
-            use diesel::Queryable;
+            use #diesel::Queryable;
 
             impl #impl_generics Queryable<__ST, __DB> for #struct_name #ty_generics
             #where_clause

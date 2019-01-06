@@ -20,12 +20,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
     let (impl_generics, _, _) = impl_generics.split_for_impl();
 
     let dummy_name = format!("_impl_diesel_numeric_ops_for_{}", item.ident);
+    let diesel = imp_root();
 
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
         quote! {
-            use diesel::expression::{ops, Expression, AsExpression};
-            use diesel::sql_types::ops::{Add, Sub, Mul, Div};
+            use #diesel::expression::{ops, Expression, AsExpression};
+            use #diesel::sql_types::ops::{Add, Sub, Mul, Div};
 
             impl #impl_generics ::std::ops::Add<__Rhs> for #struct_name #ty_generics
             #where_clause

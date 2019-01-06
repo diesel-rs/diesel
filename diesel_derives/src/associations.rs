@@ -45,6 +45,7 @@ fn derive_belongs_to(
     let foreign_key_access = foreign_key_field.name.access();
     let foreign_key_ty = inner_of_option_ty(&foreign_key_field.ty);
     let table_name = model.table_name();
+    let diesel = imp_root();
 
     let mut generics = generics.clone();
 
@@ -75,7 +76,7 @@ fn derive_belongs_to(
                 parse_quote!(for<'__a> &'__a #foreign_key_ty: std::convert::Into<::std::option::Option<&'__a __FK>>),
             );
             where_clause.predicates.push(
-                parse_quote!(for<'__a> &'__a #parent_struct: diesel::associations::Identifiable<Id = &'__a __FK>),
+                parse_quote!(for<'__a> &'__a #parent_struct: #diesel::associations::Identifiable<Id = &'__a __FK>),
             );
         }
 
@@ -88,7 +89,7 @@ fn derive_belongs_to(
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(quote! {
-        impl #impl_generics diesel::associations::BelongsTo<#parent_struct>
+        impl #impl_generics #diesel::associations::BelongsTo<#parent_struct>
             for #struct_name #ty_generics
         #where_clause
         {

@@ -37,12 +37,13 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     }
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
+    let diesel = imp_root();
 
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("queryable_by_name"),
         quote! {
-            use diesel::deserialize::{self, QueryableByName};
-            use diesel::row::NamedRow;
+            use #diesel::deserialize::{self, QueryableByName};
+            use #diesel::row::NamedRow;
 
             impl #impl_generics QueryableByName<__DB>
                 for #struct_name #ty_generics
@@ -76,12 +77,13 @@ fn field_expr(field: &Field, model: &Model) -> Result<syn::FieldValue, Diagnosti
 fn sql_type(field: &Field, model: &Model) -> syn::Type {
     let table_name = model.table_name();
     let column_name = field.column_name();
+    let diesel = imp_root();
 
     match field.sql_type {
         Some(ref st) => st.clone(),
         None => {
             if model.has_table_name_attribute() {
-                parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
+                parse_quote!(#diesel::dsl::SqlTypeOf<#table_name::#column_name>)
             } else {
                 let field_name = match field.name {
                     FieldName::Named(ref x) => x.clone(),

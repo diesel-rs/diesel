@@ -13,6 +13,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let mut ref_generics = item.generics.clone();
     ref_generics.params.push(parse_quote!('ident));
     let (ref_generics, ..) = ref_generics.split_for_impl();
+    let diesel = imp_root();
 
     let (field_ty, field_access): (Vec<_>, Vec<_>) = model
         .primary_key_names
@@ -24,7 +25,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("identifiable"),
         quote! {
-            use diesel::associations::{HasTable, Identifiable};
+            use #diesel::associations::{HasTable, Identifiable};
 
             impl #impl_generics HasTable for #struct_name #ty_generics
             #where_clause

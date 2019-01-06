@@ -23,11 +23,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
         .map(|ty_param| &ty_param.ident)
         .map(|ty_param| quote!(<#ty_param as QueryId>::HAS_STATIC_QUERY_ID));
 
+    let diesel = imp_root();
+
     let dummy_mod = format!("_impl_query_id_for_{}", item.ident).to_lowercase();
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_mod, Span::call_site()),
         quote! {
-            use diesel::query_builder::QueryId;
+            use #diesel::query_builder::QueryId;
 
             #[allow(non_camel_case_types)]
             impl #impl_generics QueryId for #struct_name #ty_generics

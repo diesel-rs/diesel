@@ -58,11 +58,13 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             .emit();
     }
 
+    let diesel = imp_root();
+
     Ok(wrap_in_dummy_mod(
         model.dummy_mod_name("as_changeset"),
         quote!(
-            use diesel::query_builder::AsChangeset;
-            use diesel::prelude::*;
+            use #diesel::query_builder::AsChangeset;
+            use #diesel::prelude::*;
 
             impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
             #where_clause
