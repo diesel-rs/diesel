@@ -83,10 +83,10 @@ pub fn fix_span(maybe_bad_span: Span, mut fallback: Span) -> Span {
 // https://github.com/rust-lang/rust/issues/56409 is stable.
 pub fn imp_root() -> TokenStream {
     let in_self = std::env::var("CARGO_PKG_NAME").unwrap() == "diesel";
-    let in_doctest = std::env::args()
-        .next()
-        .unwrap_or_default()
-        .contains("rustdoc");
+
+    let mut args = std::env::args();
+    let bin = args.next().unwrap_or_default();
+    let in_doctest = bin.ends_with("/rustdoc") && args.find(|s| s == "--test").is_some();
 
     if in_self && !in_doctest {
         quote!(crate)
