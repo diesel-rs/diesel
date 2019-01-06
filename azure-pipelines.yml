@@ -13,9 +13,13 @@ jobs:
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
       - bash: |
-          brew update
-          brew upgrade
-          brew install sqlite --HEAD
+          brew update &&
+          brew reinstall sqlite pkg-config &&
+          echo "##vso[task.setvariable variable=PATH;]/usr/local/opt/sqlite/bin:$PATH" &&
+          echo "##vso[task.setvariable variable=LDFLAGS;]-L/usr/local/opt/sqlite/lib" &&
+          echo "##vso[task.setvariable variable=CPPFLAGS;]-I/usr/local/opt/sqlite/include" &&
+          echo "##vso[task.setvariable variable=PKG_CONFIG_PATH;]/usr/local/opt/sqlite/lib/pkgconfig" &&
+          sqlite3 --version
         displayName: Install sqlite
 
 - template: _build/azure-pipelines-template.yml
@@ -71,7 +75,8 @@ jobs:
     setup:
       - bash: |
           sudo apt-get update &&
-          wget --quiet -c https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz &&
+          sudo apt-get install curl libpq-dev libmysqlclient-dev &&
+          curl -fsS --retry 3 -o sqlite-autoconf-3240000.tar.gz https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz &&
           tar zxf sqlite-autoconf-3240000.tar.gz &&
           cd sqlite-autoconf-3240000 &&
           CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
@@ -100,7 +105,6 @@ jobs:
                       --enable-dynamic-extensions \
                       --libdir=/usr/lib/x86_64-linux-gnu \
                       --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3 &&
-          cd sqlite-autoconf-3240000 &&
           sudo make &&
           sudo make install
         displayName: Install sqlite
@@ -278,8 +282,8 @@ jobs:
         rust_version: 1.36.0
     - bash: |
         sudo apt-get update &&
-        sudo apt-get update &&
-        wget --quiet -c https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz &&
+        sudo apt-get install curl libpq-dev libmysqlclient-dev &&
+        curl -fsS --retry 3 -o sqlite-autoconf-3240000.tar.gz https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz &&
         tar zxf sqlite-autoconf-3240000.tar.gz &&
         cd sqlite-autoconf-3240000 &&
         CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
