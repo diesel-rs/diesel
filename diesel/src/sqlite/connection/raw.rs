@@ -7,8 +7,8 @@ use std::ptr::NonNull;
 use std::{ptr, slice, str};
 
 use super::serialized_value::SerializedValue;
-use result::Error::DatabaseError;
-use result::*;
+use crate::result::Error::DatabaseError;
+use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {

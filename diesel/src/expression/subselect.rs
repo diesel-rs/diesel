@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use expression::array_comparison::MaybeEmpty;
-use expression::*;
-use query_builder::*;
-use result::QueryResult;
+use crate::expression::array_comparison::MaybeEmpty;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {

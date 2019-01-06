@@ -7,10 +7,10 @@ mod numeric;
 use byteorder::WriteBytesExt;
 use std::io::Write;
 
-use deserialize::{self, FromSql};
-use mysql::{Mysql, MysqlType};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::*;
+use crate::deserialize::{self, FromSql};
+use crate::mysql::{Mysql, MysqlType};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::*;
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {

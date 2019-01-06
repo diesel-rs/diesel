@@ -1,8 +1,8 @@
-use expression::SqlLiteral;
-use pg::Pg;
-use query_builder::*;
-use query_source::Column;
-use result::QueryResult;
+use crate::expression::SqlLiteral;
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::query_source::Column;
+use crate::result::QueryResult;
 
 /// Used to specify the constraint name for an upsert statement in the form `ON
 /// CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
@@ -117,10 +117,10 @@ macro_rules! on_conflict_tuples {
         {
             fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
                 out.push_sql(" (");
-                try!(out.push_identifier(T::NAME));
+                out.push_identifier(T::NAME)?;
                 $(
                     out.push_sql(", ");
-                    try!(out.push_identifier($col::NAME));
+                    out.push_identifier($col::NAME)?;
                 )+
                 out.push_sql(")");
                 Ok(())

@@ -1,13 +1,13 @@
 use super::{AppearsInFromClause, Plus, QuerySource};
-use backend::Backend;
-use expression::grouped::Grouped;
-use expression::nullable::Nullable;
-use expression::SelectableExpression;
-use prelude::*;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::Bool;
-use util::TupleAppend;
+use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
+use crate::expression::nullable::Nullable;
+use crate::expression::SelectableExpression;
+use crate::prelude::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::Bool;
+use crate::util::TupleAppend;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 /// A query source representing the join between two tables

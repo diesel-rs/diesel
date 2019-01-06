@@ -1,9 +1,9 @@
-use expression::subselect::Subselect;
-use expression::{AsExpression, Expression, NonAggregate};
-use pg::Pg;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::Array;
+use crate::expression::subselect::Subselect;
+use crate::expression::{AsExpression, Expression, NonAggregate};
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::Array;
 
 /// Creates a PostgreSQL `ANY` expression.
 ///

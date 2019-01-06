@@ -4,10 +4,10 @@ extern crate bigdecimal;
 
 use self::bigdecimal::BigDecimal;
 
-use deserialize::{self, FromSql};
-use sql_types::{Double, Numeric};
-use sqlite::connection::SqliteValue;
-use sqlite::Sqlite;
+use crate::deserialize::{self, FromSql};
+use crate::sql_types::{Double, Numeric};
+use crate::sqlite::connection::SqliteValue;
+use crate::sqlite::Sqlite;
 
 impl FromSql<Numeric, Sqlite> for BigDecimal {
     fn from_sql(bytes: Option<&SqliteValue>) -> deserialize::Result<Self> {

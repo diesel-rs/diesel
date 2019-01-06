@@ -1,14 +1,14 @@
 use byteorder::*;
 use std::io::Write;
 
-use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
-use pg::Pg;
-use query_builder::{AstPass, QueryFragment};
-use result::QueryResult;
-use row::Row;
-use serialize::{self, IsNull, Output, ToSql, WriteTuple};
-use sql_types::{HasSqlType, Record};
+use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
+use crate::expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
+use crate::pg::Pg;
+use crate::query_builder::{AstPass, QueryFragment};
+use crate::result::QueryResult;
+use crate::row::Row;
+use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};
+use crate::sql_types::{HasSqlType, Record};
 
 macro_rules! tuple_impls {
     ($(
@@ -175,10 +175,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dsl::sql;
-    use prelude::*;
-    use sql_types::*;
-    use test_helpers::*;
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::*;
+    use crate::test_helpers::*;
 
     #[test]
     fn record_deserializes_correctly() {
@@ -207,11 +207,11 @@ mod tests {
         let conn = pg_connection();
 
         let tup = sql::<Record<(Integer, Text)>>("(1, 'hi')");
-        let res = ::select(tup.eq((1, "hi"))).get_result(&conn);
+        let res = crate::select(tup.eq((1, "hi"))).get_result(&conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("((2, 'bye'::text), 3)");
-        let res = ::select(tup.eq(((2, "bye"), 3))).get_result(&conn);
+        let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(&conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<
@@ -220,7 +220,7 @@ mod tests {
                 Nullable<Integer>,
             )>,
         >("((4, NULL::text), NULL::int4)");
-        let res = ::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
+        let res = crate::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
             .get_result(&conn);
         assert_eq!(Ok(true), res);
     }
@@ -243,11 +243,11 @@ mod tests {
 
         let conn = pg_connection();
 
-        ::sql_query("CREATE TYPE my_type AS (i int4, t text)")
+        crate::sql_query("CREATE TYPE my_type AS (i int4, t text)")
             .execute(&conn)
             .unwrap();
         let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
-        let res = ::select(sql).get_result(&conn);
+        let res = crate::select(sql).get_result(&conn);
         assert_eq!(Ok(true), res);
     }
 }

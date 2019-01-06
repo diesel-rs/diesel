@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
-use expression::*;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Copy, Clone, QueryId, DieselNumericOps)]
 #[doc(hidden)]

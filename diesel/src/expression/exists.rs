@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::subselect::Subselect;
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use query_builder::*;
-use result::QueryResult;
-use sql_types::Bool;
+use crate::backend::Backend;
+use crate::expression::subselect::Subselect;
+use crate::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::Bool;
 
 /// Creates a SQL `EXISTS` expression.
 ///

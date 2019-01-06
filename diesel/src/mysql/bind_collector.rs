@@ -1,9 +1,9 @@
 use super::{Mysql, MysqlType};
-use query_builder::BindCollector;
-use result::Error::SerializationError;
-use result::QueryResult;
-use serialize::{IsNull, Output, ToSql};
-use sql_types::{HasSqlType, IsSigned};
+use crate::query_builder::BindCollector;
+use crate::result::Error::SerializationError;
+use crate::result::QueryResult;
+use crate::serialize::{IsNull, Output, ToSql};
+use crate::sql_types::{HasSqlType, IsSigned};
 
 #[derive(Default)]
 #[doc(hidden)]

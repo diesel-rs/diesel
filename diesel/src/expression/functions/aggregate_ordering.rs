@@ -1,4 +1,4 @@
-use sql_types::{IntoNullable, SqlOrd};
+use crate::sql_types::{IntoNullable, SqlOrd};
 
 sql_function! {
     /// Represents a SQL `MAX` function. This function can only take types which are

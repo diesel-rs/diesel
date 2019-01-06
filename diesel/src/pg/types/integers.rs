@@ -1,10 +1,10 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::io::prelude::*;
 
-use deserialize::{self, FromSql};
-use pg::Pg;
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::pg::Pg;
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 
 impl FromSql<sql_types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {

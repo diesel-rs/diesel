@@ -4,9 +4,9 @@ use std::mem;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
-use mysql::MysqlType;
-use result::QueryResult;
-use sql_types::IsSigned;
+use crate::mysql::MysqlType;
+use crate::result::QueryResult;
+use crate::sql_types::IsSigned;
 
 pub struct Binds {
     data: Vec<BindData>,
@@ -195,7 +195,7 @@ impl BindData {
     }
 
     fn did_numeric_overflow_occur(&self) -> QueryResult<()> {
-        use result::Error::DeserializationError;
+        use crate::result::Error::DeserializationError;
 
         if self.is_truncated() && self.is_fixed_size_buffer() {
             Err(DeserializationError(

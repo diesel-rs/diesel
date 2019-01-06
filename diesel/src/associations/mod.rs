@@ -356,7 +356,7 @@ mod belongs_to;
 
 use std::hash::Hash;
 
-use query_source::Table;
+use crate::query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 

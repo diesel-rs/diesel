@@ -1,8 +1,8 @@
-use expression::{Expression, NonAggregate};
-use pg::Pg;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::{Date, Timestamp, Timestamptz, VarChar};
+use crate::expression::{Expression, NonAggregate};
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::{Date, Timestamp, Timestamptz, VarChar};
 
 /// Marker trait for types which are valid in `AT TIME ZONE` expressions
 pub trait DateTimeLike {}

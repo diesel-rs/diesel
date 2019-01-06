@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::subselect::Subselect;
-use expression::*;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::Bool;
+use crate::backend::Backend;
+use crate::expression::subselect::Subselect;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::Bool;
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct In<T, U> {
@@ -96,7 +96,7 @@ where
 impl_selectable_expression!(In<T, U>);
 impl_selectable_expression!(NotIn<T, U>);
 
-use query_builder::{BoxedSelectStatement, SelectStatement};
+use crate::query_builder::{BoxedSelectStatement, SelectStatement};
 
 pub trait AsInExpression<T> {
     type InExpression: MaybeEmpty + Expression<SqlType = T>;

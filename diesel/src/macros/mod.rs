@@ -1068,7 +1068,7 @@ mod tuples;
 
 #[cfg(test)]
 mod tests {
-    use prelude::*;
+    use crate::prelude::*;
 
     table! {
         foo.bars {
@@ -1083,8 +1083,8 @@ mod tests {
     }
 
     table! {
-        use sql_types::*;
-        use macros::tests::my_types::*;
+        use crate::sql_types::*;
+        use crate::macros::tests::my_types::*;
 
         table_with_custom_types {
             id -> Integer,
@@ -1093,8 +1093,8 @@ mod tests {
     }
 
     table! {
-        use sql_types::*;
-        use macros::tests::my_types::*;
+        use crate::sql_types::*;
+        use crate::macros::tests::my_types::*;
 
         /// Table documentation
         ///
@@ -1111,17 +1111,17 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_with_custom_schema() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars" -- binds: []"#;
         assert_eq!(
             expected_sql,
-            &::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string()
+            &crate::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string()
         );
     }
 
     table! {
-        use sql_types;
-        use sql_types::*;
+        use crate::sql_types;
+        use crate::sql_types::*;
 
         table_with_arbitrarily_complex_types {
             id -> sql_types::Integer,
@@ -1152,41 +1152,41 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_with_column_renaming_postgres() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql =
             r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1 -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "mysql")]
     fn table_with_column_renaming_mysql() {
-        use mysql::Mysql;
+        use crate::mysql::Mysql;
         let expected_sql =
             r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "sqlite")]
     fn table_with_column_renaming_sqlite() {
-        use sqlite::Sqlite;
+        use crate::sqlite::Sqlite;
         let expected_sql =
             r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     table!(
-        use sql_types::*;
+        use crate::sql_types::*;
 
         /// Some documentation
         #[sql_name="mod"]
@@ -1199,33 +1199,33 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_renaming_postgres() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql = r#"SELECT "mod"."id" FROM "mod" -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Pg, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Pg, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "mysql")]
     fn table_renaming_mysql() {
-        use mysql::Mysql;
+        use crate::mysql::Mysql;
         let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Mysql, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Mysql, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "sqlite")]
     fn table_renaming_sqlite() {
-        use sqlite::Sqlite;
+        use crate::sqlite::Sqlite;
         let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Sqlite, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Sqlite, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 }

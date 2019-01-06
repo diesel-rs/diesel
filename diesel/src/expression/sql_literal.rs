@@ -1,10 +1,10 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
-use expression::*;
-use query_builder::*;
-use query_dsl::RunQueryDsl;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::query_dsl::RunQueryDsl;
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, DieselNumericOps)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]

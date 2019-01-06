@@ -49,7 +49,7 @@ pub mod subselect;
 #[doc(hidden)]
 #[allow(non_camel_case_types)]
 pub mod dsl {
-    use dsl::SqlTypeOf;
+    use crate::dsl::SqlTypeOf;
 
     #[doc(inline)]
     pub use super::count::*;
@@ -67,7 +67,7 @@ pub mod dsl {
     pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres")]
-    pub use pg::expression::dsl::*;
+    pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](../dsl/fn.count.html)
     pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
@@ -82,8 +82,8 @@ pub mod dsl {
 #[doc(inline)]
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
-use backend::Backend;
-use dsl::AsExprOf;
+use crate::backend::Backend;
+use crate::dsl::AsExprOf;
 
 /// Represents a typed fragment of SQL.
 ///
@@ -272,7 +272,7 @@ impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
 
 impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
 
-use query_builder::{QueryFragment, QueryId};
+use crate::query_builder::{QueryFragment, QueryId};
 
 /// Helper trait used when boxing expressions.
 ///

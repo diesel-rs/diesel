@@ -1,4 +1,4 @@
-use sql_types::{self, NotNull};
+use crate::sql_types::{self, NotNull};
 
 /// Marker trait for types which can be used with `MAX` and `MIN`
 pub trait SqlOrd {}

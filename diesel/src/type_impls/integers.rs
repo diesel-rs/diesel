@@ -2,10 +2,10 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::Backend;
-use deserialize::{self, FromSql};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use crate::backend::Backend;
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 
 impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::SmallInt, DB> for i16 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {

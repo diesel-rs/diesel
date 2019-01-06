@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
 use super::*;
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
-use serialize::ToSql;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::serialize::ToSql;
+use crate::sql_types::HasSqlType;
 
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 pub struct Bound<T, U> {

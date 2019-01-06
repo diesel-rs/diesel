@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
-use mysql::{Mysql, MysqlType};
-use result::QueryResult;
-use row::*;
-use sql_types::IsSigned;
+use crate::mysql::{Mysql, MysqlType};
+use crate::result::QueryResult;
+use crate::row::*;
+use crate::sql_types::IsSigned;
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,

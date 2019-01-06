@@ -12,14 +12,14 @@ use self::cursor::*;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataLookup, TransactionBuilder};
-use query_builder::bind_collector::RawBytesBindCollector;
-use query_builder::*;
-use result::ConnectionError::CouldntSetupConfiguration;
-use result::*;
-use sql_types::HasSqlType;
+use crate::connection::*;
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::pg::{Pg, PgMetadataLookup, TransactionBuilder};
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::query_builder::*;
+use crate::result::ConnectionError::CouldntSetupConfiguration;
+use crate::result::*;
+use crate::sql_types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -190,15 +190,15 @@ mod tests {
     use std::env;
 
     use super::*;
-    use dsl::sql;
-    use prelude::*;
-    use sql_types::{Integer, VarChar};
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::{Integer, VarChar};
 
     #[test]
     fn prepared_statements_are_cached() {
         let connection = connection();
 
-        let query = ::select(1.into_sql::<Integer>());
+        let query = crate::select(1.into_sql::<Integer>());
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok(1), query.get_result(&connection));
@@ -209,8 +209,8 @@ mod tests {
     fn queries_with_identical_sql_but_different_types_are_cached_separately() {
         let connection = connection();
 
-        let query = ::select(1.into_sql::<Integer>());
-        let query2 = ::select("hi".into_sql::<VarChar>());
+        let query = crate::select(1.into_sql::<Integer>());
+        let query2 = crate::select("hi".into_sql::<VarChar>());
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
@@ -221,8 +221,8 @@ mod tests {
     fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
         let connection = connection();
 
-        let query = ::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
-        let query2 = ::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
+        let query = crate::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
+        let query2 = crate::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
 
         assert_eq!(0, connection.statement_cache.len());
         assert_eq!(Ok(1), query.get_result(&connection));
@@ -236,8 +236,8 @@ mod tests {
 
         sql_function!(fn lower(x: VarChar) -> VarChar);
         let hi = "HI".into_sql::<VarChar>();
-        let query = ::select(hi).into_boxed::<Pg>();
-        let query2 = ::select(lower(hi)).into_boxed::<Pg>();
+        let query = crate::select(hi).into_boxed::<Pg>();
+        let query2 = crate::select(lower(hi)).into_boxed::<Pg>();
 
         assert_eq!(0, connection.statement_cache.len());
         assert_eq!(Ok("HI".to_string()), query.get_result(&connection));
@@ -248,7 +248,7 @@ mod tests {
     #[test]
     fn queries_with_sql_literal_nodes_are_not_cached() {
         let connection = connection();
-        let query = ::select(sql::<Integer>("1"));
+        let query = crate::select(sql::<Integer>("1"));
 
         assert_eq!(Ok(1), query.get_result(&connection));
         assert_eq!(0, connection.statement_cache.len());

@@ -3,11 +3,11 @@ extern crate libsqlite3_sys as ffi;
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteValue};
-use deserialize::{FromSqlRow, Queryable};
-use result::{DatabaseErrorKind, Error, QueryResult};
-use row::Row;
-use serialize::{IsNull, Output, ToSql};
-use sql_types::HasSqlType;
+use crate::deserialize::{FromSqlRow, Queryable};
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use crate::row::Row;
+use crate::serialize::{IsNull, Output, ToSql};
+use crate::sql_types::HasSqlType;
 
 pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,

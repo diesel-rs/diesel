@@ -1,8 +1,8 @@
-use backend::Backend;
-use expression::{Expression, NonAggregate};
-use query_builder::*;
-use result::QueryResult;
-use sql_types;
+use crate::backend::Backend;
+use crate::expression::{Expression, NonAggregate};
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {

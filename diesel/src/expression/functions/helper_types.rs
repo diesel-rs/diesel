@@ -1,9 +1,9 @@
 #![allow(non_camel_case_types)]
 
-use dsl::{AsExprOf, SqlTypeOf};
-use expression::grouped::Grouped;
-use expression::operators;
-use sql_types::Bool;
+use crate::dsl::{AsExprOf, SqlTypeOf};
+use crate::expression::grouped::Grouped;
+use crate::expression::operators;
+use crate::sql_types::Bool;
 
 /// The return type of [`not(expr)`](../dsl/fn.not.html)
 pub type not<Expr> = operators::Not<Grouped<AsExprOf<Expr, Bool>>>;

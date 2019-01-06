@@ -1,24 +1,24 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
-use dsl::AsExprOf;
-use expression::subselect::ValidSubselect;
-use expression::*;
-use insertable::Insertable;
-use query_builder::distinct_clause::DistinctClause;
-use query_builder::group_by_clause::GroupByClause;
-use query_builder::insert_statement::InsertFromSelect;
-use query_builder::limit_clause::LimitClause;
-use query_builder::offset_clause::OffsetClause;
-use query_builder::order_clause::OrderClause;
-use query_builder::where_clause::*;
-use query_builder::*;
-use query_dsl::methods::*;
-use query_dsl::*;
-use query_source::joins::*;
-use query_source::{QuerySource, Table};
-use result::QueryResult;
-use sql_types::{BigInt, Bool, NotNull, Nullable};
+use crate::backend::Backend;
+use crate::dsl::AsExprOf;
+use crate::expression::subselect::ValidSubselect;
+use crate::expression::*;
+use crate::insertable::Insertable;
+use crate::query_builder::distinct_clause::DistinctClause;
+use crate::query_builder::group_by_clause::GroupByClause;
+use crate::query_builder::insert_statement::InsertFromSelect;
+use crate::query_builder::limit_clause::LimitClause;
+use crate::query_builder::offset_clause::OffsetClause;
+use crate::query_builder::order_clause::OrderClause;
+use crate::query_builder::where_clause::*;
+use crate::query_builder::*;
+use crate::query_dsl::methods::*;
+use crate::query_dsl::*;
+use crate::query_source::joins::*;
+use crate::query_source::{QuerySource, Table};
+use crate::result::QueryResult;
+use crate::sql_types::{BigInt, Bool, NotNull, Nullable};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {

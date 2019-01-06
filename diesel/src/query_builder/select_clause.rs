@@ -1,7 +1,7 @@
-use backend::Backend;
-use expression::{Expression, SelectableExpression};
-use query_builder::*;
-use query_source::QuerySource;
+use crate::backend::Backend;
+use crate::expression::{Expression, SelectableExpression};
+use crate::query_builder::*;
+use crate::query_source::QuerySource;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct DefaultSelectClause;

@@ -7,7 +7,7 @@ use std::{slice, str};
 
 use super::raw::RawResult;
 use super::row::PgRow;
-use result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
+use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 
 pub struct PgResult {
     internal_result: RawResult,

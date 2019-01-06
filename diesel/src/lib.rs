@@ -217,13 +217,13 @@ pub mod dsl {
     //! generically to be included in prelude, but are often used when using Diesel.
 
     #[doc(inline)]
-    pub use helper_types::*;
+    pub use super::helper_types::*;
 
     #[doc(inline)]
-    pub use expression::dsl::*;
+    pub use super::expression::dsl::*;
 
     #[doc(inline)]
-    pub use query_builder::functions::{
+    pub use super::query_builder::functions::{
         delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
     };
 }
@@ -245,7 +245,7 @@ pub mod helper_types {
     use super::query_source::joins;
 
     #[doc(inline)]
-    pub use expression::helper_types::*;
+    pub use super::expression::helper_types::*;
 
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
@@ -334,42 +334,42 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    pub use associations::{GroupedBy, Identifiable};
-    pub use connection::Connection;
+    pub use super::associations::{GroupedBy, Identifiable};
+    pub use super::connection::Connection;
     #[deprecated(
         since = "1.1.0",
         note = "Explicitly `use diesel::deserialize::Queryable"
     )]
-    pub use deserialize::Queryable;
-    pub use expression::{
+    pub use super::deserialize::Queryable;
+    pub use super::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
-    pub use expression_methods::*;
+    pub use super::expression_methods::*;
     #[doc(inline)]
-    pub use insertable::Insertable;
+    pub use super::insertable::Insertable;
     #[doc(hidden)]
-    pub use query_dsl::GroupByDsl;
-    pub use query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
+    pub use super::query_dsl::GroupByDsl;
+    pub use super::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
-    pub use query_source::{Column, JoinTo, QuerySource, Table};
-    pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use super::query_source::{Column, JoinTo, QuerySource, Table};
+    pub use super::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]
-    pub use mysql::MysqlConnection;
+    pub use super::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
-    pub use pg::PgConnection;
+    pub use super::pg::PgConnection;
     #[cfg(feature = "sqlite")]
-    pub use sqlite::SqliteConnection;
+    pub use super::sqlite::SqliteConnection;
 }
 
-pub use prelude::*;
+pub use self::prelude::*;
 #[doc(inline)]
-pub use query_builder::debug_query;
+pub use self::query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{
+pub use self::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
 };
-pub use result::Error::NotFound;
+pub use self::result::Error::NotFound;
 
 pub(crate) mod diesel {
     pub use super::*;

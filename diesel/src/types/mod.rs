@@ -4,109 +4,109 @@
 #![deprecated(since = "1.1.0", note = "Use `sql_types`, `serialize`, or `deserialize` instead")]
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types` instead")]
-pub use sql_types::*;
+pub use crate::sql_types::*;
 
 #[deprecated(since = "1.1.0", note = "Use `deserialize` instead")]
-pub use deserialize::{FromSql, FromSqlRow};
+pub use crate::deserialize::{FromSql, FromSqlRow};
 
 #[deprecated(since = "1.1.0", note = "Use `serialize` instead")]
-pub use serialize::{IsNull, ToSql};
+pub use crate::serialize::{IsNull, ToSql};
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Bool` instead")]
-pub type Bool = ::sql_types::Bool;
+pub type Bool = crate::sql_types::Bool;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::TinyInt` instead")]
-pub type TinyInt = ::sql_types::TinyInt;
+pub type TinyInt = crate::sql_types::TinyInt;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::SmallInt` instead")]
-pub type SmallInt = ::sql_types::SmallInt;
+pub type SmallInt = crate::sql_types::SmallInt;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Integer` instead")]
-pub type Integer = ::sql_types::Integer;
+pub type Integer = crate::sql_types::Integer;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::BigInt` instead")]
-pub type BigInt = ::sql_types::BigInt;
+pub type BigInt = crate::sql_types::BigInt;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Float` instead")]
-pub type Float = ::sql_types::Float;
+pub type Float = crate::sql_types::Float;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Double` instead")]
-pub type Double = ::sql_types::Double;
+pub type Double = crate::sql_types::Double;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Numeric` instead")]
-pub type Numeric = ::sql_types::Numeric;
+pub type Numeric = crate::sql_types::Numeric;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Text` instead")]
-pub type Text = ::sql_types::Text;
+pub type Text = crate::sql_types::Text;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Binary` instead")]
-pub type Binary = ::sql_types::Binary;
+pub type Binary = crate::sql_types::Binary;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Date` instead")]
-pub type Date = ::sql_types::Date;
+pub type Date = crate::sql_types::Date;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Interval` instead")]
-pub type Interval = ::sql_types::Interval;
+pub type Interval = crate::sql_types::Interval;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Time` instead")]
-pub type Time = ::sql_types::Time;
+pub type Time = crate::sql_types::Time;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Timestamp` instead")]
-pub type Timestamp = ::sql_types::Timestamp;
+pub type Timestamp = crate::sql_types::Timestamp;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Datetime` instead")]
 #[cfg(feature = "mysql")]
-pub type Datetime = ::sql_types::Datetime;
+pub type Datetime = crate::sql_types::Datetime;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Oid` instead")]
 #[cfg(feature = "postgres")]
-pub type Oid = ::sql_types::Oid;
+pub type Oid = crate::sql_types::Oid;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Timestamptz` instead")]
 #[cfg(feature = "postgres")]
-pub type Timestamptz = ::sql_types::Timestamptz;
+pub type Timestamptz = crate::sql_types::Timestamptz;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Array<ST>(ST)` instead")]
 #[cfg(feature = "postgres")]
-pub type Array<ST> = ::sql_types::Array<ST>;
+pub type Array<ST> = crate::sql_types::Array<ST>;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Range<ST>(ST)` instead")]
 #[cfg(feature = "postgres")]
-pub type Range<ST> = ::sql_types::Range<ST>;
+pub type Range<ST> = crate::sql_types::Range<ST>;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Uuid` instead")]
 #[cfg(feature = "postgres")]
-pub type Uuid = ::sql_types::Uuid;
+pub type Uuid = crate::sql_types::Uuid;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Json` instead")]
 #[cfg(feature = "postgres")]
-pub type Json = ::sql_types::Json;
+pub type Json = crate::sql_types::Json;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Jsonb` instead")]
 #[cfg(feature = "postgres")]
-pub type Jsonb = ::sql_types::Jsonb;
+pub type Jsonb = crate::sql_types::Jsonb;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Money` instead")]
 #[cfg(feature = "postgres")]
-pub type Money = ::sql_types::Money;
+pub type Money = crate::sql_types::Money;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::MacAddr` instead")]
 #[cfg(feature = "postgres")]
-pub type MacAddr = ::sql_types::MacAddr;
+pub type MacAddr = crate::sql_types::MacAddr;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Inet` instead")]
 #[cfg(feature = "postgres")]
-pub type Inet = ::sql_types::Inet;
+pub type Inet = crate::sql_types::Inet;
 
 #[deprecated(since = "1.1.0", note = "Use `sql_types::Cidr` instead")]
 #[cfg(feature = "postgres")]
-pub type Cidr = ::sql_types::Cidr;
+pub type Cidr = crate::sql_types::Cidr;
 
 #[deprecated(
     since = "1.1.0",
     note = "Use `sql_types::Nullable<ST: NotNull>(ST)` instead"
 )]
-pub type Nullable<ST> = ::sql_types::Nullable<ST>;
+pub type Nullable<ST> = crate::sql_types::Nullable<ST>;
 
 #[deprecated(since = "1.1.0", note = "Use `serialize::Output` instead")]
-pub type ToSqlOutput<'a, T, DB> = ::serialize::Output<'a, T, DB>;
+pub type ToSqlOutput<'a, T, DB> = crate::serialize::Output<'a, T, DB>;

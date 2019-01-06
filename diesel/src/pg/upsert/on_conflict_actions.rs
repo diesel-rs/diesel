@@ -1,8 +1,8 @@
-use expression::{AppearsOnTable, Expression};
-use pg::Pg;
-use query_builder::*;
-use query_source::*;
-use result::QueryResult;
+use crate::expression::{AppearsOnTable, Expression};
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::query_source::*;
+use crate::result::QueryResult;
 
 /// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause.
 pub fn excluded<T>(excluded: T) -> Excluded<T> {

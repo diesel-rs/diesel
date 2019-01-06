@@ -5,10 +5,10 @@ use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
 use std::io::prelude::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use deserialize::{self, FromSql};
-use pg::Pg;
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Cidr, Inet, MacAddr};
+use crate::deserialize::{self, FromSql};
+use crate::pg::Pg;
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{Cidr, Inet, MacAddr};
 
 #[cfg(windows)]
 const AF_INET: u8 = 2;

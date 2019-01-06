@@ -358,9 +358,9 @@ diesel_postfix_operator!(Desc, " DESC", ());
 
 diesel_prefix_operator!(Not, "NOT ");
 
-use insertable::{ColumnInsertValue, Insertable};
-use query_builder::ValuesClause;
-use query_source::Column;
+use crate::insertable::{ColumnInsertValue, Insertable};
+use crate::query_builder::ValuesClause;
+use crate::query_source::Column;
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where

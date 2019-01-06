@@ -98,9 +98,9 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]

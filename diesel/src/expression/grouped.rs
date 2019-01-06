@@ -1,7 +1,7 @@
-use backend::Backend;
-use expression::{Expression, NonAggregate};
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::{Expression, NonAggregate};
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Copy, Clone, QueryId, Default, DieselNumericOps)]
 pub struct Grouped<T>(pub T);

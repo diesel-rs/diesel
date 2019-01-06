@@ -1,7 +1,7 @@
-use expression::grouped::Grouped;
-use expression::operators::{And, Or};
-use expression::{AsExpression, Expression};
-use sql_types::Bool;
+use crate::expression::grouped::Grouped;
+use crate::expression::operators::{And, Or};
+use crate::expression::{AsExpression, Expression};
+use crate::sql_types::Bool;
 
 /// Methods present on boolean expressions
 pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {

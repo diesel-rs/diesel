@@ -7,18 +7,18 @@
 pub mod joins;
 mod peano_numbers;
 
-use expression::{Expression, NonAggregate, SelectableExpression};
-use query_builder::*;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::*;
 
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
 #[cfg(feature = "with-deprecated")]
 #[deprecated(since = "1.1.0", note = "Use `deserialize::Queryable` instead")]
-pub use deserialize::Queryable;
+pub use crate::deserialize::Queryable;
 #[cfg(feature = "with-deprecated")]
 #[deprecated(since = "1.1.0", note = "Use `deserialize::QueryableByName` instead")]
-pub use deserialize::QueryableByName;
+pub use crate::deserialize::QueryableByName;
 
 /// Represents a type which can appear in the `FROM` clause. Apps should not
 /// need to concern themselves with this trait.

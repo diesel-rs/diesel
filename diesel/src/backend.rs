@@ -2,9 +2,9 @@
 
 use byteorder::ByteOrder;
 
-use query_builder::bind_collector::BindCollector;
-use query_builder::QueryBuilder;
-use sql_types::{self, HasSqlType};
+use crate::query_builder::bind_collector::BindCollector;
+use crate::query_builder::QueryBuilder;
+use crate::sql_types::{self, HasSqlType};
 
 /// A database backend
 ///
@@ -61,4 +61,4 @@ pub trait UsesAnsiSavepointSyntax {}
 
 #[cfg(feature = "with-deprecated")]
 #[deprecated(since = "1.1.0", note = "use `sql_types::TypeMetadata` instead")]
-pub use sql_types::TypeMetadata;
+pub use crate::sql_types::TypeMetadata;

@@ -8,11 +8,11 @@ use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use super::bind_collector::MysqlBindCollector;
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::*;
-use result::*;
-use sql_types::HasSqlType;
+use crate::connection::*;
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::query_builder::*;
+use crate::result::*;
+use crate::sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
@@ -37,7 +37,7 @@ impl Connection for MysqlConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use result::ConnectionError::CouldntSetupConfiguration;
+        use crate::result::ConnectionError::CouldntSetupConfiguration;
 
         let raw_connection = RawConnection::new();
         let connection_options = ConnectionOptions::parse(database_url)?;
@@ -67,8 +67,8 @@ impl Connection for MysqlConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        use deserialize::FromSqlRow;
-        use result::Error::DeserializationError;
+        use crate::deserialize::FromSqlRow;
+        use crate::result::Error::DeserializationError;
 
         let mut stmt = self.prepare_query(&source.as_query())?;
         let mut metadata = Vec::new();
@@ -87,7 +87,7 @@ impl Connection for MysqlConnection {
         T: QueryFragment<Self::Backend> + QueryId,
         U: QueryableByName<Self::Backend>,
     {
-        use result::Error::DeserializationError;
+        use crate::result::Error::DeserializationError;
 
         let mut stmt = self.prepare_query(source)?;
         let results = unsafe { stmt.named_results()? };

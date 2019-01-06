@@ -1,10 +1,10 @@
 //! Types related to managing bind parameters during query construction.
 
-use backend::Backend;
-use result::Error::SerializationError;
-use result::QueryResult;
-use serialize::{IsNull, Output, ToSql};
-use sql_types::{HasSqlType, TypeMetadata};
+use crate::backend::Backend;
+use crate::result::Error::SerializationError;
+use crate::result::QueryResult;
+use crate::serialize::{IsNull, Output, ToSql};
+use crate::sql_types::{HasSqlType, TypeMetadata};
 
 /// A type which manages serializing bind parameters during query construction.
 ///

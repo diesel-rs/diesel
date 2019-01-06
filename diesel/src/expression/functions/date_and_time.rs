@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::coerce::Coerce;
-use expression::{AsExpression, Expression, NonAggregate};
-use query_builder::*;
-use result::QueryResult;
-use sql_types::*;
+use crate::backend::Backend;
+use crate::expression::coerce::Coerce;
+use crate::expression::{AsExpression, Expression, NonAggregate};
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::*;
 
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.

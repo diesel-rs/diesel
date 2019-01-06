@@ -1,17 +1,17 @@
-use associations::HasTable;
+use crate::associations::HasTable;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
-use associations::Identifiable;
-use connection::Connection;
+use crate::associations::Identifiable;
+use crate::connection::Connection;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
-use dsl::Find;
+use crate::dsl::Find;
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
-use dsl::Update;
-use query_builder::{AsChangeset, IntoUpdateTarget};
+use crate::dsl::Update;
+use crate::query_builder::{AsChangeset, IntoUpdateTarget};
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
-use query_dsl::methods::{ExecuteDsl, FindDsl};
+use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
 #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
-use query_dsl::{LoadQuery, RunQueryDsl};
-use result::QueryResult;
+use crate::query_dsl::{LoadQuery, RunQueryDsl};
+use crate::result::QueryResult;
 
 /// A trait defining how to update a record and fetch the updated entry
 /// on a certain backend.
@@ -29,7 +29,7 @@ pub trait UpdateAndFetchResults<Changes, Output>: Connection {
 }
 
 #[cfg(feature = "postgres")]
-use pg::PgConnection;
+use crate::pg::PgConnection;
 
 #[cfg(feature = "postgres")]
 impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnection
@@ -38,12 +38,12 @@ where
     Update<Changes, Changes>: LoadQuery<PgConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        ::update(changeset).set(changeset).get_result(self)
+        crate::update(changeset).set(changeset).get_result(self)
     }
 }
 
 #[cfg(feature = "sqlite")]
-use sqlite::SqliteConnection;
+use crate::sqlite::SqliteConnection;
 
 #[cfg(feature = "sqlite")]
 impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for SqliteConnection
@@ -55,13 +55,13 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<SqliteConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        ::update(changeset).set(changeset).execute(self)?;
+        crate::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
 }
 
 #[cfg(feature = "mysql")]
-use mysql::MysqlConnection;
+use crate::mysql::MysqlConnection;
 
 #[cfg(feature = "mysql")]
 impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for MysqlConnection
@@ -73,7 +73,7 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<MysqlConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        ::update(changeset).set(changeset).execute(self)?;
+        crate::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
 }

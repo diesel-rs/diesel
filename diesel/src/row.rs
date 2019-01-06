@@ -1,7 +1,7 @@
 //! Contains the `Row` trait
 
-use backend::Backend;
-use deserialize::{self, FromSql};
+use crate::backend::Backend;
+use crate::deserialize::{self, FromSql};
 
 /// Represents a single database row.
 /// Apps should not need to concern themselves with this trait.

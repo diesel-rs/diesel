@@ -1,9 +1,9 @@
 use super::result::PgResult;
 use super::row::PgNamedRow;
-use deserialize::{FromSqlRow, Queryable, QueryableByName};
-use pg::Pg;
-use result::Error::DeserializationError;
-use result::QueryResult;
+use crate::deserialize::{FromSqlRow, Queryable, QueryableByName};
+use crate::pg::Pg;
+use crate::result::Error::DeserializationError;
+use crate::result::QueryResult;
 
 use std::marker::PhantomData;
 
@@ -59,7 +59,7 @@ impl NamedCursor {
     where
         T: QueryableByName<Pg>,
     {
-        use result::Error::DeserializationError;
+        use crate::result::Error::DeserializationError;
 
         (0..self.db_result.num_rows())
             .map(|i| {

@@ -13,14 +13,14 @@
 //! [`QueryDsl`]: trait.QueryDsl.html
 //! [`RunQueryDsl`]: trait.RunQueryDsl.html
 
-use backend::Backend;
-use connection::Connection;
-use expression::count::CountStar;
-use expression::Expression;
-use helper_types::*;
-use query_builder::locking_clause as lock;
-use query_source::{joins, Table};
-use result::{first_or_not_found, QueryResult};
+use crate::backend::Backend;
+use crate::connection::Connection;
+use crate::expression::count::CountStar;
+use crate::expression::Expression;
+use crate::helper_types::*;
+use crate::query_builder::locking_clause as lock;
+use crate::query_source::{joins, Table};
+use crate::result::{first_or_not_found, QueryResult};
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -313,7 +313,7 @@ pub trait QueryDsl: Sized {
     where
         Self: methods::SelectDsl<CountStar>,
     {
-        use dsl::count_star;
+        use crate::dsl::count_star;
 
         QueryDsl::select(self, count_star())
     }

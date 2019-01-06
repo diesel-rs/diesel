@@ -55,8 +55,8 @@ pub(crate) use self::insert_statement::ColumnList;
 
 use std::error::Error;
 
-use backend::Backend;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::result::QueryResult;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;

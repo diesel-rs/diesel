@@ -1,17 +1,17 @@
 use std::io::Write;
 
-use backend::Backend;
-use deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
-use expression::bound::Bound;
-use expression::*;
-use query_builder::QueryId;
-use result::UnexpectedNullError;
-use row::NamedRow;
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{HasSqlType, NotNull, Nullable};
+use crate::backend::Backend;
+use crate::deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
+use crate::expression::bound::Bound;
+use crate::expression::*;
+use crate::query_builder::QueryId;
+use crate::result::UnexpectedNullError;
+use crate::row::NamedRow;
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{HasSqlType, NotNull, Nullable};
 
 #[cfg(feature = "mysql")]
-use sql_types::IsSigned;
+use crate::sql_types::IsSigned;
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -101,7 +101,7 @@ where
 {
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 
-    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
+    fn build_from_row<R: crate::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
         let fields_needed = Self::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
@@ -150,14 +150,14 @@ where
 }
 
 #[cfg(all(test, feature = "postgres"))]
-use pg::Pg;
+use crate::pg::Pg;
 #[cfg(all(test, feature = "postgres"))]
-use sql_types;
+use crate::sql_types;
 
 #[test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
-    type Type = sql_types::Nullable<sql_types::VarChar>;
+    type Type = crate::sql_types::Nullable<sql_types::VarChar>;
     let mut bytes = Output::test();
 
     let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();

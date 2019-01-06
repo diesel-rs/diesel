@@ -105,17 +105,17 @@ pub mod sql_types {
     pub struct Range<ST>(ST);
 
     #[doc(hidden)]
-    pub type Int4range = Range<::sql_types::Int4>;
+    pub type Int4range = Range<crate::sql_types::Int4>;
     #[doc(hidden)]
-    pub type Int8range = Range<::sql_types::Int8>;
+    pub type Int8range = Range<crate::sql_types::Int8>;
     #[doc(hidden)]
-    pub type Daterange = Range<::sql_types::Date>;
+    pub type Daterange = Range<crate::sql_types::Date>;
     #[doc(hidden)]
-    pub type Numrange = Range<::sql_types::Numeric>;
+    pub type Numrange = Range<crate::sql_types::Numeric>;
     #[doc(hidden)]
-    pub type Tsrange = Range<::sql_types::Timestamp>;
+    pub type Tsrange = Range<crate::sql_types::Timestamp>;
     #[doc(hidden)]
-    pub type Tstzrange = Range<::sql_types::Timestamptz>;
+    pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
 
     /// The `Record` (a.k.a. tuple) SQL type.
     ///
@@ -159,13 +159,13 @@ pub mod sql_types {
     pub struct Record<ST>(ST);
 
     /// Alias for `SmallInt`
-    pub type SmallSerial = ::sql_types::SmallInt;
+    pub type SmallSerial = crate::sql_types::SmallInt;
 
     /// Alias for `Integer`
-    pub type Serial = ::sql_types::Integer;
+    pub type Serial = crate::sql_types::Integer;
 
     /// Alias for `BigInt`
-    pub type BigSerial = ::sql_types::BigInt;
+    pub type BigSerial = crate::sql_types::BigInt;
 
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
     ///
@@ -186,10 +186,10 @@ pub mod sql_types {
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
     #[doc(hidden)]
-    pub type Bytea = ::sql_types::Binary;
+    pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
-    pub type Bpchar = ::sql_types::VarChar;
+    pub type Bpchar = crate::sql_types::VarChar;
 
     /// The JSON SQL type.  This type can only be used with `feature =
     /// "serde_json"`
@@ -492,8 +492,8 @@ pub mod sql_types {
 
 mod ops {
     use super::sql_types::*;
-    use sql_types::ops::*;
-    use sql_types::Interval;
+    use crate::sql_types::ops::*;
+    use crate::sql_types::Interval;
 
     impl Add for Timestamptz {
         type Rhs = Interval;
