@@ -1,6 +1,6 @@
 use diesel::*;
 
-use helpers::connection;
+use super::helpers::connection;
 
 #[cfg(feature = "mysql")]
 type IntSql = ::diesel::sql_types::BigInt;

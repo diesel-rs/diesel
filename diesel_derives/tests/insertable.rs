@@ -1,5 +1,5 @@
 use diesel::*;
-use helpers::*;
+use super::helpers::*;
 
 table! {
     users {

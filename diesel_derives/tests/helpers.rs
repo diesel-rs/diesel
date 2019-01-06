@@ -66,7 +66,7 @@ cfg_if! {
 }
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
-    use schema::users::dsl::*;
+    use super::schema::users::dsl::*;
 
     let connection = connection();
     ::diesel::insert_into(users)
