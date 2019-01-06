@@ -8,11 +8,11 @@
 #[doc(hidden)]
 macro_rules! impl_selectable_expression {
     ($struct_name:ident) => {
-        impl_selectable_expression!(ty_params = (), struct_ty = $struct_name,);
+        $crate::impl_selectable_expression!(ty_params = (), struct_ty = $struct_name,);
     };
 
     ($struct_name:ident<$($ty_params:ident),+>) => {
-        impl_selectable_expression!(
+        $crate::impl_selectable_expression!(
             ty_params = ($($ty_params),+),
             struct_ty = $struct_name<$($ty_params),+>,
         );
@@ -74,7 +74,7 @@ macro_rules! __diesel_parse_type_args {
         callback = $callback:ident,
         tokens = $tokens:tt,
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             data = $data,
             callback = $callback,
             args = (),
@@ -97,7 +97,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = ($next_arg:ident : $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             brackets = (),
             data = $data,
             callback = $callback,
@@ -119,7 +119,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = ($next_arg:ident $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             data = $data,
             callback = $callback,
             args = ($($args)* $next_arg,),
@@ -141,7 +141,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = (> $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             data = $data,
             callback = $callback,
             args = $args,
@@ -163,7 +163,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = (, $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             data = $data,
             callback = $callback,
             args = $args,
@@ -186,7 +186,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = (< $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             brackets = (< $($brackets)*),
             data = $data,
             callback = $callback,
@@ -209,7 +209,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = (>> $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             brackets = ($($brackets)*),
             data = $data,
             callback = $callback,
@@ -234,7 +234,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = (> $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             brackets = ($($brackets)*),
             data = $data,
             callback = $callback,
@@ -258,7 +258,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = ($($bounds:tt)*),
         tokens = ($token:tt $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             brackets = $brackets,
             data = $data,
             callback = $callback,
@@ -280,7 +280,7 @@ macro_rules! __diesel_parse_type_args {
         bounds = $bounds:tt,
         tokens = (, $($tokens:tt)*),
     ) => {
-        __diesel_parse_type_args! {
+        $crate::__diesel_parse_type_args! {
             data = $data,
             callback = $callback,
             args = $args,
