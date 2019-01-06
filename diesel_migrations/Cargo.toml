@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "http://diesel.rs"
-
+edition = "2018"
 
 [dependencies]
 migrations_internals = "~1.3.0"

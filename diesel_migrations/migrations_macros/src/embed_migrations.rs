@@ -1,12 +1,11 @@
-use quote;
 use syn;
 
-use migrations::migration_directory_from_given_path;
+use crate::migrations::migration_directory_from_given_path;
 use migrations_internals::{migration_paths_in_directory, version_from_path};
 use std::error::Error;
 use std::path::Path;
 
-use util::{get_option, get_options_from_input};
+use crate::util::{get_option, get_options_from_input};
 
 pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
     fn bug() -> ! {
