@@ -7,7 +7,7 @@ use super::information_schema::UsesInformationSchema;
 use super::table_data::TableName;
 
 mod information_schema {
-    table! {
+    diesel::table! {
         information_schema.table_constraints (constraint_schema, constraint_name) {
             table_schema -> VarChar,
             constraint_schema -> VarChar,
@@ -16,7 +16,7 @@ mod information_schema {
         }
     }
 
-    table! {
+    diesel::table! {
         information_schema.key_column_usage (constraint_schema, constraint_name) {
             constraint_schema -> VarChar,
             constraint_name -> VarChar,
@@ -29,7 +29,7 @@ mod information_schema {
         }
     }
 
-    allow_tables_to_appear_in_same_query!(table_constraints, key_column_usage);
+    diesel::allow_tables_to_appear_in_same_query!(table_constraints, key_column_usage);
 }
 
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
