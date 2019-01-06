@@ -108,7 +108,7 @@ macro_rules! __diesel_sql_function_body {
             $args:tt -> $return_type:ty $(;)*
         ),
     ) => {
-        __diesel_sql_function_body! {
+        $crate::__diesel_sql_function_body! {
             meta = $meta,
             fn_name = $fn_name,
             type_args = $type_args,
@@ -124,7 +124,7 @@ macro_rules! __diesel_sql_function_body {
         fn_name = $fn_name:ident,
         $($rest:tt)*
     ) => {
-        __diesel_sql_function_body! {
+        $crate::__diesel_sql_function_body! {
             aggregate = no,
             sql_name = stringify!($fn_name),
             unchecked_meta = $meta,
@@ -142,7 +142,7 @@ macro_rules! __diesel_sql_function_body {
         meta = $meta:tt,
         $($rest:tt)*
     ) => {
-        __diesel_sql_function_body! {
+        $crate::__diesel_sql_function_body! {
             aggregate = yes,
             sql_name = $sql_name,
             unchecked_meta = ($($unchecked)*),
@@ -159,7 +159,7 @@ macro_rules! __diesel_sql_function_body {
         meta = $meta:tt,
         $($rest:tt)*
     ) => {
-        __diesel_sql_function_body! {
+        $crate::__diesel_sql_function_body! {
             aggregate = $aggregate,
             sql_name = $sql_name,
             unchecked_meta = ($($unchecked)*),
@@ -176,7 +176,7 @@ macro_rules! __diesel_sql_function_body {
         meta = ($($meta:tt)*),
         $($rest:tt)*
     ) => {
-        __diesel_sql_function_body! {
+        $crate::__diesel_sql_function_body! {
             aggregate = $aggregate,
             sql_name = $sql_name,
             unchecked_meta = ($($unchecked)*),
@@ -285,7 +285,7 @@ macro_rules! __diesel_sql_function_body {
                 }
             }
 
-            __diesel_sqlite_register_fn! {
+            $crate::__diesel_sqlite_register_fn! {
                 type_args = ($($type_args)*),
                 aggregate = $aggregate,
                 fn_name = $fn_name,
@@ -435,8 +435,8 @@ macro_rules! __diesel_sqlite_register_fn {
 /// }
 ///
 /// pub mod dsl {
-///     pub use functions::*;
-///     pub use helper_types::*;
+///     pub use super::functions::*;
+///     pub use super::helper_types::*;
 /// }
 /// ```
 ///
@@ -548,11 +548,11 @@ macro_rules! __diesel_sqlite_register_fn {
 /// ```
 macro_rules! sql_function {
     ($(#$meta:tt)* fn $fn_name:ident $args:tt $(;)*) => {
-        sql_function!($(#$meta)* fn $fn_name $args -> ());
+        $crate::sql_function!($(#$meta)* fn $fn_name $args -> ());
     };
 
     ($(#$meta:tt)* fn $fn_name:ident $args:tt -> $return_type:ty $(;)*) => {
-        sql_function!($(#$meta)* fn $fn_name <> $args -> $return_type);
+        $crate::sql_function!($(#$meta)* fn $fn_name <> $args -> $return_type);
     };
 
     (
@@ -561,7 +561,7 @@ macro_rules! sql_function {
         <
         $($tokens:tt)*
     ) => {
-        __diesel_parse_type_args!(
+        $crate::__diesel_parse_type_args!(
             data = (
                 meta = ($(#$meta)*),
                 fn_name = $fn_name,
@@ -572,15 +572,15 @@ macro_rules! sql_function {
     };
 
     ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty) => {
-        sql_function!($fn_name, $struct_name, $args -> $return_type, "");
+        $crate::sql_function!($fn_name, $struct_name, $args -> $return_type, "");
     };
 
     ($fn_name:ident, $struct_name:ident, $args:tt -> $return_type:ty, $docs:expr) => {
-        sql_function!($fn_name, $struct_name, $args -> $return_type, $docs, "");
+        $crate::sql_function!($fn_name, $struct_name, $args -> $return_type, $docs, "");
     };
 
     ($fn_name:ident, $struct_name:ident, ($($arg_name:ident: $arg_type:ty),*)) => {
-        sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
+        $crate::sql_function!($fn_name, $struct_name, ($($arg_name: $arg_type),*) -> ());
     };
 
     (
@@ -590,7 +590,7 @@ macro_rules! sql_function {
         $docs:expr,
         $helper_ty_docs:expr
     ) => {
-        sql_function_body!($fn_name, $struct_name, $args -> $return_type, $docs, $helper_ty_docs);
+        $crate::sql_function_body!($fn_name, $struct_name, $args -> $return_type, $docs, $helper_ty_docs);
     };
 }
 
@@ -619,7 +619,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 #[doc(hidden)]
 macro_rules! no_arg_sql_function_body {
     ($type_name:ident, $return_type:ty, $docs:expr, $($constraint:ident)::+) => {
-        no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
+        $crate::no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend + $($constraint)::+,
@@ -632,7 +632,7 @@ macro_rules! no_arg_sql_function_body {
     };
 
     ($type_name:ident, $return_type:ty, $docs:expr) => {
-        no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
+        $crate::no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
             DB: $crate::backend::Backend,
@@ -662,15 +662,15 @@ macro_rules! no_arg_sql_function_body {
 /// function.
 macro_rules! no_arg_sql_function {
     ($type_name:ident, $return_type:ty) => {
-        no_arg_sql_function!($type_name, $return_type, "");
+        $crate::no_arg_sql_function!($type_name, $return_type, "");
     };
 
     ($type_name:ident, $return_type:ty, $docs:expr) => {
-        no_arg_sql_function_body!($type_name, $return_type, $docs);
+        $crate::no_arg_sql_function_body!($type_name, $return_type, $docs);
     };
 
     ($type_name:ident, $return_type:ty, $docs:expr, $($constraint:ident)::+) => {
-        no_arg_sql_function_body!($type_name, $return_type, $docs, $($constraint)::+);
+        $crate::no_arg_sql_function_body!($type_name, $return_type, $docs, $($constraint)::+);
     };
 }
 

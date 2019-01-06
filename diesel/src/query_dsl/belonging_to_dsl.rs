@@ -5,7 +5,7 @@
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::{posts, users};
+/// # use self::schema::{posts, users};
 /// #
 /// # #[derive(Identifiable, Queryable)]
 /// # pub struct User {
@@ -28,8 +28,8 @@
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = establish_connection();
-/// #     use users::dsl::*;
-/// #     use posts::dsl::{posts, title};
+/// #     use self::users::dsl::*;
+/// #     use self::posts::dsl::{posts, title};
 /// let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
 /// let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
 ///

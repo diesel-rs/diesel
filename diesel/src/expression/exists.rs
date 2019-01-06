@@ -17,7 +17,7 @@ use crate::sql_types::Bool;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     use diesel::select;
 /// #     use diesel::dsl::exists;
 /// #     let connection = establish_connection();

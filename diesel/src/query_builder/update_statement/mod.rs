@@ -85,7 +85,7 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .set(name.eq("Jim"))
@@ -129,7 +129,7 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use std::collections::HashMap;
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("tess_has_been_a_jerk", false);
@@ -261,7 +261,7 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let updated_name = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))

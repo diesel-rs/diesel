@@ -19,7 +19,7 @@ sql_function! {
     /// # use diesel::dsl::*;
     /// #
     /// # fn main() {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
     /// # }
@@ -46,7 +46,7 @@ sql_function! {
 /// # use diesel::dsl::*;
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// assert_eq!(Ok(2), users.select(count_star()).first(&connection));
 /// # }

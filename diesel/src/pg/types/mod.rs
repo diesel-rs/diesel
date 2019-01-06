@@ -263,7 +263,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use contacts::dsl::*;
+    /// #     use self::contacts::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
@@ -319,7 +319,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use items::dsl::*;
+    /// #     use self::items::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
@@ -365,7 +365,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use devices::dsl::*;
+    /// #     use self::devices::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE devices (
     /// #         id SERIAL PRIMARY KEY,
@@ -419,7 +419,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use clients::dsl::*;
+    /// #     use self::clients::dsl::*;
     /// #     use std::str::FromStr;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (
@@ -470,7 +470,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use clients::dsl::*;
+    /// #     use self::clients::dsl::*;
     /// #     use std::str::FromStr;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE clients (

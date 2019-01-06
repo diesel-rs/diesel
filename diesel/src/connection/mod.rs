@@ -57,7 +57,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = establish_connection();
     /// conn.transaction::<_, Error, _>(|| {
     ///     diesel::insert_into(users)
@@ -130,7 +130,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = establish_connection();
     /// conn.test_transaction::<_, Error, _>(|| {
     ///     diesel::insert_into(users)

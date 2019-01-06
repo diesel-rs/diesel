@@ -14,7 +14,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
     /// assert_eq!(Ok(1), data.first(&connection));
@@ -33,7 +33,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
     /// assert_eq!(Ok(2), data.first(&connection));
@@ -57,7 +57,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -83,7 +83,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -121,7 +121,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
@@ -156,7 +156,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
@@ -183,7 +183,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
@@ -210,7 +210,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users
     ///     .select(name)
@@ -237,7 +237,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users
     ///     .select(name)
@@ -264,7 +264,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users
     ///     .select(name)
@@ -291,7 +291,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let data = users
     ///     .select(name)
@@ -314,7 +314,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
@@ -347,7 +347,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let data = animals
@@ -383,7 +383,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let names = users
@@ -412,7 +412,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let order = "name";
     /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
     ///     if order == "name" {
@@ -446,7 +446,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::sql_types::*;
-    /// # use schema::users;
+    /// # use self::schema::users;
     /// #
     /// table! {
     ///     posts {

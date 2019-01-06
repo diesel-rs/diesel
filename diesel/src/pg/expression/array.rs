@@ -29,7 +29,7 @@ pub struct ArrayLiteral<T, ST> {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     use diesel::dsl::array;
 /// #     use diesel::sql_types::Integer;
 /// #     let connection = establish_connection();

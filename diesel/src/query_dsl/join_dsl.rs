@@ -54,7 +54,7 @@ where
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::{users, posts};
+/// # use self::schema::{users, posts};
 /// #
 /// # fn main() {
 /// #     let connection = establish_connection();

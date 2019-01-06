@@ -1,5 +1,5 @@
 include!("../../doctest_setup.rs");
-use crate::schema::users;
+use self::schema::users;
 
 #[derive(Clone, Copy, Insertable, AsChangeset)]
 #[table_name="users"]

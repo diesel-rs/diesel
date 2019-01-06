@@ -16,7 +16,7 @@ use crate::sql_types::VarChar;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     use diesel::insert_into;
 /// #     let connection = establish_connection();
 /// #     insert_into(users).values(name.eq("Ha%%0r"))

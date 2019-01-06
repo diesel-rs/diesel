@@ -12,7 +12,7 @@ sql_function! {
     /// # use diesel::dsl::*;
     /// #
     /// # fn main() {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
     /// # }
@@ -32,7 +32,7 @@ sql_function! {
     /// # use diesel::dsl::*;
     /// #
     /// # fn main() {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
     /// # }

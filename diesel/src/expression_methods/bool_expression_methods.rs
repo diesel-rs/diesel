@@ -18,7 +18,7 @@ pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// diesel::insert_into(animals)
@@ -58,7 +58,7 @@ pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// diesel::insert_into(animals)

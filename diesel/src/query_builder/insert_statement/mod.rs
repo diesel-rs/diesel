@@ -62,7 +62,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let connection = connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
@@ -309,7 +309,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let inserted_names = diesel::insert_into(users)
     ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])

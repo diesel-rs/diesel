@@ -18,7 +18,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
@@ -45,7 +45,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
@@ -98,7 +98,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #
     /// # #[cfg(all(feature = "postgres", feature = "chrono"))]
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use timestamps::dsl::*;
+    /// #     use self::timestamps::dsl::*;
     /// #     use chrono::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("CREATE TABLE timestamps (\"timestamp\"
@@ -427,7 +427,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// let starts_with_s = animals
     ///     .select(species)
@@ -454,7 +454,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// let doesnt_start_with_s = animals
     ///     .select(species)

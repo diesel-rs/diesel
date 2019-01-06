@@ -90,7 +90,7 @@ where
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::animals;
+/// # use self::schema::animals;
 /// #
 /// #[derive(Queryable, Debug, PartialEq)]
 /// struct Animal {
@@ -112,7 +112,7 @@ where
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use animals::dsl::*;
+/// #     use self::animals::dsl::*;
 /// #     let connection = establish_connection();
 /// let form = AnimalForm { id: 2, name: "Super scary" };
 /// let changed_animal = form.save_changes(&connection)?;

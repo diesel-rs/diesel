@@ -48,7 +48,7 @@ pub trait BelongsTo<Parent> {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::{posts, users};
+/// # use self::schema::{posts, users};
 /// #
 /// # #[derive(Identifiable, Queryable, PartialEq, Debug)]
 /// # pub struct User {

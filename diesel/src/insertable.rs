@@ -58,7 +58,7 @@ pub trait Insertable<T> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::{posts, users};
+    /// #     use self::schema::{posts, users};
     /// #     let conn = establish_connection();
     /// #     diesel::delete(posts::table).execute(&conn)?;
     /// users::table

@@ -123,7 +123,7 @@ impl PgConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_only()

@@ -26,7 +26,7 @@ use crate::query_dsl::methods::SelectDsl;
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
@@ -59,7 +59,7 @@ use crate::query_dsl::methods::SelectDsl;
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// # use users::dsl::*;
+/// # use self::users::dsl::*;
 /// # let connection = establish_connection();
 /// # connection.execute("DROP TABLE users").unwrap();
 /// # connection.execute("CREATE TABLE users (
@@ -103,11 +103,11 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// let old_count = get_count();
-/// try!(diesel::delete(users.filter(id.eq(1))).execute(&connection));
+/// diesel::delete(users.filter(id.eq(1))).execute(&connection)?;
 /// assert_eq!(old_count.map(|count| count - 1), get_count());
 /// # Ok(())
 /// # }
@@ -124,10 +124,10 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// # }
 /// #
 /// # fn delete() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
-/// try!(diesel::delete(users).execute(&connection));
+/// diesel::delete(users).execute(&connection)?;
 /// assert_eq!(Ok(0), get_count());
 /// # Ok(())
 /// # }
@@ -158,7 +158,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&name.eq("Sean"))
@@ -186,7 +186,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     diesel::delete(users).execute(&connection).unwrap();
 /// let new_user = (id.eq(1), name.eq("Sean"));
@@ -214,7 +214,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// # use schema::users;
+/// # use self::schema::users;
 /// #
 /// #[derive(Insertable)]
 /// #[table_name = "users"]
@@ -223,7 +223,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// }
 ///
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// // Insert one record at a time
 ///
@@ -267,7 +267,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::{posts, users};
+/// #     use self::schema::{posts, users};
 /// #     let conn = establish_connection();
 /// #     diesel::delete(posts::table).execute(&conn)?;
 /// let new_posts = users::table
@@ -297,7 +297,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let inserted_names = diesel::insert_into(users)
 ///     .values(&vec![
@@ -337,7 +337,7 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 /// #
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     use diesel::{delete, insert_or_ignore_into};
 /// #
 /// #     let connection = establish_connection();
@@ -392,7 +392,7 @@ where
 /// #
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     use diesel::{insert_into, replace_into};
 /// #
 /// #     let conn = establish_connection();
@@ -439,7 +439,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
-/// # use schema::users;
+/// # use self::schema::users;
 /// #
 /// # #[derive(QueryableByName, Debug, PartialEq)]
 /// # #[table_name="users"]

@@ -54,7 +54,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_rows = diesel::delete(users)
     ///     .filter(name.eq("Sean"))
@@ -97,7 +97,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use std::collections::HashMap;
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("sean_has_been_a_jerk", true);
@@ -212,7 +212,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// let deleted_name = diesel::delete(users.filter(name.eq("Sean")))
     ///     .returning(name)

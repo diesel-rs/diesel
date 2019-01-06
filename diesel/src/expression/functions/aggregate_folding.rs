@@ -12,7 +12,7 @@ sql_function! {
     /// # use diesel::dsl::*;
     /// #
     /// # fn main() {
-    /// #     use schema::animals::dsl::*;
+    /// #     use self::schema::animals::dsl::*;
     /// #     let connection = establish_connection();
     /// assert_eq!(Ok(Some(12i64)), animals.select(sum(legs)).first(&connection));
     /// # }
@@ -47,7 +47,7 @@ sql_function! {
     /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite"))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use bigdecimal::BigDecimal;
-    /// #     use numbers::dsl::*;
+    /// #     use self::numbers::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS numbers")?;
     /// #     conn.execute("CREATE TABLE numbers (number INTEGER)")?;

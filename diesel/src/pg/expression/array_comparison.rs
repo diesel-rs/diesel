@@ -19,7 +19,7 @@ use crate::sql_types::Array;
 /// # use diesel::dsl::*;
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let sean = (1, "Sean".to_string());
@@ -48,7 +48,7 @@ where
 /// # use diesel::dsl::*;
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let tess = (2, "Tess".to_string());

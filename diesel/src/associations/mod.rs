@@ -7,7 +7,7 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! use schema::{posts, users};
+//! use self::schema::{posts, users};
 //!
 //! #[derive(Identifiable, Queryable, PartialEq, Debug)]
 //! #[table_name = "users"]
@@ -31,7 +31,7 @@
 //! #
 //! # fn run_test() -> QueryResult<()> {
 //! #     let connection = establish_connection();
-//! #     use users::dsl::*;
+//! #     use self::users::dsl::*;
 //! let user = users.find(2).get_result::<User>(&connection)?;
 //! let users_post = Post::belonging_to(&user)
 //!     .first(&connection)?;
@@ -56,7 +56,7 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::{posts, users};
+//! # use self::schema::{posts, users};
 //! # use std::borrow::Cow;
 //! #
 //! #[derive(Identifiable)]
@@ -100,8 +100,8 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::users;
-//! # use schema::posts;
+//! # use self::schema::users;
+//! # use self::schema::posts;
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
 //! # pub struct User {
@@ -118,7 +118,7 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   use users::dsl::*;
+//! #   use self::users::dsl::*;
 //! #   let connection = establish_connection();
 //! #
 //! let user = users.find(1).first::<User>(&connection).expect("Error loading user");
@@ -154,7 +154,7 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::{posts, users};
+//! # use self::schema::{posts, users};
 //! #
 //! # #[derive(Identifiable, Queryable)]
 //! # pub struct User {
@@ -177,8 +177,8 @@
 //! #
 //! # fn run_test() -> QueryResult<()> {
 //! #     let connection = establish_connection();
-//! #     use users::dsl::*;
-//! #     use posts::dsl::{posts, title};
+//! #     use self::users::dsl::*;
+//! #     use self::posts::dsl::{posts, title};
 //! let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
 //! let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
 //!
@@ -209,7 +209,7 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::{posts, users};
+//! # use self::schema::{posts, users};
 //! #
 //! # #[derive(Identifiable, Queryable, PartialEq, Debug)]
 //! # pub struct User {
@@ -271,7 +271,7 @@
 //! ```rust
 //! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
-//! # use schema::{users, posts, comments};
+//! # use self::schema::{users, posts, comments};
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable)]
 //! # pub struct User {

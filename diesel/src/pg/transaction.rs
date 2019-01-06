@@ -56,8 +56,8 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use users_for_read_only::table as users;
-    /// #     use users_for_read_only::columns::*;
+    /// #     use self::users_for_read_only::table as users;
+    /// #     use self::users_for_read_only::columns::*;
     /// #     let conn = connection_no_transaction();
     /// #     sql_query("CREATE TABLE IF NOT EXISTS users_for_read_only (
     /// #       id SERIAL PRIMARY KEY,
@@ -103,7 +103,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_write()
@@ -145,7 +145,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .deferrable()
@@ -173,7 +173,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .not_deferrable()
@@ -201,7 +201,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_committed()
@@ -226,7 +226,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .repeatable_read()
@@ -251,7 +251,7 @@ impl<'a> TransactionBuilder<'a> {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let conn = connection_no_transaction();
     /// conn.build_transaction()
     ///     .serializable()

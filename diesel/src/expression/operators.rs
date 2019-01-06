@@ -190,7 +190,7 @@ macro_rules! __diesel_operator_to_sql {
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// diesel_infix_operator!(MyEq, " = ");
 ///

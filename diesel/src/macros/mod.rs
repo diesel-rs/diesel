@@ -170,7 +170,10 @@ macro_rules! __diesel_column {
 ///
 /// table! {
 ///     use diesel::sql_types::*;
+///     # /*
 ///     use diesel_full_text_search::*;
+///     # */
+///     # use crate::diesel_full_text_search::*;
 ///
 ///     posts {
 ///         id -> Integer,
@@ -898,7 +901,7 @@ macro_rules! __diesel_table_query_source_impl {
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
-/// use schema::*;
+/// use self::schema::*;
 ///
 /// # /*
 /// joinable!(posts -> users (user_id));

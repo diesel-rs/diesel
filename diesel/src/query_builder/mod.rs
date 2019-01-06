@@ -277,10 +277,10 @@ impl<T: Query> AsQuery for T {
 /// #
 /// # #[macro_use] extern crate diesel;
 /// # use diesel::*;
-/// # use schema::*;
+/// # use self::schema::*;
 /// #
 /// # fn main() {
-/// #   use schema::users::dsl::*;
+/// #   use self::schema::users::dsl::*;
 /// let sql = debug_query::<DB, _>(&users.count()).to_string();
 /// # if cfg!(feature = "postgres") {
 /// #     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);

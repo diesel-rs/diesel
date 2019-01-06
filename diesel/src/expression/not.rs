@@ -12,7 +12,7 @@ use crate::sql_types::Bool;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// use diesel::dsl::not;
 ///

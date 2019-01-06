@@ -54,7 +54,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let first_user = users.first(&connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
@@ -70,7 +70,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
-/// # use schema::users;
+/// # use self::schema::users;
 /// # use diesel::backend::Backend;
 /// # use diesel::deserialize::Queryable;
 /// #
@@ -106,7 +106,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let first_user = users.first(&connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
@@ -121,7 +121,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
-/// use schema::users;
+/// use self::schema::users;
 /// use diesel::deserialize::Queryable;
 ///
 /// # /*
@@ -150,7 +150,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// let first_user = users.first(&connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
@@ -183,7 +183,7 @@ where
 ///
 /// If you are using `#[table_name]`, the module for that table must be in
 /// scope. For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
+/// likely need a line such as `use self::schema::users;`
 ///
 /// If the name of a field on your struct is different than the column in your
 /// `table!` declaration, or if you are deriving this trait on a tuple struct,
@@ -209,7 +209,7 @@ where
 /// ```rust
 /// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
-/// # use schema::users;
+/// # use self::schema::users;
 /// # use diesel::sql_query;
 /// #
 /// #[derive(QueryableByName, PartialEq, Debug)]
@@ -240,7 +240,7 @@ where
 /// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use diesel::sql_query;
-/// # use schema::users;
+/// # use self::schema::users;
 /// # use diesel::backend::Backend;
 /// # use diesel::deserialize::{self, FromSql};
 /// #

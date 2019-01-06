@@ -77,7 +77,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let starts_with_s = users
@@ -110,7 +110,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use schema::users::dsl::*;
+    /// #     use self::schema::users::dsl::*;
     /// #     let connection = establish_connection();
     /// #
     /// let doesnt_start_with_s = users

@@ -15,7 +15,7 @@ use crate::result::QueryResult;
 /// # include!("on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use self::users::dsl::*;
 /// use diesel::pg::upsert::*;
 ///
 /// #     let conn = establish_connection();

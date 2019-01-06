@@ -215,7 +215,7 @@ impl<ST, T> NonAggregate for SqlLiteral<ST, T> {}
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
+/// #     use self::schema::users::dsl::*;
 /// use diesel::dsl::sql;
 /// #     let connection = establish_connection();
 /// let user = users.filter(sql("name = 'Sean'")).first(&connection)?;
