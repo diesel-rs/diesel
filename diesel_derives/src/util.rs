@@ -86,7 +86,7 @@ pub fn imp_root() -> TokenStream {
 
     let mut args = std::env::args();
     let bin = args.next().unwrap_or_default();
-    let in_doctest = bin.ends_with("/rustdoc") && args.find(|s| s == "--test").is_some();
+    let in_doctest = bin.ends_with("/rustdoc") && args.any(|s| s == "--test");
 
     if in_self && !in_doctest {
         quote!(crate)
