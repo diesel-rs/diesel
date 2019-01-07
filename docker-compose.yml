@@ -1,0 +1,25 @@
+version: '3'
+services:
+  mysql:
+    image: mysql
+    container_name: diesel.mysql
+    volumes:
+      - "mysql-data:/var/lib/mysql/:delegated"
+      - "./docker/mysql/init:/docker-entrypoint-initdb.d"
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+  postgres:
+    image: postgres
+    container_name: diesel.postgres
+    volumes:
+      - "postgres-data:/var/lib/postgres/:delegated"
+      - "./docker/postgres/init:/docker-entrypoint-initdb.d"
+    ports:
+      - "5432:5432"
+volumes:
+  mysql-data:
+    driver: local
+  postgres-data:
+    driver: local
