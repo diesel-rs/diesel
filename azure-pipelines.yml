@@ -13,6 +13,7 @@ jobs:
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
       - bash: |
+          brew update &&
           brew install sqlite
         displayName: Install sqlite
 
@@ -27,6 +28,7 @@ jobs:
       PG_EXAMPLE_DATABASE_URL: postgres://postgres@localhost/diesel_example
     setup:
       - bash: |
+          brew update &&
           brew install postgres &&
           brew services start postgres &&
           sleep 3 &&
@@ -46,6 +48,7 @@ jobs:
       RUST_TEST_THREADS: 1
     setup:
       - bash: |
+          brew update &&
           brew install mysql &&
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
