@@ -24,6 +24,7 @@ jobs:
       echo $PATH
       echo $MYSQLCLIENT_LIB_DIR
     displayName: Sanity check path
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
         (cd diesel && cargo test --no-default-features --features "unstable extras $BACKEND")
@@ -32,23 +33,28 @@ jobs:
       fi &&
       (cd diesel && cargo test --no-default-features --features "extras with-deprecated $BACKEND")
     displayName: Test diesel
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       (cd diesel_derives && cargo test --features "diesel/$BACKEND") &&
       if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
         (cd diesel_derives && cargo test --features "diesel/unstable diesel/$BACKEND")
       fi
     displayName: Test diesel-derives
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       (cd "examples/$BACKEND" && ./test_all)
     displayName: Test diesel examples
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       (cd diesel_cli && cargo test --no-default-features --features "$BACKEND")
     displayName: Test diesel-cli
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       (cd diesel_migrations/migrations_internals && cargo test  ) &&
       (cd diesel_migrations/migrations_macros && cargo test ) &&
       (cd diesel_migrations/ && cargo test --features "$BACKEND diesel/$BACKEND" )
     displayName: Test diesel-migrations
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
         (cd diesel_tests && cargo test --no-default-features --features "unstable $BACKEND")
@@ -56,6 +62,7 @@ jobs:
         (cd diesel_tests && cargo test --no-default-features --features "$BACKEND")
       fi
     displayName: Run diesel tests
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
   - bash: |
       if [[ "$RUSTUP_TOOLCHAIN" == nightly* ]]; then
           (cd diesel && cargo doc --no-deps --features "$BACKEND unstable")
@@ -63,3 +70,4 @@ jobs:
           (cd diesel && cargo doc --no-deps --features "$BACKEND")
       fi
     displayName: Run rustdoc
+    condition: or(in(variables['Agent.JobStatus'], 'Succeeded', 'SucceededWithIssues'), eq(variables['parameters.rust_version'], 'nightly'))
