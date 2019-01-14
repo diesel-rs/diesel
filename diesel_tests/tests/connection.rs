@@ -1,4 +1,3 @@
-use diesel::dsl::sql;
 use diesel::*;
 use schema::{connection_without_transaction, DropTable};
 
@@ -27,8 +26,9 @@ fn managing_updated_at_for_table() {
             integer("n"),
             timestamp("updated_at"),
         ),
-    ).execute(&connection)
-        .unwrap();
+    )
+    .execute(&connection)
+    .unwrap();
     let _guard = DropTable {
         connection: &connection,
         table_name: "auto_time",

@@ -251,7 +251,8 @@ impl SqliteConnection {
                 conn.exec(&format!(
                     include_str!("diesel_manage_updated_at.sql"),
                     table_name = table_name
-                )).expect("Failed to create trigger");
+                ))
+                .expect("Failed to create trigger");
                 0 // have to return *something*
             },
         )
