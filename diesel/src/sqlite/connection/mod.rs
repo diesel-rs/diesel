@@ -50,11 +50,17 @@ impl Connection for SqliteConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        RawConnection::establish(database_url).map(|conn| SqliteConnection {
+        use result::ConnectionError::CouldntSetupConfiguration;
+
+        let raw_connection = RawConnection::establish(database_url)?;
+        let conn = Self {
             statement_cache: StatementCache::new(),
-            raw_connection: conn,
+            raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
-        })
+        };
+        conn.register_diesel_sql_functions()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
     }
 
     #[doc(hidden)]
@@ -218,7 +224,7 @@ impl SqliteConnection {
         &self,
         fn_name: &str,
         deterministic: bool,
-        f: F,
+        mut f: F,
     ) -> QueryResult<()>
     where
         F: FnMut(Args) -> Ret + Send + 'static,
@@ -226,7 +232,30 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register(&self.raw_connection, fn_name, deterministic, f)
+        functions::register(
+            &self.raw_connection,
+            fn_name,
+            deterministic,
+            move |_, args| f(args),
+        )
+    }
+
+    fn register_diesel_sql_functions(&self) -> QueryResult<()> {
+        use sql_types::{Integer, Text};
+
+        functions::register::<Text, Integer, _, _, _>(
+            &self.raw_connection,
+            "diesel_manage_updated_at",
+            false,
+            |conn, table_name: String| {
+                conn.exec(&format!(
+                    include_str!("diesel_manage_updated_at.sql"),
+                    table_name = table_name
+                ))
+                .expect("Failed to create trigger");
+                0 // have to return *something*
+            },
+        )
     }
 }
 

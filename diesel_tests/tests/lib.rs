@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate assert_matches;
+extern crate chrono;
 #[macro_use]
 extern crate diesel;
 #[macro_use]

@@ -16,7 +16,7 @@ pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(Args) -> Ret + Send + 'static,
+    F: FnMut(&RawConnection, Args) -> Ret + Send + 'static,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -29,12 +29,12 @@ where
         ));
     }
 
-    conn.register_sql_function(fn_name, fields_needed, deterministic, move |args| {
+    conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
         let mut row = FunctionRow { args };
         let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
         let args = Args::build(args_row);
 
-        let result = f(args);
+        let result = f(conn, args);
 
         let mut buf = Output::new(Vec::new(), &());
         let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
