@@ -59,7 +59,7 @@ impl UsesInformationSchema for Mysql {
     }
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(module_inception))]
+#[allow(clippy::module_inception)]
 mod information_schema {
     table! {
         information_schema.tables (table_schema, table_name) {
@@ -194,7 +194,7 @@ where
     Ok(table_names)
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(similar_names))]
+#[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
 pub fn load_foreign_key_constraints<Conn>(
     connection: &Conn,
@@ -222,12 +222,14 @@ where
             rc::table.on(tc::constraint_schema
                 .eq(rc::constraint_schema)
                 .and(tc::constraint_name.eq(rc::constraint_name))),
-        ).select((
+        )
+        .select((
             rc::constraint_schema,
             rc::constraint_name,
             rc::unique_constraint_schema,
             rc::unique_constraint_name,
-        )).load::<(String, String, String, String)>(connection)?;
+        ))
+        .load::<(String, String, String, String)>(connection)?;
 
     constraint_names
         .into_iter()
@@ -254,7 +256,8 @@ where
                     primary_key: primary_key_column,
                 })
             },
-        ).collect()
+        )
+        .collect()
 }
 
 #[cfg(all(test, feature = "postgres"))]

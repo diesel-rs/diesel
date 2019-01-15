@@ -5,7 +5,6 @@ pub mod bigdecimal {
     use self::bigdecimal::BigDecimal;
     use std::io::prelude::*;
 
-    use backend::{Backend, FamilyLt};
     use deserialize::{self, FromSql};
     use mysql::Mysql;
     use serialize::{self, IsNull, Output, ToSql};

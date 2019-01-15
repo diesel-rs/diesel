@@ -75,7 +75,8 @@ fn custom_types_round_trip() {
             custom_enum my_type NOT NULL
         );
     "#,
-        ).unwrap();
+        )
+        .unwrap();
 
     let inserted = insert_into(custom_types::table)
         .values(&data)

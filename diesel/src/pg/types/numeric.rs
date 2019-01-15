@@ -88,7 +88,7 @@ mod bigdecimal {
 
     impl<'a> From<&'a BigDecimal> for PgNumeric {
         // NOTE(clippy): No `std::ops::MulAssign` impl for `BigInt`
-        #[cfg_attr(feature = "cargo-clippy", allow(assign_op_pattern))]
+        #[allow(clippy::assign_op_pattern)]
         fn from(decimal: &'a BigDecimal) -> Self {
             let (mut integer, scale) = decimal.as_bigint_and_exponent();
             let scale = scale as u16;

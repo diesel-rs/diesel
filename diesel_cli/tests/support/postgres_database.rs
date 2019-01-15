@@ -31,7 +31,8 @@ impl Database {
              FROM information_schema.tables \
              WHERE table_name = '{}')",
             table
-        ))).get_result(&self.conn())
+        )))
+        .get_result(&self.conn())
         .unwrap()
     }
 

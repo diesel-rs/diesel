@@ -45,7 +45,8 @@ fn assert_tags_in_order(output: &str, tags: &[&str]) {
                 .find(s)
                 .expect(&format!("tag {:?} not found in output: {:?}", s, output));
             (index, s)
-        }).collect();
+        })
+        .collect();
     for window in matches.as_slice().windows(2) {
         assert!(
             window[0].0 < window[1].0,

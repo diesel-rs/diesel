@@ -62,24 +62,15 @@ pub type Datetime = ::sql_types::Datetime;
 #[cfg(feature = "postgres")]
 pub type Oid = ::sql_types::Oid;
 
-#[deprecated(
-    since = "1.1.0",
-    note = "Use `sql_types::Timestamptz` instead"
-)]
+#[deprecated(since = "1.1.0", note = "Use `sql_types::Timestamptz` instead")]
 #[cfg(feature = "postgres")]
 pub type Timestamptz = ::sql_types::Timestamptz;
 
-#[deprecated(
-    since = "1.1.0",
-    note = "Use `sql_types::Array<ST>(ST)` instead"
-)]
+#[deprecated(since = "1.1.0", note = "Use `sql_types::Array<ST>(ST)` instead")]
 #[cfg(feature = "postgres")]
 pub type Array<ST> = ::sql_types::Array<ST>;
 
-#[deprecated(
-    since = "1.1.0",
-    note = "Use `sql_types::Range<ST>(ST)` instead"
-)]
+#[deprecated(since = "1.1.0", note = "Use `sql_types::Range<ST>(ST)` instead")]
 #[cfg(feature = "postgres")]
 pub type Range<ST> = ::sql_types::Range<ST>;
 

@@ -3,15 +3,23 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;
-mod integers;
 
-use byteorder::WriteBytesExt;
+use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::io::Write;
+use std::error::Error;
 
 use deserialize::{self, FromSql};
 use mysql::{Mysql, MysqlType};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
+
+impl FromSql<Text, Mysql> for *const str {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        use std::str;
+        let string = str::from_utf8(not_none!(bytes))?;
+        Ok(string as *const _)
+    }
+}
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
@@ -25,6 +33,65 @@ impl FromSql<TinyInt, Mysql> for i8 {
         Ok(bytes[0] as i8)
     }
 }
+
+impl FromSql<SmallInt, Mysql> for i16 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let mut bytes = not_none!(bytes);
+        debug_assert!(
+            bytes.len() <= 2,
+            "Received more than 2 bytes decoding i16. \
+             Was an Integer expression accidentally identified as SmallInt?"
+        );
+        debug_assert!(
+            bytes.len() >= 2,
+            "Received fewer than 2 bytes decoding i16. \
+             Was an expression of a different type accidentally identified \
+             as SmallInt?"
+        );
+        bytes
+            .read_i16::<NativeEndian>()
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+    }
+}
+
+impl FromSql<Integer, Mysql> for i32 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let mut bytes = not_none!(bytes);
+        debug_assert!(
+            bytes.len() <= 4,
+            "Received more than 4 bytes decoding i32. \
+             Was a BigInteger expression accidentally identified as Integer?"
+        );
+        debug_assert!(
+            bytes.len() >= 4,
+            "Received fewer than 4 bytes decoding i32. \
+             Was a SmallInteger expression accidentally identified as Integer?"
+        );
+        bytes
+            .read_i32::<NativeEndian>()
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+    }
+}
+
+impl FromSql<BigInt, Mysql> for i64 {
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let mut bytes = not_none!(bytes);
+        debug_assert!(
+            bytes.len() <= 8,
+            "Received more than 8 bytes decoding i64. \
+             Was an expression of a different type misidentified as BigInteger?"
+        );
+        debug_assert!(
+            bytes.len() >= 8,
+            "Received fewer than 8 bytes decoding i64. \
+             Was an Integer expression misidentified as BigInteger?"
+        );
+        bytes
+            .read_i64::<NativeEndian>()
+            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+    }
+}
+
 
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
@@ -104,7 +171,7 @@ impl FromSql<Float, Mysql> for f32 {
              an f32. Was a double accidentally marked as float?"
         );
         bytes
-            .read_f32::<DB::ByteOrder>()
+            .read_f32::<NativeEndian>()
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }
@@ -118,7 +185,7 @@ impl FromSql<Double, Mysql> for f64 {
              an f64. Was a numeric accidentally marked as double?"
         );
         bytes
-            .read_f64::<DB::ByteOrder>()
+            .read_f64::<NativeEndian>()
             .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
     }
 }

@@ -6,44 +6,53 @@ pub fn build_cli() -> App<'static, 'static> {
         .help(
             "Specifies the database URL to connect to. Falls back to \
              the DATABASE_URL environment variable if unspecified.",
-        ).global(true)
+        )
+        .global(true)
         .takes_value(true);
 
     let migration_subcommand = SubCommand::with_name("migration")
         .about(
             "A group of commands for generating, running, and reverting \
              migrations.",
-        ).setting(AppSettings::VersionlessSubcommands)
+        )
+        .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
         .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
         .subcommand(SubCommand::with_name("revert").about("Reverts the latest run migration"))
         .subcommand(SubCommand::with_name("redo").about(
             "Reverts and re-runs the latest migration. Useful \
              for testing that a migration can in fact be reverted.",
-        )).subcommand(
+        ))
+        .subcommand(
             SubCommand::with_name("list")
                 .about("Lists all available migrations, marking those that have been applied."),
-        ).subcommand(
+        )
+        .subcommand(
             SubCommand::with_name("pending")
                 .about("Returns true if there are any pending migrations."),
-        ).subcommand(
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(
                     "Generate a new migration with the given name, and \
                      the current timestamp as the version",
-                ).arg(
+                )
+                .arg(
                     Arg::with_name("MIGRATION_NAME")
                         .help("The name of the migration to create")
                         .required(true),
-                ).arg(
+                )
+                .arg(
                     Arg::with_name("MIGRATION_VERSION")
                         .long("version")
                         .help(
                             "The version number to use when generating the migration. \
                              Defaults to the current timestamp, which should suffice \
                              for most use cases.",
-                        ).takes_value(true),
-                ).arg(
+                        )
+                        .takes_value(true),
+                )
+                .arg(
                     Arg::with_name("MIGRATION_FORMAT")
                         .long("format")
                         .possible_values(&["sql", "barrel"])
@@ -51,7 +60,8 @@ pub fn build_cli() -> App<'static, 'static> {
                         .takes_value(true)
                         .help("The format of the migration to be generated."),
                 ),
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
+        )
+        .setting(AppSettings::SubcommandRequiredElseHelp);
 
     let setup_subcommand = SubCommand::with_name("setup")
         .arg(migration_dir_arg())
@@ -68,14 +78,17 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("setup").about(
             "Creates the database specified in your DATABASE_URL, \
              and then runs any existing migrations.",
-        )).subcommand(SubCommand::with_name("reset").about(
+        ))
+        .subcommand(SubCommand::with_name("reset").about(
             "Resets your database by dropping the database specified \
              in your DATABASE_URL and then running `diesel database setup`.",
-        )).subcommand(
+        ))
+        .subcommand(
             SubCommand::with_name("drop")
                 .about("Drops the database specified in your DATABASE_URL.")
                 .setting(AppSettings::Hidden),
-        ).setting(AppSettings::SubcommandRequiredElseHelp);
+        )
+        .setting(AppSettings::SubcommandRequiredElseHelp);
 
     let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
         .about("DEPRECATED: Generate bash completion script for the diesel command.");
@@ -98,50 +111,58 @@ pub fn build_cli() -> App<'static, 'static> {
                 .short("s")
                 .takes_value(true)
                 .help("The name of the schema."),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("table-name")
                 .index(1)
                 .takes_value(true)
                 .multiple(true)
                 .help("Table names to filter (default only-tables if not empty)"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("only-tables")
                 .short("o")
                 .long("only-tables")
                 .help("Only include tables from table-name")
                 .conflicts_with("except-tables")
                 .conflicts_with("blacklist"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("whitelist")
                 .short("w")
                 .long("whitelist")
                 .hidden(true)
                 .conflicts_with("blacklist")
                 .conflicts_with("except-tables"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
                 .help("Exclude tables from table-name")
                 .conflicts_with("only-tables")
                 .conflicts_with("whitelist"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("blacklist")
                 .short("b")
                 .long("blacklist")
                 .hidden(true)
                 .conflicts_with("whitelist")
                 .conflicts_with("only-tables"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("with-docs")
                 .long("with-docs")
                 .help("Render documentation comments for tables and columns"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("patch-file")
                 .long("patch-file")
                 .takes_value(true)
                 .help("A unified diff file to be applied to the final schema"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("import-types")
                 .long("import-types")
                 .takes_value(true)
@@ -157,7 +178,8 @@ pub fn build_cli() -> App<'static, 'static> {
              `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults \
              to `diesel.toml` in your project root. See \
              diesel.rs/guides/configuring-diesel-cli for documentation on this file.",
-        ).global(true)
+        )
+        .global(true)
         .takes_value(true);
 
     let locked_schema_arg = Arg::with_name("LOCKED_SCHEMA")
@@ -168,7 +190,8 @@ pub fn build_cli() -> App<'static, 'static> {
              flag will cause Diesel CLI to error if any command would result in \
              changes to that file. It is recommended that you use this flag when \
              running migrations in CI or production.",
-        ).global(true);
+        )
+        .global(true);
 
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
@@ -195,6 +218,7 @@ fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
             "The location of your migration directory. By default this \
              will look for a directory called `migrations` in the \
              current directory and its parents.",
-        ).takes_value(true)
+        )
+        .takes_value(true)
         .global(true)
 }

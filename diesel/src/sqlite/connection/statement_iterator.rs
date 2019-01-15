@@ -47,6 +47,7 @@ pub struct NamedStatementIterator<'a, T> {
 }
 
 impl<'a, T> NamedStatementIterator<'a, T> {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: StatementUse<'a>) -> QueryResult<Self> {
         let column_indices = (0..stmt.num_fields())
             .filter_map(|i| {
@@ -56,7 +57,8 @@ impl<'a, T> NamedStatementIterator<'a, T> {
                         .map_err(|e| DeserializationError(e.into()))?;
                     Ok((column, i))
                 })
-            }).collect::<QueryResult<_>>()?;
+            })
+            .collect::<QueryResult<_>>()?;
         Ok(NamedStatementIterator {
             stmt,
             column_indices,

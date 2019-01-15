@@ -16,6 +16,7 @@ pub struct PgResult {
 }
 
 impl PgResult {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(internal_result: RawResult) -> QueryResult<Self> {
         use self::ExecStatusType::*;
 

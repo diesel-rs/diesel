@@ -315,7 +315,8 @@ fn custom_foreign_key() {
                    (2, 2, 'World'),
                    (3, 1, 'Hello 2');
         "#,
-        ).unwrap();
+        )
+        .unwrap();
 
     let sean = User {
         id: 1,

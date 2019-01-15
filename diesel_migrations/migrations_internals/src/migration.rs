@@ -63,7 +63,7 @@ pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
     }
 
     if valid_sql_migration_directory(&path) {
-        let version = try!(version_from_path(&path));
+        let version = version_from_path(&path)?;
         Ok(Box::new(SqlFileMigration(path, version)))
     } else {
         Err(MigrationError::UnknownMigrationFormat(path))
@@ -77,9 +77,9 @@ fn valid_sql_migration_directory(path: &Path) -> bool {
 }
 
 fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
-    try!(path.read_dir())
+    path.read_dir()?
         .map(|entry| {
-            let file_name = try!(entry).file_name();
+            let file_name = entry?.file_name();
 
             // FIXME(killercup): Decide whether to add MigrationError variant for this
             match file_name.into_string() {
@@ -89,10 +89,12 @@ fn file_names(path: &Path) -> Result<Vec<String>, MigrationError> {
                     original_os_string
                 ),
             }
-        }).filter(|file_name| match *file_name {
+        })
+        .filter(|file_name| match *file_name {
             Ok(ref name) => !name.starts_with('.'),
             _ => true,
-        }).collect()
+        })
+        .collect()
 }
 
 #[doc(hidden)]
@@ -131,14 +133,14 @@ impl Migration for SqlFileMigration {
 
 fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigrationsError> {
     let mut sql = String::new();
-    let mut file = try!(File::open(path));
-    try!(file.read_to_string(&mut sql));
+    let mut file = File::open(path)?;
+    file.read_to_string(&mut sql)?;
 
     if sql.is_empty() {
         return Err(RunMigrationsError::EmptyMigration);
     }
 
-    try!(conn.batch_execute(&sql));
+    conn.batch_execute(&sql)?;
     Ok(())
 }
 

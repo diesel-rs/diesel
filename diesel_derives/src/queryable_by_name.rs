@@ -79,21 +79,24 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
 
     match field.sql_type {
         Some(ref st) => st.clone(),
-        None => if model.has_table_name_attribute() {
-            parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
-        } else {
-            let field_name = match field.name {
-                FieldName::Named(ref x) => x.clone(),
-                _ => Ident::new("field", Span::call_site()),
-            };
-            field
-                .span
-                .error(format!("Cannot determine the SQL type of {}", field_name))
-                .help(
-                    "Your struct must either be annotated with `#[table_name = \"foo\"]` \
-                     or have all of its fields annotated with `#[sql_type = \"Integer\"]`",
-                ).emit();
-            parse_quote!(())
-        },
+        None => {
+            if model.has_table_name_attribute() {
+                parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
+            } else {
+                let field_name = match field.name {
+                    FieldName::Named(ref x) => x.clone(),
+                    _ => Ident::new("field", Span::call_site()),
+                };
+                field
+                    .span
+                    .error(format!("Cannot determine the SQL type of {}", field_name))
+                    .help(
+                        "Your struct must either be annotated with `#[table_name = \"foo\"]` \
+                         or have all of its fields annotated with `#[sql_type = \"Integer\"]`",
+                    )
+                    .emit();
+                parse_quote!(())
+            }
+        }
     }
 }

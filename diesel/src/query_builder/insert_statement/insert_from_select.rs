@@ -62,4 +62,5 @@ impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSele
 where
     Columns: ColumnList + Expression<SqlType = Select::SqlType>,
     Select: Query,
-{}
+{
+}

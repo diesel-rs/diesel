@@ -8,6 +8,7 @@ pub struct PgMetadataLookup {
 }
 
 impl PgMetadataLookup {
+    #[allow(clippy::new_ret_no_self)]
     pub(crate) fn new(conn: &PgConnection) -> &Self {
         unsafe { &*(conn as *const PgConnection as *const PgMetadataLookup) }
     }

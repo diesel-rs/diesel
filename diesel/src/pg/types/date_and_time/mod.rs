@@ -132,12 +132,9 @@ impl FromSql<sql_types::Time, Pg> for PgTime {
 
 impl ToSql<sql_types::Interval, Pg> for PgInterval {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        try!(ToSql::<sql_types::BigInt, Pg>::to_sql(
-            &self.microseconds,
-            out
-        ));
-        try!(ToSql::<sql_types::Integer, Pg>::to_sql(&self.days, out));
-        try!(ToSql::<sql_types::Integer, Pg>::to_sql(&self.months, out));
+        ToSql::<sql_types::BigInt, Pg>::to_sql(&self.microseconds, out)?;
+        ToSql::<sql_types::Integer, Pg>::to_sql(&self.days, out)?;
+        ToSql::<sql_types::Integer, Pg>::to_sql(&self.months, out)?;
         Ok(IsNull::No)
     }
 }
@@ -147,15 +144,15 @@ impl FromSql<sql_types::Interval, Pg> for PgInterval {
         let value = not_none!(value);
         let bytes = value.bytes();
         Ok(PgInterval {
-            microseconds: try!(FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
+            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
                 PgValue::with_oid(bytes[..8].as_ptr() as *mut u8, 8, 0) // TODO Find OID
-            ))),
-            days: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
+            ))?,
+            days: FromSql::<sql_types::Integer, Pg>::from_sql(Some(
                 PgValue::with_oid(bytes[8..12].as_ptr() as *mut u8, 4, 0) // TODO Find OID
-            ))),
-            months: try!(FromSql::<sql_types::Integer, Pg>::from_sql(Some(
+            ))?,
+            months: FromSql::<sql_types::Integer, Pg>::from_sql(Some(
                 PgValue::with_oid(bytes[12..16].as_ptr() as *mut u8, 4, 0) // TODO Find OID
-            ))),
+            ))?,
         })
     }
 }

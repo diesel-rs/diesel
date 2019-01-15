@@ -34,7 +34,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
 }
 
 impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
-    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         select: Box<QueryFragment<DB> + 'a>,
         from: QS,
@@ -75,7 +75,8 @@ where
 
 impl<'a, ST, QS, QS2, DB> ValidSubselect<QS2> for BoxedSelectStatement<'a, ST, QS, DB> where
     Self: Query<SqlType = ST>
-{}
+{
+}
 
 impl<'a, ST, QS, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB>
 where

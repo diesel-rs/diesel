@@ -192,16 +192,16 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.30.1
+        rust_version: 1.31.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
-        rustup component add rustfmt-preview
+        rustup component add rustfmt
       displayName: Install rustfmt
     - bash: |
-        rustup component add clippy-preview
+        rustup component add clippy
       displayName: Install clippy
     - bash: |
         cargo clippy
@@ -236,7 +236,7 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.27.0
+        rust_version: 1.31.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev

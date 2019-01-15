@@ -59,7 +59,7 @@ pub struct SelectStatement<
 }
 
 impl<F, S, D, W, O, L, Of, G, LC> SelectStatement<F, S, D, W, O, L, Of, G, LC> {
-    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         select: S,
         from: F,
@@ -179,7 +179,8 @@ impl<S, F, D, W, O, L, Of, G, LC, QS> ValidSubselect<QS>
 where
     Self: SelectQuery,
     W: ValidWhereClause<Join<F, QS, Inner>>,
-{}
+{
+}
 
 /// Allow `SelectStatement<From>` to act as if it were `From` as long as
 /// no other query methods have been called on it

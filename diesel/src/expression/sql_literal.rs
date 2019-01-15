@@ -326,7 +326,8 @@ impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> where Self: Expr
 
 impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> where
     Self: AppearsOnTable<QS>
-{}
+{
+}
 
 impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 

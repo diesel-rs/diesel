@@ -73,7 +73,8 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
         .values(&vec![
             (id.eq(1), name.eq("Sean"), hair_color.eq("black")),
             (id.eq(2), name.eq("Tess"), hair_color.eq("brown")),
-        ]).execute(&connection)
+        ])
+        .execute(&connection)
         .unwrap();
     connection
 }

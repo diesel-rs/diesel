@@ -184,7 +184,8 @@ fn reset_updates_schema_if_config_present() {
             [print_schema]
             file = "src/my_schema.rs"
             "#,
-        ).build();
+        )
+        .build();
 
     let result = p.command("database").arg("reset").run();
 

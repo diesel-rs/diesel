@@ -15,7 +15,8 @@ fn migration_generate_creates_a_migration_with_the_proper_name() {
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.up.sql
 Creating migrations.\\d{4}-\\d{2}-\\d{2}-\\d{6}_hello.down.sql\
         ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -95,7 +96,8 @@ fn migration_version_can_be_specified_on_creation() {
 Creating migrations.1234_hello.up.sql
 Creating migrations.1234_hello.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -119,7 +121,8 @@ fn migration_directory_can_be_specified_for_generate_by_command_line_arg() {
 Creating foo.12345_stuff.up.sql
 Creating foo.12345_stuff.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
@@ -143,7 +146,8 @@ fn migration_directory_can_be_specified_for_generate_by_env_var() {
 Creating bar.12345_stuff.up.sql
 Creating bar.12345_stuff.down.sql
 ",
-    ).unwrap();
+    )
+    .unwrap();
     assert!(result.is_success(), "Command failed: {:?}", result);
     assert!(expected_stdout.is_match(result.stdout()));
 
