@@ -117,10 +117,10 @@ macro_rules! on_conflict_tuples {
         {
             fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
                 out.push_sql(" (");
-                try!(out.push_identifier(T::NAME));
+                out.push_identifier(T::NAME)?;
                 $(
                     out.push_sql(", ");
-                    try!(out.push_identifier($col::NAME));
+                    out.push_identifier($col::NAME)?;
                 )+
                 out.push_sql(")");
                 Ok(())
