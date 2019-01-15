@@ -90,7 +90,7 @@ where
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
             let value = T::from_sql(Some(
-                PgValue::with_oid(elem_bytes.as_ptr() as *mut u8, 1, 0) // TODO Find OID
+                PgValue::with_oid(elem_bytes, None) // TODO Find OID
             ))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
@@ -103,7 +103,7 @@ where
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
             let value = T::from_sql(Some(
-                PgValue::with_oid(bytes.as_ptr() as *mut u8, 1, 0) // TODO Find OID
+                PgValue::with_oid(bytes, None) // TODO Find OID
             ))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {

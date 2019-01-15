@@ -1,5 +1,6 @@
 use byteorder::*;
 use std::io::Write;
+use std::num::NonZeroU32;
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::{AppearsOnTable, AsExpression, Expression, NonAggregate, SelectableExpression};
@@ -51,7 +52,7 @@ macro_rules! tuple_impls {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
                         $T::from_sql(Some(
-                            PgValue::with_oid(elem_bytes.as_ptr() as *mut u8, elem_bytes.len(), oid)
+                            PgValue::with_oid(elem_bytes, NonZeroU32::new(oid))
                         ))?
                     }
                 },)+);

@@ -10,6 +10,7 @@ use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::{Oid, TypeMetadata};
 
 use std::slice;
+use std::num::NonZeroU32;
 
 /// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -19,25 +20,23 @@ pub struct Pg;
 #[derive(Debug)]
 pub struct PgValue<'a> {
     raw_bytes: &'a [u8],
-    oid: u32,
+    oid: Option<NonZeroU32>,
 }
 
 impl<'a> PgValue<'a> {
-    pub(crate) fn new(value_ptr: *mut u8, byte_count: usize) -> PgValue<'a> {
+    pub(crate) fn new(value_ptr: *const u8, byte_count: usize, oid: u32) -> PgValue<'a> {
         unsafe {
             Self {
-                raw_bytes: slice::from_raw_parts_mut(value_ptr, byte_count),
-                oid: 0
+                raw_bytes: slice::from_raw_parts(value_ptr, byte_count),
+                oid: NonZeroU32::new(oid)
             }
         }
     }
 
-    pub(crate) fn with_oid(value_ptr: *mut u8, byte_count: usize, oid: u32) -> PgValue<'a> {
-        unsafe {
-            Self {
-                raw_bytes: slice::from_raw_parts_mut(value_ptr, byte_count),
-                oid
-            }
+    pub(crate) fn with_oid(raw_bytes: &'a [u8], oid: Option<NonZeroU32>) -> PgValue<'a> {
+        Self {
+            raw_bytes,
+            oid
         }
     }
 
@@ -48,7 +47,7 @@ impl<'a> PgValue<'a> {
 
     /// Get the type oid of the value represented by this raw value
     pub fn oid(&self) -> u32 {
-        self.oid
+        self.oid.unwrap().get()
     }
 }
 

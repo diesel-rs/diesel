@@ -1,6 +1,7 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::fmt;
 use std::io::Write;
+use std::num::NonZeroU32;
 
 use deserialize::{self, FromSql};
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
@@ -49,7 +50,7 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(Some(PgValue::with_oid(elem_bytes.as_ptr() as *mut u8, elem_bytes.len(), oid as u32)))
+                    T::from_sql(Some(PgValue::with_oid(elem_bytes, NonZeroU32::new(oid as u32))))
                 }
             })
             .collect()

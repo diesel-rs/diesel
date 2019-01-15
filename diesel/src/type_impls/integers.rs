@@ -2,7 +2,7 @@ use byteorder::{WriteBytesExt}; // ReadBytesExt
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::{Backend};
+use backend::Backend;
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 

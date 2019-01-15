@@ -145,13 +145,13 @@ impl FromSql<sql_types::Interval, Pg> for PgInterval {
         let bytes = value.bytes();
         Ok(PgInterval {
             microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(
-                PgValue::with_oid(bytes[..8].as_ptr() as *mut u8, 8, 0) // TODO Find OID
+                PgValue::with_oid(&bytes[..8], None) // TODO Find OID
             ))?,
             days: FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                PgValue::with_oid(bytes[8..12].as_ptr() as *mut u8, 4, 0) // TODO Find OID
+                PgValue::with_oid(&bytes[8..12], None) // TODO Find OID
             ))?,
             months: FromSql::<sql_types::Integer, Pg>::from_sql(Some(
-                PgValue::with_oid(bytes[12..16].as_ptr() as *mut u8, 4, 0) // TODO Find OID
+                PgValue::with_oid(&bytes[12..16], None) // TODO Find OID
             ))?,
         })
     }

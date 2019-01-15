@@ -82,8 +82,9 @@ impl PgResult {
                 let value_ptr =
                     PQgetvalue(self.internal_result.as_ptr(), row_idx, col_idx) as *const u8;
                 let num_bytes = PQgetlength(self.internal_result.as_ptr(), row_idx, col_idx);
+                let oid = PQftype(self.internal_result.as_ptr(), col_idx);
 
-                Some(PgValue::new(value_ptr as *mut u8, num_bytes as usize))
+                Some(PgValue::new(value_ptr, num_bytes as usize, oid))
             }
         }
     }
