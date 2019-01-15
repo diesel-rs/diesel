@@ -61,7 +61,7 @@ impl UsesInformationSchema for Mysql {
 
 #[allow(clippy::module_inception)]
 mod information_schema {
-    table! {
+    diesel::table! {
         information_schema.tables (table_schema, table_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
@@ -69,7 +69,7 @@ mod information_schema {
         }
     }
 
-    table! {
+    diesel::table! {
         information_schema.columns (table_schema, table_name, column_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
@@ -81,7 +81,7 @@ mod information_schema {
         }
     }
 
-    table! {
+    diesel::table! {
         information_schema.key_column_usage (table_schema, table_name, column_name, constraint_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
@@ -92,7 +92,7 @@ mod information_schema {
         }
     }
 
-    table! {
+    diesel::table! {
         information_schema.table_constraints (table_schema, table_name, constraint_name) {
             table_schema -> VarChar,
             table_name -> VarChar,
@@ -102,7 +102,7 @@ mod information_schema {
         }
     }
 
-    table! {
+    diesel::table! {
         information_schema.referential_constraints (constraint_schema, constraint_name) {
             constraint_schema -> VarChar,
             constraint_name -> VarChar,
@@ -111,8 +111,8 @@ mod information_schema {
         }
     }
 
-    allow_tables_to_appear_in_same_query!(table_constraints, referential_constraints);
-    allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
+    diesel::allow_tables_to_appear_in_same_query!(table_constraints, referential_constraints);
+    diesel::allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
 
 pub fn get_table_data<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<ColumnInformation>>

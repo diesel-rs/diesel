@@ -21,18 +21,18 @@ macro_rules! static_cond {
 
     // no else condition provided: fall through with empty else
     (if $lhs:tt == $rhs:tt $then:tt) => {
-        static_cond!(if $lhs == $rhs $then else { });
+        $crate::static_cond!(if $lhs == $rhs $then else { });
     };
     (if $lhs:tt != $rhs:tt $then:tt) => {
-        static_cond!(if $lhs != $rhs $then else { });
+        $crate::static_cond!(if $lhs != $rhs $then else { });
     };
 
     // we evaluate a conditional by generating a new macro (in an inner scope, so name shadowing is
     // not a big concern) and calling it
     (if $lhs:tt == $rhs:tt $then:tt else $els:tt) => {
-        static_cond!(@go $lhs $rhs $then $els);
+        $crate::static_cond!(@go $lhs $rhs $then $els);
     };
     (if $lhs:tt != $rhs:tt $then:tt else $els:tt) => {
-        static_cond!(@go $lhs $rhs $els $then);
+        $crate::static_cond!(@go $lhs $rhs $els $then);
     };
 }

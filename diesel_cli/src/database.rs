@@ -258,7 +258,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
 }
 
 #[cfg(feature = "postgres")]
-table! {
+diesel::table! {
     pg_database (datname) {
         datname -> Text,
         datistemplate -> Bool,
@@ -279,7 +279,7 @@ fn pg_database_exists(conn: &PgConnection, database_name: &str) -> QueryResult<b
 }
 
 #[cfg(feature = "mysql")]
-table! {
+diesel::table! {
     information_schema.schemata (schema_name) {
         schema_name -> Text,
     }

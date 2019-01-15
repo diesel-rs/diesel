@@ -44,7 +44,7 @@ macro_rules! numeric_operation {
             }
         }
 
-        impl_selectable_expression!($name<Lhs, Rhs>);
+        $crate::impl_selectable_expression!($name<Lhs, Rhs>);
 
         impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs>
         where

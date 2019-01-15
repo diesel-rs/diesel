@@ -272,7 +272,7 @@ macro_rules! __diesel_sql_function_body {
             {
             }
 
-            static_cond! {
+            $crate::static_cond! {
                 if $aggregate == no {
                     impl<$($type_args_bounds)* $($arg_name),*>
                         $crate::expression::NonAggregate
@@ -285,7 +285,7 @@ macro_rules! __diesel_sql_function_body {
                 }
             }
 
-            __diesel_sqlite_register_fn! {
+            $crate::__diesel_sqlite_register_fn! {
                 type_args = ($($type_args)*),
                 aggregate = $aggregate,
                 fn_name = $fn_name,
