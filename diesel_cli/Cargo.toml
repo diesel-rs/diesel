@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "1.3.1"
+version = "1.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
@@ -18,9 +18,9 @@ path = "src/main.rs"
 [dependencies]
 chrono = "0.4"
 clap = "2.27"
-diesel = { version = "~1.3.0", default-features = false }
+diesel = { version = "~1.4.0", default-features = false }
 dotenv = ">=0.8, <0.11"
-migrations_internals = "~1.3.0"
+migrations_internals = "~1.4.0"
 serde = { version = "1.0.0", features = ["derive"] }
 tempfile = "3.0.0"
 toml = "0.4.6"

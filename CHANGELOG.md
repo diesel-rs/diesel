@@ -6,9 +6,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [1.4.0] - 2019-01-20
+
 ### Fixed
 
 * `embed_migrations!` will no longer emit an unused import warning
+* Diesel now supports uuid 0.7 by adding the new feature flag `uuidv07`
 
 ### Added
 
