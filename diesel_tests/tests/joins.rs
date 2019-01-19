@@ -148,7 +148,9 @@ fn left_outer_joins() {
         (sean, Some(seans_second_post)),
         (tess, None),
     ];
-    let source = users::table.left_outer_join(posts::table);
+    let source = users::table
+        .left_outer_join(posts::table)
+        .order_by((users::id.asc(), posts::id.asc()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -174,7 +176,8 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
     ];
     let source = users::table
         .left_outer_join(posts::table)
-        .select((users::name, posts::title.nullable()));
+        .select((users::name, posts::title.nullable()))
+        .order_by((users::id.asc(), posts::title.asc()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -224,7 +227,8 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
 
     let source = users::table
         .left_outer_join(posts::table)
-        .select((posts::title, posts::body).nullable());
+        .select((posts::title, posts::body).nullable())
+        .order_by((users::id.asc(), posts::id.asc()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -256,7 +260,8 @@ fn select_complex_from_left_join() {
 
     let source = users::table
         .left_outer_join(posts::table)
-        .select((users::all_columns, (posts::title, posts::body).nullable()));
+        .select((users::all_columns, (posts::title, posts::body).nullable()))
+        .order_by((users::id.asc(), posts::id.asc()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -288,7 +293,8 @@ fn select_right_side_with_nullable_column_first() {
 
     let source = users::table
         .left_outer_join(posts::table)
-        .select((users::all_columns, (posts::body, posts::title).nullable()));
+        .select((users::all_columns, (posts::body, posts::title).nullable()))
+        .order_by((users::id.asc(), posts::id.asc()));
     let actual_data: Vec<_> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
