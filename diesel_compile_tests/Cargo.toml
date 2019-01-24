@@ -10,5 +10,5 @@ diesel = { version = "1.4.0", default-features = false, features = ["extras", "s
 compiletest_rs = "=0.3.17"
 
 [replace]
-"diesel:1.4.0" = { path = "../diesel" }
+"diesel:1.4.1" = { path = "../diesel" }
 "diesel_derives:1.4.0" = { path = "../diesel_derives" }
