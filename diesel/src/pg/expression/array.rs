@@ -81,16 +81,19 @@ impl<T, ST, QS> SelectableExpression<QS> for ArrayLiteral<T, ST>
 where
     T: SelectableExpression<QS>,
     ArrayLiteral<T, ST>: AppearsOnTable<QS>,
-{}
+{
+}
 
 impl<T, ST, QS> AppearsOnTable<QS> for ArrayLiteral<T, ST>
 where
     T: AppearsOnTable<QS>,
     ArrayLiteral<T, ST>: Expression,
-{}
+{
+}
 
 impl<T, ST> NonAggregate for ArrayLiteral<T, ST>
 where
     T: NonAggregate,
     ArrayLiteral<T, ST>: Expression,
-{}
+{
+}

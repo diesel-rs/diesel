@@ -6,9 +6,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [1.4.0] - 2019-01-20
+
 ### Fixed
 
 * `embed_migrations!` will no longer emit an unused import warning
+* Diesel now supports uuid 0.7 by adding the new feature flag `uuidv07`
 
 ### Added
 
@@ -36,6 +39,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   example, if one of the fields has the type `Cow<'a, str>`). To define an
   association to such a type, write `#[belongs_to(parent = "User<'_>")]`
 
+* `Nullable<Text>` now supports `ilike` expression on  in PostgreSQL.
+
+* `diesel_manage_updated_at('table_name')` is now available on SQLite. This
+  function can be called in your migrations to create a trigger which
+  automatically sets the `updated_at` column, unless that column was updated in
+  the query.
+
 ### Changed
 
 * Diesel's derives now require that `extern crate diesel;` be at your crate root
@@ -43,7 +53,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `Tinyint` has been renamed to `TinyInt` and an alias has been created from `Tinyint` to `TinyInt`.
 
-* The minimal officially supported rustc version is now 1.27.0
+* The minimal officially supported rustc version is now 1.31.0
 
 ## [1.3.3] - 2018-09-12
 
@@ -1582,3 +1592,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.3.1]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.3.1
 [1.3.2]: https://github.com/diesel-rs/diesel/compare/v1.3.1...v1.3.2
 [1.3.3]: https://github.com/diesel-rs/diesel/compare/v1.3.2...v1.3.3
+[1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0

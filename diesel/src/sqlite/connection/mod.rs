@@ -50,16 +50,22 @@ impl Connection for SqliteConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        RawConnection::establish(database_url).map(|conn| SqliteConnection {
+        use result::ConnectionError::CouldntSetupConfiguration;
+
+        let raw_connection = RawConnection::establish(database_url)?;
+        let conn = Self {
             statement_cache: StatementCache::new(),
-            raw_connection: conn,
+            raw_connection,
             transaction_manager: AnsiTransactionManager::new(),
-        })
+        };
+        conn.register_diesel_sql_functions()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
     }
 
     #[doc(hidden)]
     fn execute(&self, query: &str) -> QueryResult<usize> {
-        try!(self.batch_execute(query));
+        self.batch_execute(query)?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -71,7 +77,7 @@ impl Connection for SqliteConnection {
         Self::Backend: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Self::Backend>,
     {
-        let mut statement = try!(self.prepare_query(&source.as_query()));
+        let mut statement = self.prepare_query(&source.as_query())?;
         let statement_use = StatementUse::new(&mut statement);
         let iter = StatementIterator::new(statement_use);
         iter.collect()
@@ -94,9 +100,9 @@ impl Connection for SqliteConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let mut statement = try!(self.prepare_query(source));
+        let mut statement = self.prepare_query(source)?;
         let mut statement_use = StatementUse::new(&mut statement);
-        try!(statement_use.run());
+        statement_use.run()?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -191,14 +197,14 @@ impl SqliteConnection {
         &self,
         source: &T,
     ) -> QueryResult<MaybeCached<Statement>> {
-        let mut statement = try!(self.cached_prepared_statement(source));
+        let mut statement = self.cached_prepared_statement(source)?;
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        try!(source.collect_binds(&mut bind_collector, &()));
+        source.collect_binds(&mut bind_collector, &())?;
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         for (tpe, value) in metadata.into_iter().zip(binds) {
-            try!(statement.bind(tpe, value));
+            statement.bind(tpe, value)?;
         }
 
         Ok(statement)
@@ -218,7 +224,7 @@ impl SqliteConnection {
         &self,
         fn_name: &str,
         deterministic: bool,
-        f: F,
+        mut f: F,
     ) -> QueryResult<()>
     where
         F: FnMut(Args) -> Ret + Send + 'static,
@@ -226,7 +232,30 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register(&self.raw_connection, fn_name, deterministic, f)
+        functions::register(
+            &self.raw_connection,
+            fn_name,
+            deterministic,
+            move |_, args| f(args),
+        )
+    }
+
+    fn register_diesel_sql_functions(&self) -> QueryResult<()> {
+        use sql_types::{Integer, Text};
+
+        functions::register::<Text, Integer, _, _, _>(
+            &self.raw_connection,
+            "diesel_manage_updated_at",
+            false,
+            |conn, table_name: String| {
+                conn.exec(&format!(
+                    include_str!("diesel_manage_updated_at.sql"),
+                    table_name = table_name
+                ))
+                .expect("Failed to create trigger");
+                0 // have to return *something*
+            },
+        )
     }
 }
 
@@ -305,8 +334,10 @@ mod tests {
                     } else {
                         c.to_uppercase().to_string()
                     }
-                }).collect::<String>()
-        }).unwrap();
+                })
+                .collect::<String>()
+        })
+        .unwrap();
 
         let mapped_string = ::select(fun_case("foobar"))
             .get_result::<String>(&connection)
@@ -334,7 +365,8 @@ mod tests {
         add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
             y += 1;
             x + y
-        }).unwrap();
+        })
+        .unwrap();
 
         let added = ::select((add_counter(1), add_counter(1), add_counter(1)))
             .get_result::<(i32, i32, i32)>(&connection);

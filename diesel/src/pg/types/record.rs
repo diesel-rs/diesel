@@ -23,7 +23,7 @@ macro_rules! tuple_impls {
             // Yes, we're relying on the order of evaluation of subexpressions
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
-            #[cfg_attr(feature = "cargo-clippy", allow(eval_order_dependence))]
+            #[allow(clippy::eval_order_dependence)]
             fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 let mut bytes = not_none!(bytes);
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
@@ -155,7 +155,8 @@ impl<T, QS> SelectableExpression<QS> for PgTuple<T>
 where
     T: SelectableExpression<QS>,
     Self: AppearsOnTable<QS>,
-{}
+{
+}
 
 impl<T, QS> AppearsOnTable<QS> for PgTuple<T>
 where
@@ -197,9 +198,7 @@ mod tests {
                 Nullable<Integer>,
             )>,
         >("SELECT ((4, NULL), NULL)")
-            .get_result::<((Option<i32>, Option<String>), Option<i32>)>(
-            &conn,
-        );
+        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(&conn);
         assert_eq!(Ok(((Some(4), None), None)), tup);
     }
 

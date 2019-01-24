@@ -2,15 +2,9 @@ use diesel::*;
 use dotenv::dotenv;
 use std::env;
 
-#[cfg(all(
-    feature = "postgres",
-    feature = "backend_specific_database_url"
-))]
+#[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:PG_DATABASE_URL");
-#[cfg(all(
-    feature = "sqlite",
-    feature = "backend_specific_database_url"
-))]
+#[cfg(all(feature = "sqlite", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:SQLITE_DATABASE_URL");
 #[cfg(all(feature = "mysql", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:MYSQL_DATABASE_URL");
@@ -127,8 +121,8 @@ impl NewPost {
 #[derive(Debug, Clone, Copy, Insertable)]
 #[table_name = "comments"]
 pub struct NewComment<'a>(
-    #[column_name(post_id)] pub i32,
-    #[column_name(text)] pub &'a str,
+    #[column_name = "post_id"] pub i32,
+    #[column_name = "text"] pub &'a str,
 );
 
 #[derive(PartialEq, Eq, Debug, Clone, Insertable)]

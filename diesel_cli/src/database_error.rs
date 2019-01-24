@@ -45,15 +45,15 @@ impl Error for DatabaseError {
                 "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set."
             }
             IoError(ref error) => error
-                .cause()
+                .source()
                 .map(|e| e.description())
                 .unwrap_or_else(|| error.description()),
             QueryError(ref error) => error
-                .cause()
+                .source()
                 .map(|e| e.description())
                 .unwrap_or_else(|| error.description()),
             ConnectionError(ref error) => error
-                .cause()
+                .source()
                 .map(|e| e.description())
                 .unwrap_or_else(|| error.description()),
         }

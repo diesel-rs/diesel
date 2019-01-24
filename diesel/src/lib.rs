@@ -137,45 +137,33 @@
     missing_docs
 )]
 // Clippy lints
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        option_map_unwrap_or_else,
-        option_map_unwrap_or,
-        match_same_arms,
-        type_complexity,
-        redundant_field_names
-    )
+#![allow(
+    clippy::option_map_unwrap_or_else,
+    clippy::option_map_unwrap_or,
+    clippy::match_same_arms,
+    clippy::type_complexity,
+    clippy::redundant_field_names
 )]
-#![cfg_attr(
-    feature = "cargo-clippy",
-    warn(
-        option_unwrap_used,
-        result_unwrap_used,
-        print_stdout,
-        wrong_pub_self_convention,
-        mut_mut,
-        non_ascii_literal,
-        similar_names,
-        unicode_not_nfc,
-        enum_glob_use,
-        if_not_else,
-        items_after_statements,
-        used_underscore_binding
-    )
-)]
-#![cfg_attr(
-    all(test, feature = "cargo-clippy"),
-    allow(option_unwrap_used, result_unwrap_used)
+#![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
+#![warn(
+    clippy::option_unwrap_used,
+    clippy::result_unwrap_used,
+    clippy::print_stdout,
+    clippy::wrong_pub_self_convention,
+    clippy::mut_mut,
+    clippy::non_ascii_literal,
+    clippy::similar_names,
+    clippy::unicode_not_nfc,
+    clippy::enum_glob_use,
+    clippy::if_not_else,
+    clippy::items_after_statements,
+    clippy::used_underscore_binding
 )]
 
 #[cfg(feature = "postgres")]
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
-// This is required to make `diesel_derives` re-export, but cargo-clippy thinks its unused
-#[cfg_attr(feature = "cargo-clippy", allow(useless_attribute))]
-#[allow(unused_imports)]
 #[macro_use]
 extern crate diesel_derives;
 #[doc(hidden)]

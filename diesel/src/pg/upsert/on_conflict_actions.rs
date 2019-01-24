@@ -58,7 +58,7 @@ where
 {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("excluded.");
-        try!(out.push_identifier(T::NAME));
+        out.push_identifier(T::NAME)?;
         Ok(())
     }
 }

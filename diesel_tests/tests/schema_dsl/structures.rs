@@ -86,7 +86,7 @@ where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql("CREATE TABLE ");
-        try!(out.push_identifier(self.name));
+        out.push_identifier(self.name)?;
         out.push_sql(" (");
         self.columns.walk_ast(out.reborrow())?;
         out.push_sql(")");
@@ -106,7 +106,7 @@ where
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        try!(out.push_identifier(self.name));
+        out.push_identifier(self.name)?;
         out.push_sql(" ");
         out.push_sql(self.type_name);
         Ok(())
@@ -174,7 +174,7 @@ impl<Col> QueryId for AutoIncrement<Col> {
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        try!(out.push_identifier((self.0).0.name));
+        out.push_identifier((self.0).0.name)?;
         out.push_sql(" SERIAL PRIMARY KEY");
         Ok(())
     }

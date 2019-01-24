@@ -13,6 +13,7 @@ jobs:
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
       - bash: |
+          brew update &&
           brew install sqlite
         displayName: Install sqlite
 
@@ -27,6 +28,7 @@ jobs:
       PG_EXAMPLE_DATABASE_URL: postgres://postgres@localhost/diesel_example
     setup:
       - bash: |
+          brew update &&
           brew install postgres &&
           brew services start postgres &&
           sleep 3 &&
@@ -46,6 +48,7 @@ jobs:
       RUST_TEST_THREADS: 1
     setup:
       - bash: |
+          brew update &&
           brew install mysql &&
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
@@ -192,16 +195,16 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.30.1
+        rust_version: 1.31.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
-        rustup component add rustfmt-preview
+        rustup component add rustfmt
       displayName: Install rustfmt
     - bash: |
-        rustup component add clippy-preview
+        rustup component add clippy
       displayName: Install clippy
     - bash: |
         cargo clippy
@@ -236,11 +239,11 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.27.0
+        rust_version: 1.31.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
         cargo check --all
-      displayName: Check building with rust 1.27.0
+      displayName: Check building with rust 1.31.0

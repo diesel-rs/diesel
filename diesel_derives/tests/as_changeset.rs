@@ -16,7 +16,8 @@ fn named_ref_struct() {
         .set(&User {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -41,7 +42,8 @@ fn named_struct() {
         .set(User {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -67,7 +69,8 @@ fn with_explicit_table_name() {
         .set(&UserForm {
             name: String::from("Jim"),
             hair_color: String::from("blue"),
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -93,7 +96,8 @@ fn with_lifetime() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -119,7 +123,8 @@ fn with_multiple_lifetimes() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -145,7 +150,8 @@ fn with_lifetime_constraints() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -173,7 +179,8 @@ fn with_explicit_column_names() {
         .set(&UserForm {
             nombre: "Jim",
             color_de_pelo: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -270,7 +277,8 @@ fn primary_key_is_not_updated() {
             id: 3,
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -299,7 +307,8 @@ fn primary_key_is_based_on_column_name() {
             _id: 3,
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -327,7 +336,8 @@ fn primary_key_is_not_updated_with_custom_pk() {
         .set(&UserForm {
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -357,7 +367,8 @@ fn primary_key_is_not_updated_with_custom_composite_pk() {
             id: 3,
             name: "Jim",
             hair_color: "blue",
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -383,13 +394,15 @@ fn option_fields_are_skipped() {
         .set(&UserForm {
             name: "Jim",
             hair_color: Some("blue"),
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
     update(users::table.find(2))
         .set(&UserForm {
             name: "Ruby",
             hair_color: None,
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![
@@ -416,13 +429,15 @@ fn option_fields_are_assigned_null_when_specified() {
         .set(&UserForm {
             name: "Jim",
             hair_color: Some("blue"),
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
     update(users::table.find(2))
         .set(&UserForm {
             name: "Ruby",
             hair_color: None,
-        }).execute(&connection)
+        })
+        .execute(&connection)
         .unwrap();
 
     let expected = vec![

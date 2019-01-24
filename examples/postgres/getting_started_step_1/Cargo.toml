@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
-diesel = { version = "1.3.0", features = ["postgres"] }
+diesel = { version = "1.4.0", features = ["postgres"] }
 dotenv = "0.10"

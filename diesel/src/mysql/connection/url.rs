@@ -30,18 +30,18 @@ impl ConnectionOptions {
         }
 
         let host = match url.host() {
-            Some(Host::Ipv6(host)) => Some(try!(CString::new(host.to_string()))),
-            Some(host) => Some(try!(CString::new(host.to_string()))),
+            Some(Host::Ipv6(host)) => Some(CString::new(host.to_string())?),
+            Some(host) => Some(CString::new(host.to_string())?),
             None => None,
         };
-        let user = try!(decode_into_cstring(url.username()));
+        let user = decode_into_cstring(url.username())?;
         let password = match url.password() {
-            Some(password) => Some(try!(decode_into_cstring(password))),
+            Some(password) => Some(decode_into_cstring(password)?),
             None => None,
         };
         let database = match url.path_segments().and_then(|mut iter| iter.nth(0)) {
             Some("") | None => None,
-            Some(segment) => Some(try!(CString::new(segment.as_bytes()))),
+            Some(segment) => Some(CString::new(segment.as_bytes())?),
         };
 
         Ok(ConnectionOptions {
@@ -75,11 +75,9 @@ impl ConnectionOptions {
 }
 
 fn decode_into_cstring(s: &str) -> ConnectionResult<CString> {
-    let decoded = try!(
-        percent_decode(s.as_bytes())
-            .decode_utf8()
-            .map_err(|_| connection_url_error())
-    );
+    let decoded = percent_decode(s.as_bytes())
+        .decode_utf8()
+        .map_err(|_| connection_url_error())?;
     CString::new(decoded.as_bytes()).map_err(Into::into)
 }
 

@@ -11,8 +11,9 @@ pub struct StatementIterator<'a> {
     output_binds: Binds,
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // don't neet `Iterator` here
+#[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: &'a mut Statement, types: Vec<(MysqlType, IsSigned)>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
 
@@ -70,8 +71,9 @@ pub struct NamedStatementIterator<'a> {
     metadata: StatementMetadata,
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // don't need `Iterator` here
+#[allow(clippy::should_implement_trait)] // don't need `Iterator` here
 impl<'a> NamedStatementIterator<'a> {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: &'a mut Statement) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
         let mut output_binds = Binds::from_result_metadata(metadata.fields());

@@ -54,12 +54,14 @@ pub fn load_foreign_key_constraints(
             kcu::table.on(tc::constraint_schema
                 .eq(kcu::constraint_schema)
                 .and(tc::constraint_name.eq(kcu::constraint_name))),
-        ).select((
+        )
+        .select((
             (kcu::table_name, kcu::table_schema),
             (kcu::referenced_table_name, kcu::referenced_table_schema),
             kcu::column_name,
             kcu::referenced_column_name,
-        )).load::<(TableName, TableName, _, _)>(connection)?
+        ))
+        .load::<(TableName, TableName, _, _)>(connection)?
         .into_iter()
         .map(
             |(mut child_table, mut parent_table, foreign_key, primary_key)| {
@@ -72,7 +74,8 @@ pub fn load_foreign_key_constraints(
                     primary_key,
                 }
             },
-        ).collect();
+        )
+        .collect();
     Ok(constraints)
 }
 

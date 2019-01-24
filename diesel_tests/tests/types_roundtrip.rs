@@ -37,12 +37,14 @@ where
         let query = select(value.clone().into_sql::<ST>());
         let result = query.get_result::<T>(connection);
         match result {
-            Ok(res) => if value != res {
-                println!("{:?}, {:?}", value, res);
-                false
-            } else {
-                true
-            },
+            Ok(res) => {
+                if value != res {
+                    println!("{:?}, {:?}", value, res);
+                    false
+                } else {
+                    true
+                }
+            }
             Err(Error::DatabaseError(_, ref e))
                 if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
             {

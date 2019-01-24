@@ -94,14 +94,14 @@ pub trait Connection: SimpleConnection + Sized + Send {
         E: From<Error>,
     {
         let transaction_manager = self.transaction_manager();
-        try!(transaction_manager.begin_transaction(self));
+        transaction_manager.begin_transaction(self)?;
         match f() {
             Ok(value) => {
-                try!(transaction_manager.commit_transaction(self));
+                transaction_manager.commit_transaction(self)?;
                 Ok(value)
             }
             Err(e) => {
-                try!(transaction_manager.rollback_transaction(self));
+                transaction_manager.rollback_transaction(self)?;
                 Err(e)
             }
         }

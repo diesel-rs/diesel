@@ -103,7 +103,8 @@ pub fn output_schema(
             return Err(format!(
                 "Failed to apply schema patch. stdout: {} stderr: {}",
                 stdout, stderr,
-            ).into());
+            )
+            .into());
         }
     }
 

@@ -129,7 +129,7 @@ impl RawConnection {
         // https://dev.mysql.com/doc/refman/5.7/en/mysql-stmt-init.html
         let stmt = NonNull::new(stmt).expect("Out of memory creating prepared statement");
         let stmt = Statement::new(stmt);
-        try!(stmt.prepare(query));
+        stmt.prepare(query)?;
         Ok(stmt)
     }
 

@@ -86,7 +86,7 @@ impl ToSql<Time, Pg> for NaiveTime {
 
 impl FromSql<Time, Pg> for NaiveTime {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let PgTime(offset) = try!(FromSql::<Time, Pg>::from_sql(bytes));
+        let PgTime(offset) = FromSql::<Time, Pg>::from_sql(bytes)?;
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
     }
@@ -105,7 +105,7 @@ impl ToSql<Date, Pg> for NaiveDate {
 
 impl FromSql<Date, Pg> for NaiveDate {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let PgDate(offset) = try!(FromSql::<Date, Pg>::from_sql(bytes));
+        let PgDate(offset) = FromSql::<Date, Pg>::from_sql(bytes)?;
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {

@@ -85,7 +85,8 @@ impl Project {
             .expect("Error reading directory")
             .map(|e| Migration {
                 path: e.expect("error reading entry").path().into(),
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn delete_single_file<P: AsRef<Path>>(&self, path: P) {

@@ -194,10 +194,9 @@ fn setup_creates_config_file() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(p.has_file("diesel.toml"));
-    assert!(
-        p.file_contents("diesel.toml")
-            .contains("diesel.rs/guides/configuring-diesel-cli")
-    );
+    assert!(p
+        .file_contents("diesel.toml")
+        .contains("diesel.rs/guides/configuring-diesel-cli"));
 }
 
 #[test]
@@ -213,10 +212,9 @@ fn setup_can_take_config_file_by_env() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(!p.has_file("diesel.toml"));
     assert!(p.has_file("foo"));
-    assert!(
-        p.file_contents("foo")
-            .contains("diesel.rs/guides/configuring-diesel-cli")
-    );
+    assert!(p
+        .file_contents("foo")
+        .contains("diesel.rs/guides/configuring-diesel-cli"));
 }
 
 #[test]
@@ -238,8 +236,7 @@ fn setup_can_take_config_file_by_param() {
     assert!(!p.has_file("diesel.toml"));
     assert!(!p.has_file("foo"));
     assert!(p.has_file("bar"));
-    assert!(
-        p.file_contents("bar")
-            .contains("diesel.rs/guides/configuring-diesel-cli")
-    );
+    assert!(p
+        .file_contents("bar")
+        .contains("diesel.rs/guides/configuring-diesel-cli"));
 }

@@ -24,7 +24,7 @@ impl Statement {
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v2(
                 raw_connection.internal_connection.as_ptr(),
-                try!(CString::new(sql)).as_ptr(),
+                CString::new(sql)?.as_ptr(),
                 sql.len() as libc::c_int,
                 &mut stmt,
                 &mut unused_portion,
@@ -128,7 +128,8 @@ impl Drop for Statement {
                     stderr(),
                     "Error finalizing SQLite prepared statement: {:?}",
                     e
-                ).expect("Error writing to `stderr`");
+                )
+                .expect("Error writing to `stderr`");
             } else {
                 panic!("Error finalizing SQLite prepared statement: {:?}", e);
             }

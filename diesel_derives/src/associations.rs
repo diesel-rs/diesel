@@ -53,7 +53,8 @@ fn derive_belongs_to(
         let lifetime = syn::Lifetime::new(&format!("'__{}", letter), span);
         generics.params.push(parse_quote!(#lifetime));
         lifetime
-    }).fold_type_path(parent_struct);
+    })
+    .fold_type_path(parent_struct);
 
     // TODO: Remove this special casing as soon as we bump our minimal supported
     // rust version to >= 1.30.0 because this version will add
@@ -121,10 +122,12 @@ impl AssociationOptions {
                     .map(|i| parse_quote!(#i))
                     .or_else(|_| m.ty_value())
                     .map_err(|_| m.span())
-            }).and_then(|ty| match ty {
+            })
+            .and_then(|ty| match ty {
                 syn::Type::Path(ty_path) => Ok(ty_path),
                 _ => Err(ty.span()),
-            }).map_err(|span| {
+            })
+            .map_err(|span| {
                 span.error("Expected a struct name")
                     .help("e.g. `#[belongs_to(User)]` or `#[belongs_to(parent = \"User<'_>\")]")
             })?;

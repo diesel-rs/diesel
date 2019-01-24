@@ -125,21 +125,24 @@ impl<Left, Right, Kind, T> SelectableExpression<Join<Left, Right, Kind>> for Nul
 where
     T: SelectableExpression<Join<Left, Right, Inner>>,
     Nullable<T>: AppearsOnTable<Join<Left, Right, Kind>>,
-{}
+{
+}
 
 // FIXME: Remove this when overlapping marker traits are stable
 impl<Join, On, T> SelectableExpression<JoinOn<Join, On>> for Nullable<T>
 where
     Nullable<T>: SelectableExpression<Join>,
     Nullable<T>: AppearsOnTable<JoinOn<Join, On>>,
-{}
+{
+}
 
 // FIXME: Remove this when overlapping marker traits are stable
 impl<From, T> SelectableExpression<SelectStatement<From>> for Nullable<T>
 where
     Nullable<T>: SelectableExpression<From>,
     Nullable<T>: AppearsOnTable<SelectStatement<From>>,
-{}
+{
+}
 
 // FIXME: We want these blanket impls when overlapping marker traits are stable
 // impl<T, Join, On> SelectableExpression<JoinOn<Join, On>> for T where

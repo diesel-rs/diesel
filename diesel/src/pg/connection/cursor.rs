@@ -65,7 +65,8 @@ impl NamedCursor {
             .map(|i| {
                 let row = PgNamedRow::new(&self, i);
                 T::build(&row).map_err(DeserializationError)
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn index_of_column(&self, column_name: &str) -> Option<usize> {

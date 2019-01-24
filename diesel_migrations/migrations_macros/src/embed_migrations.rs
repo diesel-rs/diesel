@@ -54,9 +54,10 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
             run_with_output(conn, &mut io::sink())
         }
 
-        pub fn run_with_output<C: MigrationConnection>(conn: &C, out: &mut io::Write)
-            -> Result<(), RunMigrationsError>
-        {
+        pub fn run_with_output<C: MigrationConnection>(
+            conn: &C,
+            out: &mut io::Write,
+        ) -> Result<(), RunMigrationsError> {
             run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
         }
     );
@@ -89,7 +90,7 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<E
 }
 
 fn migration_literal_from_path(path: &Path) -> Result<quote::Tokens, Box<Error>> {
-    let version = try!(version_from_path(path));
+    let version = version_from_path(path)?;
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();
 

@@ -442,7 +442,8 @@ impl<F, S, D, W, O, L, Of, G, LC> QueryDsl for SelectStatement<F, S, D, W, O, L,
 
 impl<F, S, D, W, O, L, Of, G, LC, Conn> RunQueryDsl<Conn>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
-{}
+{
+}
 
 impl<F, S, D, W, O, L, Of, G, LC, Tab> Insertable<Tab>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>

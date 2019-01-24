@@ -6,7 +6,7 @@ use std::ffi::NulError;
 use std::fmt::{self, Display};
 
 #[derive(Debug)]
-#[cfg_attr(feature = "cargo-clippy", allow(enum_variant_names))]
+#[allow(clippy::enum_variant_names)]
 /// Represents all the ways that a query can fail.
 ///
 /// This type is not intended to be exhaustively matched, and new variants may

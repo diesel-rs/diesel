@@ -107,7 +107,7 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
 /// let old_count = get_count();
-/// try!(diesel::delete(users.filter(id.eq(1))).execute(&connection));
+/// diesel::delete(users.filter(id.eq(1))).execute(&connection)?;
 /// assert_eq!(old_count.map(|count| count - 1), get_count());
 /// # Ok(())
 /// # }
@@ -127,7 +127,7 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
 /// #     let get_count = || users.count().first::<i64>(&connection);
-/// try!(diesel::delete(users).execute(&connection));
+/// diesel::delete(users).execute(&connection)?;
 /// assert_eq!(Ok(0), get_count());
 /// # Ok(())
 /// # }

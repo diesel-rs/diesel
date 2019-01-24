@@ -55,7 +55,7 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<SqliteConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        try!(::update(changeset).set(changeset).execute(self));
+        ::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
 }
@@ -73,7 +73,7 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<MysqlConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        try!(::update(changeset).set(changeset).execute(self));
+        ::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
 }
@@ -139,4 +139,5 @@ pub trait SaveChangesDsl<Conn> {
 
 impl<T, Conn> SaveChangesDsl<Conn> for T where
     T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget
-{}
+{
+}
