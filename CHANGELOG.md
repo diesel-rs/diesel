@@ -6,6 +6,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [1.4.1] - 2019-01-24
+
+### Fixed
+
+* This release fixes a minor memory safety issue in SQLite. This bug would only occur in an error handling branch that should never occur in practice.
+
 ## [1.4.0] - 2019-01-20
 
 ### Fixed
@@ -1593,3 +1599,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.3.2]: https://github.com/diesel-rs/diesel/compare/v1.3.1...v1.3.2
 [1.3.3]: https://github.com/diesel-rs/diesel/compare/v1.3.2...v1.3.3
 [1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
+[1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1
