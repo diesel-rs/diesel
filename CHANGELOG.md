@@ -27,6 +27,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `MacAddr` SQL type can now be used without enabling the `network-address`
   feature.
 
+* Added support for SQLite's `UPSERT`.
+  You can use This feature above SQLite version 3.24.0.
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -130,11 +133,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `embed_migrations!` will no longer emit an unused import warning
 * Diesel now supports uuid 0.7 by adding the new feature flag `uuidv07`
-
-### Added
-
-* Added support for SQLite's `UPSERT`.
-  You can use This feature above SQLite version 3.24.0.
 
 * Diesel CLI can be configured to error if a command would result in changes
   to your schema file by passing `--locked-schema`. This is intended for use
