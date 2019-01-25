@@ -243,7 +243,11 @@ fn upsert_with_no_changes_executes_do_nothing() {
         .execute(&connection);
 
     assert_eq!(Ok(0), result);
+}
 
+#[test]
+#[cfg(feature = "postgres")]
+fn upsert_with_no_changes_executes_do_nothing_owned() {
     // Try the same thing with an owned type.
     let connection = connection_with_sean_and_tess_in_users_table();
     let result = insert_into(users::table)
