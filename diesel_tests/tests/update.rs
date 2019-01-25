@@ -245,7 +245,6 @@ fn upsert_with_no_changes_executes_do_nothing() {
     assert_eq!(Ok(0), result);
 }
 
-
 #[test]
 #[cfg(feature = "postgres")]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
