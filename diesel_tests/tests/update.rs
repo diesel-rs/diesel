@@ -243,8 +243,17 @@ fn upsert_with_no_changes_executes_do_nothing() {
         .execute(&connection);
 
     assert_eq!(Ok(0), result);
+}
 
-    // Try the same thing with an owned type.
+#[test]
+#[cfg(feature = "postgres")]
+fn upsert_with_no_changes_executes_do_nothing_owned() {
+    #[derive(AsChangeset)]
+    #[table_name = "users"]
+    struct Changes {
+        hair_color: Option<String>,
+    }
+
     let connection = connection_with_sean_and_tess_in_users_table();
     let result = insert_into(users::table)
         .values(User::new(1, "Sean"))
