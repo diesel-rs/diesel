@@ -160,8 +160,8 @@ pub fn build_cli() -> App<'static, 'static> {
                 .conflicts_with("except-table-regexes"),
         )
         .arg(
-            Arg::with_name("except-tables-regexes")
-                .long("except-tables-regexes")
+            Arg::with_name("except-table-regexes")
+                .long("except-table-regexes")
                 .help("Exclude tables from table-name that matches regex")
                 .conflicts_with("only-tables")
                 .conflicts_with("whitelist")
