@@ -196,7 +196,7 @@ mod postgres {
     use diesel::*;
     use schema::*;
     use std::collections::Bound;
-    use std::ops::{Range, RangeFrom, RangeTo, RangeInclusive, RangeToInclusive};
+    use std::ops::{Range, RangeFrom, RangeTo, RangeInclusive};
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
     #[table_name = "all_the_ranges"]
@@ -217,7 +217,7 @@ mod postgres {
         num: RangeFrom<PgNumeric>,
         ts: RangeInclusive<NaiveDateTime>,
         tstz: RangeTo<DateTime<Utc>>,
-        date: RangeToInclusive<NaiveDate>,
+        date: RangeTo<NaiveDate>,
     }
 
     #[test]
@@ -234,22 +234,22 @@ mod postgres {
         let inferred_bounds = InferredBounds {
             int4: (Bound::Included(5), Bound::Excluded(12)),
             int8: (Bound::Included(5), Bound::Excluded(13)),
-            num: (Bound::Included(numeric), Bound::Unbounded),
+            num: (Bound::Included(numeric.clone()), Bound::Unbounded),
             ts: (Bound::Included(dt), Bound::Included(dt_next_day)),
             tstz: (
                 Bound::Unbounded,
                 Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc)),
             ),
-            date: (Bound::Unbounded, Bound::Included(dt.date())),
+            date: (Bound::Unbounded, Bound::Excluded(dt.date())),
         };
 
         let inferred_ranges = InferredRanges {
             int4: Range { start: 5, end: 12 },
             int8: Range { start: 5, end: 13 },
-            num: RangeFrom { start: numeric },
+            num: RangeFrom { start: numeric.clone() },
             ts: RangeInclusive::new(dt, dt_next_day),
             tstz: RangeTo { end: DateTime::<Utc>::from_utc(dt, Utc) },
-            date: RangeToInclusive { end: dt.date() },
+            date: RangeTo { end: dt.date() },
         };
 
         insert_into(all_the_ranges::table)
