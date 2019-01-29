@@ -115,7 +115,7 @@ impl<'a> NamedRow<Sqlite> for SqliteNamedRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value<'b>(&'b self, idx: usize) -> Option<&'b SqliteValue> {
+    fn get_raw_value(&self, idx: usize) -> Option<&SqliteValue> {
         unsafe {
             let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), idx as libc::c_int);
             SqliteValue::new(ptr)

@@ -17,8 +17,7 @@ use std::num::NonZeroU32;
 pub struct Pg;
 
 /// The raw value representation of the postgres backend
-#[derive(Copy, Clone, Debug, SqlType)]
-#[postgres(oid = "0", array_oid = "0")]
+#[derive(Debug)]
 pub struct PgValue<'a> {
     raw_bytes: &'a [u8],
     oid: Option<NonZeroU32>,
@@ -47,8 +46,8 @@ impl<'a> PgValue<'a> {
     }
 
     /// Get the type oid of the value represented by this raw value
-    pub fn oid(&self) -> u32 {
-        self.oid.unwrap().get()
+    pub fn oid(&self) -> Option<NonZeroU32> {
+        self.oid
     }
 }
 

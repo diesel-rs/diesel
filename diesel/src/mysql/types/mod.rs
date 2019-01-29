@@ -60,12 +60,12 @@ impl FromSql<Integer, Mysql> for i32 {
         debug_assert!(
             bytes.len() <= 4,
             "Received more than 4 bytes decoding i32. \
-             Was a BigInteger expression accidentally identified as Integer?"
+             Was a BigInt expression accidentally identified as Integer?"
         );
         debug_assert!(
             bytes.len() >= 4,
             "Received fewer than 4 bytes decoding i32. \
-             Was a SmallInteger expression accidentally identified as Integer?"
+             Was a SmallInt expression accidentally identified as Integer?"
         );
         bytes
             .read_i32::<NativeEndian>()
@@ -79,12 +79,12 @@ impl FromSql<BigInt, Mysql> for i64 {
         debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes decoding i64. \
-             Was an expression of a different type misidentified as BigInteger?"
+             Was an expression of a different type misidentified as BigInt?"
         );
         debug_assert!(
             bytes.len() >= 8,
             "Received fewer than 8 bytes decoding i64. \
-             Was an Integer expression misidentified as BigInteger?"
+             Was an Integer expression misidentified as BigInt?"
         );
         bytes
             .read_i64::<NativeEndian>()

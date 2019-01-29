@@ -35,7 +35,7 @@ impl FromSql<sql_types::Integer, Pg> for i32 {
         debug_assert!(
             bytes.len() <= 4,
             "Received more than 4 bytes decoding i32. \
-             Was a BigInteger expression accidentally identified as Integer?"
+             Was a BigInt expression accidentally identified as Integer?"
         );
         debug_assert!(
             bytes.len() >= 4,
@@ -55,12 +55,12 @@ impl FromSql<sql_types::BigInt, Pg> for i64 {
         debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes decoding i64. \
-             Was an expression of a different type misidentified as BigInteger?"
+             Was an expression of a different type misidentified as BigInt?"
         );
         debug_assert!(
             bytes.len() >= 8,
             "Received fewer than 8 bytes decoding i64. \
-             Was an Integer expression misidentified as BigInteger?"
+             Was an Integer expression misidentified as BigInt?"
         );
         bytes
             .read_i64::<NetworkEndian>()

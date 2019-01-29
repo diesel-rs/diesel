@@ -52,7 +52,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn from_sql<'a>(bytes: Option<RawValue<'a, DB>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<RawValue<DB>>) -> deserialize::Result<Self> {        
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None),
