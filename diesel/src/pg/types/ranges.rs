@@ -1,7 +1,7 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
-use std::ops::{Range, RangeFrom, RangeInclusive, RangeToInclusive};
+use std::ops::{Range, RangeFrom, RangeInclusive, RangeToInclusive, RangeTo};
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::bound::Bound as SqlBound;
@@ -301,6 +301,36 @@ where
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         let range = (Bound::Unbounded, Bound::Included(&self.end));
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
+    }
+}
+
+// `std::ops::RangeTo`
+
+setup_impls! {RangeTo<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for RangeTo<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Unbounded, Bound::Excluded(end)) => Ok(Self { end }),
+            _erroneous_bounds => bounds_err!(Range, Unbounded, Included, _erroneous_bounds),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for RangeTo<T>
+where
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        let range = (Bound::Unbounded, Bound::Excluded(&self.end));
         ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
 
         Ok(IsNull::No)
