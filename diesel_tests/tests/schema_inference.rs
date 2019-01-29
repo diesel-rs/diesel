@@ -196,16 +196,28 @@ mod postgres {
     use diesel::*;
     use schema::*;
     use std::collections::Bound;
+    use std::ops::{Range, RangeFrom, RangeTo, RangeInclusive, RangeToInclusive};
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
     #[table_name = "all_the_ranges"]
-    struct InferredRanges {
+    struct InferredBounds {
         int4: (Bound<i32>, Bound<i32>),
         int8: (Bound<i64>, Bound<i64>),
         num: (Bound<PgNumeric>, Bound<PgNumeric>),
         ts: (Bound<NaiveDateTime>, Bound<NaiveDateTime>),
         tstz: (Bound<DateTime<Utc>>, Bound<DateTime<Utc>>),
         date: (Bound<NaiveDate>, Bound<NaiveDate>),
+    }
+
+    #[derive(Queryable, PartialEq, Debug, Insertable)]
+    #[table_name = "all_the_ranges"]
+    struct InferredRanges {
+        int4: Range<i32>,
+        int8: Range<i64>,
+        num: RangeFrom<PgNumeric>,
+        ts: RangeInclusive<NaiveDateTime>,
+        tstz: RangeTo<DateTime<Utc>>,
+        date: RangeToInclusive<NaiveDate>,
     }
 
     #[test]
@@ -217,24 +229,35 @@ mod postgres {
             digits: vec![1],
         };
         let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+        let dt_next_day = dt + Duration::days(1);
 
-        let inferred_ranges = InferredRanges {
+        let inferred_bounds = InferredBounds {
             int4: (Bound::Included(5), Bound::Excluded(12)),
             int8: (Bound::Included(5), Bound::Excluded(13)),
             num: (Bound::Included(numeric), Bound::Unbounded),
-            ts: (Bound::Included(dt), Bound::Unbounded),
+            ts: (Bound::Included(dt), Bound::Included(dt_next_day)),
             tstz: (
                 Bound::Unbounded,
                 Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc)),
             ),
-            date: (Bound::Included(dt.date()), Bound::Unbounded),
+            date: (Bound::Unbounded, Bound::Included(dt.date())),
+        };
+
+        let inferred_ranges = InferredRanges {
+            int4: Range { start: 5, end: 12 },
+            int8: Range { start: 5, end: 13 },
+            num: RangeFrom { start: numeric },
+            ts: RangeInclusive::new(dt, dt_next_day),
+            tstz: RangeTo { end: DateTime::<Utc>::from_utc(dt, Utc) },
+            date: RangeToInclusive { end: dt.date() },
         };
 
         insert_into(all_the_ranges::table)
-            .values(&inferred_ranges)
+            .values(&inferred_bounds)
             .execute(&conn)
             .unwrap();
 
+        assert_eq!(Ok(vec![inferred_bounds]), all_the_ranges::table.load(&conn));
         assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(&conn));
     }
 }

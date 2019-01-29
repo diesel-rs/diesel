@@ -1,7 +1,7 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
-use std::ops::{Range, RangeFrom, RangeInclusive, RangeToInclusive, RangeTo};
+use std::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::bound::Bound as SqlBound;
@@ -320,7 +320,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Unbounded, Bound::Excluded(end)) => Ok(Self { end }),
-            _erroneous_bounds => bounds_err!(Range, Unbounded, Included, _erroneous_bounds),
+            _erroneous_bounds => bounds_err!(Range, Unbounded, Excluded, _erroneous_bounds),
         }
     }
 }

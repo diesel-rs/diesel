@@ -1201,6 +1201,7 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
 fn test_range_from_sql() {
     use diesel::dsl::sql;
     use std::collections::Bound;
+    use std::ops::{Range, RangeFrom, RangeInclusive, RangeToInclusive, RangeTo};
 
     let connection = connection();
 
@@ -1211,8 +1212,59 @@ fn test_range_from_sql() {
         query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
     );
 
+    let expected_value = RangeFrom { start: 1 };
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
     let query = "'(1,2]'::int4range";
     let expected_value = (Bound::Included(2), Bound::Excluded(3));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let expected_value = Range { start: 2, end: 3 };
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'[1,2]'::int4range";
+    let expected_value = (Bound::Included(1), Bound::Included(2));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let expected_value = RangeInclusive::new(1, 2);
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'(,2)'::int4range";
+    let expected_value = (Bound::Unbounded, Bound::Excluded(2));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let expected_value = RangeTo { end: 2 };
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let query = "'(,2]'::int4range";
+    let expected_value = (Bound::Unbounded, Bound::Included(2));
+    assert_eq!(
+        expected_value,
+        query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
+    );
+
+    let expected_value = RangeToInclusive { end: 2 };
     assert_eq!(
         expected_value,
         query_single_value::<Range<Int4>, (Bound<i32>, Bound<i32>)>(query)
@@ -1228,6 +1280,7 @@ fn test_range_from_sql() {
 #[test]
 fn test_range_to_sql() {
     use std::collections::Bound;
+    use std::ops::{Range, RangeFrom, RangeInclusive, RangeToInclusive, RangeTo};
 
     let expected_value = "'[1,2]'::int4range";
     let value = (Bound::Included(1), Bound::Excluded(3));
@@ -1235,6 +1288,26 @@ fn test_range_to_sql() {
 
     let expected_value = "'(1,2]'::int4range";
     let value = (Bound::Included(2), Bound::Excluded(3));
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'[1,3)'::int4range";
+    let value = Range { start: 1, end: 3 };
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'[1,)'::int4range";
+    let value = RangeFrom { start: 1 };
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'[1,3]'::int4range";
+    let value = RangeInclusive::new(1, 3);
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'(,2)'::int4range";
+    let value = RangeTo { end: 2 };
+    assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
+
+    let expected_value = "'(,2]'::int4range";
+    let value = RangeToInclusive { end: 2 };
     assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
 }
 
