@@ -175,11 +175,19 @@ where
     }
 }
 
+fn bound_to_tag_str<T>(bound: Bound<T>) -> &'static str {
+    match bound {
+        Bound::Excluded(..) => "Excluded",
+        Bound::Included(..) => "Included",
+        Bound::Unbounded => "Unbounded",
+    }
+}
+
 macro_rules! bounds_err {
-    ($name:ident, $expected_lower:ident, $expected_upper:ident, $got:expr) => {
+    ($name:expr, $expected_lower:expr, $expected_upper:expr, $got_lower:expr, $got_upper:expr) => {
         Err(format!(
-            "Unexpected bounds for {}. Expected bounds to be {}..{}, got $got",
-            "$name", "$expected_lower", "$expected_upper"
+            "Unexpected bounds for {}. Expected bounds to be {}..{}, got {}..{}",
+            $name, $expected_lower, $expected_upper, bound_to_tag_str($got_lower), bound_to_tag_str($got_upper)
         )
         .into())
     };
@@ -198,7 +206,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Included(start), Bound::Excluded(end)) => Ok(Self { start, end }),
-            _erroneous_bounds => bounds_err!(Range, Included, Excluded, _erroneous_bounds),
+            (lower, upper) => bounds_err!("Range", "Included", "Excluded", lower, upper),
         }
     }
 }
@@ -228,7 +236,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Included(start), Bound::Unbounded) => Ok(Self { start }),
-            _erroneous_bounds => bounds_err!(Range, Included, Unbounded, _erroneous_bounds),
+            (lower, upper) => bounds_err!("RangeFrom", "Included", "Unbounded", lower, upper),
         }
     }
 }
@@ -258,7 +266,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Included(start), Bound::Included(end)) => Ok(Self::new(start, end)),
-            _erroneous_bounds => bounds_err!(Range, Included, Included, _erroneous_bounds),
+            (lower, upper) => bounds_err!("RangeInclusive", "Included", "Included", lower, upper),
         }
     }
 }
@@ -290,7 +298,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Unbounded, Bound::Included(end)) => Ok(Self { end }),
-            _erroneous_bounds => bounds_err!(Range, Unbounded, Included, _erroneous_bounds),
+            (lower, upper) => bounds_err!("RangeToInclusive", "Unbounded", "Included", lower, upper),
         }
     }
 }
@@ -320,7 +328,7 @@ where
 
         match (lower_bound, upper_bound) {
             (Bound::Unbounded, Bound::Excluded(end)) => Ok(Self { end }),
-            _erroneous_bounds => bounds_err!(Range, Unbounded, Excluded, _erroneous_bounds),
+            (lower, upper) => bounds_err!("RangeTo", "Unbounded", "Excluded", lower, upper),
         }
     }
 }
