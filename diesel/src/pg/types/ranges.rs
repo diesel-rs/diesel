@@ -337,24 +337,56 @@ where
     }
 }
 
-// Built-in PG ranges
-
-macro_rules! impl_has_sql_type {
-    ($target:ty, $oid:expr, $array_oid:expr) => {
-        impl HasSqlType<$target> for Pg {
-            fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-                PgTypeMetadata {
-                    oid: $oid,
-                    array_oid: $array_oid,
-                }
-            }
+impl HasSqlType<Int4range> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3904,
+            array_oid: 3905,
         }
-    };
+    }
 }
 
-impl_has_sql_type! {Int4range, 3904, 3905}
-impl_has_sql_type! {Numrange, 3906, 3907}
-impl_has_sql_type! {Tsrange, 3908, 3909}
-impl_has_sql_type! {Tstzrange, 3910, 3911}
-impl_has_sql_type! {Daterange, 3912, 3913}
-impl_has_sql_type! {Int8range, 3926, 3927}
+impl HasSqlType<Numrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3906,
+            array_oid: 3907,
+        }
+    }
+}
+
+impl HasSqlType<Tsrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3908,
+            array_oid: 3909,
+        }
+    }
+}
+
+impl HasSqlType<Tstzrange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3910,
+            array_oid: 3911,
+        }
+    }
+}
+
+impl HasSqlType<Daterange> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3912,
+            array_oid: 3913,
+        }
+    }
+}
+
+impl HasSqlType<Int8range> for Pg {
+    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata {
+            oid: 3926,
+            array_oid: 3927,
+        }
+    }
+}
