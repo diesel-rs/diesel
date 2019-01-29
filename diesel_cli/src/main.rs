@@ -28,6 +28,7 @@ mod query_helper;
 use chrono::*;
 use clap::{ArgMatches, Shell};
 use migrations_internals::{self as migrations, MigrationConnection};
+use regex::Regex;
 use std::any::Any;
 use std::error::Error;
 use std::fmt::Display;
@@ -406,6 +407,12 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
+    let filter_regex = matches
+        .values_of("table-name-regexpes")
+        .unwrap_or_default()
+        .map(|table_name_regex| Regex::new(table_name_regex).unwrap().into())
+        .collect();
+
     if matches.is_present("whitelist") {
         eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
     }
@@ -416,13 +423,15 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
         config.filter = Filtering::OnlyTables(filter)
-    } else if matches.is_present("only-table-regexes") {
-        config.filter = Filtering::OnlyTableRegexes(filter)
+    }
+    else if matches.is_present("only-table-regexes") {
+        config.filter = Filtering::OnlyTableRegexes(filter_regex)
     }
     else if matches.is_present("except-tables") || matches.is_present("blacklist") {
         config.filter = Filtering::ExceptTables(filter)
-    } else if matches.is_present("except-table-regexes") {
-        config.filter = Filtering::ExceptTableRegexes(filter)
+    }
+    else if matches.is_present("except-table-regexes") {
+        config.filter = Filtering::ExceptTableRegexes(filter_regex)
     }
 
     if matches.is_present("with-docs") {
