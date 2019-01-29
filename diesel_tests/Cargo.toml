@@ -8,15 +8,15 @@ autotests = false
 
 [build-dependencies]
 diesel = { path = "../diesel", default-features = false }
-diesel_migrations = { version = "1.3.0" }
+diesel_migrations = { version = "1.4.0" }
 dotenv = ">=0.8, <0.11"
 
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.4" }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "network-address", "numeric", "with-deprecated"] }
-diesel_infer_schema = { version = "1.3.0" }
-diesel_migrations = { version = "1.3.0" }
+diesel_migrations = { version = "1.4.0" }
+diesel_infer_schema = { version = "1.4.0" }
 dotenv = ">=0.8, <0.11"
 quickcheck = { version = "0.4", features = ["unstable"] }
 uuid = { version = ">=0.2.0, <0.7.0" }

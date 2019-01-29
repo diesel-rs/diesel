@@ -1,6 +1,5 @@
-use diesel::dsl::sql;
 use diesel::*;
-use schema::connection_without_transaction;
+use schema::{connection_without_transaction, DropTable};
 
 table! {
     auto_time {
@@ -11,50 +10,66 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
-    use self::auto_time::columns::*;
-    use self::auto_time::table as auto_time;
-    use diesel::pg::types::date_and_time::PgTimestamp;
+    use self::auto_time::dsl::*;
+    use chrono::NaiveDateTime;
+    use schema_dsl::*;
+    use std::{thread, time::Duration};
 
     // transactions have frozen time, so we can't use them
     let connection = connection_without_transaction();
-    connection
-        .execute(
-            "CREATE TABLE auto_time (
-        id SERIAL PRIMARY KEY,
-        n INTEGER,
-        updated_at TIMESTAMP
-    );",
-        )
-        .unwrap();
-    connection
-        .execute("SELECT diesel_manage_updated_at('auto_time');")
+    create_table(
+        "auto_time",
+        (
+            integer("id").primary_key().auto_increment(),
+            integer("n"),
+            timestamp("updated_at"),
+        ),
+    )
+    .execute(&connection)
+    .unwrap();
+    let _guard = DropTable {
+        connection: &connection,
+        table_name: "auto_time",
+    };
+    sql_query("SELECT diesel_manage_updated_at('auto_time')")
+        .execute(&connection)
         .unwrap();
 
-    connection
-        .execute("INSERT INTO auto_time (n) VALUES (2), (1), (5);")
+    insert_into(auto_time)
+        .values(&vec![n.eq(2), n.eq(1), n.eq(5)])
+        .execute(&connection)
         .unwrap();
-    let result = select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
+
+    let result = auto_time
+        .count()
+        .filter(updated_at.is_null())
         .get_result::<i64>(&connection);
     assert_eq!(Ok(3), result);
 
-    connection
-        .execute("UPDATE auto_time SET n = n + 1 WHERE true;")
+    update(auto_time)
+        .set(n.eq(n + 1))
+        .execute(&connection)
         .unwrap();
-    let result = select(sql("COUNT(*) FROM auto_time WHERE updated_at IS NULL"))
+
+    let result = auto_time
+        .count()
+        .filter(updated_at.is_null())
         .get_result::<i64>(&connection);
     assert_eq!(Ok(0), result);
 
+    if cfg!(feature = "sqlite") {
+        // SQLite only has second precision
+        thread::sleep(Duration::from_millis(1000));
+    }
+
     let query = auto_time.find(2).select(updated_at);
-    let old_time: PgTimestamp = query.first(&connection).unwrap();
+    let old_time: NaiveDateTime = query.first(&connection).unwrap();
     update(auto_time.find(2))
         .set(n.eq(0))
         .execute(&connection)
         .unwrap();
-    let new_time: PgTimestamp = query.first(&connection).unwrap();
+    let new_time: NaiveDateTime = query.first(&connection).unwrap();
     assert!(old_time < new_time);
-
-    // clean up because we aren't in a transaction
-    connection.execute("DROP TABLE auto_time;").unwrap();
 }

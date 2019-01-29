@@ -6,9 +6,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+## [1.4.1] - 2019-01-24
+
+### Fixed
+
+* This release fixes a minor memory safety issue in SQLite. This bug would only occur in an error handling branch that should never occur in practice.
+
+## [1.4.0] - 2019-01-20
+
 ### Fixed
 
 * `embed_migrations!` will no longer emit an unused import warning
+* Diesel now supports uuid 0.7 by adding the new feature flag `uuidv07`
 
 ### Added
 
@@ -35,6 +44,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `#[belongs_to]` can now accept types that are generic over lifetimes (for
   example, if one of the fields has the type `Cow<'a, str>`). To define an
   association to such a type, write `#[belongs_to(parent = "User<'_>")]`
+
+* `Nullable<Text>` now supports `ilike` expression on  in PostgreSQL.
+
+* `diesel_manage_updated_at('table_name')` is now available on SQLite. This
+  function can be called in your migrations to create a trigger which
+  automatically sets the `updated_at` column, unless that column was updated in
+  the query.
 
 ### Changed
 
@@ -1582,3 +1598,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.3.1]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.3.1
 [1.3.2]: https://github.com/diesel-rs/diesel/compare/v1.3.1...v1.3.2
 [1.3.3]: https://github.com/diesel-rs/diesel/compare/v1.3.2...v1.3.3
+[1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
+[1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1

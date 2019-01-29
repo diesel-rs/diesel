@@ -6,9 +6,9 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [workspace]
 
 [dependencies]
-diesel = { version = "1.3.3", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
+diesel = { version = "1.4.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
 compiletest_rs = "=0.3.17"
 
 [replace]
-"diesel:1.3.3" = { path = "../diesel" }
-"diesel_derives:1.3.0" = { path = "../diesel_derives" }
+"diesel:1.4.1" = { path = "../diesel" }
+"diesel_derives:1.4.0" = { path = "../diesel_derives" }
