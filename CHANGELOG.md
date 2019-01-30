@@ -33,6 +33,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * This release fixes a minor memory safety issue in SQLite. This bug would only
   occur in an error handling branch that should never occur in practice.
 
+### Added
+
+* Added `BoxedSqlQuery`.
+
 ## [1.4.0] - 2019-01-20
 
 ### Fixed

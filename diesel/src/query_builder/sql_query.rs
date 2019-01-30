@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use backend::Backend;
 use connection::Connection;
 use deserialize::QueryableByName;
-use query_builder::{AstPass, QueryFragment, QueryId, self, debug_query};
+use query_builder::{self, debug_query, AstPass, QueryFragment, QueryId};
 use query_dsl::{LoadQuery, RunQueryDsl};
 use result::QueryResult;
 use serialize::ToSql;
@@ -180,7 +180,9 @@ where
 impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
 
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
-/// See `SqlQuery`
+/// See [`SqlQuery::into_boxed`].
+///
+/// [`SqlQuery::into_boxed`]: ../struct.SqlQuery.html#method.into_boxed
 pub struct BoxedSqlQuery<'f, DB: Backend, Inner> {
     inner: Inner,
     sql: String,
@@ -205,20 +207,20 @@ impl<'f, DB: Backend, Inner> BoxedSqlQuery<'f, DB, Inner> {
         }
     }
 
-    /// See `SqlQuery`'s `bind`
+    /// See [`SqlQuery::bind`].
+    ///
+    /// [`SqlQuery::bind`]: ../struct.SqlQuery.html#method.bind
     pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
     where
-        BindSt: QueryId,
         DB: HasSqlType<BindSt>,
         Value: ToSql<BindSt, DB> + 'f,
     {
-        self.binds.push(Box::new(move |mut out| {
-            out.push_bind_param_value_only(&b)
-        }));
+        self.binds
+            .push(Box::new(move |mut out| out.push_bind_param_value_only(&b)));
         self
     }
 
-    /// See `SqlQuery`'s `sql`
+    /// Appends a piece of SQL code at the end.
     pub fn sql(mut self, sql: &str) -> Self {
         self.sql += sql;
         self
