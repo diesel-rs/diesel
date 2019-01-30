@@ -1,9 +1,10 @@
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
 use backend::Backend;
 use connection::Connection;
 use deserialize::QueryableByName;
-use query_builder::{AstPass, QueryFragment, QueryId};
+use query_builder::{AstPass, QueryFragment, QueryId, self, debug_query};
 use query_dsl::{LoadQuery, RunQueryDsl};
 use result::QueryResult;
 use serialize::ToSql;
@@ -76,6 +77,15 @@ impl SqlQuery {
     pub fn bind<ST, Value>(self, value: Value) -> UncheckedBind<Self, Value, ST> {
         UncheckedBind::new(self, value)
     }
+
+    /// Internally boxes future calls on `bind` and `sql` so that they don't
+    /// change the type.
+    ///
+    /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
+    /// loop.
+    pub fn into_boxed<'f, DB: Backend>(self) -> BoxedSqlQuery<'f, DB, Self> {
+        BoxedSqlQuery::new(self)
+    }
 }
 
 impl<DB> QueryFragment<DB> for SqlQuery
@@ -127,6 +137,10 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     pub fn bind<ST2, Value2>(self, value: Value2) -> UncheckedBind<Self, Value2, ST2> {
         UncheckedBind::new(self, value)
     }
+
+    pub fn into_boxed<'f, DB: Backend>(self) -> BoxedSqlQuery<'f, DB, Self> {
+        BoxedSqlQuery::new(self)
+    }
 }
 
 impl<Query, Value, ST> QueryId for UncheckedBind<Query, Value, ST>
@@ -164,3 +178,85 @@ where
 }
 
 impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
+
+#[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
+/// See `SqlQuery`
+pub struct BoxedSqlQuery<'f, DB: Backend, Inner> {
+    inner: Inner,
+    sql: String,
+    binds: Vec<Box<dyn Fn(AstPass<DB>) -> QueryResult<()> + 'f>>,
+}
+
+impl<DB: Backend, Inner> Debug for BoxedSqlQuery<'_, DB, Inner>
+where
+    for<'a> debug_query::DebugQuery<'a, Self, DB>: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        query_builder::debug_query::<DB, _>(self).fmt(f)
+    }
+}
+
+impl<'f, DB: Backend, Inner> BoxedSqlQuery<'f, DB, Inner> {
+    pub(crate) fn new(inner: Inner) -> Self {
+        BoxedSqlQuery {
+            inner,
+            sql: "".to_string(),
+            binds: vec![],
+        }
+    }
+
+    /// See `SqlQuery`'s `bind`
+    pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
+    where
+        BindSt: QueryId,
+        DB: HasSqlType<BindSt>,
+        Value: ToSql<BindSt, DB> + 'f,
+    {
+        self.binds.push(Box::new(move |mut out| {
+            out.push_bind_param_value_only(&b)
+        }));
+        self
+    }
+
+    /// See `SqlQuery`'s `sql`
+    pub fn sql(mut self, sql: &str) -> Self {
+        self.sql += sql;
+        self
+    }
+}
+
+impl<DB, Inner> QueryFragment<DB> for BoxedSqlQuery<'_, DB, Inner>
+where
+    DB: Backend,
+    Inner: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.inner.walk_ast(out.reborrow())?;
+        out.push_sql(&self.sql);
+
+        for b in &self.binds {
+            b(out.reborrow())?;
+        }
+        Ok(())
+    }
+}
+
+impl<DB: Backend, Inner> QueryId for BoxedSqlQuery<'_, DB, Inner> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<Conn, T, Inner> LoadQuery<Conn, T> for BoxedSqlQuery<'_, Conn::Backend, Inner>
+where
+    Conn: Connection,
+    T: QueryableByName<Conn::Backend>,
+    Self: QueryFragment<Conn::Backend> + QueryId,
+{
+    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<T>> {
+        conn.query_by_name(&self)
+    }
+}
+
+impl<Conn: Connection, Inner> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Inner> {}
