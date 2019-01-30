@@ -20,7 +20,7 @@ pub fn establish_connection() -> PgConnection {
 }
 
 pub fn create_post(conn: &PgConnection, title: &str, body: &str) -> Post {
-    use schema::posts;
+    use crate::schema::posts;
 
     let new_post = NewPost { title, body };
 
