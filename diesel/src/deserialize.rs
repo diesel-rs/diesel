@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::result;
 
-use backend::Backend;
+use backend::{self, Backend};
 use row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
@@ -71,7 +71,7 @@ pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
 /// # include!("doctest_setup.rs");
 /// #
 /// # use schema::users;
-/// # use diesel::backend::Backend;
+/// # use diesel::backend::{self, Backend};
 /// # use diesel::deserialize::Queryable;
 /// #
 /// struct LowercaseString(String);
@@ -241,7 +241,7 @@ where
 /// # include!("doctest_setup.rs");
 /// # use diesel::sql_query;
 /// # use schema::users;
-/// # use diesel::backend::Backend;
+/// # use diesel::backend::{self, Backend};
 /// # use diesel::deserialize::{self, FromSql};
 /// #
 /// struct LowercaseString(String);
@@ -257,7 +257,7 @@ where
 ///     DB: Backend,
 ///     String: FromSql<ST, DB>,
 /// {
-///     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
 ///         String::from_sql(bytes)
 ///             .map(|s| LowercaseString(s.to_lowercase()))
 ///     }
@@ -321,7 +321,7 @@ where
 /// implementation.
 ///
 /// ```rust
-/// # use diesel::backend::Backend;
+/// # use diesel::backend::{self, Backend};
 /// # use diesel::sql_types::*;
 /// # use diesel::deserialize::{self, FromSql};
 /// #
@@ -337,7 +337,7 @@ where
 ///     DB: Backend,
 ///     i32: FromSql<Integer, DB>,
 /// {
-///     fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
 ///         match i32::from_sql(bytes)? {
 ///             1 => Ok(MyEnum::A),
 ///             2 => Ok(MyEnum::B),
@@ -348,7 +348,7 @@ where
 /// ```
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: Option<&DB::RawValue>) -> Result<Self>;
+    fn from_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self>;
 }
 
 /// Deserialize one or more fields.

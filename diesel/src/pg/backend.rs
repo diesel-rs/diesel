@@ -39,8 +39,11 @@ impl Queryable<(Oid, Oid), Pg> for PgTypeMetadata {
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type BindCollector = RawBytesBindCollector<Pg>;
-    type RawValue = [u8];
     type ByteOrder = NetworkEndian;
+}
+
+impl<'a> HasRawValue<'a> for Pg {
+    type RawValue = &'a [u8];
 }
 
 impl TypeMetadata for Pg {
