@@ -1,10 +1,9 @@
-use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
 use backend::Backend;
 use connection::Connection;
 use deserialize::QueryableByName;
-use query_builder::{self, debug_query, AstPass, QueryFragment, QueryId};
+use query_builder::{AstPass, QueryFragment, QueryId};
 use query_dsl::{LoadQuery, RunQueryDsl};
 use result::QueryResult;
 use serialize::ToSql;
@@ -196,19 +195,11 @@ impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, S
 /// See [`SqlQuery::into_boxed`].
 ///
 /// [`SqlQuery::into_boxed`]: ../struct.SqlQuery.html#method.into_boxed
+#[allow(missing_debug_implementations)]
 pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
     sql: String,
     binds: Vec<Box<dyn Fn(AstPass<DB>) -> QueryResult<()> + 'f>>,
-}
-
-impl<DB: Backend, Query> Debug for BoxedSqlQuery<'_, DB, Query>
-where
-    for<'a> debug_query::DebugQuery<'a, Self, DB>: Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        query_builder::debug_query::<DB, _>(self).fmt(f)
-    }
 }
 
 impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
