@@ -18,7 +18,7 @@ use sql_types::HasSqlType;
 /// a tuple, and any structs used must implement `QueryableByName`.
 ///
 /// See [`sql_query`](../fn.sql_query.html) for examples.
-pub struct SqlQuery<Inner> {
+pub struct SqlQuery<Inner = ()> {
     inner: Inner,
     query: String,
 }
