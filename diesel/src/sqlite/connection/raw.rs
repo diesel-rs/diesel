@@ -165,9 +165,8 @@ impl RawConnection {
     }
 
     pub fn enable_load_extension(&self) -> QueryResult<()> {
-        let result = unsafe { 
-            ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), 1)
-        };
+        let result =
+            unsafe { ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), 1) };
         match result {
             ffi::SQLITE_OK => Ok(()),
             _ => {
