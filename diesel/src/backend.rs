@@ -52,10 +52,11 @@ where
 ///
 /// This trait is separate from `Backend` to imitate `type RawValue<'a>`. It
 /// should only be referenced directly by implementors. Users of this type
-/// should instead use the [`RawValue`] helper type instead.
+/// should instead use the [`RawValue`](type.RawValue.html) helper type instead.
 pub trait HasRawValue<'a> {
     /// The actual type given to `FromSql`, with lifetimes applied. This type
-    /// should not be used directly. Use the [`RawValue`] helper type instead.
+    /// should not be used directly. Use the [`RawValue`](type.RawValue.html)
+    /// helper type instead.
     type RawValue;
 }
 
