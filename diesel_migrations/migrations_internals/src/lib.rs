@@ -256,7 +256,7 @@ fn migration_with_version(
     }
 }
 
-#[doc(hidden)]
+/// Creates all diesel-internal tables and data (if needed).
 pub fn setup_database<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
     create_schema_migrations_table_if_needed(conn)
 }
