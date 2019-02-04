@@ -1,6 +1,6 @@
 //! Contains the `Row` trait
 
-use backend::Backend;
+use backend::{self, Backend};
 use deserialize::{self, FromSql};
 
 /// Represents a single database row.
@@ -11,7 +11,7 @@ use deserialize::{self, FromSql};
 /// [`FromSqlRow`]: ../deserialize/trait.FromSqlRow.html
 pub trait Row<DB: Backend> {
     /// Returns the value of the next column in the row.
-    fn take(&mut self) -> Option<&DB::RawValue>;
+    fn take(&mut self) -> Option<backend::RawValue<DB>>;
 
     /// Returns whether the next `count` columns are all `NULL`.
     ///
@@ -62,5 +62,5 @@ pub trait NamedRow<DB: Backend> {
     #[doc(hidden)]
     fn index_of(&self, column_name: &str) -> Option<usize>;
     #[doc(hidden)]
-    fn get_raw_value(&self, index: usize) -> Option<&DB::RawValue>;
+    fn get_raw_value(&self, index: usize) -> Option<backend::RawValue<DB>>;
 }

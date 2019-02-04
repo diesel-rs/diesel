@@ -6,11 +6,28 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+### Changed
+
+* The way [the `Backend` trait][backend-2-0-0] handles its `RawValue` type has
+  been changed to allow non-references. Users of this type (e.g. code written
+  `&DB::RawValue` or `&<DB as Backend>::RawValue>`) should use
+  [`backend::RawValue<DB>`][raw-value-2-0-0] instead. Implementors of `Backend`
+  should check the relevant section of [the migration guide][2-0-migration].
+
+[backend-2-0-0]: http://docs.diesel.rs/diesel/backend/trait.Backend.html
+[raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
+
+
+
+
+[2-0-migration]: FIXME write a migration guide
+
 ## [1.4.1] - 2019-01-24
 
 ### Fixed
 
-* This release fixes a minor memory safety issue in SQLite. This bug would only occur in an error handling branch that should never occur in practice.
+* This release fixes a minor memory safety issue in SQLite. This bug would only
+  occur in an error handling branch that should never occur in practice.
 
 ## [1.4.0] - 2019-01-20
 
