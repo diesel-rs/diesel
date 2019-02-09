@@ -31,6 +31,9 @@ pub trait AsChangeset {
     fn as_changeset(self) -> Self::Changeset;
 }
 
+#[doc(hidden)]
+pub use diesel_derives::AsChangeset;
+
 impl<T: AsChangeset> AsChangeset for Option<T> {
     type Target = T::Target;
     type Changeset = Option<T::Changeset>;

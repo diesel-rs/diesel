@@ -151,6 +151,9 @@ pub trait AsExpression<T> {
     fn as_expression(self) -> Self::Expression;
 }
 
+#[doc(hidden)]
+pub use diesel_derives::AsExpression;
+
 impl<T: Expression> AsExpression<T::SqlType> for T {
     type Expression = Self;
 

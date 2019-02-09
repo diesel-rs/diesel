@@ -166,8 +166,10 @@ extern crate bitflags;
 extern crate byteorder;
 #[macro_use]
 extern crate diesel_derives;
+
+// Re-exports derive macros that do not map to exactly one Diesel trait.
 #[doc(hidden)]
-pub use diesel_derives::*;
+pub use diesel_derives::{DieselNumericOps, SqlType, Associations};
 
 #[macro_use]
 mod macros;

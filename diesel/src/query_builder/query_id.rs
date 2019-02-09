@@ -88,6 +88,9 @@ pub trait QueryId {
     }
 }
 
+#[doc(hidden)]
+pub use diesel_derives::QueryId;
+
 impl QueryId for () {
     type QueryId = ();
 

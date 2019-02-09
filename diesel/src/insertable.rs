@@ -86,6 +86,9 @@ pub trait Insertable<T> {
     }
 }
 
+#[doc(hidden)]
+pub use diesel_derives::Insertable;
+
 pub trait CanInsertInSingleQuery<DB: Backend> {
     /// How many rows will this query insert?
     ///

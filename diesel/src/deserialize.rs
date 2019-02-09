@@ -171,6 +171,9 @@ where
     fn build(row: Self::Row) -> Self;
 }
 
+#[doc(hidden)]
+pub use diesel_derives::Queryable;
+
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
 /// # Deriving
@@ -293,6 +296,9 @@ where
     fn build<R: NamedRow<DB>>(row: &R) -> Result<Self>;
 }
 
+#[doc(hidden)]
+pub use diesel_derives::QueryableByName;
+
 /// Deserialize a single field of a given SQL type.
 ///
 /// When possible, implementations of this trait should prefer to use an
@@ -375,6 +381,9 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self>;
 }
+
+#[doc(hidden)]
+pub use diesel_derives::FromSqlRow;
 
 // Reasons we can't write this:
 //
