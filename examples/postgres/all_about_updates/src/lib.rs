@@ -8,6 +8,7 @@ use diesel::debug_query;
 #[cfg(test)]
 use diesel::pg::Pg;
 use diesel::prelude::*;
+use diesel::query_builder::AsChangeset;
 
 table! {
     posts {
