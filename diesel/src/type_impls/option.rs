@@ -22,12 +22,6 @@ where
         <DB as HasSqlType<T>>::metadata(lookup)
     }
 
-    #[cfg(feature = "with-deprecated")]
-    #[allow(deprecated)]
-    fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
-        <DB as HasSqlType<T>>::row_metadata(out, lookup)
-    }
-
     #[cfg(feature = "mysql")]
     fn mysql_row_metadata(
         out: &mut Vec<(DB::TypeMetadata, IsSigned)>,

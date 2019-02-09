@@ -18,7 +18,7 @@ use std::marker::PhantomData;
 
 use backend::UsesAnsiSavepointSyntax;
 use connection::{AnsiTransactionManager, SimpleConnection};
-use deserialize::QueryableByName;
+use deserialize::{Queryable, QueryableByName};
 use prelude::*;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use sql_types::HasSqlType;

@@ -1,40 +1,5 @@
-#[cfg(feature = "with-deprecated")]
-use query_builder::locking_clause::ForUpdate;
 use query_builder::AsQuery;
 use query_source::Table;
-
-/// The `for_update` method
-///
-/// This trait should not be relied on directly by most apps. Its behavior is
-/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
-/// to call `for_update` from generic code.
-///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
-#[cfg(feature = "with-deprecated")]
-#[deprecated(since = "1.3.0", note = "use `LockingDsl<ForUpdate>` instead")]
-pub trait ForUpdateDsl {
-    /// The type returned by `for_update`. See [`dsl::ForUpdate`] for
-    /// convenient access to this type.
-    ///
-    /// [`dsl::ForUpdate`]: ../../dsl/type.ForUpdate.html
-    type Output;
-
-    /// See the trait level documentation
-    fn for_update(self) -> Self::Output;
-}
-
-#[cfg(feature = "with-deprecated")]
-#[allow(deprecated)]
-impl<T> ForUpdateDsl for T
-where
-    T: LockingDsl<ForUpdate>,
-{
-    type Output = <T as LockingDsl<ForUpdate>>::Output;
-
-    fn for_update(self) -> Self::Output {
-        self.with_lock(ForUpdate)
-    }
-}
 
 /// Methods related to locking select statements
 ///
