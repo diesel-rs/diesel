@@ -114,7 +114,7 @@ mod tests {
     use dsl::{now, sql};
     use prelude::*;
     use select;
-    use sql_types::{Date, Text, Time, Timestamp};
+    use sql_types::{Text, Time, Timestamp};
 
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);

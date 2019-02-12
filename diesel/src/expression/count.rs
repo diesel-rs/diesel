@@ -15,7 +15,7 @@ sql_function! {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # include!("../../doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
     /// # fn main() {
