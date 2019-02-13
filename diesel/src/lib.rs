@@ -93,41 +93,6 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(
-    feature = "large-tables",
-    deprecated(
-        since = "1.2.0",
-        note = "The large-tables feature has been renamed to 32-column-tables"
-    )
-)]
-#![cfg_attr(
-    feature = "huge-tables",
-    deprecated(
-        since = "1.2.0",
-        note = "The huge-tables feature has been renamed to 64-column-tables"
-    )
-)]
-#![cfg_attr(
-    feature = "x32-column-tables",
-    deprecated(
-        since = "1.2.1",
-        note = "The x32-column-tables feature has been reanmed to 32-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
-    )
-)]
-#![cfg_attr(
-    feature = "x64-column-tables",
-    deprecated(
-        since = "1.2.1",
-        note = "The x64-column-tables feature has been reanmed to 64-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
-    )
-)]
-#![cfg_attr(
-    feature = "x128-column-tables",
-    deprecated(
-        since = "1.2.1",
-        note = "The x128-column-tables feature has been reanmed to 128-column-tables. The x was a workaround for a bug in crates.io that has since been resolved"
-    )
-)]
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(
@@ -200,7 +165,6 @@ pub mod serialize;
 pub mod sql_types;
 pub mod migration;
 pub mod row;
-pub mod types;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
@@ -257,12 +221,6 @@ pub mod helper_types {
     pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
     /// Represents the return type of `.for_update()`
-    #[cfg(feature = "with-deprecated")]
-    #[allow(deprecated)]
-    pub type ForUpdate<Source> = <Source as ForUpdateDsl>::Output;
-
-    /// Represents the return type of `.for_update()`
-    #[cfg(not(feature = "with-deprecated"))]
     pub type ForUpdate<Source> = <Source as LockingDsl<lock::ForUpdate>>::Output;
 
     /// Represents the return type of `.for_no_key_update()`

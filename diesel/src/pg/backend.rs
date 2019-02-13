@@ -5,7 +5,7 @@ use byteorder::NetworkEndian;
 use super::query_builder::PgQueryBuilder;
 use super::PgMetadataLookup;
 use backend::*;
-use prelude::Queryable;
+use deserialize::Queryable;
 use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::{Oid, TypeMetadata};
 

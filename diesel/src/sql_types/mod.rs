@@ -404,16 +404,6 @@ pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
     #[doc(hidden)]
-    #[cfg(feature = "with-deprecated")]
-    #[deprecated(
-        since = "1.4.0",
-        note = "This method is no longer used, and has been deprecated without replacement"
-    )]
-    fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
-        out.push(Self::metadata(lookup))
-    }
-
-    #[doc(hidden)]
     #[cfg(feature = "mysql")]
     fn is_signed() -> IsSigned {
         IsSigned::Signed

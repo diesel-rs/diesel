@@ -43,9 +43,6 @@ pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::SqlQuery;
-#[cfg(feature = "with-deprecated")]
-#[allow(deprecated)]
-pub use self::update_statement::IncompleteUpdateStatement;
 #[doc(inline)]
 pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,

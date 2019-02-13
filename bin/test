@@ -20,17 +20,17 @@ else
   (cd diesel && cargo test --no-default-features --features "extras sqlite postgres mysql" $*)
 
   (cd diesel_cli && cargo test --features "sqlite" --no-default-features $*)
-  (cd diesel_migrations && cargo test --features "sqlite" $*)
+  (cd diesel_migrations && cargo test --features "sqlite diesel/sqlite" $*)
   (cd diesel_derives && cargo test --features "diesel/sqlite" $*)
   (cd diesel_tests && cargo test --features "sqlite" --no-default-features $*)
 
-  (cd diesel_migrations && cargo test --features "postgres" $*)
+  (cd diesel_migrations && cargo test --features "postgres diesel/postgres" $*)
   (cd diesel_derives && cargo test --features "diesel/postgres" $*)
   (cd diesel_cli && cargo test --features "postgres" --no-default-features $*)
   (cd diesel_tests && cargo test --features "postgres" --no-default-features $*)
 
   export RUST_TEST_THREADS=1
-  (cd diesel_migrations && cargo test --features "mysql" $*)
+  (cd diesel_migrations && cargo test --features "mysql diesel/mysql" $*)
   (cd diesel_derives && cargo test --features "diesel/mysql" $*)
   (cd diesel_cli && cargo test --features "mysql" --no-default-features $*)
   (cd diesel_tests && cargo test --features "mysql" --no-default-features $*)

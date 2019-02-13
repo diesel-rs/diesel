@@ -64,9 +64,6 @@ pub mod methods {
     pub use super::filter_dsl::*;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
-    #[cfg(feature = "with-deprecated")]
-    #[allow(deprecated)]
-    pub use super::locking_dsl::ForUpdateDsl;
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
@@ -802,31 +799,6 @@ pub trait QueryDsl: Sized {
     /// // Executes `SELECT * FROM users FOR UPDATE`
     /// users.for_update().load(&connection)
     /// ```
-    #[cfg(feature = "with-deprecated")]
-    #[allow(deprecated)]
-    fn for_update(self) -> ForUpdate<Self>
-    where
-        Self: methods::ForUpdateDsl,
-    {
-        methods::ForUpdateDsl::for_update(self)
-    }
-
-    /// Adds `FOR UPDATE` to the end of the select statement.
-    ///
-    /// This method is only available for MySQL and PostgreSQL. SQLite does not
-    /// provide any form of row locking.
-    ///
-    /// Additionally, `.for_update` cannot be used on queries with a distinct
-    /// clause, group by clause, having clause, or any unions. Queries with
-    /// a `FOR UPDATE` clause cannot be boxed.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// // Executes `SELECT * FROM users FOR UPDATE`
-    /// users.for_update().load(&connection)
-    /// ```
-    #[cfg(not(feature = "with-deprecated"))]
     fn for_update(self) -> ForUpdate<Self>
     where
         Self: methods::LockingDsl<lock::ForUpdate>,

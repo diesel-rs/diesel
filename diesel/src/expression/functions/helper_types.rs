@@ -8,11 +8,6 @@ use sql_types::Bool;
 /// The return type of [`not(expr)`](../dsl/fn.not.html)
 pub type not<Expr> = operators::Not<Grouped<AsExprOf<Expr, Bool>>>;
 
-/// The return type of `not(expr)`
-#[deprecated(since = "1.1.0", note = "use `not` instead")]
-#[cfg(feature = "with-deprecated")]
-pub type Not<Expr> = not<Expr>;
-
 /// The return type of [`max(expr)`](../dsl/fn.max.html)
 pub type max<Expr> = super::aggregate_ordering::max::HelperType<SqlTypeOf<Expr>, Expr>;
 

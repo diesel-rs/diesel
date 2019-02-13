@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use diesel::dsl::sql;
-use diesel::sqlite::{Sqlite, SqliteConnection};
 use diesel::*;
 
 use super::data_structures::*;
@@ -96,6 +95,7 @@ pub fn get_table_data(
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
+#[derive(Queryable)]
 struct FullTableInfo {
     _cid: i32,
     name: String,
@@ -105,21 +105,7 @@ struct FullTableInfo {
     primary_key: bool,
 }
 
-impl Queryable<pragma_table_info::SqlType, Sqlite> for FullTableInfo {
-    type Row = (i32, String, String, bool, Option<String>, bool);
-
-    fn build(row: Self::Row) -> Self {
-        FullTableInfo {
-            _cid: row.0,
-            name: row.1,
-            _type_name: row.2,
-            _not_null: row.3,
-            _dflt_value: row.4,
-            primary_key: row.5,
-        }
-    }
-}
-
+#[derive(Queryable)]
 struct ForeignKeyListRow {
     _id: i32,
     _seq: i32,
@@ -129,23 +115,6 @@ struct ForeignKeyListRow {
     _on_update: String,
     _on_delete: String,
     _match: String,
-}
-
-impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
-    type Row = (i32, i32, String, String, String, String, String, String);
-
-    fn build(row: Self::Row) -> Self {
-        ForeignKeyListRow {
-            _id: row.0,
-            _seq: row.1,
-            parent_table: row.2,
-            foreign_key: row.3,
-            primary_key: row.4,
-            _on_update: row.5,
-            _on_delete: row.6,
-            _match: row.7,
-        }
-    }
 }
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
