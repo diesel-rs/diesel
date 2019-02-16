@@ -44,6 +44,9 @@ impl UsesInformationSchema for Pg {
 }
 
 #[cfg(feature = "mysql")]
+sql_function!(fn database() -> VarChar);
+
+#[cfg(feature = "mysql")]
 impl UsesInformationSchema for Mysql {
     type TypeColumn = self::information_schema::columns::column_type;
 
@@ -56,8 +59,7 @@ impl UsesInformationSchema for Mysql {
         C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>,
     {
-        no_arg_sql_function!(database, sql_types::VarChar);
-        select(database).get_result(conn)
+        select(database()).get_result(conn)
     }
 }
 

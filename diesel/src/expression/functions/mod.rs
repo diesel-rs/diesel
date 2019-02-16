@@ -5,6 +5,7 @@ pub use diesel_derives::sql_function_proc as sql_function;
 
 #[macro_export]
 #[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
 macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
@@ -30,6 +31,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 
 #[macro_export]
 #[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
 macro_rules! no_arg_sql_function_body {
     ($type_name:ident, $return_type:ty, $docs:expr, $($constraint:ident)::+) => {
         no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
@@ -72,6 +74,11 @@ macro_rules! no_arg_sql_function_body {
 ///
 /// You can optionally pass the name of a trait, as a constraint for backends which support the
 /// function.
+#[deprecated(
+    since = "2.0.0",
+    note = "Use `sql_function!` instead. See `CHANGELOG.md` for migration instructions"
+)]
+#[cfg(feature = "with-deprecated")]
 macro_rules! no_arg_sql_function {
     ($type_name:ident, $return_type:ty) => {
         no_arg_sql_function!($type_name, $return_type, "");

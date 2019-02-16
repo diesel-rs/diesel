@@ -8,6 +8,10 @@ use util::*;
 
 // Extremely curious why this triggers on a nearly branchless function
 #[allow(clippy::cognitive_complexity)]
+// for loop comes from `quote!`
+#[allow(clippy::for_loop_over_option)]
+// https://github.com/rust-lang/rust-clippy/issues/3768
+#[allow(clippy::useless_let_if_seq)]
 pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
     let SqlFunctionDecl {
         mut attributes,
@@ -47,7 +51,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
-
+    let type_args2 = &type_args.clone();
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
@@ -65,15 +69,29 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .push(parse_quote!(__DieselInternal));
     let (impl_generics_internal, _, _) = generics_with_internal.split_for_impl();
 
+    let sql_type;
+    let numeric_derive;
+
+    if arg_name.is_empty() {
+        sql_type = None;
+        // FIXME: We can always derive once trivial bounds are stable
+        numeric_derive = None;
+    } else {
+        sql_type = Some(quote!((#(#arg_name),*)));
+        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+    }
+
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
-        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
+        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
         use diesel::query_builder::{QueryFragment, AstPass};
         use diesel::sql_types::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, diesel::sql_types::DieselNumericOps)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
@@ -86,7 +104,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
-            (#(#arg_name),*): Expression,
+            #(#sql_type: Expression,)*
         {
             type SqlType = #return_type;
         }
@@ -131,6 +149,9 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
             impl #impl_generics_internal ValidGrouping<__DieselInternal>
                 for #fn_name #ty_generics
+            #where_clause
+                #(#arg_name: diesel::expression::NonAggregate,)*
+                Self: Expression,
             {
                 type IsAggregate = diesel::expression::is_aggregate::Yes;
             }

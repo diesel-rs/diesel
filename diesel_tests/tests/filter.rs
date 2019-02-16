@@ -440,6 +440,7 @@ fn filter_subselect_with_boxed_query() {
 }
 
 #[test]
+#[cfg(not(feature = "mysql"))] // FIXME: this test shouldn't need to modify schema each run
 fn filter_subselect_with_nullable_column() {
     use crate::schema_dsl::*;
     table! {
