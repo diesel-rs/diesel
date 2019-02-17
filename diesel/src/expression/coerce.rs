@@ -53,9 +53,4 @@ where
     }
 }
 
-impl<T, ST> NonAggregate for Coerce<T, ST>
-where
-    T: NonAggregate,
-    Coerce<T, ST>: Expression,
-{
-}
+impl<T, ST> NonAggregate for Coerce<T, ST> where T: NonAggregate {}

@@ -266,6 +266,25 @@ where
 /// Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
+///
+/// ## Deriving
+///
+/// This trait can be automatically derived for structs with no type parameters
+/// which are not aggregate, as well as for structs which are `NonAggregate`
+/// when all type parameters are `NonAggregate`. For example:
+///
+/// ```ignore
+/// #[derive(NonAggregate)]
+/// struct Plus<Lhs, Rhs>(Lhs, Rhs);
+///
+/// // The following impl will be generated:
+/// impl<Lhs, Rhs> NonAggregate for Plus<Lhs, Rhs>
+/// where
+///     Lhs: NonAggregate,
+///     Rhs: NonAggregate,
+/// {
+/// }
+/// ```
 pub trait NonAggregate {}
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}

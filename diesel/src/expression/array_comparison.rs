@@ -5,13 +5,13 @@ use query_builder::*;
 use result::QueryResult;
 use sql_types::Bool;
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
 pub struct In<T, U> {
     left: T,
     values: U,
 }
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
 pub struct NotIn<T, U> {
     left: T,
     values: U,
@@ -50,10 +50,6 @@ where
 {
     type SqlType = Bool;
 }
-
-impl<T, U> NonAggregate for In<T, U> where In<T, U>: Expression {}
-
-impl<T, U> NonAggregate for NotIn<T, U> where NotIn<T, U>: Expression {}
 
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
 where
@@ -144,7 +140,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, NonAggregate)]
 pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {

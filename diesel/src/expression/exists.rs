@@ -43,7 +43,7 @@ where
     type SqlType = Bool;
 }
 
-impl<T> NonAggregate for Exists<T> {}
+impl<T> NonAggregate for Exists<T> where Subselect<T, ()>: NonAggregate {}
 
 impl<T, DB> QueryFragment<DB> for Exists<T>
 where

@@ -42,6 +42,7 @@ mod diesel_numeric_ops;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
+mod non_aggregate;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
@@ -86,6 +87,11 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Insertable, attributes(table_name, column_name, diesel))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, insertable::derive)
+}
+
+#[proc_macro_derive(NonAggregate)]
+pub fn derive_non_aggregate(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, non_aggregate::derive)
 }
 
 #[proc_macro_derive(QueryId)]

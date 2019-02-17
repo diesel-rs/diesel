@@ -1,6 +1,6 @@
 use backend::Backend;
 use expression::coerce::Coerce;
-use expression::{AsExpression, Expression, NonAggregate};
+use expression::{AsExpression, Expression};
 use query_builder::*;
 use result::QueryResult;
 use sql_types::*;
@@ -8,14 +8,12 @@ use sql_types::*;
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
 pub struct now;
 
 impl Expression for now {
     type SqlType = Timestamp;
 }
-
-impl NonAggregate for now {}
 
 impl<DB: Backend> QueryFragment<DB> for now {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
