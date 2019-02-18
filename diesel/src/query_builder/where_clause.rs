@@ -108,7 +108,7 @@ where
 impl<'a, DB, Predicate> Into<BoxedWhereClause<'a, DB>> for WhereClause<Predicate>
 where
     DB: Backend,
-    Predicate: QueryFragment<DB> + 'a,
+    Predicate: QueryFragment<DB> + Send + 'a,
 {
     fn into(self) -> BoxedWhereClause<'a, DB> {
         BoxedWhereClause::Where(Box::new(self.0))
@@ -125,7 +125,7 @@ impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr> where Expr: AppearsOnT
 
 #[allow(missing_debug_implementations)] // We can't...
 pub enum BoxedWhereClause<'a, DB> {
-    Where(Box<dyn QueryFragment<DB> + 'a>),
+    Where(Box<dyn QueryFragment<DB> + Send + 'a>),
     None,
 }
 
@@ -153,7 +153,7 @@ impl<'a, DB> QueryId for BoxedWhereClause<'a, DB> {
 impl<'a, DB, Predicate> WhereAnd<Predicate> for BoxedWhereClause<'a, DB>
 where
     DB: Backend + 'a,
-    Predicate: QueryFragment<DB> + 'a,
+    Predicate: QueryFragment<DB> + Send + 'a,
 {
     type Output = Self;
 
@@ -170,7 +170,7 @@ where
 impl<'a, DB, Predicate> WhereOr<Predicate> for BoxedWhereClause<'a, DB>
 where
     DB: Backend + 'a,
-    Predicate: QueryFragment<DB> + 'a,
+    Predicate: QueryFragment<DB> + Send + 'a,
 {
     type Output = Self;
 
