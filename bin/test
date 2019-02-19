@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 
 if [ "$1" = "integration" ]; then
   if [ "$2" ]; then
