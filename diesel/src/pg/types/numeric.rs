@@ -104,11 +104,7 @@ mod bigdecimal {
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
 
             let unnecessary_zeroes = if weight >= 0 {
-                digits
-                    .iter()
-                    .rev()
-                    .take_while(|i| i.is_zero())
-                    .count()
+                digits.iter().rev().take_while(|i| i.is_zero()).count()
             } else {
                 0
             };
