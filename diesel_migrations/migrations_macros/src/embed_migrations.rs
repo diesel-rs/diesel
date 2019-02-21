@@ -46,6 +46,10 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
             fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
                 unreachable!()
             }
+
+            fn file_path(&self) -> Option<&Path> {
+                Some(Path::new(self.version))
+            }
         }
     );
 
@@ -69,6 +73,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
         use self::diesel_migrations::*;
         use self::diesel::connection::SimpleConnection;
         use std::io;
+        use std::path::Path;
 
         const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
 
