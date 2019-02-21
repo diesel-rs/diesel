@@ -104,10 +104,7 @@ mod bigdecimal {
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
 
             let unnecessary_zeroes = if weight >= 0 {
-                let index_of_decimal = (weight + 1) as usize;
                 digits
-                    .get(index_of_decimal..)
-                    .expect("enough digits exist")
                     .iter()
                     .rev()
                     .take_while(|i| i.is_zero())
@@ -185,7 +182,7 @@ mod bigdecimal {
             let expected = PgNumeric::Positive {
                 weight: 1,
                 scale: 0,
-                digits: vec![1, 0],
+                digits: vec![1],
             };
             assert_eq!(expected, decimal.into());
 
@@ -201,7 +198,7 @@ mod bigdecimal {
             let expected = PgNumeric::Positive {
                 weight: 2,
                 scale: 0,
-                digits: vec![1, 0, 0],
+                digits: vec![1],
             };
             assert_eq!(expected, decimal.into());
         }
