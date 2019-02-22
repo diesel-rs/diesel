@@ -88,8 +88,9 @@ impl<Inner> SqlQuery<Inner> {
     }
 
     /// Appends a piece of SQL code at the end.
-    pub fn sql<T: Into<String>>(self, sql: T) -> SqlQuery<Self> {
-        SqlQuery::new(self, sql.into())
+    pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
+        self.query += sql.as_ref();
+        self
     }
 }
 
@@ -227,8 +228,8 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
     /// See [`SqlQuery::sql`].
     ///
     /// [`SqlQuery::sql`]: ../struct.SqlQuery.html#method.sql
-    pub fn sql<T: Into<String>>(mut self, sql: T) -> Self {
-        self.sql += &sql.into();
+    pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
+        self.sql += sql.as_ref();
         self
     }
 }
