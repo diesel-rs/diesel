@@ -52,3 +52,37 @@ fn sql_query_can_take_bind_params() {
 
     assert_eq!(Ok(expected), users);
 }
+
+#[test]
+fn sql_query_can_take_bind_params_boxed() {
+    use diesel::sql_types::Text;
+
+    let conn = connection_with_sean_and_tess_in_users_table();
+    let tess = find_user_by_name("Tess", &conn);
+
+    let mut query = sql_query("SELECT * FROM users ").into_boxed();
+
+    let mut where_prefix = Some("WHERE ( ");
+    let mut get_where_prefix = || where_prefix.take().unwrap_or("AND ( ");
+
+    let bind_char = if cfg!(feature = "postgres") {
+        "$1"
+    } else {
+        "?"
+    };
+
+    let users_not = vec!["Sean", "Bill", "Bob"];
+    for user in users_not {
+        query = query
+            .sql(get_where_prefix())
+            .sql("name != ")
+            .sql(bind_char)
+            .sql(") ")
+            .bind::<Text, _>(user);
+    }
+
+    let users = query.load(&conn);
+    let expected = vec![tess];
+
+    assert_eq!(Ok(expected), users);
+}

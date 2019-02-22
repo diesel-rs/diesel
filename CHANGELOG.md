@@ -33,6 +33,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * This release fixes a minor memory safety issue in SQLite. This bug would only
   occur in an error handling branch that should never occur in practice.
 
+### Added
+
+* Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
+  `.bind` calls without changing the underlying type.
+* Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
+  an existing query.
+
 ## [1.4.0] - 2019-01-20
 
 ### Fixed
