@@ -44,6 +44,9 @@ where
 {
 }
 
+// FIXME: This probably isn't sound. The subselect can reference columns from
+// the outer query, and is affected by the `GROUP BY` clause of the outer query
+// identically to using it outside of a subselect
 impl<T, ST> NonAggregate for Subselect<T, ST> {}
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>

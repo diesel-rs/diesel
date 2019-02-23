@@ -174,7 +174,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
-        #[derive(Debug, Clone, Copy, QueryId)]
+        #[derive(Debug, Clone, Copy, QueryId, NonAggregate)]
         pub struct $type_name;
 
         impl $crate::expression::Expression for $type_name {
@@ -184,8 +184,6 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
         impl<QS> $crate::expression::SelectableExpression<QS> for $type_name {}
 
         impl<QS> $crate::expression::AppearsOnTable<QS> for $type_name {}
-
-        impl $crate::expression::NonAggregate for $type_name {}
     };
 }
 

@@ -131,7 +131,6 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 for #fn_name #ty_generics
             #where_clause
                 #(#arg_name: diesel::expression::NonAggregate,)*
-                Self: Expression,
             {
             }
         };
