@@ -4,6 +4,7 @@ extern crate bcrypt;
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
+extern crate failure;
 extern crate dotenv;
 extern crate structopt;
 #[macro_use]
@@ -194,6 +195,7 @@ fn register_user(conn: &PgConnection) -> Result<(), Box<Error>> {
 }
 
 fn convert_auth_error(err: auth::AuthenticationError) -> Box<Error> {
+    use failure::Fail;
     use auth::AuthenticationError::*;
 
     match err {
@@ -204,7 +206,7 @@ fn convert_auth_error(err: auth::AuthenticationError) -> Box<Error> {
         NoPasswordSet => {
             "No password given. You need to set the BLOG_PASSWORD environment variable.".into()
         }
-        EnvironmentError(e) => e.into(),
+        EnvironmentError(e) => e.compat().into(),
         BcryptError(e) => e.into(),
         DatabaseError(e) => e.into(),
     }
