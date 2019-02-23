@@ -1,8 +1,11 @@
 use syn::*;
 
-pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
+pub fn str_value_of_meta_item(item: &Meta, name: &str) -> String {
     match *item {
-        MetaItem::NameValue(_, Lit::Str(ref value, _)) => &*value,
+        Meta::NameValue(MetaNameValue {
+            lit: Lit::Str(ref value),
+            ..
+        }) => value.value(),
         _ => panic!(
             r#"`{}` must be in the form `#[{}="something"]`"#,
             name, name
@@ -11,17 +14,20 @@ pub fn str_value_of_meta_item<'a>(item: &'a MetaItem, name: &str) -> &'a str {
 }
 
 pub fn get_options_from_input(
-    name: &str,
+    name: &Path,
     attrs: &[Attribute],
     on_bug: fn() -> !,
-) -> Option<Vec<MetaItem>> {
-    let options = attrs.iter().find(|a| a.name() == name).map(|a| &a.value);
+) -> Option<Vec<Meta>> {
+    let options = attrs
+        .iter()
+        .find(|a| &a.path == name)
+        .map(|a| a.parse_meta());
     match options {
-        Some(&MetaItem::List(_, ref options)) => Some(
-            options
+        Some(Ok(Meta::List(MetaList { ref nested, .. }))) => Some(
+            nested
                 .iter()
                 .map(|o| match *o {
-                    NestedMetaItem::MetaItem(ref m) => m.clone(),
+                    NestedMeta::Meta(ref m) => m.clone(),
                     _ => on_bug(),
                 })
                 .collect(),
@@ -31,11 +37,11 @@ pub fn get_options_from_input(
     }
 }
 
-pub fn get_option<'a>(options: &'a [MetaItem], option_name: &str, on_bug: fn() -> !) -> &'a str {
+pub fn get_option(options: &[Meta], option_name: &str, on_bug: fn() -> !) -> String {
     get_optional_option(options, option_name).unwrap_or_else(|| on_bug())
 }
 
-pub fn get_optional_option<'a>(options: &'a [MetaItem], option_name: &str) -> Option<&'a str> {
+pub fn get_optional_option(options: &[Meta], option_name: &str) -> Option<String> {
     options
         .iter()
         .find(|a| a.name() == option_name)
