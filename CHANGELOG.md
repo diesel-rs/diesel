@@ -31,6 +31,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
 
+### Deprecated
+
+* `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
+  are now available without the `diesel_` prefix. With Rust 2018 they can be
+  invoked as `diesel::infix_operator!` instead.
 
 
 
