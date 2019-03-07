@@ -244,6 +244,7 @@ macro_rules! infix_operator {
 #[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::infix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 macro_rules! diesel_infix_operator {
     ($($args:tt)*) => {
         infix_operator!($($args)*);
