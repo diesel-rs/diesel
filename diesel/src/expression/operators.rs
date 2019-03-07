@@ -354,6 +354,7 @@ macro_rules! prefix_operator {
 #[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::prefix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 macro_rules! diesel_prefix_operator {
     ($($args:tt)*) => {
         prefix_operator!($($args)*);
