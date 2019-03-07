@@ -299,6 +299,7 @@ macro_rules! postfix_operator {
 #[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::postfix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 macro_rules! diesel_postfix_operator {
     ($($args:tt)*) => {
         postfix_operator!($($args)*);
