@@ -89,8 +89,8 @@ use dsl::AsExprOf;
 ///
 /// Apps should not need to implement this type directly, but it may be common
 /// to use this in where clauses. Libraries should consider using
-/// [`diesel_infix_operator!`](../macro.diesel_infix_operator.html) or
-/// [`diesel_postfix_operator!`](../macro.diesel_postfix_operator.html) instead of
+/// [`infix_operator!`](../macro.infix_operator.html) or
+/// [`postfix_operator!`](../macro.postfix_operator.html) instead of
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
