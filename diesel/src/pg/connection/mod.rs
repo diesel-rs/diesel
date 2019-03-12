@@ -230,11 +230,12 @@ mod tests {
         assert_eq!(2, connection.statement_cache.len());
     }
 
+    sql_function!(fn lower(x: VarChar) -> VarChar);
+
     #[test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
         let connection = connection();
 
-        sql_function!(fn lower(x: VarChar) -> VarChar);
         let hi = "HI".into_sql::<VarChar>();
         let query = ::select(hi).into_boxed::<Pg>();
         let query2 = ::select(lower(hi)).into_boxed::<Pg>();

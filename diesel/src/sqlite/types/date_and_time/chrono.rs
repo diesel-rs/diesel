@@ -3,7 +3,7 @@ extern crate chrono;
 use self::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use std::io::Write;
 
-use backend::Backend;
+use backend;
 use deserialize::{self, FromSql};
 use serialize::{self, Output, ToSql};
 use sql_types::{Date, Text, Time, Timestamp};
@@ -12,7 +12,7 @@ use sqlite::Sqlite;
 const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<backend::RawValue<Sqlite>>) -> deserialize::Result<Self> {
         let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
         let text = unsafe { &*text_ptr };
         Self::parse_from_str(text, SQLITE_DATE_FORMAT).map_err(Into::into)
@@ -27,7 +27,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 }
 
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<backend::RawValue<Sqlite>>) -> deserialize::Result<Self> {
         let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
         let text = unsafe { &*text_ptr };
         let valid_time_formats = &[
@@ -54,7 +54,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 }
 
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<backend::RawValue<Sqlite>>) -> deserialize::Result<Self> {
         let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
         let text = unsafe { &*text_ptr };
 
@@ -114,7 +114,7 @@ mod tests {
     use dsl::{now, sql};
     use prelude::*;
     use select;
-    use sql_types::{Date, Text, Time, Timestamp};
+    use sql_types::{Text, Time, Timestamp};
 
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);

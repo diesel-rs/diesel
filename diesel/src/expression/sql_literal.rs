@@ -322,7 +322,7 @@ where
     type SqlType = Q::SqlType;
 }
 
-impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> where Self: Expression {}
+impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> {}
 
 impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> where
     Self: AppearsOnTable<QS>

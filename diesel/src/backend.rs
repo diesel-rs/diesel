@@ -32,6 +32,7 @@ where
     Self: HasSqlType<sql_types::Date>,
     Self: HasSqlType<sql_types::Time>,
     Self: HasSqlType<sql_types::Timestamp>,
+    Self: for<'a> HasRawValue<'a>,
 {
     /// The concrete `QueryBuilder` implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
@@ -41,16 +42,27 @@ where
     ///
     /// [`RawBytesBindCollector`]: ../query_builder/bind_collector/struct.RawBytesBindCollector.html
     type BindCollector: BindCollector<Self>;
-    /// The raw representation of a database value given to `FromSql`.
-    ///
-    /// Since most backends transmit data as opaque blobs of bytes, this type
-    /// is usually `[u8]`.
-    type RawValue: ?Sized;
     /// What byte order is used to transmit integers?
     ///
     /// This type is only used if `RawValue` is `[u8]`.
     type ByteOrder: ByteOrder;
 }
+
+/// The raw representation of a database value given to `FromSql`.
+///
+/// This trait is separate from `Backend` to imitate `type RawValue<'a>`. It
+/// should only be referenced directly by implementors. Users of this type
+/// should instead use the [`RawValue`](type.RawValue.html) helper type instead.
+pub trait HasRawValue<'a> {
+    /// The actual type given to `FromSql`, with lifetimes applied. This type
+    /// should not be used directly. Use the [`RawValue`](type.RawValue.html)
+    /// helper type instead.
+    type RawValue;
+}
+
+/// A helper type to get the raw representation of a database type given to
+/// `FromSql`. Equivalent to `<DB as Backend>::RawValue<'a>`.
+pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
 
 /// Does this backend support `RETURNING` clauses?
 pub trait SupportsReturningClause {}
@@ -58,7 +70,3 @@ pub trait SupportsReturningClause {}
 pub trait SupportsDefaultKeyword {}
 /// Does this backend use the standard `SAVEPOINT` syntax?
 pub trait UsesAnsiSavepointSyntax {}
-
-#[cfg(feature = "with-deprecated")]
-#[deprecated(since = "1.1.0", note = "use `sql_types::TypeMetadata` instead")]
-pub use sql_types::TypeMetadata;

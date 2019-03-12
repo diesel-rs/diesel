@@ -76,37 +76,6 @@ pub trait ExpressionMethods: Expression + Sized {
         In::new(self, values.as_in_expression())
     }
 
-    /// Deprecated alias for `ne_all`
-    ///
-    /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// # include!("../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
-    /// #     connection.execute("INSERT INTO users (name) VALUES
-    /// #         ('Jim')").unwrap();
-    /// let data = users.select(id).filter(name.ne_any(vec!["Sean", "Jim"]));
-    /// assert_eq!(Ok(vec![2]), data.load(&connection));
-    ///
-    /// let data = users.select(id).filter(name.ne_any(vec!["Tess"]));
-    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
-    ///
-    /// // Calling `ne_any` with an empty array is the same as doing `WHERE 1=1`
-    /// let data = users.select(id).filter(name.ne_any(Vec::<String>::new()));
-    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
-    /// # }
-    /// ```
-    #[cfg(feature = "with-deprecated")]
-    #[deprecated(since = "1.2.0", note = "use `ne_all` instead")]
-    fn ne_any<T>(self, values: T) -> NotIn<Self, T::InExpression>
-    where
-        T: AsInExpression<Self::SqlType>,
-    {
-        NotIn::new(self, values.as_in_expression())
-    }
-
     /// Creates a SQL `NOT IN` statement.
     ///
     /// Queries using this method will not be

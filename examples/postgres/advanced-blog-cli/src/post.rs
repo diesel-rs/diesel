@@ -21,8 +21,8 @@ pub enum Status {
     Published { at: NaiveDateTime },
 }
 
+use diesel::deserialize::Queryable;
 use diesel::pg::Pg;
-use diesel::query_source::Queryable;
 use diesel::sql_types::{Nullable, Timestamp};
 
 impl Queryable<Nullable<Timestamp>, Pg> for Status {

@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use backend::Backend;
+use backend::{self, Backend};
 use deserialize::{self, FromSql, FromSqlRow, Queryable, QueryableByName};
 use expression::bound::Bound;
 use expression::*;
@@ -20,12 +20,6 @@ where
 {
     fn metadata(lookup: &DB::MetadataLookup) -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata(lookup)
-    }
-
-    #[cfg(feature = "with-deprecated")]
-    #[allow(deprecated)]
-    fn row_metadata(out: &mut Vec<DB::TypeMetadata>, lookup: &DB::MetadataLookup) {
-        <DB as HasSqlType<T>>::row_metadata(out, lookup)
     }
 
     #[cfg(feature = "mysql")]
@@ -52,7 +46,7 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
         match bytes {
             Some(_) => T::from_sql(bytes).map(Some),
             None => Ok(None),

@@ -1,4 +1,4 @@
-use diesel::sql_types::{Integer, Text};
+use diesel::sql_types::Text;
 use diesel::*;
 use schema::*;
 

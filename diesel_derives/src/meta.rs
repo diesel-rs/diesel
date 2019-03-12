@@ -156,7 +156,7 @@ impl MetaItem {
         })
     }
 
-    fn str_value(&self) -> Result<String, Diagnostic> {
+    pub fn str_value(&self) -> Result<String, Diagnostic> {
         self.lit_str_value().map(syn::LitStr::value)
     }
 

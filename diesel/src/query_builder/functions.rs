@@ -461,6 +461,6 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// assert_eq!(Ok(expected_users), users);
 /// # }
 /// ```
-pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery {
-    SqlQuery::new(query.into())
+pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery<()> {
+    SqlQuery::new((), query.into())
 }

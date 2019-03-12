@@ -327,10 +327,11 @@ fn select_then_join() {
     assert_eq!(expected_data, data);
 }
 
+use diesel::sql_types::Text;
+sql_function!(fn lower(x: Text) -> Text);
+
 #[test]
 fn selecting_complex_expression_from_right_side_of_left_join() {
-    use diesel::sql_types::Text;
-
     let connection = connection_with_sean_and_tess_in_users_table();
     let new_posts = vec![
         NewPost::new(1, "Post One", None),
@@ -340,7 +341,6 @@ fn selecting_complex_expression_from_right_side_of_left_join() {
         .values(&new_posts)
         .execute(&connection)
         .unwrap();
-    sql_function!(fn lower(x: Text) -> Text);
 
     let titles = users::table
         .left_outer_join(posts::table)

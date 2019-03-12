@@ -202,11 +202,7 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-#[deprecated(
-    since = "1.2.0",
-    note = "Use `<&'a [U] as Insertable<T>>::Values` instead"
-)]
-impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
+impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
 where
     &'a U: Insertable<T>,
     InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>: QueryFragment<Sqlite>,
@@ -217,7 +213,7 @@ where
         use connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
-            for record in query.records {
+            for record in query.records.records {
                 result += InsertStatement::new(
                     query.target,
                     record.values(),
@@ -228,22 +224,6 @@ where
             }
             Ok(result)
         })
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
-where
-    InsertStatement<T, &'a [U], Op>: ExecuteDsl<SqliteConnection>,
-{
-    fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        InsertStatement::new(
-            query.target,
-            query.records.records,
-            query.operator,
-            query.returning,
-        )
-        .execute(conn)
     }
 }
 

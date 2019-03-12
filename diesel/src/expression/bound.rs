@@ -47,4 +47,4 @@ impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where Bound<T, U>: Appea
 
 impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U> where Bound<T, U>: Expression {}
 
-impl<T, U> NonAggregate for Bound<T, U> where Bound<T, U>: Expression {}
+impl<T, U> NonAggregate for Bound<T, U> {}

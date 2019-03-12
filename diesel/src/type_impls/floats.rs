@@ -2,12 +2,15 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::Backend;
+use backend::{Backend, HasRawValue};
 use deserialize::{self, FromSql};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Float, DB> for f32 {
+impl<DB> FromSql<sql_types::Float, DB> for f32
+where
+    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+{
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         debug_assert!(
@@ -29,7 +32,10 @@ impl<DB: Backend> ToSql<sql_types::Float, DB> for f32 {
     }
 }
 
-impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Double, DB> for f64 {
+impl<DB> FromSql<sql_types::Double, DB> for f64
+where
+    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+{
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
         debug_assert!(

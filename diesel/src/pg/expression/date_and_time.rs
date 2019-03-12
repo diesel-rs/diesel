@@ -1,4 +1,4 @@
-use expression::{Expression, NonAggregate};
+use expression::Expression;
 use pg::Pg;
 use query_builder::*;
 use result::QueryResult;
@@ -10,7 +10,7 @@ impl DateTimeLike for Date {}
 impl DateTimeLike for Timestamp {}
 impl DateTimeLike for Timestamptz {}
 
-#[derive(Debug, Copy, Clone, QueryId)]
+#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,
@@ -33,8 +33,6 @@ where
 {
     type SqlType = Timestamp;
 }
-
-impl<Ts, Tz> NonAggregate for AtTimeZone<Ts, Tz> where AtTimeZone<Ts, Tz>: Expression {}
 
 impl<Ts, Tz> QueryFragment<Pg> for AtTimeZone<Ts, Tz>
 where

@@ -1,6 +1,5 @@
 use diesel::backend::Backend;
-use diesel::deserialize::FromSqlRow;
-use diesel::*;
+use diesel::deserialize::{FromSqlRow, Queryable};
 use std::fmt;
 use std::str::FromStr;
 

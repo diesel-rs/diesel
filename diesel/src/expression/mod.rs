@@ -89,8 +89,8 @@ use dsl::AsExprOf;
 ///
 /// Apps should not need to implement this type directly, but it may be common
 /// to use this in where clauses. Libraries should consider using
-/// [`diesel_infix_operator!`](../macro.diesel_infix_operator.html) or
-/// [`diesel_postfix_operator!`](../macro.diesel_postfix_operator.html) instead of
+/// [`infix_operator!`](../macro.infix_operator.html) or
+/// [`postfix_operator!`](../macro.postfix_operator.html) instead of
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
@@ -266,6 +266,25 @@ where
 /// Used to ensure that aggregate expressions aren't mixed with
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
+///
+/// ## Deriving
+///
+/// This trait can be automatically derived for structs with no type parameters
+/// which are not aggregate, as well as for structs which are `NonAggregate`
+/// when all type parameters are `NonAggregate`. For example:
+///
+/// ```ignore
+/// #[derive(NonAggregate)]
+/// struct Plus<Lhs, Rhs>(Lhs, Rhs);
+///
+/// // The following impl will be generated:
+/// impl<Lhs, Rhs> NonAggregate for Plus<Lhs, Rhs>
+/// where
+///     Lhs: NonAggregate,
+///     Rhs: NonAggregate,
+/// {
+/// }
+/// ```
 pub trait NonAggregate {}
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
