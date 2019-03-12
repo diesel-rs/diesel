@@ -394,23 +394,27 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         config.schema = Some(String::from(schema_name))
     }
 
-    let filter = matches
-        .values_of("table-name")
-        .unwrap_or_default()
-        .map(|table_name| {
-            if let Some(schema) = config.schema_name() {
-                TableName::new(table_name, schema)
-            } else {
-                table_name.parse().unwrap()
-            }
-        })
-        .collect();
-
-    let filter_regex = matches
-        .values_of("table-name-regexpes")
-        .unwrap_or_default()
-        .map(|table_name_regex| Regex::new(table_name_regex).unwrap().into())
-        .collect();
+    let filter = {
+        matches
+            .values_of("table-name")
+            .unwrap_or_default()
+            .map(|table_name| {
+                if let Some(schema) = config.schema_name() {
+                    TableName::new(table_name, schema)
+                } else {
+                    table_name.parse().unwrap()
+                }
+            })
+            .collect()
+    };
+    let filter_regex = || {
+        matches
+            .values_of("table-name")
+            .unwrap_or_default()
+            .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
+            .collect::<Result<_, _>>()
+            .map_err(|e| format!("invalid argument for table filtering regex: {}", e))
+    };
 
     if matches.is_present("whitelist") {
         eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
@@ -423,11 +427,11 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if matches.is_present("only-tables") || matches.is_present("whitelist") {
         config.filter = Filtering::OnlyTables(filter)
     } else if matches.is_present("only-table-regexes") {
-        config.filter = Filtering::OnlyTableRegexes(filter_regex)
+        config.filter = Filtering::OnlyTableRegexes(filter_regex()?)
     } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
         config.filter = Filtering::ExceptTables(filter)
     } else if matches.is_present("except-table-regexes") {
-        config.filter = Filtering::ExceptTableRegexes(filter_regex)
+        config.filter = Filtering::ExceptTableRegexes(filter_regex()?)
     }
 
     if matches.is_present("with-docs") {
