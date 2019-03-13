@@ -195,7 +195,7 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.31.0
+        rust_version: 1.31.1
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
@@ -239,11 +239,11 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.31.0
+        rust_version: 1.31.1
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
         cargo check --all
-      displayName: Check building with rust 1.31.0
+      displayName: Check building with rust 1.31.1
