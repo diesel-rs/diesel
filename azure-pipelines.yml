@@ -178,7 +178,8 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: nightly-2018-11-27
+        # least nightly release that stabilize try_from
+        rust_version: nightly-2019-02-26
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
