@@ -21,6 +21,8 @@ impl SqlOrd for sql_types::Timestamptz {}
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
 
 #[cfg(feature = "mysql")]
+impl SqlOrd for sql_types::Datetime {}
+#[cfg(feature = "mysql")]
 impl SqlOrd for sql_types::Unsigned<sql_types::SmallInt> {}
 #[cfg(feature = "mysql")]
 impl SqlOrd for sql_types::Unsigned<sql_types::Integer> {}
