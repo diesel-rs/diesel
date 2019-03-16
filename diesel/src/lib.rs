@@ -99,7 +99,7 @@
     warnings,
     missing_debug_implementations,
     missing_copy_implementations,
-    missing_docs
+    //missing_docs
 )]
 // Clippy lints
 #![allow(
@@ -165,6 +165,9 @@ pub mod serialize;
 pub mod sql_types;
 pub mod migration;
 pub mod row;
+
+#[cfg(feature = "mysql")]
+mod mysql_like;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
