@@ -1,7 +1,7 @@
+use super::data_structures::*;
+use super::utils::to_camel_case;
 use std::error::Error;
 use std::io::{stderr, Write};
-
-use super::data_structures::*;
 
 pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
     let is_array = attr.type_name.starts_with('_');
@@ -27,19 +27,10 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         )?;
     }
 
-    let rust_name = tpe
-        .split('_')
-        .map(|word| capitalize(word))
-        .collect::<String>();
-
     Ok(ColumnType {
-        rust_name,
+        rust_name: to_camel_case(tpe),
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
     })
-}
-
-fn capitalize(name: &str) -> String {
-    name[..1].to_uppercase() + &name[1..]
 }
