@@ -2,7 +2,6 @@ mod data_structures;
 mod foreign_keys;
 mod inference;
 mod table_data;
-mod utils;
 
 #[cfg(feature = "uses_information_schema")]
 mod information_schema;

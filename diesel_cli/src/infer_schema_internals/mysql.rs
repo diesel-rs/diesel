@@ -1,11 +1,11 @@
 use diesel::mysql::Mysql;
 use diesel::*;
+use heck::CamelCase;
 use std::error::Error;
 
 use super::data_structures::*;
 use super::information_schema::UsesInformationSchema;
 use super::table_data::TableName;
-use super::utils::to_camel_case;
 
 mod information_schema {
     table! {
@@ -85,7 +85,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     let unsigned = determine_unsigned(&attr.type_name);
 
     Ok(ColumnType {
-        rust_name: to_camel_case(tpe.trim()),
+        rust_name: tpe.trim().to_camel_case(),
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: unsigned,

@@ -1,5 +1,5 @@
 use super::data_structures::*;
-use super::utils::to_camel_case;
+use heck::CamelCase;
 use std::error::Error;
 use std::io::{stderr, Write};
 
@@ -28,7 +28,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     }
 
     Ok(ColumnType {
-        rust_name: to_camel_case(tpe),
+        rust_name: tpe.to_camel_case(),
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
