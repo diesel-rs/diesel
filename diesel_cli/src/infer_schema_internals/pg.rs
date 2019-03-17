@@ -27,8 +27,13 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
         )?;
     }
 
+    let rust_name = tpe
+        .split('_')
+        .map(|word| capitalize(word))
+        .collect::<String>();
+
     Ok(ColumnType {
-        rust_name: capitalize(tpe),
+        rust_name,
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
