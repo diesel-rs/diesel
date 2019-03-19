@@ -4,7 +4,15 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## Unreleased
+## [1.4.2] - 2019-03019
+
+### Fixed
+
+* Parenthesis are now inserted around all mathematical operations. This means
+  that `(2.into_sql() + 3) * 4` will correctly evaluate to 20 as expected.
+  Previously we would generate SQL that evaluated to 14. This could even result
+  in runtime errors if multiple types were involved (for example, `interval *
+  (integer + 1)`)
 
 ## [1.4.1] - 2019-01-24
 
