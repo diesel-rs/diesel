@@ -37,9 +37,11 @@ macro_rules! numeric_operation {
             Rhs: QueryFragment<DB>,
         {
             fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                out.push_sql("(");
                 self.lhs.walk_ast(out.reborrow())?;
                 out.push_sql($op);
                 self.rhs.walk_ast(out.reborrow())?;
+                out.push_sql(")");
                 Ok(())
             }
         }
