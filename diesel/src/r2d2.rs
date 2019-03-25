@@ -93,17 +93,17 @@ where
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        println!("checking Is valid");
         if conn.transaction_manager().get_transaction_depth() > 0 {
-            println!("Connection still open, can't reuse");
             Err(Error::InvalidConnectionError("An uncommitted transaction from the previous connection is still present".to_owned()))
         } else{
-            Ok(())
+            conn.execute("SELECT 1")
+                .map(|_| ())
+                .map_err(Error::QueryError)
         }
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {
-        false
+        conn.transaction_manager().get_transaction_depth() > 0
     }
 }
 
