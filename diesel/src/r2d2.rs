@@ -22,6 +22,7 @@ use deserialize::{Queryable, QueryableByName};
 use prelude::*;
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use sql_types::HasSqlType;
+use connection::TransactionManager;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -55,6 +56,9 @@ pub enum Error {
 
     /// An error occurred pinging the database
     QueryError(::result::Error),
+
+    /// The error returned when checking if a connection can be reused
+    InvalidConnectionError(String)
 }
 
 impl fmt::Display for Error {
@@ -62,6 +66,7 @@ impl fmt::Display for Error {
         match *self {
             Error::ConnectionError(ref e) => e.fmt(f),
             Error::QueryError(ref e) => e.fmt(f),
+            Error::InvalidConnectionError(ref s) => write!(f, "{}", s)
         }
     }
 }
@@ -71,6 +76,7 @@ impl ::std::error::Error for Error {
         match *self {
             Error::ConnectionError(ref e) => e.description(),
             Error::QueryError(ref e) => e.description(),
+            Error::InvalidConnectionError(ref e) => e
         }
     }
 }
@@ -87,9 +93,11 @@ where
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        conn.execute("SELECT 1")
-            .map(|_| ())
-            .map_err(Error::QueryError)
+        if conn.transaction_manager().get_transaction_depth() > 0 {
+            Err(Error::InvalidConnectionError("An uncommitted transaction from the previous connection is still present".to_owned()))
+        } else{
+            Ok(())
+        }
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {
