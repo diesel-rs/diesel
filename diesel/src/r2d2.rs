@@ -94,8 +94,9 @@ where
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
         if conn.transaction_manager().get_transaction_depth() > 0 {
-            Err(Error::InvalidConnectionError("An uncommitted transaction from the previous connection is still present".to_owned()))
-        } else{
+            Err(Error::InvalidConnectionError(
+                "An uncommitted transaction from the previous connection is still present".to_owned()))
+        } else {
             conn.execute("SELECT 1")
                 .map(|_| ())
                 .map_err(Error::QueryError)
@@ -103,6 +104,8 @@ where
     }
 
     fn has_broken(&self, conn: &mut T) -> bool {
+        // If there is a transaction open, it should not be put back into the pool, otherwise
+        // the next thread to get connection will be working on data that is potentially invalid
         conn.transaction_manager().get_transaction_depth() > 0
     }
 }
