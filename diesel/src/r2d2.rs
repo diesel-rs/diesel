@@ -94,6 +94,7 @@ where
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
         if conn.transaction_manager().get_transaction_depth() > 0 {
+            println!("Connection still open, can't reuse");
             Err(Error::InvalidConnectionError("An uncommitted transaction from the previous connection is still present".to_owned()))
         } else{
             Ok(())
