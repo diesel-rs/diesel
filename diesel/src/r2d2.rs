@@ -102,7 +102,7 @@ where
         }
     }
 
-    fn has_broken(&self, _conn: &mut T) -> bool {
+    fn has_broken(&self, conn: &mut T) -> bool {
         conn.transaction_manager().get_transaction_depth() > 0
     }
 }
