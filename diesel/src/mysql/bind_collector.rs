@@ -1,15 +1,15 @@
-use super::{Mysql, MysqlType};
+use super::{Mysql, MysqlTypeMetadata};
 use query_builder::BindCollector;
 use result::Error::SerializationError;
 use result::QueryResult;
 use serialize::{IsNull, Output, ToSql};
-use sql_types::{HasSqlType, IsSigned};
+use sql_types::HasSqlType;
 
 #[derive(Default)]
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct MysqlBindCollector {
-    pub(crate) binds: Vec<(MysqlType, IsSigned, Option<Vec<u8>>)>,
+    pub(crate) binds: Vec<(MysqlTypeMetadata, Option<Vec<u8>>)>,
 }
 
 impl MysqlBindCollector {
@@ -33,8 +33,7 @@ impl BindCollector<Mysql> for MysqlBindCollector {
             IsNull::Yes => None,
         };
         let metadata = Mysql::metadata(metadata_lookup);
-        let sign = Mysql::is_signed();
-        self.binds.push((metadata, sign, bytes));
+        self.binds.push((metadata, bytes));
         Ok(())
     }
 }
