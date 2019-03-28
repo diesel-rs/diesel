@@ -106,6 +106,13 @@ pub enum DatabaseErrorKind {
     /// transaction isolation levels for other backends.
     SerializationFailure,
 
+    /// The command could not be completed because the transaction was read
+    /// only.
+    ///
+    /// This error will also be returned for `SELECT` statements which attempted
+    /// to lock the rows.
+    ReadOnlyTransaction,
+
     #[doc(hidden)]
     __Unknown, // Match against _ instead, more variants may be added in the future
 }
