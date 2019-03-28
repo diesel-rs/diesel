@@ -474,6 +474,11 @@ fn filter_subselect_with_nullable_column() {
     .execute(&connection)
     .unwrap();
 
+    let _home_worlds = DropTable {
+        connection: &connection,
+        table_name: "home_worlds",
+    };
+
     create_table(
         "heros",
         (
@@ -484,6 +489,11 @@ fn filter_subselect_with_nullable_column() {
     )
     .execute(&connection)
     .unwrap();
+
+    let _heros = DropTable {
+        connection: &connection,
+        table_name: "heros",
+    };
 
     ::diesel::insert_into(home_worlds::table)
         .values(home_worlds::name.eq("Tatooine"))
