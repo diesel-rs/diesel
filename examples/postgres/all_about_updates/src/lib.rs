@@ -108,7 +108,7 @@ fn examine_sql_from_increment_visit_counts() {
     use posts::dsl::*;
 
     assert_eq!(
-        "UPDATE \"posts\" SET \"visit_count\" = \"posts\".\"visit_count\" + $1 \
+        "UPDATE \"posts\" SET \"visit_count\" = (\"posts\".\"visit_count\" + $1) \
          -- binds: [1]",
         debug_query::<Pg, _>(&diesel::update(posts).set(visit_count.eq(visit_count + 1)))
             .to_string()

@@ -174,6 +174,7 @@ fn test_dividing_nullables() {
     let data = nullable_table.select(value / value).load(&connection);
     assert_eq!(Ok(expected_data), data);
 }
+
 #[test]
 fn mix_and_match_all_numeric_ops() {
     use schema::users::dsl::*;
@@ -189,4 +190,12 @@ fn mix_and_match_all_numeric_ops() {
     let expected_data = vec![4, 6, 7, 9];
     let data = users.select(id * 3 / 2 + 4 - 1).load(&connection);
     assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+fn precedence_with_parens_is_maintained() {
+    use diesel::sql_types::Integer;
+
+    let x = select((2.into_sql::<Integer>() + 3) * 4).get_result::<i32>(&connection());
+    assert_eq!(Ok(20), x);
 }
