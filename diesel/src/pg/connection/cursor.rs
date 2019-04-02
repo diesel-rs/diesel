@@ -59,8 +59,6 @@ impl NamedCursor {
     where
         T: QueryableByName<Pg>,
     {
-        use result::Error::DeserializationError;
-
         (0..self.db_result.num_rows())
             .map(|i| {
                 let row = PgNamedRow::new(&self, i);

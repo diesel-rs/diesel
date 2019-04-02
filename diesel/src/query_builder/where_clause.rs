@@ -159,7 +159,6 @@ where
 
     fn and(self, predicate: Predicate) -> Self::Output {
         use self::BoxedWhereClause::Where;
-        use expression::operators::And;
 
         match self {
             Where(where_clause) => Where(Box::new(And::new(where_clause, predicate))),
