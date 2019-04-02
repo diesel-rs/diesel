@@ -6,6 +6,14 @@ error: Deriving `AsChangeset` on a structure that only contains the primary key 
    |
    = help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.
    = note: `#[derive(AsChangeset)]` never changes the primary key of a row.
-
-error: aborting due to previous error
-
+error[E0601]: `main` function not found in crate `as_changeset_struct_with_only_primary_key`
+  |
+  = note: consider adding a `main` function to `$DIR/as_changeset_struct_with_only_primary_key.rs`
+error[E0277]: the trait bound `(): diesel::query_builder::AsChangeset` is not satisfied
+  --> $DIR/as_changeset_struct_with_only_primary_key.rs:17:10
+   |
+17 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `diesel::query_builder::AsChangeset` is not implemented for `()`
+error: aborting due to 3 previous errors
+Some errors occurred: E0277, E0601.
+For more information about an error, try `rustc --explain E0277`.

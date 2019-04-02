@@ -3,6 +3,20 @@ error: `column_name` must be in the form `column_name = "value"`
    |
 14 |     #[column_name]
    |       ^^^^^^^^^^^
+error[E0412]: cannot find type `column_name` in module `users`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^ not found in `users`
+error[E0425]: cannot find value `column_name` in module `users`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^ not found in `users`
+error[E0601]: `main` function not found in crate `as_changeset_bad_column_name_syntax`
+  |
+  = note: consider adding a `main` function to `$DIR/as_changeset_bad_column_name_syntax.rs`
+error: aborting due to 4 previous errors
 
-error: aborting due to previous error
-
+Some errors occurred: E0412, E0425, E0601.
+For more information about an error, try `rustc --explain E0412`.

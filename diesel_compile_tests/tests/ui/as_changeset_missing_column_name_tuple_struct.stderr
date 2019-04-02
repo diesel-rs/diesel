@@ -3,12 +3,34 @@ error: All fields of tuple structs must be annotated with `#[column_name]`
    |
 14 | struct User(i32, #[column_name = "name"] String, String);
    |             ^^^
-
 error: All fields of tuple structs must be annotated with `#[column_name]`
   --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
    |
 14 | struct User(i32, #[column_name = "name"] String, String);
    |                                                  ^^^^^^
-
-error: aborting due to 2 previous errors
-
+error[E0412]: cannot find type `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:13
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |             ^^^ not found in `users`
+error[E0412]: cannot find type `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |                                                  ^^^^^^ not found in `users`
+error[E0425]: cannot find value `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:13
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |             ^^^ not found in `users`
+error[E0425]: cannot find value `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |                                                  ^^^^^^ not found in `users`
+error[E0601]: `main` function not found in crate `as_changeset_missing_column_name_tuple_struct`
+  |
+  = note: consider adding a `main` function to `$DIR/as_changeset_missing_column_name_tuple_struct.rs`
+error: aborting due to 7 previous errors
+Some errors occurred: E0412, E0425, E0601.
+For more information about an error, try `rustc --explain E0412`.
