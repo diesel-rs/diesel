@@ -78,3 +78,5 @@ pub trait SupportsOnConflictClause {}
 pub trait SupportsDefaultKeyword {}
 /// Does this backend use the standard `SAVEPOINT` syntax?
 pub trait UsesAnsiSavepointSyntax {}
+/// Does this backend supports `OFFSET` clauses without limit clauses?
+pub trait SupportsLonelyOffset {}

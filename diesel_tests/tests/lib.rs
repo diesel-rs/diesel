@@ -51,6 +51,7 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
+mod limit_offset;
 
 #[cfg(rustfmt)]
 mod postgres_specific_schema;

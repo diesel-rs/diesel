@@ -91,11 +91,11 @@ impl<Inner, Tab> IntoConflictValueClause for OwnedBatchInsert<Inner, Tab> {
     }
 }
 
-impl<F, S, D, W, O, L, Of, G, LC, Columns> IntoConflictValueClause
-    for InsertFromSelect<SelectStatement<F, S, D, W, O, L, Of, G, LC>, Columns>
+impl<F, S, D, W, O, LOf, G, LC, Columns> IntoConflictValueClause
+    for InsertFromSelect<SelectStatement<F, S, D, W, O, LOf, G, LC>, Columns>
 {
     type ValueClause = InsertFromSelect<
-        OnConflictSelectWrapper<SelectStatement<F, S, D, W, O, L, Of, G, LC>>,
+        OnConflictSelectWrapper<SelectStatement<F, S, D, W, O, LOf, G, LC>>,
         Columns,
     >;
 

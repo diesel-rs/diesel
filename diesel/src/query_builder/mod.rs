@@ -18,11 +18,12 @@ mod distinct_clause;
 pub mod functions;
 mod group_by_clause;
 mod insert_statement;
-mod limit_clause;
+pub(crate) mod limit_clause;
+pub(crate) mod limit_offset_clause;
 pub(crate) mod locking_clause;
 #[doc(hidden)]
 pub mod nodes;
-mod offset_clause;
+pub(crate) mod offset_clause;
 mod order_clause;
 mod returning_clause;
 mod select_clause;
