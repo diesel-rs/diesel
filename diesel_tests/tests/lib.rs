@@ -6,9 +6,6 @@ extern crate assert_matches;
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-#[allow(deprecated)]
-extern crate diesel_infer_schema;
 #[cfg(feature = "sqlite")]
 #[macro_use]
 extern crate diesel_migrations;
@@ -20,8 +17,6 @@ mod annotations;
 mod associations;
 mod boxed_queries;
 mod connection;
-#[cfg(feature = "postgres")]
-mod custom_schemas;
 #[cfg(feature = "postgres")]
 mod custom_types;
 mod debug;
