@@ -97,22 +97,24 @@ where
     }
 }
 
-impl<T> SimpleConnection for PooledConnection<ConnectionManager<T>>
+impl<M> SimpleConnection for PooledConnection<M>
 where
-    T: Connection + Send + 'static,
+    M: ManageConnection,
+    M::Connection: Connection + Send + 'static,
 {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         (&**self).batch_execute(query)
     }
 }
 
-impl<C> Connection for PooledConnection<ConnectionManager<C>>
+impl<M> Connection for PooledConnection<M>
 where
-    C: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
-    C::Backend: UsesAnsiSavepointSyntax,
+    M: ManageConnection,
+    M::Connection: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
+    <M::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
 {
-    type Backend = C::Backend;
-    type TransactionManager = C::TransactionManager;
+    type Backend = <M::Connection as Connection>::Backend;
+    type TransactionManager = <M::Connection as Connection>::TransactionManager;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(

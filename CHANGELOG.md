@@ -9,6 +9,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Added
 
 * `NonAggregate` can now be derived for simple cases.
+* `Connection` and `SimpleConnection` traits are implemented for a broader range
+  of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
 * Added `DatabaseErrorKind::ReadOnlyTransaction` to allow applications to
   handle errors caused by writing when only allowed to read.
