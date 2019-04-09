@@ -3,6 +3,7 @@ use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
+use diesel::dsl::*;
 use diesel::expression::{is_aggregate, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
@@ -11,12 +12,15 @@ use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
+use self::information_schema::{
+    columns, key_column_usage, referential_constraints, table_constraints, tables,
+};
 use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
-    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
+    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sqnl_types::Text>
         + ValidGrouping<(), IsAggregate = is_aggregate::No>
         + QueryId
         + QueryFragment<Self>;
@@ -24,7 +28,7 @@ pub trait UsesInformationSchema: Backend {
     fn type_column() -> Self::TypeColumn;
     fn default_schema<C>(conn: &C) -> QueryResult<String>
     where
-        C: Connection,
+        C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>;
 }
 
@@ -51,7 +55,7 @@ impl UsesInformationSchema for Mysql {
 
     fn default_schema<C>(conn: &C) -> QueryResult<String>
     where
-        C: Connection,
+        C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>,
     {
         no_arg_sql_function!(database, sql_types::VarChar);
@@ -117,11 +121,31 @@ mod information_schema {
     allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
 
-pub fn get_table_data<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<ColumnInformation>>
+pub fn get_table_data<'a, Conn>(
+    conn: &Conn,
+    table: &'a TableName,
+) -> QueryResult<Vec<ColumnInformation>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    Order<
+        Filter<
+            Filter<
+                Select<
+                    columns::table,
+                    (
+                        columns::column_name,
+                        <Conn::Backend as UsesInformationSchema>::TypeColumn,
+                        columns::is_nullable,
+                    ),
+                >,
+                Eq<columns::table_name, &'a String>,
+            >,
+            Eq<columns::table_schema, String>,
+        >,
+        columns::ordinal_position,
+    >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::columns::dsl::*;
 
@@ -139,11 +163,30 @@ where
         .load(conn)
 }
 
-pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<String>>
+pub fn get_primary_keys<'a, Conn>(conn: &Conn, table: &'a TableName) -> QueryResult<Vec<String>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    Order<
+        Filter<
+            Filter<
+                Filter<
+                    Select<key_column_usage::table, key_column_usage::column_name>,
+                    EqAny<
+                        key_column_usage::constraint_name,
+                        Filter<
+                            Select<table_constraints::table, table_constraints::constraint_name>,
+                            Eq<table_constraints::constraint_type, &'static str>,
+                        >,
+                    >,
+                >,
+                Eq<key_column_usage::table_name, &'a String>,
+            >,
+            Eq<key_column_usage::table_schema, String>,
+        >,
+        key_column_usage::ordinal_position,
+    >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::key_column_usage::dsl::*;
     use self::information_schema::table_constraints::{self, constraint_type};
@@ -174,6 +217,19 @@ where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    Order<
+        Filter<
+            Filter<
+                Filter<
+                    Select<tables::table, (tables::table_name, tables::table_schema)>,
+                    Eq<tables::table_schema, String>,
+                >,
+                NotLike<tables::table_name, &'static str>,
+            >,
+            Like<tables::table_type, &'static str>,
+        >,
+        tables::table_name,
+    >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::tables::dsl::*;
 
@@ -201,14 +257,66 @@ where
 
 #[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
-pub fn load_foreign_key_constraints<Conn>(
+pub fn load_foreign_key_constraints<'a, Conn>(
     connection: &Conn,
-    schema_name: Option<&str>,
+    schema_name: Option<&'a str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    Select<
+        InnerJoinOn<
+            Filter<
+                Filter<
+                    table_constraints::table,
+                    Eq<table_constraints::constraint_type, &'static str>,
+                >,
+                Eq<table_constraints::table_schema, String>,
+            >,
+            referential_constraints::table,
+            And<
+                Eq<
+                    table_constraints::constraint_schema,
+                    referential_constraints::constraint_schema,
+                >,
+                Eq<table_constraints::constraint_name, referential_constraints::constraint_name>,
+            >,
+        >,
+        (
+            referential_constraints::constraint_schema,
+            referential_constraints::constraint_name,
+            referential_constraints::unique_constraint_schema,
+            referential_constraints::unique_constraint_name,
+        ),
+    >: QueryFragment<Conn::Backend>,
+    Limit<
+        Select<
+            Filter<
+                Filter<
+                    key_column_usage::table,
+                    Eq<diesel::dsl::Nullable<key_column_usage::constraint_schema>, Option<String>>,
+                >,
+                Eq<diesel::dsl::Nullable<key_column_usage::constraint_name>, Option<String>>,
+            >,
+            (
+                (key_column_usage::table_name, key_column_usage::table_schema),
+                key_column_usage::column_name,
+            ),
+        >,
+    >: QueryFragment<Conn::Backend>,
+    Limit<
+        Select<
+            Filter<
+                Filter<key_column_usage::table, Eq<key_column_usage::constraint_schema, String>>,
+                Eq<key_column_usage::constraint_name, String>,
+            >,
+            (
+                (key_column_usage::table_name, key_column_usage::table_schema),
+                key_column_usage::column_name,
+            ),
+        >,
+    >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::key_column_usage as kcu;
     use self::information_schema::referential_constraints as rc;
@@ -238,8 +346,8 @@ where
         .map(
             |(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
                 let (mut foreign_key_table, foreign_key_column) = kcu::table
-                    .filter(kcu::constraint_schema.eq(&foreign_key_schema))
-                    .filter(kcu::constraint_name.eq(&foreign_key_name))
+                    .filter(kcu::constraint_schema.eq(foreign_key_schema))
+                    .filter(kcu::constraint_name.eq(foreign_key_name))
                     .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                     .first::<(TableName, String)>(connection)?;
                 let (mut primary_key_table, primary_key_column) = kcu::table
