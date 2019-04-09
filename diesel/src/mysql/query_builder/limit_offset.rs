@@ -1,9 +1,9 @@
+use mysql::Mysql;
 use query_builder::limit_clause::{LimitClause, NoLimitClause};
 use query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 use query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
-use mysql::Mysql;
 
 impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast(&self, _out: AstPass<Mysql>) -> QueryResult<()> {
@@ -17,27 +17,6 @@ where
 {
     fn walk_ast(&self, out: AstPass<Mysql>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out)?;
-        Ok(())
-    }
-}
-
-impl<O> QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, OffsetClause<O>>
-where
-    OffsetClause<O>: QueryFragment<Mysql>,
-{
-    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
-        // Mysql requires a limit clause in front of any offset clause
-        // The documentation proposes the following:
-        // > To retrieve all rows from a certain offset up to the end of the
-        // > result set, you can use some large number for the second parameter.
-        // https://dev.mysql.com/doc/refman/8.0/en/select.html
-        // Therefore we just use u64::MAX as limit here
-        // That does not result in any limitations because mysql only supports
-        // up to 64TB of data per table. Assuming 1 bit per row this means
-        // 1024 * 1024 * 1024 * 1024 * 8 = 562.949.953.421.312 rows which is smaller
-        // than 2^64 = 18.446.744.073.709.551.615
-        out.push_sql(" LIMIT 18446744073709551615 ");
-        self.offset_clause.walk_ast(out)?;
         Ok(())
     }
 }
@@ -65,7 +44,16 @@ impl<'a> QueryFragment<Mysql> for BoxedLimitOffsetClause<'a, Mysql> {
                 limit.walk_ast(out.reborrow())?;
             }
             (None, Some(offset)) => {
-                // See the `QueryFragment` implementation for `LimitOffsetClause` for details.
+                // Mysql requires a limit clause in front of any offset clause
+                // The documentation proposes the following:
+                // > To retrieve all rows from a certain offset up to the end of the
+                // > result set, you can use some large number for the second parameter.
+                // https://dev.mysql.com/doc/refman/8.0/en/select.html
+                // Therefore we just use u64::MAX as limit here
+                // That does not result in any limitations because mysql only supports
+                // up to 64TB of data per table. Assuming 1 bit per row this means
+                // 1024 * 1024 * 1024 * 1024 * 8 = 562.949.953.421.312 rows which is smaller
+                // than 2^64 = 18.446.744.073.709.551.615
                 out.push_sql(" LIMIT 18446744073709551615 ");
                 offset.walk_ast(out.reborrow())?;
             }
@@ -95,19 +83,6 @@ where
         Self {
             limit: Some(Box::new(limit_offset.limit_clause)),
             offset: None,
-        }
-    }
-}
-
-impl<'a, O> From<LimitOffsetClause<NoLimitClause, OffsetClause<O>>>
-    for BoxedLimitOffsetClause<'a, Mysql>
-where
-    O: QueryFragment<Mysql> + 'a,
-{
-    fn from(limit_offset: LimitOffsetClause<NoLimitClause, OffsetClause<O>>) -> Self {
-        Self {
-            limit: None,
-            offset: Some(Box::new(limit_offset.offset_clause)),
         }
     }
 }
