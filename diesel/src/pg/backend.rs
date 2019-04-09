@@ -55,4 +55,3 @@ impl SupportsReturningClause for Pg {}
 impl SupportsOnConflictClause for Pg {}
 impl SupportsDefaultKeyword for Pg {}
 impl UsesAnsiSavepointSyntax for Pg {}
-impl SupportsLonelyOffset for Pg {}

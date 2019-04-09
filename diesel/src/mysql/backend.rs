@@ -80,4 +80,3 @@ impl TypeMetadata for Mysql {
 
 impl SupportsDefaultKeyword for Mysql {}
 impl UsesAnsiSavepointSyntax for Mysql {}
-impl SupportsLonelyOffset for Mysql {}
