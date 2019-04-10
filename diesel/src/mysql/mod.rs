@@ -5,7 +5,6 @@
 //! MySQL, you may need to work with this module directly.
 
 mod backend;
-mod bind_collector;
 mod connection;
 
 mod query_builder;

@@ -19,11 +19,7 @@ impl Binds {
         let data = input
             .into_iter()
             .map(|(metadata, bytes)| {
-                BindData::for_input(
-                    metadata.data_type,
-                    metadata.is_unsigned as _,
-                    bytes,
-                )
+                BindData::for_input(metadata.data_type, metadata.is_unsigned as _, bytes)
             })
             .collect();
 

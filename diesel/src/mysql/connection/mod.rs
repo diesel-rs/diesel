@@ -7,9 +7,9 @@ use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use super::bind_collector::MysqlBindCollector;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
+use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::*;
 use sql_types::HasSqlType;
@@ -120,9 +120,13 @@ impl MysqlConnection {
         let mut stmt = self
             .statement_cache
             .cached_statement(source, &[], |sql| self.raw_connection.prepare(sql))?;
-        let mut bind_collector = MysqlBindCollector::new();
+        let mut bind_collector = RawBytesBindCollector::new();
         source.collect_binds(&mut bind_collector, &())?;
-        stmt.bind(bind_collector.binds)?;
+        let binds = bind_collector
+            .metadata
+            .into_iter()
+            .zip(bind_collector.binds);
+        stmt.bind(binds)?;
         Ok(stmt)
     }
 
