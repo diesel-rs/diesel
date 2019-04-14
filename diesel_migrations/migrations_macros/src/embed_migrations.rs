@@ -4,6 +4,7 @@ use syn;
 use migrations::migration_directory_from_given_path;
 use migrations_internals::{migration_paths_in_directory, version_from_path};
 use std::error::Error;
+use std::fs::DirEntry;
 use std::path::Path;
 
 use util::{get_option, get_options_from_input};
@@ -83,7 +84,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
 fn migration_literals_from_path(path: &Path) -> Result<Vec<proc_macro2::TokenStream>, Box<Error>> {
     let mut migrations = migration_paths_in_directory(path)?;
 
-    migrations.sort_by_key(|a| a.path());
+    migrations.sort_by_key(DirEntry::path);
 
     migrations
         .into_iter()

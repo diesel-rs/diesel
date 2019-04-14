@@ -19,8 +19,7 @@ impl<'a> fmt::Display for MigrationName<'a> {
         let file_name = self
             .migration
             .file_path()
-            .and_then(|file_path| file_path.file_name())
-            .and_then(|file| file.to_str());
+            .and_then(|file_path| file_path.file_name()?.to_str());
         if let Some(name) = file_name {
             f.write_str(name)?;
         } else {

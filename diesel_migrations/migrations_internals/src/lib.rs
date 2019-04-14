@@ -225,7 +225,7 @@ pub fn revert_migration_with_version<Conn: Connection>(
     output: &mut Write,
 ) -> Result<(), RunMigrationsError> {
     migration_with_version(migrations_dir, ver)
-        .map_err(|e| e.into())
+        .map_err(Into::into)
         .and_then(|m| revert_migration(conn, &m, output))
 }
 
@@ -240,7 +240,7 @@ where
     Conn: MigrationConnection,
 {
     migration_with_version(migrations_dir, ver)
-        .map_err(|e| e.into())
+        .map_err(Into::into)
         .and_then(|m| run_migration(conn, &*m, output))
 }
 

@@ -98,7 +98,7 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                     .help("Valid options are `type_name` or `oid` and `array_oid`"))
             }
         })
-        .and_then(|res| res.map_err(|e| e.emit()).ok())
+        .and_then(|res| res.map_err(Diagnostic::emit).ok())
         .and_then(|ty| {
             if cfg!(not(feature = "postgres")) {
                 return None;

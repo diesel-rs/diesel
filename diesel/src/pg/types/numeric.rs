@@ -17,9 +17,7 @@ mod bigdecimal {
     use serialize::{self, Output, ToSql};
     use sql_types::Numeric;
 
-    #[cfg(feature = "unstable")]
     use std::convert::{TryFrom, TryInto};
-    #[cfg(feature = "unstable")]
     use std::error::Error;
 
     /// Iterator over the digits of a big uint in base 10k.
@@ -68,7 +66,6 @@ mod bigdecimal {
         Ok(result)
     }
 
-    #[cfg(feature = "unstable")]
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
         type Error = Box<Error + Send + Sync>;
 
@@ -77,7 +74,6 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(feature = "unstable")]
     impl TryFrom<PgNumeric> for BigDecimal {
         type Error = Box<Error + Send + Sync>;
 
@@ -112,7 +108,8 @@ mod bigdecimal {
                     .expect("enough digits exist")
                     .iter()
                     .rev()
-                    .take_while(|i| i.is_zero())
+                    .cloned()
+                    .take_while(Zero::is_zero)
                     .count()
             } else {
                 0
