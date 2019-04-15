@@ -38,39 +38,37 @@ mod bigdecimal {
         }
     }
 
-    fn pg_decimal_to_bigdecimal(numeric: &PgNumeric) -> deserialize::Result<BigDecimal> {
-        let (sign, weight, scale, digits) = match *numeric {
-            PgNumeric::Positive {
-                weight,
-                scale,
-                ref digits,
-            } => (Sign::Plus, weight, scale, digits),
-            PgNumeric::Negative {
-                weight,
-                scale,
-                ref digits,
-            } => (Sign::Minus, weight, scale, digits),
-            PgNumeric::NaN => return Err(Box::from("NaN is not (yet) supported in BigDecimal")),
-        };
-
-        let mut result = BigUint::default();
-        let count = digits.len() as i64;
-        for digit in digits {
-            result *= BigUint::from(10_000u64);
-            result += BigUint::from(*digit as u64);
-        }
-        // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
-        let correction_exp = 4 * (i64::from(weight) - count + 1);
-        let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
-            .with_scale(i64::from(scale));
-        Ok(result)
-    }
-
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
         type Error = Box<Error + Send + Sync>;
 
         fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
-            pg_decimal_to_bigdecimal(numeric)
+            let (sign, weight, scale, digits) = match *numeric {
+                PgNumeric::Positive {
+                    weight,
+                    scale,
+                    ref digits,
+                } => (Sign::Plus, weight, scale, digits),
+                PgNumeric::Negative {
+                    weight,
+                    scale,
+                    ref digits,
+                } => (Sign::Minus, weight, scale, digits),
+                PgNumeric::NaN => {
+                    return Err(Box::from("NaN is not (yet) supported in BigDecimal"))
+                }
+            };
+
+            let mut result = BigUint::default();
+            let count = digits.len() as i64;
+            for digit in digits {
+                result *= BigUint::from(10_000u64);
+                result += BigUint::from(*digit as u64);
+            }
+            // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
+            let correction_exp = 4 * (i64::from(weight) - count + 1);
+            let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
+                .with_scale(i64::from(scale));
+            Ok(result)
         }
     }
 
@@ -152,8 +150,7 @@ mod bigdecimal {
 
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
-            let numeric = PgNumeric::from_sql(numeric)?;
-            pg_decimal_to_bigdecimal(&numeric)
+            PgNumeric::from_sql(numeric)?.try_into()
         }
     }
 
