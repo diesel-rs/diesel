@@ -108,7 +108,6 @@ mod bigdecimal {
                     .expect("enough digits exist")
                     .iter()
                     .rev()
-                    .cloned()
                     .take_while(Zero::is_zero)
                     .count()
             } else {
@@ -153,7 +152,6 @@ mod bigdecimal {
 
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
-            // FIXME: Use the TryFrom impl after Rust 1.34 get released.
             let numeric = PgNumeric::from_sql(numeric)?;
             pg_decimal_to_bigdecimal(&numeric)
         }
