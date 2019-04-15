@@ -82,7 +82,11 @@ mod bigdecimal {
 
     impl<'a> From<&'a BigDecimal> for PgNumeric {
         // NOTE(clippy): No `std::ops::MulAssign` impl for `BigInt`
-        #[allow(clippy::assign_op_pattern)]
+        // NOTE(clippy): Clippy suggests to replace the `.take_while(|i| i.is_zero())`
+        // with `.take_while(Zero::is_zero)`, but that's a false positive.
+        // The closure gets an `&&i16` due to autoderef `<i16 as Zero>::is_zero(&self) -> bool`
+        // is called. There is no impl for `&i16` that would work with this closure.
+        #[allow(clippy::assign_op_pattern, clippy::redundant_closure)]
         fn from(decimal: &'a BigDecimal) -> Self {
             let (mut integer, scale) = decimal.as_bigint_and_exponent();
             let scale = scale as u16;
@@ -106,7 +110,7 @@ mod bigdecimal {
                     .expect("enough digits exist")
                     .iter()
                     .rev()
-                    .take_while(Zero::is_zero)
+                    .take_while(|i| i.is_zero())
                     .count()
             } else {
                 0
