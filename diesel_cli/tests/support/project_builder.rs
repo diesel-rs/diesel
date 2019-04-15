@@ -161,7 +161,6 @@ impl Project {
     }
 
     pub fn create_migration_in_directory(&self, directory: &str, name: &str, up: &str, down: &str) {
-        use std::io::Write;
         let migration_path = self.directory.path().join(directory).join(name);
         fs::create_dir(&migration_path)
             .expect("Migrations folder must exist to create a migration");

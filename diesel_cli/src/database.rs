@@ -236,7 +236,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         Backend::Sqlite => {
             if Path::new(database_url).exists() {
                 println!("Dropping database: {}", database_url);
-                fs::remove_file(&database_url)?;
+                std::fs::remove_file(&database_url)?;
             }
         }
         #[cfg(feature = "mysql")]
