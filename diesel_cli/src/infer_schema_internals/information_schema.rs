@@ -189,7 +189,7 @@ where
     >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::key_column_usage::dsl::*;
-    use self::information_schema::table_constraints::{self, constraint_type};
+    use self::information_schema::table_constraints::constraint_type;
 
     let pk_query = table_constraints::table
         .select(table_constraints::constraint_name)
