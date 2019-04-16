@@ -15,7 +15,7 @@ pub mod bigdecimal {
         fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
             write!(out, "{}", *self)
                 .map(|_| IsNull::No)
-                .map_err(|e| e.into())
+                .map_err(Into::into)
         }
     }
 

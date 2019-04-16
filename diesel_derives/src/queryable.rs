@@ -1,6 +1,7 @@
 use proc_macro2;
 use syn;
 
+use field::Field;
 use model::*;
 use util::*;
 
@@ -11,7 +12,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let field_ty = model
         .fields()
         .iter()
-        .map(|f| f.ty_for_deserialize())
+        .map(Field::ty_for_deserialize)
         .collect::<Result<Vec<_>, _>>()?;
     let field_ty = &field_ty;
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {

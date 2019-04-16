@@ -44,5 +44,12 @@ warning: Unrecognized option random_option
 29 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
    |                                           ^^^^^^^^^^^^^
 
-error: aborting due to 5 previous errors
+error[E0433]: failed to resolve: use of undeclared type or module `foos`
+  --> $DIR/belongs_to_invalid_option_syntax.rs:30:8
+   |
+30 | struct Foo {
+   |        ^^^ use of undeclared type or module `foos`
 
+error: aborting due to 6 previous errors
+
+For more information about this error, try `rustc --explain E0433`.

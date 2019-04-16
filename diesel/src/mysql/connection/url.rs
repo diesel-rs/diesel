@@ -25,7 +25,7 @@ impl ConnectionOptions {
             return Err(connection_url_error());
         }
 
-        if url.path_segments().map(|x| x.count()).unwrap_or(0) > 1 {
+        if url.path_segments().map(Iterator::count).unwrap_or(0) > 1 {
             return Err(connection_url_error());
         }
 

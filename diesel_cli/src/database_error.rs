@@ -46,15 +46,15 @@ impl Error for DatabaseError {
             }
             IoError(ref error) => error
                 .source()
-                .map(|e| e.description())
+                .map(Error::description)
                 .unwrap_or_else(|| error.description()),
             QueryError(ref error) => error
                 .source()
-                .map(|e| e.description())
+                .map(Error::description)
                 .unwrap_or_else(|| error.description()),
             ConnectionError(ref error) => error
                 .source()
-                .map(|e| e.description())
+                .map(Error::description)
                 .unwrap_or_else(|| error.description()),
         }
     }

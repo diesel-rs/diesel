@@ -1,8 +1,8 @@
 #![cfg(not(windows))]
 extern crate compiletest_rs as compiletest;
 
-use std::path::PathBuf;
 use std::env::var;
+use std::path::PathBuf;
 
 fn run_mode(mode: &'static str) {
     let mut config = compiletest::Config::default();
@@ -10,7 +10,7 @@ fn run_mode(mode: &'static str) {
     let cfg_mode = mode.parse().expect("Invalid mode");
 
     if let Ok(name) = var::<&str>("TESTNAME") {
-        let s : String = name.to_owned();
+        let s: String = name.to_owned();
         config.filter = Some(s)
     }
     config.mode = cfg_mode;

@@ -17,9 +17,7 @@ mod bigdecimal {
     use serialize::{self, Output, ToSql};
     use sql_types::Numeric;
 
-    #[cfg(feature = "unstable")]
     use std::convert::{TryFrom, TryInto};
-    #[cfg(feature = "unstable")]
     use std::error::Error;
 
     /// Iterator over the digits of a big uint in base 10k.
@@ -40,44 +38,40 @@ mod bigdecimal {
         }
     }
 
-    fn pg_decimal_to_bigdecimal(numeric: &PgNumeric) -> deserialize::Result<BigDecimal> {
-        let (sign, weight, scale, digits) = match *numeric {
-            PgNumeric::Positive {
-                weight,
-                scale,
-                ref digits,
-            } => (Sign::Plus, weight, scale, digits),
-            PgNumeric::Negative {
-                weight,
-                scale,
-                ref digits,
-            } => (Sign::Minus, weight, scale, digits),
-            PgNumeric::NaN => return Err(Box::from("NaN is not (yet) supported in BigDecimal")),
-        };
-
-        let mut result = BigUint::default();
-        let count = digits.len() as i64;
-        for digit in digits {
-            result *= BigUint::from(10_000u64);
-            result += BigUint::from(*digit as u64);
-        }
-        // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
-        let correction_exp = 4 * (i64::from(weight) - count + 1);
-        let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
-            .with_scale(i64::from(scale));
-        Ok(result)
-    }
-
-    #[cfg(feature = "unstable")]
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
         type Error = Box<Error + Send + Sync>;
 
         fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
-            pg_decimal_to_bigdecimal(numeric)
+            let (sign, weight, scale, digits) = match *numeric {
+                PgNumeric::Positive {
+                    weight,
+                    scale,
+                    ref digits,
+                } => (Sign::Plus, weight, scale, digits),
+                PgNumeric::Negative {
+                    weight,
+                    scale,
+                    ref digits,
+                } => (Sign::Minus, weight, scale, digits),
+                PgNumeric::NaN => {
+                    return Err(Box::from("NaN is not (yet) supported in BigDecimal"))
+                }
+            };
+
+            let mut result = BigUint::default();
+            let count = digits.len() as i64;
+            for digit in digits {
+                result *= BigUint::from(10_000u64);
+                result += BigUint::from(*digit as u64);
+            }
+            // First digit got factor 10_000^(digits.len() - 1), but should get 10_000^weight
+            let correction_exp = 4 * (i64::from(weight) - count + 1);
+            let result = BigDecimal::new(BigInt::from_biguint(sign, result), -correction_exp)
+                .with_scale(i64::from(scale));
+            Ok(result)
         }
     }
 
-    #[cfg(feature = "unstable")]
     impl TryFrom<PgNumeric> for BigDecimal {
         type Error = Box<Error + Send + Sync>;
 
@@ -88,7 +82,11 @@ mod bigdecimal {
 
     impl<'a> From<&'a BigDecimal> for PgNumeric {
         // NOTE(clippy): No `std::ops::MulAssign` impl for `BigInt`
-        #[allow(clippy::assign_op_pattern)]
+        // NOTE(clippy): Clippy suggests to replace the `.take_while(|i| i.is_zero())`
+        // with `.take_while(Zero::is_zero)`, but that's a false positive.
+        // The closure gets an `&&i16` due to autoderef `<i16 as Zero>::is_zero(&self) -> bool`
+        // is called. There is no impl for `&i16` that would work with this closure.
+        #[allow(clippy::assign_op_pattern, clippy::redundant_closure)]
         fn from(decimal: &'a BigDecimal) -> Self {
             let (mut integer, scale) = decimal.as_bigint_and_exponent();
             let scale = scale as u16;
@@ -156,9 +154,7 @@ mod bigdecimal {
 
     impl FromSql<Numeric, Pg> for BigDecimal {
         fn from_sql(numeric: Option<&[u8]>) -> deserialize::Result<Self> {
-            // FIXME: Use the TryFrom impl when try_from is stable
-            let numeric = PgNumeric::from_sql(numeric)?;
-            pg_decimal_to_bigdecimal(&numeric)
+            PgNumeric::from_sql(numeric)?.try_into()
         }
     }
 
