@@ -33,6 +33,7 @@ mod insert;
 mod insert_from_select;
 mod internal_details;
 mod joins;
+mod limit_offset;
 mod macros;
 mod order;
 mod perf_details;
@@ -46,5 +47,3 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
-mod limit_offset;
-

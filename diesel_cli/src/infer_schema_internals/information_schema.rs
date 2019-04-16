@@ -12,11 +12,9 @@ use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
-use self::information_schema::{
-    columns, key_column_usage, table_constraints, tables,
-};
 #[cfg(feature = "postgres")]
 use self::information_schema::referential_constraints;
+use self::information_schema::{columns, key_column_usage, table_constraints, tables};
 use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
