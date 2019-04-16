@@ -8,7 +8,7 @@ use byteorder::WriteBytesExt;
 use std::io::Write;
 
 use deserialize::{self, FromSql};
-use mysql::{Mysql, MysqlType};
+use mysql::{Mysql, MysqlTypeMetadata};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
 
@@ -98,12 +98,11 @@ impl<ST> HasSqlType<Unsigned<ST>> for Mysql
 where
     Mysql: HasSqlType<ST>,
 {
-    fn metadata(lookup: &()) -> MysqlType {
-        <Mysql as HasSqlType<ST>>::metadata(lookup)
-    }
-
-    fn is_signed() -> IsSigned {
-        IsSigned::Unsigned
+    fn metadata(lookup: &()) -> MysqlTypeMetadata {
+        MysqlTypeMetadata {
+            is_unsigned: true,
+            ..<Mysql as HasSqlType<ST>>::metadata(lookup)
+        }
     }
 }
 

@@ -405,32 +405,9 @@ pub trait HasSqlType<ST>: TypeMetadata {
 
     #[doc(hidden)]
     #[cfg(feature = "mysql")]
-    fn is_signed() -> IsSigned {
-        IsSigned::Signed
+    fn mysql_row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
+        out.push(Self::metadata(lookup))
     }
-
-    #[doc(hidden)]
-    #[cfg(feature = "mysql")]
-    fn mysql_metadata(lookup: &Self::MetadataLookup) -> (Self::TypeMetadata, IsSigned) {
-        (Self::metadata(lookup), Self::is_signed())
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "mysql")]
-    fn mysql_row_metadata(
-        out: &mut Vec<(Self::TypeMetadata, IsSigned)>,
-        lookup: &Self::MetadataLookup,
-    ) {
-        out.push(Self::mysql_metadata(lookup))
-    }
-}
-
-#[doc(hidden)]
-#[cfg(feature = "mysql")]
-#[derive(Debug, Clone, Copy)]
-pub enum IsSigned {
-    Signed,
-    Unsigned,
 }
 
 /// Information about how a backend stores metadata about given SQL types

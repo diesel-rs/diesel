@@ -2,14 +2,30 @@
 
 use byteorder::NativeEndian;
 
-use super::bind_collector::MysqlBindCollector;
 use super::query_builder::MysqlQueryBuilder;
 use backend::*;
+use query_builder::bind_collector::RawBytesBindCollector;
 use sql_types::TypeMetadata;
 
 /// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Mysql;
+
+/// The full type metadata for MySQL
+///
+/// This includes the type of the value, and whether it is signed.
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub struct MysqlTypeMetadata {
+    /// The underlying data type
+    ///
+    /// Affects the `buffer_type` sent to libmysqlclient
+    pub data_type: MysqlType,
+
+    /// Is this type signed?
+    ///
+    /// Affects the `is_unsigned` flag sent to libmysqlclient
+    pub is_unsigned: bool,
+}
 
 #[allow(missing_debug_implementations)]
 /// Represents the possible forms a bind parameter can be transmitted as.
@@ -18,7 +34,7 @@ pub struct Mysql;
 ///
 /// The null variant is omitted, as we will never prepare a statement in which
 /// one of the bind parameters can always be NULL
-#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum MysqlType {
     /// Sets `buffer_type` to `MYSQL_TYPE_TINY`
     Tiny,
@@ -48,7 +64,7 @@ pub enum MysqlType {
 
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
-    type BindCollector = MysqlBindCollector;
+    type BindCollector = RawBytesBindCollector<Self>;
     type ByteOrder = NativeEndian;
 }
 
@@ -57,7 +73,7 @@ impl<'a> HasRawValue<'a> for Mysql {
 }
 
 impl TypeMetadata for Mysql {
-    type TypeMetadata = MysqlType;
+    type TypeMetadata = MysqlTypeMetadata;
     type MetadataLookup = ();
 }
 
