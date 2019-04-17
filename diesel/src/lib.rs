@@ -96,11 +96,12 @@
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
 #![deny(
-    warnings,
+//    warnings,
     missing_debug_implementations,
     missing_copy_implementations,
-    missing_docs
+  //  missing_docs
 )]
+#![warn(missing_docs)]
 // Clippy lints
 #![allow(
     clippy::option_map_unwrap_or_else,
@@ -140,6 +141,8 @@ mod macros;
 #[cfg(test)]
 #[macro_use]
 extern crate cfg_if;
+#[macro_use]
+pub extern crate frunk;
 
 #[cfg(test)]
 pub mod test_helpers;

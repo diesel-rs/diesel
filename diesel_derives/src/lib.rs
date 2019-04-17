@@ -42,6 +42,8 @@ mod diesel_numeric_ops;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
+mod named_query_fragment;
+mod named_queryable;
 mod non_aggregate;
 mod query_id;
 mod queryable;
@@ -117,6 +119,16 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, sql_function::expand)
+}
+
+#[proc_macro_derive(NamedQueryFragment)]
+pub fn derive_named_query_fragment(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, named_query_fragment::derive)
+}
+
+#[proc_macro_derive(NamedQueryable)]
+pub fn derive_named_queryable(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, named_queryable::derive)
 }
 
 fn expand_proc_macro<T: syn::parse::Parse>(

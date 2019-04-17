@@ -50,3 +50,33 @@ where
         source.default_selection().walk_ast(pass)
     }
 }
+
+macro_rules! named_query_fragment {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+
+            impl<$($T,)*> NamedQueryFragment for SelectClause<($($T,)*)>
+            where
+                $($T: NamedQueryFragment,)*
+            {
+                type Name = ($($T::Name,)*);
+            }
+
+        )*
+    }
+}
+
+__diesel_for_each_tuple!(named_query_fragment);
+
+use query_source::Column;
+
+impl<C> NamedQueryFragment for SelectClause<C>
+where
+    C: Column + NamedQueryFragment,
+{
+    type Name = (C::Name,);
+}

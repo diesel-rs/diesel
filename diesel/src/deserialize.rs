@@ -411,3 +411,297 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
 //   certainly good enough for user types.
 //   - Still, it really feels like `FromSql` *should* be able to imply both
 //   `FromSqlRow` and `Queryable`
+use std::marker::PhantomData;
+
+#[derive(Debug)]
+pub struct Field<Name, T> {
+    name: PhantomData<Name>,
+    pub value: T,
+}
+
+pub trait NamedQueryable {
+    type Row: IntoHlist;
+
+    fn build(row: Self::Row) -> Self;
+}
+
+impl<Name, T, ST, DB> FromSql<ST, DB> for Field<Name, T>
+where
+    T: FromSql<ST, DB>,
+    DB: Backend,
+{
+    fn from_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
+        let value = <T as FromSql<ST, DB>>::from_sql(bytes)?;
+        Ok(Self {
+            name: PhantomData,
+            value,
+        })
+    }
+}
+
+pub trait IntoHlist {
+    type Hlist;
+
+    fn into_hlist(self) -> Self::Hlist;
+}
+
+pub trait FromHlist {
+    type Tuple;
+
+    fn from_hlist(self) -> Self::Tuple;
+}
+
+impl<N, T> IntoHlist for Field<N, T> {
+    type Hlist = Hlist![Field<N, T>];
+
+    fn into_hlist(self) -> Self::Hlist {
+        hlist![self]
+    }
+}
+
+use frunk::{HCons, HNil};
+
+macro_rules! into_hlist {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            impl<$($T,)*> IntoHlist for ($($T,)*) {
+                type Hlist = Hlist![$($T,)*];
+
+                fn into_hlist(self) -> Self::Hlist {
+                    hlist![$(self.$idx,)*]
+                }
+            }
+        )*
+    }
+}
+
+__diesel_for_each_tuple!(into_hlist);
+
+impl<A> FromHlist for HCons<A, HNil> {
+    type Tuple = (A,);
+
+    fn from_hlist(self) -> Self::Tuple {
+        (self.pop().0,)
+    }
+}
+
+impl<A, B> FromHlist for HCons<A, HCons<B, HNil>> {
+    type Tuple = (A, B);
+
+    fn from_hlist(self) -> Self::Tuple {
+        let (a, rest) = self.pop();
+        let (b, _) = rest.pop();
+        (a, b)
+    }
+}
+
+impl<A, B, C> FromHlist for HCons<A, HCons<B, HCons<C, HNil>>> {
+    type Tuple = (A, B, C);
+
+    fn from_hlist(self) -> Self::Tuple {
+        let (a, rest) = self.pop();
+        let (b, rest) = rest.pop();
+        let (c, _) = rest.pop();
+        (a, b, c)
+    }
+}
+
+impl<A, B, C, D> FromHlist for HCons<A, HCons<B, HCons<C, HCons<D, HNil>>>> {
+    type Tuple = (A, B, C, D);
+
+    fn from_hlist(self) -> Self::Tuple {
+        let (a, rest) = self.pop();
+        let (b, rest) = rest.pop();
+        let (c, rest) = rest.pop();
+        let (d, _) = rest.pop();
+        (a, b, c, d)
+    }
+}
+
+use frunk::indices::{Here, There};
+
+impl<A, B, C, D, E> FromHlist for HCons<A, HCons<B, HCons<C, HCons<D, HCons<E, HNil>>>>> {
+    type Tuple = (A, B, C, D, E);
+
+    fn from_hlist(self) -> Self::Tuple {
+        let (a, rest) = self.pop();
+        let (b, rest) = rest.pop();
+        let (c, rest) = rest.pop();
+        let (d, rest) = rest.pop();
+        let (e, _rest) = rest.pop();
+        (a, b, c, d, e)
+    }
+}
+
+pub trait ByNameFieldPlucker<TargetKey, Index> {
+    type TargetValue;
+    type Remainder;
+
+    /// Returns a pair consisting of the value pointed to by the target key and the remainder.
+    #[inline(always)]
+    fn pluck_by_name(self) -> (Field<TargetKey, Self::TargetValue>, Self::Remainder);
+}
+
+/// Implementation when the pluck target key is in the head.
+impl<K, V, Tail> ByNameFieldPlucker<K, Here> for HCons<Field<K, V>, Tail> {
+    type TargetValue = V;
+    type Remainder = Tail;
+
+    #[inline(always)]
+    fn pluck_by_name(self) -> (Field<K, Self::TargetValue>, Self::Remainder) {
+        let field = Field {
+            value: self.head.value,
+            name: PhantomData,
+        };
+        (field, self.tail)
+    }
+}
+
+/// Implementation when the pluck target key is in the tail.
+impl<Head, Tail, K, TailIndex> ByNameFieldPlucker<K, There<TailIndex>> for HCons<Head, Tail>
+where
+    Tail: ByNameFieldPlucker<K, TailIndex>,
+{
+    type TargetValue = <Tail as ByNameFieldPlucker<K, TailIndex>>::TargetValue;
+    type Remainder = HCons<Head, <Tail as ByNameFieldPlucker<K, TailIndex>>::Remainder>;
+
+    #[inline(always)]
+    fn pluck_by_name(self) -> (Field<K, Self::TargetValue>, Self::Remainder) {
+        let (target, tail_remainder) =
+            <Tail as ByNameFieldPlucker<K, TailIndex>>::pluck_by_name(self.tail);
+        (
+            target,
+            HCons {
+                head: self.head,
+                tail: tail_remainder,
+            },
+        )
+    }
+}
+
+pub trait MapToQueryType<FieldNames, PluckIndices> {
+    type Queryable;
+}
+
+impl<N, P, T> MapToQueryType<N, P> for Field<N, T> {
+    type Queryable = (T,);
+}
+
+macro_rules! map_to_query_type {
+    (@inner 1
+     tuple = [$tuple:ty],
+     t = [$T: ident,],
+     st = [$ST:ident,],
+     tt = [$TT: ident,],
+    ) => {
+        impl<$T, $ST, $TT,> MapToQueryType<($ST,), ($TT,)> for ($T,)
+        where $tuple: IntoHlist,
+             <$tuple as IntoHlist>::Hlist: ByNameFieldPlucker<$ST, $TT>,
+
+        {
+            type Queryable =
+                <<$tuple as IntoHlist>::Hlist as ByNameFieldPlucker<$ST, $TT>>::TargetValue;
+        }
+    };
+    (@inner $Tuple:tt
+     tuple = [$tuple:ty],
+     t = [$($T: ident,)*],
+     st = [$($ST:ident, )*],
+     tt = [$($TT: ident,)*],
+    ) => {
+        impl<$($T,)* $($ST,)* $($TT,)* > MapToQueryType<($($ST,)*), ($($TT,)*)> for ($($T,)*)
+        where $tuple: IntoHlist,
+        $(<$tuple as IntoHlist>::Hlist: ByNameFieldPlucker<$ST, $TT>,)*
+
+        {
+            type Queryable = (
+                $(<<$tuple as IntoHlist>::Hlist as ByNameFieldPlucker<$ST, $TT>>::TargetValue,)*
+            );
+        }
+    };
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            map_to_query_type!{
+                @inner $Tuple
+                tuple = [($($T,)*)],
+                t = [$($T,)*],
+                st = [$($ST,)*],
+                tt = [$($TT,)*],
+            }
+        )*
+    }
+}
+
+__diesel_for_each_tuple!(map_to_query_type);
+
+pub trait ZipWithNames<Names> {
+    type Out;
+
+    fn zip(self) -> Self::Out;
+}
+
+impl<N, OtherNames, T, OtherT> ZipWithNames<HCons<N, OtherNames>> for HCons<T, OtherT>
+where
+    OtherT: ZipWithNames<OtherNames>,
+{
+    type Out = HCons<Field<N, T>, <OtherT as ZipWithNames<OtherNames>>::Out>;
+
+    fn zip(self) -> Self::Out {
+        let (t, other_t) = self.pop();
+        let field = Field {
+            name: PhantomData,
+            value: t,
+        };
+        HCons {
+            head: field,
+            tail: other_t.zip(),
+        }
+    }
+}
+
+impl ZipWithNames<HNil> for HNil {
+    type Out = HNil;
+
+    fn zip(self) -> Self::Out {
+        HNil
+    }
+}
+
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct LabeledQueryableWrapper<Q, L, N, P> {
+    labeled: L,
+    p: PhantomData<(Q, N, P)>,
+}
+
+use frunk::hlist::IntoTuple2;
+use frunk::hlist::Sculptor;
+
+impl<Q, L, N, ST, DB, P> Queryable<ST, DB> for LabeledQueryableWrapper<Q, L, N, P>
+where
+    DB: Backend,
+    Q: Queryable<ST, DB> + IntoHlist,
+    L: NamedQueryable,
+    L::Row: IntoHlist,
+    Q::Hlist: ZipWithNames<N>,
+    <Q::Hlist as ZipWithNames<N>>::Out: Sculptor<<L::Row as IntoHlist>::Hlist, P>,
+    <L::Row as IntoHlist>::Hlist: FromHlist<Tuple = L::Row>,
+{
+    type Row = Q::Row;
+
+    fn build(row: Self::Row) -> Self {
+        let queryable = Q::build(row).into_hlist().zip().sculpt().0;
+        Self {
+            labeled: L::build(queryable.from_hlist()),
+            p: PhantomData,
+        }
+    }
+}

@@ -2,7 +2,7 @@ use super::RunQueryDsl;
 use backend::Backend;
 use connection::Connection;
 use deserialize::Queryable;
-use query_builder::{AsQuery, QueryFragment, QueryId};
+use query_builder::{AsQuery, NamedQueryFragment, QueryFragment, QueryId};
 use result::QueryResult;
 use sql_types::HasSqlType;
 
@@ -29,6 +29,33 @@ where
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>> {
         conn.query_by_index(self)
     }
+}
+
+use deserialize::{LabeledQueryableWrapper, MapToQueryType, NamedQueryable, IntoHlist};
+
+pub fn labelled_query<T, U, Conn, P1, P2>(query: T, conn: &Conn) -> QueryResult<Vec<U>>
+where
+    Conn: Connection,
+    Conn::Backend: HasSqlType<T::SqlType>,
+    T: AsQuery + RunQueryDsl<Conn>,
+    T::Query: QueryFragment<Conn::Backend> + QueryId + NamedQueryFragment,
+    <T::Query as NamedQueryFragment>::Name: IntoHlist,
+    U: NamedQueryable,
+    U::Row: MapToQueryType<<T::Query as NamedQueryFragment>::Name, P1>,
+    LabeledQueryableWrapper<
+        <U::Row as MapToQueryType<<T::Query as NamedQueryFragment>::Name, P1>>::Queryable,
+        U,
+        <<T::Query as NamedQueryFragment>::Name as IntoHlist>::Hlist,
+        P2,
+    >: Queryable<T::SqlType, Conn::Backend>,
+{
+    let raw: Vec<LabeledQueryableWrapper<_, U, _, _>> = query.internal_load(conn)?;
+    // This is actually safe because LabeledQueryableWrapper has 2 fields, one of the type U
+    // and one of the type PhantomData which is actually a zero sized type
+    // Additionally LabeledQueryableWrapper is #[repr(C)], therefore it is safe to assume
+    // that the type is binary compatible with the inner U field, which means we could
+    // just tell the compiler it is U
+    Ok(unsafe { std::mem::transmute(raw) })
 }
 
 /// The `execute` method

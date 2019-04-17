@@ -51,6 +51,7 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
+mod labeled_queryable;
 
 #[cfg(rustfmt)]
 mod postgres_specific_schema;

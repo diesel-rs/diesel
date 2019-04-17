@@ -15,7 +15,9 @@ use query_builder::order_clause::*;
 use query_builder::select_clause::*;
 use query_builder::update_statement::*;
 use query_builder::where_clause::*;
-use query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
+use query_builder::{
+    AsQuery, NamedQueryFragment, Query, QueryFragment, SelectQuery, SelectStatement,
+};
 use query_dsl::boxed_dsl::BoxedDsl;
 use query_dsl::methods::*;
 use query_dsl::*;
@@ -512,4 +514,20 @@ where
             self.locking,
         )
     }
+}
+
+impl<F, S, D, W, O, L, Of, G> NamedQueryFragment for SelectStatement<F, S, D, W, O, L, Of, G>
+where
+    S: NamedQueryFragment,
+{
+    type Name = S::Name;
+}
+
+impl<F, D, W, O, L, Of, G> NamedQueryFragment
+    for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
+where
+    F: QuerySource,
+    F::DefaultSelection: NamedQueryFragment,
+{
+    type Name = <F::DefaultSelection as NamedQueryFragment>::Name;
 }
