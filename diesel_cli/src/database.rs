@@ -109,7 +109,7 @@ macro_rules! call_with_conn {
         $database_url:expr,
         $($func:ident)::+ ($($args:expr),*)
     ) => {
-        match ::database::InferConnection::establish(&$database_url).unwrap() {
+        match ::database::InferConnection::establish(&$database_url).unwrap_or_else(handle_error) {
             #[cfg(feature="postgres")]
             ::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
             #[cfg(feature="sqlite")]
