@@ -963,6 +963,6 @@ for more information on using the Diesel framework.
 If you have any questions, join our [gitter channel],
 the Diesel team is happy to help.
 
-[official guides]: http://diesel.rs/guides/
+[official guides]: https://diesel.rs/guides/
 [docs]: https://docs.diesel.rs
 [gitter channel]: https://gitter.im/diesel-rs/diesel

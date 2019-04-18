@@ -5,7 +5,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
-homepage = "http://diesel.rs"
+homepage = "https://diesel.rs"
 
 
 [dependencies]
