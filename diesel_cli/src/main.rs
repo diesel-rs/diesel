@@ -427,7 +427,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
                 .into());
             }
         } else {
-            let mut file = fs::File::create(path)?;
+            let file = fs::File::create(path)?;
             print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
         }
     }
