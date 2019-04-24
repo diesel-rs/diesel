@@ -29,9 +29,9 @@ operator_allowed!(now, Sub, sub);
 sql_function! {
     /// Represents the SQL `DATE` function. The argument should be a Timestamp
     /// expression, and the return value will be an expression of type Date.
-
+    ///
     /// # Examples
-
+    ///
     /// ```ignore
     /// # #[macro_use] extern crate diesel;
     /// # extern crate chrono;
