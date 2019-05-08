@@ -3,6 +3,7 @@ use prelude::*;
 
 /// Determines the OID of types at runtime
 #[allow(missing_debug_implementations)]
+#[repr(transparent)]
 pub struct PgMetadataLookup {
     conn: PgConnection,
 }
