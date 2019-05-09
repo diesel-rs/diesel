@@ -43,6 +43,11 @@ impl SimpleConnection for SqliteConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         self.raw_connection.exec(query)
     }
+
+    #[cfg(feature = "postgres")]
+    fn as_pg_connection(&self) -> Option<&crate::pg::PgConnection> {
+        None
+    }
 }
 
 impl Connection for SqliteConnection {

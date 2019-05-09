@@ -10,6 +10,8 @@ use deserialize::{Queryable, QueryableByName};
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use result::*;
 use sql_types::HasSqlType;
+#[cfg(feature = "postgres")]
+use crate::pg::PgConnection;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
@@ -24,6 +26,10 @@ pub trait SimpleConnection {
     /// This function is used to execute migrations,
     /// which may contain more than one SQL statement.
     fn batch_execute(&self, query: &str) -> QueryResult<()>;
+
+    /// Return the underlying `PgConnection` if it is one.
+    #[cfg(feature = "postgres")]
+    fn as_pg_connection(&self) -> Option<&PgConnection>;
 }
 
 /// A connection to a database

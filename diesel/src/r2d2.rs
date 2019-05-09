@@ -105,6 +105,11 @@ where
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         (&**self).batch_execute(query)
     }
+
+    #[cfg(feature = "postgres")]
+    fn as_pg_connection(&self) -> Option<&PgConnection> {
+        None
+    }
 }
 
 impl<M> Connection for PooledConnection<M>

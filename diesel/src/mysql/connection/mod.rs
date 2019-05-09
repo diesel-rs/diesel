@@ -30,6 +30,11 @@ impl SimpleConnection for MysqlConnection {
         self.raw_connection
             .enable_multi_statements(|| self.raw_connection.execute(query))
     }
+
+    #[cfg(feature = "postgres")]
+    fn as_pg_connection(&self) -> Option<&crate::pg::PgConnection> {
+        None
+    }
 }
 
 impl Connection for MysqlConnection {

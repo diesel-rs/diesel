@@ -40,6 +40,10 @@ impl SimpleConnection for PgConnection {
         PgResult::new(inner_result?)?;
         Ok(())
     }
+
+    fn as_pg_connection(&self) -> Option<&PgConnection> {
+        Some(self)
+    }
 }
 
 impl Connection for PgConnection {
