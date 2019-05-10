@@ -5,13 +5,13 @@ mod transaction_manager;
 
 use std::fmt::Debug;
 
+#[cfg(feature = "postgres")]
+use crate::pg::PgConnection;
 use backend::Backend;
 use deserialize::{Queryable, QueryableByName};
 use query_builder::{AsQuery, QueryFragment, QueryId};
 use result::*;
 use sql_types::HasSqlType;
-#[cfg(feature = "postgres")]
-use crate::pg::PgConnection;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
