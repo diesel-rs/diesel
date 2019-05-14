@@ -180,6 +180,7 @@ where
 {
     let migrations_dir = find_migrations_directory()?;
     let all_migrations = migrations_in_directory(&migrations_dir)?;
+    setup_database(conn)?;
     let already_run = conn.previously_run_migration_versions()?;
 
     let pending = all_migrations
