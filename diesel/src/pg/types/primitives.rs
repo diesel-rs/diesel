@@ -7,10 +7,7 @@ use sql_types;
 
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        match bytes {
-            Some(bytes) => Ok(bytes[0] != 0),
-            None => Ok(false),
-        }
+        Ok(not_none!(bytes)[0] != 0)
     }
 }
 
