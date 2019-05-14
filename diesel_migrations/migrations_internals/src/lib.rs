@@ -109,6 +109,7 @@ use self::schema::__diesel_schema_migrations::dsl::*;
 use diesel::expression_methods::*;
 use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 
+use std::convert::AsRef;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -348,7 +349,7 @@ where
     let run_in_transaction = migration
         .metadata()
         .and_then(|m| m.get("run_in_transaction"));
-    let run_in_transaction = match run_in_transaction.as_ref().map(|s| s.as_ref()) {
+    let run_in_transaction = match run_in_transaction.as_ref().map(AsRef::as_ref) {
         Some("true") => true,
         Some("false") | None => false,
         Some(_) => {

@@ -173,8 +173,6 @@ impl Project {
 
     #[cfg(feature = "postgres")]
     pub fn add_migration_metadata(&self, name: &str, metadata: &str) {
-        use std::io::Write;
-
         let migration_path = self.directory.path().join("migrations").join(name);
         let mut file = fs::File::create(&migration_path.join("metadata.toml"))
             .expect("Could not create migration metadata file");
