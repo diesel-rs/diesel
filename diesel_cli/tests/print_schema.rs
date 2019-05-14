@@ -70,6 +70,7 @@ fn print_schema_column_renaming() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn print_schema_type_renaming() {
     test_print_schema("print_schema_type_renaming", vec!["--with-docs"]);
 }
