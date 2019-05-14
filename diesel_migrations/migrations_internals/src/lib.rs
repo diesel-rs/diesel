@@ -355,7 +355,8 @@ where
         Some(_) => {
             return Err(MigrationError::InvalidMetadata(
                 "run_in_transaction must be a boolean".into(),
-            ).into())
+            )
+            .into())
         }
     };
 
