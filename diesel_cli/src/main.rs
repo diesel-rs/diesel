@@ -20,6 +20,7 @@ extern crate clap;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+extern crate heck;
 extern crate migrations_internals;
 #[macro_use]
 extern crate serde;
