@@ -1,3 +1,4 @@
+#![recursion_limit = "128"]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
@@ -36,7 +37,10 @@ mod util;
 use proc_macro::TokenStream;
 use syn::DeriveInput;
 
-#[proc_macro_derive(EmbedMigrations, attributes(embed_migrations_options))]
+#[proc_macro_derive(
+    EmbedMigrations,
+    attributes(embed_migrations_options, embed_rust_migrations)
+)]
 pub fn derive_embed_migrations(input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as DeriveInput);
     embed_migrations::derive_embed_migrations(&item)

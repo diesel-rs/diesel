@@ -47,3 +47,29 @@ pub fn get_optional_option(options: &[Meta], option_name: &str) -> Option<String
         .find(|a| a.name() == option_name)
         .map(|a| str_value_of_meta_item(a, option_name))
 }
+
+pub fn get_rust_migrations_from_input(
+    name: &Path,
+    attrs: &[Attribute],
+    on_bug: fn() -> !,
+) -> Option<Vec<String>> {
+    let options = attrs
+        .iter()
+        .find(|a| &a.path == name)
+        .map(Attribute::parse_meta);
+    match options {
+        Some(Ok(Meta::List(MetaList { ref nested, .. }))) => Some(
+            nested
+                .iter()
+                .map(|o| match *o {
+                    NestedMeta::Literal(Lit::Str(ref s)) => s.value(),
+                    _ => {
+                        panic!(r#"Rust migrations must be given in the form `["expr1", "expr2", ...]`. Each expr must evaluate to a type that impls `Migration`."#);
+                    }
+                })
+                .collect(),
+        ),
+        Some(_) => on_bug(),
+        None => None,
+    }
+}

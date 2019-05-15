@@ -190,4 +190,14 @@ macro_rules! embed_migrations {
             struct _Dummy;
         }
     };
+
+    ($migrations_path:expr, [$($rust_migration:expr /* str */),*]) => {
+        #[allow(dead_code)]
+        mod embedded_migrations {
+            #[derive(EmbedMigrations)]
+            #[embed_migrations_options(migrations_path=$migrations_path)]
+            #[embed_rust_migrations($($rust_migration),*)]
+            struct _Dummy;
+        }
+    };
 }

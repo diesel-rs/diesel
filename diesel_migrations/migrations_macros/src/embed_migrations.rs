@@ -7,7 +7,7 @@ use std::error::Error;
 use std::fs::DirEntry;
 use std::path::Path;
 
-use util::{get_option, get_options_from_input};
+use util::{get_option, get_options_from_input, get_rust_migrations_from_input};
 
 pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     fn bug() -> ! {
@@ -29,6 +29,18 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         Ok(v) => v,
         Err(e) => panic!("Error reading migrations: {}", e),
     };
+    let rust_migrations_expr =
+        get_rust_migrations_from_input(&parse_quote!(embed_rust_migrations), &input.attrs, bug)
+            .unwrap_or_default()
+            .into_iter()
+            .enumerate()
+            .map(|(i, expr_str)| {
+                let expr = syn::parse_str::<syn::Expr>(&expr_str).unwrap_or_else(|e| {
+                    panic!("Migration string [{}] must contain an expression: {}", i, e)
+                });
+                quote!(Box::new(#expr))
+            })
+            .collect::<Vec<_>>();
 
     // These are split into multiple `quote!` calls to avoid recursion limit
     let embedded_migration_def = quote!(
@@ -61,7 +73,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
             conn: &C,
             out: &mut io::Write,
         ) -> Result<(), RunMigrationsError> {
-            run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
+            run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| &**v), out)
         }
     );
 
@@ -73,7 +85,16 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         use self::diesel::connection::SimpleConnection;
         use std::io;
 
-        const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
+        lazy_static! {
+            pub static ref ALL_MIGRATIONS: Vec<Box<Migration + Send + Sync>> = {
+                let mut migrations: Vec<Box<Migration + Send + Sync>> = vec![
+                    #(#migrations_expr,)*
+                    #(#rust_migrations_expr,)*
+                ];
+                migrations.sort_by(|a, b| a.version().cmp(b.version()));
+                migrations
+            };
+        }
 
         #embedded_migration_def
 
@@ -97,8 +118,8 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();
 
-    Ok(quote!(&EmbeddedMigration {
+    Ok(quote!(Box::new(EmbeddedMigration {
         version: #version,
         up_sql: include_str!(#sql_file_path),
-    }))
+    })))
 }
