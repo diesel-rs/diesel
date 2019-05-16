@@ -1,10 +1,10 @@
 use expression::grouped::Grouped;
 use expression::operators::{And, Or};
 use expression::{AsExpression, Expression};
-use sql_types::Bool;
+use sql_types::{Bool, Nullable};
 
 /// Methods present on boolean expressions
-pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
+pub trait BoolExpressionMethods: Expression + Sized {
     /// Creates a SQL `AND` expression
     ///
     /// # Example
@@ -37,8 +37,8 @@ pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
-    fn and<T: AsExpression<Bool>>(self, other: T) -> And<Self, T::Expression> {
-        And::new(self.as_expression(), other.as_expression())
+    fn and<T: AsExpression<Self::SqlType>>(self, other: T) -> And<Self, T::Expression> {
+        And::new(self, other.as_expression())
     }
 
     /// Creates a SQL `OR` expression
@@ -79,9 +79,23 @@ pub trait BoolExpressionMethods: Expression<SqlType = Bool> + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
-    fn or<T: AsExpression<Bool>>(self, other: T) -> Grouped<Or<Self, T::Expression>> {
+    fn or<T: AsExpression<Self::SqlType>>(self, other: T) -> Grouped<Or<Self, T::Expression>> {
         Grouped(Or::new(self, other.as_expression()))
     }
 }
 
-impl<T: Expression<SqlType = Bool>> BoolExpressionMethods for T {}
+impl<T> BoolExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: BoolOrNullableBool,
+{
+}
+
+#[doc(hidden)]
+/// Marker trait used to implement `BoolExpressionMethods` on the appropriate
+/// types. Once coherence takes associated types into account, we can remove
+/// this trait.
+pub trait BoolOrNullableBool {}
+
+impl BoolOrNullableBool for Bool {}
+impl BoolOrNullableBool for Nullable<Bool> {}
