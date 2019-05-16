@@ -348,13 +348,20 @@ where
 
     let run_in_transaction = migration
         .metadata()
-        .and_then(|m| {
-            m.get("run_in_transaction")
-                .and_then(|x: &dyn Any| x.downcast_ref::<bool>())
-        })
-        .unwrap_or(&false);
+        .and_then(|m| m.get("run_in_transaction"))
+        .map(|x: &dyn Any| x.downcast_ref::<bool>());
+    let run_in_transaction = match run_in_transaction {
+        Some(None) => {
+            return Err(MigrationError::InvalidMetadata(
+                "run_in_transaction must be a boolean".into(),
+            )
+            .into())
+        }
+        Some(Some(flag)) => *flag,
+        None => false,
+    };
 
-    if *run_in_transaction {
+    if run_in_transaction {
         conn.transaction(run_migration)
     } else {
         run_migration().map_err(Into::into)

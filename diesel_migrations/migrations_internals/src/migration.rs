@@ -181,13 +181,13 @@ impl Metadata for TomlMetadata {
         use toml::Value::*;
 
         self.0.get(key).map(|v| match v {
-            String(s) => s as &dyn Any,
-            Integer(i) => i as &dyn Any,
-            Float(f) => f as &dyn Any,
-            Boolean(b) => b as &dyn Any,
-            Datetime(d) => d as &dyn Any,
-            Array(a) => a as &dyn Any,
-            Table(t) => t as &dyn Any,
+            String(s) => s as _,
+            Integer(i) => i as _,
+            Float(f) => f as _,
+            Boolean(b) => b as _,
+            Datetime(d) => d as _,
+            Array(a) => a as _,
+            Table(t) => t as _,
         })
     }
 }
