@@ -115,6 +115,19 @@ fn print_schema_custom_types() {
     );
 }
 
+#[test]
+fn schema_file_is_relative_to_project_root() {
+    let p = project("schema_file_is_relative_to_project_root")
+        .folder("foo")
+        .build();
+    let _db = database(&p.database_url());
+
+    p.command("setup").run();
+    p.command("migration").arg("run").cd("foo").run();
+
+    assert!(p.has_file("src/schema.rs"));
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

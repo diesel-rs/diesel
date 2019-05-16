@@ -36,6 +36,11 @@ impl TestCommand {
         self
     }
 
+    pub fn cd<P: AsRef<Path>>(mut self, path: P) -> Self {
+        self.cwd.push(path);
+        self
+    }
+
     pub fn run(self) -> CommandResult {
         let output = self.build_command().output().unwrap();
         CommandResult { output: output }
