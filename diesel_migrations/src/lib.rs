@@ -97,6 +97,8 @@ pub use migrations_internals::revert_latest_migration;
 #[doc(inline)]
 pub use migrations_internals::revert_latest_migration_in_directory;
 #[doc(inline)]
+pub use migrations_internals::revert_migration;
+#[doc(inline)]
 pub use migrations_internals::revert_migration_with_version;
 #[doc(inline)]
 pub use migrations_internals::run_migration_with_version;

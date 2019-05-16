@@ -47,6 +47,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         struct EmbeddedMigration {
             version: &'static str,
             up_sql: &'static str,
+            down_sql: &'static str,
         }
 
         impl Migration for EmbeddedMigration {
@@ -58,8 +59,8 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
                 conn.batch_execute(self.up_sql).map_err(Into::into)
             }
 
-            fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                unreachable!()
+            fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+                conn.batch_execute(self.down_sql).map_err(Into::into)
             }
         }
     );
@@ -75,6 +76,43 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         ) -> Result<(), RunMigrationsError> {
             run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| &**v), out)
         }
+
+        pub fn migration_with_version(ver: &str) -> Result<&'static Migration, MigrationError> {
+            let migration = ALL_MIGRATIONS
+                .iter()
+                .map(|v| &**v)
+                .find(|m| m.version() == ver);
+            match migration {
+                Some(m) => Ok(m),
+                None => Err(MigrationError::UnknownMigrationVersion(ver.into())),
+            }
+        }
+
+        pub fn revert_migration_with_version<Conn: Connection>(
+            conn: &Conn,
+            ver: &str,
+            out: &mut io::Write,
+        ) -> Result<(), RunMigrationsError> {
+            migration_with_version(ver)
+                .map_err(Into::into)
+                .and_then(|m| revert_migration(conn, &m, out))
+        }
+
+        pub fn revert_latest_embedded_migration<Conn>(
+            conn: &Conn,
+            out: &mut io::Write,
+        ) -> Result<String, RunMigrationsError>
+        where
+            Conn: MigrationConnection,
+        {
+            setup_database(conn)?;
+            let latest_migration_version =
+                conn.latest_run_migration_version()?.ok_or_else(|| {
+                    RunMigrationsError::MigrationError(MigrationError::NoMigrationRun)
+                })?;
+            revert_migration_with_version(conn, &latest_migration_version, out)
+                .map(|_| latest_migration_version)
+        }
     );
 
     quote! {
@@ -82,7 +120,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         extern crate diesel_migrations;
 
         use self::diesel_migrations::*;
-        use self::diesel::connection::SimpleConnection;
+        use self::diesel::connection::{Connection, SimpleConnection};
         use std::io;
 
         lazy_static! {
@@ -115,11 +153,14 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<proc_macro2::TokenStr
 
 fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<Error>> {
     let version = version_from_path(path)?;
-    let sql_file = path.join("up.sql");
-    let sql_file_path = sql_file.to_str();
+    let sql_file_up = path.join("up.sql");
+    let sql_file_path_up = sql_file_up.to_str();
+    let sql_file_down = path.join("down.sql");
+    let sql_file_path_down = sql_file_down.to_str();
 
     Ok(quote!(Box::new(EmbeddedMigration {
         version: #version,
-        up_sql: include_str!(#sql_file_path),
+        up_sql: include_str!(#sql_file_path_up),
+        down_sql: include_str!(#sql_file_path_down),
     })))
 }

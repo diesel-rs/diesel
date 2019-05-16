@@ -345,7 +345,7 @@ where
     })
 }
 
-fn revert_migration<Conn: Connection>(
+pub fn revert_migration<Conn: Connection>(
     conn: &Conn,
     migration: &Migration,
     output: &mut Write,
