@@ -15,6 +15,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `DatabaseErrorKind::ReadOnlyTransaction` to allow applications to
   handle errors caused by writing when only allowed to read.
 
+* All expression methods can now be called on expressions of nullable types.
+
 ### Removed
 
 * All previously deprecated items have been removed.
