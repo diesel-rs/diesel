@@ -45,11 +45,14 @@ pub fn file_name<'a>(migration: &'a Migration, sql_file: &'a str) -> MigrationFi
 
 impl<'a> fmt::Display for MigrationFileName<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fpath = match self.migration.file_path() {
-            None => return Err(fmt::Error),
-            Some(v) => v.join(self.sql_file),
+        match self.migration.file_path() {
+            None => f.write_str("<no file name>")?,
+            Some(v) => f.write_str(
+                v.join(self.sql_file)
+                    .to_str()
+                    .unwrap_or("Invalid utf8 in filename"),
+            )?,
         };
-        f.write_str(fpath.to_str().unwrap_or("Invalid utf8 in filename"))?;
         Ok(())
     }
 }
