@@ -1,7 +1,7 @@
 use diesel::connection::SimpleConnection;
 use diesel::migration::*;
 
-use std::borrow::Cow;
+use std::any::Any;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
@@ -177,11 +177,17 @@ fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigr
 struct TomlMetadata(toml::Value);
 
 impl Metadata for TomlMetadata {
-    fn get(&self, key: &str) -> Option<Cow<str>> {
-        self.0.get(key).map(|v| {
-            v.as_str()
-                .map(Into::into)
-                .unwrap_or_else(|| v.to_string().into())
+    fn get(&self, key: &str) -> Option<&dyn Any> {
+        use toml::Value::*;
+
+        self.0.get(key).map(|v| match v {
+            String(s) => s as &dyn Any,
+            Integer(i) => i as &dyn Any,
+            Float(f) => f as &dyn Any,
+            Boolean(b) => b as &dyn Any,
+            Datetime(d) => d as &dyn Any,
+            Array(a) => a as &dyn Any,
+            Table(t) => t as &dyn Any,
         })
     }
 }

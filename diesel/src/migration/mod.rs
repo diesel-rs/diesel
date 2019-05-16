@@ -4,7 +4,7 @@ mod errors;
 pub use self::errors::{MigrationError, RunMigrationsError};
 
 use connection::SimpleConnection;
-use std::borrow::Cow;
+use std::any::Any;
 use std::path::Path;
 
 /// Represents a migration that interacts with diesel
@@ -85,5 +85,5 @@ impl<'a> Migration for &'a Migration {
 /// this to `false`.
 pub trait Metadata {
     /// Get the metadata at the given key, if present
-    fn get(&self, key: &str) -> Option<Cow<str>>;
+    fn get(&self, key: &str) -> Option<&dyn Any>;
 }

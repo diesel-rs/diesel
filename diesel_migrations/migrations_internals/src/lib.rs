@@ -109,7 +109,7 @@ use self::schema::__diesel_schema_migrations::dsl::*;
 use diesel::expression_methods::*;
 use diesel::{Connection, QueryDsl, QueryResult, RunQueryDsl};
 
-use std::convert::AsRef;
+use std::any::Any;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -348,19 +348,13 @@ where
 
     let run_in_transaction = migration
         .metadata()
-        .and_then(|m| m.get("run_in_transaction"));
-    let run_in_transaction = match run_in_transaction.as_ref().map(AsRef::as_ref) {
-        Some("true") => true,
-        Some("false") | None => false,
-        Some(_) => {
-            return Err(MigrationError::InvalidMetadata(
-                "run_in_transaction must be a boolean".into(),
-            )
-            .into())
-        }
-    };
+        .and_then(|m| {
+            m.get("run_in_transaction")
+                .and_then(|x: &dyn Any| x.downcast_ref::<bool>())
+        })
+        .unwrap_or(&false);
 
-    if run_in_transaction {
+    if *run_in_transaction {
         conn.transaction(run_migration)
     } else {
         run_migration().map_err(Into::into)
