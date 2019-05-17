@@ -358,7 +358,7 @@ where
             .into())
         }
         Some(Some(flag)) => *flag,
-        None => false,
+        None => true,
     };
 
     if run_in_transaction {
