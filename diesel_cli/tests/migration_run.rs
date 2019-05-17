@@ -548,6 +548,7 @@ fn migrations_can_be_run_without_transactions() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
 fn migration_run_error_on_invalid_metadata() {
     let p = project("migration_run_invalid_metadata").build();
 
