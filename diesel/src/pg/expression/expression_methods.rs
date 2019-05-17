@@ -138,7 +138,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
 impl<T: Expression> PgTimestampExpressionMethods for T where T::SqlType: DateTimeLike {}
 
 /// PostgreSQL specific methods present on array expressions.
-pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized {
+pub trait PgArrayExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `&&` expression.
     ///
     /// This operator returns whether two arrays have common elements.
@@ -300,7 +300,21 @@ pub trait PgArrayExpressionMethods<ST>: Expression<SqlType = Array<ST>> + Sized 
     }
 }
 
-impl<T, ST> PgArrayExpressionMethods<ST> for T where T: Expression<SqlType = Array<ST>> {}
+impl<T> PgArrayExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: ArrayOrNullableArray,
+{
+}
+
+#[doc(hidden)]
+/// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
+/// types. Once coherence takes associated types into account, we can remove
+/// this trait.
+pub trait ArrayOrNullableArray {}
+
+impl<T> ArrayOrNullableArray for Array<T> {}
+impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
 
 use expression::operators::{Asc, Desc};
 

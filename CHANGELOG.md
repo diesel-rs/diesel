@@ -18,6 +18,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Migrations can now opt out of being wrapped in a transaction by adding
   `metadata.toml` to their directory with `run_in_transaction = false`.
 
+* All expression methods can now be called on expressions of nullable types.
+
+
 ### Removed
 
 * All previously deprecated items have been removed.
