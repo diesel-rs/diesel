@@ -5,7 +5,7 @@ use std::path::Path;
 use support::{database, project};
 
 #[test]
-fn migration_run_runs_pending_migrations() {
+fn migration_grun_runs_pending_migrations() {
     let p = project("migration_run").folder("migrations").build();
     let db = database(&p.database_url());
 
@@ -545,4 +545,29 @@ fn migrations_can_be_run_without_transactions() {
         result.stdout()
     );
     assert!(db.table_exists("users"));
+}
+
+#[test]
+fn migration_run_error_on_invalid_metadata() {
+    let p = project("migration_run_invalid_metadata").build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_dummy_table",
+        "CREATE TABLE dummy (id INTEGER PRIMARY KEY);",
+        "DROP TABLE dummy",
+    );
+    p.add_migration_metadata(
+        "12345_create_dummy_table",
+        "run_in_transaction = \"dontcare\"",
+    );
+
+    let result = p.command("migration").arg("run").run();
+    assert!(
+        !result.is_success(),
+        "Result was successfull, but expected error {:?}",
+        result
+    );
 }
