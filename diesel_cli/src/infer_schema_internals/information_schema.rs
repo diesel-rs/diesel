@@ -106,8 +106,8 @@ mod information_schema {
         information_schema.referential_constraints (constraint_schema, constraint_name) {
             constraint_schema -> VarChar,
             constraint_name -> VarChar,
-            unique_constraint_schema -> VarChar,
-            unique_constraint_name -> VarChar,
+            unique_constraint_schema -> Nullable<VarChar>,
+            unique_constraint_name -> Nullable<VarChar>,
         }
     }
 
@@ -229,7 +229,7 @@ where
             rc::unique_constraint_schema,
             rc::unique_constraint_name,
         ))
-        .load::<(String, String, String, String)>(connection)?;
+        .load::<(String, String, Option<String>, Option<String>)>(connection)?;
 
     constraint_names
         .into_iter()
@@ -241,8 +241,8 @@ where
                     .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                     .first::<(TableName, _)>(connection)?;
                 let (mut primary_key_table, primary_key_column) = kcu::table
-                    .filter(kcu::constraint_schema.eq(primary_key_schema))
-                    .filter(kcu::constraint_name.eq(primary_key_name))
+                    .filter(kcu::constraint_schema.nullable().eq(primary_key_schema))
+                    .filter(kcu::constraint_name.nullable().eq(primary_key_name))
                     .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                     .first::<(TableName, _)>(connection)?;
 
@@ -257,6 +257,10 @@ where
                 })
             },
         )
+        .filter(|e| match e {
+            Err(NotFound) => false,
+            _ => true,
+        })
         .collect()
 }
 
