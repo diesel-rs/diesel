@@ -5,9 +5,9 @@
 
 mod on_conflict_actions;
 mod on_conflict_clause;
-mod on_conflict_extension;
+mod on_conflict_ext;
 mod on_conflict_target;
 
 pub use self::on_conflict_actions::excluded;
-pub use self::on_conflict_extension::*;
+pub use self::on_conflict_ext::*;
 pub use self::on_conflict_target::on_constraint;

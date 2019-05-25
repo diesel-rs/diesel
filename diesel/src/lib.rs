@@ -310,7 +310,7 @@ pub mod prelude {
     pub use query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
     pub use query_source::{Column, JoinTo, QuerySource, Table};
-    pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use result::{ConnectionError, ConnectionResult, OptionalExt, QueryResult};
 
     #[cfg(feature = "mysql")]
     pub use mysql::MysqlConnection;

@@ -37,7 +37,7 @@ pub enum Error {
     /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
     /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
     /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
-    /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
+    /// [`optional`]: trait.OptionalExt.html#tymethod.optional
     NotFound,
 
     /// The query could not be constructed
@@ -218,7 +218,7 @@ pub type QueryResult<T> = Result<T, Error>;
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
 /// See the [method documentation](#tymethod.optional).
-pub trait OptionalExtension<T> {
+pub trait OptionalExt<T> {
     /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
     ///
     /// By default, Diesel treats 0 rows being returned from a query that is expected to return 1
@@ -231,7 +231,7 @@ pub trait OptionalExtension<T> {
     /// # Example
     ///
     /// ```rust
-    /// use diesel::{QueryResult, NotFound, OptionalExtension};
+    /// use diesel::{QueryResult, NotFound, OptionalExt};
     ///
     /// let result: QueryResult<i32> = Ok(1);
     /// assert_eq!(Ok(Some(1)), result.optional());
@@ -242,7 +242,7 @@ pub trait OptionalExtension<T> {
     fn optional(self) -> Result<Option<T>, Error>;
 }
 
-impl<T> OptionalExtension<T> for QueryResult<T> {
+impl<T> OptionalExt<T> for QueryResult<T> {
     fn optional(self) -> Result<Option<T>, Error> {
         match self {
             Ok(value) => Ok(Some(value)),
