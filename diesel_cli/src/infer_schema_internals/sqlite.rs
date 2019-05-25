@@ -77,7 +77,8 @@ pub fn load_foreign_key_constraints(
                     ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
-                        foreign_key: row.foreign_key,
+                        foreign_key: row.foreign_key.clone(),
+                        foreign_key_rust_name: row.foreign_key,
                         primary_key: row.primary_key,
                     }
                 })
@@ -290,12 +291,14 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         child_table: table_2.clone(),
         parent_table: table_1.clone(),
         foreign_key: "fk_one".into(),
+        foreign_key_rust_name: "fk_one".into(),
         primary_key: "id".into(),
     };
     let fk_two = ForeignKeyConstraint {
         child_table: table_3.clone(),
         parent_table: table_2.clone(),
         foreign_key: "fk_two".into(),
+        foreign_key_rust_name: "fk_two".into(),
         primary_key: "id".into(),
     };
     let fks = load_foreign_key_constraints(&connection, None).unwrap();

@@ -65,6 +65,15 @@ fn print_schema_with_foreign_keys() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_foreign_keys_reserved_names() {
+    test_print_schema(
+        "print_schema_with_foreign_keys_reserved_names",
+        vec!["--with-docs"],
+    );
+}
+
+#[test]
 fn print_schema_column_renaming() {
     test_print_schema("print_schema_column_renaming", vec!["--with-docs"]);
 }

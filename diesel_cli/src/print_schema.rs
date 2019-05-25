@@ -249,7 +249,7 @@ impl<'a> Display for Joinable<'a> {
         write!(
             f,
             "joinable!({} -> {} ({}));",
-            self.0.child_table.name, self.0.parent_table.name, self.0.foreign_key,
+            self.0.child_table.name, self.0.parent_table.name, self.0.foreign_key_rust_name,
         )
     }
 }

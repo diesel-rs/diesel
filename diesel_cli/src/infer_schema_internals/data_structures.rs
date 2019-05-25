@@ -102,6 +102,7 @@ pub struct ForeignKeyConstraint {
     pub child_table: TableName,
     pub parent_table: TableName,
     pub foreign_key: String,
+    pub foreign_key_rust_name: String,
     pub primary_key: String,
 }
 
