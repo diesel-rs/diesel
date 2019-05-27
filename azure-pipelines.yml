@@ -1,4 +1,4 @@
-trigger: ["master"]
+#trigger: ["master"]
 pr: ["master"]
 
 
@@ -87,6 +87,24 @@ jobs:
           sudo service postgresql restart && sleep 3 &&
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" &&
           sudo service postgresql restart && sleep 3
+        displayName: Install postgresql
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: Windows_postgres_vcpkg
+    displayName: Windows PostgreSQL from vcpkg
+    vmImage: vs2017-win2016
+    variables:
+      BACKEND: postgres
+      PG_DATABASE_URL: postgres://postgres:password@localhost/
+      PG_EXAMPLE_DATABASE_URL: postgres://postgres:password@localhost/diesel_example
+    setup:
+      - script: |
+          choco install postgresql10 --force --params '/Password:password'
+          cd /d c:\vcpkg
+          .\vcpkg install libpq:x64-windows
+          echo "##vso[task.setvariable variable=VCPKG_ROOT;]C:\vcpkg
+          echo "##vso[task.setvariable variable=VCPKGRS_DYNAMIC;]1
         displayName: Install postgresql
 
 - template: _build/azure-pipelines-template.yml
