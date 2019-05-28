@@ -14,6 +14,14 @@ static RESERVED_NAMES: &[&str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
+fn is_reserved(name: &str) -> bool {
+    RESERVED_NAMES.contains(&name) || (
+        // Names ending in an underscore are not considered reserved so that we
+        // can always just append an underscore to generate an unreserved name.
+        name.starts_with("__") && !name.ends_with("_")
+    )
+}
+
 pub fn load_table_names(
     database_url: &str,
     schema_name: Option<&str>,
@@ -110,9 +118,9 @@ pub fn load_foreign_key_constraints(
     constraints.map(|mut ct| {
         ct.sort();
         ct.iter_mut().for_each(|foreign_key_constraint| {
-            if RESERVED_NAMES.contains(&foreign_key_constraint.foreign_key_rust_name.as_str()) {
+            if is_reserved(&foreign_key_constraint.foreign_key_rust_name) {
                 foreign_key_constraint.foreign_key_rust_name =
-                    format!("{}_", foreign_key_constraint.foreign_key_rust_name.as_str());
+                    format!("{}_", foreign_key_constraint.foreign_key_rust_name);
             }
         });
         ct
@@ -141,7 +149,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = primary_key
         .iter()
         .map(|k| {
-            if RESERVED_NAMES.contains(&k.as_str()) {
+            if is_reserved(&k) {
                 format!("{}_", k)
             } else {
                 k.clone()
@@ -153,7 +161,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
         .into_iter()
         .map(|c| {
             let ty = determine_column_type(&c, &connection)?;
-            let rust_name = if RESERVED_NAMES.contains(&c.column_name.as_str()) {
+            let rust_name = if is_reserved(&c.column_name) {
                 Some(format!("{}_", c.column_name))
             } else {
                 None
