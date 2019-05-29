@@ -15,11 +15,12 @@ static RESERVED_NAMES: &[&str] = &[
 ];
 
 fn is_reserved(name: &str) -> bool {
-    RESERVED_NAMES.contains(&name) || (
-        // Names ending in an underscore are not considered reserved so that we
-        // can always just append an underscore to generate an unreserved name.
-        name.starts_with("__") && !name.ends_with("_")
-    )
+    RESERVED_NAMES.contains(&name)
+        || (
+            // Names ending in an underscore are not considered reserved so that we
+            // can always just append an underscore to generate an unreserved name.
+            name.starts_with("__") && !name.ends_with('_')
+        )
 }
 
 pub fn load_table_names(
