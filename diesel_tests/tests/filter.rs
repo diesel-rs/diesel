@@ -378,7 +378,7 @@ sql_function!(fn lower(x: VarChar) -> VarChar);
 fn filter_by_boxed_predicate() {
     fn by_name(
         name: &str,
-    ) -> Box<BoxableExpression<users::table, TestBackend, SqlType = sql_types::Bool>> {
+    ) -> Box<dyn BoxableExpression<users::table, TestBackend, SqlType = sql_types::Bool>> {
         Box::new(lower(users::name).eq(name.to_string()))
     }
 

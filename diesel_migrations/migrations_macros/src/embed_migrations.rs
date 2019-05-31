@@ -78,7 +78,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> quote::Tokens {
     }
 }
 
-fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<Error>> {
+fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<dyn Error>> {
     let mut migrations = migration_paths_in_directory(path)?;
 
     migrations.sort_by_key(|a| a.path());
@@ -89,7 +89,7 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<quote::Tokens>, Box<E
         .collect()
 }
 
-fn migration_literal_from_path(path: &Path) -> Result<quote::Tokens, Box<Error>> {
+fn migration_literal_from_path(path: &Path) -> Result<quote::Tokens, Box<dyn Error>> {
     let version = version_from_path(path)?;
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();

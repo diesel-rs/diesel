@@ -70,7 +70,7 @@ mod bigdecimal {
 
     #[cfg(feature = "unstable")]
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
-        type Error = Box<Error + Send + Sync>;
+        type Error = Box<dyn Error + Send + Sync>;
 
         fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
             pg_decimal_to_bigdecimal(numeric)
@@ -79,7 +79,7 @@ mod bigdecimal {
 
     #[cfg(feature = "unstable")]
     impl TryFrom<PgNumeric> for BigDecimal {
-        type Error = Box<Error + Send + Sync>;
+        type Error = Box<dyn Error + Send + Sync>;
 
         fn try_from(numeric: PgNumeric) -> deserialize::Result<Self> {
             (&numeric).try_into()

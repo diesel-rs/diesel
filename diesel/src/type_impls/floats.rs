@@ -17,7 +17,7 @@ impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Float, DB> for f32 {
         );
         bytes
             .read_f32::<DB::ByteOrder>()
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 
@@ -25,7 +25,7 @@ impl<DB: Backend> ToSql<sql_types::Float, DB> for f32 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_f32::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 
@@ -39,7 +39,7 @@ impl<DB: Backend<RawValue = [u8]>> FromSql<sql_types::Double, DB> for f64 {
         );
         bytes
             .read_f64::<DB::ByteOrder>()
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 
@@ -47,6 +47,6 @@ impl<DB: Backend> ToSql<sql_types::Double, DB> for f64 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_f64::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }

@@ -25,7 +25,7 @@ pub enum Error {
     /// violation.
     DatabaseError(
         DatabaseErrorKind,
-        Box<DatabaseErrorInformation + Send + Sync>,
+        Box<dyn DatabaseErrorInformation + Send + Sync>,
     ),
 
     /// No rows were returned by a query expected to return at least one row.
@@ -45,21 +45,21 @@ pub enum Error {
     /// An example of when this error could occur is if you are attempting to
     /// construct an update statement with no changes (e.g. all fields on the
     /// struct are `None`).
-    QueryBuilderError(Box<StdError + Send + Sync>),
+    QueryBuilderError(Box<dyn StdError + Send + Sync>),
 
     /// An error occurred deserializing the data being sent to the database.
     ///
     /// Typically this error means that the stated type of the query is
     /// incorrect. An example of when this error might occur in normal usage is
     /// attempting to deserialize an infinite date into chrono.
-    DeserializationError(Box<StdError + Send + Sync>),
+    DeserializationError(Box<dyn StdError + Send + Sync>),
 
     /// An error occurred serializing the data being sent to the database.
     ///
     /// An example of when this error would be returned is if you attempted to
     /// serialize a `chrono::NaiveDate` earlier than the earliest date supported
     /// by PostgreSQL.
-    SerializationError(Box<StdError + Send + Sync>),
+    SerializationError(Box<dyn StdError + Send + Sync>),
 
     /// Roll back the current transaction.
     ///
@@ -147,7 +147,7 @@ pub trait DatabaseErrorInformation {
     fn constraint_name(&self) -> Option<&str>;
 }
 
-impl fmt::Debug for DatabaseErrorInformation + Send + Sync {
+impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.message(), f)
     }
@@ -290,7 +290,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Error::InvalidCString(ref e) => Some(e),
             Error::QueryBuilderError(ref e) => Some(&**e),
@@ -324,7 +324,7 @@ impl StdError for ConnectionError {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ConnectionError::InvalidCString(ref e) => Some(e),
             ConnectionError::CouldntSetupConfiguration(ref e) => Some(e),
