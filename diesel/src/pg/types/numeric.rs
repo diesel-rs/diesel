@@ -39,7 +39,7 @@ mod bigdecimal {
     }
 
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
-        type Error = Box<Error + Send + Sync>;
+        type Error = Box<dyn Error + Send + Sync>;
 
         fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
             let (sign, weight, scale, digits) = match *numeric {
@@ -73,7 +73,7 @@ mod bigdecimal {
     }
 
     impl TryFrom<PgNumeric> for BigDecimal {
-        type Error = Box<Error + Send + Sync>;
+        type Error = Box<dyn Error + Send + Sync>;
 
         fn try_from(numeric: PgNumeric) -> deserialize::Result<Self> {
             (&numeric).try_into()

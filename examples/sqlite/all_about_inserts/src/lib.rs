@@ -93,7 +93,7 @@ fn examine_sql_from_insert_multiple_columns() {
     assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct(conn: &SqliteConnection) -> Result<(), Box<Error>> {
+pub fn insert_insertable_struct(conn: &SqliteConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Sean", "hair_color": "Black" }"#;
@@ -116,7 +116,7 @@ fn examine_sql_from_insertable_struct() {
     assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_option(conn: &SqliteConnection) -> Result<(), Box<Error>> {
+pub fn insert_insertable_struct_option(conn: &SqliteConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Ruby", "hair_color": null }"#;
@@ -241,7 +241,7 @@ fn examine_sql_from_insert_tuple_batch_with_default() {
     // assert_eq!(sql, debug_query::<Sqlite, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_batch(conn: &SqliteConnection) -> Result<(), Box<Error>> {
+pub fn insert_insertable_struct_batch(conn: &SqliteConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"[

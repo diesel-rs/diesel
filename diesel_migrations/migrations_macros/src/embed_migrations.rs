@@ -81,7 +81,9 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
     }
 }
 
-fn migration_literals_from_path(path: &Path) -> Result<Vec<proc_macro2::TokenStream>, Box<Error>> {
+fn migration_literals_from_path(
+    path: &Path,
+) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
     let mut migrations = migration_paths_in_directory(path)?;
 
     migrations.sort_by_key(DirEntry::path);
@@ -92,7 +94,7 @@ fn migration_literals_from_path(path: &Path) -> Result<Vec<proc_macro2::TokenStr
         .collect()
 }
 
-fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<Error>> {
+fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
     let version = version_from_path(path)?;
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();
