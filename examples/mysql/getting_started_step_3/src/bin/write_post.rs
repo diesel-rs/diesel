@@ -12,7 +12,7 @@ fn main() {
 
     println!("What would you like your title to be?");
     stdin().read_line(&mut title).unwrap();
-    let title = title.trim_right(); // Remove the trailing newline
+    let title = title.trim_end(); // Remove the trailing newline
 
     println!(
         "\nOk! Let's write {} (Press {} when finished)\n",
