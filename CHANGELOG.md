@@ -48,6 +48,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `Mysql::TypeMetadata`, you will need to take the new struct
   `MysqlTypeMetadata` instead.
 
+<<<<<<< HEAD
 * The minimal officially supported rustc version is now 1.36.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
@@ -56,6 +57,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   For the postgres backend additionally type information where added to the `RawValue`
   type. This allows to dynamically deserialize `RawValues` in container types.
 * The uuidv07 feature was renamed to uuid, due to the removal of support for older uuid versions
+=======
+* Boxed queries (constructed from `.into_boxed()`) are now `Send`.
+>>>>>>> Add a minimal changelog entry for making boxed queries Send
 
 ### Fixed
 
