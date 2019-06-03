@@ -1,7 +1,7 @@
-use expression::operators::And;
-use expression::Expression;
-use expression_methods::*;
-use sql_types::Bool;
+use crate::expression::operators::And;
+use crate::expression::Expression;
+use crate::expression_methods::*;
+use crate::sql_types::Bool;
 
 /// This method is used by `FindDsl` to work with tuples. Because we cannot
 /// express this without specialization or overlapping impls, it is brute force

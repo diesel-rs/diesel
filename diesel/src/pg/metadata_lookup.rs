@@ -1,5 +1,5 @@
 use super::{PgConnection, PgTypeMetadata};
-use prelude::*;
+use crate::prelude::*;
 
 /// Determines the OID of types at runtime
 #[allow(missing_debug_implementations)]

@@ -3,10 +3,10 @@
 use std::io::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-use deserialize::{self, FromSql};
-use pg::Pg;
-use serialize::{self, Output, ToSql};
-use sql_types::{BigInt, Money};
+use crate::deserialize::{self, FromSql};
+use crate::pg::Pg;
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types::{BigInt, Money};
 
 /// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
 /// type, meant only to indicate the integer's meaning.  The fractional precision of the value is

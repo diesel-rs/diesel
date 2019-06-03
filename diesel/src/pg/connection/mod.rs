@@ -12,14 +12,14 @@ use self::cursor::*;
 use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataLookup, TransactionBuilder};
-use query_builder::bind_collector::RawBytesBindCollector;
-use query_builder::*;
-use result::ConnectionError::CouldntSetupConfiguration;
-use result::*;
-use sql_types::HasSqlType;
+use crate::connection::*;
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::pg::{Pg, PgMetadataLookup, TransactionBuilder};
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::query_builder::*;
+use crate::result::ConnectionError::CouldntSetupConfiguration;
+use crate::result::*;
+use crate::sql_types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -190,9 +190,9 @@ mod tests {
     use std::env;
 
     use super::*;
-    use dsl::sql;
-    use prelude::*;
-    use sql_types::{Integer, VarChar};
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::{Integer, VarChar};
 
     #[test]
     fn prepared_statements_are_cached() {

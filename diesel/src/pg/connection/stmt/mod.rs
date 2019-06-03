@@ -5,8 +5,8 @@ use std::os::raw as libc;
 use std::ptr;
 
 use super::result::PgResult;
-use pg::PgTypeMetadata;
-use result::QueryResult;
+use crate::pg::PgTypeMetadata;
+use crate::result::QueryResult;
 
 pub use super::raw::RawConnection;
 

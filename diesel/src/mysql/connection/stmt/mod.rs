@@ -10,8 +10,8 @@ use std::ptr::NonNull;
 use self::iterator::*;
 use self::metadata::*;
 use super::bind::Binds;
-use mysql::MysqlTypeMetadata;
-use result::{DatabaseErrorKind, QueryResult};
+use crate::mysql::MysqlTypeMetadata;
+use crate::result::{DatabaseErrorKind, QueryResult};
 
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
@@ -115,7 +115,7 @@ impl Statement {
     }
 
     fn metadata(&self) -> QueryResult<StatementMetadata> {
-        use result::Error::DeserializationError;
+        use crate::result::Error::DeserializationError;
 
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()).as_mut() };
         self.did_an_error_occur()?;
@@ -125,7 +125,7 @@ impl Statement {
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {
-        use result::Error::DatabaseError;
+        use crate::result::Error::DatabaseError;
 
         let error_message = self.last_error_message();
         if error_message.is_empty() {

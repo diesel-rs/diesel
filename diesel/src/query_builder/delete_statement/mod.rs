@@ -1,13 +1,13 @@
-use backend::Backend;
-use dsl::{Filter, IntoBoxed};
-use expression::{AppearsOnTable, SelectableExpression};
-use query_builder::returning_clause::*;
-use query_builder::where_clause::*;
-use query_builder::*;
-use query_dsl::methods::{BoxedDsl, FilterDsl};
-use query_dsl::RunQueryDsl;
-use query_source::Table;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::dsl::{Filter, IntoBoxed};
+use crate::expression::{AppearsOnTable, SelectableExpression};
+use crate::query_builder::returning_clause::*;
+use crate::query_builder::where_clause::*;
+use crate::query_builder::*;
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
+use crate::query_dsl::RunQueryDsl;
+use crate::query_source::Table;
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]

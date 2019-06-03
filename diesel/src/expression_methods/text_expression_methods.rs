@@ -1,6 +1,6 @@
-use expression::operators::{Concat, Like, NotLike};
-use expression::{AsExpression, Expression};
-use sql_types::{Nullable, Text};
+use crate::expression::operators::{Concat, Like, NotLike};
+use crate::expression::{AsExpression, Expression};
+use crate::sql_types::{Nullable, Text};
 
 /// Methods present on text expressions
 pub trait TextExpressionMethods: Expression + Sized {

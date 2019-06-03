@@ -1,14 +1,14 @@
 use byteorder::*;
 use std::io::Write;
 
-use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::{AppearsOnTable, AsExpression, Expression, SelectableExpression};
-use pg::Pg;
-use query_builder::{AstPass, QueryFragment};
-use result::QueryResult;
-use row::Row;
-use serialize::{self, IsNull, Output, ToSql, WriteTuple};
-use sql_types::{HasSqlType, Record};
+use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
+use crate::expression::{AppearsOnTable, AsExpression, Expression, SelectableExpression};
+use crate::pg::Pg;
+use crate::query_builder::{AstPass, QueryFragment};
+use crate::result::QueryResult;
+use crate::row::Row;
+use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};
+use crate::sql_types::{HasSqlType, Record};
 
 macro_rules! tuple_impls {
     ($(
@@ -168,10 +168,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dsl::sql;
-    use prelude::*;
-    use sql_types::*;
-    use test_helpers::*;
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::*;
+    use crate::test_helpers::*;
 
     #[test]
     fn record_deserializes_correctly() {

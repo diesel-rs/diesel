@@ -16,12 +16,12 @@ use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 
-use backend::UsesAnsiSavepointSyntax;
-use connection::{AnsiTransactionManager, SimpleConnection};
-use deserialize::{Queryable, QueryableByName};
-use prelude::*;
-use query_builder::{AsQuery, QueryFragment, QueryId};
-use sql_types::HasSqlType;
+use crate::backend::UsesAnsiSavepointSyntax;
+use crate::connection::{AnsiTransactionManager, SimpleConnection};
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::prelude::*;
+use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::sql_types::HasSqlType;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -54,7 +54,7 @@ pub enum Error {
     ConnectionError(ConnectionError),
 
     /// An error occurred pinging the database
-    QueryError(::result::Error),
+    QueryError(crate::result::Error),
 }
 
 impl fmt::Display for Error {
@@ -209,8 +209,8 @@ mod tests {
 
     #[test]
     fn pooled_connection_impls_connection() {
-        use select;
-        use sql_types::Text;
+        use crate::select;
+        use crate::sql_types::Text;
 
         let manager = ConnectionManager::<TestConnection>::new(database_url());
         let pool = Pool::builder()

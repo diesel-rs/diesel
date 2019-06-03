@@ -2,9 +2,9 @@
 
 use byteorder::ByteOrder;
 
-use query_builder::bind_collector::BindCollector;
-use query_builder::QueryBuilder;
-use sql_types::{self, HasSqlType};
+use crate::query_builder::bind_collector::BindCollector;
+use crate::query_builder::QueryBuilder;
+use crate::sql_types::{self, HasSqlType};
 
 /// A database backend
 ///

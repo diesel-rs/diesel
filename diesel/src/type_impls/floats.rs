@@ -2,10 +2,10 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::{Backend, HasRawValue};
-use deserialize::{self, FromSql};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use crate::backend::{Backend, HasRawValue};
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 
 impl<DB> FromSql<sql_types::Float, DB> for f32
 where

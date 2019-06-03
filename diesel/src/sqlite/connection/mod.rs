@@ -15,14 +15,14 @@ use std::os::raw as libc;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
-use connection::*;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::bind_collector::RawBytesBindCollector;
-use query_builder::*;
-use result::*;
-use serialize::ToSql;
-use sql_types::HasSqlType;
-use sqlite::Sqlite;
+use crate::connection::*;
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::query_builder::*;
+use crate::result::*;
+use crate::serialize::ToSql;
+use crate::sql_types::HasSqlType;
+use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
 /// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
@@ -50,7 +50,7 @@ impl Connection for SqliteConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use result::ConnectionError::CouldntSetupConfiguration;
+        use crate::result::ConnectionError::CouldntSetupConfiguration;
 
         let raw_connection = RawConnection::establish(database_url)?;
         let conn = Self {
@@ -241,7 +241,7 @@ impl SqliteConnection {
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
-        use sql_types::{Integer, Text};
+        use crate::sql_types::{Integer, Text};
 
         functions::register::<Text, Integer, _, _, _>(
             &self.raw_connection,
@@ -266,9 +266,9 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dsl::sql;
-    use prelude::*;
-    use sql_types::Integer;
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::Integer;
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
@@ -319,7 +319,7 @@ mod tests {
         assert_eq!(1, connection.statement_cache.len());
     }
 
-    use sql_types::Text;
+    use crate::sql_types::Text;
     sql_function!(fn fun_case(x: Text) -> Text);
 
     #[test]

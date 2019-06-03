@@ -3,7 +3,7 @@
 mod errors;
 pub use self::errors::{MigrationError, RunMigrationsError};
 
-use connection::SimpleConnection;
+use crate::connection::SimpleConnection;
 use std::path::Path;
 
 /// Represents a migration that interacts with diesel

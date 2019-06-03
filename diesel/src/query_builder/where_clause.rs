@@ -1,11 +1,11 @@
 use super::*;
-use backend::Backend;
-use dsl::Or;
-use expression::operators::And;
-use expression::*;
-use expression_methods::*;
-use result::QueryResult;
-use sql_types::Bool;
+use crate::backend::Backend;
+use crate::dsl::Or;
+use crate::expression::operators::And;
+use crate::expression::*;
+use crate::expression_methods::*;
+use crate::result::QueryResult;
+use crate::sql_types::Bool;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
 /// applicable.
@@ -176,8 +176,8 @@ where
 
     fn or(self, predicate: Predicate) -> Self::Output {
         use self::BoxedWhereClause::Where;
-        use expression::grouped::Grouped;
-        use expression::operators::Or;
+        use crate::expression::grouped::Grouped;
+        use crate::expression::operators::Or;
 
         match self {
             Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),

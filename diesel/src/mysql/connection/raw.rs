@@ -7,7 +7,7 @@ use std::sync::{Once, ONCE_INIT};
 
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
-use result::{ConnectionError, ConnectionResult, QueryResult};
+use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub struct RawConnection(NonNull<ffi::MYSQL>);
 
@@ -134,8 +134,8 @@ impl RawConnection {
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {
-        use result::DatabaseErrorKind;
-        use result::Error::DatabaseError;
+        use crate::result::DatabaseErrorKind;
+        use crate::result::Error::DatabaseError;
 
         let error_message = self.last_error_message();
         if error_message.is_empty() {

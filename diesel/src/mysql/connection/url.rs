@@ -4,7 +4,7 @@ use self::url::percent_encoding::percent_decode;
 use self::url::{Host, Url};
 use std::ffi::{CStr, CString};
 
-use result::{ConnectionError, ConnectionResult};
+use crate::result::{ConnectionError, ConnectionResult};
 
 pub struct ConnectionOptions {
     host: Option<CString>,

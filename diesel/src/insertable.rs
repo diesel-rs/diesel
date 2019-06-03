@@ -1,14 +1,14 @@
 use std::marker::PhantomData;
 
-use backend::{Backend, SupportsDefaultKeyword};
-use expression::{AppearsOnTable, Expression};
-use query_builder::{
+use crate::backend::{Backend, SupportsDefaultKeyword};
+use crate::expression::{AppearsOnTable, Expression};
+use crate::query_builder::{
     AstPass, InsertStatement, QueryFragment, UndecoratedInsertRecord, ValuesClause,
 };
-use query_source::{Column, Table};
-use result::QueryResult;
+use crate::query_source::{Column, Table};
+use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
-use sqlite::Sqlite;
+use crate::sqlite::Sqlite;
 
 /// Represents that a structure can be used to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
@@ -82,7 +82,7 @@ pub trait Insertable<T> {
     where
         Self: Sized,
     {
-        ::insert_into(table).values(self)
+        crate::insert_into(table).values(self)
     }
 }
 

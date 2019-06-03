@@ -3,9 +3,9 @@
 use byteorder::NativeEndian;
 
 use super::query_builder::MysqlQueryBuilder;
-use backend::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use sql_types::TypeMetadata;
+use crate::backend::*;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::sql_types::TypeMetadata;
 
 /// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]

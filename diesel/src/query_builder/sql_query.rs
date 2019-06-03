@@ -1,13 +1,13 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
-use connection::Connection;
-use deserialize::QueryableByName;
-use query_builder::{AstPass, QueryFragment, QueryId};
-use query_dsl::{LoadQuery, RunQueryDsl};
-use result::QueryResult;
-use serialize::ToSql;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::connection::Connection;
+use crate::deserialize::QueryableByName;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::query_dsl::{LoadQuery, RunQueryDsl};
+use crate::result::QueryResult;
+use crate::serialize::ToSql;
+use crate::sql_types::HasSqlType;
 
 #[derive(Debug, Clone)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]

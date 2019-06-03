@@ -1,6 +1,6 @@
-use backend::Backend;
-use query_builder::{AstPass, QueryFragment};
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::{AstPass, QueryFragment};
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoLockingClause;
