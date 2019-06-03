@@ -10,6 +10,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Updated `libsqlite3-sys` to allow version 0.22
 * Updated `ipnetwork` to allow version 0.18
+* Boxed queries (constructed from `.into_boxed()`) are now `Send`.
 
 ## [1.4.6] - 2021-03-05
 
