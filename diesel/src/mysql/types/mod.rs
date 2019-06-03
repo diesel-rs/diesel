@@ -3,6 +3,8 @@
 #[cfg(feature = "chrono")]
 mod date_and_time;
 mod numeric;
+#[cfg(feature = "uuidv07")]
+mod uuid_v0_7;
 
 use byteorder::WriteBytesExt;
 use std::io::Write;
