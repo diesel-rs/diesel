@@ -40,10 +40,17 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         from: QS,
         distinct: Box<dyn QueryFragment<DB> + Send + 'a>,
         where_clause: BoxedWhereClause<'a, DB>,
+<<<<<<< HEAD
         order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
         limit: Box<dyn QueryFragment<DB> + Send + 'a>,
         offset: Box<dyn QueryFragment<DB> + Send + 'a>,
         group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
+=======
+        order: Option<Box<QueryFragment<DB> + Send + 'a>>,
+        limit: Box<QueryFragment<DB> + Send + 'a>,
+        offset: Box<QueryFragment<DB> + Send + 'a>,
+        group_by: Box<QueryFragment<DB> + Send + 'a>,
+>>>>>>> Run rustfmt
     ) -> Self {
         BoxedSelectStatement {
             select: select,
