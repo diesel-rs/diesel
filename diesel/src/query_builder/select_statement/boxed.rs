@@ -347,3 +347,34 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+    use crate::backend::Backend;
+
+    table! {
+        users {
+            id -> Integer,
+        }
+    }
+
+    fn assert_send<T>(_: T) where T: Send {}
+
+    fn assert_boxed_query_send<B: Backend>() {
+        assert_send(users::table.into_boxed::<B>());
+        assert_send(users::table.filter(users::id.eq(10)).into_boxed::<B>());
+    }
+
+    #[test]
+    fn boxed_is_send() {
+        #[cfg(feature = "postgres")]
+        assert_boxed_query_send::<crate::pg::Pg>();
+
+        #[cfg(feature = "sqlite")]
+        assert_boxed_query_send::<crate::sqlite::Sqlite>();
+
+        #[cfg(feature = "mysql")]
+        assert_boxed_query_send::<crate::mysql::Mysql>();
+    }
+}
