@@ -39,7 +39,7 @@ pub fn run_print_schema<W: IoWrite>(
     database_url: &str,
     config: &config::PrintSchema,
     output: &mut W,
-) -> Result<(), Box<Error>> {
+) -> Result<(), Box<dyn Error>> {
     let tempfile = NamedTempFile::new()?;
     let file = tempfile.reopen()?;
     output_schema(database_url, config, file, tempfile.path())?;
@@ -56,7 +56,7 @@ pub fn output_schema(
     config: &config::PrintSchema,
     mut out: File,
     out_path: &Path,
-) -> Result<(), Box<Error>> {
+) -> Result<(), Box<dyn Error>> {
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
@@ -67,7 +67,7 @@ pub fn output_schema(
     let table_data = table_names
         .into_iter()
         .map(|t| load_table_data(database_url, t))
-        .collect::<Result<_, Box<Error>>>()?;
+        .collect::<Result<_, Box<dyn Error>>>()?;
     let definitions = TableDefinitions {
         tables: table_data,
         fk_constraints: foreign_keys,

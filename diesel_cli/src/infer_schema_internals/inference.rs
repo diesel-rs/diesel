@@ -17,7 +17,7 @@ static RESERVED_NAMES: &[&str] = &[
 pub fn load_table_names(
     database_url: &str,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
 
     match connection {
@@ -33,7 +33,7 @@ pub fn load_table_names(
 fn get_column_information(
     conn: &InferConnection,
     table: &TableName,
-) -> Result<Vec<ColumnInformation>, Box<Error>> {
+) -> Result<Vec<ColumnInformation>, Box<dyn Error>> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => super::sqlite::get_table_data(c, table),
@@ -52,7 +52,7 @@ fn get_column_information(
 fn determine_column_type(
     attr: &ColumnInformation,
     conn: &InferConnection,
-) -> Result<ColumnType, Box<Error>> {
+) -> Result<ColumnType, Box<dyn Error>> {
     match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => super::sqlite::determine_column_type(attr),
@@ -66,7 +66,7 @@ fn determine_column_type(
 pub(crate) fn get_primary_keys(
     conn: &InferConnection,
     table: &TableName,
-) -> Result<Vec<String>, Box<Error>> {
+) -> Result<Vec<String>, Box<dyn Error>> {
     let primary_keys: Vec<String> = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => super::sqlite::get_primary_keys(c, table),
@@ -90,7 +90,7 @@ pub(crate) fn get_primary_keys(
 pub fn load_foreign_key_constraints(
     database_url: &str,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
 
     let constraints = match connection {
@@ -123,7 +123,7 @@ macro_rules! doc_comment {
     };
 }
 
-pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<Error>> {
+pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
     let docs = doc_comment!(
         "Representation of the `{}` table.
@@ -169,7 +169,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
                 rust_name,
             })
         })
-        .collect::<Result<_, Box<Error>>>()?;
+        .collect::<Result<_, Box<dyn Error>>>()?;
 
     Ok(TableData {
         name,
