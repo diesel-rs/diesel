@@ -167,7 +167,7 @@ where
 pub fn load_table_names<Conn>(
     connection: &Conn,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<Error>>
+) -> Result<Vec<TableName>, Box<dyn Error>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,

@@ -25,7 +25,7 @@ impl Config {
             .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }
 
-    pub fn read(matches: &ArgMatches) -> Result<Self, Box<Error>> {
+    pub fn read(matches: &ArgMatches) -> Result<Self, Box<dyn Error>> {
         let path = Self::file_path(matches);
 
         if path.exists() {

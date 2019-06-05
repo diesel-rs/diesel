@@ -8,7 +8,7 @@ use row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
-pub type Result<T> = result::Result<T, Box<Error + Send + Sync>>;
+pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 
 /// Trait indicating that a record can be queried from the database.
 ///
