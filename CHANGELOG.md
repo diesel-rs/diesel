@@ -20,7 +20,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * All expression methods can now be called on expressions of nullable types.
 
-
 ### Removed
 
 * All previously deprecated items have been removed.
