@@ -14,10 +14,19 @@ static RESERVED_NAMES: &[&str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
+fn is_reserved(name: &str) -> bool {
+    RESERVED_NAMES.contains(&name)
+        || (
+            // Names ending in an underscore are not considered reserved so that we
+            // can always just append an underscore to generate an unreserved name.
+            name.starts_with("__") && !name.ends_with('_')
+        )
+}
+
 pub fn load_table_names(
     database_url: &str,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
 
     match connection {
@@ -33,7 +42,7 @@ pub fn load_table_names(
 fn get_column_information(
     conn: &InferConnection,
     table: &TableName,
-) -> Result<Vec<ColumnInformation>, Box<Error>> {
+) -> Result<Vec<ColumnInformation>, Box<dyn Error>> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => super::sqlite::get_table_data(c, table),
@@ -52,7 +61,7 @@ fn get_column_information(
 fn determine_column_type(
     attr: &ColumnInformation,
     conn: &InferConnection,
-) -> Result<ColumnType, Box<Error>> {
+) -> Result<ColumnType, Box<dyn Error>> {
     match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => super::sqlite::determine_column_type(attr),
@@ -66,7 +75,7 @@ fn determine_column_type(
 pub(crate) fn get_primary_keys(
     conn: &InferConnection,
     table: &TableName,
-) -> Result<Vec<String>, Box<Error>> {
+) -> Result<Vec<String>, Box<dyn Error>> {
     let primary_keys: Vec<String> = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref c) => super::sqlite::get_primary_keys(c, table),
@@ -90,7 +99,7 @@ pub(crate) fn get_primary_keys(
 pub fn load_foreign_key_constraints(
     database_url: &str,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
 
     let constraints = match connection {
@@ -109,6 +118,12 @@ pub fn load_foreign_key_constraints(
 
     constraints.map(|mut ct| {
         ct.sort();
+        ct.iter_mut().for_each(|foreign_key_constraint| {
+            if is_reserved(&foreign_key_constraint.foreign_key_rust_name) {
+                foreign_key_constraint.foreign_key_rust_name =
+                    format!("{}_", foreign_key_constraint.foreign_key_rust_name);
+            }
+        });
         ct
     })
 }
@@ -123,7 +138,7 @@ macro_rules! doc_comment {
     };
 }
 
-pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<Error>> {
+pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
     let docs = doc_comment!(
         "Representation of the `{}` table.
@@ -135,7 +150,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = primary_key
         .iter()
         .map(|k| {
-            if RESERVED_NAMES.contains(&k.as_str()) {
+            if is_reserved(&k) {
                 format!("{}_", k)
             } else {
                 k.clone()
@@ -147,7 +162,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
         .into_iter()
         .map(|c| {
             let ty = determine_column_type(&c, &connection)?;
-            let rust_name = if RESERVED_NAMES.contains(&c.column_name.as_str()) {
+            let rust_name = if is_reserved(&c.column_name) {
                 Some(format!("{}_", c.column_name))
             } else {
                 None
@@ -169,7 +184,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
                 rust_name,
             })
         })
-        .collect::<Result<_, Box<Error>>>()?;
+        .collect::<Result<_, Box<dyn Error>>>()?;
 
     Ok(TableData {
         name,

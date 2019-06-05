@@ -39,7 +39,7 @@ table! {
 pub fn load_table_names(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error>> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
@@ -63,7 +63,7 @@ pub fn load_table_names(
 pub fn load_foreign_key_constraints(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
@@ -77,7 +77,8 @@ pub fn load_foreign_key_constraints(
                     ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
-                        foreign_key: row.foreign_key,
+                        foreign_key: row.foreign_key.clone(),
+                        foreign_key_rust_name: row.foreign_key,
                         primary_key: row.primary_key,
                     }
                 })
@@ -126,7 +127,7 @@ pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResu
         .collect())
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
         String::from("Bool")
@@ -290,12 +291,14 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         child_table: table_2.clone(),
         parent_table: table_1.clone(),
         foreign_key: "fk_one".into(),
+        foreign_key_rust_name: "fk_one".into(),
         primary_key: "id".into(),
     };
     let fk_two = ForeignKeyConstraint {
         child_table: table_3.clone(),
         parent_table: table_2.clone(),
         foreign_key: "fk_two".into(),
+        foreign_key_rust_name: "fk_two".into(),
         primary_key: "id".into(),
     };
     let fks = load_foreign_key_constraints(&connection, None).unwrap();

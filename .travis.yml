@@ -82,7 +82,7 @@ env:
 after_success:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    (cd diesel && cargo +$TRAVIS_RUST_VERSION doc -- --features "postgres sqlite mysql extras")
+    (cd diesel && cargo +$TRAVIS_RUST_VERSION doc --features "postgres sqlite mysql extras")
     mkdir diesel/target
     mv target/doc diesel/target/doc
     echo "docs.diesel.rs" > diesel/target/doc/CNAME

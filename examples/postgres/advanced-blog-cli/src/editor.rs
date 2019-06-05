@@ -6,13 +6,13 @@ use std::ffi::OsString;
 use std::io::prelude::*;
 use std::process::Command;
 
-pub fn edit_string(s: &str) -> Result<String, Box<Error>> {
+pub fn edit_string(s: &str) -> Result<String, Box<dyn Error>> {
     let mut file = NamedTempFile::new()?;
     file.write_all(s.as_bytes())?;
     editor_output(&mut file)
 }
 
-fn editor_output(file: &mut NamedTempFile) -> Result<String, Box<Error>> {
+fn editor_output(file: &mut NamedTempFile) -> Result<String, Box<dyn Error>> {
     use std::io::SeekFrom::Start;
 
     let status = Command::new(editor_command()?)
@@ -30,7 +30,7 @@ fn editor_output(file: &mut NamedTempFile) -> Result<String, Box<Error>> {
     Ok(buffer)
 }
 
-fn editor_command() -> Result<OsString, Box<Error>> {
+fn editor_command() -> Result<OsString, Box<dyn Error>> {
     use std::env;
 
     env::var_os("VISUAL")

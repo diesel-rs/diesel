@@ -62,16 +62,18 @@ pub fn load_foreign_key_constraints(
             kcu::column_name,
             kcu::referenced_column_name,
         ))
-        .load::<(TableName, TableName, _, _)>(connection)?
+        .load::<(TableName, TableName, String, _)>(connection)?
         .into_iter()
         .map(
             |(mut child_table, mut parent_table, foreign_key, primary_key)| {
                 child_table.strip_schema_if_matches(&default_schema);
                 parent_table.strip_schema_if_matches(&default_schema);
+
                 ForeignKeyConstraint {
                     child_table,
                     parent_table,
-                    foreign_key,
+                    foreign_key: foreign_key.clone(),
+                    foreign_key_rust_name: foreign_key,
                     primary_key,
                 }
             },
@@ -80,7 +82,7 @@ pub fn load_foreign_key_constraints(
     Ok(constraints)
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
     let tpe = determine_type_name(&attr.type_name)?;
     let unsigned = determine_unsigned(&attr.type_name);
 
@@ -92,7 +94,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     })
 }
 
-fn determine_type_name(sql_type_name: &str) -> Result<String, Box<Error>> {
+fn determine_type_name(sql_type_name: &str) -> Result<String, Box<dyn Error>> {
     let result = if sql_type_name == "tinyint(1)" {
         "bool"
     } else if sql_type_name.starts_with("int") {
