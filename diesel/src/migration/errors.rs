@@ -23,7 +23,7 @@ pub enum MigrationError {
     /// No migrations had to be/ could be run
     NoMigrationRun,
     /// The metadatafile for a given migration was invalid
-    InvalidMetadata(Box<Error>),
+    InvalidMetadata(Box<dyn Error>),
     #[doc(hidden)]
     __NonExhaustive,
 }
@@ -50,7 +50,7 @@ impl Error for MigrationError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             MigrationError::IoError(ref err) => Some(err),
 

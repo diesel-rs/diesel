@@ -20,7 +20,7 @@ pub trait Migration {
         None
     }
     /// Get the metadata associated with this migration, if any
-    fn metadata(&self) -> Option<&Metadata> {
+    fn metadata(&self) -> Option<&dyn Metadata> {
         None
     }
 }
@@ -41,7 +41,7 @@ impl Migration for Box<dyn Migration> {
         (&**self).file_path()
     }
 
-    fn metadata(&self) -> Option<&Metadata> {
+    fn metadata(&self) -> Option<&dyn Metadata> {
         (&**self).metadata()
     }
 }
@@ -62,7 +62,7 @@ impl<'a> Migration for &'a dyn Migration {
         (&**self).file_path()
     }
 
-    fn metadata(&self) -> Option<&Metadata> {
+    fn metadata(&self) -> Option<&dyn Metadata> {
         (&**self).metadata()
     }
 }
