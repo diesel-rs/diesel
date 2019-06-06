@@ -14,7 +14,7 @@ use self::result::PgResult;
 use self::stmt::Statement;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataCache, PgMetadataLookup, TransactionBuilder};
+use pg::{metadata_lookup::PgMetadataCache, Pg, PgMetadataLookup, TransactionBuilder};
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::ConnectionError::CouldntSetupConfiguration;
