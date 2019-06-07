@@ -156,7 +156,7 @@ impl Migration for SqlFileMigration {
         run_sql_from_file(conn, &self.directory.join("down.sql"))
     }
 
-    fn metadata(&self) -> Option<&Metadata> {
+    fn metadata(&self) -> Option<&dyn Metadata> {
         self.metadata.as_ref().map(|m| m as _)
     }
 }
