@@ -14,7 +14,7 @@ use self::result::PgResult;
 use self::stmt::Statement;
 use connection::*;
 use deserialize::{Queryable, QueryableByName};
-use pg::{Pg, PgMetadataLookup, TransactionBuilder};
+use pg::{metadata_lookup::PgMetadataCache, Pg, PgMetadataLookup, TransactionBuilder};
 use query_builder::bind_collector::RawBytesBindCollector;
 use query_builder::*;
 use result::ConnectionError::CouldntSetupConfiguration;
@@ -29,6 +29,7 @@ pub struct PgConnection {
     raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
+    metadata_cache: PgMetadataCache,
 }
 
 unsafe impl Send for PgConnection {}
@@ -52,6 +53,7 @@ impl Connection for PgConnection {
                 raw_connection: raw_conn,
                 transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
+                metadata_cache: PgMetadataCache::new(),
             };
             conn.set_config_options()
                 .map_err(CouldntSetupConfiguration)?;
@@ -177,6 +179,10 @@ impl PgConnection {
         self.raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
+    }
+
+    pub(crate) fn get_metadata_cache(&self) -> &PgMetadataCache {
+        &self.metadata_cache
     }
 }
 
