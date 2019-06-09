@@ -53,9 +53,7 @@ impl Error for MigrationError {
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             MigrationError::IoError(ref err) => Some(err),
-
             MigrationError::InvalidMetadata(ref err) => Some(&**err),
-
             MigrationError::MigrationDirectoryNotFound
             | MigrationError::UnknownMigrationFormat(_)
             | MigrationError::UnknownMigrationVersion(_)
