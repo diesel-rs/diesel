@@ -5,7 +5,7 @@ use std::path::Path;
 use support::{database, project};
 
 #[test]
-fn migration_grun_runs_pending_migrations() {
+fn migration_run_runs_pending_migrations() {
     let p = project("migration_run").folder("migrations").build();
     let db = database(&p.database_url());
 
