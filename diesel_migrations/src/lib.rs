@@ -113,6 +113,8 @@ pub use migrations_internals::setup_database;
 #[doc(inline)]
 pub use migrations_internals::version_from_path;
 #[doc(inline)]
+pub use migrations_internals::Metadata;
+#[doc(inline)]
 pub use migrations_internals::Migration;
 #[doc(inline)]
 pub use migrations_internals::MigrationConnection;
@@ -122,8 +124,11 @@ pub use migrations_internals::MigrationError;
 pub use migrations_internals::MigrationName;
 #[doc(inline)]
 pub use migrations_internals::RunMigrationsError;
+#[doc(inline)]
+pub use migrations_internals::{TomlDatetime, TomlMetadata, TomlTable, TomlValue};
 #[doc(hidden)]
 pub use migrations_macros::*;
+#[doc(hidden)]
 
 pub mod connection {
     #[doc(inline)]

@@ -2,9 +2,13 @@ use proc_macro2;
 use syn;
 
 use migrations::migration_directory_from_given_path;
-use migrations_internals::{migration_paths_in_directory, version_from_path};
+use migrations_internals::{
+    migration_paths_in_directory, version_from_path, TomlDatetime, TomlMetadata, TomlTable,
+    TomlValue,
+};
 use std::error::Error;
-use std::fs::DirEntry;
+use std::fs::{DirEntry, File};
+use std::io::Read;
 use std::path::Path;
 
 use util::{get_option, get_options_from_input};
@@ -35,6 +39,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         struct EmbeddedMigration {
             version: &'static str,
             up_sql: &'static str,
+            metadata: Option<TomlMetadata>
         }
 
         impl Migration for EmbeddedMigration {
@@ -48,6 +53,10 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
 
             fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
                 unreachable!()
+            }
+
+            fn metadata(&self) -> Option<&dyn Metadata> {
+                self.metadata.as_ref().map(|m| m as _)
             }
         }
     );
@@ -99,8 +108,70 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     let sql_file = path.join("up.sql");
     let sql_file_path = sql_file.to_str();
 
+    let metadata_file = path.join("metadata.toml");
+    let metadata = if metadata_file.exists() {
+        let metadata = migration_metadata_from_path(&metadata_file)?;
+        quote!(Some(#metadata))
+    } else {
+        quote!(None)
+    };
+
     Ok(quote!(&EmbeddedMigration {
         version: #version,
         up_sql: include_str!(#sql_file_path),
+        metadata: #metadata
     }))
+}
+
+fn migration_metadata_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
+    let mut buf = Vec::new();
+    let mut file = File::open(path)?;
+    file.read_to_end(&mut buf)?;
+    let value = TomlMetadata::from_slice(&buf)?.0;
+    Ok(migration_metadata_from_value(&value))
+}
+
+fn migration_metadata_from_value(value: &TomlValue) -> proc_macro2::TokenStream {
+    use migrations_internals::TomlValue::*;
+
+    match value {
+        String(s) => quote!(TomlValue::String(#s)),
+        Integer(i) => quote!(TomlValue::Integer(#i)),
+        Float(f) => quote!(TomlValue::Float(#f)),
+        Boolean(b) => quote!(TomlValue::Boolean(#b)),
+        Datetime(d) => {
+            let datetime = migration_metadata_from_datetime(d);
+            quote!(TomlValue::Datetime(#datetime))
+        }
+        Array(a) => {
+            let array = a.iter().map(|v| migration_metadata_from_value(v));
+            quote!(TomlValue::Array(vec![#(#array),*]))
+        }
+        Table(t) => {
+            let table = migration_metadata_from_table(t);
+            quote!(TomlValue::Table(#table))
+        }
+    }
+}
+
+fn migration_metadata_from_datetime(dt: &TomlDatetime) -> proc_macro2::TokenStream {
+    // Unfortunately, the toml::Datetime type does not allow us to access the underlying data. We
+    // are currently forced to serialize the datetime to a string and parse it again later.
+    let dt_str = format!("{}", dt);
+    quote!(TomlDatetime::from_str(#dt_str).expect("A previously valid toml::Datetime became invalid"))
+}
+
+fn migration_metadata_from_table(tbl: &TomlTable) -> proc_macro2::TokenStream {
+    // toml uses a BTreeMap by default to represent a table
+    let entries = tbl.iter().map(|(k, v)| {
+        let value = migration_metadata_from_value(v);
+        quote!(m.insert(String::from(#k), #value);)
+    });
+    quote! {
+        {
+            let mut m = TomlTable::new();
+            #(#entries)*
+            m
+        }
+    }
 }

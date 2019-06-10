@@ -1,3 +1,4 @@
+#![recursion_limit = "128"]
 // Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints

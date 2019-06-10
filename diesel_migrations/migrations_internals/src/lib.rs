@@ -101,6 +101,7 @@ pub use self::connection::MigrationConnection;
 #[doc(inline)]
 pub use self::migration::*;
 pub use diesel::migration::*;
+pub use toml::value::{Datetime as TomlDatetime, Table as TomlTable, Value as TomlValue};
 
 use std::fs::DirEntry;
 use std::io::{stdout, Write};
