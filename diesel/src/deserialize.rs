@@ -388,8 +388,8 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
 //     }
 // }
 //
-// (this is mostly here so @sgrif has a better reference every time he thinks
-// he's somehow had a breakthrough on solving this problem):
+// (this is mostly here so @sgrif has a better reference every time they think
+// they've somehow had a breakthrough on solving this problem):
 //
 // - It conflicts with our impl for tuples, because `DB` is a bare type
 //   parameter, it could in theory be a local type for some other impl.
