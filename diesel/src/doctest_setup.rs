@@ -197,7 +197,7 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 
 
 mod schema {
-    table! {
+    diesel::table! {
         animals {
             id -> Integer,
             species -> VarChar,
@@ -206,7 +206,7 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         comments {
             id -> Integer,
             post_id -> Integer,
@@ -214,7 +214,7 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         posts {
             id -> Integer,
             user_id -> Integer,
@@ -222,13 +222,13 @@ mod schema {
         }
     }
 
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> VarChar,
         }
     }
 
-    joinable!(posts -> users (user_id));
-    allow_tables_to_appear_in_same_query!(animals, comments, posts, users);
+    diesel::joinable!(posts -> users (user_id));
+    diesel::allow_tables_to_appear_in_same_query!(animals, comments, posts, users);
 }

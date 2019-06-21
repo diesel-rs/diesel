@@ -148,7 +148,7 @@ pub mod connection {
 /// # #[macro_use] extern crate diesel;
 /// # #[macro_use] extern crate diesel_migrations;
 /// # include!("../../diesel/src/doctest_setup.rs");
-/// # table! {
+/// # diesel::table! {
 /// #   users {
 /// #       id -> Integer,
 /// #       name -> VarChar,

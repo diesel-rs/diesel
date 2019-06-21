@@ -131,8 +131,11 @@ extern crate bitflags;
 extern crate byteorder;
 #[macro_use]
 extern crate diesel_derives;
+
 #[doc(hidden)]
-pub use diesel_derives::*;
+pub use diesel_derives::{
+    sql_function_proc, Associations, DieselNumericOps, NonAggregate, SqlType,
+};
 
 #[macro_use]
 mod macros;
@@ -298,13 +301,17 @@ pub mod prelude {
         since = "1.1.0",
         note = "Explicitly `use diesel::deserialize::Queryable"
     )]
-    pub use crate::deserialize::Queryable;
+    pub use crate::deserialize::{FromSqlRow, Queryable, QueryableByName};
     pub use crate::expression::{
-        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
+        AppearsOnTable, AsExpression, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
+
     pub use crate::expression_methods::*;
     #[doc(inline)]
     pub use crate::insertable::Insertable;
+
+    pub use crate::query_builder::{AsChangeset, QueryId};
+
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};

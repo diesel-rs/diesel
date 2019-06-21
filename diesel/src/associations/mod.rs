@@ -428,3 +428,6 @@ pub trait Identifiable: HasTable {
     /// so that we have a lifetime to use for `Id`.
     fn id(self) -> Self::Id;
 }
+
+#[doc(inline)]
+pub use diesel_derives::Identifiable;

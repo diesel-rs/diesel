@@ -151,6 +151,9 @@ pub trait AsExpression<T> {
     fn as_expression(self) -> Self::Expression;
 }
 
+#[doc(inline)]
+pub use diesel_derives::AsExpression;
+
 impl<T: Expression> AsExpression<T::SqlType> for T {
     type Expression = Self;
 
@@ -286,6 +289,9 @@ where
 /// }
 /// ```
 pub trait NonAggregate {}
+
+#[doc(inline)]
+pub use diesel_derives::NonAggregate;
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
 

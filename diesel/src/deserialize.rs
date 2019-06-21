@@ -40,7 +40,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// #[derive(Queryable, PartialEq, Debug)]
@@ -67,7 +67,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// # use schema::users;
@@ -118,7 +118,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// Alternatively, we can implement the trait for our struct manually.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
@@ -171,6 +171,9 @@ where
     fn build(row: Self::Row) -> Self;
 }
 
+#[doc(inline)]
+pub use diesel_derives::Queryable;
+
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
 /// # Deriving
@@ -207,7 +210,7 @@ where
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use schema::users;
 /// # use diesel::sql_query;
@@ -237,7 +240,7 @@ where
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use diesel::sql_query;
 /// # use schema::users;
@@ -292,6 +295,9 @@ where
     /// Construct an instance of `Self` from the database row
     fn build<R: NamedRow<DB>>(row: &R) -> Result<Self>;
 }
+
+#[doc(inline)]
+pub use diesel_derives::QueryableByName;
 
 /// Deserialize a single field of a given SQL type.
 ///
@@ -375,6 +381,9 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self>;
 }
+
+#[doc(inline)]
+pub use diesel_derives::FromSqlRow;
 
 // Reasons we can't write this:
 //

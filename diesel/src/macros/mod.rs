@@ -13,7 +13,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId, Default)]
+        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, Default)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -95,8 +95,8 @@ macro_rules! __diesel_column {
             }
         }
 
-        __diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
-        __diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
     }
 }
 
@@ -272,7 +272,7 @@ macro_rules! __diesel_column {
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($tokens)*],
             imports = [],
             meta = [],
@@ -304,7 +304,7 @@ macro_rules! __diesel_parse_table {
         imports = [$($imports:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = [$($imports)* use $($import)::+;],
             $($args)*
@@ -319,7 +319,7 @@ macro_rules! __diesel_parse_table {
         sql_name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -335,7 +335,7 @@ macro_rules! __diesel_parse_table {
         meta = [$($meta:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = [$($meta)* #$new_meta],
@@ -353,7 +353,7 @@ macro_rules! __diesel_parse_table {
         schema = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -373,7 +373,7 @@ macro_rules! __diesel_parse_table {
         name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -394,7 +394,7 @@ macro_rules! __diesel_parse_table {
         primary_key = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -412,7 +412,7 @@ macro_rules! __diesel_parse_table {
         imports = [],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = [use $crate::sql_types::*;],
             $($args)*
@@ -428,7 +428,7 @@ macro_rules! __diesel_parse_table {
         name = $name:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = $imports,
             meta = $meta,
@@ -443,7 +443,7 @@ macro_rules! __diesel_parse_table {
         tokens = [{$($columns:tt)*}],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = [$($columns)*],
             table = { $($args)* },
             columns = [],
@@ -452,7 +452,7 @@ macro_rules! __diesel_parse_table {
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -469,7 +469,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -491,7 +491,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -515,7 +515,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($meta)*],
                 name = $name,
@@ -538,7 +538,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($unchecked_meta)*],
                 name = $name,
@@ -562,7 +562,7 @@ macro_rules! __diesel_parse_columns {
         columns = [$($columns:tt,)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = $tokens,
             table = $table,
             columns = [$($columns,)* { $($current_column)* },],
@@ -575,12 +575,12 @@ macro_rules! __diesel_parse_columns {
         tokens = [],
         $($args:tt)*
     ) => {
-        __diesel_table_impl!($($args)*);
+        $crate::__diesel_table_impl!($($args)*);
     };
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -624,7 +624,7 @@ macro_rules! __diesel_table_impl {
             /// table struct renamed to the module name. This is meant to be
             /// glob imported for functions which only deal with one table.
             pub mod dsl {
-                $(static_cond! {
+                $($crate::static_cond! {
                     if $table_name == $column_name {
                         compile_error!(concat!(
                             "Column `",
@@ -672,7 +672,7 @@ macro_rules! __diesel_table_impl {
             /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
-            __diesel_table_query_source_impl!(table, $schema, $sql_name);
+            $crate::__diesel_table_query_source_impl!(table, $schema, $sql_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
@@ -831,7 +831,7 @@ macro_rules! __diesel_table_impl {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column! {
+                $($crate::__diesel_column! {
                     table = table,
                     name = $column_name,
                     sql_name = $column_sql_name,
@@ -952,8 +952,8 @@ macro_rules! __diesel_table_query_source_impl {
 #[macro_export]
 macro_rules! joinable {
     ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
-        joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
-        joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        $crate::joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        $crate::joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
 }
 
@@ -961,7 +961,7 @@ macro_rules! joinable {
 #[doc(hidden)]
 macro_rules! joinable_inner {
     ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
-        joinable_inner!(
+        $crate::joinable_inner!(
             left_table_ty = $left_table,
             right_table_ty = $right_table,
             right_table_expr = $right_table,
@@ -1042,7 +1042,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
                 type Count = $crate::query_source::Never;
             }
         )+
-        allow_tables_to_appear_in_same_query!($($right_mod,)+);
+        $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };
 
     ($last_table:ident,) => {};
