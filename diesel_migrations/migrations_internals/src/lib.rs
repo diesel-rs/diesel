@@ -334,11 +334,15 @@ where
             writeln!(output, "Running migration {}", name(&migration))?;
         }
         if let Err(e) = migration.run(conn) {
-            writeln!(
-                output,
-                "Executing migration script {}",
-                file_name(&migration, "up.sql")
-            )?;
+            if migration.file_path().is_some() {
+                writeln!(
+                    output,
+                    "Executing migration script {}",
+                    file_name(&migration, "up.sql")
+                )?;
+            } else {
+                writeln!(output, "Executing embedded migration script",)?;
+            }
             return Err(e);
         }
         conn.insert_new_migration(migration.version())?;
