@@ -3,7 +3,7 @@ extern crate mysqlclient_sys as ffi;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
-use std::sync::{Once, ONCE_INIT};
+use std::sync::Once;
 
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
@@ -195,7 +195,7 @@ impl Drop for RawConnection {
 /// > any other client library call.
 ///
 /// <https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html>
-static MYSQL_THREAD_UNSAFE_INIT: Once = ONCE_INIT;
+static MYSQL_THREAD_UNSAFE_INIT: Once = Once::new();
 
 fn perform_thread_unsafe_library_initialization() {
     MYSQL_THREAD_UNSAFE_INIT.call_once(|| {
