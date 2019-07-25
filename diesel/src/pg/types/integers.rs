@@ -9,7 +9,7 @@ use sql_types;
 impl FromSql<sql_types::Oid, Pg> for u32 {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let mut bytes = not_none!(bytes);
-        bytes.read_u32::<NetworkEndian>().map_err(|e| e.into())
+        bytes.read_u32::<NetworkEndian>().map_err(Into::into)
     }
 }
 
@@ -17,7 +17,7 @@ impl ToSql<sql_types::Oid, Pg> for u32 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| e.into())
+            .map_err(Into::into)
     }
 }
 

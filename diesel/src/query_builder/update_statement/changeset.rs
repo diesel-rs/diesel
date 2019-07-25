@@ -36,7 +36,7 @@ impl<T: AsChangeset> AsChangeset for Option<T> {
     type Changeset = Option<T::Changeset>;
 
     fn as_changeset(self) -> Self::Changeset {
-        self.map(|v| v.as_changeset())
+        self.map(AsChangeset::as_changeset)
     }
 }
 

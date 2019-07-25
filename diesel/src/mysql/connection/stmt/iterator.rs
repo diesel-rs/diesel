@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
-use mysql::{Mysql, MysqlType};
+use mysql::{Mysql, MysqlTypeMetadata};
 use result::QueryResult;
 use row::*;
-use sql_types::IsSigned;
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
@@ -14,7 +13,7 @@ pub struct StatementIterator<'a> {
 #[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: Vec<(MysqlType, IsSigned)>) -> QueryResult<Self> {
+    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlTypeMetadata>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
 
         execute_statement(stmt, &mut output_binds)?;

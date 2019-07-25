@@ -4,5 +4,10 @@ error: This derive can only be used on structs
 12 | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^
 
-error: aborting due to previous error
+error[E0601]: `main` function not found in crate `as_changeset_on_non_struct`
+  |
+  = note: consider adding a `main` function to `$DIR/as_changeset_on_non_struct.rs`
 
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0601`.

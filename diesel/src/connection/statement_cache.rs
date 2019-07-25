@@ -108,7 +108,7 @@ pub struct StatementCache<DB: Backend, Statement> {
     pub cache: RefCell<HashMap<StatementCacheKey<DB>, Statement>>,
 }
 
-#[allow(clippy::len_without_is_empty, clippy::new_without_default_derive)]
+#[allow(clippy::len_without_is_empty, clippy::new_without_default)]
 impl<DB, Statement> StatementCache<DB, Statement>
 where
     DB: Backend,

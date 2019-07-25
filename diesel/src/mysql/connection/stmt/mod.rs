@@ -10,9 +10,8 @@ use std::ptr::NonNull;
 use self::iterator::*;
 use self::metadata::*;
 use super::bind::Binds;
-use mysql::MysqlType;
+use mysql::MysqlTypeMetadata;
 use result::{DatabaseErrorKind, QueryResult};
-use sql_types::IsSigned;
 
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
@@ -40,7 +39,7 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (MysqlType, IsSigned, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlTypeMetadata, Option<Vec<u8>>)>,
     {
         let mut input_binds = Binds::from_input_data(binds);
         input_binds.with_mysql_binds(|bind_ptr| {
@@ -75,7 +74,7 @@ impl Statement {
     /// be called on this statement.
     pub unsafe fn results(
         &mut self,
-        types: Vec<(MysqlType, IsSigned)>,
+        types: Vec<MysqlTypeMetadata>,
     ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
@@ -147,6 +146,7 @@ impl Statement {
         match last_error_number {
             1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
             1216 | 1217 | 1451 | 1452 | 1830 | 1834 => DatabaseErrorKind::ForeignKeyViolation,
+            1792 => DatabaseErrorKind::ReadOnlyTransaction,
             _ => DatabaseErrorKind::__Unknown,
         }
     }

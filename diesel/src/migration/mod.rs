@@ -11,25 +11,25 @@ pub trait Migration {
     /// Get the migration version
     fn version(&self) -> &str;
     /// Apply this migration
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
+    fn run(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError>;
     /// Revert this migration
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError>;
+    fn revert(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError>;
     /// Get the migration file path
     fn file_path(&self) -> Option<&Path> {
         None
     }
 }
 
-impl Migration for Box<Migration> {
+impl Migration for Box<dyn Migration> {
     fn version(&self) -> &str {
         (&**self).version()
     }
 
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn run(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn revert(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).revert(conn)
     }
     fn file_path(&self) -> Option<&Path> {
@@ -37,16 +37,16 @@ impl Migration for Box<Migration> {
     }
 }
 
-impl<'a> Migration for &'a Migration {
+impl<'a> Migration for &'a dyn Migration {
     fn version(&self) -> &str {
         (&**self).version()
     }
 
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn run(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn revert(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         (&**self).revert(conn)
     }
     fn file_path(&self) -> Option<&Path> {

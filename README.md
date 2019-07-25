@@ -46,6 +46,8 @@ Licensed under either of these:
    https://opensource.org/licenses/MIT)
 
 ### Contributing
+Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md) 
+for useful information about setting up Diesel locally, coding style and common abbreviations.
 
 Unless you explicitly state otherwise, any contribution you intentionally submit
 for inclusion in the work, as defined in the Apache-2.0 license, shall be

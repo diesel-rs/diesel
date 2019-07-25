@@ -40,6 +40,9 @@ impl PgResult {
                         Some(error_codes::SERIALIZATION_FAILURE) => {
                             DatabaseErrorKind::SerializationFailure
                         }
+                        Some(error_codes::READ_ONLY_TRANSACTION) => {
+                            DatabaseErrorKind::ReadOnlyTransaction
+                        }
                         _ => DatabaseErrorKind::__Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
@@ -167,4 +170,5 @@ mod error_codes {
     pub const UNIQUE_VIOLATION: &str = "23505";
     pub const FOREIGN_KEY_VIOLATION: &str = "23503";
     pub const SERIALIZATION_FAILURE: &str = "40001";
+    pub const READ_ONLY_TRANSACTION: &str = "25006";
 }

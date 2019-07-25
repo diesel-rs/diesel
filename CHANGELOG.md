@@ -9,6 +9,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Added
 
 * `NonAggregate` can now be derived for simple cases.
+* `Connection` and `SimpleConnection` traits are implemented for a broader range
+  of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
+
+* Added `DatabaseErrorKind::ReadOnlyTransaction` to allow applications to
+  handle errors caused by writing when only allowed to read.
+
+* All expression methods can now be called on expressions of nullable types.
 
 ### Removed
 
@@ -21,9 +28,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `&DB::RawValue` or `&<DB as Backend>::RawValue>`) should use
   [`backend::RawValue<DB>`][raw-value-2-0-0] instead. Implementors of `Backend`
   should check the relevant section of [the migration guide][2-0-migration].
+* The minimal officially supported rustc version is now 1.34.0
 
 [backend-2-0-0]: http://docs.diesel.rs/diesel/backend/trait.Backend.html
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
+
+* The type metadata for MySQL has been changed to include sign information. If
+  you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
+  `Mysql::TypeMetadata`, you will need to take the new struct
+  `MysqlTypeMetadata` instead.
 
 ### Fixed
 
@@ -40,6 +53,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.2] - 2019-03-19
+
+### Fixed
+
+* Parenthesis are now inserted around all mathematical operations. This means
+  that `(2.into_sql() + 3) * 4` will correctly evaluate to 20 as expected.
+  Previously we would generate SQL that evaluated to 14. This could even result
+  in runtime errors if multiple types were involved (for example, `interval *
+  (integer + 1)`)
 
 ## [1.4.1] - 2019-01-24
 
@@ -1643,3 +1666,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.3.3]: https://github.com/diesel-rs/diesel/compare/v1.3.2...v1.3.3
 [1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
 [1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1
+[1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2

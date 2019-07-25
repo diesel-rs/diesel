@@ -15,7 +15,7 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
 
     let duplicates = foreign_keys
         .iter()
-        .map(|fk| fk.ordered_tables())
+        .map(ForeignKeyConstraint::ordered_tables)
         .filter(|tables| {
             let dup_count = foreign_keys
                 .iter()

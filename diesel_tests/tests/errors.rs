@@ -176,3 +176,16 @@ fn isolation_errors_are_detected() {
     assert_matches!(results[0], Ok(_));
     assert_matches!(results[1], Err(DatabaseError(SerializationFailure, _)));
 }
+
+#[test]
+#[cfg(not(feature = "sqlite"))]
+fn read_only_errors_are_detected() {
+    use diesel::result::DatabaseErrorKind::ReadOnlyTransaction;
+
+    let conn = connection_without_transaction();
+    conn.execute("START TRANSACTION READ ONLY").unwrap();
+
+    let result = users::table.for_update().load::<User>(&conn);
+
+    assert_matches!(result, Err(DatabaseError(ReadOnlyTransaction, _)));
+}

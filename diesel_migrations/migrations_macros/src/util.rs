@@ -21,7 +21,7 @@ pub fn get_options_from_input(
     let options = attrs
         .iter()
         .find(|a| &a.path == name)
-        .map(|a| a.parse_meta());
+        .map(Attribute::parse_meta);
     match options {
         Some(Ok(Meta::List(MetaList { ref nested, .. }))) => Some(
             nested

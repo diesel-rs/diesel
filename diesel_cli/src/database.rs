@@ -109,7 +109,7 @@ macro_rules! call_with_conn {
         $database_url:expr,
         $($func:ident)::+ ($($args:expr),*)
     ) => {
-        match ::database::InferConnection::establish(&$database_url).unwrap() {
+        match ::database::InferConnection::establish(&$database_url).unwrap_or_else(handle_error) {
             #[cfg(feature="postgres")]
             ::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
             #[cfg(feature="sqlite")]
@@ -234,12 +234,9 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         }
         #[cfg(feature = "sqlite")]
         Backend::Sqlite => {
-            use std::fs;
-            use std::path::Path;
-
             if Path::new(database_url).exists() {
                 println!("Dropping database: {}", database_url);
-                fs::remove_file(&database_url)?;
+                std::fs::remove_file(&database_url)?;
             }
         }
         #[cfg(feature = "mysql")]
