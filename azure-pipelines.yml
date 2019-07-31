@@ -178,13 +178,15 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: nightly-2019-02-26
+        rust_version: nightly-2019-08-01
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
         (cd diesel_compile_tests && cargo test)
+      env:
+        RUSTFLAGS: '--cap-lints=warn'
       displayName: Run compile tests
 
 - job: RUSTFMT_AND_CLIPPY
