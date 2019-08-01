@@ -43,7 +43,7 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2019-02-26
+  - rust: nightly-2019-08-01
     name: "Compile tests"
     script:
     - (cd diesel_compile_tests && cargo +$TRAVIS_RUST_VERSION test)
