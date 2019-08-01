@@ -45,6 +45,7 @@ matrix:
   include:
   - rust: nightly-2019-08-01
     name: "Compile tests"
+    env: RUSTFLAGS="--cap-lints=warn"
     script:
     - (cd diesel_compile_tests && cargo +$TRAVIS_RUST_VERSION test)
   - rust: 1.34.0
