@@ -2,13 +2,14 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::io::prelude::*;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
 impl FromSql<sql_types::Oid, Pg> for u32 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none!(bytes);
+        let mut bytes = bytes.as_bytes();
         bytes.read_u32::<NetworkEndian>().map_err(Into::into)
     }
 }

@@ -2,11 +2,12 @@ extern crate ipnetwork;
 extern crate libc;
 
 use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
+use std::convert::TryInto;
 use std::io::prelude::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{Cidr, Inet, MacAddr};
 
@@ -61,10 +62,12 @@ macro_rules! assert_or_error {
 }
 
 impl FromSql<MacAddr, Pg> for [u8; 6] {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
-        assert_or_error!(6 == bytes.len(), "input isn't 6 bytes.");
-        Ok([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]])
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        value
+            .as_bytes()
+            .try_into()
+            .map_err(|_| "invalid network address format: input isn't 6 bytes.".into())
     }
 }
 
@@ -78,9 +81,10 @@ impl ToSql<MacAddr, Pg> for [u8; 6] {
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
         impl FromSql<$ty, Pg> for IpNetwork {
-            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+            fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
                 // https://github.com/postgres/postgres/blob/55c3391d1e6a201b5b891781d21fe682a8c64fe6/src/include/utils/inet.h#L23-L28
-                let bytes = not_none!(bytes);
+                let value = not_none!(value);
+                let bytes = value.as_bytes();
                 assert_or_error!(4 <= bytes.len(), "input is too short.");
                 let af = bytes[0];
                 let prefix = bytes[1];
@@ -155,10 +159,13 @@ impl_Sql!(Cidr, 1);
 
 #[test]
 fn macaddr_roundtrip() {
+    use pg::StaticSqlType;
+
     let mut bytes = Output::test();
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-    let output_address: [u8; 6] = FromSql::from_sql(Some(bytes.as_ref())).unwrap();
+    let output_address: [u8; 6] =
+        FromSql::from_sql(Some(PgValue::new(bytes.as_ref(), MacAddr::OID))).unwrap();
     assert_eq!(input_address, output_address);
 }
 
@@ -180,13 +187,16 @@ fn v4address_to_sql() {
 
 #[test]
 fn some_v4address_from_sql() {
+    use pg::StaticSqlType;
+
     macro_rules! test_some_address_from_sql {
-        ($ty:ty) => {
+        ($ty:tt) => {
             let input_address =
                 IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
             let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
+            let output_address =
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(bytes.as_ref(), $ty::OID))).unwrap();
             assert_eq!(input_address, output_address);
         };
     }
@@ -237,13 +247,16 @@ fn v6address_to_sql() {
 
 #[test]
 fn some_v6address_from_sql() {
+    use pg::StaticSqlType;
+
     macro_rules! test_some_address_from_sql {
-        ($ty:ty) => {
+        ($ty:tt) => {
             let input_address =
                 IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            let output_address = FromSql::<$ty, Pg>::from_sql(Some(bytes.as_ref())).unwrap();
+            let output_address =
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(bytes.as_ref(), $ty::OID))).unwrap();
             assert_eq!(input_address, output_address);
         };
     }
@@ -254,10 +267,11 @@ fn some_v6address_from_sql() {
 
 #[test]
 fn bad_address_from_sql() {
+    use pg::StaticSqlType;
     macro_rules! bad_address_from_sql {
-        ($ty:ty) => {
+        ($ty:tt) => {
             let address: Result<IpNetwork, _> =
-                FromSql::<$ty, Pg>::from_sql(Some(&[7, PGSQL_AF_INET, 0]));
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(&[7, PGSQL_AF_INET, 0], $ty::OID)));
             assert_eq!(
                 address.unwrap_err().description(),
                 "invalid network address format. input is too short."

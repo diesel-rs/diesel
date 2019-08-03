@@ -2,7 +2,7 @@ use std::io::Write;
 use std::ops::Add;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue, StaticSqlType};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
 
@@ -60,9 +60,9 @@ impl PgInterval {
     /// how many months are in "40 days" without knowing a precise date.
     pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
         PgInterval {
-            microseconds: microseconds,
-            days: days,
-            months: months,
+            days,
+            microseconds,
+            months,
         }
     }
 
@@ -89,8 +89,11 @@ impl ToSql<sql_types::Timestamp, Pg> for PgTimestamp {
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTimestamp)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        FromSql::<sql_types::BigInt, Pg>::from_sql(
+            bytes.map(|b| b.with_new_oid(sql_types::BigInt::OID)),
+        )
+        .map(PgTimestamp)
     }
 }
 
@@ -101,8 +104,10 @@ impl ToSql<sql_types::Timestamptz, Pg> for PgTimestamp {
 }
 
 impl FromSql<sql_types::Timestamptz, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<sql_types::Timestamp, Pg>::from_sql(bytes)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        FromSql::<sql_types::Timestamp, Pg>::from_sql(
+            bytes.map(|b| b.with_new_oid(sql_types::Timestamp::OID)),
+        )
     }
 }
 
@@ -113,8 +118,11 @@ impl ToSql<sql_types::Date, Pg> for PgDate {
 }
 
 impl FromSql<sql_types::Date, Pg> for PgDate {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<sql_types::Integer, Pg>::from_sql(bytes).map(PgDate)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        FromSql::<sql_types::Integer, Pg>::from_sql(
+            bytes.map(|b| b.with_new_oid(sql_types::Integer::OID)),
+        )
+        .map(PgDate)
     }
 }
 
@@ -125,8 +133,11 @@ impl ToSql<sql_types::Time, Pg> for PgTime {
 }
 
 impl FromSql<sql_types::Time, Pg> for PgTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTime)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        FromSql::<sql_types::BigInt, Pg>::from_sql(
+            bytes.map(|b| b.with_new_oid(sql_types::BigInt::OID)),
+        )
+        .map(PgTime)
     }
 }
 
@@ -140,12 +151,22 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
 }
 
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let bytes = value.as_bytes();
         Ok(PgInterval {
-            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(&bytes[..8]))?,
-            days: FromSql::<sql_types::Integer, Pg>::from_sql(Some(&bytes[8..12]))?,
-            months: FromSql::<sql_types::Integer, Pg>::from_sql(Some(&bytes[12..16]))?,
+            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(PgValue::new(
+                &bytes[..8],
+                sql_types::BigInt::OID,
+            )))?,
+            days: FromSql::<sql_types::Integer, Pg>::from_sql(Some(PgValue::new(
+                &bytes[8..12],
+                sql_types::Integer::OID,
+            )))?,
+            months: FromSql::<sql_types::Integer, Pg>::from_sql(Some(PgValue::new(
+                &bytes[12..16],
+                sql_types::Integer::OID,
+            )))?,
         })
     }
 }

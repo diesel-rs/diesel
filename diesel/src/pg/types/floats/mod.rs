@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io::prelude::*;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
@@ -53,8 +53,9 @@ impl Error for InvalidNumericSign {
 }
 
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        let bytes = not_none!(bytes);
+        let mut bytes = bytes.as_bytes();
         let digit_count = bytes.read_u16::<NetworkEndian>()?;
         let mut digits = Vec::with_capacity(digit_count as usize);
         let weight = bytes.read_i16::<NetworkEndian>()?;

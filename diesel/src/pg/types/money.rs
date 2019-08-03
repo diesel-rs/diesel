@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, Output, ToSql};
 use sql_types::{BigInt, Money};
 
@@ -24,7 +24,7 @@ use sql_types::{BigInt, Money};
 pub struct PgMoney(pub i64);
 
 impl FromSql<Money, Pg> for PgMoney {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         FromSql::<BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }

@@ -9,7 +9,7 @@ use std::io::Write;
 
 use super::{PgDate, PgTime, PgTimestamp};
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue, StaticSqlType};
 use serialize::{self, Output, ToSql};
 use sql_types::{Date, Time, Timestamp, Timestamptz};
 
@@ -19,7 +19,7 @@ fn pg_epoch() -> NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         let PgTimestamp(offset) = FromSql::<Timestamp, Pg>::from_sql(bytes)?;
         match pg_epoch().checked_add_signed(Duration::microseconds(offset)) {
             Some(v) => Ok(v),
@@ -46,8 +46,8 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
 }
 
 impl FromSql<Timestamptz, Pg> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        FromSql::<Timestamp, Pg>::from_sql(bytes)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        FromSql::<Timestamp, Pg>::from_sql(bytes.map(|b| b.with_new_oid(Timestamp::OID)))
     }
 }
 
@@ -58,7 +58,7 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
 }
 
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
@@ -85,7 +85,7 @@ impl ToSql<Time, Pg> for NaiveTime {
 }
 
 impl FromSql<Time, Pg> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         let PgTime(offset) = FromSql::<Time, Pg>::from_sql(bytes)?;
         let duration = Duration::microseconds(offset);
         Ok(midnight() + duration)
@@ -104,7 +104,7 @@ impl ToSql<Date, Pg> for NaiveDate {
 }
 
 impl FromSql<Date, Pg> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
         let PgDate(offset) = FromSql::<Date, Pg>::from_sql(bytes)?;
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),

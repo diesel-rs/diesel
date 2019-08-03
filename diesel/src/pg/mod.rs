@@ -14,6 +14,7 @@ mod metadata_lookup;
 mod query_builder;
 pub(crate) mod serialize;
 mod transaction;
+mod value;
 
 pub use self::backend::{Pg, PgTypeMetadata};
 pub use self::connection::PgConnection;
@@ -21,6 +22,7 @@ pub use self::metadata_lookup::PgMetadataLookup;
 pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;
+pub use self::value::{PgValue, StaticSqlType};
 
 /// Data structures for PG types which have no corresponding Rust type
 ///

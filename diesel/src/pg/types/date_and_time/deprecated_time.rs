@@ -5,7 +5,7 @@ use std::io::Write;
 use self::time::{Duration, Timespec};
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue, StaticSqlType};
 use serialize::{self, Output, ToSql};
 use sql_types;
 
@@ -27,8 +27,10 @@ impl ToSql<sql_types::Timestamp, Pg> for Timespec {
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for Timespec {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(
+            bytes.map(|b| b.with_new_oid(sql_types::BigInt::OID)),
+        )?;
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);
         let out = pg_epoch + duration;

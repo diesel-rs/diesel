@@ -1128,6 +1128,8 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 #[test]
 #[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
+    use diesel::pg::PgValue;
+
     #[derive(Debug, Clone, Copy, QueryId, SqlType)]
     struct MyInt;
 
@@ -1138,7 +1140,7 @@ fn third_party_crates_can_add_new_types() {
     }
 
     impl FromSql<MyInt, Pg> for i32 {
-        fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
             FromSql::<Integer, Pg>::from_sql(bytes)
         }
     }

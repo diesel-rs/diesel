@@ -1,6 +1,6 @@
 use diesel::connection::SimpleConnection;
 use diesel::deserialize::{self, FromSql};
-use diesel::pg::Pg;
+use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, IsNull, Output, ToSql};
 use diesel::*;
 use schema::*;
@@ -37,8 +37,8 @@ impl ToSql<MyType, Pg> for MyEnum {
 }
 
 impl FromSql<MyType, Pg> for MyEnum {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        match not_none!(bytes) {
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        match not_none!(bytes).as_bytes() {
             b"foo" => Ok(MyEnum::Foo),
             b"bar" => Ok(MyEnum::Bar),
             _ => Err("Unrecognized enum variant".into()),

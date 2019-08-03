@@ -2,17 +2,18 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::{Backend, HasRawValue};
+use backend::{Backend, BinaryRawValue};
 use deserialize::{self, FromSql};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
 impl<DB> FromSql<sql_types::SmallInt, DB> for i16
 where
-    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+    DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 2,
             "Received more than 2 bytes decoding i16. \
@@ -40,10 +41,11 @@ impl<DB: Backend> ToSql<sql_types::SmallInt, DB> for i16 {
 
 impl<DB> FromSql<sql_types::Integer, DB> for i32
 where
-    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+    DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 4,
             "Received more than 4 bytes decoding i32. \
@@ -70,10 +72,11 @@ impl<DB: Backend> ToSql<sql_types::Integer, DB> for i32 {
 
 impl<DB> FromSql<sql_types::BigInt, DB> for i64
 where
-    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+    DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 8,
             "Received more than 8 bytes decoding i64. \

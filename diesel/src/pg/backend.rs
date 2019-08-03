@@ -3,7 +3,7 @@
 use byteorder::NetworkEndian;
 
 use super::query_builder::PgQueryBuilder;
-use super::PgMetadataLookup;
+use super::{PgMetadataLookup, PgValue};
 use backend::*;
 use deserialize::Queryable;
 use query_builder::bind_collector::RawBytesBindCollector;
@@ -43,7 +43,7 @@ impl Backend for Pg {
 }
 
 impl<'a> HasRawValue<'a> for Pg {
-    type RawValue = &'a [u8];
+    type RawValue = PgValue<'a>;
 }
 
 impl TypeMetadata for Pg {

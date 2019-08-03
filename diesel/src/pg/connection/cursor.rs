@@ -20,7 +20,7 @@ impl<ST, T> Cursor<ST, T> {
     pub fn new(db_result: PgResult) -> Self {
         Cursor {
             current_row: 0,
-            db_result: db_result,
+            db_result,
             _marker: PhantomData,
         }
     }
@@ -47,7 +47,7 @@ where
 }
 
 pub struct NamedCursor {
-    db_result: PgResult,
+    pub(crate) db_result: PgResult,
 }
 
 impl NamedCursor {

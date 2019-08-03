@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
-use mysql::{Mysql, MysqlTypeMetadata};
+use mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
 use result::QueryResult;
 use row::*;
 
@@ -18,10 +18,7 @@ impl<'a> StatementIterator<'a> {
 
         execute_statement(stmt, &mut output_binds)?;
 
-        Ok(StatementIterator {
-            stmt: stmt,
-            output_binds: output_binds,
-        })
+        Ok(StatementIterator { stmt, output_binds })
     }
 
     pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>>
@@ -53,7 +50,7 @@ pub struct MysqlRow<'a> {
 }
 
 impl<'a> Row<Mysql> for MysqlRow<'a> {
-    fn take(&mut self) -> Option<&[u8]> {
+    fn take(&mut self) -> Option<MysqlValue> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
         self.binds.field_data(current_idx)
@@ -119,7 +116,7 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value(&self, idx: usize) -> Option<&[u8]> {
+    fn get_raw_value(&self, idx: usize) -> Option<MysqlValue> {
         self.binds.field_data(idx)
     }
 }

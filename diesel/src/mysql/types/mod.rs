@@ -8,7 +8,7 @@ use byteorder::WriteBytesExt;
 use std::io::Write;
 
 use deserialize::{self, FromSql};
-use mysql::{Mysql, MysqlTypeMetadata};
+use mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
 
@@ -19,8 +19,9 @@ impl ToSql<TinyInt, Mysql> for i8 {
 }
 
 impl FromSql<TinyInt, Mysql> for i8 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(value: Option<MysqlValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        let bytes = value.as_bytes();
         Ok(bytes[0] as i8)
     }
 }
@@ -36,7 +37,7 @@ impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
 }
 
 impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue>) -> deserialize::Result<Self> {
         let signed: i8 = FromSql::<TinyInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u8)
     }
@@ -49,7 +50,7 @@ impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
 }
 
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue>) -> deserialize::Result<Self> {
         let signed: i16 = FromSql::<SmallInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u16)
     }
@@ -62,7 +63,7 @@ impl ToSql<Unsigned<Integer>, Mysql> for u32 {
 }
 
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue>) -> deserialize::Result<Self> {
         let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
         Ok(signed as u32)
     }
@@ -75,7 +76,7 @@ impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
 }
 
 impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u64)
     }
@@ -89,8 +90,8 @@ impl ToSql<Bool, Mysql> for bool {
 }
 
 impl FromSql<Bool, Mysql> for bool {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        Ok(not_none!(bytes).iter().any(|x| *x != 0))
+    fn from_sql(bytes: Option<MysqlValue>) -> deserialize::Result<Self> {
+        Ok(not_none!(bytes).as_bytes().iter().any(|x| *x != 0))
     }
 }
 

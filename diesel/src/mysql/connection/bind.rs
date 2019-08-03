@@ -4,7 +4,7 @@ use std::mem;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
-use mysql::{MysqlType, MysqlTypeMetadata};
+use mysql::{MysqlType, MysqlTypeMetadata, MysqlValue};
 use result::QueryResult;
 
 pub struct Binds {
@@ -23,7 +23,7 @@ impl Binds {
             })
             .collect();
 
-        Binds { data: data }
+        Binds { data }
     }
 
     pub fn from_output_types(types: Vec<MysqlTypeMetadata>) -> Self {
@@ -38,7 +38,7 @@ impl Binds {
             .map(BindData::for_output)
             .collect();
 
-        Binds { data: data }
+        Binds { data }
     }
 
     pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
@@ -86,8 +86,8 @@ impl Binds {
         }
     }
 
-    pub fn field_data(&self, idx: usize) -> Option<&[u8]> {
-        self.data[idx].bytes()
+    pub fn field_data(&self, idx: usize) -> Option<MysqlValue> {
+        self.data[idx].bytes().map(MysqlValue::new)
     }
 }
 

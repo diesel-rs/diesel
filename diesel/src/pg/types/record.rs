@@ -1,9 +1,10 @@
 use byteorder::*;
 use std::io::Write;
+use std::num::NonZeroU32;
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::{AppearsOnTable, AsExpression, Expression, SelectableExpression};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use query_builder::{AstPass, QueryFragment};
 use result::QueryResult;
 use row::Row;
@@ -24,8 +25,9 @@ macro_rules! tuple_impls {
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
             #[allow(clippy::eval_order_dependence)]
-            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-                let mut bytes = not_none!(bytes);
+            fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+                let bytes = not_none!(bytes);
+                let mut bytes = bytes.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
                 if num_elements != $Tuple {
@@ -41,7 +43,7 @@ macro_rules! tuple_impls {
                     // ignores cases like text vs varchar where the
                     // representation is the same and we don't care which we
                     // got.
-                    let _oid = bytes.read_u32::<NetworkEndian>()?;
+                    let oid = NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?).expect("Oid's aren't zero");
                     let num_bytes = bytes.read_i32::<NetworkEndian>()?;
 
                     if num_bytes == -1 {
@@ -49,7 +51,7 @@ macro_rules! tuple_impls {
                     } else {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
-                        $T::from_sql(Some(elem_bytes))?
+                        $T::from_sql(Some(PgValue::new(elem_bytes, oid)))?
                     }
                 },)+);
 

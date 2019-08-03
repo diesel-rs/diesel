@@ -60,6 +60,12 @@ pub trait HasRawValue<'a> {
     type RawValue;
 }
 
+/// A trait indicating that the provided raw value uses a binary representation internally
+pub trait BinaryRawValue<'a>: HasRawValue<'a> {
+    /// Get the underlying binary representation of the raw value
+    fn as_bytes(value: Self::RawValue) -> &'a [u8];
+}
+
 /// A helper type to get the raw representation of a database type given to
 /// `FromSql`. Equivalent to `<DB as Backend>::RawValue<'a>`.
 pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;

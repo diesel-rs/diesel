@@ -3,7 +3,7 @@ extern crate uuidv07 as uuid;
 use std::io::prelude::*;
 
 use deserialize::{self, FromSql};
-use pg::Pg;
+use pg::{Pg, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::Uuid;
 
@@ -14,9 +14,9 @@ use sql_types::Uuid;
 struct UuidProxy(uuid::Uuid);
 
 impl FromSql<Uuid, Pg> for uuid::Uuid {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
-        uuid::Uuid::from_slice(bytes).map_err(Into::into)
+    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        let value = not_none!(value);
+        uuid::Uuid::from_slice(value.as_bytes()).map_err(Into::into)
     }
 }
 
@@ -38,14 +38,18 @@ fn uuid_to_sql() {
 
 #[test]
 fn some_uuid_from_sql() {
+    use pg::StaticSqlType;
     let input_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
-    let output_uuid = FromSql::<Uuid, Pg>::from_sql(Some(input_uuid.as_bytes())).unwrap();
+    let output_uuid =
+        FromSql::<Uuid, Pg>::from_sql(Some(PgValue::new(input_uuid.as_bytes(), Uuid::OID)))
+            .unwrap();
     assert_eq!(input_uuid, output_uuid);
 }
 
 #[test]
 fn bad_uuid_from_sql() {
-    let uuid = uuid::Uuid::from_sql(Some(b"boom"));
+    use pg::StaticSqlType;
+    let uuid = uuid::Uuid::from_sql(Some(PgValue::new(b"boom", Uuid::OID)));
     assert_eq!(uuid.unwrap_err().description(), "UUID parse error");
 }
 
