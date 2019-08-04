@@ -7,9 +7,11 @@ bi-directional changes to your database that get applied sequentially.
 Installation
 ---------------
 
-The diesel cli, by default, requires [`libpq`][postgres], [`sqlite`][sqlite]
+The diesel cli, by default, requires [`openssl`][openssl] [`libpq`][postgres], [`sqlite`][sqlite]
 and [`mysql`][mysql]. Once these dependencies are installed, you can run
 `cargo install diesel_cli`.
+
+> Note: Make sure that both the `bin` and `lib` directories for postgres are added to your PATH
 
 To install the cli without these dependencies, omit the unneeded dependencies from
 the following command:
@@ -18,6 +20,7 @@ the following command:
 cargo install diesel_cli --no-default-features --features "postgres sqlite mysql"
 ```
 
+[openssl]: https://indy.fulgan.com/SSL/
 [postgres]: https://www.postgresql.org/download/
 [sqlite]: http://www.sqlitetutorial.net/download-install-sqlite/
 [mysql]: https://dev.mysql.com/doc/refman/5.7/en/installing.html
