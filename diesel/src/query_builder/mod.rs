@@ -26,7 +26,7 @@ pub mod nodes;
 pub(crate) mod offset_clause;
 mod order_clause;
 mod returning_clause;
-mod select_clause;
+pub(crate) mod select_clause;
 mod select_statement;
 mod sql_query;
 mod update_statement;
@@ -42,6 +42,8 @@ pub use self::insert_statement::{
     IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
 };
 pub use self::query_id::QueryId;
+#[doc(inline)]
+pub use self::select_clause::{SelectClauseExpression, SelectClauseQueryFragment};
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};

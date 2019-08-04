@@ -113,6 +113,21 @@ impl PgResult {
         }
     }
 
+    pub fn column_name(&self, col_idx: usize) -> &str {
+        unsafe {
+            CStr::from_ptr(PQfname(
+                self.internal_result.as_ptr(),
+                col_idx as libc::c_int,
+            ))
+            .to_str()
+            .expect("Utf8")
+        }
+    }
+
+    pub fn column_count(&self) -> usize {
+        unsafe { PQnfields(self.internal_result.as_ptr()) as usize }
+    }
+
     pub fn field_number(&self, column_name: &str) -> Option<usize> {
         let cstr = CString::new(column_name).unwrap_or_default();
         let fnum = unsafe { PQfnumber(self.internal_result.as_ptr(), cstr.as_ptr()) };

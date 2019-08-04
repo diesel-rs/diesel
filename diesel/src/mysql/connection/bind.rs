@@ -121,6 +121,10 @@ bitflags::bitflags! {
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
     }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
 }
 
 struct BindData {

@@ -116,4 +116,12 @@ impl<'a> Row<Sqlite> for FunctionRow<'a> {
             .iter()
             .all(|&p| unsafe { SqliteValue::new(p) }.is_none())
     }
+
+    fn column_count(&self) -> usize {
+        self.args.len()
+    }
+
+    fn column_name(&self) -> &str {
+        unimplemented!()
+    }
 }

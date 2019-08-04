@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ffi::CStr;
 
 use super::{Binds, Statement, StatementMetadata};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
@@ -37,6 +38,7 @@ impl<'a> StatementIterator<'a> {
             Ok(Some(())) => Some(Ok(MysqlRow {
                 col_idx: 0,
                 binds: &mut self.output_binds,
+                stmt: &self.stmt,
             })),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -47,6 +49,7 @@ impl<'a> StatementIterator<'a> {
 pub struct MysqlRow<'a> {
     col_idx: usize,
     binds: &'a Binds,
+    stmt: &'a Statement,
 }
 
 impl<'a> Row<Mysql> for MysqlRow<'a> {
@@ -58,6 +61,20 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
 
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| self.binds.field_data(self.col_idx + i).is_none())
+    }
+
+    fn column_count(&self) -> usize {
+        self.binds.len()
+    }
+
+    fn column_name(&self) -> &str {
+        let metadata = self.stmt.metadata().expect("Failed to get metadata");
+        let field = if self.col_idx == 0 {
+            metadata.fields()[0]
+        } else {
+            metadata.fields()[self.col_idx - 1]
+        };
+        unsafe { CStr::from_ptr(field.name).to_str().expect("It's utf8") }
     }
 }
 

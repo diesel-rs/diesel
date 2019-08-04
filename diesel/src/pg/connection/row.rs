@@ -31,6 +31,14 @@ impl<'a> Row<Pg> for PgRow<'a> {
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| self.db_result.is_null(self.row_idx, self.col_idx + i))
     }
+
+    fn column_count(&self) -> usize {
+        self.db_result.column_count()
+    }
+
+    fn column_name(&self) -> &str {
+        self.db_result.column_name(self.col_idx)
+    }
 }
 
 pub struct PgNamedRow<'a> {

@@ -105,6 +105,23 @@ impl Row<Sqlite> for SqliteRow {
             tpe == ffi::SQLITE_NULL
         })
     }
+
+    fn column_name(&self) -> &str {
+        unsafe {
+            let ptr = if self.next_col_index == 0 {
+                ffi::sqlite3_column_name(self.stmt.as_ptr(), 0)
+            } else {
+                ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index - 1)
+            };
+            std::ffi::CStr::from_ptr(ptr)
+                .to_str()
+                .expect("Sqlite3 doc's say it's UTF8")
+        }
+    }
+
+    fn column_count(&self) -> usize {
+        unsafe { ffi::sqlite3_column_count(self.stmt.as_ptr()) as usize }
+    }
 }
 
 pub struct SqliteNamedRow<'a> {

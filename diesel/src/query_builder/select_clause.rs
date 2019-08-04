@@ -8,8 +8,13 @@ pub struct DefaultSelectClause;
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct SelectClause<T>(pub T);
 
+/// Specialised variant of `Expression` for select clause types
+///
+/// The difference to the normal `Expression` trait is the query source (`QS`)
+/// generic type parameter. This allows to access the query source in generic code.
 pub trait SelectClauseExpression<QS> {
     type Selection: SelectableExpression<QS>;
+    /// SQL type of the select clause
     type SelectClauseSqlType;
 }
 
@@ -29,7 +34,18 @@ where
     type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
 }
 
+/// Specialised variant of `QueryFragment` for select clause types
+///
+/// The difference to the normal `QueryFragment` trait is the query source (`QS`)
+/// generic type parameter.
 pub trait SelectClauseQueryFragment<QS, DB: Backend> {
+    /// Walk over this `SelectClauseQueryFragment` for all passes.
+    ///
+    /// This method is where the actual behavior of an select clause is implemented.
+    /// This method will contain the behavior required for all possible AST
+    /// passes. See [`AstPass`] for more details.
+    ///
+    /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
 }
 
