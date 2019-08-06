@@ -1,0 +1,29 @@
+parameters:
+  rust_version: ''
+
+steps:
+  - bash: |
+      if [[ "$RUST_VERSION" == nightly* ]]; then
+          export RUSTFLAGS='--cap-lints=warn'
+          (${{ parameters.bash }})  2>&1 | tee log
+          export EXIT_CODE=${PIPESTATUS[0]}
+          echo "The exit code is $EXIT_CODE"
+          if grep -q "warning:" log; then
+              echo -e "\043#vso[task.logissue type=warning;]${{ parameters.displayName}} contains new warnings"
+          fi
+          if [[ $EXIT_CODE -eq 0 ]]; then
+              true
+          else
+              false
+          fi
+      else
+          ${{ parameters.bash }}
+      fi
+    displayName: ${{ parameters.displayName }}
+    env:
+      RUST_VERSION: ${{parameters.rust_version}}
+    condition: |
+      or(
+          startsWith(variables['parameters.rust_version'], 'nightly'),
+          succeeded()
+      )
