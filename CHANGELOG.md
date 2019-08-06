@@ -39,6 +39,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The minimal officially supported rustc version is now 1.36.0
 
+* The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
+  from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
+  somewhere you need to change it to `mysql::MysqlValue` or `pg::PgValue`.
+  For the postgres backend additionally type information where added to the `RawValue`
+  type. This allows to dynamically deserialize `RawValues` in container types.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
