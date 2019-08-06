@@ -7,7 +7,7 @@ use meta::*;
 use util::*;
 
 // Extremely curious why this triggers on a nearly branchless function
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
     let SqlFunctionDecl {
         mut attributes,
