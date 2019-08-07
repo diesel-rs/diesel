@@ -28,7 +28,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `&DB::RawValue` or `&<DB as Backend>::RawValue>`) should use
   [`backend::RawValue<DB>`][raw-value-2-0-0] instead. Implementors of `Backend`
   should check the relevant section of [the migration guide][2-0-migration].
-* The minimal officially supported rustc version is now 1.34.0
 
 [backend-2-0-0]: http://docs.diesel.rs/diesel/backend/trait.Backend.html
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
@@ -37,6 +36,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
   `Mysql::TypeMetadata`, you will need to take the new struct
   `MysqlTypeMetadata` instead.
+
+* The minimal officially supported rustc version is now 1.36.0
 
 ### Fixed
 

@@ -25,14 +25,13 @@ macro_rules! mysql_time_impls {
         }
 
         impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            // ptr::copy_nonoverlapping does not require aligned pointers
-            #[allow(clippy::cast_ptr_alignment)]
             fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 let bytes = not_none!(bytes);
                 let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
                 unsafe {
-                    let mut result = mem::uninitialized();
-                    ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
+                    let mut result = mem::MaybeUninit::uninit();
+                    ptr::copy_nonoverlapping(bytes_ptr, result.as_mut_ptr(), 1);
+                    let result = result.assume_init();
                     if result.neg == 0 {
                         Ok(result)
                     } else {
