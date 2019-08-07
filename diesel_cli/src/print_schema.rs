@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::fs::File;
-use std::io::{self, Write as IoWrite};
+use std::io::{self, Error as IoError, ErrorKind, Write as IoWrite};
 use std::path::Path;
 use std::process::Command;
 use tempfile::NamedTempFile;
@@ -51,6 +51,13 @@ pub fn run_print_schema<W: IoWrite>(
     Ok(())
 }
 
+fn simplify_patch_error(err: IoError) -> Box<dyn Error> {
+    match err.kind() {
+        ErrorKind::NotFound => "Unable to find `patch` command, is it installed?".into(),
+        _ => err.into(),
+    }
+}
+
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
@@ -85,7 +92,8 @@ pub fn output_schema(
         let output = Command::new("patch")
             .arg(out_path)
             .arg(patch_file)
-            .output()?;
+            .output()
+            .map_err(simplify_patch_error)?;
         if !output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
