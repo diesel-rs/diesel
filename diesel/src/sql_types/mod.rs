@@ -387,8 +387,8 @@ pub use crate::mysql::types::*;
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use]
 /// # extern crate diesel;
+/// # use diesel::sql_types::SqlType;
 /// #[derive(SqlType)]
 /// #[postgres(oid = "23", array_oid = "1007")]
 /// #[sqlite_type = "Integer"]
@@ -464,3 +464,6 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
+
+#[doc(inline)]
+pub use diesel_derives::{DieselNumericOps, SqlType};

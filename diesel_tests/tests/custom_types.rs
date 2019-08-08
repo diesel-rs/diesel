@@ -3,6 +3,7 @@ use diesel::connection::SimpleConnection;
 use diesel::deserialize::{self, FromSql};
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, IsNull, Output, ToSql};
+use diesel::sql_types::SqlType;
 use diesel::*;
 use std::io::Write;
 

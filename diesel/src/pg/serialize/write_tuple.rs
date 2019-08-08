@@ -15,14 +15,13 @@ use crate::serialize::{self, Output};
 /// # Example
 ///
 /// ```no_run
-/// # #[macro_use]
 /// # extern crate diesel;
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # mod the_impl {
 /// #     use diesel::pg::Pg;
 /// #     use diesel::serialize::{self, ToSql, Output, WriteTuple};
-/// #     use diesel::sql_types::{Integer, Text};
+/// #     use diesel::sql_types::{Integer, SqlType, Text};
 /// #     use std::io::Write;
 /// #
 ///     #[derive(SqlType)]

@@ -61,7 +61,7 @@ macro_rules! __diesel_operator_body {
         expression_ty_params = ($($expression_ty_params:ident,)*),
         expression_bounds = ($($expression_bounds:tt)*),
     ) => {
-        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, DieselNumericOps, $crate::expression::NonAggregate)]
+        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, $crate::sql_types::DieselNumericOps, $crate::expression::NonAggregate)]
         #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
             $(pub(crate) $field_name: $ty_param,)+
@@ -406,6 +406,9 @@ where
         Eq::new(self.left, &self.right).values()
     }
 }
+
+#[doc(inline)]
+use crate::sql_types::DieselNumericOps;
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, NonAggregate)]
 #[doc(hidden)]

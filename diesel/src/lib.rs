@@ -132,9 +132,6 @@ extern crate byteorder;
 #[macro_use]
 extern crate diesel_derives;
 
-#[doc(hidden)]
-pub use diesel_derives::{DieselNumericOps, SqlType};
-
 #[macro_use]
 pub mod macros;
 
