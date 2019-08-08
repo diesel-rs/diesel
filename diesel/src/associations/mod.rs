@@ -431,3 +431,6 @@ pub trait Identifiable: HasTable {
 
 #[doc(inline)]
 pub use diesel_derives::Identifiable;
+
+#[doc(inline)]
+pub use diesel_derives::Associations;

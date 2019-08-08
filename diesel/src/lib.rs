@@ -134,7 +134,7 @@ extern crate diesel_derives;
 
 #[doc(hidden)]
 pub use diesel_derives::{
-    sql_function_proc, Associations, DieselNumericOps, SqlType,
+    sql_function_proc, DieselNumericOps, SqlType,
 };
 
 #[macro_use]
@@ -295,7 +295,7 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    pub use crate::associations::{GroupedBy, Identifiable};
+    pub use crate::associations::{Associations, GroupedBy, Identifiable};
     pub use crate::connection::Connection;
     #[deprecated(
         since = "1.1.0",
