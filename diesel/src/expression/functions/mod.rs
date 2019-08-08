@@ -167,7 +167,7 @@
 /// ```
 macro_rules! sql_function {
     ($($args:tt)*) => {
-        sql_function_proc! { $($args)* }
+        $crate::macros::sql_function_proc! { $($args)* }
     }
 }
 

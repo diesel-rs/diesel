@@ -133,12 +133,10 @@ extern crate byteorder;
 extern crate diesel_derives;
 
 #[doc(hidden)]
-pub use diesel_derives::{
-    sql_function_proc, DieselNumericOps, SqlType,
-};
+pub use diesel_derives::{DieselNumericOps, SqlType};
 
 #[macro_use]
-mod macros;
+pub mod macros;
 
 #[cfg(test)]
 #[macro_use]

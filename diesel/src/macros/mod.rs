@@ -1,4 +1,9 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
+//! Dummy Docs for now
+//!
+//! Probably need something about sql_function_proc or the other macros here
+//!
+
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
 #[macro_export]
@@ -1237,3 +1242,6 @@ mod tests {
         );
     }
 }
+
+#[doc(hidden)]
+pub use diesel_derives::sql_function_proc;
