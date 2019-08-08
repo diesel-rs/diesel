@@ -134,7 +134,7 @@ extern crate diesel_derives;
 
 #[doc(hidden)]
 pub use diesel_derives::{
-    sql_function_proc, Associations, DieselNumericOps, NonAggregate, SqlType,
+    sql_function_proc, Associations, DieselNumericOps, SqlType,
 };
 
 #[macro_use]
