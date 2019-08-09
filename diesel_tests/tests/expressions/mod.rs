@@ -216,6 +216,8 @@ fn test_min() {
     assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
+use diesel::sql_function;
+
 sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::VarChar>, y: sql_types::VarChar) -> sql_types::VarChar);
 
 #[test]
