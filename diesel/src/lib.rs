@@ -305,7 +305,7 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::insertable::Insertable;
 
-    pub use crate::query_builder::{AsChangeset, QueryId};
+    pub use crate::query_builder::AsChangeset;
 
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;

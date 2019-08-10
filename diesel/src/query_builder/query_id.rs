@@ -19,7 +19,8 @@ use std::any::{Any, TypeId};
 /// For example, given this struct:
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
+/// # use diesel::query_builder::QueryId;
 /// #[derive(QueryId)]
 /// pub struct And<Left, Right> {
 ///     left: Left,
@@ -88,7 +89,7 @@ pub trait QueryId {
     }
 }
 
-#[doc(hidden)]
+#[doc(inline)]
 pub use diesel_derives::QueryId;
 
 impl QueryId for () {

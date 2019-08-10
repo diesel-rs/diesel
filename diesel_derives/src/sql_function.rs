@@ -67,7 +67,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
         use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
-        use diesel::query_builder::{QueryFragment, AstPass};
+        use diesel::query_builder::{AstPass, QueryFragment, QueryId};
         use diesel::sql_types::*;
         use super::*;
 
