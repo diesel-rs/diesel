@@ -298,7 +298,7 @@ pub mod prelude {
     )]
     pub use crate::deserialize::{FromSqlRow, Queryable, QueryableByName};
     pub use crate::expression::{
-        AppearsOnTable, AsExpression, BoxableExpression, Expression, IntoSql, SelectableExpression,
+        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
 
     pub use crate::expression_methods::*;
