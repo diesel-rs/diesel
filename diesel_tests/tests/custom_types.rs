@@ -1,6 +1,6 @@
 use crate::schema::*;
 use diesel::connection::SimpleConnection;
-use diesel::deserialize::{self, FromSql};
+use diesel::deserialize::{self, FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, IsNull, Output, ToSql};
