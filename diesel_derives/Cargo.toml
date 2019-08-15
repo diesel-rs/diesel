@@ -10,9 +10,9 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 
 [dependencies]
-syn = { version = "0.15.0", features = ["full", "fold"] }
-quote = "0.6.0"
-proc-macro2 = "0.4.0"
+syn = { version = "1", features = ["full", "fold"] }
+quote = "1"
+proc-macro2 = "1"
 
 [dev-dependencies]
 cfg-if = "0.1.0"
