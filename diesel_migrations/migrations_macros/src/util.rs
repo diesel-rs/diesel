@@ -44,6 +44,6 @@ pub fn get_option(options: &[Meta], option_name: &str, on_bug: fn() -> !) -> Str
 pub fn get_optional_option(options: &[Meta], option_name: &str) -> Option<String> {
     options
         .iter()
-        .find(|a| a.name() == option_name)
+        .find(|a| a.path().is_ident(option_name))
         .map(|a| str_value_of_meta_item(a, option_name))
 }
