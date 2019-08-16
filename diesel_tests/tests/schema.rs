@@ -1,3 +1,4 @@
+use diesel::deserialize::QueryableByName;
 use diesel::*;
 
 #[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]

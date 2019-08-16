@@ -1,5 +1,5 @@
+use diesel::deserialize::QueryableByName;
 use diesel::*;
-
 use helpers::connection;
 
 #[cfg(feature = "mysql")]

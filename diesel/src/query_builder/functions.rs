@@ -440,6 +440,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// # include!("../doctest_setup.rs");
 /// #
 /// # use schema::users;
+/// # use diesel::deserialize::QueryableByName;
 /// #
 /// # #[derive(QueryableByName, Debug, PartialEq)]
 /// # #[table_name="users"]

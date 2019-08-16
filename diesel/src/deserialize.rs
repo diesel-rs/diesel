@@ -213,6 +213,7 @@ pub use diesel_derives::Queryable;
 /// # extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use schema::users;
+/// # use diesel::deserialize::QueryableByName;
 /// # use diesel::sql_query;
 /// #
 /// #[derive(QueryableByName, PartialEq, Debug)]
@@ -245,7 +246,7 @@ pub use diesel_derives::Queryable;
 /// # use diesel::sql_query;
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{self, FromSql};
+/// # use diesel::deserialize::{self, FromSql, QueryableByName};
 /// #
 /// struct LowercaseString(String);
 ///

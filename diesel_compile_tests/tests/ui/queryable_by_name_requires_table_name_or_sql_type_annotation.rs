@@ -1,4 +1,5 @@
-#[macro_use] extern crate diesel;
+extern crate diesel;
+use diesel::deserialize::QueryableByName;
 
 #[derive(QueryableByName)]
 struct Foo {

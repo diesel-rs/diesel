@@ -47,6 +47,7 @@ impl<Inner> SqlQuery<Inner> {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # use schema::users;
+    /// # use diesel::deserialize::QueryableByName;
     /// #
     /// # #[derive(QueryableByName, Debug, PartialEq)]
     /// # #[table_name="users"]

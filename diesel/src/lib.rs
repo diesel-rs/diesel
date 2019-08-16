@@ -296,7 +296,7 @@ pub mod prelude {
         since = "1.1.0",
         note = "Explicitly `use diesel::deserialize::Queryable"
     )]
-    pub use crate::deserialize::{Queryable, QueryableByName};
+    pub use crate::deserialize::Queryable;
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
