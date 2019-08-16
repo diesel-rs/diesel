@@ -147,13 +147,29 @@ impl AssociationOptions {
             .skip(1)
             .filter(|n| !n.name().is_ident("foreign_key"));
         for ignored in unrecognized_options {
-            ignored
-                .span()
-                .warning(format!(
-                    "Unrecognized option {}",
-                    path_to_string(&ignored.name())
-                ))
-                .emit();
+            match ignored.word() {
+                Ok(_) => {
+                    ignored
+                        .span()
+                        .warning(format!(
+                            "belongs_to takes a single parent. Change\n\
+                            \tbelongs_to(Parent1, Parent2)\n\
+                            to\n\
+                            \tbelongs_to(Parent1)\n\
+                            \tbelongs_to(Parent2)"
+                        ))
+                        .emit();
+                },
+                Err(_) => {
+                    ignored
+                        .span()
+                        .warning(format!(
+                            "Unrecognized option {}",
+                            path_to_string(&ignored.name())
+                        ))
+                        .emit();
+                }
+            }
         }
 
         Ok(Self {
