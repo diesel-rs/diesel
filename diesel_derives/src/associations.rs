@@ -151,13 +151,13 @@ impl AssociationOptions {
                 Ok(_) => {
                     ignored
                         .span()
-                        .warning(format!(
+                        .warning(
                             "belongs_to takes a single parent. Change\n\
                             \tbelongs_to(Parent1, Parent2)\n\
                             to\n\
                             \tbelongs_to(Parent1)\n\
                             \tbelongs_to(Parent2)"
-                        ))
+                        )
                         .emit();
                 },
                 Err(_) => {
