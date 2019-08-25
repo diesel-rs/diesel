@@ -4,7 +4,10 @@ rust:
   - stable
   - beta
   - nightly
-cache: cargo
+cache:
+  directories:
+    - $HOME/.cargo
+    - $HOME/.rustup
 addons:
   postgresql: '9.5'
   apt:
