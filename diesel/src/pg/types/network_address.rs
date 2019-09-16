@@ -159,13 +159,12 @@ impl_Sql!(Cidr, 1);
 
 #[test]
 fn macaddr_roundtrip() {
-    use pg::StaticSqlType;
 
     let mut bytes = Output::test();
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
     let output_address: [u8; 6] =
-        FromSql::from_sql(Some(PgValue::new(bytes.as_ref(), MacAddr::OID))).unwrap();
+        FromSql::from_sql(Some(PgValue::for_test(bytes.as_ref()))).unwrap();
     assert_eq!(input_address, output_address);
 }
 
@@ -187,8 +186,6 @@ fn v4address_to_sql() {
 
 #[test]
 fn some_v4address_from_sql() {
-    use pg::StaticSqlType;
-
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
             let input_address =
@@ -196,7 +193,7 @@ fn some_v4address_from_sql() {
             let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address =
-                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(bytes.as_ref(), $ty::OID))).unwrap();
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::for_test(bytes.as_ref()))).unwrap();
             assert_eq!(input_address, output_address);
         };
     }
@@ -247,8 +244,6 @@ fn v6address_to_sql() {
 
 #[test]
 fn some_v6address_from_sql() {
-    use pg::StaticSqlType;
-
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
             let input_address =
@@ -256,7 +251,7 @@ fn some_v6address_from_sql() {
             let mut bytes = Output::test();
             ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             let output_address =
-                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(bytes.as_ref(), $ty::OID))).unwrap();
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::for_test(bytes.as_ref()))).unwrap();
             assert_eq!(input_address, output_address);
         };
     }
@@ -267,11 +262,10 @@ fn some_v6address_from_sql() {
 
 #[test]
 fn bad_address_from_sql() {
-    use pg::StaticSqlType;
     macro_rules! bad_address_from_sql {
         ($ty:tt) => {
             let address: Result<IpNetwork, _> =
-                FromSql::<$ty, Pg>::from_sql(Some(PgValue::new(&[7, PGSQL_AF_INET, 0], $ty::OID)));
+                FromSql::<$ty, Pg>::from_sql(Some(PgValue::for_test(&[7, PGSQL_AF_INET, 0])));
             assert_eq!(
                 address.unwrap_err().description(),
                 "invalid network address format. input is too short."

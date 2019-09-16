@@ -66,10 +66,9 @@ fn json_to_sql() {
 
 #[test]
 fn some_json_from_sql() {
-    use pg::StaticSqlType;
     let input_json = b"true";
     let output_json: serde_json::Value = FromSql::<sql_types::Json, Pg>::from_sql(Some(
-        PgValue::new(input_json, sql_types::Json::OID),
+        PgValue::for_test(input_json),
     ))
     .unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
@@ -77,9 +76,8 @@ fn some_json_from_sql() {
 
 #[test]
 fn bad_json_from_sql() {
-    use pg::StaticSqlType;
     let uuid: Result<serde_json::Value, _> =
-        FromSql::<sql_types::Json, Pg>::from_sql(Some(PgValue::new(b"boom", sql_types::Json::OID)));
+        FromSql::<sql_types::Json, Pg>::from_sql(Some(PgValue::for_test(b"boom")));
     assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
@@ -102,10 +100,9 @@ fn jsonb_to_sql() {
 
 #[test]
 fn some_jsonb_from_sql() {
-    use pg::StaticSqlType;
     let input_json = b"\x01true";
     let output_json: serde_json::Value = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::new(input_json, sql_types::Jsonb::OID),
+        PgValue::for_test(input_json),
     ))
     .unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
@@ -113,18 +110,16 @@ fn some_jsonb_from_sql() {
 
 #[test]
 fn bad_jsonb_from_sql() {
-    use pg::StaticSqlType;
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::new(b"\x01boom", sql_types::Jsonb::OID),
+        PgValue::for_test(b"\x01boom"),
     ));
     assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
 fn bad_jsonb_version_from_sql() {
-    use pg::StaticSqlType;
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::new(b"\x02true", sql_types::Jsonb::OID),
+        PgValue::for_test(b"\x02true"),
     ));
     assert_eq!(
         uuid.unwrap_err().description(),

@@ -38,18 +38,15 @@ fn uuid_to_sql() {
 
 #[test]
 fn some_uuid_from_sql() {
-    use pg::StaticSqlType;
     let input_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
     let output_uuid =
-        FromSql::<Uuid, Pg>::from_sql(Some(PgValue::new(input_uuid.as_bytes(), Uuid::OID)))
-            .unwrap();
+        FromSql::<Uuid, Pg>::from_sql(Some(PgValue::for_test(input_uuid.as_bytes()))).unwrap();
     assert_eq!(input_uuid, output_uuid);
 }
 
 #[test]
 fn bad_uuid_from_sql() {
-    use pg::StaticSqlType;
-    let uuid = uuid::Uuid::from_sql(Some(PgValue::new(b"boom", Uuid::OID)));
+    let uuid = uuid::Uuid::from_sql(Some(PgValue::for_test(b"boom")));
     assert_eq!(uuid.unwrap_err().description(), "UUID parse error");
 }
 
