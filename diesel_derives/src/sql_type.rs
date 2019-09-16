@@ -110,32 +110,23 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
-            let (metadata_fn, const_metadata) = match ty {
+            let metadata_fn = match ty {
                 PgType::Fixed { oid, array_oid } => {
-                    let metadata_fn = quote!(
+                    quote!(
                         fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
                             PgTypeMetadata {
                                 oid: #oid,
                                 array_oid: #array_oid,
                             }
                         }
-                    );
+                    )
 
-                    let const_metadata = quote! {
-                        impl #impl_generics diesel::pg::StaticSqlType for #struct_name #ty_generics
-                        {
-                            const OID: std::num::NonZeroU32 = unsafe {std::num::NonZeroU32::new_unchecked(#oid) };
-                            const ARRAY_OID: std::num::NonZeroU32 = unsafe {std::num::NonZeroU32::new_unchecked(#array_oid) };
-                        }
-                    };
-
-                    (metadata_fn, Some(const_metadata))
                 }
-                PgType::Lookup(type_name) => (quote!(
+                PgType::Lookup(type_name) => quote!(
                     fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
                         lookup.lookup_type(#type_name)
                     }
-                ), None)
+                )
             };
 
             Some(quote! {
@@ -147,8 +138,6 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                 {
                     #metadata_fn
                 }
-
-                #const_metadata
             })
         })
 }

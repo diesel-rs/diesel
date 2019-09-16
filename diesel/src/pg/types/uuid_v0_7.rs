@@ -15,7 +15,7 @@ struct UuidProxy(uuid::Uuid);
 
 impl FromSql<Uuid, Pg> for uuid::Uuid {
     fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+        let value = not_none!(bytes);
         uuid::Uuid::from_slice(value.as_bytes()).map_err(Into::into)
     }
 }

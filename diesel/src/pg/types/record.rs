@@ -25,9 +25,9 @@ macro_rules! tuple_impls {
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
             #[allow(clippy::eval_order_dependence)]
-            fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
-                let bytes = not_none!(bytes);
-                let mut bytes = bytes.as_bytes();
+            fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+                let value = not_none!(value);
+                let mut bytes = value.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
                 if num_elements != $Tuple {

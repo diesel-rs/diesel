@@ -9,7 +9,7 @@ use std::io::Write;
 
 use super::{PgDate, PgTime, PgTimestamp};
 use deserialize::{self, FromSql};
-use pg::{Pg, PgValue, StaticSqlType};
+use pg::{Pg, PgValue};
 use serialize::{self, Output, ToSql};
 use sql_types::{Date, Time, Timestamp, Timestamptz};
 
@@ -47,7 +47,7 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
 
 impl FromSql<Timestamptz, Pg> for NaiveDateTime {
     fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
-        FromSql::<Timestamp, Pg>::from_sql(bytes.map(|b| b.with_new_oid(Timestamp::OID)))
+        FromSql::<Timestamp, Pg>::from_sql(bytes)
     }
 }
 

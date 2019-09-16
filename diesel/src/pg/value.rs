@@ -1,14 +1,7 @@
-use super::Pg;
+use super::{Pg, PgMetadataLookup};
 use backend::BinaryRawValue;
 use std::num::NonZeroU32;
-
-/// Marker trait for types with oid's known at compile time
-pub trait StaticSqlType {
-    /// Type oid
-    const OID: NonZeroU32;
-    /// Array oid
-    const ARRAY_OID: NonZeroU32;
-}
+use std::ops::Range;
 
 /// Raw postgres value as received from the database
 #[derive(Clone, Copy)]
@@ -42,7 +35,10 @@ impl<'a> PgValue<'a> {
         self.type_oid
     }
 
-    pub(crate) fn with_new_oid(self, type_oid: NonZeroU32) -> Self {
-        Self { type_oid, ..self }
+    pub(crate) fn subslice(&self, range: Range<usize>) -> Self {
+        Self {
+            raw_value: &self.raw_value[range],
+            ..*self
+        }
     }
 }

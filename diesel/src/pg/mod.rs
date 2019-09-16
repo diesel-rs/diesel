@@ -22,7 +22,7 @@ pub use self::metadata_lookup::PgMetadataLookup;
 pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;
-pub use self::value::{PgValue, StaticSqlType};
+pub use self::value::PgValue;
 
 /// Data structures for PG types which have no corresponding Rust type
 ///
