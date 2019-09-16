@@ -92,6 +92,7 @@ where
             let value = T::from_sql(Some(PgValue::new(
                 elem_bytes,
                 value.get_oid(),
+                value.get_metadata_lookup(),
             )))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
@@ -106,6 +107,7 @@ where
             let value = T::from_sql(Some(PgValue::new(
                 bytes,
                 value.get_oid(),
+                value.get_metadata_lookup(),
             )))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {

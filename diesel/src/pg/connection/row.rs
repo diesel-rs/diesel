@@ -1,10 +1,10 @@
 use super::cursor::NamedCursor;
 use super::result::PgResult;
-use pg::{Pg, PgValue};
+use pg::{Pg, PgMetadataLookup, PgValue};
 use row::*;
 
 pub struct PgRow<'a> {
-    db_result: &'a PgResult,
+    db_result: &'a PgResult<'a>,
     row_idx: usize,
     col_idx: usize,
 }
@@ -25,7 +25,11 @@ impl<'a> Row<Pg> for PgRow<'a> {
         self.col_idx += 1;
         let raw = self.db_result.get(self.row_idx, current_idx)?;
 
-        Some(PgValue::new(raw, self.db_result.column_type(current_idx)))
+        Some(PgValue::new(
+            raw,
+            self.db_result.column_type(current_idx),
+            PgMetadataLookup::new(self.db_result.connection),
+        ))
     }
 
     fn next_is_null(&self, count: usize) -> bool {
@@ -34,7 +38,7 @@ impl<'a> Row<Pg> for PgRow<'a> {
 }
 
 pub struct PgNamedRow<'a> {
-    cursor: &'a NamedCursor,
+    cursor: &'a NamedCursor<'a>,
     idx: usize,
 }
 
@@ -47,7 +51,11 @@ impl<'a> PgNamedRow<'a> {
 impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
     fn get_raw_value(&self, index: usize) -> Option<PgValue> {
         let raw = self.cursor.get_value(self.idx, index)?;
-        Some(PgValue::new(raw, self.cursor.db_result.column_type(index)))
+        Some(PgValue::new(
+            raw,
+            self.cursor.db_result.column_type(index),
+            PgMetadataLookup::new(self.cursor.db_result.connection),
+        ))
     }
 
     fn index_of(&self, column_name: &str) -> Option<usize> {

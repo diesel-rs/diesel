@@ -9,6 +9,7 @@ use std::ops::Range;
 pub struct PgValue<'a> {
     raw_value: &'a [u8],
     type_oid: NonZeroU32,
+    metadata: &'a PgMetadataLookup,
 }
 
 impl<'a> BinaryRawValue<'a> for Pg {
@@ -18,10 +19,15 @@ impl<'a> BinaryRawValue<'a> for Pg {
 }
 
 impl<'a> PgValue<'a> {
-    pub(crate) fn new(raw_value: &'a [u8], type_oid: NonZeroU32) -> Self {
+    pub(crate) fn new(
+        raw_value: &'a [u8],
+        type_oid: NonZeroU32,
+        metadata: &'a PgMetadataLookup,
+    ) -> Self {
         Self {
             raw_value,
             type_oid,
+            metadata,
         }
     }
 
@@ -33,6 +39,11 @@ impl<'a> PgValue<'a> {
     /// Get the type oid of this value
     pub fn get_oid(&self) -> NonZeroU32 {
         self.type_oid
+    }
+
+    /// Get a instance for type lookup
+    pub fn get_metadata_lookup(&self) -> &PgMetadataLookup {
+        self.metadata
     }
 
     pub(crate) fn subslice(&self, range: Range<usize>) -> Self {

@@ -28,9 +28,7 @@ impl ToSql<sql_types::Timestamp, Pg> for Timespec {
 
 impl FromSql<sql_types::Timestamp, Pg> for Timespec {
     fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
-        let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(
-            bytes,
-        )?;
+        let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);
         let out = pg_epoch + duration;

@@ -51,7 +51,11 @@ macro_rules! tuple_impls {
                     } else {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
-                        $T::from_sql(Some(PgValue::new(elem_bytes, oid)))?
+                        $T::from_sql(Some(PgValue::new(
+                            elem_bytes,
+                            oid,
+                            value.get_metadata_lookup()
+                        )))?
                     }
                 },)+);
 
