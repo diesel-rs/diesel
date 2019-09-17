@@ -2,7 +2,7 @@ error: Cannot determine the SQL type of foo
  --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:5:5
   |
 5 |     foo: i32,
-  |     ^^^
+  |     ^^^^^^^^
   |
   = help: Your struct must either be annotated with `#[table_name = "foo"]` or have all of its fields annotated with `#[sql_type = "Integer"]`
 
@@ -10,7 +10,7 @@ error: Cannot determine the SQL type of bar
  --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:6:5
   |
 6 |     bar: String,
-  |     ^^^
+  |     ^^^^^^^^^^^
   |
   = help: Your struct must either be annotated with `#[table_name = "foo"]` or have all of its fields annotated with `#[sql_type = "Integer"]`
 
