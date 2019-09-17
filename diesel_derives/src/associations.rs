@@ -142,11 +142,17 @@ impl AssociationOptions {
                 .unwrap_or_else(|| Ok(infer_foreign_key(&parent_struct_name.ident)))?
         };
 
-        let unrecognized_options = meta.nested()?.skip(1).filter(|n| !n.name().is_ident("foreign_key"));
+        let unrecognized_options = meta
+            .nested()?
+            .skip(1)
+            .filter(|n| !n.name().is_ident("foreign_key"));
         for ignored in unrecognized_options {
             ignored
                 .span()
-                .warning(format!("Unrecognized option {}", path_to_string(&ignored.name())))
+                .warning(format!(
+                    "Unrecognized option {}",
+                    path_to_string(&ignored.name())
+                ))
                 .emit();
         }
 
