@@ -11,7 +11,11 @@ pub struct MetaItem {
 }
 
 pub(crate) fn path_to_string(path: &syn::Path) -> String {
-    path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<String>>().join("::")
+    path.segments
+        .iter()
+        .map(|s| s.ident.to_string())
+        .collect::<Vec<String>>()
+        .join("::")
 }
 
 impl MetaItem {
@@ -19,7 +23,8 @@ impl MetaItem {
         attrs
             .iter()
             .filter_map(|attr| {
-                attr.parse_meta().ok()
+                attr.parse_meta()
+                    .ok()
                     .map(|m| FixSpan(attr.pound_token.spans[0]).fold_meta(m))
             })
             .filter(|m| m.path().is_ident(name))
@@ -42,7 +47,8 @@ impl MetaItem {
     }
 
     pub fn nested_item(&self, name: &str) -> Result<Option<Self>, Diagnostic> {
-        self.nested().map(|mut i| i.find(|n| n.name().is_ident(name)))
+        self.nested()
+            .map(|mut i| i.find(|n| n.name().is_ident(name)))
     }
 
     pub fn required_nested_item(&self, name: &str) -> Result<Self, Diagnostic> {
@@ -123,9 +129,10 @@ impl MetaItem {
 
         match self.meta {
             List(ref list) => Ok(Nested(list.nested.iter())),
-            _ => Err(self
-                .span()
-                .error(format!("`{0}` must be in the form `{0}(...)`", path_to_string(&self.name())))),
+            _ => Err(self.span().error(format!(
+                "`{0}` must be in the form `{0}(...)`",
+                path_to_string(&self.name())
+            ))),
         }
     }
 
@@ -209,11 +216,15 @@ impl MetaItem {
             Ok(x) => x,
             Err(_) => return,
         };
-        let unrecognized_options = nested.filter(|n| !options.iter().any(|&o| n.name().is_ident(o)));
+        let unrecognized_options =
+            nested.filter(|n| !options.iter().any(|&o| n.name().is_ident(o)));
         for ignored in unrecognized_options {
             ignored
                 .span()
-                .warning(format!("Option {} has no effect", path_to_string(&ignored.name())))
+                .warning(format!(
+                    "Option {} has no effect",
+                    path_to_string(&ignored.name())
+                ))
                 .emit();
         }
     }
