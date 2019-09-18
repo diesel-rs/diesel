@@ -1140,7 +1140,7 @@ fn third_party_crates_can_add_new_types() {
     }
 
     impl FromSql<MyInt, Pg> for i32 {
-        fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+        fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
             FromSql::<Integer, Pg>::from_sql(bytes)
         }
     }

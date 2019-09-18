@@ -86,7 +86,7 @@ impl Binds {
         }
     }
 
-    pub fn field_data(&self, idx: usize) -> Option<MysqlValue> {
+    pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
         self.data[idx].bytes().map(MysqlValue::new)
     }
 }

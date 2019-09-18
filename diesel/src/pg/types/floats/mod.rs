@@ -53,7 +53,7 @@ impl Error for InvalidNumericSign {
 }
 
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         let mut bytes = bytes.as_bytes();
         let digit_count = bytes.read_u16::<NetworkEndian>()?;

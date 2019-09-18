@@ -20,7 +20,7 @@ impl<'a> PgRow<'a> {
 }
 
 impl<'a> Row<Pg> for PgRow<'a> {
-    fn take(&mut self) -> Option<PgValue> {
+    fn take(&mut self) -> Option<PgValue<'_>> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
         let raw = self.db_result.get(self.row_idx, current_idx)?;
@@ -49,7 +49,7 @@ impl<'a> PgNamedRow<'a> {
 }
 
 impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
-    fn get_raw_value(&self, index: usize) -> Option<PgValue> {
+    fn get_raw_value(&self, index: usize) -> Option<PgValue<'_>> {
         let raw = self.cursor.get_value(self.idx, index)?;
         Some(PgValue::new(
             raw,

@@ -7,7 +7,7 @@ use serialize::{self, IsNull, Output, ToSql};
 use sql_types;
 
 impl FromSql<sql_types::Oid, Pg> for u32 {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         let mut bytes = bytes.as_bytes();
         bytes.read_u32::<NetworkEndian>().map_err(Into::into)

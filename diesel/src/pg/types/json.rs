@@ -22,7 +22,7 @@ mod foreign_derives {
 }
 
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
-    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         serde_json::from_slice(value.as_bytes()).map_err(Into::into)
     }
@@ -37,7 +37,7 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
 }
 
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
-    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         let bytes = value.as_bytes();
         if bytes[0] != 1 {

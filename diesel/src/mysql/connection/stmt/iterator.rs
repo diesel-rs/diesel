@@ -50,7 +50,7 @@ pub struct MysqlRow<'a> {
 }
 
 impl<'a> Row<Mysql> for MysqlRow<'a> {
-    fn take(&mut self) -> Option<MysqlValue> {
+    fn take(&mut self) -> Option<MysqlValue<'_>> {
         let current_idx = self.col_idx;
         self.col_idx += 1;
         self.binds.field_data(current_idx)
@@ -116,7 +116,7 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value(&self, idx: usize) -> Option<MysqlValue> {
+    fn get_raw_value(&self, idx: usize) -> Option<MysqlValue<'_>> {
         self.binds.field_data(idx)
     }
 }

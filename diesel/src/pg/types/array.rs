@@ -23,7 +23,7 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         let mut bytes = value.as_bytes();
         let num_dimensions = bytes.read_i32::<NetworkEndian>()?;

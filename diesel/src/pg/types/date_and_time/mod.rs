@@ -89,7 +89,7 @@ impl ToSql<sql_types::Timestamp, Pg> for PgTimestamp {
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTimestamp)
     }
 }
@@ -101,7 +101,7 @@ impl ToSql<sql_types::Timestamptz, Pg> for PgTimestamp {
 }
 
 impl FromSql<sql_types::Timestamptz, Pg> for PgTimestamp {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         FromSql::<sql_types::Timestamp, Pg>::from_sql(bytes)
     }
 }
@@ -113,7 +113,7 @@ impl ToSql<sql_types::Date, Pg> for PgDate {
 }
 
 impl FromSql<sql_types::Date, Pg> for PgDate {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         FromSql::<sql_types::Integer, Pg>::from_sql(bytes).map(PgDate)
     }
 }
@@ -125,7 +125,7 @@ impl ToSql<sql_types::Time, Pg> for PgTime {
 }
 
 impl FromSql<sql_types::Time, Pg> for PgTime {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTime)
     }
 }
@@ -140,7 +140,7 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
 }
 
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
-    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         Ok(PgInterval {
             microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(Some(value.subslice(0..8)))?,

@@ -37,7 +37,7 @@ impl ToSql<MyType, Pg> for MyEnum {
 }
 
 impl FromSql<MyType, Pg> for MyEnum {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         match not_none!(bytes).as_bytes() {
             b"foo" => Ok(MyEnum::Foo),
             b"bar" => Ok(MyEnum::Bar),

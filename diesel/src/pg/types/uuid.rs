@@ -14,7 +14,7 @@ use sql_types::Uuid;
 struct UuidProxy(uuid::Uuid);
 
 impl FromSql<Uuid, Pg> for uuid::Uuid {
-    fn from_sql(value: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         uuid::Uuid::from_bytes(value.as_bytes()).map_err(Into::into)
     }

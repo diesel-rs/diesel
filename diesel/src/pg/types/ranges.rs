@@ -78,7 +78,7 @@ impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(bytes);
         let mut bytes = value.as_bytes();
         let flags: RangeFlags = RangeFlags::from_bits_truncate(bytes.read_u8()?);
