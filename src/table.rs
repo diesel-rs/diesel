@@ -9,6 +9,8 @@ use column::Column;
 use dummy_expression::*;
 
 #[derive(Debug, Clone, Copy)]
+/// A database table.
+/// This type is created by the [`table`](fn.table.html) function.
 pub struct Table<T, U = T> {
     name: T,
     schema: Option<U>,
@@ -26,6 +28,7 @@ impl<T, U> Table<T, U> {
         }
     }
 
+    /// Create a column with this table.
     pub fn column<ST, V>(&self, name: V) -> Column<Self, V, ST>
     where
         Self: Clone,

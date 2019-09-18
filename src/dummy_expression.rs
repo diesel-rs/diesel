@@ -1,6 +1,7 @@
 use diesel::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 
 #[doc(hidden)]
+/// A dummy expression.
 pub struct DummyExpression;
 
 impl DummyExpression {

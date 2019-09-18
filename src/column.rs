@@ -6,6 +6,8 @@ use std::borrow::Borrow;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy)]
+/// A database table column.
+/// This type is created by the [`column`](struct.Table.html#method.column) function.
 pub struct Column<T, U, ST> {
     table: T,
     name: U,
