@@ -159,7 +159,6 @@ impl_Sql!(Cidr, 1);
 
 #[test]
 fn macaddr_roundtrip() {
-
     let mut bytes = Output::test();
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();

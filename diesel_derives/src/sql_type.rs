@@ -111,22 +111,19 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
             let metadata_fn = match ty {
-                PgType::Fixed { oid, array_oid } => {
-                    quote!(
-                        fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-                            PgTypeMetadata {
-                                oid: #oid,
-                                array_oid: #array_oid,
-                            }
+                PgType::Fixed { oid, array_oid } => quote!(
+                    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+                        PgTypeMetadata {
+                            oid: #oid,
+                            array_oid: #array_oid,
                         }
-                    )
-
-                }
+                    }
+                ),
                 PgType::Lookup(type_name) => quote!(
                     fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
                         lookup.lookup_type(#type_name)
                     }
-                )
+                ),
             };
 
             Some(quote! {

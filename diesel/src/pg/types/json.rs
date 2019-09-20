@@ -67,10 +67,8 @@ fn json_to_sql() {
 #[test]
 fn some_json_from_sql() {
     let input_json = b"true";
-    let output_json: serde_json::Value = FromSql::<sql_types::Json, Pg>::from_sql(Some(
-        PgValue::for_test(input_json),
-    ))
-    .unwrap();
+    let output_json: serde_json::Value =
+        FromSql::<sql_types::Json, Pg>::from_sql(Some(PgValue::for_test(input_json))).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
 }
 
@@ -101,26 +99,22 @@ fn jsonb_to_sql() {
 #[test]
 fn some_jsonb_from_sql() {
     let input_json = b"\x01true";
-    let output_json: serde_json::Value = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::for_test(input_json),
-    ))
-    .unwrap();
+    let output_json: serde_json::Value =
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(input_json))).unwrap();
     assert_eq!(output_json, serde_json::Value::Bool(true));
 }
 
 #[test]
 fn bad_jsonb_from_sql() {
-    let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::for_test(b"\x01boom"),
-    ));
+    let uuid: Result<serde_json::Value, _> =
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x01boom")));
     assert_eq!(uuid.unwrap_err().description(), "JSON error");
 }
 
 #[test]
 fn bad_jsonb_version_from_sql() {
-    let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(
-        PgValue::for_test(b"\x02true"),
-    ));
+    let uuid: Result<serde_json::Value, _> =
+        FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x02true")));
     assert_eq!(
         uuid.unwrap_err().description(),
         "Unsupported JSONB encoding version"

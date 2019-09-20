@@ -47,7 +47,10 @@ fn some_uuid_from_sql() {
 #[test]
 fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(Some(PgValue::for_test(b"boom")));
-    assert_eq!(uuid.unwrap_err().description(), "invalid number of uuid bytes");
+    assert_eq!(
+        uuid.unwrap_err().description(),
+        "invalid number of uuid bytes"
+    );
 }
 
 #[test]
