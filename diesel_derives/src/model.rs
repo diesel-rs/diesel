@@ -18,7 +18,11 @@ impl Model {
         let table_name_from_attribute =
             MetaItem::with_name(&item.attrs, "table_name").map(|m| m.expect_ident_value());
         let primary_key_names = MetaItem::with_name(&item.attrs, "primary_key")
-            .map(|m| Ok(m.nested()?.map(|m| m.expect_word()).collect()))
+            .map(|m| {
+                Ok(m.nested()?
+                    .map(|m| m.expect_path().segments.first().unwrap().ident.clone())
+                    .collect())
+            })
             .unwrap_or_else(|| Ok(vec![Ident::new("id", Span::call_site())]))?;
         let fields = fields_from_item_data(&item.data)?;
         Ok(Self {

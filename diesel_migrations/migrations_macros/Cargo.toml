@@ -9,9 +9,9 @@ homepage = "http://diesel.rs"
 
 [dependencies]
 migrations_internals = "~1.4.0"
-syn = { version = "0.15", features = ["extra-traits"] }
-quote = "0.6"
-proc-macro2 = "0.4"
+syn = { version = "1", features = ["extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
 
 [dev-dependencies]
 tempdir = "0.3.4"

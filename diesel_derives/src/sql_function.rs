@@ -24,8 +24,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
     let is_aggregate = MetaItem::with_name(&attributes, "aggregate").is_some();
 
     attributes.retain(|attr| {
-        attr.interpret_meta()
-            .map(|m| m.name() != "sql_name" && m.name() != "aggregate")
+        attr.parse_meta()
+            .map(|m| !m.path().is_ident("sql_name") && !m.path().is_ident("aggregate"))
             .unwrap_or(true)
     });
 
@@ -47,7 +47,6 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
-    let type_args2 = &type_args.clone();
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
@@ -64,6 +63,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .push(parse_quote!(__DieselInternal));
     let (impl_generics_internal, _, _) = generics_with_internal.split_for_impl();
 
+    let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
         use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
@@ -73,8 +73,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
         pub struct #fn_name #ty_generics {
-            #(pub(in super) #args,)*
-            #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args2>,)*
+            #(pub(in super) #args_iter,)*
+            #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
         }
 
         pub type HelperType #ty_generics = #fn_name <
@@ -195,10 +195,11 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         }
     }
 
+    let args_iter = args.iter();
     tokens = quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
-        pub #fn_token #fn_name #impl_generics (#(#args,)*)
+        pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
             -> #fn_name::HelperType #ty_generics
         #where_clause
             #(#arg_name: ::diesel::expression::AsExpression<#arg_type>,)*
