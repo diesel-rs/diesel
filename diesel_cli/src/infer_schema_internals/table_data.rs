@@ -4,18 +4,23 @@ use std::fmt;
 use std::str::FromStr;
 
 use super::data_structures::ColumnDefinition;
+use super::inference;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableName {
-    pub name: String,
+    pub sql_name: String,
     pub schema: Option<String>,
+    pub rust_name: Option<String>,
 }
 
 impl TableName {
     pub fn from_name<T: Into<String>>(name: T) -> Self {
+        let name = name.into();
+
         TableName {
-            name: name.into(),
+            sql_name: name.clone(),
             schema: None,
+            rust_name: inference::rust_name_for_column(&name),
         }
     }
 
@@ -24,9 +29,12 @@ impl TableName {
         T: Into<String>,
         U: Into<String>,
     {
+        let name = name.into();
+
         TableName {
-            name: name.into(),
+            sql_name: name.clone(),
             schema: Some(schema.into()),
+            rust_name: inference::rust_name_for_column(&name),
         }
     }
 
@@ -53,8 +61,8 @@ where
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.schema {
-            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
-            None => write!(out, "{}", self.name),
+            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.sql_name),
+            None => write!(out, "{}", self.sql_name),
         }
     }
 }

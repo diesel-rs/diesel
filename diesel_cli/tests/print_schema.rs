@@ -115,6 +115,12 @@ fn print_schema_custom_types() {
     );
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_unmappable_names() {
+    test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
