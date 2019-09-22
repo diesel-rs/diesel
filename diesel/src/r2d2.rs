@@ -75,9 +75,36 @@ impl ::std::error::Error for Error {
     }
 }
 
+/// A trait indicating a connection could be used inside a r2d2 pool
+pub trait R2D2Connection: Connection {
+    /// Check if a connection is still valid
+    fn ping(&self) -> QueryResult<()>;
+}
+
+#[cfg(feature = "postgres")]
+impl R2D2Connection for ::pg::PgConnection {
+    fn ping(&self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl R2D2Connection for ::mysql::MysqlConnection {
+    fn ping(&self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl R2D2Connection for ::sqlite::SqliteConnection {
+    fn ping(&self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+}
+
 impl<T> ManageConnection for ConnectionManager<T>
 where
-    T: Connection + Send + 'static,
+    T: R2D2Connection + Send + 'static,
 {
     type Connection = T;
     type Error = Error;
@@ -87,9 +114,7 @@ where
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        conn.execute("SELECT 1")
-            .map(|_| ())
-            .map_err(Error::QueryError)
+        conn.ping().map_err(Error::QueryError)
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {
@@ -100,7 +125,7 @@ where
 impl<M> SimpleConnection for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection + Send + 'static,
+    M::Connection: R2D2Connection + Send + 'static,
 {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         (&**self).batch_execute(query)
@@ -110,7 +135,8 @@ where
 impl<M> Connection for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<TransactionManager = AnsiTransactionManager> + Send + 'static,
+    M::Connection:
+        Connection<TransactionManager = AnsiTransactionManager> + R2D2Connection + Send + 'static,
     <M::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
 {
     type Backend = <M::Connection as Connection>::Backend;
