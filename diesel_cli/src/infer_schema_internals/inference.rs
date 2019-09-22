@@ -171,7 +171,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = get_primary_keys(&connection, &name)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_column(&k).unwrap_or(k.clone()))
+        .map(|k| rust_name_for_column(&k).unwrap_or_else(|| k.clone()))
         .collect();
 
     let column_data = get_column_information(&connection, &name)?
