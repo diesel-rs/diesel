@@ -68,7 +68,7 @@ pub fn load_foreign_key_constraints(
     let rows = tables
         .into_iter()
         .map(|child_table| {
-            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.name);
+            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
             Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
@@ -92,7 +92,7 @@ pub fn get_table_data(
     conn: &SqliteConnection,
     table: &TableName,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
     sql::<pragma_table_info::SqlType>(&query).load(conn)
 }
 
@@ -119,7 +119,7 @@ struct ForeignKeyListRow {
 }
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()

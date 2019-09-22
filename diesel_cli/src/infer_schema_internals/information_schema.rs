@@ -134,7 +134,7 @@ where
     let type_column = Conn::Backend::type_column();
     columns
         .select((column_name, type_column, is_nullable))
-        .filter(table_name.eq(&table.name))
+        .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
@@ -161,7 +161,7 @@ where
     key_column_usage
         .select(column_name)
         .filter(constraint_name.eq_any(pk_query))
-        .filter(table_name.eq(&table.name))
+        .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)

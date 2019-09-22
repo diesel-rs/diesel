@@ -116,6 +116,12 @@ fn print_schema_custom_types() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_unmappable_names() {
+    test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
+}
+
+#[test]
 fn schema_file_is_relative_to_project_root() {
     let p = project("schema_file_is_relative_to_project_root")
         .folder("foo")

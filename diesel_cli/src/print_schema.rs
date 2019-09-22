@@ -163,7 +163,7 @@ impl<'a> Display for TableDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in &self.tables {
-                    writeln!(out, "{},", table.name.name)?;
+                    writeln!(out, "{},", table.name.sql_name)?;
                 }
             }
             writeln!(f, ");")?;
@@ -199,7 +199,13 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
-            write!(out, "{} (", self.table.name)?;
+            if let Some(ref rust_name) = self.table.name.rust_name {
+                writeln!(out, r#"#[sql_name = "{}"]"#, self.table.name.sql_name)?;
+                write!(out, "{} (", rust_name)?;
+            } else {
+                write!(out, "{} (", self.table.name)?;
+            }
+
             for (i, pk) in self.table.primary_key.iter().enumerate() {
                 if i != 0 {
                     write!(out, ", ")?;
@@ -257,7 +263,7 @@ impl<'a> Display for Joinable<'a> {
         write!(
             f,
             "joinable!({} -> {} ({}));",
-            self.0.child_table.name, self.0.parent_table.name, self.0.foreign_key_rust_name,
+            self.0.child_table.sql_name, self.0.parent_table.sql_name, self.0.foreign_key_rust_name,
         )
     }
 }

@@ -14,13 +14,35 @@ static RESERVED_NAMES: &[&str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
-fn is_reserved(name: &str) -> bool {
+static UNMAPPABLE_CHARS: &[char] = &['-', ' '];
+
+fn is_reserved_name(name: &str) -> bool {
     RESERVED_NAMES.contains(&name)
         || (
             // Names ending in an underscore are not considered reserved so that we
             // can always just append an underscore to generate an unreserved name.
             name.starts_with("__") && !name.ends_with('_')
         )
+}
+
+fn contains_unmappable_chars(name: &str) -> bool {
+    UNMAPPABLE_CHARS.iter().any(|c| name.contains(*c))
+}
+
+pub fn rust_name_for_column(column_name: &str) -> Option<String> {
+    if is_reserved_name(column_name) {
+        Some(format!("{}_", column_name))
+    } else if contains_unmappable_chars(column_name) {
+        Some(
+            UNMAPPABLE_CHARS
+                .iter()
+                .fold(column_name.to_string(), |rust_name, c| {
+                    rust_name.replace(*c, "_")
+                }),
+        )
+    } else {
+        None
+    }
 }
 
 pub fn load_table_names(
@@ -119,7 +141,7 @@ pub fn load_foreign_key_constraints(
     constraints.map(|mut ct| {
         ct.sort();
         ct.iter_mut().for_each(|foreign_key_constraint| {
-            if is_reserved(&foreign_key_constraint.foreign_key_rust_name) {
+            if is_reserved_name(&foreign_key_constraint.foreign_key_rust_name) {
                 foreign_key_constraint.foreign_key_rust_name =
                     format!("{}_", foreign_key_constraint.foreign_key_rust_name);
             }
@@ -149,24 +171,14 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = get_primary_keys(&connection, &name)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| {
-            if is_reserved(&k) {
-                format!("{}_", k)
-            } else {
-                k.clone()
-            }
-        })
+        .map(|k| rust_name_for_column(&k).unwrap_or(k.clone()))
         .collect();
 
     let column_data = get_column_information(&connection, &name)?
         .into_iter()
         .map(|c| {
             let ty = determine_column_type(&c, &connection)?;
-            let rust_name = if is_reserved(&c.column_name) {
-                Some(format!("{}_", c.column_name))
-            } else {
-                None
-            };
+            let rust_name = rust_name_for_column(&c.column_name);
 
             Ok(ColumnDefinition {
                 docs: doc_comment!(
