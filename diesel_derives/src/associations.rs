@@ -147,7 +147,7 @@ impl AssociationOptions {
             .skip(1)
             .filter(|n| !n.name().is_ident("foreign_key"));
         for ignored in unrecognized_options {
-            match ignored.word() {
+            match ignored.path() {
                 Ok(_) => {
                     ignored
                         .span()
