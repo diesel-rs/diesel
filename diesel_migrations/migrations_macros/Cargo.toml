@@ -4,8 +4,8 @@ version = "1.4.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
-documentation = "http://docs.diesel.rs"
-homepage = "http://diesel.rs"
+documentation = "https://docs.diesel.rs"
+homepage = "https://diesel.rs"
 
 [dependencies]
 migrations_internals = "~1.4.0"
