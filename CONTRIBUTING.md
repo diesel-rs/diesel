@@ -81,7 +81,7 @@ Thank you! We'll try to respond as quickly as possible.
    `diesel_%`.* TO ''@'localhost';" -uroot```, or something similar for the
    user that you've specified.
 
-   If you have [Docker](https://docker.io), the following snippet might help you
+   If you have [Docker](https://www.docker.com/), the following snippet might help you
    to get Postgres and MySQL running (with the above `.env` file):
 
    ```bash
@@ -110,11 +110,11 @@ Thank you! We'll try to respond as quickly as possible.
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.)
 
-[rustup]: https://www.rustup.rs
+[rustup]: https://rustup.rs/
 
 ### Coding Style
 
-We follow the [Rust Style Guide](https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md), enforced using [rustfmt](https://github.com/rust-lang-nursery/rustfmt).
+We follow the [Rust Style Guide](https://github.com/rust-dev-tools/fmt-rfcs/blob/master/guide/guide.md), enforced using [rustfmt](https://github.com/rust-lang/rustfmt).
 To run rustfmt tests locally:
 
 1. Use rustup to set rust toolchain to the version specified in the
@@ -155,7 +155,7 @@ To run rustfmt tests locally:
    You won't see any output, but all your files will be corrected.
 
 You can also use rustfmt to make corrections or highlight issues in your editor.
-Check out [their README](https://github.com/rust-lang-nursery/rustfmt) for details.
+Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 
 
 ### Common Abbreviations
