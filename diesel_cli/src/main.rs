@@ -55,7 +55,8 @@ use std::{env, fs};
 
 use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
-use migrations_internals::TIMESTAMP_FORMAT;
+use migrations::MigrationError;
+use migrations_internals::{TIMESTAMP_FORMAT};
 
 fn main() {
     use self::dotenv::dotenv;
@@ -194,7 +195,24 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
     migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
+        .or_else(|| migration_dir_from_config(matches).ok())
         .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error))
+}
+
+/// Looks for a migration directory configured in `diesel.toml`.
+/// Returns a `MigrationError::MigrationDirectoryNotFound` if
+/// no path to the migration directory is found.
+fn migration_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
+    let migration_config = Config::read(matches)
+        .unwrap_or_else(handle_error)
+        .migration_directory;
+
+    let migration_dir = match migration_config {
+        Some(migration_dir) => migration_dir,
+        None => return Err(MigrationError::MigrationDirectoryNotFound)
+    };
+
+    Ok(migration_dir.migration_directory().to_owned())
 }
 
 fn run_setup_command(matches: &ArgMatches) {
