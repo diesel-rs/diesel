@@ -195,24 +195,22 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 fn migrations_dir(matches: &ArgMatches) -> PathBuf {
     migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .or_else(|| migration_dir_from_config(matches).ok())
+        .or_else(|| migrations_dir_from_config(matches).ok())
         .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error))
 }
 
 /// Looks for a migration directory configured in `diesel.toml`.
 /// Returns a `MigrationError::MigrationDirectoryNotFound` if
 /// no path to the migration directory is found.
-fn migration_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
-    let migration_config = Config::read(matches)
+fn migrations_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
+    let migrations_dir = Config::read(matches)
         .unwrap_or_else(handle_error)
-        .migration_directory;
+        .migrations_directory;
 
-    let migration_dir = match migration_config {
-        Some(migration_dir) => migration_dir,
-        None => return Err(MigrationError::MigrationDirectoryNotFound)
-    };
-
-    Ok(migration_dir.migration_directory().to_owned())
+    match migrations_dir {
+        Some(migrations_dir) => Ok(migrations_dir.file().to_owned()),
+        None => Err(MigrationError::MigrationDirectoryNotFound)
+    }
 }
 
 fn run_setup_command(matches: &ArgMatches) {
@@ -228,9 +226,14 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
         .map(PathBuf::from)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
         .unwrap_or_else(|| {
-            find_project_root()
-                .unwrap_or_else(handle_error)
-                .join("migrations")
+            let migrations_dir_from_config = migrations_dir_from_config(matches);
+            let project_root = find_project_root().unwrap_or_else(handle_error);
+
+            // Retreives and transforms the path of the migrations
+            // directory from the configuration file or returns the
+            // default one.
+            migrations_dir_from_config.ok()
+                .unwrap_or(project_root.join("migrations"))
         });
 
     if !dir.exists() {

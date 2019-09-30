@@ -15,7 +15,7 @@ pub struct Config {
     #[serde(default)]
     pub print_schema: PrintSchema,
     #[serde(default)]
-    pub migration_directory: Option<MigrationDirectory>,
+    pub migrations_directory: Option<MigrationsDirectory>,
 }
 
 impl Config {
@@ -69,12 +69,12 @@ impl PrintSchema {
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct MigrationDirectory {
-    pub path: PathBuf,
+pub struct MigrationsDirectory {
+    pub file: PathBuf,
 }
 
-impl MigrationDirectory {
-    pub fn migration_directory(&self) -> &PathBuf {
-        &self.path
+impl MigrationsDirectory {
+    pub fn file(&self) -> &PathBuf {
+        &self.file
     }
 }

@@ -149,14 +149,14 @@ fn database_setup_respects_migration_dir_by_env() {
 }
 
 #[test]
-fn database_setup_respects_migration_dir_by_diesel_toml() {
-    let p = project("database_setup_respects_migration_dir_by_diesel_toml")
+fn database_setup_respects_migrations_dir_from_diesel_toml() {
+    let p = project("database_setup_respects_migrations_dir_by_diesel_toml")
         .folder("custom_migrations")
         .file(
             "diesel.toml",
             r#"
-            [migration_directory]
-            path = "custom_migrations"
+            [migrations_directory]
+            file = "custom_migrations"
             "#,
         )
         .build();
