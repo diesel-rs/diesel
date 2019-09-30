@@ -73,3 +73,11 @@ fn managing_updated_at_for_table() {
     let new_time: NaiveDateTime = query.first(&connection).unwrap();
     assert!(old_time < new_time);
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn strips_sqlite_url_prefix() {
+    let mut path = std::env::temp_dir();
+    path.push("diesel_test_sqlite.db");
+    assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
+}
