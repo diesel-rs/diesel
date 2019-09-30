@@ -55,6 +55,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   For the postgres backend additionally type information where added to the `RawValue`
   type. This allows to dynamically deserialize `RawValues` in container types.
 
+* CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
+  Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
