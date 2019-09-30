@@ -123,20 +123,8 @@ pub fn build_cli() -> App<'static, 'static> {
             Arg::with_name("only-tables")
                 .short("o")
                 .long("only-tables")
-                .help("Only include tables from table-name")
-                .conflicts_with("only-table-regexes")
-                .conflicts_with("except-tables")
-                .conflicts_with("except-table-regexes")
-                .conflicts_with("blacklist"),
-        )
-        .arg(
-            Arg::with_name("only-table-regexes")
-                .long("only-table-regexes")
                 .help("Only include tables from table-name that matches regexp")
-                .conflicts_with("only-tables")
-                .conflicts_with("whitelist")
                 .conflicts_with("except-tables")
-                .conflicts_with("except-table-regexes")
                 .conflicts_with("blacklist"),
         )
         .arg(
@@ -153,21 +141,9 @@ pub fn build_cli() -> App<'static, 'static> {
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
-                .help("Exclude tables from table-name")
-                .conflicts_with("only-tables")
-                .conflicts_with("only-table-regexes")
-                .conflicts_with("whitelist")
-                .conflicts_with("except-table-regexes"),
-        )
-        .arg(
-            Arg::with_name("except-table-regexes")
-                .long("except-table-regexes")
                 .help("Exclude tables from table-name that matches regex")
                 .conflicts_with("only-tables")
                 .conflicts_with("whitelist")
-                .conflicts_with("only-table-regexes")
-                .conflicts_with("except-tables")
-                .conflicts_with("blacklist"),
         )
         .arg(
             Arg::with_name("blacklist")
