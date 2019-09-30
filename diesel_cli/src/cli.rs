@@ -132,10 +132,8 @@ pub fn build_cli() -> App<'static, 'static> {
                 .short("w")
                 .long("whitelist")
                 .hidden(true)
-                .conflicts_with("only-table-regexes")
                 .conflicts_with("blacklist")
                 .conflicts_with("except-tables")
-                .conflicts_with("except-table-regexes"),
         )
         .arg(
             Arg::with_name("except-tables")
@@ -152,8 +150,6 @@ pub fn build_cli() -> App<'static, 'static> {
                 .hidden(true)
                 .conflicts_with("whitelist")
                 .conflicts_with("only-tables")
-                .conflicts_with("only-table-regexes")
-                .conflicts_with("except-table-regexes"),
         )
         .arg(
             Arg::with_name("with-docs")
