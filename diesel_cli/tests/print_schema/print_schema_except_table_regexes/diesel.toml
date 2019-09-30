@@ -1,4 +1,4 @@
 [print_schema]
 file = "src/schema.rs"
 with_docs = true
-filter = { except_table_regexes = [".*1"] }
+filter = { except_table = [".*1"] }
