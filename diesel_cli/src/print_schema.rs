@@ -322,17 +322,15 @@ impl<'de> Deserialize<'de> for Filtering {
             type Value = Filtering;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("either only_tables, only_table_regexes, except_tables, or except_table_regexes")
+                f.write_str("either only_tables or except_tables")
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
                 V: MapAccess<'de>,
             {
-                let mut only_tables = None::<Vec<TableName>>;
-                let mut only_table_regexes = None::<Vec<Regex>>;
-                let mut except_tables = None::<Vec<TableName>>;
-                let mut except_table_regexes = None::<Vec<Regex>>;
+                let mut only_tables = None::<Vec<Regex>>;
+                let mut except_tables = None::<Vec<Regex>>;
                 while let Some(key) = map.next_key()? {
                     match key {
                         "only_tables" => {
@@ -341,32 +339,18 @@ impl<'de> Deserialize<'de> for Filtering {
                             }
                             only_tables = Some(map.next_value()?);
                         }
-                        "only_table_regexes" => {
-                            if only_table_regexes.is_some() {
-                                return Err(de::Error::duplicate_field("only_table_regexes"));
-                            }
-                            only_table_regexes = Some(map.next_value()?);
-                        }
                         "except_tables" => {
                             if except_tables.is_some() {
                                 return Err(de::Error::duplicate_field("except_tables"));
                             }
                             except_tables = Some(map.next_value()?);
                         }
-                        "except_table_regexes" => {
-                            if except_table_regexes.is_some() {
-                                return Err(de::Error::duplicate_field("except_table_regexes"));
-                            }
-                            except_table_regexes = Some(map.next_value()?);
-                        }
                         _ => {
                             return Err(de::Error::unknown_field(
                                 key,
                                 &[
                                     "only_tables",
-                                    "only_table_regexes",
                                     "except_tables",
-                                    "except_table_regexes",
                                 ],
                             ))
                         }
@@ -374,17 +358,13 @@ impl<'de> Deserialize<'de> for Filtering {
                 }
                 match (
                     only_tables,
-                    only_table_regexes,
                     except_tables,
-                    except_table_regexes,
                 ) {
-                    (Some(t), None, None, None) => Ok(Filtering::OnlyTables(t)),
-                    (None, Some(t), None, None) => Ok(Filtering::OnlyTableRegexes(t)),
-                    (None, None, Some(t), None) => Ok(Filtering::ExceptTables(t)),
-                    (None, None, None, Some(t)) => Ok(Filtering::ExceptTableRegexes(t)),
-                    (None, None, None, None) => Ok(Filtering::None),
+                    (Some(t), None) => Ok(Filtering::OnlyTableRegexes(t)),
+                    (None, Some(t)) => Ok(Filtering::ExceptTableRegexes(t)),
+                    (None, None => Ok(Filtering::None),
                     _ => Err(de::Error::duplicate_field(
-                        "only_tables, only_table_regexes, except_tables, except_table_regexes",
+                        "only_tables except_tables",
                     )),
                 }
             }

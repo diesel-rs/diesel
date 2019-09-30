@@ -424,13 +424,13 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         eprintln!("The `blacklist` option has been deprecated and renamed to `except-tables`.");
     }
 
-    if matches.is_present("only-tables") || matches.is_present("whitelist") {
+    if matches.is_present("whitelist") {
         config.filter = Filtering::OnlyTables(filter)
-    } else if matches.is_present("only-table-regexes") {
+    } else if matches.is_present("only-tables") {
         config.filter = Filtering::OnlyTableRegexes(filter_regex()?)
-    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
+    } else if matches.is_present("blacklist") {
         config.filter = Filtering::ExceptTables(filter)
-    } else if matches.is_present("except-table-regexes") {
+    } else if matches.is_present("except-tables") {
         config.filter = Filtering::ExceptTableRegexes(filter_regex()?)
     }
 
