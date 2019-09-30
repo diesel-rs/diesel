@@ -214,8 +214,8 @@ fn migrations_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, Migration
 }
 
 fn run_setup_command(matches: &ArgMatches) {
-    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
     create_config_file(matches).unwrap_or_else(handle_error);
+    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
 
     database::setup_database(matches, &migrations_dir).unwrap_or_else(handle_error);
 }
