@@ -36,5 +36,5 @@ error[E0425]: cannot find value `name` in module `users`
 
 error: aborting due to 6 previous errors
 
-Some errors occurred: E0412, E0425, E0433.
+Some errors have detailed explanations: E0412, E0425, E0433.
 For more information about an error, try `rustc --explain E0412`.

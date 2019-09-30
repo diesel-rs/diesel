@@ -17,6 +17,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * All expression methods can now be called on expressions of nullable types.
 
+* Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
+
+  `.bind` calls without changing the underlying type.
+
+* Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
+
+  an existing query.
+
+
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -28,7 +38,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `&DB::RawValue` or `&<DB as Backend>::RawValue>`) should use
   [`backend::RawValue<DB>`][raw-value-2-0-0] instead. Implementors of `Backend`
   should check the relevant section of [the migration guide][2-0-migration].
-* The minimal officially supported rustc version is now 1.34.0
 
 [backend-2-0-0]: http://docs.diesel.rs/diesel/backend/trait.Backend.html
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
@@ -37,6 +46,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
   `Mysql::TypeMetadata`, you will need to take the new struct
   `MysqlTypeMetadata` instead.
+
+* The minimal officially supported rustc version is now 1.36.0
+
+* The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
+  from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
+  somewhere you need to change it to `mysql::MysqlValue` or `pg::PgValue`.
+  For the postgres backend additionally type information where added to the `RawValue`
+  type. This allows to dynamically deserialize `RawValues` in container types.
 
 ### Fixed
 
@@ -70,13 +87,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * This release fixes a minor memory safety issue in SQLite. This bug would only
   occur in an error handling branch that should never occur in practice.
-
-### Added
-
-* Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
-  `.bind` calls without changing the underlying type.
-* Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
-  an existing query.
 
 ## [1.4.0] - 2019-01-20
 

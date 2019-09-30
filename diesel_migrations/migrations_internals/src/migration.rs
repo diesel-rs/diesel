@@ -45,12 +45,12 @@ pub fn file_name<'a>(migration: &'a dyn Migration, sql_file: &'a str) -> Migrati
 
 impl<'a> fmt::Display for MigrationFileName<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fpath = match self.migration.file_path() {
-            None => return Err(fmt::Error),
-            Some(v) => v.join(self.sql_file),
-        };
-        f.write_str(fpath.to_str().unwrap_or("Invalid utf8 in filename"))?;
-        Ok(())
+        if let Some(path) = self.migration.file_path() {
+            let fpath = path.join(self.sql_file);
+            f.write_str(fpath.to_str().unwrap_or("Invalid utf8 in filename"))
+        } else {
+            write!(f, "{}/{}", self.migration.version(), self.sql_file)
+        }
     }
 }
 

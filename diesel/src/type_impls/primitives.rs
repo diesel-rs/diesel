@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
-use backend::{self, Backend, HasRawValue};
+use backend::{self, Backend, BinaryRawValue};
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{self, BigInt, Binary, Bool, Double, Float, Integer, NotNull, SmallInt, Text};
@@ -122,11 +122,12 @@ where
 /// `FromSql`
 impl<DB> FromSql<sql_types::Text, DB> for *const str
 where
-    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+    DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
         use std::str;
-        let string = str::from_utf8(not_none!(bytes))?;
+        let value = not_none!(value);
+        let string = str::from_utf8(DB::as_bytes(value))?;
         Ok(string as *const _)
     }
 }
@@ -169,10 +170,10 @@ where
 /// `FromSql`
 impl<DB> FromSql<sql_types::Binary, DB> for *const [u8]
 where
-    DB: Backend + for<'a> HasRawValue<'a, RawValue = &'a [u8]>,
+    DB: Backend + for<'a> BinaryRawValue<'a>,
 {
     fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
-        Ok(not_none!(bytes) as *const _)
+        Ok(DB::as_bytes(not_none!(bytes)) as *const _)
     }
 }
 

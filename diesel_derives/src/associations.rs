@@ -115,10 +115,10 @@ impl AssociationOptions {
     fn from_meta(meta: MetaItem) -> Result<Self, Diagnostic> {
         let parent_struct = meta
             .nested()?
-            .find(|m| m.word().is_ok() || m.name() == "parent")
+            .find(|m| m.path().is_ok() || m.name().is_ident("parent"))
             .ok_or_else(|| meta.span())
             .and_then(|m| {
-                m.word()
+                m.path()
                     .map(|i| parse_quote!(#i))
                     .or_else(|_| m.ty_value())
                     .map_err(|_| m.span())
@@ -136,18 +136,23 @@ impl AssociationOptions {
                 .path
                 .segments
                 .last()
-                .expect("paths always have at least one segment")
-                .into_value();
+                .expect("paths always have at least one segment");
             meta.nested_item("foreign_key")?
                 .map(|i| i.ident_value())
                 .unwrap_or_else(|| Ok(infer_foreign_key(&parent_struct_name.ident)))?
         };
 
-        let unrecognized_options = meta.nested()?.skip(1).filter(|n| n.name() != "foreign_key");
+        let unrecognized_options = meta
+            .nested()?
+            .skip(1)
+            .filter(|n| !n.name().is_ident("foreign_key"));
         for ignored in unrecognized_options {
             ignored
                 .span()
-                .warning(format!("Unrecognized option {}", ignored.name()))
+                .warning(format!(
+                    "Unrecognized option {}",
+                    path_to_string(&ignored.name())
+                ))
                 .emit();
         }
 

@@ -7,7 +7,7 @@ use std::os::raw as libc;
 use std::{mem, ptr, slice};
 
 use deserialize::{self, FromSql};
-use mysql::Mysql;
+use mysql::{Mysql, MysqlValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::{Date, Datetime, Time, Timestamp};
 
@@ -25,14 +25,13 @@ macro_rules! mysql_time_impls {
         }
 
         impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            // ptr::copy_nonoverlapping does not require aligned pointers
-            #[allow(clippy::cast_ptr_alignment)]
-            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-                let bytes = not_none!(bytes);
-                let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
+            fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+                let value = not_none!(value);
+                let bytes_ptr = value.as_bytes().as_ptr() as *const ffi::MYSQL_TIME;
                 unsafe {
-                    let mut result = mem::uninitialized();
-                    ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
+                    let mut result = mem::MaybeUninit::uninit();
+                    ptr::copy_nonoverlapping(bytes_ptr, result.as_mut_ptr(), 1);
+                    let result = result.assume_init();
                     if result.neg == 0 {
                         Ok(result)
                     } else {
@@ -56,7 +55,7 @@ impl ToSql<Datetime, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Datetime, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
         <NaiveDateTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)
     }
 }
@@ -78,7 +77,7 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
         NaiveDate::from_ymd_opt(
@@ -111,7 +110,7 @@ impl ToSql<Time, Mysql> for NaiveTime {
 }
 
 impl FromSql<Time, Mysql> for NaiveTime {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
         NaiveTime::from_hms_opt(
             mysql_time.hour as u32,
@@ -135,7 +134,7 @@ impl ToSql<Date, Mysql> for NaiveDate {
 }
 
 impl FromSql<Date, Mysql> for NaiveDate {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
         let mysql_time = <ffi::MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,

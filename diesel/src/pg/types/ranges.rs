@@ -5,7 +5,7 @@ use std::io::Write;
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::bound::Bound as SqlBound;
 use expression::AsExpression;
-use pg::{Pg, PgMetadataLookup, PgTypeMetadata};
+use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
 
@@ -78,8 +78,9 @@ impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mut bytes = not_none!(bytes);
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        let value = not_none!(bytes);
+        let mut bytes = value.as_bytes();
         let flags: RangeFlags = RangeFlags::from_bits_truncate(bytes.read_u8()?);
         let mut lower_bound = Bound::Unbounded;
         let mut upper_bound = Bound::Unbounded;
@@ -88,7 +89,11 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(Some(elem_bytes))?;
+            let value = T::from_sql(Some(PgValue::new(
+                elem_bytes,
+                value.get_oid(),
+                value.get_metadata_lookup(),
+            )))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -99,7 +104,11 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(Some(bytes))?;
+            let value = T::from_sql(Some(PgValue::new(
+                bytes,
+                value.get_oid(),
+                value.get_metadata_lookup(),
+            )))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
