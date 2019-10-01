@@ -56,7 +56,7 @@ use std::{env, fs};
 use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
 use migrations::MigrationError;
-use migrations_internals::{TIMESTAMP_FORMAT};
+use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
     use self::dotenv::dotenv;
@@ -209,7 +209,7 @@ fn migrations_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, Migration
 
     match migrations_dir {
         Some(migrations_dir) => Ok(migrations_dir.file().to_owned()),
-        None => Err(MigrationError::MigrationDirectoryNotFound)
+        None => Err(MigrationError::MigrationDirectoryNotFound),
     }
 }
 
@@ -232,8 +232,9 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
             // Retreives and transforms the path of the migrations
             // directory from the configuration file or returns the
             // default one.
-            migrations_dir_from_config.ok()
-                .unwrap_or(project_root.join("migrations"))
+            migrations_dir_from_config
+                .ok()
+                .unwrap_or_else(|| project_root.join("migrations"))
         });
 
     if !dir.exists() {

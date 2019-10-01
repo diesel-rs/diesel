@@ -160,10 +160,7 @@ fn migration_redo_respects_migrations_dir_from_diesel_toml() {
     // Make sure the project is setup
     p.command("setup").run();
 
-    let result = p
-        .command("migration")
-        .arg("redo")
-        .run();
+    let result = p.command("migration").arg("redo").run();
 
     let expected_stdout = "\
 Rolling back migration 12345_create_users_table

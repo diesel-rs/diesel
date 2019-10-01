@@ -537,10 +537,7 @@ fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml(
 
     assert!(!db.table_exists("users"));
 
-    let result = p
-        .command("migration")
-        .arg("run")
-        .run();
+    let result = p.command("migration").arg("run").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(

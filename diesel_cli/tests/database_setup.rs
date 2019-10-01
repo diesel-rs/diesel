@@ -172,10 +172,7 @@ fn database_setup_respects_migrations_dir_from_diesel_toml() {
     // sanity check
     assert!(!db.exists());
 
-    let result = p
-        .command("database")
-        .arg("setup")
-        .run();
+    let result = p.command("database").arg("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(

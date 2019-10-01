@@ -118,10 +118,7 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
 
     assert!(db.table_exists("users"));
 
-    let result = p
-        .command("migration")
-        .arg("revert")
-        .run();
+    let result = p.command("migration").arg("revert").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(

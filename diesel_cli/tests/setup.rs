@@ -255,9 +255,7 @@ fn setup_respects_migrations_dir_from_diesel_toml() {
 
     assert!(!p.has_file("custom_migrations"));
 
-    let result = p
-        .command("setup")
-        .run();
+    let result = p.command("setup").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(p.has_file("custom_migrations"));
