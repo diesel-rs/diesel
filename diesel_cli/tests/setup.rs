@@ -242,7 +242,7 @@ fn setup_can_take_config_file_by_param() {
 }
 
 #[test]
-fn setup_respects_migration_dir_from_diesel_toml() {
+fn setup_respects_migrations_dir_from_diesel_toml() {
     let p = project("setup_respects_migration_dir_from_diesel_toml")
         .file(
             "diesel.toml",
