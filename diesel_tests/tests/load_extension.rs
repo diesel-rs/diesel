@@ -9,7 +9,7 @@ fn test_load_extension_fail() {
     let conn = conn();
 
     // try loading module without enabling extension loading
-    let result = sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn);
+    let result = sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
 
     assert!(result.is_err());
 }
@@ -21,8 +21,8 @@ fn test_load_extension_ok() {
     // enable loading
     conn.enable_load_extension().unwrap();
 
-    // load libspatialite.so.5
-    let result = sql_query("SELECT load_extension('libspatialite.so.5');").execute(&conn);
+    // load mod_spatialite
+    let result = sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
 
     assert!(result.is_ok());
 }
@@ -48,10 +48,10 @@ fn test_extension_function() {
     // enable loading
     conn.enable_load_extension().unwrap();
 
-    // load libspatialite.so.5
-    sql_query("SELECT load_extension('libspatialite.so.5');")
+    // load mod_spatialite
+    sql_query("SELECT load_extension('mod_spatialite');")
         .execute(&conn)
-        .expect("Failed to load libspatialite.so.5");
+        .expect("Failed to load mod_spatialite");
 
     // test module function
     let r: Vec<Foo> =
