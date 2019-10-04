@@ -1,8 +1,7 @@
 use diesel::{sql_query, Connection, RunQueryDsl, SqliteConnection};
-use schema::connection_without_transaction;
 
 fn conn() -> SqliteConnection {
-    connection_without_transaction()
+    SqliteConnection::establish(":memory:").unwrap()
 }
 
 #[test]
@@ -43,7 +42,7 @@ struct Foo {
 }
 
 #[test]
-fn test_load_extension_function() {
+fn test_extension_function() {
     let conn = conn();
 
     // enable loading
