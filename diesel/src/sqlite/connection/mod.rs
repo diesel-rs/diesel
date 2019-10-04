@@ -164,14 +164,14 @@ impl SqliteConnection {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
-    /// Enables the `load_extension` SQL function.
+    /// Enables or disables the `load_extension` SQL function.
     ///
     /// See the documentation for the [`enable_load_extension` C function] for
     /// details.
     ///
     /// [`enable_load_extension` C function]: https://www.sqlite.org/c3ref/enable_load_extension.html
-    pub fn enable_load_extension(&self) -> QueryResult<()> {
-        self.raw_connection.enable_load_extension()
+    pub fn enable_load_extension(&self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection.enable_load_extension(enabled)
     }
 
     fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>

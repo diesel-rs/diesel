@@ -8,6 +8,9 @@ fn conn() -> SqliteConnection {
 fn test_load_extension_fail() {
     let conn = conn();
 
+    // disable extension loading
+    conn.enable_load_extension(false).unwrap();
+
     // try loading module without enabling extension loading
     let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
 
@@ -19,7 +22,7 @@ fn test_load_extension_ok() {
     let conn = conn();
 
     // enable loading
-    conn.enable_load_extension().unwrap();
+    conn.enable_load_extension(true).unwrap();
 
     // load mod_spatialite
     let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
@@ -46,7 +49,7 @@ fn test_extension_function() {
     let conn = conn();
 
     // enable loading
-    conn.enable_load_extension().unwrap();
+    conn.enable_load_extension(true).unwrap();
 
     // load mod_spatialite
     sql_query("SELECT load_extension('mod_spatialite.so');")
