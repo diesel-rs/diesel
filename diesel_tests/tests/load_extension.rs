@@ -4,29 +4,6 @@ fn conn() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
 }
 
-#[test]
-fn test_load_extension_fail() {
-    let conn = conn();
-
-    // try loading module without enabling extension loading
-    let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
-
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_load_extension_ok() {
-    let conn = conn();
-
-    // enable loading
-    conn.enable_load_extension().unwrap();
-
-    // load mod_spatialite
-    let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
-
-    assert!(result.is_ok());
-}
-
 table! {
     foo {
         id -> Integer,
@@ -42,7 +19,7 @@ struct Foo {
 }
 
 #[test]
-fn test_extension_function() {
+fn test_extension_function_ok() {
     let conn = conn();
 
     // enable loading
@@ -62,4 +39,21 @@ fn test_extension_function() {
     for v in r {
         assert_eq!(&v.bar, "POINT(25.2 54.2)");
     }
+}
+
+#[test]
+fn test_extension_function_fail() {
+    let conn = conn();
+
+    // load mod_spatialite
+    sql_query("SELECT load_extension('mod_spatialite.so');")
+        .execute(&conn)
+        .expect("Failed to load mod_spatialite.so");
+
+    // test module function
+    let r = 
+        sql_query("SELECT * FROM (SELECT 0 as id, AsText(ST_Point(25.2,54.2)) as bar) foo;")
+            .load(&conn);
+           
+    assert!(r.is_err());
 }
