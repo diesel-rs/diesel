@@ -288,7 +288,6 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
 }
 
 fn migrations_in_directory(path: &Path) -> Result<Vec<Box<dyn Migration>>, MigrationError> {
-    use self::migration::migration_from;
     migration_paths_in_directory(path)?
         .iter()
         .map(|e| migration_from(e.path()))
