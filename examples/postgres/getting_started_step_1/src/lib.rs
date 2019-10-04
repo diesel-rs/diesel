@@ -5,6 +5,7 @@ extern crate dotenv;
 pub mod models;
 pub mod schema;
 
+use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
