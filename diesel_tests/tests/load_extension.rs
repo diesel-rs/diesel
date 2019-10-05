@@ -12,7 +12,7 @@ fn test_load_extension_fail() {
     conn.enable_load_extension(false).unwrap();
 
     // try loading module without enabling extension loading
-    let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
+    let result = sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
 
     assert!(result.is_err());
 }
@@ -25,7 +25,7 @@ fn test_load_extension_ok() {
     conn.enable_load_extension(true).unwrap();
 
     // load mod_spatialite
-    let result = sql_query("SELECT load_extension('mod_spatialite.so');").execute(&conn);
+    let result = sql_query("SELECT load_extension('mod_spatialite');").execute(&conn);
 
     assert!(result.is_ok());
 }
@@ -52,7 +52,7 @@ fn test_extension_function() {
     conn.enable_load_extension(true).unwrap();
 
     // load mod_spatialite
-    sql_query("SELECT load_extension('mod_spatialite.so');")
+    sql_query("SELECT load_extension('mod_spatialite');")
         .execute(&conn)
         .expect("Failed to load mod_spatialite.so");
 
