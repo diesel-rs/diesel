@@ -99,7 +99,7 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
             "diesel.toml",
             r#"
             [migrations_directory]
-            file = "custom_migrations"
+            dir = "custom_migrations"
             "#,
         )
         .build();

@@ -70,11 +70,5 @@ impl PrintSchema {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MigrationsDirectory {
-    pub file: PathBuf,
-}
-
-impl MigrationsDirectory {
-    pub fn file(&self) -> &PathBuf {
-        &self.file
-    }
+    pub dir: PathBuf,
 }

@@ -201,7 +201,7 @@ fn migrations_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, Migration
         .migrations_directory;
 
     match migrations_dir {
-        Some(migrations_dir) => Ok(migrations_dir.file().to_owned()),
+        Some(migrations_dir) => Ok(migrations_dir.dir.to_owned()),
         None => Err(MigrationError::MigrationDirectoryNotFound),
     }
 }

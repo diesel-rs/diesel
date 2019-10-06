@@ -517,7 +517,7 @@ fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml(
             "diesel.toml",
             r#"
             [migrations_directory]
-            file = "custom_migrations"
+            dir = "custom_migrations"
             "#,
         )
         .build();

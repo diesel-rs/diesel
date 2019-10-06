@@ -202,7 +202,7 @@ fn reset_respects_migrations_dir_from_diesel_toml() {
             "diesel.toml",
             r#"
             [migrations_directory]
-            file = "custom_migrations"
+            dir = "custom_migrations"
             "#,
         )
         .build();
