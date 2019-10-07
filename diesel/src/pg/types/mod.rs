@@ -170,6 +170,7 @@ pub mod sql_types {
     pub type BigSerial = ::sql_types::BigInt;
 
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
+    /// (uuid <=0.6) or `feature = "uuidv07"` (uuid = 0.7)
     ///
     /// ### [`ToSql`] impls
     ///

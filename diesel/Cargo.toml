@@ -41,7 +41,7 @@ tempdir = "^0.3.4"
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
-extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address", "numeric", "r2d2"]
+extras = ["chrono", "serde_json", "uuidv07", "deprecated-time", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
 huge-tables = ["64-column-tables"]
