@@ -328,6 +328,28 @@ fn u64_from_sql() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn mysql_json_array_from_sql() {
+    assert_eq!(
+        serde_json::to_value(vec![true, false, true]).unwrap(),
+        query_single_value::<Json, serde_json::Value>("JSON_ARRAY(true, false, true)")
+    );
+    assert_eq!(
+        serde_json::to_value(vec![1, 2, 3]).unwrap(),
+        query_single_value::<Json, serde_json::Value>("JSON_ARRAY(1, 2, 3)")
+    );
+    assert_eq!(
+        serde_json::to_value(vec![
+            "Hello".to_string(),
+            "".to_string(),
+            "world".to_string()
+        ])
+        .unwrap(),
+        query_single_value::<Json, serde_json::Value>("JSON_ARRAY('Hello', '', 'world')")
+    );
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn i64_from_sql() {
     assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));

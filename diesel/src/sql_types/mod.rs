@@ -16,6 +16,11 @@
 mod fold;
 pub mod ops;
 mod ord;
+#[cfg(feature = "serde_json")]
+mod json;
+
+#[cfg(feature = "serde_json")]
+pub use self::json::Json;
 
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;

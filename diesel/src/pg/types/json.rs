@@ -12,11 +12,11 @@ use sql_types;
 #[allow(dead_code)]
 mod foreign_derives {
     use super::serde_json;
-    use sql_types::{Json, Jsonb};
+    use sql_types::Jsonb;
 
-    #[derive(FromSqlRow, AsExpression)]
+    /// Deriving AsExpression only, FromSqlRow for serde_json::Value is already derived in src/sql_types/mod.rs
+    #[derive(AsExpression)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Json"]
     #[sql_type = "Jsonb"]
     struct SerdeJsonValueProxy(serde_json::Value);
 }

@@ -2,6 +2,8 @@
 
 #[cfg(feature = "chrono")]
 mod date_and_time;
+#[cfg(feature = "serde_json")]
+mod json;
 mod numeric;
 
 use byteorder::WriteBytesExt;
