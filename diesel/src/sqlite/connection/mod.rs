@@ -171,7 +171,7 @@ impl SqliteConnection {
     ///
     /// [`enable_load_extension` C function]: https://www.sqlite.org/c3ref/enable_load_extension.html
     pub fn enable_load_extension(&self) -> QueryResult<()> {
-        self.raw_connection.enable_load_extension()
+        self.raw_connection.enable_load_extension(true)
     }
 
     /// Disables the `load_extension` SQL function.
@@ -181,7 +181,7 @@ impl SqliteConnection {
     ///
     /// [`enable_load_extension` C function]: https://www.sqlite.org/c3ref/enable_load_extension.html
     pub fn disable_load_extension(&self) -> QueryResult<()> {
-        self.raw_connection.disable_load_extension()
+        self.raw_connection.enable_load_extension(false)
     }
 
     fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>
