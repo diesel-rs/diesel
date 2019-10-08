@@ -1,15 +1,12 @@
 use diesel::{sql_query, Connection, RunQueryDsl, SqliteConnection};
-
-fn conn() -> SqliteConnection {
-    SqliteConnection::establish(":memory:").unwrap()
-}
+use schema::connection_without_transaction;
 
 #[test]
 fn test_load_extension() {
-    let conn = conn();
+    let conn = connection_without_transaction();
 
     // disable extension loading
-    conn.enable_load_extension(false).unwrap();
+    conn.disable_load_extension().unwrap();
 
     // try loading module without enabling extension loading
     let result = sql_query("SELECT load_extension('/tmp/foo');")
@@ -19,7 +16,7 @@ fn test_load_extension() {
     assert_eq!(&format!("{}", &result), "not authorized");
 
     // enable extension loading
-    conn.enable_load_extension(true).unwrap();
+    conn.enable_load_extension().unwrap();
 
     // try loading module without enabling extension loading
     let result = sql_query("SELECT load_extension('/tmp/foo');")

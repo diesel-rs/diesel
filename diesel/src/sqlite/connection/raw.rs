@@ -164,10 +164,24 @@ impl RawConnection {
         }
     }
 
-    pub fn enable_load_extension(&self, enabled: bool) -> QueryResult<()> {
-        let result = unsafe {
-            ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), enabled as i32)
-        };
+    pub fn enable_load_extension(&self) -> QueryResult<()> {
+        let result =
+            unsafe { ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), 1) };
+        match result {
+            ffi::SQLITE_OK => Ok(()),
+            _ => {
+                let error_message = super::error_message(result);
+                Err(DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new(error_message.to_string()),
+                ))
+            }
+        }
+    }
+
+    pub fn disable_load_extension(&self) -> QueryResult<()> {
+        let result =
+            unsafe { ffi::sqlite3_enable_load_extension(self.internal_connection.as_ptr(), 0) };
         match result {
             ffi::SQLITE_OK => Ok(()),
             _ => {
