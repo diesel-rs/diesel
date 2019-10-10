@@ -57,11 +57,10 @@ impl<'a> Migration for &'a dyn Migration {
 
 /// Create table statement for the `__diesel_schema_migrations` used
 /// used by the postgresql, sqlite and mysql backend
-pub const CREATE_MIGRATIONS_TABLE: &'static str =
-    "CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (\
-     version VARCHAR(50) PRIMARY KEY NOT NULL,\
-     run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\
-     )";
+pub const CREATE_MIGRATIONS_TABLE: &str = "CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (\
+                                           version VARCHAR(50) PRIMARY KEY NOT NULL,\
+                                           run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\
+                                           )";
 
 /// A trait indicating that a connection could be used to manage migrations
 ///
