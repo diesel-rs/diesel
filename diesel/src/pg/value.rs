@@ -1,5 +1,6 @@
 use super::{Pg, PgMetadataLookup};
 use backend::BinaryRawValue;
+use byteorder::NetworkEndian;
 use std::num::NonZeroU32;
 use std::ops::Range;
 
@@ -13,6 +14,8 @@ pub struct PgValue<'a> {
 }
 
 impl<'a> BinaryRawValue<'a> for Pg {
+    type ByteOrder = NetworkEndian;
+
     fn as_bytes(value: PgValue<'a>) -> &'a [u8] {
         value.raw_value
     }

@@ -42,10 +42,6 @@ where
     ///
     /// [`RawBytesBindCollector`]: ../query_builder/bind_collector/struct.RawBytesBindCollector.html
     type BindCollector: BindCollector<Self>;
-    /// What byte order is used to transmit integers?
-    ///
-    /// This type is only used if `RawValue` is `[u8]`.
-    type ByteOrder: ByteOrder;
 }
 
 /// The raw representation of a database value given to `FromSql`.
@@ -62,6 +58,9 @@ pub trait HasRawValue<'a> {
 
 /// A trait indicating that the provided raw value uses a binary representation internally
 pub trait BinaryRawValue<'a>: HasRawValue<'a> {
+    /// What byte order is used to transmit integers?
+    type ByteOrder: ByteOrder;
+
     /// Get the underlying binary representation of the raw value
     fn as_bytes(value: Self::RawValue) -> &'a [u8];
 }
