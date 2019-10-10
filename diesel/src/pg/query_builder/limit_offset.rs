@@ -1,17 +1,19 @@
 use pg::Pg;
 use query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
-use query_builder::{AstPass, QueryFragment};
+use query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use result::QueryResult;
 
-impl<'a, L, O> From<LimitOffsetClause<L, O>> for BoxedLimitOffsetClause<'a, Pg>
+impl<'a, L, O> IntoBoxedClause<'a, Pg> for LimitOffsetClause<L, O>
 where
     L: QueryFragment<Pg> + 'a,
     O: QueryFragment<Pg> + 'a,
 {
-    fn from(limit_offset: LimitOffsetClause<L, O>) -> Self {
-        Self {
-            limit: Some(Box::new(limit_offset.limit_clause)),
-            offset: Some(Box::new(limit_offset.offset_clause)),
+    type BoxedClause = BoxedLimitOffsetClause<'a, Pg>;
+
+    fn into_boxed(self) -> Self::BoxedClause {
+        BoxedLimitOffsetClause {
+            limit: Some(Box::new(self.limit_clause)),
+            offset: Some(Box::new(self.offset_clause)),
         }
     }
 }

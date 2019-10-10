@@ -2,7 +2,7 @@ use mysql::Mysql;
 use query_builder::limit_clause::{LimitClause, NoLimitClause};
 use query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 use query_builder::offset_clause::{NoOffsetClause, OffsetClause};
-use query_builder::{AstPass, QueryFragment};
+use query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use result::QueryResult;
 
 impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
@@ -63,40 +63,42 @@ impl<'a> QueryFragment<Mysql> for BoxedLimitOffsetClause<'a, Mysql> {
     }
 }
 
-impl<'a> From<LimitOffsetClause<NoLimitClause, NoOffsetClause>>
-    for BoxedLimitOffsetClause<'a, Mysql>
-{
-    fn from(_limit_offset: LimitOffsetClause<NoLimitClause, NoOffsetClause>) -> Self {
-        Self {
+impl<'a> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+    type BoxedClause = BoxedLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed(self) -> Self::BoxedClause {
+        BoxedLimitOffsetClause {
             limit: None,
             offset: None,
         }
     }
 }
 
-impl<'a, L> From<LimitOffsetClause<LimitClause<L>, NoOffsetClause>>
-    for BoxedLimitOffsetClause<'a, Mysql>
+impl<'a, L> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
     L: QueryFragment<Mysql> + 'a,
 {
-    fn from(limit_offset: LimitOffsetClause<LimitClause<L>, NoOffsetClause>) -> Self {
-        Self {
-            limit: Some(Box::new(limit_offset.limit_clause)),
+    type BoxedClause = BoxedLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed(self) -> Self::BoxedClause {
+        BoxedLimitOffsetClause {
+            limit: Some(Box::new(self.limit_clause)),
             offset: None,
         }
     }
 }
 
-impl<'a, L, O> From<LimitOffsetClause<LimitClause<L>, OffsetClause<O>>>
-    for BoxedLimitOffsetClause<'a, Mysql>
+impl<'a, L, O> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
     L: QueryFragment<Mysql> + 'a,
     O: QueryFragment<Mysql> + 'a,
 {
-    fn from(limit_offset: LimitOffsetClause<LimitClause<L>, OffsetClause<O>>) -> Self {
-        Self {
-            limit: Some(Box::new(limit_offset.limit_clause)),
-            offset: Some(Box::new(limit_offset.offset_clause)),
+    type BoxedClause = BoxedLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed(self) -> Self::BoxedClause {
+        BoxedLimitOffsetClause {
+            limit: Some(Box::new(self.limit_clause)),
+            offset: Some(Box::new(self.offset_clause)),
         }
     }
 }

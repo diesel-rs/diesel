@@ -236,6 +236,17 @@ where
     }
 }
 
+/// A trait used to construct type erased boxed variant of the current query node
+///
+/// Mainly useful for implementing third party backends
+pub trait IntoBoxedClause<'a, DB> {
+    /// Resulting type
+    type BoxedClause;
+
+    /// Convert the given query node in it's boxed representation
+    fn into_boxed(self) -> Self::BoxedClause;
+}
+
 /// Types that can be converted into a complete, typed SQL query.
 ///
 /// This is used internally to automatically add the right select clause when
