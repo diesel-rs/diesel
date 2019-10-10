@@ -50,6 +50,10 @@ pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
 
+pub use self::limit_clause::{LimitClause, NoLimitClause};
+pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+
 pub(crate) use self::insert_statement::ColumnList;
 
 use std::error::Error;
