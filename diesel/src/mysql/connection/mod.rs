@@ -72,7 +72,7 @@ impl Connection for MysqlConnection {
 
         let mut stmt = self.prepare_query(&source.as_query())?;
         let mut metadata = Vec::new();
-        Mysql::mysql_row_metadata(&mut metadata, &());
+        Mysql::row_metadata(&mut metadata, &());
         let results = unsafe { stmt.results(metadata)? };
         results.map(|mut row| {
             U::Row::build_from_row(&mut row)

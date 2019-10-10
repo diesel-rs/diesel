@@ -29,9 +29,8 @@ macro_rules! tuple_impls {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
 
-                #[cfg(feature = "mysql")]
-                fn mysql_row_metadata(out: &mut Vec<__DB::TypeMetadata>, lookup: &__DB::MetadataLookup) {
-                    $(<__DB as HasSqlType<$T>>::mysql_row_metadata(out, lookup);)+
+                fn row_metadata(out: &mut Vec<__DB::TypeMetadata>, lookup: &__DB::MetadataLookup) {
+                    $(<__DB as HasSqlType<$T>>::row_metadata(out, lookup);)+
                 }
             }
 

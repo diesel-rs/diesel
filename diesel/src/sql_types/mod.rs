@@ -404,8 +404,7 @@ pub trait HasSqlType<ST>: TypeMetadata {
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
 
     #[doc(hidden)]
-    #[cfg(feature = "mysql")]
-    fn mysql_row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
+    fn row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
         out.push(Self::metadata(lookup))
     }
 }
