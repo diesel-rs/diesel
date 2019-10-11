@@ -132,7 +132,7 @@ impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 
@@ -184,7 +184,7 @@ impl<DB: Backend> ToSql<sql_types::Binary, DB> for [u8] {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 

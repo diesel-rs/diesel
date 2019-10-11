@@ -3,7 +3,7 @@ use std::io::{stderr, Write};
 
 use super::data_structures::*;
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
     let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
         &attr.type_name[1..]

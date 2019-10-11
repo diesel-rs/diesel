@@ -125,7 +125,7 @@ impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr> where Expr: AppearsOnT
 
 #[allow(missing_debug_implementations)] // We can't...
 pub enum BoxedWhereClause<'a, DB> {
-    Where(Box<QueryFragment<DB> + 'a>),
+    Where(Box<dyn QueryFragment<DB> + 'a>),
     None,
 }
 
@@ -159,7 +159,6 @@ where
 
     fn and(self, predicate: Predicate) -> Self::Output {
         use self::BoxedWhereClause::Where;
-        use expression::operators::And;
 
         match self {
             Where(where_clause) => Where(Box::new(And::new(where_clause, predicate))),

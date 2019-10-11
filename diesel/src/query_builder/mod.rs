@@ -61,7 +61,7 @@ use result::QueryResult;
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
 /// A specialized Result type used with the query builder.
-pub type BuildQueryResult = Result<(), Box<Error + Send + Sync>>;
+pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 
 /// Constructs a SQL query from a Diesel AST.
 ///

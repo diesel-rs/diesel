@@ -7,10 +7,10 @@ use std::path::{Path, PathBuf};
 #[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]
 pub struct MigrationName<'a> {
-    pub migration: &'a Migration,
+    pub migration: &'a dyn Migration,
 }
 
-pub fn name(migration: &Migration) -> MigrationName {
+pub fn name(migration: &dyn Migration) -> MigrationName {
     MigrationName { migration }
 }
 
@@ -33,11 +33,11 @@ impl<'a> fmt::Display for MigrationName<'a> {
 #[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]
 pub struct MigrationFileName<'a> {
-    pub migration: &'a Migration,
+    pub migration: &'a dyn Migration,
     pub sql_file: &'a str,
 }
 
-pub fn file_name<'a>(migration: &'a Migration, sql_file: &'a str) -> MigrationFileName<'a> {
+pub fn file_name<'a>(migration: &'a dyn Migration, sql_file: &'a str) -> MigrationFileName<'a> {
     MigrationFileName {
         migration,
         sql_file,
@@ -55,7 +55,7 @@ impl<'a> fmt::Display for MigrationFileName<'a> {
     }
 }
 
-pub fn migration_from(path: PathBuf) -> Result<Box<Migration>, MigrationError> {
+pub fn migration_from(path: PathBuf) -> Result<Box<dyn Migration>, MigrationError> {
     #[cfg(feature = "barrel")]
     match ::barrel::integrations::diesel::migration_from(&path) {
         Some(migration) => return Ok(migration),
@@ -122,16 +122,16 @@ impl Migration for SqlFileMigration {
         &self.1
     }
 
-    fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn run(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         run_sql_from_file(conn, &self.0.join("up.sql"))
     }
 
-    fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+    fn revert(&self, conn: &dyn SimpleConnection) -> Result<(), RunMigrationsError> {
         run_sql_from_file(conn, &self.0.join("down.sql"))
     }
 }
 
-fn run_sql_from_file(conn: &SimpleConnection, path: &Path) -> Result<(), RunMigrationsError> {
+fn run_sql_from_file(conn: &dyn SimpleConnection, path: &Path) -> Result<(), RunMigrationsError> {
     let mut sql = String::new();
     let mut file = File::open(path)?;
     file.read_to_string(&mut sql)?;

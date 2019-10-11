@@ -47,6 +47,7 @@ use clap::{ArgMatches, Shell};
 use migrations_internals::{self as migrations, MigrationConnection};
 use std::any::Any;
 use std::error::Error;
+use std::fmt::Display;
 use std::io::stdout;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
@@ -74,7 +75,7 @@ fn main() {
 
 // https://github.com/rust-lang-nursery/rust-clippy/issues/2927#issuecomment-405705595
 #[allow(clippy::similar_names)]
-fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
+fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("run", Some(_)) => {
             let database_url = database::database_url(matches);
@@ -170,11 +171,10 @@ fn generate_sql_migration(path: &PathBuf) {
         .unwrap();
 }
 
-use std::fmt::Display;
-fn migration_version<'a>(matches: &'a ArgMatches) -> Box<Display + 'a> {
+fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {
     matches
         .value_of("MIGRATION_VERSION")
-        .map(|s| Box::new(s) as Box<Display>)
+        .map(|s| Box::new(s) as Box<dyn Display>)
         .unwrap_or_else(|| Box::new(Utc::now().format(TIMESTAMP_FORMAT)))
 }
 
@@ -232,7 +232,7 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
     Ok(())
 }
 
-fn run_database_command(matches: &ArgMatches) -> Result<(), Box<Error>> {
+fn run_database_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
             let migrations_dir = migrations_dir(args);
@@ -314,12 +314,12 @@ where
 }
 
 #[cfg(feature = "mysql")]
-fn should_redo_migration_in_transaction(t: &Any) -> bool {
+fn should_redo_migration_in_transaction(t: &dyn Any) -> bool {
     !t.is::<::diesel::mysql::MysqlConnection>()
 }
 
 #[cfg(not(feature = "mysql"))]
-fn should_redo_migration_in_transaction(_t: &Any) -> bool {
+fn should_redo_migration_in_transaction(_t: &dyn Any) -> bool {
     true
 }
 
@@ -345,7 +345,7 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
     result.join(target_path.strip_prefix(current_path).unwrap())
 }
 
-fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
+fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     use infer_schema_internals::TableName;
     use print_schema::*;
 
@@ -399,7 +399,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<Error>> {
+fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     use std::io::Read;
 
     let config = Config::read(matches)?;
@@ -427,7 +427,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<E
                 .into());
             }
         } else {
-            let mut file = fs::File::create(path)?;
+            let file = fs::File::create(path)?;
             print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
         }
     }

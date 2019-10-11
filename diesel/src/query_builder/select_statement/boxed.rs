@@ -22,28 +22,28 @@ use sql_types::{BigInt, Bool, NotNull, Nullable};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
-    select: Box<QueryFragment<DB> + 'a>,
+    select: Box<dyn QueryFragment<DB> + 'a>,
     from: QS,
-    distinct: Box<QueryFragment<DB> + 'a>,
+    distinct: Box<dyn QueryFragment<DB> + 'a>,
     where_clause: BoxedWhereClause<'a, DB>,
-    order: Option<Box<QueryFragment<DB> + 'a>>,
-    limit: Box<QueryFragment<DB> + 'a>,
-    offset: Box<QueryFragment<DB> + 'a>,
-    group_by: Box<QueryFragment<DB> + 'a>,
+    order: Option<Box<dyn QueryFragment<DB> + 'a>>,
+    limit: Box<dyn QueryFragment<DB> + 'a>,
+    offset: Box<dyn QueryFragment<DB> + 'a>,
+    group_by: Box<dyn QueryFragment<DB> + 'a>,
     _marker: PhantomData<ST>,
 }
 
 impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        select: Box<QueryFragment<DB> + 'a>,
+        select: Box<dyn QueryFragment<DB> + 'a>,
         from: QS,
-        distinct: Box<QueryFragment<DB> + 'a>,
+        distinct: Box<dyn QueryFragment<DB> + 'a>,
         where_clause: BoxedWhereClause<'a, DB>,
-        order: Option<Box<QueryFragment<DB> + 'a>>,
-        limit: Box<QueryFragment<DB> + 'a>,
-        offset: Box<QueryFragment<DB> + 'a>,
-        group_by: Box<QueryFragment<DB> + 'a>,
+        order: Option<Box<dyn QueryFragment<DB> + 'a>>,
+        limit: Box<dyn QueryFragment<DB> + 'a>,
+        offset: Box<dyn QueryFragment<DB> + 'a>,
+        group_by: Box<dyn QueryFragment<DB> + 'a>,
     ) -> Self {
         BoxedSelectStatement {
             select: select,
