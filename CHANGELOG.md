@@ -4,7 +4,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## [1.4.2] - 2019-03019
+## [1.4.3] - 2019-10-11
+
+## Fixed
+
+* Updated several dependencies 
+* Fixed an issue where the postgresql backend exploits implementation defined behaviour
+* Fixed issue where rustdoc failed to build the documentation
+* `diesel_derives` and `diesel_migrations` are updated to syn 1.0
+
+## [1.4.2] - 2019-03-19
 
 ### Fixed
 
