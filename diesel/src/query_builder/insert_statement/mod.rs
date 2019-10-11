@@ -448,7 +448,7 @@ where
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct ValuesClause<T, Tab> {
-    pub(crate) values: T,
+    pub values: T,
     _marker: PhantomData<Tab>,
 }
 
