@@ -4,7 +4,8 @@ use diesel::insertable::ColumnInsertValue;
 use diesel::prelude::*;
 use diesel::query_builder::{InsertStatement, ValuesClause};
 use diesel::query_dsl::methods::ExecuteDsl;
-use diesel::sql_types::VarChar;
+use diesel::serialize::ToSql;
+use diesel::sql_types::{BigInt, VarChar};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
@@ -32,6 +33,7 @@ where
             __diesel_schema_migrations,
         >,
     >: ExecuteDsl<T>,
+    i64: ToSql<BigInt, T::Backend>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations

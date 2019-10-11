@@ -2,6 +2,7 @@ use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
+use diesel::serialize::ToSql;
 use diesel::expression::NonAggregate;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
@@ -204,6 +205,7 @@ where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    i64: ToSql<sql_types::BigInt, Conn::Backend>,
 {
     use self::information_schema::key_column_usage as kcu;
     use self::information_schema::referential_constraints as rc;
