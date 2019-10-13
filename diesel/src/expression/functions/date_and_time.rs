@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::diesel::sql_function;
 use crate::expression::coerce::Coerce;
 use crate::expression::{AsExpression, Expression};
 use crate::query_builder::*;

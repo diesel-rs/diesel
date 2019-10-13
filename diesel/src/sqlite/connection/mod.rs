@@ -319,6 +319,7 @@ mod tests {
         assert_eq!(1, connection.statement_cache.len());
     }
 
+    use crate::diesel::sql_function;
     use crate::sql_types::Text;
     sql_function!(fn fun_case(x: Text) -> Text);
 

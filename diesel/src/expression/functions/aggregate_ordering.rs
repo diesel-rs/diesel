@@ -1,3 +1,4 @@
+use crate::diesel::sql_function;
 use crate::sql_types::{IntoNullable, SqlOrd};
 
 sql_function! {

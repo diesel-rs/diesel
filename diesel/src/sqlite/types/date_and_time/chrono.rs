@@ -111,6 +111,7 @@ mod tests {
     use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
     use self::dotenv::dotenv;
 
+    use crate::diesel::sql_function;
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;

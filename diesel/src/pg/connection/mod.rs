@@ -229,6 +229,7 @@ mod tests {
         assert_eq!(2, connection.statement_cache.len());
     }
 
+    use crate::diesel::sql_function;
     sql_function!(fn lower(x: VarChar) -> VarChar);
 
     #[test]

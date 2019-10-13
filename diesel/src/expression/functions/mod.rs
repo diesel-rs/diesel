@@ -37,6 +37,7 @@
 /// ```ignore
 /// pub mod functions {
 ///     use super::types::*;
+///     use diesel::sql_function;
 ///     use diesel::sql_types::*;
 ///
 ///     sql_function! {
@@ -67,6 +68,7 @@
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
+/// use diesel::sql_function;
 /// use diesel::sql_types::Text;
 /// use diesel::query_builder::QueryId;
 ///
@@ -107,6 +109,7 @@
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
+/// use diesel::sql_function;
 /// use diesel::sql_types::Foldable;
 /// use diesel::query_builder::QueryId;
 ///
@@ -147,6 +150,7 @@
 /// # fn main() {
 /// # }
 /// #
+/// use diesel::sql_function;
 /// use diesel::sql_types::{Integer, Double};
 /// use diesel::query_builder::QueryId;
 /// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
@@ -165,13 +169,7 @@
 /// #     Ok(())
 /// # }
 /// ```
-macro_rules! sql_function {
-    ($($args:tt)*) => {
-        $crate::macros::sql_function_proc! { $($args)* }
-    }
-}
 
-#[macro_export]
 #[doc(hidden)]
 macro_rules! no_arg_sql_function_body_except_to_sql {
     ($type_name:ident, $return_type:ty, $docs:expr) => {

@@ -1,5 +1,6 @@
 use super::Expression;
 use crate::backend::Backend;
+use crate::diesel::sql_function;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::BigInt;

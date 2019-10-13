@@ -129,11 +129,13 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
-#[macro_use]
-extern crate diesel_derives;
 
 #[macro_use]
-pub mod macros;
+extern crate diesel_derives;
+pub use diesel_derives::sql_function_proc as sql_function;
+
+#[macro_use]
+mod macros;
 
 #[cfg(test)]
 #[macro_use]
