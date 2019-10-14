@@ -258,17 +258,8 @@ fn migration_with_version(
 }
 
 #[doc(hidden)]
-pub fn setup_database<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
-    create_schema_migrations_table_if_needed(conn)
-}
-
-fn create_schema_migrations_table_if_needed<Conn: Connection>(conn: &Conn) -> QueryResult<usize> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (\
-         version VARCHAR(50) PRIMARY KEY NOT NULL,\
-         run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\
-         )",
-    )
+pub fn setup_database<Conn: MigrationConnection>(conn: &Conn) -> QueryResult<usize> {
+    conn.setup()
 }
 
 #[doc(hidden)]
