@@ -26,8 +26,8 @@ members = [
 ]
 
 [replace]
-"diesel:1.4.2" = { path = "diesel" }
-"diesel_derives:1.4.0" = { path = "diesel_derives" }
+"diesel:1.4.3" = { path = "diesel" }
+"diesel_derives:1.4.1" = { path = "diesel_derives" }
 "diesel_migrations:1.4.0" = { path = "diesel_migrations" }
 "migrations_internals:1.4.0" = { path = "diesel_migrations/migrations_internals" }
-"migrations_macros:1.4.0" = { path = "diesel_migrations/migrations_macros" }
+"migrations_macros:1.4.1" = { path = "diesel_migrations/migrations_macros" }
