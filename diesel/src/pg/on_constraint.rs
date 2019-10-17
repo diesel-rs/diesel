@@ -56,7 +56,7 @@ pub struct OnConstraint<'a> {
 impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql(" ON CONSTRAINT ");
-        try!(out.push_identifier(self.0.constraint_name));
+        out.push_identifier(self.0.constraint_name)?;
         Ok(())
     }
 }
