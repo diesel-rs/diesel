@@ -8,6 +8,7 @@ use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
+#[cfg(feature = "postgres")]
 use diesel::serialize::ToSql;
 use diesel::*;
 
