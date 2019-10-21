@@ -75,6 +75,9 @@ pub struct Following {
 #[cfg_attr(not(feature = "postgres"), path = "backend_specifics.rs")]
 mod backend_specifics;
 
+#[cfg(rustfmt)]
+mod postgres_specific_schema;
+
 pub use self::backend_specifics::*;
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]

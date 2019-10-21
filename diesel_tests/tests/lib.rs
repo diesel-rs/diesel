@@ -48,6 +48,3 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
-
-#[cfg(rustfmt)]
-mod postgres_specific_schema;
