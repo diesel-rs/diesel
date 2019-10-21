@@ -46,7 +46,10 @@ fn some_uuid_from_sql() {
 #[test]
 fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(Some(b"boom"));
-    assert_eq!(uuid.unwrap_err().description(), "UUID parse error");
+    assert_eq!(
+        uuid.unwrap_err().to_string(),
+        "invalid bytes length: expected 16, found 4"
+    );
 }
 
 #[test]
