@@ -2,13 +2,13 @@ use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
-use diesel::serialize::ToSql;
 use diesel::expression::NonAggregate;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::serialize::ToSql;
 use diesel::*;
 
 use super::data_structures::*;
