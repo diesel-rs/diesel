@@ -4,6 +4,6 @@ CREATE TABLE `user-has-role` (
   role INTEGER NOT NULL,
   id INTEGER PRIMARY KEY,
   `created at` TIMESTAMP NOT NULL,
-  `expiry date` TIMESTAMP,
+  `expiry date` TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (user) REFERENCES self(id)
 );
