@@ -18,9 +18,9 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            sql_name: name.clone(),
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: None,
-            rust_name: inference::rust_name_for_column(&name),
         }
     }
 
@@ -32,9 +32,9 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            sql_name: name.clone(),
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: Some(schema.into()),
-            rust_name: inference::rust_name_for_column(&name),
         }
     }
 
@@ -42,6 +42,13 @@ impl TableName {
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
         if self.schema.as_ref().map(|s| &**s) == Some(schema) {
             self.schema = None;
+        }
+    }
+
+    pub fn full_sql_name(&self) -> String {
+        match self.schema {
+            Some(ref schema_name) => format!("{}.{}", schema_name, self.sql_name),
+            None => format!("{}", self.sql_name),
         }
     }
 }
@@ -60,9 +67,15 @@ where
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let name = if let Some(ref rust_name) = &self.rust_name {
+            rust_name
+        } else {
+            &self.sql_name
+        };
+
         match self.schema {
-            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.sql_name),
-            None => write!(out, "{}", self.sql_name),
+            Some(ref schema_name) => write!(out, "{}.{}", schema_name, name),
+            None => write!(out, "{}", name),
         }
     }
 }

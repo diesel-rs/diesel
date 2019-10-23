@@ -1,2 +1,8 @@
-CREATE TABLE users (id SERIAL PRIMARY KEY);
-CREATE TABLE "user-has-role" ("user" INTEGER NOT NULL REFERENCES users, role INTEGER NOT NULL, id SERIAL PRIMARY KEY, "created at" TIMESTAMP NOT NULL, "expiry date" TIMESTAMP);
+CREATE TABLE self (id SERIAL PRIMARY KEY);
+CREATE TABLE "user-has-role" (
+  "user" INTEGER NOT NULL REFERENCES self,
+  role INTEGER NOT NULL,
+  id SERIAL PRIMARY KEY,
+  "created at" TIMESTAMP NOT NULL,
+  "expiry date" TIMESTAMP
+);
