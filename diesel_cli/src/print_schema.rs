@@ -163,7 +163,11 @@ impl<'a> Display for TableDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in &self.tables {
-                    writeln!(out, "{},", table.name.sql_name)?;
+                    if let Some(ref rust_name) = &table.name.rust_name {
+                        writeln!(out, "{},", rust_name)?;
+                    } else {
+                        writeln!(out, "{},", table.name.sql_name)?;
+                    }
                 }
             }
             writeln!(f, ");")?;
@@ -199,12 +203,15 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
-            if let Some(ref rust_name) = self.table.name.rust_name {
-                writeln!(out, r#"#[sql_name = "{}"]"#, self.table.name.sql_name)?;
-                write!(out, "{} (", rust_name)?;
-            } else {
-                write!(out, "{} (", self.table.name)?;
+            if self.table.name.rust_name.is_some() {
+                writeln!(
+                    out,
+                    r#"#[sql_name = "{}"]"#,
+                    self.table.name.full_sql_name()
+                )?;
             }
+
+            write!(out, "{} (", self.table.name)?;
 
             for (i, pk) in self.table.primary_key.iter().enumerate() {
                 if i != 0 {
@@ -260,10 +267,22 @@ struct Joinable<'a>(&'a ForeignKeyConstraint);
 
 impl<'a> Display for Joinable<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let child_table_name = if let Some(ref rust_name) = self.0.child_table.rust_name {
+            rust_name
+        } else {
+            &self.0.child_table.sql_name
+        };
+
+        let parent_table_name = if let Some(ref rust_name) = self.0.parent_table.rust_name {
+            rust_name
+        } else {
+            &self.0.parent_table.sql_name
+        };
+
         write!(
             f,
             "joinable!({} -> {} ({}));",
-            self.0.child_table.sql_name, self.0.parent_table.sql_name, self.0.foreign_key_rust_name,
+            child_table_name, parent_table_name, self.0.foreign_key_rust_name,
         )
     }
 }
