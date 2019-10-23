@@ -48,7 +48,7 @@ impl TableName {
     pub fn full_sql_name(&self) -> String {
         match self.schema {
             Some(ref schema_name) => format!("{}.{}", schema_name, self.sql_name),
-            None => format!("{}", self.sql_name),
+            None => self.sql_name.to_string(),
         }
     }
 }
