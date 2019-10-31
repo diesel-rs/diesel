@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 
 use diesel::backend::Backend;
@@ -124,15 +125,15 @@ where
     use self::information_schema::columns::dsl::*;
 
     let schema_name = match table.schema {
-        Some(ref name) => name.clone(),
-        None => Conn::Backend::default_schema(conn)?,
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Conn::Backend::default_schema(conn)?),
     };
 
     let type_column = Conn::Backend::type_column();
     columns
         .select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.eq(schema_name))
+        .filter(table_schema.eq(schema_name.as_ref()))
         .order(ordinal_position)
         .load(conn)
 }
@@ -151,15 +152,15 @@ where
         .filter(constraint_type.eq("PRIMARY KEY"));
 
     let schema_name = match table.schema {
-        Some(ref name) => name.clone(),
-        None => Conn::Backend::default_schema(conn)?,
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Conn::Backend::default_schema(conn)?),
     };
 
     key_column_usage
         .select(column_name)
         .filter(constraint_name.eq_any(pk_query))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.eq(schema_name))
+        .filter(table_schema.eq(schema_name.as_ref()))
         .order(ordinal_position)
         .load(conn)
 }
@@ -175,15 +176,14 @@ where
 {
     use self::information_schema::tables::dsl::*;
 
-    let default_schema = Conn::Backend::default_schema(connection)?;
     let db_schema_name = match schema_name {
-        Some(name) => name,
-        None => &default_schema,
+        Some(name) => Cow::Borrowed(name),
+        None => Cow::Owned(Conn::Backend::default_schema(connection)?),
     };
 
     let mut table_names = tables
         .select(table_name)
-        .filter(table_schema.eq(db_schema_name))
+        .filter(table_schema.eq(db_schema_name.as_ref()))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
         .load::<String>(connection)?;
