@@ -176,22 +176,25 @@ where
     use self::information_schema::tables::dsl::*;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
-    let schema_name = match schema_name {
+    let db_schema_name = match schema_name {
         Some(name) => name,
         None => &default_schema,
     };
 
     let mut table_names = tables
-        .select((table_name, table_schema))
-        .filter(table_schema.eq(schema_name))
+        .select(table_name)
+        .filter(table_schema.eq(db_schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
-        .order(table_name)
-        .load::<TableName>(connection)?;
-    for table in &mut table_names {
-        table.strip_schema_if_matches(&default_schema);
-    }
-    Ok(table_names)
+        .load::<String>(connection)?;
+    table_names.sort_unstable();
+    Ok(table_names
+        .into_iter()
+        .map(|name| TableName {
+            name,
+            schema: schema_name.map(|schema| schema.to_owned()),
+        })
+        .collect())
 }
 
 #[allow(clippy::similar_names)]
