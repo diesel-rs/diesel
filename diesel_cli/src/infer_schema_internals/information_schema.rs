@@ -176,14 +176,15 @@ where
 {
     use self::information_schema::tables::dsl::*;
 
+    let default_schema = Conn::Backend::default_schema(connection)?;
     let db_schema_name = match schema_name {
-        Some(name) => Cow::Borrowed(name),
-        None => Cow::Owned(Conn::Backend::default_schema(connection)?),
+        Some(name) => name,
+        None => &default_schema,
     };
 
     let mut table_names = tables
         .select(table_name)
-        .filter(table_schema.eq(db_schema_name.as_ref()))
+        .filter(table_schema.eq(db_schema_name))
         .filter(table_name.not_like("\\_\\_%"))
         .filter(table_type.like("BASE TABLE"))
         .load::<String>(connection)?;
@@ -192,7 +193,9 @@ where
         .into_iter()
         .map(|name| TableName {
             name,
-            schema: schema_name.map(|schema| schema.to_owned()),
+            schema: schema_name
+                .filter(|&schema| schema != default_schema)
+                .map(|schema| schema.to_owned()),
         })
         .collect())
 }
