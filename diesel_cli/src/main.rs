@@ -55,6 +55,7 @@ use std::{env, fs};
 
 use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
+use migrations::MigrationError;
 use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
@@ -80,7 +81,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("run", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(matches);
+            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             call_with_conn!(
                 database_url,
                 migrations::run_pending_migrations_in_directory(&dir, &mut stdout())
@@ -89,7 +90,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
         ("revert", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(matches);
+            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             call_with_conn!(
                 database_url,
                 migrations::revert_latest_migration_in_directory(&dir)
@@ -98,13 +99,13 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
         ("redo", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(matches);
+            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             call_with_conn!(database_url, redo_latest_migration(&dir));
             regenerate_schema_if_file_specified(matches)?;
         }
         ("list", Some(_)) => {
             let database_url = database::database_url(matches);
-            let dir = migrations_dir(matches);
+            let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let mut migrations =
                 call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))?;
 
@@ -131,7 +132,9 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
-            let migration_dir = migrations_dir(matches).join(versioned_name);
+            let migration_dir = migrations_dir(matches)
+                .unwrap_or_else(handle_error)
+                .join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
             match args.value_of("MIGRATION_FORMAT") {
@@ -191,29 +194,51 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
         })
 }
 
-fn migrations_dir(matches: &ArgMatches) -> PathBuf {
-    migrations_dir_from_cli(matches)
+/// Checks for a migrations folder in the following order :
+/// 1. From the CLI arguments
+/// 2. From the MIGRATION_DIRECTORY environment variable
+/// 3. From `diesel.toml` in the `migrations_directory` section
+///
+/// Else try to find the migrations directory with the
+/// `find_migrations_directory` in the diesel_migrations crate.
+///
+/// Returns a `MigrationError::MigrationDirectoryNotFound` if
+/// no path to the migration directory is found.
+fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
+    let migrations_dir = migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .unwrap_or_else(|| migrations::find_migrations_directory().unwrap_or_else(handle_error))
+        .or_else(|| {
+            Some(
+                Config::read(matches)
+                    .unwrap_or_else(handle_error)
+                    .migrations_directory?
+                    .dir
+                    .to_owned(),
+            )
+        });
+
+    match migrations_dir {
+        Some(dir) => Ok(dir),
+        None => migrations::find_migrations_directory(),
+    }
 }
 
 fn run_setup_command(matches: &ArgMatches) {
-    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
     create_config_file(matches).unwrap_or_else(handle_error);
+    let migrations_dir = create_migrations_dir(matches).unwrap_or_else(handle_error);
 
     database::setup_database(matches, &migrations_dir).unwrap_or_else(handle_error);
 }
 
+/// Checks if the migration directory exists, else creates it.
+/// For more information see the `migrations_dir` function.
 fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
-    let dir = matches
-        .value_of("MIGRATION_DIRECTORY")
-        .map(PathBuf::from)
-        .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .unwrap_or_else(|| {
-            find_project_root()
-                .unwrap_or_else(handle_error)
-                .join("migrations")
-        });
+    let dir = match migrations_dir(matches) {
+        Ok(dir) => dir,
+        Err(_) => find_project_root()
+            .unwrap_or_else(handle_error)
+            .join("migrations"),
+    };
 
     if !dir.exists() {
         create_migrations_directory(&dir)?;
@@ -236,11 +261,11 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
 fn run_database_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
-            let migrations_dir = migrations_dir(args);
+            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
             database::setup_database(args, &migrations_dir)?;
         }
         ("reset", Some(args)) => {
-            let migrations_dir = migrations_dir(args);
+            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
             database::reset_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }

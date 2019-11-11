@@ -14,6 +14,8 @@ use print_schema;
 pub struct Config {
     #[serde(default)]
     pub print_schema: PrintSchema,
+    #[serde(default)]
+    pub migrations_directory: Option<MigrationsDirectory>,
 }
 
 impl Config {
@@ -63,4 +65,10 @@ impl PrintSchema {
     pub fn import_types(&self) -> Option<&[String]> {
         self.import_types.as_ref().map(|v| &**v)
     }
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MigrationsDirectory {
+    pub dir: PathBuf,
 }

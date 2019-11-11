@@ -154,3 +154,37 @@ Creating bar.12345_stuff.down.sql
     assert!(p.has_file("bar/12345_stuff/up.sql"));
     assert!(p.has_file("bar/12345_stuff/down.sql"));
 }
+
+#[test]
+fn migration_generate_respects_migrations_dir_from_diesel_toml() {
+    let p = project("migration_name")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("stuff")
+        .arg("--version=12345")
+        .run();
+
+    let expected_stdout = Regex::new(
+        "\
+Creating custom_migrations.12345_stuff.up.sql
+Creating custom_migrations.12345_stuff.down.sql
+",
+    )
+    .unwrap();
+    assert!(result.is_success(), "Command failed: {:?}", result);
+    assert!(expected_stdout.is_match(result.stdout()));
+
+    assert!(p.has_file("custom_migrations/12345_stuff/up.sql"));
+    assert!(p.has_file("custom_migrations/12345_stuff/down.sql"));
+}

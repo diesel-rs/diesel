@@ -240,3 +240,23 @@ fn setup_can_take_config_file_by_param() {
         .file_contents("bar")
         .contains("diesel.rs/guides/configuring-diesel-cli"));
 }
+
+#[test]
+fn setup_respects_migrations_dir_from_diesel_toml() {
+    let p = project("setup_respects_migration_dir_from_diesel_toml")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+
+    assert!(!p.has_file("custom_migrations"));
+
+    let result = p.command("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(p.has_file("custom_migrations"));
+}
