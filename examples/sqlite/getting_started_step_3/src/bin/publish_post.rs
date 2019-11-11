@@ -18,7 +18,7 @@ fn main() {
     let _ = diesel::update(posts.find(id))
         .set(published.eq(true))
         .execute(&connection)
-        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
+        .unwrap();
 
     let post: models::Post = posts
         .find(id)
