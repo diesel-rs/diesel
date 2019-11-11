@@ -194,24 +194,28 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
         })
 }
 
-/// Looks for a migration directory configured in `diesel.toml`.
+/// Checks for a migrations folder in the following order :
+/// 1. From the CLI arguments
+/// 2. From the MIGRATION_DIRECTORY environment variable
+/// 3. From `diesel.toml` in the `migrations_directory` section
+///
+/// Else try to find the migrations directory with the
+/// `find_migrations_directory` in the diesel_migrations crate.
+///
 /// Returns a `MigrationError::MigrationDirectoryNotFound` if
 /// no path to the migration directory is found.
-fn migrations_dir_from_config(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
-    let migrations_dir = Config::read(matches)
-        .unwrap_or_else(handle_error)
-        .migrations_directory;
-
-    match migrations_dir {
-        Some(migrations_dir) => Ok(migrations_dir.dir.to_owned()),
-        None => Err(MigrationError::MigrationDirectoryNotFound),
-    }
-}
-
 fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
     let migrations_dir = migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
-        .or_else(|| migrations_dir_from_config(matches).ok());
+        .or_else(|| {
+            Some(
+                Config::read(matches)
+                    .unwrap_or_else(handle_error)
+                    .migrations_directory?
+                    .dir
+                    .to_owned(),
+            )
+        });
 
     match migrations_dir {
         Some(dir) => Ok(dir),
