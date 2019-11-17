@@ -6,4 +6,4 @@ authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 
 [dependencies]
 diesel = { version = "1.4.0", features = ["sqlite"] }
-dotenv = "0.10"
+dotenv = "0.15"
