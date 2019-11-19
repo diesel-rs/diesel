@@ -57,6 +57,37 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
             _marker: PhantomData,
         }
     }
+
+    pub(crate) fn build_query(
+        &self,
+        mut out: AstPass<DB>,
+        on_no_where_clause: impl Fn(&BoxedWhereClause<'a, DB>, AstPass<DB>) -> QueryResult<()>,
+    ) -> QueryResult<()>
+    where
+        DB: Backend,
+        QS: QuerySource,
+        QS::FromClause: QueryFragment<DB>,
+    {
+        out.push_sql("SELECT ");
+        self.distinct.walk_ast(out.reborrow())?;
+        self.select.walk_ast(out.reborrow())?;
+        out.push_sql(" FROM ");
+        self.from.from_clause().walk_ast(out.reborrow())?;
+        match &self.where_clause {
+            w @ BoxedWhereClause::None => on_no_where_clause(w, out.reborrow())?,
+            w => w.walk_ast(out.reborrow())?,
+        }
+        self.group_by.walk_ast(out.reborrow())?;
+
+        if let Some(ref order) = self.order {
+            out.push_sql(" ORDER BY ");
+            order.walk_ast(out.reborrow())?;
+        }
+
+        self.limit.walk_ast(out.reborrow())?;
+        self.offset.walk_ast(out.reborrow())?;
+        Ok(())
+    }
 }
 
 impl<'a, ST, QS, DB> Query for BoxedSelectStatement<'a, ST, QS, DB>
@@ -84,23 +115,8 @@ where
     QS: QuerySource,
     QS::FromClause: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("SELECT ");
-        self.distinct.walk_ast(out.reborrow())?;
-        self.select.walk_ast(out.reborrow())?;
-        out.push_sql(" FROM ");
-        self.from.from_clause().walk_ast(out.reborrow())?;
-        self.where_clause.walk_ast(out.reborrow())?;
-        self.group_by.walk_ast(out.reborrow())?;
-
-        if let Some(ref order) = self.order {
-            out.push_sql(" ORDER BY ");
-            order.walk_ast(out.reborrow())?;
-        }
-
-        self.limit.walk_ast(out.reborrow())?;
-        self.offset.walk_ast(out.reborrow())?;
-        Ok(())
+    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
+        self.build_query(out, |where_clause, out| where_clause.walk_ast(out))
     }
 }
 

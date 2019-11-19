@@ -207,7 +207,7 @@ fn insert_or_replace_with_select() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(all(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
@@ -233,9 +233,7 @@ fn on_conflict_do_nothing_with_select() {
     assert_eq!(expected, data);
 }
 
-// FIXME: sqlite needs 'WHERE clause' if we use 'ON CONFLICT clause' with 'InsertFromSelect'.
 #[test]
-#[should_panic]
 #[cfg(feature = "sqlite")]
 fn on_conflict_do_nothing_with_select_for_sqlite() {
     use schema::posts::dsl::*;
@@ -246,15 +244,20 @@ fn on_conflict_do_nothing_with_select_for_sqlite() {
     sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
         .execute(&conn)
         .unwrap();
-    let query = users
+
+    let inserted_rows = users
         .select((id, name.concat(" says hi")))
+        .filter(diesel::dsl::sql(" 1=1 "))
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict_do_nothing();
-
-    let inserted_rows = query.execute(&conn).unwrap();
+        .on_conflict_do_nothing().execute(&conn).unwrap();
     assert_eq!(2, inserted_rows);
-    let inserted_rows = query.execute(&conn).unwrap();
+    let inserted_rows = users
+        .select((id, name.concat(" says hi")))
+        .filter(diesel::dsl::sql(" 1=1 "))
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict_do_nothing().execute(&conn).unwrap();
     assert_eq!(0, inserted_rows);
 
     let data = posts.select(title).load::<String>(&conn).unwrap();
@@ -270,7 +273,6 @@ fn on_conflict_do_update_with_select() {
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
-    #[cfg(feature = "postgres")]
     sql_query("CREATE UNIQUE INDEX ON posts (title)")
         .execute(&conn)
         .unwrap();
@@ -300,9 +302,7 @@ fn on_conflict_do_update_with_select() {
     assert_eq!(expected, data);
 }
 
-// FIXME: sqlite needs 'WHERE clause' if we use 'ON CONFLICT clause' with 'InsertFromSelect'.
 #[test]
-#[should_panic]
 #[cfg(feature = "sqlite")]
 fn on_conflict_do_update_with_select_for_sqlite() {
     use schema::posts::dsl::*;
@@ -313,22 +313,80 @@ fn on_conflict_do_update_with_select_for_sqlite() {
     sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
         .execute(&conn)
         .unwrap();
-    let query = users
+
+    users
         .select((id, name.concat(" says hi")))
+        .filter(diesel::dsl::sql("1=1"))
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict(title)
         .do_update()
-        .set(body.eq("updated"));
-
-    query.execute(&conn).unwrap();
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
 
     insert_into(users)
         .values(name.eq("Ruby"))
         .execute(&conn)
         .unwrap();
 
-    query.execute(&conn).unwrap();
+    users
+        .select((id, name.concat(" says hi")))
+        .filter(diesel::dsl::sql("1=1"))
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict(title)
+        .do_update()
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
+
+    let data = posts.select((title, body)).load(&conn).unwrap();
+    let expected = vec![
+        (String::from("Sean says hi"), Some(String::from("updated"))),
+        (String::from("Tess says hi"), Some(String::from("updated"))),
+        (String::from("Ruby says hi"), None),
+    ];
+    assert_eq!(expected, data);
+}
+
+#[test]
+fn on_conflict_do_update_with_boxed_select() {
+    use schema::posts::dsl::*;
+    use schema::users::dsl::{id, name, users};
+
+    let conn = connection_with_sean_and_tess_in_users_table();
+
+    sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
+        .execute(&conn)
+        .unwrap();
+
+    users
+        .select((id, name.concat(" says hi")))
+        .into_boxed()
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict(title)
+        .do_update()
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
+
+    insert_into(users)
+        .values(name.eq("Ruby"))
+        .execute(&conn)
+        .unwrap();
+
+    users
+        .select((id, name.concat(" says hi")))
+        .into_boxed()
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict(title)
+        .do_update()
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
 
     let data = posts.select((title, body)).load(&conn).unwrap();
     let expected = vec![

@@ -7,8 +7,8 @@ use crate::query_source::Table;
 /// Represents `(Columns) SELECT FROM ...` for use in an `INSERT` statement
 #[derive(Debug, Clone, Copy)]
 pub struct InsertFromSelect<Select, Columns> {
-    query: Select,
-    columns: Columns,
+    pub(crate) query: Select,
+    pub(crate) columns: Columns,
 }
 
 impl<Select, Columns> InsertFromSelect<Select, Columns> {

@@ -48,7 +48,8 @@ pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
 
-pub(crate) use self::insert_statement::ColumnList;
+pub(crate) use self::insert_statement::{ColumnList, InsertFromSelect};
+pub(crate) use self::where_clause::WhereClause;
 
 use std::error::Error;
 
