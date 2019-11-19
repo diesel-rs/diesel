@@ -59,35 +59,37 @@ where
 impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 
 macro_rules! on_conflict_tuples {
-    ($($col:ident),+) => {
-        impl<DB, T, $($col),+> QueryFragment<DB> for ConflictTarget<(T, $($col),+)> where
-            DB: Backend + SupportsOnConflictClause,
-            T: Column,
-            $($col: Column<Table=T::Table>,)+
-        {
-            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                out.push_sql(" (");
-                out.push_identifier(T::NAME)?;
-                $(
-                    out.push_sql(", ");
-                    out.push_identifier($col::NAME)?;
-                )+
-                out.push_sql(")");
-                Ok(())
+    ($(
+        $Tuple:tt {
+            (0) -> A, SA, TA,
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)*
+        }
+    )+) => {
+        $(
+            impl<_DB, _T, $($T),*> QueryFragment<_DB> for ConflictTarget<(_T, $($T),*)> where
+                _DB: Backend + SupportsOnConflictClause,
+                _T: Column,
+                $($T: Column<Table=_T::Table>,)*
+            {
+                fn walk_ast(&self, mut out: AstPass<_DB>) -> QueryResult<()> {
+                    out.push_sql(" (");
+                    out.push_identifier(_T::NAME)?;
+                    $(
+                        out.push_sql(", ");
+                        out.push_identifier($T::NAME)?;
+                    )*
+                    out.push_sql(")");
+                    Ok(())
+                }
             }
-        }
 
-        impl<T, $($col),+> OnConflictTarget<T::Table> for ConflictTarget<(T, $($col),+)> where
-            T: Column,
-            $($col: Column<Table=T::Table>,)+
-        {
-        }
+            impl<_T, $($T),*> OnConflictTarget<_T::Table> for ConflictTarget<(_T, $($T),*)> where
+                _T: Column,
+                $($T: Column<Table=_T::Table>,)*
+            {
+            }
+        )*
     }
 }
 
-on_conflict_tuples!(U);
-on_conflict_tuples!(U, V);
-on_conflict_tuples!(U, V, W);
-on_conflict_tuples!(U, V, W, X);
-on_conflict_tuples!(U, V, W, X, Y);
-on_conflict_tuples!(U, V, W, X, Y, Z);
+__diesel_for_each_tuple!(on_conflict_tuples);
