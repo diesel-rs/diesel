@@ -133,7 +133,7 @@ where
     columns
         .select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.eq(schema_name.as_ref()))
+        .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
 }
@@ -160,7 +160,7 @@ where
         .select(column_name)
         .filter(constraint_name.eq_any(pk_query))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.eq(schema_name.as_ref()))
+        .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
 }
@@ -177,10 +177,7 @@ where
     use self::information_schema::tables::dsl::*;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
-    let db_schema_name = match schema_name {
-        Some(name) => name,
-        None => &default_schema,
-    };
+    let db_schema_name = schema_name.unwrap_or(&default_schema);
 
     let mut table_names = tables
         .select(table_name)
@@ -216,10 +213,7 @@ where
     use self::information_schema::table_constraints as tc;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
-    let schema_name = match schema_name {
-        Some(name) => name,
-        None => &default_schema,
-    };
+    let schema_name = schema_name.unwrap_or(&default_schema);
 
     let constraint_names = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
