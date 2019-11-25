@@ -12,6 +12,7 @@ use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
 use super::data_structures::*;
+use super::inference;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
@@ -191,7 +192,8 @@ where
     Ok(table_names
         .into_iter()
         .map(|name| TableName {
-            name,
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: schema_name
                 .filter(|&schema| schema != default_schema)
                 .map(|schema| schema.to_owned()),
