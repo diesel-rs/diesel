@@ -267,17 +267,19 @@ struct Joinable<'a>(&'a ForeignKeyConstraint);
 
 impl<'a> Display for Joinable<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let child_table_name = if let Some(ref rust_name) = self.0.child_table.rust_name {
-            rust_name
-        } else {
-            &self.0.child_table.sql_name
-        };
+        let child_table_name = self
+            .0
+            .child_table
+            .rust_name
+            .as_ref()
+            .unwrap_or(&self.0.child_table.sql_name);
 
-        let parent_table_name = if let Some(ref rust_name) = self.0.parent_table.rust_name {
-            rust_name
-        } else {
-            &self.0.parent_table.sql_name
-        };
+        let parent_table_name = self
+            .0
+            .parent_table
+            .rust_name
+            .as_ref()
+            .unwrap_or(&self.0.parent_table.sql_name);
 
         write!(
             f,

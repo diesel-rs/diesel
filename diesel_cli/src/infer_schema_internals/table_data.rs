@@ -67,11 +67,7 @@ where
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let name = if let Some(ref rust_name) = &self.rust_name {
-            rust_name
-        } else {
-            &self.sql_name
-        };
+        let name = self.rust_name.as_ref().unwrap_or(&self.sql_name);
 
         match self.schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, name),
