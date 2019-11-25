@@ -14,7 +14,7 @@ quote = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]
-tempdir = "0.3.4"
+tempfile = "3.0.0"
 
 [lib]
 proc-macro = true

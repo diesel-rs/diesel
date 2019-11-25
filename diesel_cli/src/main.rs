@@ -466,11 +466,11 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<d
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+    extern crate tempfile;
 
     use database_error::DatabaseError;
 
-    use self::tempdir::TempDir;
+    use self::tempfile::Builder;
 
     use std::fs;
     use std::path::PathBuf;
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn toml_directory_find_cargo_toml() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let temp_path = dir.path().canonicalize().unwrap();
         let toml_path = temp_path.join("Cargo.toml");
 
@@ -494,7 +494,7 @@ mod tests {
 
     #[test]
     fn cargo_toml_not_found_if_no_cargo_toml() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(

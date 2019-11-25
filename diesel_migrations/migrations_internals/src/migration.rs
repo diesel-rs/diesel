@@ -145,17 +145,17 @@ fn run_sql_from_file(conn: &dyn SimpleConnection, path: &Path) -> Result<(), Run
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+    extern crate tempfile;
 
     use super::{valid_sql_migration_directory, version_from_path};
 
-    use self::tempdir::TempDir;
+    use self::tempfile::Builder;
     use std::fs;
     use std::path::PathBuf;
 
     #[test]
     fn files_are_not_valid_sql_file_migrations() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let file_path = dir.path().join("12345");
 
         fs::File::create(&file_path).unwrap();
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn directory_containing_exactly_up_sql_and_down_sql_is_valid_migration_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         let folder = tempdir.path().join("12345");
 
         fs::create_dir(&folder).unwrap();
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn directory_containing_unknown_files_is_valid_migration_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         let folder = tempdir.path().join("12345");
 
         fs::create_dir(&folder).unwrap();
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn files_beginning_with_dot_are_allowed() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         let folder = tempdir.path().join("12345");
 
         fs::create_dir(&folder).unwrap();
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn empty_directory_is_not_valid_migration_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         let folder = tempdir.path().join("12345");
 
         fs::create_dir(&folder).unwrap();
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn directory_with_only_up_sql_is_not_valid_migration_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         let folder = tempdir.path().join("12345");
 
         fs::create_dir(&folder).unwrap();
