@@ -67,7 +67,7 @@ where
 impl<T, ST, DB> QueryFragment<DB> for ArrayLiteral<T, ST>
 where
     DB: Backend,
-    for<'a> (&'a T): QueryFragment<DB>,
+    for<'a> &'a T: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> ::result::QueryResult<()> {
         out.push_sql("ARRAY[");
