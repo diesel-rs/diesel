@@ -18,7 +18,7 @@ pub struct RawConnection {
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
-        let database_url = CString::new(database_url)?;
+        let database_url = CString::new(database_url.trim_start_matches("sqlite://"))?;
         let connection_status =
             unsafe { ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) };
 

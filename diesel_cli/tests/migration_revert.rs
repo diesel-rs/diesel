@@ -90,3 +90,41 @@ fn migration_revert_respects_migration_dir_env() {
     );
     assert!(!db.table_exists("users"));
 }
+
+#[test]
+fn migration_revert_respects_migration_dir_from_diesel_toml() {
+    let p = project("migration_revert_respects_migration_dir_from_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    // Make sure the project is setup.
+    p.command("setup").run();
+
+    assert!(db.table_exists("users"));
+
+    let result = p.command("migration").arg("revert").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Rolling back migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(!db.table_exists("users"));
+}

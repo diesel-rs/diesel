@@ -136,3 +136,41 @@ fn error_migrations_fails() {
     assert!(!result.is_success());
     assert!(result.stderr().contains("Failed with: "));
 }
+
+#[test]
+fn migration_redo_respects_migrations_dir_from_diesel_toml() {
+    let p = project("migration_redo_respects_migrations_dir_from_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
+        "DROP TABLE users;",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    let result = p.command("migration").arg("redo").run();
+
+    let expected_stdout = "\
+Rolling back migration 12345_create_users_table
+Running migration 12345_create_users_table
+";
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains(expected_stdout),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+}

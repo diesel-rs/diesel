@@ -29,21 +29,46 @@ enum Backend {
 impl Backend {
     fn for_url(database_url: &str) -> Self {
         match database_url {
-            #[cfg(feature = "postgres")]
             _ if database_url.starts_with("postgres://")
                 || database_url.starts_with("postgresql://") =>
             {
-                Backend::Pg
+                #[cfg(feature = "postgres")]
+                {
+                    Backend::Pg
+                }
+                #[cfg(not(feature = "postgres"))]
+                {
+                    panic!(
+                        "Database url `{}` requires the `postgres` feature but it's not enabled.",
+                        database_url
+                    );
+                }
             }
-            #[cfg(feature = "mysql")]
             _ if database_url.starts_with("mysql://") =>
             {
-                Backend::Mysql
+                #[cfg(feature = "mysql")]
+                {
+                    Backend::Mysql
+                }
+                #[cfg(not(feature = "mysql"))]
+                {
+                    panic!(
+                        "Database url `{}` requires the `mysql` feature but it's not enabled.",
+                        database_url
+                    );
+                }
             }
             #[cfg(feature = "sqlite")]
             _ => Backend::Sqlite,
             #[cfg(not(feature = "sqlite"))]
             _ => {
+                if database_url.starts_with("sqlite://") {
+                    panic!(
+                        "Database url `{}` requires the `sqlite` feature but it's not enabled.",
+                        database_url
+                    );
+                }
+
                 let mut available_schemes: Vec<&str> = Vec::new();
 
                 // One of these will always be true, or you are compiling
@@ -57,7 +82,7 @@ impl Backend {
                 }
 
                 panic!(
-                    "`{}` is not a valid database URL. It should start with {}",
+                    "`{}` is not a valid database URL. It should start with {}, or maybe you meant to use the `sqlite` feature which is not enabled.",
                     database_url,
                     available_schemes.join(" or ")
                 );

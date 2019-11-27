@@ -14,7 +14,7 @@ use super::schema::__diesel_schema_migrations::dsl::*;
 /// to wrap up some constraints which are meant to hold for *all* connections.
 /// This trait will go away at some point in the future. Any Diesel connection
 /// should be useable where this trait is required.
-pub trait MigrationConnection: Connection {
+pub trait MigrationConnection: diesel::migration::MigrationConnection {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>>;
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>>;
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
@@ -22,7 +22,7 @@ pub trait MigrationConnection: Connection {
 
 impl<T> MigrationConnection for T
 where
-    T: Connection,
+    T: diesel::migration::MigrationConnection,
     String: FromSql<VarChar, T::Backend>,
     // FIXME: HRTB is preventing projecting on any associated types here
     for<'a> InsertStatement<

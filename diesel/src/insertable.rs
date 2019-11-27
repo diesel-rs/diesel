@@ -268,7 +268,7 @@ where
 
 #[derive(Debug, Clone, Copy)]
 pub struct BatchInsert<'a, T: 'a, Tab> {
-    pub(crate) records: &'a [T],
+    pub records: &'a [T],
     _marker: PhantomData<Tab>,
 }
 
@@ -295,7 +295,7 @@ where
 
 #[derive(Debug)]
 pub struct OwnedBatchInsert<V, Tab> {
-    pub(crate) values: Vec<V>,
+    pub values: Vec<V>,
     _marker: PhantomData<Tab>,
 }
 

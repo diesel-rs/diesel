@@ -508,3 +508,42 @@ fn verify_schema_errors_if_schema_file_would_change() {
     );
     assert!(p.has_file("src/my_schema.rs"));
 }
+
+#[test]
+fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml() {
+    let p = project("migration_run_custom_migration_dir_from_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+
+    let db_url = p.database_url();
+    let db = database(&db_url);
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}

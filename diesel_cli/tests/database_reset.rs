@@ -193,3 +193,35 @@ fn reset_updates_schema_if_config_present() {
 
     assert!(p.has_file("src/my_schema.rs"));
 }
+
+#[test]
+fn reset_respects_migrations_dir_from_diesel_toml() {
+    let p = project("reset_respects_migrations_dir_from_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url()).create();
+
+    db.execute("CREATE TABLE users ( id INTEGER )");
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    assert!(db.table_exists("users"));
+
+    let result = p.command("database").arg("reset").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(db.table_exists("users"));
+    assert!(db.table_exists("__diesel_schema_migrations"));
+}

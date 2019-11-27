@@ -147,3 +147,38 @@ fn database_setup_respects_migration_dir_by_env() {
     );
     assert!(db.table_exists("users"));
 }
+
+#[test]
+fn database_setup_respects_migrations_dir_from_diesel_toml() {
+    let p = project("database_setup_respects_migrations_dir_by_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p.command("database").arg("setup").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}

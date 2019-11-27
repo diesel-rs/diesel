@@ -167,3 +167,43 @@ fn migration_list_orders_old_and_new_timestamp_forms_mixed_correctly() {
     let output = result.stdout();
     assert_tags_in_order(output, &[&tag1, &tag2]);
 }
+
+#[test]
+fn migration_list_respects_migrations_dir_from_diesel_toml() {
+    let p = project("migration_list_respects_migrations_dir_from_diesel_toml")
+        .folder("custom_migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [migrations_directory]
+            dir = "custom_migrations"
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url());
+
+    p.command("setup").run();
+
+    p.create_migration_in_directory(
+        "custom_migrations",
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    assert!(!db.table_exists("users"));
+
+    // finds unapplied migration
+    let result = p.command("migration").arg("list").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout().contains("[ ] 12345_create_users_table"));
+
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success());
+    assert!(db.table_exists("users"));
+
+    // finds applied migration
+    let result = p.command("migration").arg("list").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout().contains("[X] 12345_create_users_table"));
+}
