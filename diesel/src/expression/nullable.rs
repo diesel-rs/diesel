@@ -1,7 +1,7 @@
 use backend::Backend;
 use expression::*;
 use query_builder::*;
-use query_source::Table;
+use query_source::joins::ToInnerJoin;
 use result::QueryResult;
 use sql_types::IntoNullable;
 
@@ -50,7 +50,7 @@ impl<T: QueryId> QueryId for Nullable<T> {
 impl<T, QS> SelectableExpression<QS> for Nullable<T>
 where
     Self: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
-    QS: Table,
+    QS: ToInnerJoin,
+    T: SelectableExpression<QS::InnerJoin>,
 {
 }

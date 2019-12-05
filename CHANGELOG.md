@@ -18,14 +18,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * All expression methods can now be called on expressions of nullable types.
 
 * Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
-
   `.bind` calls without changing the underlying type.
 
 * Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
-
   an existing query.
-
-
 
 ### Removed
 
@@ -60,6 +56,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Many types were incorrectly considered non-aggregate when they should not
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
+
+* Nullability requirements are now properly enforced for nested joins.
+  Previously, only the rules for the outer-most join were considered. For
+  example, `users.left_join(posts).left_join(comments)` would allow selecting
+  any columns from `posts`. That will now fail to compile, and any selections
+  from `posts` will need to be made explicitly nullable.
 
 ### Deprecated
 
