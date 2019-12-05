@@ -58,7 +58,7 @@ macro_rules! __diesel_column {
             Left: AppearsInFromClause<$table>,
             Right: AppearsInFromClause<$table>,
             (Left::Count, Right::Count): Select<Left, Right>,
-            Self: SelectableExpression<<
+            Self: SelectableExpression<
                 <(Left::Count, Right::Count) as Select<Left, Right>>::Selection,
             >,
         {
