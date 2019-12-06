@@ -6,7 +6,7 @@ extern crate diesel;
 extern crate difference;
 extern crate migrations_internals;
 extern crate regex;
-extern crate tempdir;
+extern crate tempfile;
 
 mod completion_generation;
 mod database_drop;

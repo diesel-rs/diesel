@@ -32,16 +32,16 @@ fn resolve_migrations_directory(
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+    extern crate tempfile;
 
-    use self::tempdir::TempDir;
+    use self::tempfile::Builder;
     use super::resolve_migrations_directory;
     use std::fs;
     use std::path::Path;
 
     #[test]
     fn migrations_directory_resolved_relative_to_cargo_manifest_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         fs::create_dir_all(tempdir.path().join("foo/special_migrations")).unwrap();
         let cargo_manifest_dir = tempdir.path().join("foo");
         let relative_path = Some(Path::new("special_migrations"));
@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     fn migrations_directory_canonicalizes_result() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         fs::create_dir_all(tempdir.path().join("foo/migrations/bar")).unwrap();
         fs::create_dir_all(tempdir.path().join("foo/bar")).unwrap();
         let cargo_manifest_dir = tempdir.path().join("foo/bar");
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn migrations_directory_defaults_to_searching_migrations_path() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         fs::create_dir_all(tempdir.path().join("foo/migrations")).unwrap();
         fs::create_dir_all(tempdir.path().join("foo/bar")).unwrap();
         let cargo_manifest_dir = tempdir.path().join("foo/bar");
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn migrations_directory_searches_src_migrations_if_present() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         fs::create_dir_all(tempdir.path().join("foo/src/migrations")).unwrap();
         fs::create_dir_all(tempdir.path().join("foo/migrations")).unwrap();
         let cargo_manifest_dir = tempdir.path().join("foo");
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn migrations_directory_allows_no_parent_dir_for_cargo_manifest_dir() {
-        let tempdir = TempDir::new("diesel").unwrap();
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
         fs::create_dir_all(tempdir.path().join("special_migrations")).unwrap();
         let cargo_manifest_dir = tempdir.path().to_owned();
         let relative_path = Some(Path::new("special_migrations"));

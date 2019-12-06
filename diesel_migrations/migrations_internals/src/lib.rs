@@ -391,16 +391,16 @@ pub fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, Migration
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+    extern crate tempfile;
 
     use super::*;
 
-    use self::tempdir::TempDir;
+    use self::tempfile::Builder;
     use std::fs;
 
     #[test]
     fn migration_directory_not_found_if_no_migration_dir_exists() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
 
         assert_eq!(
             Err(MigrationError::MigrationDirectoryNotFound),
@@ -410,7 +410,7 @@ mod tests {
 
     #[test]
     fn migration_directory_defaults_to_pwd_slash_migrations() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let temp_path = dir.path().canonicalize().unwrap();
         let migrations_path = temp_path.join("migrations");
 
@@ -424,7 +424,7 @@ mod tests {
 
     #[test]
     fn migration_directory_checks_parents() {
-        let dir = TempDir::new("diesel").unwrap();
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
         let temp_path = dir.path().canonicalize().unwrap();
         let migrations_path = temp_path.join("migrations");
         let child_path = temp_path.join("child");
