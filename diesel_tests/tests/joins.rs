@@ -1,5 +1,5 @@
-use super::schema::*;
 use diesel::*;
+use schema::*;
 
 #[test]
 fn belongs_to() {
@@ -678,13 +678,13 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
         .order(posts::id)
         .load::<Post>(&connection)
         .unwrap();
-    let new_comments = vec![
+    let new_comments: &[NewComment<'static>] = &[
         NewComment(posts[0].id, "First Comment"),
         NewComment(posts[2].id, "Second Comment"),
         NewComment(posts[0].id, "Third Comment"),
     ];
     insert_into(comments::table)
-        .values(&new_comments)
+        .values(new_comments)
         .execute(&connection)
         .unwrap();
 

@@ -1,3 +1,5 @@
+#![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
+
 use super::{PgConnection, PgTypeMetadata};
 use prelude::*;
 

@@ -1,3 +1,4 @@
+#![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
 #[macro_export]

@@ -182,7 +182,10 @@ where
     any_pending_migrations_in_directory(conn, &migrations_dir)
 }
 
-pub fn any_pending_migrations_in_directory<Conn>(conn: &Conn, migrations_dir: &Path) -> Result<bool, RunMigrationsError>
+pub fn any_pending_migrations_in_directory<Conn>(
+    conn: &Conn,
+    migrations_dir: &Path,
+) -> Result<bool, RunMigrationsError>
 where
     Conn: MigrationConnection,
 {
