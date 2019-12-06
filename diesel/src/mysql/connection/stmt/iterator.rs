@@ -67,14 +67,20 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
         self.binds.len()
     }
 
-    fn column_name(&self) -> &str {
+    fn column_name(&self) -> Option<&str> {
         let metadata = self.stmt.metadata().expect("Failed to get metadata");
         let field = if self.col_idx == 0 {
             metadata.fields()[0]
         } else {
             metadata.fields()[self.col_idx - 1]
         };
-        unsafe { CStr::from_ptr(field.name).to_str().expect("It's utf8") }
+        unsafe {
+            Some(CStr::from_ptr(field.name).to_str().expect(
+                "Diesel assumes that your mysql database uses the \
+                 utf8mb4 encoding. That's not the case if you hit \
+                 this error message.",
+            ))
+        }
     }
 }
 

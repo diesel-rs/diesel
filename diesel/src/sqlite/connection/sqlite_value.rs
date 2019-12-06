@@ -106,16 +106,22 @@ impl Row<Sqlite> for SqliteRow {
         })
     }
 
-    fn column_name(&self) -> &str {
+    fn column_name(&self) -> Option<&str> {
         unsafe {
             let ptr = if self.next_col_index == 0 {
                 ffi::sqlite3_column_name(self.stmt.as_ptr(), 0)
             } else {
                 ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index - 1)
             };
-            std::ffi::CStr::from_ptr(ptr)
-                .to_str()
-                .expect("Sqlite3 doc's say it's UTF8")
+            Some(
+                std::ffi::CStr::from_ptr(ptr)
+                    .to_str()
+                    .expect(
+                        "The Sqlite documentation states that this is UTF8. \
+                         If you see this error message something has gone \
+                         horribliy wrong. Please open an issue at the \
+                         diesel repository."),
+            )
         }
     }
 

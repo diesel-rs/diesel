@@ -36,8 +36,8 @@ impl<'a> Row<Pg> for PgRow<'a> {
         self.db_result.column_count()
     }
 
-    fn column_name(&self) -> &str {
-        self.db_result.column_name(self.col_idx)
+    fn column_name(&self) -> Option<&str> {
+        Some(self.db_result.column_name(self.col_idx))
     }
 }
 
