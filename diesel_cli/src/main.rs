@@ -126,7 +126,10 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         ("pending", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let result = call_with_conn!(database_url, migrations::any_pending_migrations_in_directory(&dir))?;
+            let result = call_with_conn!(
+                database_url,
+                migrations::any_pending_migrations_in_directory(&dir)
+            )?;
             println!("{:?}", result);
         }
         ("generate", Some(args)) => {
