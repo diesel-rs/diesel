@@ -68,7 +68,10 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
     }
 
     fn column_name(&self) -> Option<&str> {
-        let metadata = self.stmt.metadata().expect("Failed to get metadata");
+        let metadata = self
+            .stmt
+            .metadata()
+            .expect("Failed to get result metadata from the mysql backend");
         let field = if self.col_idx == 0 {
             metadata.fields()[0]
         } else {

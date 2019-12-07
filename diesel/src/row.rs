@@ -32,6 +32,9 @@ pub trait Row<DB: Backend> {
     fn column_count(&self) -> usize;
 
     /// Name of the current column
+    ///
+    /// May return `None` in cases where the field is not
+    /// named on sql side
     fn column_name(&self) -> Option<&str>;
 }
 
