@@ -113,15 +113,12 @@ impl Row<Sqlite> for SqliteRow {
             } else {
                 ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index - 1)
             };
-            Some(
-                std::ffi::CStr::from_ptr(ptr)
-                    .to_str()
-                    .expect(
-                        "The Sqlite documentation states that this is UTF8. \
-                         If you see this error message something has gone \
-                         horribliy wrong. Please open an issue at the \
-                         diesel repository."),
-            )
+            Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
+                "The Sqlite documentation states that this is UTF8. \
+                 If you see this error message something has gone \
+                 horribliy wrong. Please open an issue at the \
+                 diesel repository.",
+            ))
         }
     }
 
