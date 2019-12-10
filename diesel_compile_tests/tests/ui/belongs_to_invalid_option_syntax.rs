@@ -2,19 +2,25 @@
 extern crate diesel;
 
 table! {
-    foo {
+    bar (id) {
         id -> Integer,
     }
 }
 
+table! {
+    foo (bar_id) {
+        bar_id -> Integer,
+    }
+}
+
 #[derive(Identifiable)]
-#[table_name = "foo"]
+#[table_name = "bar"]
 struct Bar {
     id: i32,
 }
 
 #[derive(Identifiable)]
-#[table_name = "foo"]
+#[table_name = "bar"]
 struct Baz {
     id: i32,
 }
@@ -27,6 +33,7 @@ struct Baz {
 #[belongs_to(Bar, foreign_key)]
 #[belongs_to(Bar, foreign_key(bar_id))]
 #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
+#[table_name = "foo"]
 struct Foo {
     bar_id: i32,
 }
