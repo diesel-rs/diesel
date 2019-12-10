@@ -3,10 +3,10 @@ warning: belongs_to takes a single parent. Change
 to
     belongs_to(Bar)
     belongs_to(Baz)
-  --> $DIR/belongs_to_second_parent.rs:23:19
+  --> $DIR/belongs_to_second_parent.rs:23:3
    |
 23 | #[belongs_to(Bar, Baz)]
-   |                   ^^^
+   |   ^^^^^^^^^^^^^^^^^^^^
 
 error[E0433]: failed to resolve: use of undeclared type or module `foos`
   --> $DIR/belongs_to_second_parent.rs:24:8

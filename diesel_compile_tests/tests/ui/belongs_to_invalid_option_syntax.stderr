@@ -39,14 +39,14 @@ warning: The form `foreign_key(value)` is deprecated. Use `foreign_key = "value"
    |                   ^^^^^^^^^^^^^^^^^^^
 
 warning: belongs_to takes a single parent. Change
-    belongs_to(Parent1, Parent2)
+    belongs_to(Baz, random_option)
 to
-    belongs_to(Parent1)
-    belongs_to(Parent2)
-  --> $DIR/belongs_to_invalid_option_syntax.rs:29:43
+    belongs_to(Baz)
+    belongs_to(random_option)
+  --> $DIR/belongs_to_invalid_option_syntax.rs:29:3
    |
 29 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
-   |                                           ^^^^^^^^^^^^^
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0433]: failed to resolve: use of undeclared type or module `foos`
   --> $DIR/belongs_to_invalid_option_syntax.rs:30:8
