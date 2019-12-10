@@ -142,34 +142,46 @@ impl AssociationOptions {
                 .unwrap_or_else(|| Ok(infer_foreign_key(&parent_struct_name.ident)))?
         };
 
-        let unrecognized_options = meta
+        let (unrecognized_paths, unrecognized_options): (Vec<_>, Vec<_>) = meta
             .nested()?
             .skip(1)
-            .filter(|n| !n.name().is_ident("foreign_key"));
+            .filter(|n| !n.name().is_ident("foreign_key"))
+            .partition(|item| item.path().is_ok());
+
+        if !unrecognized_paths.is_empty() {
+            let parent_path_string = path_to_string(&parent_struct.path);
+            let unrecognized_path_strings: Vec<_> = unrecognized_paths
+                .iter()
+                .filter_map(|item| item.path().as_ref().map(path_to_string).ok())
+                .collect();
+
+            meta
+                .span()
+                .warning(format!(
+                    "belongs_to takes a single parent. Change\n\
+                    \tbelongs_to({}, {})\n\
+                    to\n\
+                    \tbelongs_to({})\n\
+                    {}",
+                    parent_path_string,
+                    unrecognized_path_strings.join(","),
+                    parent_path_string,
+                    unrecognized_path_strings
+                        .iter()
+                        .map(|path| format!("\tbelongs_to({})", path))
+                        .collect::<Vec<_>>().join("\n")
+                ))
+                .emit();
+        }
+
         for ignored in unrecognized_options {
-            match ignored.path() {
-                Ok(_) => {
-                    ignored
-                        .span()
-                        .warning(
-                            "belongs_to takes a single parent. Change\n\
-                            \tbelongs_to(Parent1, Parent2)\n\
-                            to\n\
-                            \tbelongs_to(Parent1)\n\
-                            \tbelongs_to(Parent2)"
-                        )
-                        .emit();
-                },
-                Err(_) => {
-                    ignored
-                        .span()
-                        .warning(format!(
-                            "Unrecognized option {}",
-                            path_to_string(&ignored.name())
-                        ))
-                        .emit();
-                }
-            }
+            ignored
+                .span()
+                .warning(format!(
+                    "Unrecognized option {}",
+                    path_to_string(&ignored.name())
+                ))
+                .emit();
         }
 
         Ok(Self {
