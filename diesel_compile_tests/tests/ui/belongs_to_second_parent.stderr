@@ -8,5 +8,3 @@ to
 29 | #[belongs_to(Bar, Baz)]
    |   ^^^^^^^^^^^^^^^^^^^^
 
-error: aborting due to previous error
-
