@@ -155,21 +155,21 @@ impl AssociationOptions {
                 .filter_map(|item| item.path().as_ref().map(path_to_string).ok())
                 .collect();
 
-            meta
-                .span()
+            meta.span()
                 .warning(format!(
                     "belongs_to takes a single parent. Change\n\
-                    \tbelongs_to({}, {})\n\
-                    to\n\
-                    \tbelongs_to({})\n\
-                    {}",
+                     \tbelongs_to({}, {})\n\
+                     to\n\
+                     \tbelongs_to({})\n\
+                     {}",
                     parent_path_string,
                     unrecognized_path_strings.join(","),
                     parent_path_string,
                     unrecognized_path_strings
                         .iter()
                         .map(|path| format!("\tbelongs_to({})", path))
-                        .collect::<Vec<_>>().join("\n")
+                        .collect::<Vec<_>>()
+                        .join("\n")
                 ))
                 .emit();
         }
