@@ -26,13 +26,7 @@ struct Baz {
 }
 
 #[derive(Associations)]
-#[belongs_to]
-#[belongs_to = "Bar"]
-#[belongs_to()]
-#[belongs_to(foreign_key = "bar_id")]
-#[belongs_to(Bar, foreign_key)]
-#[belongs_to(Bar, foreign_key(bar_id))]
-#[belongs_to(Baz, foreign_key = "bar_id", random_option)]
+#[belongs_to(Bar, Baz)]
 #[table_name = "foo"]
 struct Foo {
     bar_id: i32,
