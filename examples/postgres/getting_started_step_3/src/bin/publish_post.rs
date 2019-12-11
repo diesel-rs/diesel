@@ -19,6 +19,6 @@ fn main() {
     let post = diesel::update(posts.find(id))
         .set(published.eq(true))
         .get_result::<Post>(&connection)
-        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
+        .unwrap();
     println!("Published post {}", post.title);
 }
