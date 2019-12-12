@@ -106,7 +106,7 @@ fn last_error_message(conn: *const PGconn) -> String {
     unsafe {
         let error_ptr = PQerrorMessage(conn);
         let bytes = CStr::from_ptr(error_ptr).to_bytes();
-        str::from_utf8_unchecked(bytes).to_string()
+        String::from_utf8_lossy(bytes).to_string()
     }
 }
 
