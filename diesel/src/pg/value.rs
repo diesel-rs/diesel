@@ -1,4 +1,4 @@
-use super::{Pg, PgMetadataLookup};
+use super::Pg;
 use backend::BinaryRawValue;
 use std::num::NonZeroU32;
 use std::ops::Range;
@@ -9,7 +9,6 @@ use std::ops::Range;
 pub struct PgValue<'a> {
     raw_value: &'a [u8],
     type_oid: NonZeroU32,
-    metadata: Option<&'a PgMetadataLookup>,
 }
 
 impl<'a> BinaryRawValue<'a> for Pg {
@@ -24,19 +23,13 @@ impl<'a> PgValue<'a> {
         Self {
             raw_value,
             type_oid: NonZeroU32::new(42).unwrap(),
-            metadata: None,
         }
     }
 
-    pub(crate) fn new(
-        raw_value: &'a [u8],
-        type_oid: NonZeroU32,
-        metadata: &'a PgMetadataLookup,
-    ) -> Self {
+    pub(crate) fn new(raw_value: &'a [u8], type_oid: NonZeroU32) -> Self {
         Self {
             raw_value,
             type_oid,
-            metadata: Some(metadata),
         }
     }
 
@@ -48,11 +41,6 @@ impl<'a> PgValue<'a> {
     /// Get the type oid of this value
     pub fn get_oid(&self) -> NonZeroU32 {
         self.type_oid
-    }
-
-    /// Get a instance for type lookup
-    pub fn get_metadata_lookup(&self) -> &PgMetadataLookup {
-        self.metadata.expect("It's only not there for tests")
     }
 
     pub(crate) fn subslice(&self, range: Range<usize>) -> Self {

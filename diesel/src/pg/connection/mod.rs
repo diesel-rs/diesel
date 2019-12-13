@@ -38,7 +38,7 @@ impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
         let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
-        PgResult::new(inner_result?, self)?;
+        PgResult::new(inner_result?)?;
         Ok(())
     }
 }

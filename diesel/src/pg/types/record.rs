@@ -54,7 +54,6 @@ macro_rules! tuple_impls {
                         $T::from_sql(Some(PgValue::new(
                             elem_bytes,
                             oid,
-                            value.get_metadata_lookup()
                         )))?
                     }
                 },)+);

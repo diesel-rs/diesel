@@ -9,15 +9,15 @@ use std::marker::PhantomData;
 
 /// The type returned by various [`Connection`](struct.Connection.html) methods.
 /// Acts as an iterator over `T`.
-pub struct Cursor<'a, ST, T> {
+pub struct Cursor<ST, T> {
     current_row: usize,
-    db_result: PgResult<'a>,
+    db_result: PgResult,
     _marker: PhantomData<(ST, T)>,
 }
 
-impl<'a, ST, T> Cursor<'a, ST, T> {
+impl<ST, T> Cursor<ST, T> {
     #[doc(hidden)]
-    pub fn new(db_result: PgResult<'a>) -> Self {
+    pub fn new(db_result: PgResult) -> Self {
         Cursor {
             current_row: 0,
             db_result,
@@ -26,7 +26,7 @@ impl<'a, ST, T> Cursor<'a, ST, T> {
     }
 }
 
-impl<'a, ST, T> Iterator for Cursor<'a, ST, T>
+impl<ST, T> Iterator for Cursor<ST, T>
 where
     T: Queryable<ST, Pg>,
 {
@@ -46,12 +46,12 @@ where
     }
 }
 
-pub struct NamedCursor<'a> {
-    pub(crate) db_result: PgResult<'a>,
+pub struct NamedCursor {
+    pub(crate) db_result: PgResult,
 }
 
-impl<'a> NamedCursor<'a> {
-    pub fn new(db_result: PgResult<'a>) -> Self {
+impl NamedCursor {
+    pub fn new(db_result: PgResult) -> Self {
         NamedCursor { db_result }
     }
 
