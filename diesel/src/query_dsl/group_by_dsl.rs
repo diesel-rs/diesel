@@ -1,6 +1,6 @@
-use expression::Expression;
-use query_builder::{AsQuery, Query};
-use query_source::Table;
+use crate::expression::Expression;
+use crate::query_builder::{AsQuery, Query};
+use crate::query_source::Table;
 
 /// This trait is not yet part of Diesel's public API. It may change in the
 /// future without a major version bump.

@@ -3,9 +3,9 @@ use byteorder::NativeEndian;
 
 use super::connection::SqliteValue;
 use super::query_builder::SqliteQueryBuilder;
-use backend::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use sql_types::TypeMetadata;
+use crate::backend::*;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]

@@ -8,8 +8,8 @@ use std::{slice, str};
 
 use super::raw::RawResult;
 use super::row::PgRow;
-use pg::PgConnection;
-use result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
+use crate::pg::PgConnection;
+use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 
 pub struct PgResult<'a> {
     internal_result: RawResult,

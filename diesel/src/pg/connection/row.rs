@@ -1,7 +1,7 @@
 use super::cursor::NamedCursor;
 use super::result::PgResult;
-use pg::{Pg, PgMetadataLookup, PgValue};
-use row::*;
+use crate::pg::{Pg, PgMetadataLookup, PgValue};
+use crate::row::*;
 
 pub struct PgRow<'a> {
     db_result: &'a PgResult<'a>,

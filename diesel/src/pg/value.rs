@@ -1,5 +1,5 @@
 use super::{Pg, PgMetadataLookup};
-use backend::BinaryRawValue;
+use crate::backend::BinaryRawValue;
 use std::num::NonZeroU32;
 use std::ops::Range;
 

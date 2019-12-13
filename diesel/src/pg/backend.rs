@@ -4,10 +4,10 @@ use byteorder::NetworkEndian;
 
 use super::query_builder::PgQueryBuilder;
 use super::{PgMetadataLookup, PgValue};
-use backend::*;
-use deserialize::Queryable;
-use query_builder::bind_collector::RawBytesBindCollector;
-use sql_types::{Oid, TypeMetadata};
+use crate::backend::*;
+use crate::deserialize::Queryable;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::sql_types::{Oid, TypeMetadata};
 
 /// The PostgreSQL backend
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

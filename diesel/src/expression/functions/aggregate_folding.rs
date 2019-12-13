@@ -1,4 +1,4 @@
-use sql_types::Foldable;
+use crate::sql_types::Foldable;
 
 sql_function! {
     /// Represents a SQL `SUM` function. This function can only take types which are

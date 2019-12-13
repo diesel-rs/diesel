@@ -1,7 +1,7 @@
-use associations::{HasTable, Identifiable};
-use dsl::Find;
-use query_dsl::methods::FindDsl;
-use query_source::Table;
+use crate::associations::{HasTable, Identifiable};
+use crate::dsl::Find;
+use crate::query_dsl::methods::FindDsl;
+use crate::query_source::Table;
 
 #[doc(hidden)]
 #[derive(Debug)]

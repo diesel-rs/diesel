@@ -1,5 +1,5 @@
 use super::{PgConnection, PgTypeMetadata};
-use prelude::*;
+use crate::prelude::*;
 
 use std::cell::RefCell;
 use std::collections::HashMap;

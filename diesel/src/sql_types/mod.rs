@@ -356,10 +356,10 @@ pub struct Timestamp;
 pub struct Nullable<ST: NotNull>(ST);
 
 #[cfg(feature = "postgres")]
-pub use pg::types::sql_types::*;
+pub use crate::pg::types::sql_types::*;
 
 #[cfg(feature = "mysql")]
-pub use mysql::types::*;
+pub use crate::mysql::types::*;
 
 /// Indicates that a SQL type exists for a backend.
 ///

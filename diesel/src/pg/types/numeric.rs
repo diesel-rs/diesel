@@ -11,11 +11,11 @@ mod bigdecimal {
     use self::num_traits::{Signed, ToPrimitive, Zero};
     use std::io::prelude::*;
 
-    use deserialize::{self, FromSql};
-    use pg::data_types::PgNumeric;
-    use pg::{Pg, PgValue};
-    use serialize::{self, Output, ToSql};
-    use sql_types::Numeric;
+    use crate::deserialize::{self, FromSql};
+    use crate::pg::data_types::PgNumeric;
+    use crate::pg::{Pg, PgValue};
+    use crate::serialize::{self, Output, ToSql};
+    use crate::sql_types::Numeric;
 
     use std::convert::{TryFrom, TryInto};
     use std::error::Error;

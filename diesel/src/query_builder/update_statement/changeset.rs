@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::operators::Eq;
-use expression::AppearsOnTable;
-use query_builder::*;
-use query_source::{Column, QuerySource};
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::operators::Eq;
+use crate::expression::AppearsOnTable;
+use crate::query_builder::*;
+use crate::query_source::{Column, QuerySource};
+use crate::result::QueryResult;
 
 /// Types which can be passed to
 /// [`update.set`](struct.UpdateStatement.html#method.set).

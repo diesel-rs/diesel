@@ -1,6 +1,6 @@
 use std::ops::Mul;
 
-use data_types::PgInterval;
+use crate::data_types::PgInterval;
 
 /// A DSL added to integers and `f64` to construct PostgreSQL intervals.
 ///
@@ -243,10 +243,10 @@ mod tests {
     use self::quickcheck::quickcheck;
 
     use super::*;
-    use data_types::PgInterval;
-    use dsl::sql;
-    use prelude::*;
-    use {select, sql_types};
+    use crate::data_types::PgInterval;
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::{select, sql_types};
 
     thread_local! {
         static CONN: PgConnection = {

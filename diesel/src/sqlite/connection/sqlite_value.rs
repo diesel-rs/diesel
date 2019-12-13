@@ -5,8 +5,8 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{slice, str};
 
-use row::*;
-use sqlite::Sqlite;
+use crate::row::*;
+use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {

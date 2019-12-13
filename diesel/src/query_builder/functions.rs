@@ -3,9 +3,9 @@ use super::insert_statement::{Insert, InsertOrIgnore, Replace};
 use super::{
     IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
-use dsl::Select;
-use expression::Expression;
-use query_dsl::methods::SelectDsl;
+use crate::dsl::Select;
+use crate::expression::Expression;
+use crate::query_dsl::methods::SelectDsl;
 
 /// Creates an `UPDATE` statement.
 ///

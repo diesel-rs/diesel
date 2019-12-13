@@ -23,4 +23,4 @@ pub use self::text_expression_methods::TextExpressionMethods;
 
 #[cfg(feature = "postgres")]
 #[doc(inline)]
-pub use pg::expression::expression_methods::*;
+pub use crate::pg::expression::expression_methods::*;

@@ -1,5 +1,5 @@
-use query_builder::AsQuery;
-use query_source::Table;
+use crate::query_builder::AsQuery;
+use crate::query_source::Table;
 
 /// The `into_boxed` method
 ///

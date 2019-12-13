@@ -3,8 +3,8 @@
 mod errors;
 pub use self::errors::{MigrationError, RunMigrationsError};
 
-use connection::{Connection, SimpleConnection};
-use result::QueryResult;
+use crate::connection::{Connection, SimpleConnection};
+use crate::result::QueryResult;
 use std::path::Path;
 
 /// Represents a migration that interacts with diesel
@@ -80,25 +80,25 @@ pub trait MigrationConnection: Connection {
 }
 
 #[cfg(feature = "postgres")]
-impl MigrationConnection for ::pg::PgConnection {
+impl MigrationConnection for crate::pg::PgConnection {
     fn setup(&self) -> QueryResult<usize> {
-        use RunQueryDsl;
-        ::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+        use crate::RunQueryDsl;
+        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
 }
 
 #[cfg(feature = "mysql")]
-impl MigrationConnection for ::mysql::MysqlConnection {
+impl MigrationConnection for crate::mysql::MysqlConnection {
     fn setup(&self) -> QueryResult<usize> {
-        use RunQueryDsl;
-        ::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+        use crate::RunQueryDsl;
+        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
 }
 
 #[cfg(feature = "sqlite")]
-impl MigrationConnection for ::sqlite::SqliteConnection {
+impl MigrationConnection for crate::sqlite::SqliteConnection {
     fn setup(&self) -> QueryResult<usize> {
-        use RunQueryDsl;
-        ::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+        use crate::RunQueryDsl;
+        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
 }
