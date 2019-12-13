@@ -39,7 +39,7 @@ mod foreign_impls {
     #[diesel(foreign_derive)]
     #[cfg_attr(
         feature = "mysql",
-        sql_type = "crate::sql_types::Unsigned<::sql_types::TinyInt>"
+        sql_type = "crate::sql_types::Unsigned<crate::sql_types::TinyInt>"
     )]
     struct U8Proxy(u8);
 

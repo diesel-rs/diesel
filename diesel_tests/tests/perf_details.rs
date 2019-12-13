@@ -1,7 +1,7 @@
 use diesel::query_builder::AsQuery;
 use diesel::*;
-use schema::posts::dsl::{posts, title};
-use schema::users::dsl::*;
+use crate::schema::posts::dsl::{posts, title};
+use crate::schema::users::dsl::*;
 use std::cmp::max;
 use std::mem;
 

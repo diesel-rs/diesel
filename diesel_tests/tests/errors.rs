@@ -1,7 +1,7 @@
 use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, UniqueViolation};
 use diesel::result::Error::DatabaseError;
 use diesel::*;
-use schema::*;
+use crate::schema::*;
 
 #[test]
 fn unique_constraints_are_detected() {

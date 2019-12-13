@@ -10,7 +10,7 @@ pub use diesel::result::Error;
 pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::HasSqlType;
 pub use diesel::*;
-pub use schema::{connection_without_transaction, TestConnection};
+pub use crate::schema::{connection_without_transaction, TestConnection};
 
 use diesel::expression::AsExpression;
 use diesel::query_builder::{QueryFragment, QueryId};

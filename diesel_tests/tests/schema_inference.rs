@@ -194,7 +194,7 @@ mod postgres {
     use super::chrono::*;
     use diesel::data_types::PgNumeric;
     use diesel::*;
-    use schema::*;
+    use crate::schema::*;
     use std::collections::Bound;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
@@ -293,7 +293,7 @@ mod mysql {
 #[test]
 fn columns_named_as_reserved_keywords_are_renamed() {
     use diesel::*;
-    use schema::*;
+    use crate::schema::*;
 
     #[derive(Queryable, Insertable, Debug, PartialEq)]
     #[table_name = "with_keywords"]

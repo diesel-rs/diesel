@@ -1,5 +1,5 @@
 use diesel::*;
-use schema::connection;
+use crate::schema::connection;
 
 mod using_infer_schema {
     use super::*;

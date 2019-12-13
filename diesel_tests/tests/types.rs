@@ -9,7 +9,7 @@ use diesel::deserialize::FromSql;
 use diesel::pg::Pg;
 use diesel::sql_types::*;
 use diesel::*;
-use schema::*;
+use crate::schema::*;
 
 use quickcheck::quickcheck;
 

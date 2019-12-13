@@ -5,13 +5,13 @@
 #![cfg(feature = "postgres")]
 use diesel::sql_types::{BigInt, VarChar};
 use diesel::*;
-use schema::*;
+use crate::schema::*;
 
 sql_function!(fn my_lower(x: VarChar) -> VarChar);
 
 #[test]
 fn test_sql_function() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     connection

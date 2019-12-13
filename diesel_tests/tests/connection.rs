@@ -1,5 +1,5 @@
 use diesel::*;
-use schema::{connection_without_transaction, DropTable};
+use crate::schema::{connection_without_transaction, DropTable};
 
 table! {
     auto_time {
@@ -14,7 +14,7 @@ table! {
 fn managing_updated_at_for_table() {
     use self::auto_time::dsl::*;
     use chrono::NaiveDateTime;
-    use schema_dsl::*;
+    use crate::schema_dsl::*;
     use std::{thread, time::Duration};
 
     // transactions have frozen time, so we can't use them

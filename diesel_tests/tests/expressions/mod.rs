@@ -8,8 +8,8 @@ use diesel::backend::Backend;
 use diesel::dsl::*;
 use diesel::query_builder::*;
 use diesel::*;
-use schema::users::dsl::*;
-use schema::{
+use crate::schema::users::dsl::*;
+use crate::schema::{
     connection, connection_with_sean_and_tess_in_users_table, DropTable, NewUser, TestBackend,
 };
 
@@ -219,7 +219,7 @@ sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::VarChar>, y: sql_typ
 
 #[test]
 fn function_with_multiple_arguments() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let new_users = vec![

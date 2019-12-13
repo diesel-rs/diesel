@@ -1,5 +1,5 @@
 use diesel::*;
-use schema::*;
+use crate::schema::*;
 
 #[test]
 fn one_to_many_returns_query_source_for_association() {
@@ -41,7 +41,7 @@ fn eager_loading_associations_for_multiple_records() {
 mod eager_loading_with_string_keys {
     use diesel::connection::SimpleConnection;
     use diesel::*;
-    use schema::{connection, drop_table_cascade};
+    use crate::schema::{connection, drop_table_cascade};
 
     table! { users { id -> Text, } }
     table! { posts { id -> Text, user_id -> Text, } }

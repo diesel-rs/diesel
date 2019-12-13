@@ -1,11 +1,11 @@
 use super::schema::*;
 use diesel::connection::SimpleConnection;
 use diesel::*;
-use schema_dsl::*;
+use crate::schema_dsl::*;
 
 #[test]
 fn selecting_basic_data() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -22,7 +22,7 @@ fn selecting_basic_data() {
 
 #[test]
 fn selecting_a_struct() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
@@ -35,7 +35,7 @@ fn selecting_a_struct() {
 
 #[test]
 fn with_safe_select() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -71,7 +71,7 @@ fn with_select_sql() {
 
 #[test]
 fn selecting_nullable_followed_by_non_null() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -87,7 +87,7 @@ fn selecting_nullable_followed_by_non_null() {
 
 #[test]
 fn selecting_expression_with_bind_param() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -163,7 +163,7 @@ fn selecting_columns_with_different_definition_order() {
 
 #[test]
 fn selection_using_subselect() {
-    use schema::posts::dsl::*;
+    use crate::schema::posts::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let ids: Vec<i32> = users::table.select(users::id).load(&connection).unwrap();

@@ -1,9 +1,9 @@
 use diesel::*;
-use schema::*;
+use crate::schema::*;
 
 #[test]
 fn order_by_column() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let conn = connection();
     let data = vec![
@@ -42,7 +42,7 @@ fn order_by_column() {
 
 #[test]
 fn order_by_descending_column() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let conn = connection();
     let data = vec![
