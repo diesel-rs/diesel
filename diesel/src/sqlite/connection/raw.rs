@@ -133,6 +133,7 @@ impl Drop for RawConnection {
 fn convert_to_string_and_free(err_msg: *const libc::c_char) -> String {
     let msg = unsafe {
         let bytes = CStr::from_ptr(err_msg).to_bytes();
+        // sqlite is documented to return utf8 strings here
         str::from_utf8_unchecked(bytes).into()
     };
     unsafe { ffi::sqlite3_free(err_msg as *mut libc::c_void) };
