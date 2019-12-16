@@ -309,3 +309,24 @@ impl<T: Query> AsQuery for T {
 pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
     DebugQuery::new(query)
 }
+
+pub trait NamedQueryFragment {
+    type Name;
+}
+
+macro_rules! named_query_fragment {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            impl<$($T,)*> NamedQueryFragment for ($($T,)*)
+            where $($T: NamedQueryFragment,)* {
+                type Name = ($($T::Name,)*);
+            }
+        )*
+    }
+}
+
+__diesel_for_each_tuple!(named_query_fragment);

@@ -4,18 +4,17 @@ use syn;
 use meta::*;
 use util::*;
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
+pub fn derive(item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let flags =
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
 
-    item.generics.params.push(parse_quote!(__ST));
-    item.generics.params.push(parse_quote!(__DB));
+    let (raw_generics, _, raw_where_clause) = item.generics.split_for_impl();
+    let mut generics = item.generics.clone();
+    generics.params.push(parse_quote!(__ST));
+    generics.params.push(parse_quote!(__DB));
     {
-        let where_clause = item
-            .generics
-            .where_clause
-            .get_or_insert(parse_quote!(where));
+        let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
         where_clause
             .predicates
             .push(parse_quote!(__DB: diesel::backend::Backend));
@@ -23,13 +22,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
             .predicates
             .push(parse_quote!(Self: FromSql<__ST, __DB>));
     }
-    let (impl_generics, _, where_clause) = item.generics.split_for_impl();
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let dummy_mod = format!("_impl_from_sql_row_for_{}", item.ident,).to_lowercase();
     Ok(wrap_in_dummy_mod(
         Ident::new(&dummy_mod, Span::call_site()),
         quote! {
-            use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable};
+            use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable, IntoHlist};
 
             impl #impl_generics FromSqlRow<__ST, __DB> for #struct_ty
             #where_clause
@@ -48,6 +47,19 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
 
                 fn build(row: Self::Row) -> Self {
                     row
+                }
+            }
+
+            impl #raw_generics IntoHlist for #struct_ty
+                #raw_where_clause
+            {
+                type Hlist = diesel::frunk::HCons<#struct_ty, diesel::frunk::HNil>;
+
+                fn into_hlist(self) -> Self::Hlist {
+                    diesel::frunk::HCons {
+                        head: self,
+                        tail: diesel::frunk::HNil
+                    }
                 }
             }
         },

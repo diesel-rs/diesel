@@ -13,7 +13,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId, Default)]
+        #[derive(Debug, Clone, Copy, QueryId, Default, NamedQueryFragment)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
