@@ -34,6 +34,10 @@ num-integer = { version = "0.1.32", optional = true }
 bigdecimal = { version = ">= 0.0.10, <= 0.1.0", optional = true }
 bitflags = { version = "1.0", optional = true }
 r2d2 = { version = ">= 0.8, < 0.9", optional = true }
+tokio = { version = "0.2.0", optional = true, features = ["io-driver"] }
+mio = "0.6.21"
+async-trait = { version = "0.1.21", optional = true }
+futures = "0.3.1"
 
 [dev-dependencies]
 cfg-if = "0.1.0"
@@ -57,6 +61,7 @@ with-deprecated = []
 deprecated-time = ["time"]
 network-address = ["ipnetwork", "libc"]
 numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
+unstable_async_pg = ["tokio", "async-trait"]
 
 [badges]
 travis-ci = { repository = "diesel-rs/diesel" }

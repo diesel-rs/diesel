@@ -48,6 +48,40 @@ impl Statement {
         PgResult::new(internal_res?)
     }
 
+    pub async fn execute_async(
+        &self,
+        conn: &mut RawConnection,
+        param_data: &Vec<Option<Vec<u8>>>,
+    ) -> QueryResult<PgResult> {
+        {
+            let params_pointer = param_data
+                .iter()
+                .map(|data| {
+                    data.as_ref()
+                        .map(|d| d.as_ptr() as *const libc::c_char)
+                        .unwrap_or(ptr::null())
+                })
+                .collect::<Vec<_>>();
+            let param_lengths = param_data
+                .iter()
+                .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))
+                .collect::<Vec<_>>();
+            unsafe {
+                conn.exec_prepared_async(
+                    self.name.as_ptr(),
+                    params_pointer.len() as libc::c_int,
+                    params_pointer.as_ptr(),
+                    param_lengths.as_ptr(),
+                    self.param_formats.as_ptr(),
+                    1,
+                )
+            }?;
+        }
+
+        let internal_res = conn.get_last_result().await?;
+        PgResult::new(internal_res)
+    }
+
     #[allow(clippy::ptr_arg)]
     pub fn prepare(
         conn: &PgConnection,
@@ -70,6 +104,34 @@ impl Statement {
         PgResult::new(internal_result?)?;
 
         Ok(Statement {
+            name,
+            param_formats: vec![1; param_types.len()],
+        })
+    }
+
+    pub async fn prepare_async(
+        conn: &mut RawConnection,
+        sql: &str,
+        name: Option<&str>,
+        param_types: &[PgTypeMetadata],
+    ) -> QueryResult<Self> {
+        let name = CString::new(name.unwrap_or(""))?;
+        let sql = CString::new(sql)?;
+        let param_types_vec = param_types.iter().map(|x| x.oid).collect();
+
+        unsafe {
+            conn.prepare_async(
+                name.as_ptr(),
+                sql.as_ptr(),
+                param_types.len() as libc::c_int,
+                param_types_to_ptr(Some(&param_types_vec)),
+            )
+        }?;
+
+        let internal_result = conn.get_last_result().await?;
+        PgResult::new(internal_result)?;
+
+        Ok(Self {
             name,
             param_formats: vec![1; param_types.len()],
         })

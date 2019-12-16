@@ -18,6 +18,8 @@ mod value;
 
 pub use self::backend::{Pg, PgTypeMetadata};
 pub use self::connection::PgConnection;
+#[cfg(feature = "unstable_async_pg")]
+pub use self::connection::AsyncPgConnection;
 pub use self::metadata_lookup::PgMetadataLookup;
 pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;

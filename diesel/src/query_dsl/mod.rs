@@ -1318,6 +1318,37 @@ pub trait RunQueryDsl<Conn>: Sized {
     }
 }
 
+use crate::AsyncPgConnection;
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::deserialize::Queryable;
+use crate::sql_types::HasSqlType;
+
+#[async_trait::async_trait]
+pub trait AsyncRunQueryDsl: Sized {
+    async fn execute_async(self, conn: &mut AsyncPgConnection) -> QueryResult<usize>
+    where
+        Self: QueryFragment<Pg> + QueryId,
+    {
+        conn.execute_returning_count(self).await
+    }
+
+    async fn load_async<U>(self, conn: &mut AsyncPgConnection) -> QueryResult<Vec<U>>
+    where
+        Pg: HasSqlType<Self::SqlType>,
+        Self: AsQuery,
+        Self::Query: QueryFragment<Pg> + QueryId + Send,
+        U: Queryable<Self::SqlType, Pg>,
+    {
+        conn.query_by_index(self).await
+    }
+}
+
+impl<T> AsyncRunQueryDsl for T
+where
+    T: RunQueryDsl<crate::PgConnection>,
+{}
+
 // Note: We could have a blanket `AsQuery` impl here, which would apply to
 // everything we want it to. However, when a query is invalid, we specifically
 // want the error to happen on the where clause of the method instead of trait

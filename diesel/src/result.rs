@@ -4,6 +4,7 @@ use std::convert::From;
 use std::error::Error as StdError;
 use std::ffi::NulError;
 use std::fmt::{self, Display};
+use std::io;
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -185,7 +186,7 @@ impl DatabaseErrorInformation for String {
 /// Errors which can occur during [`Connection::establish`]
 ///
 /// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum ConnectionError {
     /// The connection URL contained a `NUL` byte.
     InvalidCString(NulError),
@@ -200,8 +201,25 @@ pub enum ConnectionError {
     /// This variant is returned if an error occurred executing the query to set
     /// those options. Diesel will never affect global configuration.
     CouldntSetupConfiguration(Error),
+    /// An I/O error occurred
+    IoError(io::Error),
     #[doc(hidden)]
     __Nonexhaustive, // Match against _ instead, more variants may be added in the future
+}
+
+impl PartialEq for ConnectionError {
+    fn eq(&self, other: &Self) -> bool {
+        use ConnectionError::*;
+
+        match (self, other) {
+            (InvalidCString(e1), InvalidCString(e2)) => e1 == e2,
+            (BadConnection(e1), BadConnection(e2)) => e1 == e2,
+            (InvalidConnectionUrl(e1), InvalidConnectionUrl(e2)) => e1 == e2,
+            (CouldntSetupConfiguration(e1), CouldntSetupConfiguration(e2)) => e1 == e2,
+            (IoError(e1), IoError(e2)) => e1.kind() == e2.kind(),
+            (_, _) => false,
+        }
+    }
 }
 
 /// A specialized result type for queries.
@@ -255,6 +273,12 @@ impl<T> OptionalExtension<T> for QueryResult<T> {
 impl From<NulError> for ConnectionError {
     fn from(e: NulError) -> Self {
         ConnectionError::InvalidCString(e)
+    }
+}
+
+impl From<io::Error> for ConnectionError {
+    fn from(e: io::Error) -> Self {
+        ConnectionError::IoError(e)
     }
 }
 
@@ -315,6 +339,7 @@ impl Display for ConnectionError {
             ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
             ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
             ConnectionError::CouldntSetupConfiguration(ref e) => e.fmt(f),
+            ConnectionError::IoError(ref e) => e.fmt(f),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
@@ -327,6 +352,7 @@ impl StdError for ConnectionError {
             ConnectionError::BadConnection(ref s) => s,
             ConnectionError::InvalidConnectionUrl(ref s) => s,
             ConnectionError::CouldntSetupConfiguration(ref e) => e.description(),
+            ConnectionError::IoError(ref e) => e.description(),
             ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }

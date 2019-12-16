@@ -3,20 +3,25 @@ use diesel::connection::SimpleConnection;
 use diesel::*;
 use crate::schema_dsl::*;
 
-#[test]
-fn selecting_basic_data() {
+#[tokio::test(threaded_scheduler)]
+async fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    let mut connection = async_connection().await;
+    sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute_async(&mut connection)
+        .await
         .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), None::<String>),
         ("Tess".to_string(), None::<String>),
     ];
-    let actual_data: Vec<_> = users.select((name, hair_color)).load(&connection).unwrap();
+    let actual_data: Vec<_> = users
+        .select((name, hair_color))
+        .load_async(&mut connection)
+        .await
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 

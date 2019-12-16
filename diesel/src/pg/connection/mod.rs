@@ -1,9 +1,12 @@
+mod async_connection;
 mod cursor;
 pub mod raw;
 #[doc(hidden)]
 pub mod result;
 mod row;
 mod stmt;
+
+pub use self::async_connection::AsyncPgConnection;
 
 use std::ffi::CString;
 use std::os::raw as libc;
@@ -49,12 +52,7 @@ impl Connection for PgConnection {
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
-            let conn = PgConnection {
-                raw_connection: raw_conn,
-                transaction_manager: AnsiTransactionManager::new(),
-                statement_cache: StatementCache::new(),
-                metadata_cache: PgMetadataCache::new(),
-            };
+            let conn = Self::from_raw(raw_conn);
             conn.set_config_options()
                 .map_err(CouldntSetupConfiguration)?;
             Ok(conn)
@@ -176,6 +174,19 @@ impl PgConnection {
 
     pub(crate) fn get_metadata_cache(&self) -> &PgMetadataCache {
         &self.metadata_cache
+    }
+
+    pub(crate) fn set_nonblocking(&self) -> ConnectionResult<()> {
+        self.raw_connection.set_nonblocking()
+    }
+
+    fn from_raw(raw_connection: RawConnection) -> Self {
+        Self {
+            raw_connection,
+            transaction_manager: AnsiTransactionManager::new(),
+            statement_cache: StatementCache::new(),
+            metadata_cache: PgMetadataCache::new(),
+        }
     }
 }
 

@@ -181,6 +181,16 @@ impl<'a> Drop for DropTable<'a> {
     }
 }
 
+#[cfg(all(feature = "async", feature = "postgres"))]
+pub async fn async_connection() -> AsyncPgConnection {
+    let connection_url = dotenv::var("PG_DATABASE_URL")
+        .or_else(|_| dotenv::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+    let mut conn = AsyncPgConnection::establish(&connection_url).await.unwrap();
+    conn.begin_test_transaction().await.unwrap();
+    conn
+}
+
 pub fn connection() -> TestConnection {
     let result = connection_without_transaction();
     #[cfg(feature = "sqlite")]

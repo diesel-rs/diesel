@@ -95,8 +95,8 @@
 
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
-#![deny(
-    warnings,
+// #![deny(warnings)]
+#![warn(
     missing_debug_implementations,
     missing_copy_implementations,
     missing_docs
@@ -309,6 +309,8 @@ pub mod prelude {
     pub use crate::query_dsl::GroupByDsl;
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
+    pub use crate::query_dsl::AsyncRunQueryDsl;
+
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
@@ -316,6 +318,8 @@ pub mod prelude {
     pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
     pub use crate::pg::PgConnection;
+    #[cfg(all(feature = "postgres", feature = "unstable_async_pg"))]
+    pub use crate::pg::AsyncPgConnection;
     #[cfg(feature = "sqlite")]
     pub use crate::sqlite::SqliteConnection;
 }
