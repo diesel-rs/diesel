@@ -1,13 +1,14 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
+use std::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 
 use deserialize::{self, FromSql, FromSqlRow, Queryable};
 use expression::bound::Bound as SqlBound;
 use expression::AsExpression;
 use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
 use serialize::{self, IsNull, Output, ToSql};
-use sql_types::*;
+use sql_types::{Range as SqlRange, *};
 
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
 bitflags! {
@@ -23,58 +24,75 @@ bitflags! {
     }
 }
 
-impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
-{
-    type Row = Self;
-    fn build(row: Self) -> Self {
-        row
-    }
+macro_rules! setup_impls {
+    ($target:ty) => {
+        impl<T, ST> Queryable<SqlRange<ST>, Pg> for $target
+        where
+            T: FromSql<ST, Pg> + Queryable<ST, Pg>,
+        {
+            type Row = Self;
+            fn build(row: Self) -> Self {
+                row
+            }
+        }
+
+        impl<ST, T> AsExpression<SqlRange<ST>> for $target {
+            type Expression = SqlBound<SqlRange<ST>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                SqlBound::new(self)
+            }
+        }
+
+        impl<'a, ST, T> AsExpression<SqlRange<ST>> for &'a $target {
+            type Expression = SqlBound<SqlRange<ST>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                SqlBound::new(self)
+            }
+        }
+
+        impl<ST, T> AsExpression<Nullable<SqlRange<ST>>> for $target {
+            type Expression = SqlBound<Nullable<SqlRange<ST>>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                SqlBound::new(self)
+            }
+        }
+
+        impl<'a, ST, T> AsExpression<Nullable<SqlRange<ST>>> for &'a $target {
+            type Expression = SqlBound<Nullable<SqlRange<ST>>, Self>;
+
+            fn as_expression(self) -> Self::Expression {
+                SqlBound::new(self)
+            }
+        }
+
+        impl<T, ST> FromSqlRow<SqlRange<ST>, Pg> for $target
+        where
+            $target: FromSql<SqlRange<ST>, Pg>,
+        {
+            fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
+                FromSql::<SqlRange<ST>, Pg>::from_sql(row.take())
+            }
+        }
+
+        impl<ST, T> ToSql<Nullable<SqlRange<ST>>, Pg> for $target
+        where
+            $target: ToSql<SqlRange<ST>, Pg>,
+        {
+            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+                ToSql::<SqlRange<ST>, Pg>::to_sql(self, out)
+            }
+        }
+    };
 }
 
-impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Range<ST>, Self>;
+// (Bound<T>, Bound<T>) as range representation
 
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
+setup_impls! {(Bound<T>, Bound<T>)}
 
-impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Range<ST>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
-
-impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Nullable<Range<ST>>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
-
-impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
-    type Expression = SqlBound<Nullable<Range<ST>>, Self>;
-
-    fn as_expression(self) -> Self::Expression {
-        SqlBound::new(self)
-    }
-}
-
-impl<T, ST> FromSqlRow<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    (Bound<T>, Bound<T>): FromSql<Range<ST>, Pg>,
-{
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
-        FromSql::<Range<ST>, Pg>::from_sql(row.take())
-    }
-}
-
-impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
@@ -113,7 +131,7 @@ where
     }
 }
 
-impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
 {
@@ -158,12 +176,173 @@ where
     }
 }
 
-impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
+fn bound_to_tag_str<T>(bound: Bound<T>) -> &'static str {
+    match bound {
+        Bound::Excluded(..) => "Excluded",
+        Bound::Included(..) => "Included",
+        Bound::Unbounded => "Unbounded",
+    }
+}
+
+macro_rules! bounds_err {
+    ($name:expr, $expected_lower:expr, $expected_upper:expr, $got_lower:expr, $got_upper:expr) => {
+        Err(format!(
+            "Unexpected bounds for {}. Expected bounds to be {}..{}, got {}..{}",
+            $name, $expected_lower, $expected_upper, bound_to_tag_str($got_lower), bound_to_tag_str($got_upper)
+        )
+        .into())
+    };
+}
+
+// `std::ops::Range`
+
+setup_impls! {Range<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for Range<T>
 where
-    (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Included(start), Bound::Excluded(end)) => Ok(Self { start, end }),
+            (lower, upper) => bounds_err!("Range", "Included", "Excluded", lower, upper),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for Range<T>
+where
+    T: ToSql<ST, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        ToSql::<Range<ST>, Pg>::to_sql(self, out)
+        let range = (Bound::Included(&self.start), Bound::Excluded(&self.end));
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
+    }
+}
+
+// `std::ops::RangeFrom`
+
+setup_impls! {RangeFrom<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for RangeFrom<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Included(start), Bound::Unbounded) => Ok(Self { start }),
+            (lower, upper) => bounds_err!("RangeFrom", "Included", "Unbounded", lower, upper),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for RangeFrom<T>
+where
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        let range = (Bound::Included(&self.start), Bound::Unbounded);
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
+    }
+}
+
+// `std::ops::RangeInclusive`
+
+setup_impls! {RangeInclusive<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for RangeInclusive<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Included(start), Bound::Included(end)) => Ok(Self::new(start, end)),
+            (lower, upper) => bounds_err!("RangeInclusive", "Included", "Included", lower, upper),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for RangeInclusive<T>
+where
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        let start = self.start();
+        let end = self.end();
+        let range = (Bound::Included(start), Bound::Included(end));
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
+    }
+}
+
+// `std::ops::RangeToInclusive`
+
+setup_impls! {RangeToInclusive<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for RangeToInclusive<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Unbounded, Bound::Included(end)) => Ok(Self { end }),
+            (lower, upper) => bounds_err!("RangeToInclusive", "Unbounded", "Included", lower, upper),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for RangeToInclusive<T>
+where
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        let range = (Bound::Unbounded, Bound::Included(&self.end));
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
+    }
+}
+
+// `std::ops::RangeTo`
+
+setup_impls! {RangeTo<T>}
+
+impl<T, ST> FromSql<SqlRange<ST>, Pg> for RangeTo<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+        let (lower_bound, upper_bound) = FromSql::from_sql(bytes)?;
+
+        match (lower_bound, upper_bound) {
+            (Bound::Unbounded, Bound::Excluded(end)) => Ok(Self { end }),
+            (lower, upper) => bounds_err!("RangeTo", "Unbounded", "Excluded", lower, upper),
+        }
+    }
+}
+
+impl<ST, T> ToSql<SqlRange<ST>, Pg> for RangeTo<T>
+where
+    T: ToSql<ST, Pg>,
+{
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        let range = (Bound::Unbounded, Bound::Excluded(&self.end));
+        ToSql::<SqlRange<ST>, Pg>::to_sql(&range, out)?;
+
+        Ok(IsNull::No)
     }
 }
 
