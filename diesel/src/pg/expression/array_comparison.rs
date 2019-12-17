@@ -14,7 +14,6 @@ use crate::sql_types::Array;
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #
@@ -43,7 +42,6 @@ where
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #

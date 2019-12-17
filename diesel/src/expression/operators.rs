@@ -1,4 +1,4 @@
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! __diesel_operator_body {
     (
@@ -179,13 +179,12 @@ macro_rules! __diesel_operator_to_sql {
 /// ## Example usage
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// infix_operator!(MyEq, " = ");
+/// diesel::infix_operator!(MyEq, " = ");
 ///
 /// use diesel::expression::AsExpression;
 ///
@@ -202,7 +201,7 @@ macro_rules! __diesel_operator_to_sql {
 /// assert_eq!(Ok(1), users_with_name.first(&connection));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! infix_operator {
     ($name:ident, $operator:expr) => {
         infix_operator!($name, $operator, $crate::sql_types::Bool);
@@ -239,7 +238,7 @@ macro_rules! infix_operator {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::infix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
 #[doc(hidden)]
@@ -257,7 +256,7 @@ macro_rules! diesel_infix_operator {
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
 /// [`infix_operator!`]: macro.infix_operator.html
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
         postfix_operator!($name, $operator, $crate::sql_types::Bool);
@@ -294,7 +293,7 @@ macro_rules! postfix_operator {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::postfix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
 #[doc(hidden)]
@@ -312,7 +311,7 @@ macro_rules! diesel_postfix_operator {
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
 /// [`infix_operator!`]: macro.infix_operator.html
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {
         prefix_operator!($name, $operator, $crate::sql_types::Bool);
@@ -349,7 +348,7 @@ macro_rules! prefix_operator {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::prefix_operator!` instead")]
 #[cfg(feature = "with-deprecated")]
 #[doc(hidden)]

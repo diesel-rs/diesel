@@ -144,7 +144,6 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # extern crate diesel;
     /// # use diesel::query_builder::{QueryFragment, AstPass};
     /// # use diesel::backend::Backend;
     /// # use diesel::QueryResult;

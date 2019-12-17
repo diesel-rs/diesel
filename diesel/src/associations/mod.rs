@@ -5,7 +5,6 @@
 //! Unlike other ORMs, Diesel has no concept of `#[has_many`]
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!
@@ -54,7 +53,6 @@
 //! `unrestricted_attribute_tokens` is stable.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! # use std::borrow::Cow;
@@ -98,7 +96,6 @@
 //! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -153,7 +150,6 @@
 //! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! #
@@ -208,7 +204,6 @@
 //! and it will be combined with its parent.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! #
@@ -270,7 +265,6 @@
 //! to make each line a bit more clear.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{users, posts, comments};
 //! #

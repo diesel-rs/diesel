@@ -19,18 +19,18 @@ use std::any::{Any, TypeId};
 /// For example, given this struct:
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// #[derive(QueryId)]
+/// #[derive(diesel::QueryId)]
 /// pub struct And<Left, Right> {
 ///     left: Left,
 ///     right: Right,
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// the following implementation will be generated
 ///
-/// ```rust,ignore
+/// ```rust
+/// # struct And<Left, Right>(Left, Right);
+/// # use diesel::query_builder::QueryId;
 /// impl<Left, Right> QueryId for And<Left, Right>
 /// where
 ///     Left: QueryId,

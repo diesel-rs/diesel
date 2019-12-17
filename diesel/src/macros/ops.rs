@@ -21,7 +21,7 @@ macro_rules! operator_allowed {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 /// Indicates that an expression allows all numeric operators. If you create new
 /// SQL functions that return a numeric type, you should invoke this macro that
 /// type. Unfortunately, Rust disallows us from automatically implementing `Add`
@@ -35,7 +35,7 @@ macro_rules! numeric_expr {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! __diesel_generate_ops_impls_if_numeric {
     ($column_name:ident, Nullable<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_numeric!($column_name, $($inner)::*); };
@@ -67,7 +67,7 @@ macro_rules! __diesel_generate_ops_impls_if_numeric {
     ($column_name:ident, $non_numeric_type:ty) => {};
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! date_time_expr {
     ($tpe:ty) => {
@@ -76,7 +76,7 @@ macro_rules! date_time_expr {
     };
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! __diesel_generate_ops_impls_if_date_time {
     ($column_name:ident, Nullable<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_date_time!($column_name, $($inner)::*); };

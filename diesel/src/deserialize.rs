@@ -40,7 +40,6 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// #[derive(Queryable, PartialEq, Debug)]
@@ -67,7 +66,6 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// # use schema::users;
@@ -118,7 +116,6 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// Alternatively, we can implement the trait for our struct manually.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
@@ -207,7 +204,6 @@ where
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use schema::users;
 /// # use diesel::sql_query;
@@ -237,7 +233,6 @@ where
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use diesel::sql_query;
 /// # use schema::users;

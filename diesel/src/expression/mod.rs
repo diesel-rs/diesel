@@ -169,7 +169,6 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// #
@@ -308,7 +307,6 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// use diesel::sql_types::Bool;

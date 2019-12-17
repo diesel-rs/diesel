@@ -4,7 +4,7 @@
 ///
 /// This macro is exported because we want to be able to call it from other
 /// macros that are exported, but it is not part of our public API.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! impl_selectable_expression {
     ($struct_name:ident) => {

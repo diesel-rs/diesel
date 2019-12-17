@@ -131,11 +131,10 @@ extern crate bitflags;
 extern crate byteorder;
 #[macro_use]
 extern crate diesel_derives;
-#[doc(hidden)]
-pub use diesel_derives::*;
 
 #[macro_use]
-mod macros;
+#[doc(hidden)]
+pub mod macros;
 
 #[cfg(test)]
 #[macro_use]
@@ -292,6 +291,9 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
+    #[doc(inline)]
+    pub use diesel_derives::*;
+
     pub use crate::associations::{GroupedBy, Identifiable};
     pub use crate::connection::Connection;
     #[deprecated(
@@ -308,8 +310,9 @@ pub mod prelude {
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
-
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
+    #[doc(inline)]
+    pub use crate::macros::public::*;
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]

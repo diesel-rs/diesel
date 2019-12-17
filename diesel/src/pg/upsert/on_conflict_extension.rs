@@ -16,7 +16,6 @@ where
     /// ### Single Record
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -42,7 +41,6 @@ where
     /// ### Vec of Records
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -78,7 +76,6 @@ where
     /// ### Specifying a column as the target
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -111,7 +108,6 @@ where
     /// ### Specifying multiple columns as the target
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -217,7 +213,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ## Set specific value on conflict
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -245,7 +240,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ## Set `AsChangeset` struct on conflict
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
@@ -273,7 +267,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ## Use `excluded` to get the rejected value
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {

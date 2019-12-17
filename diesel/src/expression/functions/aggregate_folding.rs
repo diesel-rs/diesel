@@ -7,7 +7,6 @@ sql_function! {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
@@ -28,7 +27,6 @@ sql_function! {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// # #[cfg(feature = "bigdecimal")]

@@ -14,7 +14,6 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -41,7 +40,6 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -81,7 +79,6 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -144,7 +141,6 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -203,7 +199,6 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -254,7 +249,6 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -330,7 +324,6 @@ pub trait PgSortExpressionMethods: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -379,7 +372,6 @@ pub trait PgSortExpressionMethods: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -431,7 +423,6 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -458,7 +449,6 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {

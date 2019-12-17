@@ -10,7 +10,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -29,7 +28,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -53,7 +51,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -86,7 +83,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -117,7 +113,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -144,7 +139,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -171,7 +165,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -198,7 +191,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -225,7 +217,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -252,7 +243,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -279,7 +269,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -308,7 +297,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -344,7 +332,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -377,7 +364,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -412,7 +398,6 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// # Example
     /// ```no_run
     /// # #![allow(dead_code)]
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::sql_types::*;
     /// # use schema::users;

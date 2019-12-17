@@ -50,7 +50,6 @@ pub trait Insertable<T> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("doctest_setup.rs");
     /// #
     /// # fn main() {

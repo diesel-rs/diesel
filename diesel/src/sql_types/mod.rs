@@ -387,14 +387,11 @@ pub use crate::mysql::types::*;
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use]
-/// # extern crate diesel;
-/// #[derive(SqlType)]
+/// #[derive(diesel::SqlType)]
 /// #[postgres(oid = "23", array_oid = "1007")]
 /// #[sqlite_type = "Integer"]
 /// #[mysql_type = "Long"]
 /// pub struct Integer;
-/// # fn main() {}
 /// ```
 pub trait HasSqlType<ST>: TypeMetadata {
     /// Fetch the metadata for the given type

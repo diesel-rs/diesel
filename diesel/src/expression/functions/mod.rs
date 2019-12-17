@@ -62,7 +62,6 @@
 /// # Adding Doc Comments
 ///
 /// ```no_run
-/// # #[macro_use] extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
@@ -101,7 +100,6 @@
 /// of all of this:
 ///
 /// ```no_run
-/// # #[macro_use] extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
@@ -133,7 +131,6 @@
 /// are not supported on SQLite.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # #[cfg(feature = "sqlite")]
@@ -224,7 +221,6 @@ macro_rules! no_arg_sql_function_body {
 /// generated using:
 ///
 /// ```no_run
-/// # #[macro_use] extern crate diesel;
 /// # pub use diesel::*;
 /// no_arg_sql_function!(now, sql_types::Timestamp, "Represents the SQL NOW() function");
 /// # fn main() {}
