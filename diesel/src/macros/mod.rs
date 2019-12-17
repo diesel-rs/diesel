@@ -57,9 +57,9 @@ macro_rules! __diesel_column {
             $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
             Left: AppearsInFromClause<$table>,
             Right: AppearsInFromClause<$table>,
-            (Left::Count, Right::Count): Select<Left, Right>,
+            (Left::Count, Right::Count): Pick<Left, Right>,
             Self: SelectableExpression<
-                <(Left::Count, Right::Count) as Select<Left, Right>>::Selection,
+                <(Left::Count, Right::Count) as Pick<Left, Right>>::Selection,
             >,
         {
         }
@@ -798,7 +798,7 @@ macro_rules! __diesel_table_impl {
                 use $crate::backend::Backend;
                 use $crate::query_builder::{QueryFragment, AstPass, SelectStatement};
                 use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
-                use $crate::query_source::{AppearsInFromClause, Once, Never, Select};
+                use $crate::query_source::{AppearsInFromClause, Once, Never, Pick};
                 use $crate::result::QueryResult;
                 $($imports)*
 

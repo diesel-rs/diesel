@@ -96,15 +96,15 @@ pub trait AppearsInFromClause<QS> {
 /// where
 ///     Left: AppearsInFromClause<T::Table>,
 ///     Right: AppearsInFromClause<T::Table>,
-///     (Left::Count, Right::Count): Select<Left, Right>,
+///     (Left::Count, Right::Count): Pick<Left, Right>,
 ///     T: SelectableExpression<
-///         <(Left::Count, Right::Count) as Select<Left, Right>>::Selection,
+///         <(Left::Count, Right::Count) as Pick<Left, Right>>::Selection,
 ///     >,
 /// ```
 ///
 /// In order to aquire the counts in the first place, we must already know
 /// the table we're searching for.
-pub trait Select<Left, Right> {
+pub trait Pick<Left, Right> {
     /// The selected type.
     ///
     /// For `(Once, Never)` this type will be `Left`. For `(Never, Once)`, this type will be
@@ -112,11 +112,11 @@ pub trait Select<Left, Right> {
     type Selection;
 }
 
-impl<Left, Right> Select<Left, Right> for (Once, Never) {
+impl<Left, Right> Pick<Left, Right> for (Once, Never) {
     type Selection = Left;
 }
 
-impl<Left, Right> Select<Left, Right> for (Never, Once) {
+impl<Left, Right> Pick<Left, Right> for (Never, Once) {
     type Selection = Right;
 }
 
@@ -128,7 +128,7 @@ impl<Left, Right> Select<Left, Right> for (Never, Once) {
 )]
 /// Everything in this module is here to give something more helpful than:
 ///
-/// > (Never, Never): Select<table1, table2> is not satisifed
+/// > (Never, Never): Pick<table1, table2> is not satisifed
 ///
 /// Any of these impls can be deleted if they are getting in the way of
 /// other functionality. Any code which is using these impls is already
@@ -138,21 +138,21 @@ mod impls_which_are_only_here_to_improve_error_messages {
 
     pub struct this_table_doesnt_appear_in_the_from_clause_of_your_query;
 
-    impl<Left, Right> Select<Left, Right> for (Never, Never) {
+    impl<Left, Right> Pick<Left, Right> for (Never, Never) {
         type Selection = this_table_doesnt_appear_in_the_from_clause_of_your_query;
     }
 
     pub struct this_table_appears_in_your_query_more_than_once_and_must_be_aliased;
 
-    impl<Left, Right, OtherCount> Select<Left, Right> for (MoreThanOnce, OtherCount) {
+    impl<Left, Right, OtherCount> Pick<Left, Right> for (MoreThanOnce, OtherCount) {
         type Selection = this_table_appears_in_your_query_more_than_once_and_must_be_aliased;
     }
 
-    impl<Left, Right> Select<Left, Right> for (Never, MoreThanOnce) {
+    impl<Left, Right> Pick<Left, Right> for (Never, MoreThanOnce) {
         type Selection = this_table_appears_in_your_query_more_than_once_and_must_be_aliased;
     }
 
-    impl<Left, Right> Select<Left, Right> for (Once, MoreThanOnce) {
+    impl<Left, Right> Pick<Left, Right> for (Once, MoreThanOnce) {
         type Selection = this_table_appears_in_your_query_more_than_once_and_must_be_aliased;
     }
 }
