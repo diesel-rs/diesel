@@ -38,24 +38,21 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("queryable_by_name"),
-        quote! {
-            use diesel::deserialize::{self, QueryableByName};
-            use diesel::row::NamedRow;
+    Ok(wrap_in_dummy_mod(quote! {
+        use diesel::deserialize::{self, QueryableByName};
+        use diesel::row::NamedRow;
 
-            impl #impl_generics QueryableByName<__DB>
-                for #struct_name #ty_generics
-            #where_clause
-            {
-                fn build<__R: NamedRow<__DB>>(row: &__R) -> deserialize::Result<Self> {
-                    std::result::Result::Ok(Self {
-                        #(#field_expr,)*
-                    })
-                }
+        impl #impl_generics QueryableByName<__DB>
+            for #struct_name #ty_generics
+        #where_clause
+        {
+            fn build<__R: NamedRow<__DB>>(row: &__R) -> deserialize::Result<Self> {
+                std::result::Result::Ok(Self {
+                    #(#field_expr,)*
+                })
             }
-        },
-    ))
+        }
+    }))
 }
 
 fn field_expr(field: &Field, model: &Model) -> Result<syn::FieldValue, Diagnostic> {

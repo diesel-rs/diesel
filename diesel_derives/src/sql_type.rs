@@ -1,5 +1,4 @@
 use proc_macro2;
-use proc_macro2::*;
 use syn;
 
 use meta::*;
@@ -13,27 +12,23 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let mysql_tokens = mysql_tokens(&item);
     let pg_tokens = pg_tokens(&item);
 
-    let dummy_name = format!("_impl_sql_type_for_{}", item.ident);
-    Ok(wrap_in_dummy_mod(
-        Ident::new(&dummy_name.to_lowercase(), Span::call_site()),
-        quote! {
-            impl #impl_generics diesel::sql_types::NotNull
-                for #struct_name #ty_generics
-            #where_clause
-            {
-            }
+    Ok(wrap_in_dummy_mod(quote! {
+        impl #impl_generics diesel::sql_types::NotNull
+            for #struct_name #ty_generics
+        #where_clause
+        {
+        }
 
-            impl #impl_generics diesel::sql_types::SingleValue
-                for #struct_name #ty_generics
-            #where_clause
-            {
-            }
+        impl #impl_generics diesel::sql_types::SingleValue
+            for #struct_name #ty_generics
+        #where_clause
+        {
+        }
 
-            #sqlite_tokens
-            #mysql_tokens
-            #pg_tokens
-        },
-    ))
+        #sqlite_tokens
+        #mysql_tokens
+        #pg_tokens
+    }))
 }
 
 fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {

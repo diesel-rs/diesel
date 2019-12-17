@@ -34,23 +34,20 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("queryable"),
-        quote! {
-            use diesel::deserialize::Queryable;
+    Ok(wrap_in_dummy_mod(quote! {
+        use diesel::deserialize::Queryable;
 
-            impl #impl_generics Queryable<__ST, __DB> for #struct_name #ty_generics
-            #where_clause
-            {
-                type Row = <(#(#field_ty,)*) as Queryable<__ST, __DB>>::Row;
+        impl #impl_generics Queryable<__ST, __DB> for #struct_name #ty_generics
+        #where_clause
+        {
+            type Row = <(#(#field_ty,)*) as Queryable<__ST, __DB>>::Row;
 
-                fn build(row: Self::Row) -> Self {
-                    let row: (#(#field_ty,)*) = Queryable::build(row);
-                    Self {
-                        #(#build_expr,)*
-                    }
+            fn build(row: Self::Row) -> Self {
+                let row: (#(#field_ty,)*) = Queryable::build(row);
+                Self {
+                    #(#build_expr,)*
                 }
             }
-        },
-    ))
+        }
+    }))
 }
