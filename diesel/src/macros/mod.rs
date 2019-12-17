@@ -1,7 +1,7 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
-pub(crate) mod public {
+pub(crate) mod prelude {
     pub use crate::{
         allow_tables_to_appear_in_same_query,
         joinable,

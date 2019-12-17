@@ -312,7 +312,7 @@ pub mod prelude {
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
-    pub use crate::macros::public::*;
+    pub use crate::macros::prelude::*;
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]
