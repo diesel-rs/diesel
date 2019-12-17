@@ -1,4 +1,4 @@
-use sql_types::{self, NotNull};
+use crate::sql_types::{self, NotNull};
 
 /// Represents SQL types which can be used with `SUM` and `AVG`
 pub trait Foldable {

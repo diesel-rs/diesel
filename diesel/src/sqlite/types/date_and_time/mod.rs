@@ -1,10 +1,10 @@
 use std::io::Write;
 
-use deserialize::{self, FromSql};
-use serialize::{self, Output, ToSql};
-use sql_types;
-use sqlite::connection::SqliteValue;
-use sqlite::Sqlite;
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types;
+use crate::sqlite::connection::SqliteValue;
+use crate::sqlite::Sqlite;
 
 #[cfg(feature = "chrono")]
 mod chrono;

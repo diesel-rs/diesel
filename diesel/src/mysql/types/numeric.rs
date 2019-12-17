@@ -5,11 +5,11 @@ pub mod bigdecimal {
     use self::bigdecimal::BigDecimal;
     use std::io::prelude::*;
 
-    use backend;
-    use deserialize::{self, FromSql};
-    use mysql::Mysql;
-    use serialize::{self, IsNull, Output, ToSql};
-    use sql_types::{Binary, Numeric};
+    use crate::backend;
+    use crate::deserialize::{self, FromSql};
+    use crate::mysql::Mysql;
+    use crate::serialize::{self, IsNull, Output, ToSql};
+    use crate::sql_types::{Binary, Numeric};
 
     impl ToSql<Numeric, Mysql> for BigDecimal {
         fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {

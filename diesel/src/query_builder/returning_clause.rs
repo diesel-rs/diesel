@@ -1,4 +1,4 @@
-use backend::SupportsReturningClause;
+use crate::backend::SupportsReturningClause;
 
 simple_clause!(
     NoReturningClause,

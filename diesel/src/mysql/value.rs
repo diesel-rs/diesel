@@ -1,5 +1,5 @@
 use super::Mysql;
-use backend::BinaryRawValue;
+use crate::backend::BinaryRawValue;
 
 /// Raw mysql value as received from the database
 #[derive(Copy, Clone, Debug)]

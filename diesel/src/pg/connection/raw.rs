@@ -8,7 +8,7 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{ptr, str};
 
-use result::*;
+use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {

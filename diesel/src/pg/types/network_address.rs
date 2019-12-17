@@ -2,14 +2,13 @@ extern crate ipnetwork;
 extern crate libc;
 
 use self::ipnetwork::{IpNetwork, Ipv4Network, Ipv6Network};
-use std::convert::TryInto;
 use std::io::prelude::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Cidr, Inet, MacAddr};
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{Cidr, Inet};
 
 #[cfg(windows)]
 const AF_INET: u8 = 2;
@@ -25,11 +24,6 @@ const PGSQL_AF_INET6: u8 = AF_INET + 1;
 #[allow(dead_code)]
 mod foreign_derives {
     use super::*;
-
-    #[derive(FromSqlRow, AsExpression)]
-    #[diesel(foreign_derive)]
-    #[sql_type = "MacAddr"]
-    struct ByteArrayProxy([u8; 6]);
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
@@ -61,23 +55,6 @@ macro_rules! assert_or_error {
     };
 }
 
-impl FromSql<MacAddr, Pg> for [u8; 6] {
-    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
-        value
-            .as_bytes()
-            .try_into()
-            .map_err(|_| "invalid network address format: input isn't 6 bytes.".into())
-    }
-}
-
-impl ToSql<MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        out.write_all(&self[..])
-            .map(|_| IsNull::No)
-            .map_err(Into::into)
-    }
-}
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
         impl FromSql<$ty, Pg> for IpNetwork {
@@ -156,16 +133,6 @@ macro_rules! impl_Sql {
 
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
-
-#[test]
-fn macaddr_roundtrip() {
-    let mut bytes = Output::test();
-    let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
-    ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-    let output_address: [u8; 6] =
-        FromSql::from_sql(Some(PgValue::for_test(bytes.as_ref()))).unwrap();
-    assert_eq!(input_address, output_address);
-}
 
 #[test]
 fn v4address_to_sql() {

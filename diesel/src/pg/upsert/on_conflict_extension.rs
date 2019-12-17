@@ -1,8 +1,8 @@
 use super::on_conflict_actions::*;
 use super::on_conflict_clause::*;
 use super::on_conflict_target::*;
-use query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
-use query_source::QuerySource;
+use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
+use crate::query_source::QuerySource;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where
@@ -20,7 +20,7 @@ where
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Sean", };
@@ -46,7 +46,7 @@ where
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Sean", };
@@ -82,7 +82,7 @@ where
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// conn.execute("CREATE UNIQUE INDEX users_name ON users (name)").unwrap();
@@ -131,7 +131,7 @@ where
     /// # }
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// use diesel::pg::upsert::*;
     ///
     /// #     let conn = establish_connection();
@@ -221,7 +221,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Pascal" };
@@ -249,7 +249,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// let user = User { id: 1, name: "Pascal" };
@@ -277,7 +277,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// use diesel::pg::upsert::excluded;
     ///
     /// #     let conn = establish_connection();

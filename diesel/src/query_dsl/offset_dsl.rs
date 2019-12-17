@@ -1,4 +1,4 @@
-use query_source::Table;
+use crate::query_source::Table;
 
 /// The `offset` method
 ///

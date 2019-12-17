@@ -1,10 +1,10 @@
 use super::RunQueryDsl;
-use backend::Backend;
-use connection::Connection;
-use deserialize::Queryable;
-use query_builder::{AsQuery, QueryFragment, QueryId};
-use result::QueryResult;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::connection::Connection;
+use crate::deserialize::Queryable;
+use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::result::QueryResult;
+use crate::sql_types::HasSqlType;
 
 /// The `load` method
 ///

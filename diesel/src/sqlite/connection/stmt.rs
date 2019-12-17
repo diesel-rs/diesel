@@ -8,9 +8,9 @@ use std::ptr::{self, NonNull};
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::sqlite_value::SqliteRow;
-use result::Error::DatabaseError;
-use result::*;
-use sqlite::SqliteType;
+use crate::result::Error::DatabaseError;
+use crate::result::*;
+use crate::sqlite::SqliteType;
 
 pub struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,

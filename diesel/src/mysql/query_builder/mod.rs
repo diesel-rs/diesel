@@ -1,6 +1,6 @@
 use super::backend::Mysql;
-use query_builder::QueryBuilder;
-use result::QueryResult;
+use crate::query_builder::QueryBuilder;
+use crate::result::QueryResult;
 
 mod query_fragment_impls;
 

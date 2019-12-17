@@ -5,11 +5,11 @@ mod transaction_manager;
 
 use std::fmt::Debug;
 
-use backend::Backend;
-use deserialize::{Queryable, QueryableByName};
-use query_builder::{AsQuery, QueryFragment, QueryId};
-use result::*;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::deserialize::{Queryable, QueryableByName};
+use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::result::*;
+use crate::sql_types::HasSqlType;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};

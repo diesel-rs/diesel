@@ -380,9 +380,9 @@ postfix_operator!(Desc, " DESC", ());
 
 prefix_operator!(Not, "NOT ");
 
-use insertable::{ColumnInsertValue, Insertable};
-use query_builder::ValuesClause;
-use query_source::Column;
+use crate::insertable::{ColumnInsertValue, Insertable};
+use crate::query_builder::ValuesClause;
+use crate::query_source::Column;
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
@@ -420,23 +420,23 @@ impl<L, R> Concat<L, R> {
     }
 }
 
-impl<L, R, ST> ::expression::Expression for Concat<L, R>
+impl<L, R, ST> crate::expression::Expression for Concat<L, R>
 where
-    L: ::expression::Expression<SqlType = ST>,
-    R: ::expression::Expression<SqlType = ST>,
+    L: crate::expression::Expression<SqlType = ST>,
+    R: crate::expression::Expression<SqlType = ST>,
 {
     type SqlType = ST;
 }
 
 impl_selectable_expression!(Concat<L, R>);
 
-impl<L, R, DB> ::query_builder::QueryFragment<DB> for Concat<L, R>
+impl<L, R, DB> crate::query_builder::QueryFragment<DB> for Concat<L, R>
 where
-    L: ::query_builder::QueryFragment<DB>,
-    R: ::query_builder::QueryFragment<DB>,
-    DB: ::backend::Backend,
+    L: crate::query_builder::QueryFragment<DB>,
+    R: crate::query_builder::QueryFragment<DB>,
+    DB: crate::backend::Backend,
 {
-    fn walk_ast(&self, mut out: ::query_builder::AstPass<DB>) -> ::result::QueryResult<()> {
+    fn walk_ast(&self, mut out: crate::query_builder::AstPass<DB>) -> crate::result::QueryResult<()> {
         // Those brackets are required because mysql is broken
         // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
         out.push_sql("(");

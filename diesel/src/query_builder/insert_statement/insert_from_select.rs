@@ -1,8 +1,8 @@
-use backend::Backend;
-use expression::{Expression, NonAggregate, SelectableExpression};
-use insertable::*;
-use query_builder::*;
-use query_source::Table;
+use crate::backend::Backend;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::insertable::*;
+use crate::query_builder::*;
+use crate::query_source::Table;
 
 /// Represents `(Columns) SELECT FROM ...` for use in an `INSERT` statement
 #[derive(Debug, Clone, Copy)]

@@ -25,13 +25,13 @@ use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
-use backend::Backend;
-use expression::subselect::ValidSubselect;
-use expression::*;
-use query_builder::SelectQuery;
-use query_source::joins::{AppendSelection, Inner, Join};
-use query_source::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::subselect::ValidSubselect;
+use crate::expression::*;
+use crate::query_builder::SelectQuery;
+use crate::query_source::joins::{AppendSelection, Inner, Join};
+use crate::query_source::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]

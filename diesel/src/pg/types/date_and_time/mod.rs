@@ -1,10 +1,10 @@
 use std::io::Write;
 use std::ops::Add;
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
 
 #[cfg(feature = "chrono")]
 mod chrono;

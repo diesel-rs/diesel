@@ -1,10 +1,10 @@
 use std::{fmt, mem};
 
-use backend::Backend;
-use query_builder::{BindCollector, QueryBuilder};
-use result::QueryResult;
-use serialize::ToSql;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::query_builder::{BindCollector, QueryBuilder};
+use crate::result::QueryResult;
+use crate::serialize::ToSql;
+use crate::sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations)]
 /// The primary type used when walking a Diesel AST during query execution.

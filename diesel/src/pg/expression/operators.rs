@@ -1,4 +1,4 @@
-use pg::Pg;
+use crate::pg::Pg;
 
 infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", backend: Pg);
 infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", backend: Pg);
