@@ -138,7 +138,7 @@ impl<DB> FromSql<sql_types::Text, DB> for *const str
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    default fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    default fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
         use std::str;
         let value = not_none!(value);
         let string = str::from_utf8(DB::as_bytes(value))?;
