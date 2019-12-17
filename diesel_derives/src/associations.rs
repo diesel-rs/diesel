@@ -43,7 +43,7 @@ fn derive_belongs_to(
     let foreign_key_field = model.find_column(&foreign_key)?;
     let struct_name = &model.name;
     let foreign_key_access = foreign_key_field.name.access();
-    let foreign_key_ty = inner_of_option_ty(&foreign_key_field.ty);
+    let foreign_key_ty = &foreign_key_field.ty;
     let table_name = model.table_name();
 
     let mut generics = generics.clone();
