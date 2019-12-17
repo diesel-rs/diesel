@@ -4,7 +4,9 @@ use std::io::Write;
 use crate::backend::{self, Backend, BinaryRawValue};
 use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::{self, BigInt, Binary, Bool, Double, Float, Integer, NotNull, SmallInt, Text};
+use crate::sql_types::{
+    self, BigInt, Binary, Bool, Double, Float, Integer, NotNull, SmallInt, Text,
+};
 
 #[allow(dead_code)]
 mod foreign_impls {

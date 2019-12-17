@@ -436,7 +436,10 @@ where
     R: crate::query_builder::QueryFragment<DB>,
     DB: crate::backend::Backend,
 {
-    fn walk_ast(&self, mut out: crate::query_builder::AstPass<DB>) -> crate::result::QueryResult<()> {
+    fn walk_ast(
+        &self,
+        mut out: crate::query_builder::AstPass<DB>,
+    ) -> crate::result::QueryResult<()> {
         // Those brackets are required because mysql is broken
         // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
         out.push_sql("(");

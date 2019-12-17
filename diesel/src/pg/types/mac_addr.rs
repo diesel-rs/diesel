@@ -43,4 +43,3 @@ fn macaddr_roundtrip() {
         FromSql::from_sql(Some(PgValue::for_test(bytes.as_ref()))).unwrap();
     assert_eq!(input_address, output_address);
 }
-
