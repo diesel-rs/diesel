@@ -134,7 +134,7 @@ macro_rules! tuple_impls {
 
 __diesel_for_each_tuple!(tuple_impls);
 
-#[derive(Debug, Clone, Copy, QueryId, NonAggregate)]
+#[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct PgTuple<T>(T);
 
 impl<T> QueryFragment<Pg> for PgTuple<T>

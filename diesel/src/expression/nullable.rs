@@ -5,7 +5,7 @@ use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::IntoNullable;
 
-#[derive(Debug, Copy, Clone, DieselNumericOps, NonAggregate)]
+#[derive(Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
 pub struct Nullable<T>(T);
 
 impl<T> Nullable<T> {

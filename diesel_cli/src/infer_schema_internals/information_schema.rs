@@ -3,7 +3,7 @@ use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
-use diesel::expression::NonAggregate;
+use diesel::expression::{ValidGrouping, is_aggregate};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -16,8 +16,10 @@ use super::inference;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
-    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
-        + NonAggregate
+    type TypeColumn: SelectableExpression<
+            self::information_schema::columns::table,
+            SqlType = sql_types::Text,
+        > + ValidGrouping<(), IsAggregate = is_aggregate::No>
         + QueryId
         + QueryFragment<Self>;
 

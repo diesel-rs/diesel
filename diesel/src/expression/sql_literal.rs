@@ -184,7 +184,9 @@ impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> {}
 
 impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> {}
 
-impl<ST, T> NonAggregate for SqlLiteral<ST, T> {}
+impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
+    type IsAggregate = is_aggregate::Never;
+}
 
 /// Use literal SQL in the query builder
 ///
@@ -317,7 +319,9 @@ where
     type SqlType = Q::SqlType;
 }
 
-impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> {}
+impl<Query, Value, GB> ValidGrouping<GB> for UncheckedBind<Query, Value> {
+    type IsAggregate = is_aggregate::Never;
+}
 
 impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> where
     Self: AppearsOnTable<QS>

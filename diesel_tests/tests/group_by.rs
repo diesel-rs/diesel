@@ -8,9 +8,31 @@ use diesel::*;
 fn group_by_generates_group_by_sql() {
     let source = users::table
         .group_by(users::name)
-        .select(users::id)
+        .select(users::name)
         .filter(users::hair_color.is_null());
-    let mut expected_sql = "SELECT `users`.`id` FROM `users` \
+    let mut expected_sql = "SELECT `users`.`name` FROM `users` \
+                            WHERE `users`.`hair_color` IS NULL \
+                            GROUP BY `users`.`name` \
+                            -- binds: []"
+        .to_string();
+    if cfg!(feature = "postgres") {
+        expected_sql = expected_sql.replace('`', "\"");
+    }
+
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
+}
+
+#[test]
+fn group_by_mixed_aggregate_column_and_aggregate_function() {
+    use diesel::dsl::max;
+    let source = users::table
+        .group_by(users::name)
+        .select((max(users::id), users::name))
+        .filter(users::hair_color.is_null());
+    let mut expected_sql = "SELECT max(`users`.`id`), `users`.`name` FROM `users` \
                             WHERE `users`.`hair_color` IS NULL \
                             GROUP BY `users`.`name` \
                             -- binds: []"
@@ -33,9 +55,9 @@ fn boxed_queries_have_group_by_method() {
     let source = users::table
         .into_boxed::<TestBackend>()
         .group_by(users::name)
-        .select(users::id)
+        .select(users::name)
         .filter(users::hair_color.is_null());
-    let mut expected_sql = "SELECT `users`.`id` FROM `users` \
+    let mut expected_sql = "SELECT `users`.`name` FROM `users` \
                             WHERE `users`.`hair_color` IS NULL \
                             GROUP BY `users`.`name` \
                             -- binds: []"

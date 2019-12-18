@@ -17,7 +17,7 @@ mod dsl_impls;
 pub use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
-use super::group_by_clause::NoGroupByClause;
+use super::group_by_clause::*;
 use super::limit_clause::NoLimitClause;
 use super::locking_clause::NoLockingClause;
 use super::offset_clause::NoOffsetClause;
@@ -103,7 +103,9 @@ impl<F> SelectStatement<F> {
 
 impl<F, S, D, W, O, L, Of, G, LC> Query for SelectStatement<F, S, D, W, O, L, Of, G, LC>
 where
+    G: ValidGroupByClause,
     S: SelectClauseExpression<F>,
+    S::Selection: ValidGrouping<G::Expressions>,
     W: ValidWhereClause<F>,
 {
     type SqlType = S::SelectClauseSqlType;

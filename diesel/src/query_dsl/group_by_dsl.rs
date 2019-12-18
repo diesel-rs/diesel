@@ -1,5 +1,5 @@
 use crate::expression::Expression;
-use crate::query_builder::{AsQuery, Query};
+use crate::query_builder::AsQuery;
 use crate::query_source::Table;
 
 /// This trait is not yet part of Diesel's public API. It may change in the
@@ -15,7 +15,7 @@ use crate::query_source::Table;
 /// query is an error), you may need to use `sql` for your select clause.
 pub trait GroupByDsl<Expr: Expression> {
     /// The type returned by `.group_by`
-    type Output: Query;
+    type Output;
 
     /// See the trait documentation.
     fn group_by(self, expr: Expr) -> Self::Output;

@@ -67,7 +67,7 @@ macro_rules! __diesel_operator_body {
             Copy,
             $crate::query_builder::QueryId,
             $crate::sql_types::DieselNumericOps,
-            $crate::expression::NonAggregate
+            ValidGrouping
         )]
         #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
@@ -413,7 +413,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, NonAggregate)]
+#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
 pub struct Concat<L, R> {
     pub(crate) left: L,

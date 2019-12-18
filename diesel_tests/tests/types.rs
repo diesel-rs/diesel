@@ -1229,14 +1229,14 @@ where
     select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
 
-use diesel::expression::AsExpression;
+use diesel::expression::{AsExpression, ValidGrouping, is_aggregate};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), SqlType = T>,
+    U::Expression: SelectableExpression<(), SqlType = T> + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue,
 {

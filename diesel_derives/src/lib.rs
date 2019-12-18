@@ -43,12 +43,12 @@ mod diesel_numeric_ops;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
-mod non_aggregate;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
 mod sql_function;
 mod sql_type;
+mod valid_grouping;
 
 use diagnostic_shim::*;
 
@@ -258,14 +258,14 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, insertable::derive)
 }
 
-/// Implements `NonAggregate`
-///
-/// This derive can be used for structs with no type parameters,
-/// which are not aggregate, as well as for struct which are
-/// `NonAggregate` if all type parameters are `NonAggregate`.
+#[doc(hidden)]
 #[proc_macro_derive(NonAggregate)]
 pub fn derive_non_aggregate(input: TokenStream) -> TokenStream {
-    expand_proc_macro(input, non_aggregate::derive)
+    eprintln!(
+        "#[derive(NonAggregate)] is deprecated. Please use \
+         `#[derive(ValidGrouping)]` instead.)"
+    );
+    expand_proc_macro(input, valid_grouping::derive)
 }
 
 /// Implements `QueryId`
@@ -433,6 +433,41 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(SqlType, attributes(postgres, sqlite_type, mysql_type))]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, sql_type::derive)
+}
+
+/// Implements `ValidGrouping`
+///
+/// This trait can be automatically derived for structs with no type parameters
+/// which are not aggregate, as well as for structs which are `NonAggregate`
+/// when all type parameters are `NonAggregate`. For example:
+///
+/// ```ignore
+/// #[derive(ValidGrouping)]
+/// struct Plus<Lhs, Rhs>(Lhs, Rhs);
+///
+/// // The following impl will be generated:
+/// impl<Lhs, Rhs, GroupByClause> ValidGrouping<GroupByClause> for Plus<Lhs, Rhs>
+/// where
+///     Lhs: ValidGrouping<GroupByClause>,
+///     Rhs: ValidGrouping<GroupByClause>,
+///     Lhs::IsAggregate: MixedAggregates<Rhs::GroupByClause>,
+/// {
+///     type IsAggregate = <Lhs::IsAggregate as MixedAggregates<Rhs::GroupByClause>>::Output;
+/// }
+/// ```
+///
+/// For types which are always considered aggregate (such as an aggregate
+/// function), annotate your struct with `#[aggregate]`.
+///
+/// # Attributes
+///
+/// ## Optional type attributes
+///
+/// * `#[aggregate]` for cases where the type represents an aggregating
+///   SQL expression
+#[proc_macro_derive(ValidGrouping, attributes(diesel))]
+pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, valid_grouping::derive)
 }
 
 /// Declare a sql function for use in your code.

@@ -9,7 +9,7 @@ use crate::sql_types::*;
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct now;
 
 impl Expression for now {

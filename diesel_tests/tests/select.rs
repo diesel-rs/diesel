@@ -497,3 +497,17 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
 
     assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
 }
+
+#[test]
+fn selecting_multiple_aggregate_expressions_without_group_by() {
+    use self::users::dsl::*;
+    use diesel::dsl::{count_star, max};
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let (count, max_name) = users.select((count_star(), max(name)))
+        .get_result::<(i64, _)>(&connection)
+        .unwrap();
+
+    assert_eq!(2, count);
+    assert_eq!(Some(String::from("Tess")), max_name);
+}

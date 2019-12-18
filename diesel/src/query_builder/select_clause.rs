@@ -9,6 +9,7 @@ pub struct DefaultSelectClause;
 pub struct SelectClause<T>(pub T);
 
 pub trait SelectClauseExpression<QS> {
+    type Selection: SelectableExpression<QS>;
     type SelectClauseSqlType;
 }
 
@@ -16,6 +17,7 @@ impl<T, QS> SelectClauseExpression<QS> for SelectClause<T>
 where
     T: SelectableExpression<QS>,
 {
+    type Selection = T;
     type SelectClauseSqlType = T::SqlType;
 }
 
@@ -23,6 +25,7 @@ impl<QS> SelectClauseExpression<QS> for DefaultSelectClause
 where
     QS: QuerySource,
 {
+    type Selection = QS::DefaultSelection;
     type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
 }
 

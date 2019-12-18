@@ -4,7 +4,7 @@ use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName};
 use crate::expression::{
-    AppearsOnTable, AsExpression, AsExpressionList, Expression, NonAggregate, SelectableExpression,
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;
@@ -70,7 +70,7 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T: Expression + NonAggregate),+> Expression for ($($T,)+) {
+            impl<$($T: Expression),+> Expression for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
             }
 
@@ -114,8 +114,11 @@ macro_rules! tuple_impls {
                 const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
 
-            impl<$($T: Expression + NonAggregate),+> NonAggregate for ($($T,)+) {
-            }
+            const _: () = {
+                #[derive(ValidGrouping)]
+                #[diesel(foreign_derive)]
+                struct TupleWrapper<$($T,)*>(($($T,)*));
+            };
 
             impl<$($T,)+ Tab> UndecoratedInsertRecord<Tab> for ($($T,)+)
             where

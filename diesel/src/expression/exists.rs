@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::subselect::Subselect;
-use crate::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use crate::expression::{AppearsOnTable, Expression, ValidGrouping, SelectableExpression};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
@@ -42,7 +42,12 @@ where
     type SqlType = Bool;
 }
 
-impl<T> NonAggregate for Exists<T> where Subselect<T, ()>: NonAggregate {}
+impl<T, GB> ValidGrouping<GB> for Exists<T>
+where
+    Subselect<T, ()>: ValidGrouping<GB>,
+{
+    type IsAggregate = <Subselect<T, ()> as ValidGrouping<GB>>::IsAggregate;
+}
 
 #[cfg(not(feature = "unstable"))]
 impl<T, DB> QueryFragment<DB> for Exists<T>

@@ -93,7 +93,7 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(feature = "unstable", feature(specialization))]
+#![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(

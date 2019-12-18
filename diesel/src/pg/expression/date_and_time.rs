@@ -11,7 +11,7 @@ impl DateTimeLike for Timestamp {}
 impl DateTimeLike for Timestamptz {}
 impl<T: NotNull + DateTimeLike> DateTimeLike for Nullable<T> {}
 
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,

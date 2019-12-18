@@ -66,7 +66,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
-        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
+        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
         use diesel::query_builder::{QueryFragment, AstPass};
         use diesel::sql_types::*;
         use super::*;
@@ -123,15 +123,29 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         }
     };
 
-    if !is_aggregate {
+    if is_aggregate {
         tokens = quote! {
             #tokens
 
-            impl #impl_generics diesel::expression::NonAggregate
+            impl #impl_generics_internal ValidGrouping<__DieselInternal>
                 for #fn_name #ty_generics
-            #where_clause
-                #(#arg_name: diesel::expression::NonAggregate,)*
             {
+                type IsAggregate = diesel::expression::is_aggregate::Yes;
+            }
+        }
+    } else {
+        tokens = quote! {
+            #tokens
+
+            #[derive(ValidGrouping)]
+            pub struct __Derived<#(#arg_name,)*>(#(#arg_name,)*);
+
+            impl #impl_generics_internal ValidGrouping<__DieselInternal>
+                for #fn_name #ty_generics
+            where
+                __Derived<#(#arg_name,)*>: ValidGrouping<__DieselInternal>,
+            {
+                type IsAggregate = <__Derived<#(#arg_name,)*> as ValidGrouping<__DieselInternal>>::IsAggregate;
             }
         };
 

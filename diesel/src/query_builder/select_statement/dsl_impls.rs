@@ -48,7 +48,8 @@ where
 impl<F, S, D, W, O, L, Of, G, LC, Selection> SelectDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
 where
-    Selection: SelectableExpression<F>,
+    G: ValidGroupByClause,
+    Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, LC>: SelectQuery,
 {
     type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, L, Of, G, LC>;
@@ -268,7 +269,7 @@ where
 
 impl<F, S, D, W, O, L, Of, G, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, L, Of, G>
 where
-    SelectStatement<F, S, D, W, O, L, Of, GroupByClause<Expr>>: Query,
+    SelectStatement<F, S, D, W, O, L, Of, GroupByClause<Expr>>: SelectQuery,
     Expr: Expression,
 {
     type Output = SelectStatement<F, S, D, W, O, L, Of, GroupByClause<Expr>>;

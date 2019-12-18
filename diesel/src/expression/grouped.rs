@@ -3,7 +3,7 @@ use crate::expression::Expression;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
-#[derive(Debug, Copy, Clone, QueryId, Default, DieselNumericOps, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, Default, DieselNumericOps, ValidGrouping)]
 pub struct Grouped<T>(pub T);
 
 impl<T: Expression> Expression for Grouped<T> {

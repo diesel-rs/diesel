@@ -20,11 +20,11 @@ fn main() {
     use self::users::dsl::*;
 
     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(count(id));
-    //~^ ERROR NonAggregate
+    //~^ ERROR MixedAggregates
 
     let new_user = NewUser {
         name: "Foobar".to_string(),
     };
     let stmt = insert_into(users).values(&new_user).returning((name, count(name)));
-    //~^ ERROR E0277
+    //~^ ERROR MixedAggregates
 }
