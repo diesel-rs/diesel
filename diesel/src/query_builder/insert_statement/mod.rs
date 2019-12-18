@@ -8,20 +8,20 @@ use std::any::*;
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
-use backend::Backend;
-use expression::operators::Eq;
-use expression::{Expression, NonAggregate, SelectableExpression};
-use insertable::*;
+use crate::backend::Backend;
+use crate::expression::operators::Eq;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::insertable::*;
 #[cfg(feature = "mysql")]
-use mysql::Mysql;
-use query_builder::*;
+use crate::mysql::Mysql;
+use crate::query_builder::*;
 #[cfg(feature = "sqlite")]
-use query_dsl::methods::ExecuteDsl;
-use query_dsl::RunQueryDsl;
-use query_source::{Column, Table};
-use result::QueryResult;
+use crate::query_dsl::methods::ExecuteDsl;
+use crate::query_dsl::RunQueryDsl;
+use crate::query_source::{Column, Table};
+use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
-use sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::{Sqlite, SqliteConnection};
 
 /// The structure returned by [`insert_into`].
 ///
@@ -62,7 +62,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
-    /// #     use users::dsl::*;
+    /// #     use self::users::dsl::*;
     /// #     let connection = connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
@@ -210,7 +210,7 @@ where
     Op: Copy,
 {
     fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use connection::Connection;
+        use crate::connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
             for record in query.records.records {
@@ -236,7 +236,7 @@ where
     Op: Copy,
 {
     fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use connection::Connection;
+        use crate::connection::Connection;
         conn.transaction(|| {
             let mut result = 0;
             for value in query.records.values {
@@ -430,7 +430,7 @@ where
     #[cfg(feature = "mysql")]
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         // This can be less hacky once stabilization lands
-        if TypeId::of::<DB>() == TypeId::of::<::mysql::Mysql>() {
+        if TypeId::of::<DB>() == TypeId::of::<crate::mysql::Mysql>() {
             out.push_sql("() VALUES ()");
         } else {
             out.push_sql("DEFAULT VALUES");

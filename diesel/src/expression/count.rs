@@ -1,8 +1,8 @@
 use super::Expression;
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
-use sql_types::BigInt;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::BigInt;
 
 sql_function! {
     /// Creates a SQL `COUNT` expression

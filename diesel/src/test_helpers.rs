@@ -1,6 +1,6 @@
 extern crate dotenv;
 
-use prelude::*;
+use crate::prelude::*;
 
 cfg_if! {
     if #[cfg(feature = "sqlite")] {

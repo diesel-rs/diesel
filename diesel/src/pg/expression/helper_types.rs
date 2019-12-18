@@ -1,5 +1,5 @@
-use dsl::AsExprOf;
-use sql_types::VarChar;
+use crate::dsl::AsExprOf;
+use crate::sql_types::VarChar;
 
 /// The return type of `lhs.ilike(rhs)`
 pub type ILike<Lhs, Rhs> = super::operators::ILike<Lhs, AsExprOf<Rhs, VarChar>>;

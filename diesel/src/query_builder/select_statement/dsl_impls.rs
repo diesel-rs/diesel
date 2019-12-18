@@ -1,27 +1,27 @@
 use super::BoxedSelectStatement;
-use associations::HasTable;
-use backend::Backend;
-use dsl::AsExprOf;
-use expression::nullable::Nullable;
-use expression::*;
-use insertable::Insertable;
-use query_builder::distinct_clause::*;
-use query_builder::group_by_clause::*;
-use query_builder::insert_statement::InsertFromSelect;
-use query_builder::limit_clause::*;
-use query_builder::locking_clause::*;
-use query_builder::offset_clause::*;
-use query_builder::order_clause::*;
-use query_builder::select_clause::*;
-use query_builder::update_statement::*;
-use query_builder::where_clause::*;
-use query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
-use query_dsl::boxed_dsl::BoxedDsl;
-use query_dsl::methods::*;
-use query_dsl::*;
-use query_source::joins::{Join, JoinOn, JoinTo};
-use query_source::QuerySource;
-use sql_types::{BigInt, Bool};
+use crate::associations::HasTable;
+use crate::backend::Backend;
+use crate::dsl::AsExprOf;
+use crate::expression::nullable::Nullable;
+use crate::expression::*;
+use crate::insertable::Insertable;
+use crate::query_builder::distinct_clause::*;
+use crate::query_builder::group_by_clause::*;
+use crate::query_builder::insert_statement::InsertFromSelect;
+use crate::query_builder::limit_clause::*;
+use crate::query_builder::locking_clause::*;
+use crate::query_builder::offset_clause::*;
+use crate::query_builder::order_clause::*;
+use crate::query_builder::select_clause::*;
+use crate::query_builder::update_statement::*;
+use crate::query_builder::where_clause::*;
+use crate::query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
+use crate::query_dsl::boxed_dsl::BoxedDsl;
+use crate::query_dsl::methods::*;
+use crate::query_dsl::*;
+use crate::query_source::joins::{Join, JoinOn, JoinTo};
+use crate::query_source::QuerySource;
+use crate::sql_types::{BigInt, Bool};
 
 impl<F, S, D, W, O, L, Of, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
@@ -136,9 +136,9 @@ where
     }
 }
 
-use dsl::Filter;
-use expression_methods::EqAll;
-use query_source::Table;
+use crate::dsl::Filter;
+use crate::expression_methods::EqAll;
+use crate::query_source::Table;
 
 impl<F, S, D, W, O, L, Of, G, LC, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, L, Of, G, LC>
 where
@@ -207,7 +207,7 @@ where
     Expr: Expression,
     Self: OrderDsl<Expr>,
 {
-    type Output = ::dsl::Order<Self, Expr>;
+    type Output = crate::dsl::Order<Self, Expr>;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         self.order_by(expr)

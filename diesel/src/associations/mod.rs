@@ -31,7 +31,7 @@
 //! #
 //! # fn run_test() -> QueryResult<()> {
 //! #     let connection = establish_connection();
-//! #     use users::dsl::*;
+//! #     use self::users::dsl::*;
 //! let user = users.find(2).get_result::<User>(&connection)?;
 //! let users_post = Post::belonging_to(&user)
 //!     .first(&connection)?;
@@ -118,7 +118,7 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   use users::dsl::*;
+//! #   use self::users::dsl::*;
 //! #   let connection = establish_connection();
 //! #
 //! let user = users.find(1).first::<User>(&connection).expect("Error loading user");
@@ -178,8 +178,8 @@
 //! #
 //! # fn run_test() -> QueryResult<()> {
 //! #     let connection = establish_connection();
-//! #     use users::dsl::*;
-//! #     use posts::dsl::{posts, title};
+//! #     use self::users::dsl::*;
+//! #     use self::posts::dsl::{posts, title};
 //! let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
 //! let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
 //!
@@ -357,7 +357,7 @@ mod belongs_to;
 
 use std::hash::Hash;
 
-use query_source::Table;
+use crate::query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 

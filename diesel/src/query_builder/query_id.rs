@@ -118,7 +118,7 @@ mod tests {
     use std::any::TypeId;
 
     use super::QueryId;
-    use prelude::*;
+    use crate::prelude::*;
 
     table! {
         users {

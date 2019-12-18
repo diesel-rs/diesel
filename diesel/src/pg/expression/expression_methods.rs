@@ -1,8 +1,8 @@
 //! PostgreSQL specific expression methods
 
 use super::operators::*;
-use expression::{AsExpression, Expression};
-use sql_types::{Array, Nullable, Text};
+use crate::expression::{AsExpression, Expression};
+use crate::sql_types::{Array, Nullable, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -64,7 +64,7 @@ pub trait PgExpressionMethods: Expression + Sized {
 impl<T: Expression> PgExpressionMethods for T {}
 
 use super::date_and_time::{AtTimeZone, DateTimeLike};
-use sql_types::VarChar;
+use crate::sql_types::VarChar;
 
 /// PostgreSQL specific methods present on timestamp expressions.
 pub trait PgTimestampExpressionMethods: Expression + Sized {
@@ -82,8 +82,6 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # #[macro_use] extern crate diesel;
-    /// # #[cfg(feature = "chrono")]
-    /// # extern crate chrono;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -98,7 +96,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #
     /// # #[cfg(all(feature = "postgres", feature = "chrono"))]
     /// # fn run_test() -> QueryResult<()> {
-    /// #     use timestamps::dsl::*;
+    /// #     use self::timestamps::dsl::*;
     /// #     use chrono::*;
     /// #     let connection = establish_connection();
     /// #     connection.execute("CREATE TABLE timestamps (\"timestamp\"
@@ -316,7 +314,7 @@ pub trait ArrayOrNullableArray {}
 impl<T> ArrayOrNullableArray for Array<T> {}
 impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
 
-use expression::operators::{Asc, Desc};
+use crate::expression::operators::{Asc, Desc};
 
 /// PostgreSQL expression methods related to sorting.
 ///

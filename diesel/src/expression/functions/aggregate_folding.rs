@@ -1,4 +1,4 @@
-use sql_types::Foldable;
+use crate::sql_types::Foldable;
 
 sql_function! {
     /// Represents a SQL `SUM` function. This function can only take types which are
@@ -47,7 +47,7 @@ sql_function! {
     /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite"))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use bigdecimal::BigDecimal;
-    /// #     use numbers::dsl::*;
+    /// #     use self::numbers::dsl::*;
     /// #     let conn = establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS numbers")?;
     /// #     conn.execute("CREATE TABLE numbers (number INTEGER)")?;

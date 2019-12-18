@@ -9,6 +9,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Added
 
 * `NonAggregate` can now be derived for simple cases.
+
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
@@ -18,14 +19,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * All expression methods can now be called on expressions of nullable types.
 
 * Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
-
   `.bind` calls without changing the underlying type.
 
 * Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
-
   an existing query.
 
-
+* The `MacAddr` SQL type can now be used without enabling the `network-address`
+  feature.
 
 ### Removed
 

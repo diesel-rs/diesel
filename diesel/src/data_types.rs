@@ -4,4 +4,4 @@
 //! all backend specific data structures when compiled against that
 //! backend.
 #[cfg(feature = "postgres")]
-pub use pg::data_types::*;
+pub use crate::pg::data_types::*;

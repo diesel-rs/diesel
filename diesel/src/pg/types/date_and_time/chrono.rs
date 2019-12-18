@@ -8,10 +8,10 @@ use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTim
 use std::io::Write;
 
 use super::{PgDate, PgTime, PgTimestamp};
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, Output, ToSql};
-use sql_types::{Date, Time, Timestamp, Timestamptz};
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
 
 // Postgres timestamps start from January 1st 2000.
 fn pg_epoch() -> NaiveDateTime {
@@ -132,10 +132,10 @@ mod tests {
     use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
     use self::dotenv::dotenv;
 
-    use dsl::{now, sql};
-    use prelude::*;
-    use select;
-    use sql_types::{Date, Time, Timestamp, Timestamptz};
+    use crate::dsl::{now, sql};
+    use crate::prelude::*;
+    use crate::select;
+    use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
 
     fn connection() -> PgConnection {
         dotenv().ok();

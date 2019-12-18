@@ -1,6 +1,6 @@
-use dsl::{Filter, OrFilter};
-use expression_methods::*;
-use query_source::*;
+use crate::dsl::{Filter, OrFilter};
+use crate::expression_methods::*;
+use crate::query_source::*;
 
 /// The `filter` method
 ///
