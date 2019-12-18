@@ -95,12 +95,8 @@
 
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
-#![deny(
-    warnings,
-    missing_debug_implementations,
-    missing_copy_implementations,
-    missing_docs
-)]
+#![deny(missing_debug_implementations, missing_copy_implementations)]
+#![warn(missing_docs)]
 // Clippy lints
 #![allow(
     clippy::option_map_unwrap_or_else,

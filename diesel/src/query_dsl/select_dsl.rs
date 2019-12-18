@@ -1,4 +1,5 @@
 use expression::Expression;
+use query_builder::AsQuery;
 use query_source::Table;
 
 /// The `select` method

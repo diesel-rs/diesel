@@ -945,8 +945,126 @@ macro_rules! __diesel_table_query_source_impl {
 #[macro_export]
 macro_rules! joinable {
     ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
-        joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
-        joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        impl $crate::JoinTo<$($parent)::* ::table> for $($child)::* ::table {
+            type FromClause = $($parent)::* ::table;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
+                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
+            >;
+
+            fn join_target(rhs: $($parent)::* ::table) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+
+                (
+                    rhs,
+                    $($child)::* ::$source.nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
+                    ),
+                )
+            }
+        }
+
+        impl $crate::JoinTo<$($child)::* ::table> for $($parent)::* ::table {
+            type FromClause = $($child)::* ::table;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
+                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
+            >;
+
+            fn join_target(rhs: $($child)::* ::table) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+
+                (
+                    rhs,
+                    $($child)::* ::$source.nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
+                    ),
+                )
+            }
+        }
+
+        impl<F> $crate::JoinTo<$crate::query_source::Alias<$($parent)::* ::table, F>> for $($child)::* ::table {
+            type FromClause = $crate::query_source::Alias<$($parent)::* ::table, F>;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
+                $crate::expression::nullable::Nullable<<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey as $crate::query_source::FieldAliasMapper<$crate::query_source::Alias<$($parent)::* ::table, F>>>::Out>,
+            >;
+
+            fn join_target(rhs: $crate::query_source::Alias<$($parent)::* ::table, F>) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+                use $crate::query_source::FieldAliasMapper;
+
+                (
+                    rhs,
+                    $($child)::* ::$source.nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).map().nullable()
+                    ),
+                )
+            }
+        }
+
+        impl<F> $crate::JoinTo<$crate::query_source::Alias<$($child)::* ::table, F>> for $($parent)::* ::table {
+            type FromClause = $crate::query_source::Alias<$($child)::* ::table, F>;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<<$($child)::* ::$source as $crate::query_source::FieldAliasMapper<$crate::query_source::Alias<$($child)::* ::table, F>>>::Out>,
+                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
+            >;
+
+            fn join_target(rhs: $crate::query_source::Alias<$($child)::* ::table, F>) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+                use $crate::query_source::FieldAliasMapper;
+                (
+                    rhs,
+                    $($child)::* ::$source.map().nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
+                    ),
+                )
+            }
+        }
+
+       impl<F> $crate::JoinTo<$($parent)::* ::table> for $crate::query_source::Alias<$($child)::* ::table, F> {
+            type FromClause = $($parent)::* ::table;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<<$($child)::* ::$source as $crate::query_source::FieldAliasMapper<$crate::query_source::Alias<$($child)::* ::table, F>>>::Out>,
+                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
+            >;
+
+            fn join_target(rhs: $($parent)::* ::table) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+                use $crate::query_source::FieldAliasMapper;
+
+                (
+                    rhs,
+                    $($child)::* ::$source.map().nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
+                    ),
+                )
+            }
+        }
+
+        impl<F> $crate::JoinTo<$($child)::* ::table> for $crate::query_source::Alias<$($parent)::* ::table, F> {
+            type FromClause = $($child)::* ::table;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
+                $crate::expression::nullable::Nullable<<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey as $crate::query_source::FieldAliasMapper<$crate::query_source::Alias<$($parent)::* ::table, F>>>::Out>,
+            >;
+
+            fn join_target(rhs: $($child)::* ::table) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+                use $crate::query_source::FieldAliasMapper;
+
+                (
+                    rhs,
+                    $($child)::* ::$source.nullable().eq(
+                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).map().nullable()
+                    ),
+                )
+            }
+        }
+
+
+        //joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        //joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
 }
 
@@ -1029,9 +1147,17 @@ macro_rules! allow_tables_to_appear_in_same_query {
                 type Count = $crate::query_source::Never;
             }
 
+            impl<F> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<$left_mod::table, F>> for $right_mod::table {
+                type Count = $crate::query_source::Never;
+            }
+
             impl $crate::query_source::AppearsInFromClause<$right_mod::table>
                 for $left_mod::table
             {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<F> $crate::query_source::AppearsInFromClause<$right_mod::table> for $crate::query_source::Alias<$left_mod::table, F> {
                 type Count = $crate::query_source::Never;
             }
         )+
