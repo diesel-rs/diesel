@@ -3,11 +3,11 @@ extern crate chrono;
 use self::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use std::io::Write;
 
-use backend;
-use deserialize::{self, FromSql};
-use serialize::{self, Output, ToSql};
-use sql_types::{Date, Text, Time, Timestamp};
-use sqlite::Sqlite;
+use crate::backend;
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types::{Date, Text, Time, Timestamp};
+use crate::sqlite::Sqlite;
 
 const SQLITE_DATE_FORMAT: &str = "%F";
 
@@ -111,10 +111,10 @@ mod tests {
     use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
     use self::dotenv::dotenv;
 
-    use dsl::{now, sql};
-    use prelude::*;
-    use select;
-    use sql_types::{Text, Time, Timestamp};
+    use crate::dsl::{now, sql};
+    use crate::prelude::*;
+    use crate::select;
+    use crate::sql_types::{Text, Time, Timestamp};
 
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);

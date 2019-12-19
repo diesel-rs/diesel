@@ -181,13 +181,13 @@ pub mod dsl {
     //! generically to be included in prelude, but are often used when using Diesel.
 
     #[doc(inline)]
-    pub use helper_types::*;
+    pub use crate::helper_types::*;
 
     #[doc(inline)]
-    pub use expression::dsl::*;
+    pub use crate::expression::dsl::*;
 
     #[doc(inline)]
-    pub use query_builder::functions::{
+    pub use crate::query_builder::functions::{
         delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
     };
 }
@@ -209,7 +209,7 @@ pub mod helper_types {
     use super::query_source::joins;
 
     #[doc(inline)]
-    pub use expression::helper_types::*;
+    pub use crate::expression::helper_types::*;
 
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
@@ -292,42 +292,42 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    pub use associations::{GroupedBy, Identifiable};
-    pub use connection::Connection;
+    pub use crate::associations::{GroupedBy, Identifiable};
+    pub use crate::connection::Connection;
     #[deprecated(
         since = "1.1.0",
         note = "Explicitly `use diesel::deserialize::Queryable"
     )]
-    pub use deserialize::Queryable;
-    pub use expression::{
+    pub use crate::deserialize::Queryable;
+    pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
-    pub use expression_methods::*;
+    pub use crate::expression_methods::*;
     #[doc(inline)]
-    pub use insertable::Insertable;
+    pub use crate::insertable::Insertable;
     #[doc(hidden)]
-    pub use query_dsl::GroupByDsl;
-    pub use query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
+    pub use crate::query_dsl::GroupByDsl;
+    pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
 
-    pub use query_source::{Column, JoinTo, QuerySource, Table};
-    pub use result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
+    pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]
-    pub use mysql::MysqlConnection;
+    pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
-    pub use pg::PgConnection;
+    pub use crate::pg::PgConnection;
     #[cfg(feature = "sqlite")]
-    pub use sqlite::SqliteConnection;
+    pub use crate::sqlite::SqliteConnection;
 }
 
-pub use prelude::*;
+pub use crate::prelude::*;
 #[doc(inline)]
-pub use query_builder::debug_query;
+pub use crate::query_builder::debug_query;
 #[doc(inline)]
-pub use query_builder::functions::{
+pub use crate::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
 };
-pub use result::Error::NotFound;
+pub use crate::result::Error::NotFound;
 
 pub(crate) mod diesel {
     pub use super::*;

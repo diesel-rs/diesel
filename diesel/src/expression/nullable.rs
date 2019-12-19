@@ -1,9 +1,9 @@
-use backend::Backend;
-use expression::*;
-use query_builder::*;
-use query_source::joins::ToInnerJoin;
-use result::QueryResult;
-use sql_types::IntoNullable;
+use crate::backend::Backend;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::query_source::joins::ToInnerJoin;
+use crate::result::QueryResult;
+use crate::sql_types::IntoNullable;
 
 #[derive(Debug, Copy, Clone, DieselNumericOps, NonAggregate)]
 pub struct Nullable<T>(T);

@@ -1,6 +1,6 @@
 use super::backend::Pg;
-use query_builder::QueryBuilder;
-use result::QueryResult;
+use crate::query_builder::QueryBuilder;
+use crate::result::QueryResult;
 
 mod distinct_on;
 mod query_fragment_impls;

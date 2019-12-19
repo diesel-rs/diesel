@@ -1,6 +1,6 @@
 #[cfg(feature = "postgres")]
-use expression::SelectableExpression;
-use query_source::Table;
+use crate::expression::SelectableExpression;
+use crate::query_source::Table;
 
 /// The `distinct` method
 ///

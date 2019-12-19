@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use super::stmt::StatementUse;
-use deserialize::{FromSqlRow, Queryable, QueryableByName};
-use result::Error::DeserializationError;
-use result::QueryResult;
-use sqlite::Sqlite;
+use crate::deserialize::{FromSqlRow, Queryable, QueryableByName};
+use crate::result::Error::DeserializationError;
+use crate::result::QueryResult;
+use crate::sqlite::Sqlite;
 
 pub struct StatementIterator<'a, ST, T> {
     stmt: StatementUse<'a>,

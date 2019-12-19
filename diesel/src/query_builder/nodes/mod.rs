@@ -1,6 +1,6 @@
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Identifier<'a>(pub &'a str);

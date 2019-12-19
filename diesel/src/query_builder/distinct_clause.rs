@@ -1,6 +1,6 @@
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoDistinctClause;
@@ -21,4 +21,4 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
 }
 
 #[cfg(feature = "postgres")]
-pub use pg::DistinctOnClause;
+pub use crate::pg::DistinctOnClause;

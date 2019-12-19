@@ -4,7 +4,7 @@
 use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
 use super::{AsExpression, Expression};
-use sql_types;
+use crate::sql_types;
 
 /// The SQL type of an expression
 pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;

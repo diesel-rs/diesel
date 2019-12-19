@@ -7,8 +7,8 @@
 pub mod joins;
 mod peano_numbers;
 
-use expression::{Expression, NonAggregate, SelectableExpression};
-use query_builder::*;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::*;
 
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;

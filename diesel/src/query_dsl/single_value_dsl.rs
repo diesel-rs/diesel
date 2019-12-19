@@ -1,9 +1,9 @@
 use super::methods::LimitDsl;
-use dsl::Limit;
-use expression::grouped::Grouped;
-use expression::subselect::Subselect;
-use query_builder::SelectQuery;
-use sql_types::{IntoNullable, SingleValue};
+use crate::dsl::Limit;
+use crate::expression::grouped::Grouped;
+use crate::expression::subselect::Subselect;
+use crate::query_builder::SelectQuery;
+use crate::sql_types::{IntoNullable, SingleValue};
 
 /// The `single_value` method
 ///

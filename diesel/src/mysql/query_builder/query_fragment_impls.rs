@@ -1,7 +1,7 @@
-use mysql::Mysql;
-use query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
-use query_builder::{AstPass, QueryFragment};
-use result::QueryResult;
+use crate::mysql::Mysql;
+use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
+use crate::query_builder::{AstPass, QueryFragment};
+use crate::result::QueryResult;
 
 impl QueryFragment<Mysql> for ForUpdate {
     fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {

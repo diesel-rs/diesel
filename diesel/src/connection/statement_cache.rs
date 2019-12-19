@@ -98,9 +98,9 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
@@ -238,8 +238,8 @@ where
 
 /// Similar to `RefMut::map`, but for functions which return `Result`
 ///
-/// If we were in Haskell (and if `RefMut` were a functor), this would just be
-/// `sequenceA`.
+/// If we were in Haskell (and if `RefMut` were `Traversable`), this would just be
+/// `traverse`.
 fn refmut_map_result<T, U, F>(mut refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
 where
     F: FnOnce(&mut T) -> QueryResult<&mut U>,

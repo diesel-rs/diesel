@@ -6,10 +6,10 @@ use std::io::Write;
 use std::os::raw as libc;
 use std::{mem, ptr, slice};
 
-use deserialize::{self, FromSql};
-use mysql::{Mysql, MysqlValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Date, Datetime, Time, Timestamp};
+use crate::deserialize::{self, FromSql};
+use crate::mysql::{Mysql, MysqlValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
@@ -153,10 +153,10 @@ mod tests {
     use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
     use self::dotenv::dotenv;
 
-    use dsl::{now, sql};
-    use prelude::*;
-    use select;
-    use sql_types::{Date, Datetime, Time, Timestamp};
+    use crate::dsl::{now, sql};
+    use crate::prelude::*;
+    use crate::select;
+    use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
     fn connection() -> MysqlConnection {
         dotenv().ok();
