@@ -21,6 +21,7 @@ before_script:
   - pip install 'travis-cargo<0.2' --user
   - export PATH=$HOME/.local/bin:$PATH
   - mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'travis'@'%';" -uroot
+  - rm rust-toolchain
 script:
 - |
   rustc +$TRAVIS_RUST_VERSION --version &&
