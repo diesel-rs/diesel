@@ -6,8 +6,10 @@ use backend::Backend;
 use dsl::{Filter, Select};
 use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
 use query_builder::{AsQuery, AstPass, QueryFragment, QueryId, SelectStatement};
+use query_dsl::join_dsl::InternalJoinDsl;
 use query_dsl::methods::*;
 use query_dsl::QueryDsl;
+use query_source::joins::{AppendSelection, Inner, Join, JoinOn, LeftOuter, OnClauseWrapper};
 use query_source::{AppearsInFromClause, Column, Never, Once, QuerySource, Table};
 use result::QueryResult;
 use std::marker::PhantomData;
@@ -22,9 +24,19 @@ pub trait Named {
     const NAME: &'static str;
 }
 
+pub trait AliasNotEqualHelper<Table2, Alias1, Alias2> {
+    type Count;
+}
+
 impl<T, F> Clone for Alias<T, F> {
     fn clone(&self) -> Self {
         Alias::new()
+    }
+}
+
+impl<T, F, C> Clone for AliasedField<Alias<T, F>, C> {
+    fn clone(&self) -> Self {
+        AliasedField(self.0.clone(), PhantomData)
     }
 }
 
@@ -171,6 +183,7 @@ impl<T, F, C> SelectableExpression<Alias<T, F>> for AliasedField<Alias<T, F>, C>
 where
     T: Table,
     C: Column<Table = T>,
+    Self: AppearsOnTable<Alias<T, F>>,
 {
 }
 
@@ -194,11 +207,11 @@ where
     }
 }
 
-impl<T, F> AppearsInFromClause<Alias<T, F>> for Alias<T, F>
+impl<T1, T2, F1, F2> AppearsInFromClause<Alias<T1, F1>> for Alias<T2, F2>
 where
-    T: Table,
+    T2: AliasNotEqualHelper<T1, F2, F1>,
 {
-    type Count = Once;
+    type Count = T2::Count;
 }
 
 impl<T, F> AppearsInFromClause<Alias<T, F>> for ()
@@ -207,25 +220,6 @@ where
 {
     type Count = Never;
 }
-
-// impl<T, F> AppearsInFromClause<Alias<T, F>> for T
-// where
-//     T: Table,
-// {
-//     type Count = Never;
-// }
-
-// impl<F> AppearsInFromClause<dependent_operations::table> for Alias<operation_states::table, F> {
-//     type Count = Never;
-// }
-
-// impl<F> AppearsInFromClause<Alias<operation_states::table, F>> for dependent_operations::table {
-//     type Count = Never;
-// }
-
-// impl<F> AppearsInFromClause<Alias<operation_states::table, F>> for operation_states::table {
-//     type Count = Never;
-// }
 
 impl<T, F> QueryDsl for Alias<T, F> where T: Table {}
 
@@ -256,18 +250,125 @@ where
     }
 }
 
+#[macro_export]
+macro_rules! __internal_alias_helper {
+    (
+        $left_table: ident as $left_alias: ident,
+        $right_table: ident as $right_alias: ident,
+        $($table: ident as $alias: ident,)*
+    ) => {
+        static_cond!{if $left_table == $right_table {
+            impl $crate::query_source::AliasNotEqualHelper<$left_table::table, $right_alias, $left_alias> for $right_table::table {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl $crate::query_source::AliasNotEqualHelper<$right_table::table, $left_alias, $right_alias> for $left_table::table {
+                type Count = $crate::query_source::Never;
+            }
+        }}
+
+        __internal_alias_helper!($left_table as $left_alias, $($table as $alias,)*);
+        __internal_alias_helper!($right_alias as $right_alias, $($table as $alias,)*);
+    };
+
+    ($table: ident as $alias: ident,) => {}
+}
+
 /// TODO
 #[macro_export]
 macro_rules! alias {
-    ($table: ident as $alias: ident) => {{
-        #[allow(non_camel_case_types)]
-        #[derive(Debug, Clone, Copy)]
-        struct $alias;
+    ($($table: ident as $alias: ident),* $(,)?) => {{
+        $(
+            #[allow(non_camel_case_types)]
+            #[derive(Debug, Clone, Copy)]
+            struct $alias;
 
-        impl $crate::query_source::Named for $alias {
-            const NAME: &'static str = stringify!($alias);
-        }
+            impl $crate::query_source::Named for $alias {
+                const NAME: &'static str = stringify!($alias);
+            }
 
-        $crate::query_source::Alias::<$table::table, $alias>::new()
+            impl
+                $crate::query_source::AppearsInFromClause<
+                $crate::query_source::Alias<$table::table, $alias>,
+            > for $table::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl $crate::query_source::AppearsInFromClause<$table::table>
+                for $crate::query_source::Alias<$table::table, $alias>
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl $crate::query_source::AliasNotEqualHelper<$table::table, $alias, $alias> for $table::table {
+                type Count = $crate::query_source::Once;
+            }
+        )*
+        __internal_alias_helper!($($table as $alias,)*);
+        ($($crate::query_source::Alias::<$table::table, $alias>::new()),*)
     }};
+}
+
+impl<T, Rhs, Kind, On, F> InternalJoinDsl<Rhs, Kind, On> for Alias<T, F>
+where
+    Self: AsQuery,
+    <Self as AsQuery>::Query: InternalJoinDsl<Rhs, Kind, On>,
+{
+    type Output = <<Self as AsQuery>::Query as InternalJoinDsl<Rhs, Kind, On>>::Output;
+
+    fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
+        self.as_query().join(rhs, kind, on)
+    }
+}
+
+// TODO: adjust as soon as seans fix nullable pr is merged
+impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, LeftOuter>>
+    for AliasedField<Alias<T, F>, C>
+where
+    Self: AppearsOnTable<Join<Left, Right, LeftOuter>>,
+    Left: AppearsInFromClause<Alias<T, F>, Count = Once>,
+    Right: AppearsInFromClause<Alias<T, F>, Count = Never>,
+{
+}
+
+// TODO: adjust as soon as seans fix nullable pr is merged
+impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, Inner>>
+    for AliasedField<Alias<T, F>, C>
+where
+    Self: AppearsOnTable<Join<Left, Right, Inner>>,
+    Join<Left, Right, Inner>: AppearsInFromClause<Alias<T, F>, Count = Once>,
+{
+}
+
+impl<Join, On, T, F, C> SelectableExpression<JoinOn<Join, On>> for AliasedField<Alias<T, F>, C> where
+    Self: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>
+{
+}
+
+// FIXME: Remove this when overlapping marker traits are stable
+impl<From, T, F, C> SelectableExpression<SelectStatement<From>> for AliasedField<Alias<T, F>, C> where
+    Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>
+{
+}
+
+impl<T, Selection, F> AppendSelection<Selection> for Alias<T, F>
+where
+    T: Table,
+    Self: QuerySource,
+{
+    type Output = (<Self as QuerySource>::DefaultSelection, Selection);
+
+    fn append_selection(&self, selection: Selection) -> Self::Output {
+        (self.default_selection(), selection)
+    }
+}
+
+impl<Lhs, Rhs, On, F> JoinTo<OnClauseWrapper<Rhs, On>> for Alias<Lhs, F> {
+    type FromClause = Rhs;
+    type OnClause = On;
+
+    fn join_target(rhs: OnClauseWrapper<Rhs, On>) -> (Self::FromClause, Self::OnClause) {
+        (rhs.source, rhs.on)
+    }
 }

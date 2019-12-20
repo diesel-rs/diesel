@@ -1151,7 +1151,19 @@ macro_rules! allow_tables_to_appear_in_same_query {
                 type Count = $crate::query_source::Never;
             }
 
+            impl<F> $crate::query_source::AppearsInFromClause<$left_mod::table>
+                for $crate::query_source::Alias<$right_mod::table, F>
+            {
+                type Count = $crate::query_source::Never;
+            }
+
             impl $crate::query_source::AppearsInFromClause<$right_mod::table>
+                for $left_mod::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<F> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<$right_mod::table, F>>
                 for $left_mod::table
             {
                 type Count = $crate::query_source::Never;
@@ -1160,6 +1172,15 @@ macro_rules! allow_tables_to_appear_in_same_query {
             impl<F> $crate::query_source::AppearsInFromClause<$right_mod::table> for $crate::query_source::Alias<$left_mod::table, F> {
                 type Count = $crate::query_source::Never;
             }
+
+            impl<F1, F2> $crate::query_source::AliasNotEqualHelper<$right_mod::table, F1, F2> for $left_mod::table {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<F1, F2> $crate::query_source::AliasNotEqualHelper<$left_mod::table, F1, F2> for $right_mod::table {
+                type Count = $crate::query_source::Never;
+            }
+
         )+
         allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };

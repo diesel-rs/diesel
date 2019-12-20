@@ -279,8 +279,8 @@ where
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct OnClauseWrapper<Source, On> {
-    source: Source,
-    on: On,
+    pub(crate) source: Source,
+    pub(crate) on: On,
 }
 
 impl<Source, On> OnClauseWrapper<Source, On> {

@@ -29,7 +29,7 @@ mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
 mod group_by_dsl;
-mod join_dsl;
+pub(crate) mod join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
 #[doc(hidden)]

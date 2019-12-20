@@ -12,3 +12,5 @@ table! {
 #[derive(AsChangeset)]
 #[table_name = "users"]
 enum User {}
+
+fn main() {}

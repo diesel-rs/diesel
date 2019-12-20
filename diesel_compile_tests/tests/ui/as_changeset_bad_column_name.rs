@@ -18,3 +18,5 @@ struct UserStruct {
 #[derive(AsChangeset)]
 #[table_name = "users"]
 struct UserTuple(#[column_name = "name"] String);
+
+fn main() {}

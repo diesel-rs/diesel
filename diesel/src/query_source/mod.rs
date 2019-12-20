@@ -12,7 +12,7 @@ use expression::{Expression, NonAggregate, SelectableExpression};
 use query_builder::*;
 
 #[doc(hidden)]
-pub use self::alias::{Alias, Named, AliasedField, FieldAliasMapper};
+pub use self::alias::{Alias, Named, AliasedField, FieldAliasMapper, AliasNotEqualHelper};
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 

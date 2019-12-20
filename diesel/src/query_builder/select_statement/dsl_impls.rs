@@ -26,7 +26,7 @@ use sql_types::{BigInt, Bool};
 impl<F, S, D, W, O, L, Of, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, L, Of, G, LC>
 where
-    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G, LC>: AsQuery,
+    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G, LC>: Query,
 {
     type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, L, Of, G, LC>;
 

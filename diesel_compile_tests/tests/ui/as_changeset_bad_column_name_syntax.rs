@@ -14,3 +14,5 @@ struct User {
     #[column_name]
     name: String,
 }
+
+fn main() {}
