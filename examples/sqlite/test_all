@@ -5,7 +5,7 @@ export DATABASE_URL="/tmp/test_examples.db"
 
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
-  ../../../bin/diesel database reset
+  BACKEND=sqlite ../../../bin/diesel database reset
   cargo build
   cd ..
 done
