@@ -51,7 +51,7 @@ pub use self::update_statement::{
 pub(crate) use self::insert_statement::ColumnList;
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 pub(crate) use self::insert_statement::InsertFromSelect;
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[cfg(feature = "sqlite")]
 pub(crate) use self::where_clause::WhereClause;
 
 use std::error::Error;

@@ -2,10 +2,10 @@
 //! CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
 //! unique constraint, not the name of an index.
 
-use pg::Pg;
-use query_builder::*;
-use result::QueryResult;
-use upsert::{ConflictTarget, OnConflictTarget};
+use crate::pg::Pg;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::upsert::{ConflictTarget, OnConflictTarget};
 
 /// # Example
 ///
@@ -14,7 +14,7 @@ use upsert::{ConflictTarget, OnConflictTarget};
 /// # include!("../upsert/on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
-/// #     use users::dsl::*;
+/// #     use self::users::dsl::*;
 /// use diesel::upsert::*;
 ///
 /// #     let conn = establish_connection();

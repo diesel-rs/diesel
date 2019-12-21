@@ -351,6 +351,7 @@ fn on_conflict_do_update_with_select_for_sqlite() {
 }
 
 #[test]
+#[cfg(all(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_boxed_select() {
     use schema::posts::dsl::*;
     use schema::users::dsl::{id, name, users};
