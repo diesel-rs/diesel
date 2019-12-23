@@ -352,12 +352,12 @@ impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, T
 
 mod private {
     use crate::insertable::{BatchInsert, OwnedBatchInsert};
+    #[cfg(feature = "sqlite")]
+    use crate::query_builder::WhereClause;
     use crate::query_builder::{
         AstPass, BoxedSelectStatement, InsertFromSelect, Query, QueryFragment, SelectStatement,
         ValuesClause,
     };
-    #[cfg(feature = "sqlite")]
-    use crate::query_builder::WhereClause;
 
     use crate::result::QueryResult;
 
@@ -391,7 +391,8 @@ mod private {
     impl<F, S, D, W, O, L, Of, G, LC> QueryFragment<crate::sqlite::Sqlite>
         for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>>
     where
-        SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>: QueryFragment<crate::sqlite::Sqlite>,
+        SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>:
+            QueryFragment<crate::sqlite::Sqlite>,
     {
         fn walk_ast(&self, out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
             self.0.walk_ast(out)
@@ -402,7 +403,8 @@ mod private {
     impl<'a, ST, QS> QueryFragment<crate::sqlite::Sqlite>
         for OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite>>
     where
-        BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite>: QueryFragment<crate::sqlite::Sqlite>,
+        BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite>:
+            QueryFragment<crate::sqlite::Sqlite>,
         QS: crate::query_source::QuerySource,
         QS::FromClause: QueryFragment<crate::sqlite::Sqlite>,
     {

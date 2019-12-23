@@ -250,14 +250,18 @@ fn on_conflict_do_nothing_with_select_for_sqlite() {
         .filter(diesel::dsl::sql(" 1=1 "))
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict_do_nothing().execute(&conn).unwrap();
+        .on_conflict_do_nothing()
+        .execute(&conn)
+        .unwrap();
     assert_eq!(2, inserted_rows);
     let inserted_rows = users
         .select((id, name.concat(" says hi")))
         .filter(diesel::dsl::sql(" 1=1 "))
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict_do_nothing().execute(&conn).unwrap();
+        .on_conflict_do_nothing()
+        .execute(&conn)
+        .unwrap();
     assert_eq!(0, inserted_rows);
 
     let data = posts.select(title).load::<String>(&conn).unwrap();
