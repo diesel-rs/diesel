@@ -96,7 +96,9 @@
 #![cfg_attr(feature = "unstable", feature(specialization))]
 // Built-in Lints
 #![deny(
-    warnings,
+    //    warnings,
+)]
+#![warn(
     missing_debug_implementations,
     missing_copy_implementations,
     missing_docs
@@ -315,7 +317,7 @@ pub mod prelude {
     #[cfg(feature = "mysql")]
     pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
-    pub use crate::pg::PgConnection;
+    pub use crate::pg::{PgConnection, PostgresConnection};
     #[cfg(feature = "sqlite")]
     pub use crate::sqlite::SqliteConnection;
 }

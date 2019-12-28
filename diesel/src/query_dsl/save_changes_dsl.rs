@@ -29,13 +29,24 @@ pub trait UpdateAndFetchResults<Changes, Output>: Connection {
 }
 
 #[cfg(feature = "postgres")]
-use crate::pg::PgConnection;
+use crate::pg::{PgConnection, PostgresConnection};
 
 #[cfg(feature = "postgres")]
 impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnection
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Update<Changes, Changes>: LoadQuery<PgConnection, Output>,
+{
+    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
+        crate::update(changeset).set(changeset).get_result(self)
+    }
+}
+
+#[cfg(feature = "postgres")]
+impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PostgresConnection
+where
+    Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
+    Update<Changes, Changes>: LoadQuery<PostgresConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).get_result(self)

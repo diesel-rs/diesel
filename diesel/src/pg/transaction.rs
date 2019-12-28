@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::backend::Backend;
-use crate::connection::TransactionManager;
+use crate::connection::{AnsiTransactionManager, TransactionManager};
 use crate::pg::Pg;
 use crate::prelude::*;
 use crate::query_builder::{AstPass, QueryBuilder, QueryFragment};
@@ -18,15 +18,18 @@ use crate::result::Error;
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
 #[derive(Clone, Copy)]
 #[must_use = "Transaction builder does nothing unless you call `run` on it"]
-pub struct TransactionBuilder<'a> {
-    connection: &'a PgConnection,
+pub struct TransactionBuilder<'a, T> {
+    connection: &'a T,
     isolation_level: Option<IsolationLevel>,
     read_mode: Option<ReadMode>,
     deferrable: Option<Deferrable>,
 }
 
-impl<'a> TransactionBuilder<'a> {
-    pub(crate) fn new(connection: &'a PgConnection) -> Self {
+impl<'a, T> TransactionBuilder<'a, T>
+where
+    T: Connection<Backend = Pg, TransactionManager = AnsiTransactionManager>,
+{
+    pub(crate) fn new(connection: &'a T) -> Self {
         Self {
             connection,
             isolation_level: None,
@@ -267,9 +270,9 @@ impl<'a> TransactionBuilder<'a> {
     /// with the parameters given to this builder.
     ///
     /// Returns an error if the connection is already inside a transaction.
-    pub fn run<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn run<O, E, F>(&self, f: F) -> Result<O, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce() -> Result<O, E>,
         E: From<Error>,
     {
         let mut query_builder = <Pg as Backend>::QueryBuilder::default();
@@ -291,7 +294,7 @@ impl<'a> TransactionBuilder<'a> {
     }
 }
 
-impl<'a> QueryFragment<Pg> for TransactionBuilder<'a> {
+impl<'a, T> QueryFragment<Pg> for TransactionBuilder<'a, T> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("BEGIN TRANSACTION");
         if let Some(ref isolation_level) = self.isolation_level {

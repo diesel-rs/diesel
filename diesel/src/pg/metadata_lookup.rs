@@ -6,17 +6,55 @@ use crate::prelude::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+pub trait DynPgConnection: Send {
+    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata;
+}
+
+impl DynPgConnection for PgConnection {
+    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
+        let metadata_cache = self.get_metadata_cache();
+        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
+            use self::pg_type::dsl::*;
+
+            let type_metadata = pg_type
+                .select((oid, typarray))
+                .filter(typname.eq(type_name))
+                .first(self)
+                .unwrap_or_default();
+            metadata_cache.store_type(type_name, type_metadata);
+            type_metadata
+        })
+    }
+}
+
+impl DynPgConnection for super::postgres_connection::PostgresConnection {
+    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
+        let metadata_cache = self.get_metadata_cache();
+        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
+            use self::pg_type::dsl::*;
+
+            let type_metadata = pg_type
+                .select((oid, typarray))
+                .filter(typname.eq(type_name))
+                .first(self)
+                .unwrap_or_default();
+            metadata_cache.store_type(type_name, type_metadata);
+            type_metadata
+        })
+    }
+}
+
 /// Determines the OID of types at runtime
 #[allow(missing_debug_implementations)]
 #[repr(transparent)]
 pub struct PgMetadataLookup {
-    conn: PgConnection,
+    conn: dyn DynPgConnection,
 }
 
 impl PgMetadataLookup {
     #[allow(clippy::new_ret_no_self)]
-    pub(crate) fn new(conn: &PgConnection) -> &Self {
-        unsafe { &*(conn as *const PgConnection as *const PgMetadataLookup) }
+    pub(crate) fn new(conn: &dyn DynPgConnection) -> &Self {
+        unsafe { &*(conn as *const dyn DynPgConnection as *const PgMetadataLookup) }
     }
 
     /// Determine the type metadata for the given `type_name`
@@ -25,18 +63,7 @@ impl PgMetadataLookup {
     /// come from an extension. This function may perform a SQL query to look
     /// up the type. For built-in types, a static OID should be preferred.
     pub fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
-        let metadata_cache = self.conn.get_metadata_cache();
-        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
-            use self::pg_type::dsl::*;
-
-            let type_metadata = pg_type
-                .select((oid, typarray))
-                .filter(typname.eq(type_name))
-                .first(&self.conn)
-                .unwrap_or_default();
-            metadata_cache.store_type(type_name, type_metadata);
-            type_metadata
-        })
+        self.conn.lookup_type(type_name)
     }
 }
 

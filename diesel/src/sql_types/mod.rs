@@ -422,7 +422,7 @@ pub trait TypeMetadata {
     ///
     /// For most backends, which don't support user defined types, this will
     /// be `()`.
-    type MetadataLookup;
+    type MetadataLookup: ?Sized;
 }
 
 /// A marker trait indicating that a SQL type is not null.

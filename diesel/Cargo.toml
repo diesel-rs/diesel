@@ -20,6 +20,8 @@ libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.8.0, <0.17.0", optional = true, features = ["min_sqlite_version_3_7_16"] }
 mysqlclient-sys = { version = ">=0.1.0, <0.3.0", optional = true }
 pq-sys = { version = ">=0.3.0, <0.5.0", optional = true }
+postgresql = {version = "0.17", optional = true, package = "postgres" }
+bytes = {version = "0.5", optional = true}
 quickcheck = { version = "0.4", optional = true }
 serde_json = { version = ">=0.8.0, <2.0", optional = true }
 time = { version = "0.1", optional = true }
@@ -49,7 +51,7 @@ huge-tables = ["64-column-tables"]
 32-column-tables = []
 64-column-tables = ["32-column-tables"]
 128-column-tables = ["64-column-tables"]
-postgres = ["pq-sys", "bitflags", "diesel_derives/postgres"]
+postgres = ["pq-sys", "bitflags", "diesel_derives/postgres", "postgresql", "bytes"]
 sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
 mysql = ["mysqlclient-sys", "url", "percent-encoding", "diesel_derives/mysql"]
 with-deprecated = []
