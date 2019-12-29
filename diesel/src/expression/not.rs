@@ -1,7 +1,7 @@
-use expression::grouped::Grouped;
-use expression::AsExpression;
-use helper_types::not;
-use sql_types::Bool;
+use crate::expression::grouped::Grouped;
+use crate::expression::AsExpression;
+use crate::helper_types::not;
+use crate::sql_types::Bool;
 
 /// Creates a SQL `NOT` expression
 ///

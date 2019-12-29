@@ -5,9 +5,9 @@ use std::io::prelude::*;
 
 use super::connection::SqliteValue;
 use super::Sqlite;
-use deserialize::{self, FromSql};
-use serialize::{self, Output, ToSql};
-use sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types;
 
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new

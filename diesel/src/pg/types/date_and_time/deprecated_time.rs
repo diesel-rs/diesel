@@ -4,10 +4,10 @@ use std::io::Write;
 
 use self::time::{Duration, Timespec};
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, Output, ToSql};
-use sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types;
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
@@ -44,10 +44,10 @@ mod tests {
     use self::dotenv::dotenv;
     use self::time::{Duration, Timespec};
 
-    use dsl::{now, sql};
-    use prelude::*;
-    use select;
-    use sql_types::Timestamp;
+    use crate::dsl::{now, sql};
+    use crate::prelude::*;
+    use crate::select;
+    use crate::sql_types::Timestamp;
 
     fn connection() -> PgConnection {
         dotenv().ok();

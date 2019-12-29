@@ -7,7 +7,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::{fmt, io};
 
-use result;
+use crate::result;
 
 /// Errors that occur while preparing to run migrations
 #[derive(Debug)]

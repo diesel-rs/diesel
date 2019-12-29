@@ -1,5 +1,5 @@
-use expression::Expression;
-use query_source::Table;
+use crate::expression::Expression;
+use crate::query_source::Table;
 
 /// The `select` method
 ///

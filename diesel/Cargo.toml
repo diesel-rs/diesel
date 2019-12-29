@@ -10,6 +10,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "blockchain", "sql"]
 categories = ["database"]
+edition = "2018"
 
 [dependencies]
 byteorder = "1.0"

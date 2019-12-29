@@ -2,16 +2,16 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use backend::{Backend, BinaryRawValue};
-use deserialize::{self, FromSql};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use crate::backend::{Backend, BinaryRawValue};
+use crate::deserialize::{self, FromSql};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 
 impl<DB> FromSql<sql_types::Float, DB> for f32
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         let mut bytes = DB::as_bytes(value);
         debug_assert!(
@@ -37,7 +37,7 @@ impl<DB> FromSql<sql_types::Double, DB> for f64
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(value: Option<::backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
         let mut bytes = DB::as_bytes(value);
         debug_assert!(

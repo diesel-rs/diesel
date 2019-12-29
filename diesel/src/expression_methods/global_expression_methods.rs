@@ -1,7 +1,7 @@
-use expression::array_comparison::{AsInExpression, In, NotIn};
-use expression::operators::*;
-use expression::{nullable, AsExpression, Expression};
-use sql_types::SingleValue;
+use crate::expression::array_comparison::{AsInExpression, In, NotIn};
+use crate::expression::operators::*;
+use crate::expression::{nullable, AsExpression, Expression};
+use crate::sql_types::SingleValue;
 
 /// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {

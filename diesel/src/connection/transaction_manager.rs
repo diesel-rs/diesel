@@ -1,6 +1,6 @@
-use backend::UsesAnsiSavepointSyntax;
-use connection::{Connection, SimpleConnection};
-use result::QueryResult;
+use crate::backend::UsesAnsiSavepointSyntax;
+use crate::connection::{Connection, SimpleConnection};
+use crate::result::QueryResult;
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -68,7 +68,7 @@ impl AnsiTransactionManager {
     where
         Conn: SimpleConnection,
     {
-        use result::Error::AlreadyInTransaction;
+        use crate::result::Error::AlreadyInTransaction;
 
         if self.transaction_depth.get() == 0 {
             self.change_transaction_depth(1, conn.batch_execute(sql))

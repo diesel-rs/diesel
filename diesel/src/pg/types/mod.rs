@@ -8,6 +8,7 @@ pub mod floats;
 mod integers;
 #[cfg(feature = "serde_json")]
 mod json;
+mod mac_addr;
 #[doc(hidden)]
 pub mod money;
 #[cfg(feature = "network-address")]
@@ -107,17 +108,17 @@ pub mod sql_types {
     pub struct Range<ST>(ST);
 
     #[doc(hidden)]
-    pub type Int4range = Range<::sql_types::Int4>;
+    pub type Int4range = Range<crate::sql_types::Int4>;
     #[doc(hidden)]
-    pub type Int8range = Range<::sql_types::Int8>;
+    pub type Int8range = Range<crate::sql_types::Int8>;
     #[doc(hidden)]
-    pub type Daterange = Range<::sql_types::Date>;
+    pub type Daterange = Range<crate::sql_types::Date>;
     #[doc(hidden)]
-    pub type Numrange = Range<::sql_types::Numeric>;
+    pub type Numrange = Range<crate::sql_types::Numeric>;
     #[doc(hidden)]
-    pub type Tsrange = Range<::sql_types::Timestamp>;
+    pub type Tsrange = Range<crate::sql_types::Timestamp>;
     #[doc(hidden)]
-    pub type Tstzrange = Range<::sql_types::Timestamptz>;
+    pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
 
     /// The `Record` (a.k.a. tuple) SQL type.
     ///
@@ -161,13 +162,13 @@ pub mod sql_types {
     pub struct Record<ST>(ST);
 
     /// Alias for `SmallInt`
-    pub type SmallSerial = ::sql_types::SmallInt;
+    pub type SmallSerial = crate::sql_types::SmallInt;
 
     /// Alias for `Integer`
-    pub type Serial = ::sql_types::Integer;
+    pub type Serial = crate::sql_types::Integer;
 
     /// Alias for `BigInt`
-    pub type BigSerial = ::sql_types::BigInt;
+    pub type BigSerial = crate::sql_types::BigInt;
 
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
     /// (uuid <=0.6) or `feature = "uuidv07"` (uuid = 0.7)
@@ -189,10 +190,10 @@ pub mod sql_types {
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
     #[doc(hidden)]
-    pub type Bytea = ::sql_types::Binary;
+    pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
-    pub type Bpchar = ::sql_types::VarChar;
+    pub type Bpchar = crate::sql_types::VarChar;
 
     /// The JSON SQL type.  This type can only be used with `feature =
     /// "serde_json"`
@@ -252,7 +253,6 @@ pub mod sql_types {
     ///
     /// ```rust
     /// # #![allow(dead_code)]
-    /// extern crate serde_json;
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
@@ -264,27 +264,31 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # fn main() {
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// #     use diesel::insert_into;
-    /// #     use contacts::dsl::*;
+    /// #     use self::contacts::dsl::*;
     /// #     let connection = connection_no_data();
-    /// #     connection.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(&connection)?;
     /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
     ///     "postcode": "99705",
     ///     "state": "Alaska"
-    /// }"#).unwrap();
+    /// }"#)?;
     /// let inserted_address = insert_into(contacts)
     ///     .values((name.eq("Claus"), address.eq(&santas_address)))
     ///     .returning(address)
-    ///     .get_result(&connection);
-    /// assert_eq!(Ok(santas_address), inserted_address);
+    ///     .get_result::<serde_json::Value>(&connection)?;
+    /// assert_eq!(santas_address, inserted_address);
+    /// #     Ok(())
     /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "3802", array_oid = "3807")]
@@ -307,7 +311,6 @@ pub mod sql_types {
     /// # Examples
     ///
     /// ```rust
-    /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// use diesel::data_types::Cents;
@@ -322,7 +325,7 @@ pub mod sql_types {
     ///
     /// # fn main() {
     /// #     use diesel::insert_into;
-    /// #     use items::dsl::*;
+    /// #     use self::items::dsl::*;
     /// #     let connection = connection_no_data();
     /// #     connection.execute("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
@@ -340,7 +343,7 @@ pub mod sql_types {
     #[postgres(oid = "790", array_oid = "791")]
     pub struct Money;
 
-    /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -356,7 +359,6 @@ pub mod sql_types {
     /// # Examples
     ///
     /// ```rust
-    /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// table! {
@@ -366,19 +368,20 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # fn main() {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// #     use diesel::insert_into;
-    /// #     use devices::dsl::*;
+    /// #     use self::devices::dsl::*;
     /// #     let connection = connection_no_data();
-    /// #     connection.execute("CREATE TABLE devices (
+    /// #     diesel::sql_query("CREATE TABLE devices (
     /// #         id SERIAL PRIMARY KEY,
     /// #         macaddr MACADDR NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(&connection)?;
     /// let inserted_macaddr = insert_into(devices)
     ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]))
     ///     .returning(macaddr)
-    ///     .get_result(&connection);
-    /// assert_eq!(Ok([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]), inserted_macaddr);
+    ///     .get_result::<[u8; 6]>(&connection)?;
+    /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_macaddr);
+    /// #     Ok(())
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
@@ -406,13 +409,9 @@ pub mod sql_types {
     /// # Examples
     ///
     /// ```rust
-    /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
-    /// extern crate ipnetwork;
-    /// use ipnetwork::IpNetwork;
-    ///
     /// table! {
     ///     clients {
     ///         id -> Integer,
@@ -420,22 +419,28 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # fn main() {
+    /// # #[cfg(feature = "network-address")]
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// use ipnetwork::IpNetwork;
+    ///
     /// #     use diesel::insert_into;
-    /// #     use clients::dsl::*;
-    /// #     use std::str::FromStr;
+    /// #     use self::clients::dsl::*;
     /// #     let connection = connection_no_data();
-    /// #     connection.execute("CREATE TABLE clients (
+    /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
-    /// #     )").unwrap();
-    /// let addr = IpNetwork::from_str("10.1.9.32/32").unwrap();
+    /// #     )").execute(&connection)?;
+    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
     /// let inserted_address = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection);
-    /// assert_eq!(Ok(addr), inserted_address);
+    ///     .get_result(&connection)?;
+    /// assert_eq!(addr, inserted_address);
+    /// #     Ok(())
     /// # }
+    /// #
+    /// # #[cfg(not(feature = "network-address"))]
+    /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "869", array_oid = "1041")]
@@ -461,9 +466,6 @@ pub mod sql_types {
     /// # #![allow(dead_code)]
     /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
-    /// extern crate ipnetwork;
-    /// use ipnetwork::IpNetwork;
-    ///
     /// table! {
     ///     clients {
     ///         id -> Integer,
@@ -471,22 +473,27 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # fn main() {
+    /// # #[cfg(feature = "network-address")]
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// use ipnetwork::IpNetwork;
+    ///
     /// #     use diesel::insert_into;
-    /// #     use clients::dsl::*;
-    /// #     use std::str::FromStr;
+    /// #     use self::clients::dsl::*;
     /// #     let connection = connection_no_data();
-    /// #     connection.execute("CREATE TABLE clients (
+    /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
-    /// #     )").unwrap();
-    /// let addr = IpNetwork::from_str("10.1.9.32/32").unwrap();
+    /// #     )").execute(&connection)?;
+    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
     /// let inserted_addr = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection);
-    /// assert_eq!(Ok(addr), inserted_addr);
+    ///     .get_result(&connection)?;
+    /// assert_eq!(addr, inserted_addr);
+    /// #     Ok(())
     /// # }
+    /// # #[cfg(not(feature = "network-address"))]
+    /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "650", array_oid = "651")]
@@ -495,8 +502,8 @@ pub mod sql_types {
 
 mod ops {
     use super::sql_types::*;
-    use sql_types::ops::*;
-    use sql_types::Interval;
+    use crate::sql_types::ops::*;
+    use crate::sql_types::Interval;
 
     impl Add for Timestamptz {
         type Rhs = Interval;

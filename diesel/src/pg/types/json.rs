@@ -4,15 +4,15 @@ extern crate serde_json;
 
 use std::io::prelude::*;
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 
 #[allow(dead_code)]
 mod foreign_derives {
     use super::serde_json;
-    use sql_types::{Json, Jsonb};
+    use crate::sql_types::{Json, Jsonb};
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]

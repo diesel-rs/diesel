@@ -1,10 +1,10 @@
 #![allow(dead_code)]
-use backend::Backend;
-use connection::TransactionManager;
-use pg::Pg;
-use prelude::*;
-use query_builder::{AstPass, QueryBuilder, QueryFragment};
-use result::Error;
+use crate::backend::Backend;
+use crate::connection::TransactionManager;
+use crate::pg::Pg;
+use crate::prelude::*;
+use crate::query_builder::{AstPass, QueryBuilder, QueryFragment};
+use crate::result::Error;
 
 /// Used to build a transaction, specifying additional details.
 ///

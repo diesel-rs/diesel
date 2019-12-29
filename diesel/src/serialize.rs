@@ -6,11 +6,11 @@ use std::io::{self, Write};
 use std::ops::{Deref, DerefMut};
 use std::result;
 
-use backend::Backend;
-use sql_types::TypeMetadata;
+use crate::backend::Backend;
+use crate::sql_types::TypeMetadata;
 
 #[cfg(feature = "postgres")]
-pub use pg::serialize::*;
+pub use crate::pg::serialize::*;
 
 /// A specialized result type representing the result of serializing
 /// a value for the database.
