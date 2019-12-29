@@ -15,10 +15,8 @@ use super::data_structures::*;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
-    type TypeColumn: SelectableExpression<
-            self::information_schema::columns::table,
-            SqlType = sql_types::Text,
-        > + NonAggregate
+    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
+        + NonAggregate
         + QueryId
         + QueryFragment<Self>;
 
