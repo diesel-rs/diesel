@@ -16,7 +16,6 @@ use crate::result::Error;
 /// [`.build_transaction`]: struct.PgConnection.html#method.build_transaction
 /// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
-#[derive(Clone, Copy)]
 #[must_use = "Transaction builder does nothing unless you call `run` on it"]
 pub struct TransactionBuilder<'a, T> {
     connection: &'a T,
@@ -24,6 +23,14 @@ pub struct TransactionBuilder<'a, T> {
     read_mode: Option<ReadMode>,
     deferrable: Option<Deferrable>,
 }
+
+impl<'a, T> Clone for TransactionBuilder<'a, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, T> Copy for TransactionBuilder<'a, T> {}
 
 impl<'a, T> TransactionBuilder<'a, T>
 where
