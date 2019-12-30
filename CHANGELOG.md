@@ -61,6 +61,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
 
+* Nullability requirements are now properly enforced for nested joins.
+  Previously, only the rules for the outer-most join were considered. For
+  example, `users.left_join(posts).left_join(comments)` would allow selecting
+  any columns from `posts`. That will now fail to compile, and any selections
+  from `posts` will need to be made explicitly nullable.
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
