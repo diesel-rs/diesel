@@ -5,6 +5,8 @@ pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
 
 use std::any::*;
+#[cfg(feature = "sqlite")]
+use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
@@ -228,6 +230,62 @@ where
 }
 
 #[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Display for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
+where
+    &'a U: Insertable<T>,
+    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
+        Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "BEGIN;")?;
+        for record in self.query.records.records {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                record.values(),
+                self.query.operator,
+                self.query.returning,
+            );
+
+            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
+        }
+        writeln!(f, "COMMIT;")?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Debug for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
+where
+    &'a U: Insertable<T>,
+    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
+        Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut statements = Vec::with_capacity(self.query.records.records.len() + 2);
+        statements.push("BEGIN".into());
+        for record in self.query.records.records {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                record.values(),
+                self.query.operator,
+                self.query.returning,
+            );
+            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
+        }
+        statements.push("COMMIT".into());
+
+        f.debug_struct("Query")
+            .field("sql", &statements)
+            .field("binds", &[] as &[i32; 0])
+            .finish()
+    }
+}
+
+#[cfg(feature = "sqlite")]
 impl<T, U, Op> ExecuteDsl<SqliteConnection>
     for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>
 where
@@ -246,6 +304,61 @@ where
             }
             Ok(result)
         })
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Display
+    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
+where
+    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "BEGIN;")?;
+        for value in &self.query.records.values {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                value,
+                self.query.operator,
+                self.query.returning,
+            );
+
+            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
+        }
+        writeln!(f, "COMMIT;")?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a, T, U, Op> Debug
+    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
+where
+    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
+    T: Copy,
+    Op: Copy,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut statements = Vec::with_capacity(self.query.records.values.len() + 2);
+        statements.push("BEGIN".into());
+
+        for value in &self.query.records.values {
+            let stmt = InsertStatement::new(
+                self.query.target,
+                value,
+                self.query.operator,
+                self.query.returning,
+            );
+            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
+        }
+        statements.push("COMMIT".into());
+
+        f.debug_struct("Query")
+            .field("sql", &statements)
+            .field("binds", &[] as &[i32; 0])
+            .finish()
     }
 }
 
