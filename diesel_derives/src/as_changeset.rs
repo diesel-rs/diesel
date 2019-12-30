@@ -58,35 +58,32 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             .emit();
     }
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("as_changeset"),
-        quote!(
-            use diesel::query_builder::AsChangeset;
-            use diesel::prelude::*;
+    Ok(wrap_in_dummy_mod(quote!(
+        use diesel::query_builder::AsChangeset;
+        use diesel::prelude::*;
 
-            impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
-            #where_clause
-            {
-                type Target = #table_name::table;
-                type Changeset = <(#(#ref_changeset_ty,)*) as AsChangeset>::Changeset;
+        impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
+        #where_clause
+        {
+            type Target = #table_name::table;
+            type Changeset = <(#(#ref_changeset_ty,)*) as AsChangeset>::Changeset;
 
-                fn as_changeset(self) -> Self::Changeset {
-                    (#(#ref_changeset_expr,)*).as_changeset()
-                }
+            fn as_changeset(self) -> Self::Changeset {
+                (#(#ref_changeset_expr,)*).as_changeset()
             }
+        }
 
-            impl #impl_generics AsChangeset for #struct_name #ty_generics
-            #where_clause
-            {
-                type Target = #table_name::table;
-                type Changeset = <(#(#direct_changeset_ty,)*) as AsChangeset>::Changeset;
+        impl #impl_generics AsChangeset for #struct_name #ty_generics
+        #where_clause
+        {
+            type Target = #table_name::table;
+            type Changeset = <(#(#direct_changeset_ty,)*) as AsChangeset>::Changeset;
 
-                fn as_changeset(self) -> Self::Changeset {
-                    (#(#direct_changeset_expr,)*).as_changeset()
-                }
+            fn as_changeset(self) -> Self::Changeset {
+                (#(#direct_changeset_expr,)*).as_changeset()
             }
-        ),
-    ))
+        }
+    )))
 }
 
 fn field_changeset_ty(

@@ -48,41 +48,38 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         })
         .unzip();
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("insertable"),
-        quote! {
-            use diesel::insertable::Insertable;
-            use diesel::query_builder::UndecoratedInsertRecord;
-            use diesel::prelude::*;
+    Ok(wrap_in_dummy_mod(quote! {
+        use diesel::insertable::Insertable;
+        use diesel::query_builder::UndecoratedInsertRecord;
+        use diesel::prelude::*;
 
-            impl #impl_generics Insertable<#table_name::table> for #struct_name #ty_generics
-                #where_clause
-            {
-                type Values = <(#(#direct_field_ty,)*) as Insertable<#table_name::table>>::Values;
-
-                fn values(self) -> Self::Values {
-                    (#(#direct_field_assign,)*).values()
-                }
-            }
-
-            impl #impl_generics Insertable<#table_name::table>
-                for &'insert #struct_name #ty_generics
+        impl #impl_generics Insertable<#table_name::table> for #struct_name #ty_generics
             #where_clause
-            {
-                type Values = <(#(#ref_field_ty,)*) as Insertable<#table_name::table>>::Values;
+        {
+            type Values = <(#(#direct_field_ty,)*) as Insertable<#table_name::table>>::Values;
 
-                fn values(self) -> Self::Values {
-                    (#(#ref_field_assign,)*).values()
-                }
+            fn values(self) -> Self::Values {
+                (#(#direct_field_assign,)*).values()
             }
+        }
 
-            impl #impl_generics UndecoratedInsertRecord<#table_name::table>
-                for #struct_name #ty_generics
-            #where_clause
-            {
+        impl #impl_generics Insertable<#table_name::table>
+            for &'insert #struct_name #ty_generics
+        #where_clause
+        {
+            type Values = <(#(#ref_field_ty,)*) as Insertable<#table_name::table>>::Values;
+
+            fn values(self) -> Self::Values {
+                (#(#ref_field_assign,)*).values()
             }
-        },
-    ))
+        }
+
+        impl #impl_generics UndecoratedInsertRecord<#table_name::table>
+            for #struct_name #ty_generics
+        #where_clause
+        {
+        }
+    }))
 }
 
 fn field_ty(
