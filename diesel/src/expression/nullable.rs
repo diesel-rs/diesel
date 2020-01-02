@@ -1,7 +1,7 @@
 use crate::backend::Backend;
 use crate::expression::*;
 use crate::query_builder::*;
-use crate::query_source::Table;
+use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::IntoNullable;
 
@@ -50,7 +50,7 @@ impl<T: QueryId> QueryId for Nullable<T> {
 impl<T, QS> SelectableExpression<QS> for Nullable<T>
 where
     Self: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
-    QS: Table,
+    QS: ToInnerJoin,
+    T: SelectableExpression<QS::InnerJoin>,
 {
 }

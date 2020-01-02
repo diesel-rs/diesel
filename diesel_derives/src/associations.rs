@@ -23,10 +23,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             },
         );
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("associations"),
-        quote!(#(#tokens)*),
-    ))
+    Ok(wrap_in_dummy_mod(quote!(#(#tokens)*)))
 }
 
 fn derive_belongs_to(

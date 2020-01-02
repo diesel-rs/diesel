@@ -19,16 +19,12 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let struct_name = &item.ident;
 
-    let dummy_mod = format!("_impl_non_aggregate_for_{}", item.ident).to_lowercase();
-    Ok(wrap_in_dummy_mod(
-        Ident::new(&dummy_mod, Span::call_site()),
-        quote! {
-            use diesel::expression::NonAggregate;
+    Ok(wrap_in_dummy_mod(quote! {
+        use diesel::expression::NonAggregate;
 
-            impl #impl_generics NonAggregate for #struct_name #ty_generics
-            #where_clause
-            {
-            }
-        },
-    ))
+        impl #impl_generics NonAggregate for #struct_name #ty_generics
+        #where_clause
+        {
+        }
+    }))
 }

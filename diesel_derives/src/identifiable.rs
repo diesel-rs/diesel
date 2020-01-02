@@ -21,30 +21,27 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .map(|f| (&f.ty, f.name.access()))
         .unzip();
 
-    Ok(wrap_in_dummy_mod(
-        model.dummy_mod_name("identifiable"),
-        quote! {
-            use diesel::associations::{HasTable, Identifiable};
+    Ok(wrap_in_dummy_mod(quote! {
+        use diesel::associations::{HasTable, Identifiable};
 
-            impl #impl_generics HasTable for #struct_name #ty_generics
-            #where_clause
-            {
-                type Table = #table_name::table;
+        impl #impl_generics HasTable for #struct_name #ty_generics
+        #where_clause
+        {
+            type Table = #table_name::table;
 
-                fn table() -> Self::Table {
-                    #table_name::table
-                }
+            fn table() -> Self::Table {
+                #table_name::table
             }
+        }
 
-            impl #ref_generics Identifiable for &'ident #struct_name #ty_generics
-            #where_clause
-            {
-                type Id = (#(&'ident #field_ty),*);
+        impl #ref_generics Identifiable for &'ident #struct_name #ty_generics
+        #where_clause
+        {
+            type Id = (#(&'ident #field_ty),*);
 
-                fn id(self) -> Self::Id {
-                    (#(&self#field_access),*)
-                }
+            fn id(self) -> Self::Id {
+                (#(&self#field_access),*)
             }
-        },
-    ))
+        }
+    }))
 }
