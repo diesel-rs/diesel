@@ -340,12 +340,11 @@ impl<F, S, D, W, O, LOf, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB>
-    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G>
+impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB> for SelectStatement<F, S, D, W, O, LOf, G>
 where
     Self: AsQuery,
     DB: Backend,
-    S: QueryFragment<DB> + SelectableExpression<F> + Send + 'a,
+    S: IntoBoxedSelectClause<'a, DB, F>,
     D: QueryFragment<DB> + Send + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
@@ -356,34 +355,7 @@ where
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
-            Box::new(self.select.0),
-            self.from,
-            Box::new(self.distinct),
-            self.where_clause.into(),
-            self.order.into(),
-            self.limit_offset.into_boxed(),
-            Box::new(self.group_by),
-        )
-    }
-}
-
-impl<'a, F, D, W, O, LOf, G, DB> BoxedDsl<'a, DB>
-    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G>
-where
-    Self: AsQuery,
-    DB: Backend,
-    F: QuerySource,
-    F::DefaultSelection: QueryFragment<DB> + Send + 'a,
-    D: QueryFragment<DB> + Send + 'a,
-    W: Into<BoxedWhereClause<'a, DB>>,
-    O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
-    LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
-    G: QueryFragment<DB> + Send + 'a,
-{
-    type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
-    fn internal_into_boxed(self) -> Self::Output {
-        BoxedSelectStatement::new(
-            Box::new(self.from.default_selection()),
+            self.select.into_boxed(&self.from),
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
