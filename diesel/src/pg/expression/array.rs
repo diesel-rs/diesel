@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::{
-    AppearsOnTable, AsExpressionList, Expression, ValidGrouping, SelectableExpression,
+    AppearsOnTable, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::sql_types;

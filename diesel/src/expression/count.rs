@@ -1,5 +1,5 @@
 use super::functions::sql_function;
-use super::{Expression, ValidGrouping, is_aggregate};
+use super::{is_aggregate, Expression, ValidGrouping};
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;

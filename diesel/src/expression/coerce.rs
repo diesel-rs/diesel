@@ -54,7 +54,8 @@ where
 }
 
 impl<T, ST, GB> ValidGrouping<GB> for Coerce<T, ST>
-where T: ValidGrouping<GB>,
+where
+    T: ValidGrouping<GB>,
 {
     type IsAggregate = T::IsAggregate;
 }

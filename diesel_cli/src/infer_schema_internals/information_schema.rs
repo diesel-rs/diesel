@@ -3,7 +3,7 @@ use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
-use diesel::expression::{ValidGrouping, is_aggregate};
+use diesel::expression::{is_aggregate, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]

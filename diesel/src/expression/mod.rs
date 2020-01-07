@@ -347,7 +347,8 @@ pub mod is_aggregate {
 #[cfg(feature = "unstable")]
 pub trait NonAggregate = ValidGrouping<()>
 where
-    <Self as ValidGrouping<()>>::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>;
+    <Self as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>;
 
 // Note that these docs are similar to but slightly different than the unstable
 // docs above. Make sure if you change these that you also change the docs
@@ -375,7 +376,8 @@ impl<T> NonAggregate for T
 where
     T: ValidGrouping<()>,
     T::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
-{}
+{
+}
 
 use crate::query_builder::{QueryFragment, QueryId};
 

@@ -504,7 +504,8 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
     use diesel::dsl::{count_star, max};
 
     let connection = connection_with_sean_and_tess_in_users_table();
-    let (count, max_name) = users.select((count_star(), max(name)))
+    let (count, max_name) = users
+        .select((count_star(), max(name)))
         .get_result::<(i64, _)>(&connection)
         .unwrap();
 

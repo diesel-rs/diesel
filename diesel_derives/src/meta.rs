@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, Span};
+use syn;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
-use syn;
 
 use resolved_at_shim::*;
 use util::*;

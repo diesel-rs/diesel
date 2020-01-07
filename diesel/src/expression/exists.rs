@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::subselect::Subselect;
-use crate::expression::{AppearsOnTable, Expression, ValidGrouping, SelectableExpression};
+use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
