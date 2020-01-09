@@ -355,7 +355,7 @@ pub struct Timestamp;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Nullable<ST: NotNull>(ST);
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 pub use crate::pg::types::sql_types::*;
 
 #[cfg(feature = "mysql")]

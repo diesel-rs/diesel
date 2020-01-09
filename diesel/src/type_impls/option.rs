@@ -137,13 +137,13 @@ where
     }
 }
 
-#[cfg(all(test, feature = "postgres"))]
+#[cfg(all(test, any(feature = "postgres", feature = "unstable_pure_rust_postgres")))]
 use crate::pg::Pg;
-#[cfg(all(test, feature = "postgres"))]
+#[cfg(all(test, any(feature = "postgres", feature = "unstable_pure_rust_postgres")))]
 use crate::sql_types;
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 fn option_to_sql() {
     type Type = sql_types::Nullable<sql_types::VarChar>;
     let mut bytes = Output::test();

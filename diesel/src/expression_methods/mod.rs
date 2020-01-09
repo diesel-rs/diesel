@@ -21,6 +21,6 @@ pub use self::global_expression_methods::{ExpressionMethods, NullableExpressionM
 #[doc(inline)]
 pub use self::text_expression_methods::TextExpressionMethods;
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 #[doc(inline)]
 pub use crate::pg::expression::expression_methods::*;

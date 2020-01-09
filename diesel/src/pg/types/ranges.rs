@@ -1,6 +1,7 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
+use bitflags::bitflags;
 
 use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
 use crate::expression::bound::Bound as SqlBound;

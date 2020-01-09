@@ -4,12 +4,22 @@ use crate::associations::Identifiable;
 use crate::connection::Connection;
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use crate::dsl::Find;
-#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
+#[cfg(any(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "unstable_pure_rust_postgres"
+))]
 use crate::dsl::Update;
 use crate::query_builder::{AsChangeset, IntoUpdateTarget};
 #[cfg(any(feature = "sqlite", feature = "mysql"))]
 use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
-#[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
+#[cfg(any(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "unstable_pure_rust_postgres"
+))]
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::result::QueryResult;
 
@@ -29,24 +39,21 @@ pub trait UpdateAndFetchResults<Changes, Output>: Connection {
 }
 
 #[cfg(feature = "postgres")]
-use crate::pg::{PgConnection, PostgresConnection};
-
-#[cfg(feature = "postgres")]
-impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnection
+impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for crate::PgConnection
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
-    Update<Changes, Changes>: LoadQuery<PgConnection, Output>,
+    Update<Changes, Changes>: LoadQuery<crate::PgConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).get_result(self)
     }
 }
 
-#[cfg(feature = "postgres")]
-impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PostgresConnection
+#[cfg(feature = "unstable_pure_rust_postgres")]
+impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for crate::PostgresConnection
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
-    Update<Changes, Changes>: LoadQuery<PostgresConnection, Output>,
+    Update<Changes, Changes>: LoadQuery<crate::PostgresConnection, Output>,
 {
     fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).get_result(self)

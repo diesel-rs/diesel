@@ -20,5 +20,5 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
     }
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 pub use crate::pg::DistinctOnClause;

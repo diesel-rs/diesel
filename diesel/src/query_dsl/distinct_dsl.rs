@@ -1,4 +1,4 @@
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 use crate::expression::SelectableExpression;
 use crate::query_source::Table;
 
@@ -36,7 +36,7 @@ where
 /// to call `distinct_on` from generic code.
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 pub trait DistinctOnDsl<Selection> {
     /// The type returned by `.distinct_on`
     type Output;
@@ -45,7 +45,7 @@ pub trait DistinctOnDsl<Selection> {
     fn distinct_on(self, selection: Selection) -> Self::Output;
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,

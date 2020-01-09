@@ -59,9 +59,9 @@ impl<Inner> SqlQuery<Inner> {
     /// #     diesel::insert_into(users::table)
     /// #         .values(users::name.eq("Jim"))
     /// #         .execute(&connection).unwrap();
-    /// # #[cfg(feature = "postgres")]
+    /// # #[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
-    /// # #[cfg(not(feature = "postgres"))]
+    /// # #[cfg(not(any(feature = "postgres", feature = "unstable_pure_rust_postgres")))]
     /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
     /// # ;
     /// # let users = users

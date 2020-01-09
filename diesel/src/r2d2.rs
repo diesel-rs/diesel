@@ -88,6 +88,13 @@ impl R2D2Connection for crate::pg::PgConnection {
     }
 }
 
+#[cfg(feature = "unstable_pure_rust_postgres")]
+impl R2D2Connection for crate::pg::PostgresConnection {
+    fn ping(&self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+}
+
 #[cfg(feature = "mysql")]
 impl R2D2Connection for crate::mysql::MysqlConnection {
     fn ping(&self) -> QueryResult<()> {

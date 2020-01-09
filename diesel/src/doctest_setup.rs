@@ -1,20 +1,27 @@
 extern crate dotenv;
-#[macro_use] extern crate cfg_if;
+#[macro_use]
+extern crate cfg_if;
 
-use diesel::prelude::*;
 use self::dotenv::dotenv;
+use diesel::prelude::*;
 
 cfg_if! {
-    if #[cfg(feature = "postgres")] {
+    if #[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))] {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
 
-        fn connection_no_transaction() -> PgConnection {
+        #[cfg(feature = "postgres")]
+        type DbConnection = PgConnection;
+
+        #[cfg(feature = "unstable_pure_rust_postgres")]
+        type DbConnection = PostgresConnection;
+
+        fn connection_no_transaction() -> DbConnection {
             let connection_url = database_url_from_env("PG_DATABASE_URL");
-            PgConnection::establish(&connection_url).unwrap()
+            DbConnection::establish(&connection_url).unwrap()
         }
 
-        fn connection_no_data() -> PgConnection {
+        fn connection_no_data() -> DbConnection {
             let connection = connection_no_transaction();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
@@ -26,7 +33,7 @@ cfg_if! {
         }
 
         #[allow(dead_code)]
-        fn establish_connection() -> PgConnection {
+        fn establish_connection() -> DbConnection {
             let connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
@@ -104,7 +111,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id INTEGER NOT NULL,
@@ -161,7 +168,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 post_id INTEGER NOT NULL,
@@ -194,7 +201,6 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }
-
 
 mod schema {
     table! {

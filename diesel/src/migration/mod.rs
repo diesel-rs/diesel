@@ -87,6 +87,14 @@ impl MigrationConnection for crate::pg::PgConnection {
     }
 }
 
+#[cfg(feature = "unstable_pure_rust_postgres")]
+impl MigrationConnection for crate::pg::PostgresConnection {
+    fn setup(&self) -> QueryResult<usize> {
+        use crate::RunQueryDsl;
+        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+}
+
 #[cfg(feature = "mysql")]
 impl MigrationConnection for crate::mysql::MysqlConnection {
     fn setup(&self) -> QueryResult<usize> {

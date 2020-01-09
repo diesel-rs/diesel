@@ -1,6 +1,3 @@
-extern crate bytes;
-extern crate postgresql;
-
 use super::{Pg, PgMetadataLookup, PgValue};
 use crate::connection::{
     AnsiTransactionManager, Connection, MaybeCached, SimpleConnection, StatementCache,

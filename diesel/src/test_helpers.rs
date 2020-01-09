@@ -23,6 +23,20 @@ cfg_if! {
         pub fn database_url() -> String {
             pg_database_url()
         }
+    } else if #[cfg(feature = "unstable_pure_rust_postgres")] {
+        pub type TestConnection = PostgresConnection;
+
+        pub fn connection() -> TestConnection {
+            let conn = PostgresConnection::establish(&database_url()).unwrap();
+            conn.begin_test_transaction().unwrap();
+            conn
+        }
+
+        pub fn database_url() -> String {
+            dotenv::var("PG_DATABASE_URL")
+                .or_else(|_| dotenv::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests")
+        }
     } else if #[cfg(feature = "mysql")] {
         pub type TestConnection = MysqlConnection;
 
@@ -45,7 +59,7 @@ cfg_if! {
         compile_error!(
             "At least one backend must be used to test this crate.\n \
             Pass argument `--features \"<backend>\"` with one or more of the following backends, \
-            'mysql', 'postgres', or 'sqlite'. \n\n \
+            'mysql', 'postgres', 'sqlite', or 'unstable_pure_rust_postgres'. \n\n \
             ex. cargo test --features \"mysql postgres sqlite\"\n"
         );
     }

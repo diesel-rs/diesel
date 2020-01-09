@@ -9,8 +9,10 @@ pub mod types;
 pub mod upsert;
 
 mod backend;
+#[cfg(feature = "postgres")]
 mod connection;
 mod metadata_lookup;
+#[cfg(feature = "unstable_pure_rust_postgres")]
 mod postgres_connection;
 mod query_builder;
 pub(crate) mod serialize;
@@ -18,8 +20,10 @@ mod transaction;
 mod value;
 
 pub use self::backend::{Pg, PgTypeMetadata};
+#[cfg(feature = "postgres")]
 pub use self::connection::PgConnection;
 pub use self::metadata_lookup::PgMetadataLookup;
+#[cfg(feature = "unstable_pure_rust_postgres")]
 pub use self::postgres_connection::PostgresConnection;
 pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;

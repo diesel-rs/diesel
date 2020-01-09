@@ -17,6 +17,15 @@ use crate::result::Error;
 /// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
 #[must_use = "Transaction builder does nothing unless you call `run` on it"]
+#[cfg(feature = "postgres")]
+pub struct TransactionBuilder<'a, T = crate::pg::PgConnection> {
+    connection: &'a T,
+    isolation_level: Option<IsolationLevel>,
+    read_mode: Option<ReadMode>,
+    deferrable: Option<Deferrable>,
+}
+
+#[cfg(not(feature = "postgres"))]
 pub struct TransactionBuilder<'a, T> {
     connection: &'a T,
     isolation_level: Option<IsolationLevel>,

@@ -1,6 +1,5 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
-
-use super::{PgConnection, PgTypeMetadata};
+use super::PgTypeMetadata;
 use crate::prelude::*;
 
 use std::cell::RefCell;
@@ -8,40 +7,6 @@ use std::collections::HashMap;
 
 pub trait DynPgConnection: Send {
     fn lookup_type(&self, type_name: &str) -> PgTypeMetadata;
-}
-
-impl DynPgConnection for PgConnection {
-    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
-        let metadata_cache = self.get_metadata_cache();
-        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
-            use self::pg_type::dsl::*;
-
-            let type_metadata = pg_type
-                .select((oid, typarray))
-                .filter(typname.eq(type_name))
-                .first(self)
-                .unwrap_or_default();
-            metadata_cache.store_type(type_name, type_metadata);
-            type_metadata
-        })
-    }
-}
-
-impl DynPgConnection for super::postgres_connection::PostgresConnection {
-    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
-        let metadata_cache = self.get_metadata_cache();
-        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
-            use self::pg_type::dsl::*;
-
-            let type_metadata = pg_type
-                .select((oid, typarray))
-                .filter(typname.eq(type_name))
-                .first(self)
-                .unwrap_or_default();
-            metadata_cache.store_type(type_name, type_metadata);
-            type_metadata
-        })
-    }
 }
 
 /// Determines the OID of types at runtime
@@ -96,5 +61,41 @@ table! {
         oid -> Oid,
         typname -> Text,
         typarray -> Oid,
+    }
+}
+
+#[cfg(feature = "postgres")]
+impl DynPgConnection for super::PgConnection {
+    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
+        let metadata_cache = self.get_metadata_cache();
+        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
+            use self::pg_type::dsl::*;
+
+            let type_metadata = pg_type
+                .select((oid, typarray))
+                .filter(typname.eq(type_name))
+                .first(self)
+                .unwrap_or_default();
+            metadata_cache.store_type(type_name, type_metadata);
+            type_metadata
+        })
+    }
+}
+
+#[cfg(feature = "unstable_pure_rust_postgres")]
+impl DynPgConnection for super::PostgresConnection {
+    fn lookup_type(&self, type_name: &str) -> PgTypeMetadata {
+        let metadata_cache = self.get_metadata_cache();
+        metadata_cache.lookup_type(type_name).unwrap_or_else(|| {
+            use self::pg_type::dsl::*;
+
+            let type_metadata = pg_type
+                .select((oid, typarray))
+                .filter(typname.eq(type_name))
+                .first(self)
+                .unwrap_or_default();
+            metadata_cache.store_type(type_name, type_metadata);
+            type_metadata
+        })
     }
 }
