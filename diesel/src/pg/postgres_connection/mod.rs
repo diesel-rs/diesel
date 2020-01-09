@@ -7,7 +7,7 @@ use crate::pg::metadata_lookup::PgMetadataCache;
 use crate::pg::transaction::TransactionBuilder;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
-use crate::result::ConnectionError::CouldntSetupConfiguration;
+use crate::result::ConnectionError::{self, CouldntSetupConfiguration};
 use crate::result::Error::DeserializationError;
 use crate::result::{ConnectionResult, QueryResult};
 use crate::row::{NamedRow, Row};
@@ -17,14 +17,46 @@ use postgresql::fallible_iterator::FallibleIterator;
 use postgresql::types::Type;
 use postgresql::Statement;
 use std::cell::RefCell;
+use std::convert::TryFrom;
 use std::error::Error;
 
-#[allow(missing_docs, missing_debug_implementations)]
+/// This connection type is based on the pure rust postgresql implementation
+/// inside the [postgres](https://docs.rs/postgres/0.17.0/postgres/index.html) crate.
+///
+/// See the documentation on [`postgres::Client`](https://docs.rs/postgres/0.17.0/postgres/struct.Client.html#method.connect)
+/// for connection strings that are accepted by `PostgresConnection::establish`
+/// or use the the `TryFrom` impl to create a new `PostgresConnection` from
+/// an existing `postgres::Client`
+#[allow(missing_debug_implementations)]
 pub struct PostgresConnection {
     conn: RefCell<postgresql::Client>,
     transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
+}
+
+impl PostgresConnection {
+    /// Get a reference to the inner `postgres::Client`
+    pub fn inner_connection(&self) -> &RefCell<postgresql::Client> {
+        &self.conn
+    }
+}
+
+impl TryFrom<postgresql::Client> for PostgresConnection {
+    type Error = ConnectionError;
+
+    fn try_from(client: postgresql::Client) -> Result<PostgresConnection, ConnectionError> {
+        let conn = Self {
+            conn: RefCell::new(client),
+            transaction_manager: AnsiTransactionManager::new(),
+            statement_cache: StatementCache::new(),
+            metadata_cache: PgMetadataCache::new(),
+        };
+
+        conn.set_config_options()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
+    }
 }
 
 impl SimpleConnection for PostgresConnection {
@@ -181,6 +213,30 @@ impl PostgresConnection {
         &self.metadata_cache
     }
 
+    /// Build a transaction, specifying additional details such as isolation level
+    ///
+    /// See [`TransactionBuilder`] for more examples.
+    ///
+    /// [`TransactionBuilder`]: ../pg/struct.TransactionBuilder.html
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let conn = connection_no_transaction();
+    /// conn.build_transaction()
+    ///     .read_only()
+    ///     .serializable()
+    ///     .deferrable()
+    ///     .run(|| Ok(()))
+    /// # }
+    /// ```
     pub fn build_transaction(&self) -> TransactionBuilder<Self> {
         TransactionBuilder::new(self)
     }
