@@ -27,6 +27,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `MacAddr` SQL type can now be used without enabling the `network-address`
   feature.
 
+* A unstable pure rust postgresql connection implementation (`PostgresConnection`) was added behind the `unstable_pure_rust_postgres` feature flag. It is based on the `postgres` crate
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -47,7 +49,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `Mysql::TypeMetadata`, you will need to take the new struct
   `MysqlTypeMetadata` instead.
 
-* The minimal officially supported rustc version is now 1.36.0
+* The minimal officially supported rustc version is now 1.40.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
