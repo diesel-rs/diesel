@@ -6,7 +6,7 @@ use std::ptr::NonNull;
 use std::{slice, str};
 
 use crate::row::*;
-use crate::sqlite::Sqlite;
+use crate::sqlite::{Sqlite, SqliteType};
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
@@ -62,8 +62,19 @@ impl SqliteValue {
     }
 
     pub fn is_null(&self) -> bool {
+        self.value_type().is_none()
+    }
+
+    pub fn value_type(&self) -> Option<SqliteType> {
         let tpe = unsafe { ffi::sqlite3_value_type(self.value()) };
-        tpe == ffi::SQLITE_NULL
+        match tpe {
+            ffi::SQLITE_TEXT => Some(SqliteType::Text),
+            ffi::SQLITE_INTEGER => Some(SqliteType::Long),
+            ffi::SQLITE_FLOAT => Some(SqliteType::Double),
+            ffi::SQLITE_BLOB => Some(SqliteType::Binary),
+            ffi::SQLITE_NULL => None,
+            _ => unreachable!("Sqlite does saying this is not reachable"),
+        }
     }
 
     fn value(&self) -> *mut ffi::sqlite3_value {
