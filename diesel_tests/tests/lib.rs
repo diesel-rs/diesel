@@ -1,5 +1,8 @@
 #![recursion_limit = "1024"]
-#![cfg_attr(any(feature = "postgres", feature = "postgres_pure_rust"), deny(warnings))]
+#![cfg_attr(
+    any(feature = "postgres", feature = "postgres_pure_rust"),
+    deny(warnings)
+)]
 
 #[macro_use]
 extern crate assert_matches;

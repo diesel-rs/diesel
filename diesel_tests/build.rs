@@ -5,7 +5,12 @@ use self::diesel::*;
 use self::dotenv::dotenv;
 use std::{env, io};
 
-#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "postgres_pure_rust")))]
+#[cfg(not(any(
+    feature = "mysql",
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "postgres_pure_rust"
+)))]
 compile_error!(
     "At least one backend must be used to test this crate.\n \
      Pass argument `--features \"<backend>\"` with one or more of the following backends, \

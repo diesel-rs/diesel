@@ -1,6 +1,10 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "postgres_pure_rust"
+))]
 extern crate bigdecimal;
 extern crate chrono;
 

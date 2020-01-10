@@ -1,4 +1,8 @@
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "postgres_pure_rust"
+))]
 extern crate bigdecimal;
 extern crate chrono;
 
@@ -301,7 +305,11 @@ pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
     DateTime::from_utc(mk_naive_datetime(data), Utc)
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "postgres_pure_rust"
+))]
 fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
     format!("{}.{}", data.0, data.1)
         .parse()
