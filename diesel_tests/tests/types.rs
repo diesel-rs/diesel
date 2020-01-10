@@ -1,11 +1,11 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
 extern crate bigdecimal;
 extern crate chrono;
 
 use diesel::deserialize::FromSql;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 use diesel::pg::Pg;
 use diesel::sql_types::*;
 use diesel::*;
@@ -29,7 +29,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn errors_during_deserialization_do_not_panic() {
     use self::chrono::NaiveDateTime;
     use self::has_timestamps::dsl::*;
@@ -137,14 +137,14 @@ fn test_chrono_types_sqlite() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn boolean_from_sql() {
     assert_eq!(true, query_single_value::<Bool, bool>("'t'::bool"));
     assert_eq!(false, query_single_value::<Bool, bool>("'f'::bool"));
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn boolean_treats_null_as_false_when_predicates_return_null() {
     let connection = connection();
     let one = Some(1).into_sql::<Nullable<Integer>>();
@@ -153,7 +153,7 @@ fn boolean_treats_null_as_false_when_predicates_return_null() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn boolean_to_sql() {
     assert!(query_to_sql_equality::<Bool, bool>("'t'::bool", true));
     assert!(query_to_sql_equality::<Bool, bool>("'f'::bool", false));
@@ -162,7 +162,7 @@ fn boolean_to_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn i16_from_sql() {
     assert_eq!(0, query_single_value::<SmallInt, i16>("0::int2"));
     assert_eq!(-1, query_single_value::<SmallInt, i16>("-1::int2"));
@@ -170,7 +170,7 @@ fn i16_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn i16_to_sql_smallint() {
     assert!(query_to_sql_equality::<SmallInt, i16>("0::int2", 0));
     assert!(query_to_sql_equality::<SmallInt, i16>("-1::int2", -1));
@@ -328,7 +328,7 @@ fn u64_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn i64_from_sql() {
     assert_eq!(0, query_single_value::<BigInt, i64>("0::int8"));
     assert_eq!(-1, query_single_value::<BigInt, i64>("-1::int8"));
@@ -339,7 +339,7 @@ fn i64_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn i64_to_sql_bigint() {
     assert!(query_to_sql_equality::<BigInt, i64>("0::int8", 0));
     assert!(query_to_sql_equality::<BigInt, i64>("-1::int8", -1));
@@ -357,7 +357,7 @@ fn i64_to_sql_bigint() {
 use std::{f32, f64};
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn f32_from_sql() {
     assert_eq!(0.0, query_single_value::<Float, f32>("0.0::real"));
     assert_eq!(0.5, query_single_value::<Float, f32>("0.5::real"));
@@ -374,7 +374,7 @@ fn f32_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn f32_to_sql_float() {
     assert!(query_to_sql_equality::<Float, f32>("0.0::real", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5::real", 0.5));
@@ -400,7 +400,7 @@ fn f32_to_sql_float() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn f64_from_sql() {
     assert_eq!(
         0.0,
@@ -423,7 +423,7 @@ fn f64_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn f64_to_sql_float() {
     assert!(query_to_sql_equality::<Double, f64>(
         "0.0::double precision",
@@ -493,7 +493,7 @@ fn string_to_sql_varchar() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn binary_from_sql() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
     assert_eq!(
@@ -511,7 +511,7 @@ fn binary_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn bytes_to_sql_binary() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
     assert!(query_to_sql_equality::<Binary, Vec<u8>>(
@@ -537,7 +537,7 @@ fn bytes_to_sql_binary() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_specific_option_from_sql() {
     assert_eq!(
         Some(true),
@@ -574,7 +574,7 @@ fn option_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_specific_option_to_sql() {
     assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "'t'::bool",
@@ -616,7 +616,7 @@ fn option_to_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_array_from_sql() {
     assert_eq!(
         vec![true, false, true],
@@ -632,7 +632,7 @@ fn pg_array_from_sql() {
     );
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn pg_array_from_sql_non_one_lower_bound() {
     assert_eq!(
@@ -650,7 +650,7 @@ fn pg_array_from_sql_non_one_lower_bound() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn to_sql_array() {
     assert!(query_to_sql_equality::<Array<Bool>, Vec<bool>>(
         "ARRAY['t', 'f', 't']::bool[]",
@@ -675,7 +675,7 @@ fn to_sql_array() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_array_containing_null() {
     let query = "ARRAY['Hello', '', NULL, 'world']";
     let data = query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>(query);
@@ -689,7 +689,7 @@ fn pg_array_containing_null() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn timestamp_from_sql() {
     use diesel::data_types::PgTimestamp;
 
@@ -708,7 +708,7 @@ fn timestamp_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_timestamp_to_sql_timestamp() {
     use diesel::data_types::PgTimestamp;
 
@@ -732,7 +732,7 @@ fn pg_timestamp_to_sql_timestamp() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_numeric_from_sql() {
     use diesel::data_types::PgNumeric;
 
@@ -765,7 +765,7 @@ fn pg_numeric_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_numeric_bigdecimal_to_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -835,7 +835,7 @@ fn mysql_numeric_bigdecimal_to_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -901,7 +901,7 @@ fn mysql_numeric_bigdecimal_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_uuid_from_sql() {
     extern crate uuid;
 
@@ -920,7 +920,7 @@ fn pg_uuid_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_uuid_to_sql_uuid() {
     extern crate uuid;
 
@@ -944,7 +944,7 @@ fn pg_uuid_to_sql_uuid() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_macaddress_from_sql() {
     let query = "'08:00:2b:01:02:03'::macaddr";
     let expected_value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03];
@@ -955,7 +955,7 @@ fn pg_macaddress_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_macaddress_to_sql_macaddress() {
     let expected_value = "'08:00:2b:01:02:03'::macaddr";
     let value = [0x08, 0x00, 0x2b, 0x01, 0x02, 0x03];
@@ -966,7 +966,7 @@ fn pg_macaddress_to_sql_macaddress() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_v4address_from_sql() {
     extern crate ipnetwork;
     use std::str::FromStr;
@@ -987,7 +987,7 @@ fn pg_v4address_from_sql() {
     );
 }
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_v6address_from_sql() {
     extern crate ipnetwork;
     use std::str::FromStr;
@@ -1009,7 +1009,7 @@ fn pg_v6address_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_v4address_to_sql_v4address() {
     extern crate ipnetwork;
     use std::str::FromStr;
@@ -1036,7 +1036,7 @@ fn pg_v4address_to_sql_v4address() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_v6address_to_sql_v6address() {
     extern crate ipnetwork;
     use std::str::FromStr;
@@ -1063,7 +1063,7 @@ fn pg_v6address_to_sql_v6address() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_json_from_sql() {
     extern crate serde_json;
 
@@ -1081,7 +1081,7 @@ fn pg_json_from_sql() {
 // test for `jsonb` values.
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_jsonb_from_sql() {
     extern crate serde_json;
 
@@ -1094,7 +1094,7 @@ fn pg_jsonb_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn pg_jsonb_to_sql_jsonb() {
     extern crate serde_json;
 
@@ -1107,7 +1107,7 @@ fn pg_jsonb_to_sql_jsonb() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn text_array_can_be_assigned_to_varchar_array_column() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
@@ -1126,7 +1126,7 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn third_party_crates_can_add_new_types() {
     use diesel::pg::PgValue;
 
@@ -1184,7 +1184,7 @@ where
         .expect(&format!("Error comparing {}, {:?}", sql_str, value))
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 #[should_panic(expected = "Received more than 4 bytes decoding i32")]
 fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
@@ -1198,7 +1198,7 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
         .unwrap();
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn test_range_from_sql() {
     use diesel::dsl::sql;
@@ -1226,7 +1226,7 @@ fn test_range_from_sql() {
         .is_err());
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn test_range_to_sql() {
     use std::collections::Bound;
@@ -1240,7 +1240,7 @@ fn test_range_to_sql() {
     assert!(query_to_sql_equality::<Range<Int4>, (Bound<i32>, Bound<i32>)>(expected_value, value));
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn test_inserting_ranges() {
     use std::collections::Bound;

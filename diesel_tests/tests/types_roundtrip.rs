@@ -1,4 +1,4 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
 extern crate bigdecimal;
 extern crate chrono;
 
@@ -111,7 +111,7 @@ mod sqlite_types {
     );
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 mod pg_types {
     extern crate ipnetwork;
     extern crate uuid;
@@ -301,14 +301,14 @@ pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
     DateTime::from_utc(mk_naive_datetime(data), Utc)
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "postgres_pure_rust"))]
 fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
     format!("{}.{}", data.0, data.1)
         .parse()
         .expect("Could not interpret as bigdecimal")
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     use self::chrono::naive::MAX_DATE;
 
@@ -342,7 +342,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 mod unstable_types {
     use super::{quickcheck, test_type_round_trips};
     use std::time::*;

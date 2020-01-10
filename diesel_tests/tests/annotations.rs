@@ -292,7 +292,7 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
 sql_function!(fn nextval(a: Text) -> Integer);
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
     #[table_name = "users"]

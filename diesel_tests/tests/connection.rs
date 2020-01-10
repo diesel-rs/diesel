@@ -10,7 +10,7 @@ table! {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[cfg(any(feature = "postgres", feature = "sqlite", feature = "postgres_pure_rust"))]
 fn managing_updated_at_for_table() {
     use self::auto_time::dsl::*;
     use chrono::NaiveDateTime;

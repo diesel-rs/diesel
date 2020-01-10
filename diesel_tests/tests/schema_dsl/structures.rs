@@ -70,7 +70,7 @@ pub struct Default<'a, Col> {
 use diesel::backend::*;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 use diesel::pg::Pg;
 use diesel::query_builder::*;
 use diesel::result::QueryResult;
@@ -170,7 +170,7 @@ impl<Col> QueryId for AutoIncrement<Col> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();

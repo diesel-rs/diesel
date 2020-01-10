@@ -557,7 +557,7 @@ fn filter_subselect_with_nullable_column() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn filter_subselect_with_pg_any() {
     use diesel::dsl::any;
 

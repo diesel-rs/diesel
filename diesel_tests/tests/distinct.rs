@@ -17,7 +17,7 @@ fn simple_distinct() {
     assert_eq!(expected_data, data);
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn distinct_on() {
     use schema::users::dsl::*;

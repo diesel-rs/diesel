@@ -297,7 +297,7 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     ///     .get_results(&connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
     /// # }
-    /// # #[cfg(not(feature = "postgres"))]
+    /// # #[cfg(not(any(feature = "postgres", feature = "unstable_pure_rust_postgres")))]
     /// # fn main() {}
     /// ```
     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>

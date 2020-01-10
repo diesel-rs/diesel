@@ -59,23 +59,17 @@ fn duration_to_usecs(duration: Duration) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
-
-    use self::dotenv::dotenv;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::Timestamp;
+    use crate::test_helpers::*;
 
-    fn connection() -> PgConnection {
-        dotenv().ok();
 
-        let connection_url = ::std::env::var("PG_DATABASE_URL")
-            .or_else(|_| ::std::env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        PgConnection::establish(&connection_url).unwrap()
+    fn connection() -> TestConnection {
+        pg_connection()
     }
 
     #[test]

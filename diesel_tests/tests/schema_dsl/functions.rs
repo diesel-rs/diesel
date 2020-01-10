@@ -18,7 +18,7 @@ pub fn timestamp<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
     Column::new(name, "TIMESTAMP")
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 pub fn timestamptz<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
     Column::new(name, "TIMESTAMPTZ")
 }

@@ -248,14 +248,19 @@ mod tests {
     use crate::prelude::*;
     use crate::{select, sql_types};
 
+    #[cfg(feature = "postgres")]
+    type DbConnection = PgConnection;
+    #[cfg(feature = "unstable_pure_rust_postgres")]
+    type DbConnection = PostgresConnection;
+
     thread_local! {
-        static CONN: PgConnection = {
+        static CONN: DbConnection = {
             dotenv().ok();
 
             let connection_url = ::std::env::var("PG_DATABASE_URL")
                 .or_else(|_| ::std::env::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
-            PgConnection::establish(&connection_url).unwrap()
+            DbConnection::establish(&connection_url).unwrap()
         }
     }
 

@@ -5,7 +5,7 @@ use schema::TestBackend;
 fn test_debug_count_output() {
     use schema::users::dsl::*;
     let sql = debug_query::<TestBackend, _>(&users.count()).to_string();
-    if cfg!(feature = "postgres") {
+    if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
     } else {
         assert_eq!(sql, "SELECT COUNT(*) FROM `users` -- binds: []");
@@ -17,7 +17,7 @@ fn test_debug_output() {
     use schema::users::dsl::*;
     let command = update(users.filter(id.eq(1))).set(name.eq("new_name"));
     let sql = debug_query::<TestBackend, _>(&command).to_string();
-    if cfg!(feature = "postgres") {
+    if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         assert_eq!(
             sql,
             r#"UPDATE "users" SET "name" = $1 WHERE "users"."id" = $2 -- binds: ["new_name", 1]"#

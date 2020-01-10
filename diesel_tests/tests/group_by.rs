@@ -15,7 +15,7 @@ fn group_by_generates_group_by_sql() {
                             GROUP BY `users`.`name` \
                             -- binds: []"
         .to_string();
-    if cfg!(feature = "postgres") {
+    if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
@@ -40,7 +40,7 @@ fn boxed_queries_have_group_by_method() {
                             GROUP BY `users`.`name` \
                             -- binds: []"
         .to_string();
-    if cfg!(feature = "postgres") {
+    if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         expected_sql = expected_sql.replace('`', "\"");
     }
 

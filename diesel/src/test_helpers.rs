@@ -13,8 +13,11 @@ cfg_if! {
         pub fn database_url() -> String {
             String::from(":memory:")
         }
-    } else if #[cfg(feature = "postgres")] {
+    } else if #[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))] {
+        #[cfg(feature = "postgres")]
         pub type TestConnection = PgConnection;
+        #[cfg(feature = "unstable_pure_rust_postgres")]
+        pub type TestConnection = PostgresConnection;
 
         pub fn connection() -> TestConnection {
             pg_connection()
@@ -22,20 +25,6 @@ cfg_if! {
 
         pub fn database_url() -> String {
             pg_database_url()
-        }
-    } else if #[cfg(feature = "unstable_pure_rust_postgres")] {
-        pub type TestConnection = PostgresConnection;
-
-        pub fn connection() -> TestConnection {
-            let conn = PostgresConnection::establish(&database_url()).unwrap();
-            conn.begin_test_transaction().unwrap();
-            conn
-        }
-
-        pub fn database_url() -> String {
-            dotenv::var("PG_DATABASE_URL")
-                .or_else(|_| dotenv::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests")
         }
     } else if #[cfg(feature = "mysql")] {
         pub type TestConnection = MysqlConnection;
@@ -65,14 +54,14 @@ cfg_if! {
     }
 }
 
-#[cfg(feature = "postgres")]
-pub fn pg_connection() -> PgConnection {
-    let conn = PgConnection::establish(&pg_database_url()).unwrap();
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
+pub fn pg_connection() -> TestConnection {
+    let conn = TestConnection::establish(&pg_database_url()).unwrap();
     conn.begin_test_transaction().unwrap();
     conn
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "unstable_pure_rust_postgres"))]
 pub fn pg_database_url() -> String {
     dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))

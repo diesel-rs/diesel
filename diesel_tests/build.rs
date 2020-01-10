@@ -5,11 +5,11 @@ use self::diesel::*;
 use self::dotenv::dotenv;
 use std::{env, io};
 
-#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "postgres_pure_rust")))]
 compile_error!(
     "At least one backend must be used to test this crate.\n \
      Pass argument `--features \"<backend>\"` with one or more of the following backends, \
-     'mysql', 'postgres', or 'sqlite'. \n\n \
+     'mysql', 'postgres', 'postgres_pure_rust', or 'sqlite'. \n\n \
      ex. cargo test --features \"mysql postgres sqlite\"\n"
 );
 
@@ -17,6 +17,12 @@ compile_error!(
 fn connection() -> PgConnection {
     let database_url = database_url_from_env("PG_DATABASE_URL");
     PgConnection::establish(&database_url).unwrap()
+}
+
+#[cfg(feature = "postgres_pure_rust")]
+fn connection() -> PostgresConnection {
+    let database_url = database_url_from_env("PG_DATABASE_URL");
+    PostgresConnection::establish(&database_url).unwrap()
 }
 
 #[cfg(feature = "sqlite")]
@@ -31,7 +37,7 @@ fn connection() -> MysqlConnection {
     MysqlConnection::establish(&database_url).unwrap()
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 const MIGRATION_SUBDIR: &str = "postgresql";
 
 #[cfg(feature = "sqlite")]

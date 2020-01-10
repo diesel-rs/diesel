@@ -25,6 +25,17 @@ pub struct TransactionBuilder<'a, T = crate::pg::PgConnection> {
     deferrable: Option<Deferrable>,
 }
 
+/// Used to build a transaction, specifying additional details.
+///
+/// This struct is returned by [`.build_transaction`].
+/// See the documentation for methods on this struct for usage examples.
+/// See [the PostgreSQL documentation for `SET TRANSACTION`][pg-docs]
+/// for details on the behavior of each option.
+///
+/// [`.build_transaction`]: struct.PgConnection.html#method.build_transaction
+/// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
+#[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
+#[must_use = "Transaction builder does nothing unless you call `run` on it"]
 #[cfg(not(feature = "postgres"))]
 pub struct TransactionBuilder<'a, T> {
     connection: &'a T,
@@ -379,7 +390,7 @@ impl QueryFragment<Pg> for Deferrable {
 
 #[test]
 fn test_transaction_builder_generates_correct_sql() {
-    extern crate dotenv;
+    use crate::test_helpers::*;
 
     macro_rules! assert_sql {
         ($query:expr, $sql:expr) => {
@@ -390,10 +401,7 @@ fn test_transaction_builder_generates_correct_sql() {
         };
     }
 
-    let database_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
-        .expect("DATABASE_URL must be set in order to run tests");
-    let conn = PgConnection::establish(&database_url).unwrap();
+    let conn = pg_connection();
 
     let t = conn.build_transaction();
     assert_sql!(t, "BEGIN TRANSACTION");

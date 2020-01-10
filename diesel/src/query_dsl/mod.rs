@@ -1250,7 +1250,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "postgres"))]
+    /// # #[cfg(not(any(feature = "postgres", feature = "unstable_pure_rust_postgres")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }

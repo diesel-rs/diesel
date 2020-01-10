@@ -42,7 +42,7 @@ fn sql_query_can_take_bind_params() {
     let conn = connection_with_sean_and_tess_in_users_table();
     let tess = find_user_by_name("Tess", &conn);
 
-    let query = if cfg!(feature = "postgres") {
+    let query = if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         sql_query("SELECT * FROM users WHERE name = $1")
     } else {
         sql_query("SELECT * FROM users WHERE name = ?")
@@ -65,7 +65,7 @@ fn sql_query_can_take_bind_params_boxed() {
     let mut where_prefix = Some("WHERE ( ");
     let mut get_where_prefix = || where_prefix.take().unwrap_or("AND ( ");
 
-    let bind_char = if cfg!(feature = "postgres") {
+    let bind_char = if cfg!(any(feature = "postgres", feature = "postgres_pure_rust")) {
         "$1"
     } else {
         "?"

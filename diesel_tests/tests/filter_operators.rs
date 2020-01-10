@@ -174,7 +174,7 @@ fn filter_by_like() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn filter_by_ilike() {
     use schema::users::dsl::*;
 
@@ -212,7 +212,7 @@ fn filter_by_ilike() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn filter_by_any() {
     use diesel::dsl::any;
     use schema::users::dsl::*;

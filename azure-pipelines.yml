@@ -241,11 +241,29 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.40.0
+        rust_version: 1.37.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
         cargo check --all
-      displayName: Check building with rust 1.40.0
+      displayName: Check building with rust 1.37.0
+
+- job: PURE_RUST_POSTGRES
+  displayName: Test pure rust postgres connection implementation
+  pool:
+    vmImage: ubuntu-16.04
+  variables:
+    PG_DATABASE_URL: postgres://postgres@localhost/
+  steps:
+    - template: _build/install-rust.yml
+      parameters:
+        platform: Linux
+        rust_version: 1.40.0
+    - bash: |
+        (cd diesel && cargo test --no-default-features --features "extras unstable_pure_rust_postgres")
+      displayName: Test diesel
+    - bash: |
+        (cd diesel_tests && cargo test --no-default-features --features "unstable_pure_rust_postgres")
+      displayName: Run diesel tests

@@ -274,7 +274,7 @@ fn insert_empty_slice() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn insert_empty_slice_with_returning() {
     let connection = connection();
 
@@ -290,7 +290,7 @@ fn insert_empty_slice_with_returning() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn upsert_empty_slice() {
     let connection = connection();
 
@@ -303,7 +303,7 @@ fn upsert_empty_slice() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn insert_only_default_values_with_returning() {
     use schema::users::id;
     use schema::users::table as users;

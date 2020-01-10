@@ -290,7 +290,7 @@ fn select_for_update_locks_selected_rows() {
     assert_eq!("Sean", next_selected_name);
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn select_for_update_modifiers() {
     use self::users_select_for_update_modifieres::dsl::*;
@@ -362,7 +362,7 @@ fn select_for_update_modifiers() {
     assert_eq!(tess.name, "Tess");
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 #[test]
 fn select_for_no_key_update_modifiers() {
     use self::users_fk_for_no_key_update::dsl::*;

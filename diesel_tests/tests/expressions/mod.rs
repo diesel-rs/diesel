@@ -70,7 +70,7 @@ fn test_count_max() {
     assert_eq!(Ok(None::<i32>), source.first(&connection));
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 table! {
     number_arrays (na) {
         na -> Array<Integer>,
@@ -78,7 +78,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn test_min_max_of_array() {
     use self::number_arrays::dsl::*;
 
@@ -357,7 +357,7 @@ fn test_avg_for_nullable() {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: We need to test this on SQLite when we support these types
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))] // FIXME: We need to test this on SQLite when we support these types
 fn test_avg_for_integer() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;
@@ -395,7 +395,7 @@ table! {
 }
 
 #[test]
-#[cfg(feature = "postgres")] // FIXME: We need to test this on MySQL
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))] // FIXME: We need to test this on MySQL
 fn test_avg_for_numeric() {
     use self::numeric::columns::*;
     use self::numeric::table as numeric;
@@ -419,7 +419,7 @@ fn test_avg_for_numeric() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn test_arrays_a() {
     let connection = connection();
 
@@ -431,13 +431,13 @@ fn test_arrays_a() {
     assert_eq!(value, vec![1, 2]);
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 use diesel::sql_types::{Array, Int4};
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 sql_function!(fn unnest(a: Array<Int4>) -> Int4);
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "postgres_pure_rust"))]
 fn test_arrays_b() {
     use self::numbers::columns::*;
     use self::numbers::table as numbers;

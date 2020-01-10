@@ -30,6 +30,7 @@ unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
 sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
 mysql = ["diesel/mysql", "diesel_infer_schema/mysql"]
+postgres_pure_rust = ["diesel/unstable_pure_rust_postgres", "diesel_infer_schema/postgres"]
 
 [[test]]
 name = "integration_tests"

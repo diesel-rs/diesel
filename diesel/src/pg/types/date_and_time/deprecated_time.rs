@@ -38,24 +38,16 @@ impl FromSql<sql_types::Timestamp, Pg> for Timespec {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
-    extern crate time;
-
-    use self::dotenv::dotenv;
-    use self::time::{Duration, Timespec};
+    use time::{Duration, Timespec};
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::Timestamp;
+    use crate::test_helpers::*;
 
-    fn connection() -> PgConnection {
-        dotenv().ok();
-
-        let connection_url = ::std::env::var("PG_DATABASE_URL")
-            .or_else(|_| ::std::env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        PgConnection::establish(&connection_url).unwrap()
+    fn connection() -> TestConnection {
+        pg_connection()
     }
 
     #[test]

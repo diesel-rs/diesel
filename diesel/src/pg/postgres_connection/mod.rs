@@ -395,3 +395,74 @@ impl crate::result::DatabaseErrorInformation for postgresql::error::DbError {
         self.constraint()
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::{Integer, VarChar};
+    use crate::test_helpers::connection;
+
+    #[test]
+    fn prepared_statements_are_cached() {
+        let connection = connection();
+
+        let query = crate::select(1.into_sql::<Integer>());
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(1, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn queries_with_identical_sql_but_different_types_are_cached_separately() {
+        let connection = connection();
+
+        let query = crate::select(1.into_sql::<Integer>());
+        let query2 = crate::select("hi".into_sql::<VarChar>());
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
+        let connection = connection();
+
+        let query = crate::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
+        let query2 = crate::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
+
+        assert_eq!(0, connection.statement_cache.len());
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    sql_function!(fn lower(x: VarChar) -> VarChar);
+
+    #[test]
+    fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
+        let connection = connection();
+
+        let hi = "HI".into_sql::<VarChar>();
+        let query = crate::select(hi).into_boxed::<Pg>();
+        let query2 = crate::select(lower(hi)).into_boxed::<Pg>();
+
+        assert_eq!(0, connection.statement_cache.len());
+        assert_eq!(Ok("HI".to_string()), query.get_result(&connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(&connection));
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn queries_with_sql_literal_nodes_are_not_cached() {
+        let connection = connection();
+        let query = crate::select(sql::<Integer>("1"));
+
+        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(0, connection.statement_cache.len());
+    }
+}

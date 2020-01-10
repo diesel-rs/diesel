@@ -279,7 +279,7 @@ impl<T: Query> AsQuery for T {
 /// # fn main() {
 /// #   use schema::users::dsl::*;
 /// let sql = debug_query::<DB, _>(&users.count()).to_string();
-/// # if cfg!(feature = "postgres") {
+/// # if cfg!(any(feature = "postgres", feature = "unstable_pure_rust_postgres")) {
 /// #     assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
 /// # } else {
 /// assert_eq!(sql, "SELECT COUNT(*) FROM `users` -- binds: []");
@@ -287,7 +287,7 @@ impl<T: Query> AsQuery for T {
 ///
 /// let query = users.find(1);
 /// let debug = debug_query::<DB, _>(&query);
-/// # if cfg!(feature = "postgres") {
+/// # if cfg!(any(feature = "postgres", feature = "unstable_pure_rust_postgres")) {
 /// #     assert_eq!(debug.to_string(), "SELECT \"users\".\"id\", \"users\".\"name\" \
 /// #         FROM \"users\" WHERE \"users\".\"id\" = $1 -- binds: [1]");
 /// # } else {
@@ -296,7 +296,11 @@ impl<T: Query> AsQuery for T {
 /// # }
 ///
 /// let debug = format!("{:?}", debug);
-/// # if !cfg!(feature = "postgres") { // Escaping that string is a pain
+/// # if cfg!(any(feature = "postgres", feature = "unstable_pure_rust_postgres")) {
+/// #
+/// #     let expected = r#"Query { sql: "SELECT \"users\".\"id\", \"users\".\"name\" FROM \"users\" WHERE \"users\".\"id\" = $1", binds: [1] }"#;
+/// #     assert_eq!(debug, expected);
+/// # } else {
 /// let expected = "Query { \
 ///     sql: \"SELECT `users`.`id`, `users`.`name` FROM `users` WHERE \
 ///         `users`.`id` = ?\", \
