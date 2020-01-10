@@ -1,9 +1,9 @@
-use query_builder::limit_clause::{LimitClause, NoLimitClause};
-use query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
-use query_builder::offset_clause::{NoOffsetClause, OffsetClause};
-use query_builder::{AstPass, IntoBoxedClause, QueryFragment};
-use result::QueryResult;
-use sqlite::Sqlite;
+use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
+use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
+use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
+use crate::result::QueryResult;
+use crate::sqlite::Sqlite;
 
 impl QueryFragment<Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast(&self, _out: AstPass<Sqlite>) -> QueryResult<()> {

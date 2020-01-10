@@ -1,7 +1,7 @@
-use pg::Pg;
-use query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
-use query_builder::{AstPass, IntoBoxedClause, QueryFragment};
-use result::QueryResult;
+use crate::pg::Pg;
+use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
+use crate::result::QueryResult;
 
 impl<'a, L, O> IntoBoxedClause<'a, Pg> for LimitOffsetClause<L, O>
 where
