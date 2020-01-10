@@ -1,9 +1,9 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn delete_records() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let deleted_rows = delete(users.filter(name.eq("Sean"))).execute(&connection);
@@ -17,7 +17,7 @@ fn delete_records() {
 
 #[test]
 fn delete_single_record() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
     let data = users.load::<User>(&connection).unwrap();
     let sean = data[0].clone();
@@ -31,7 +31,7 @@ fn delete_single_record() {
 #[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn return_deleted_records() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let deleted_name = delete(users.filter(name.eq("Sean")))

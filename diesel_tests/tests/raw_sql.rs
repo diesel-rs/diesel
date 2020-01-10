@@ -1,5 +1,5 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn execute_query_by_raw_sql() {

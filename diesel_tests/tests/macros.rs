@@ -3,15 +3,15 @@
 // think we need to generically support creation of these functions, as it's
 // different enough in SQLite to avoid.
 #![cfg(feature = "postgres")]
+use crate::schema::*;
 use diesel::sql_types::{BigInt, VarChar};
 use diesel::*;
-use schema::*;
 
 sql_function!(fn my_lower(x: VarChar) -> VarChar);
 
 #[test]
 fn test_sql_function() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     connection

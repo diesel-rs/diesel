@@ -1,6 +1,4 @@
 use diesel::*;
-use dotenv::dotenv;
-use std::env;
 
 #[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
 infer_schema!("dotenv:PG_DATABASE_URL");
@@ -191,9 +189,8 @@ pub fn connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
-    dotenv().ok();
-    let connection_url = env::var("PG_DATABASE_URL")
-        .or_else(|_| env::var("DATABASE_URL"))
+    let connection_url = dotenv::var("PG_DATABASE_URL")
+        .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     PgConnection::establish(&connection_url).unwrap()
 }
@@ -210,9 +207,8 @@ pub fn connection_without_transaction() -> TestConnection {
 
 #[cfg(feature = "mysql")]
 pub fn connection_without_transaction() -> TestConnection {
-    dotenv().ok();
-    let connection_url = env::var("MYSQL_DATABASE_URL")
-        .or_else(|_| env::var("DATABASE_URL"))
+    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     MysqlConnection::establish(&connection_url).unwrap()
 }
@@ -241,7 +237,7 @@ pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
         .unwrap();
 }
 
-#[cfg(not(feature = "sqlite"))]
+#[cfg(feature = "postgres")]
 pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
     connection
         .execute(&format!("DROP TABLE {} CASCADE", table))
