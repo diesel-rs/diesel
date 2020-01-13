@@ -142,7 +142,7 @@ where
                 >,
                 Eq<columns::table_name, &'a String>,
             >,
-            Eq<columns::table_schema, String>,
+            Eq<columns::table_schema, Cow<'a, String>>,
         >,
         columns::ordinal_position,
     >: QueryFragment<Conn::Backend>,
@@ -183,7 +183,7 @@ where
                 >,
                 Eq<key_column_usage::table_name, &'a String>,
             >,
-            Eq<key_column_usage::table_schema, String>,
+            Eq<key_column_usage::table_schema, Cow<'a, String>>,
         >,
         key_column_usage::ordinal_position,
     >: QueryFragment<Conn::Backend>,
@@ -209,32 +209,31 @@ where
         .load(conn)
 }
 
-pub fn load_table_names<Conn>(
+pub fn load_table_names<'a, Conn>(
     connection: &Conn,
-    schema_name: Option<&str>,
+    schema_name: Option<&'a str>,
 ) -> Result<Vec<TableName>, Box<dyn Error>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
-    Order<
+    Filter<
         Filter<
             Filter<
-                Filter<
-                    Select<tables::table, (tables::table_name, tables::table_schema)>,
-                    Eq<tables::table_schema, String>,
-                >,
-                NotLike<tables::table_name, &'static str>,
+                Select<tables::table, tables::table_name>,
+                Eq<tables::table_schema, Cow<'a, str>>,
             >,
-            Like<tables::table_type, &'static str>,
+            NotLike<tables::table_name, &'static str>,
         >,
-        tables::table_name,
+        Like<tables::table_type, &'static str>,
     >: QueryFragment<Conn::Backend>,
 {
     use self::information_schema::tables::dsl::*;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
-    let db_schema_name = schema_name.unwrap_or(&default_schema);
+    let db_schema_name = schema_name
+        .map(Cow::Borrowed)
+        .unwrap_or_else(|| Cow::Owned(default_schema.clone()));
 
     let mut table_names = tables
         .select(table_name)
@@ -272,7 +271,7 @@ where
                     table_constraints::table,
                     Eq<table_constraints::constraint_type, &'static str>,
                 >,
-                Eq<table_constraints::table_schema, String>,
+                Eq<table_constraints::table_schema, Cow<'a, str>>,
             >,
             referential_constraints::table,
             And<
@@ -323,7 +322,9 @@ where
     use self::information_schema::table_constraints as tc;
 
     let default_schema = Conn::Backend::default_schema(connection)?;
-    let schema_name = schema_name.unwrap_or(&default_schema);
+    let schema_name = schema_name
+        .map(Cow::Borrowed)
+        .unwrap_or_else(|| Cow::Owned(default_schema.clone()));
 
     let constraint_names = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
