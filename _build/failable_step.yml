@@ -21,6 +21,7 @@ steps:
       fi
     displayName: ${{ parameters.displayName }}
     env:
+      RUST_BACKTRACE: 1
       RUST_VERSION: ${{parameters.rust_version}}
     condition: |
       or(
