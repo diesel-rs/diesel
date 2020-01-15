@@ -1,9 +1,9 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn find() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
 
     let connection = connection();
 
@@ -50,7 +50,7 @@ fn find_with_non_serial_pk() {
 
 #[test]
 fn find_with_composite_pk() {
-    use schema::followings::dsl::*;
+    use crate::schema::followings::dsl::*;
 
     let first_following = Following {
         user_id: 1,
@@ -95,7 +95,7 @@ fn find_with_composite_pk() {
 
 #[test]
 fn select_then_find() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = users.select(name).find(1).first(&connection);

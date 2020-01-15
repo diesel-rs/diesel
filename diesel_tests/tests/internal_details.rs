@@ -1,7 +1,8 @@
+#![cfg(not(feature = "mysql"))]
+use crate::schema::*;
 use diesel::dsl::sql;
 use diesel::sql_types::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 #[cfg(not(feature = "mysql"))] // ? IS NULL is invalid syntax for MySQL
@@ -15,9 +16,9 @@ fn bind_params_are_passed_for_null_when_not_inserting() {
 #[test]
 #[cfg(feature = "postgres")]
 fn query_which_cannot_be_transmitted_gives_proper_error_message() {
+    use crate::schema::comments::dsl::*;
     use diesel::result::DatabaseErrorKind::UnableToSendCommand;
     use diesel::result::Error::DatabaseError;
-    use schema::comments::dsl::*;
 
     // Create a query with 90000 binds, 2 binds per row
     let data: &[NewComment<'static>] = &[NewComment(1, "hi"); 45_000];

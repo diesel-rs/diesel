@@ -5,7 +5,10 @@
 #[macro_use]
 extern crate diesel;
 #[macro_use]
-extern crate diesel_proc_macro;
+extern crate diesel_infer_schema;
+#[cfg(feature = "sqlite")]
+#[macro_use]
+extern crate diesel_migrations;
 extern crate dotenv;
 extern crate test;
 
@@ -111,7 +114,7 @@ macro_rules! bench_medium_complex_query {
                 .unwrap();
 
             b.iter(|| {
-                use schema::users::dsl::*;
+                use crate::schema::users::dsl::*;
                 let target = users
                     .left_outer_join(posts::table)
                     .filter(hair_color.eq("black"))
@@ -136,7 +139,7 @@ macro_rules! bench_medium_complex_query {
                 .unwrap();
 
             b.iter(|| {
-                use schema::users::dsl::*;
+                use crate::schema::users::dsl::*;
                 let target = users
                     .left_outer_join(posts::table)
                     .filter(hair_color.eq("black"))
@@ -234,7 +237,7 @@ fn loading_associations_sequentially(b: &mut Bencher) {
             .unwrap()
             .grouped_by(&posts);
         let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);
-        let result: Vec<(User, Vec<(Post, Vec<Comment>)>)> =
+        let _result: Vec<(User, Vec<(Post, Vec<Comment>)>)> =
             users.into_iter().zip(posts_and_comments).collect();
     })
 }

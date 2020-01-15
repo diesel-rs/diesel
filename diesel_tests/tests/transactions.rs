@@ -1,6 +1,6 @@
+use crate::schema::*;
 use diesel::result::Error;
 use diesel::*;
-use schema::*;
 
 #[test]
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
@@ -113,7 +113,7 @@ fn test_transaction_panics_on_error() {
 }
 
 fn setup_test_table(connection: &TestConnection, table_name: &str) {
-    use schema_dsl::*;
+    use crate::schema_dsl::*;
     create_table(table_name, (integer("id").primary_key().auto_increment(),))
         .execute(connection)
         .unwrap();

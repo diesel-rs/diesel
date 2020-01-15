@@ -1,9 +1,9 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn insert_from_table() {
-    use schema::posts::dsl::*;
+    use crate::schema::posts::dsl::*;
     let conn = connection_with_sean_and_tess_in_users_table();
     insert_into(posts)
         .values(users::table)
@@ -21,7 +21,7 @@ fn insert_from_table() {
 
 #[test]
 fn insert_from_table_reference() {
-    use schema::posts::dsl::*;
+    use crate::schema::posts::dsl::*;
     let conn = connection_with_sean_and_tess_in_users_table();
     insert_into(posts)
         .values(&users::table)
@@ -39,8 +39,8 @@ fn insert_from_table_reference() {
 
 #[test]
 fn insert_from_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     users
@@ -57,8 +57,8 @@ fn insert_from_select() {
 
 #[test]
 fn insert_from_select_reference() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     let select = users.select((id, name.concat(" says hi")));
@@ -75,8 +75,8 @@ fn insert_from_select_reference() {
 
 #[test]
 fn insert_from_boxed() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     users
@@ -94,8 +94,8 @@ fn insert_from_boxed() {
 
 #[test]
 fn insert_from_boxed_reference() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     let select = users.select((id, name.concat(" says hi"))).into_boxed();
@@ -113,8 +113,8 @@ fn insert_from_boxed_reference() {
 #[test]
 #[cfg(feature = "sqlite")]
 fn insert_or_ignore_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     sql_query("CREATE UNIQUE INDEX foo ON posts (user_id)")
@@ -140,8 +140,8 @@ fn insert_or_ignore_with_select() {
 #[test]
 #[cfg(feature = "sqlite")]
 fn insert_or_replace_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     sql_query("CREATE UNIQUE INDEX foo ON posts (user_id)")
@@ -169,8 +169,8 @@ fn insert_or_replace_with_select() {
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
 fn insert_or_ignore_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
@@ -190,8 +190,8 @@ fn insert_or_ignore_with_select() {
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
 fn insert_or_replace_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
@@ -209,8 +209,8 @@ fn insert_or_replace_with_select() {
 #[test]
 #[cfg(feature = "postgres")]
 fn on_conflict_do_nothing_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     sql_query("CREATE UNIQUE INDEX ON posts (title)")
@@ -235,8 +235,8 @@ fn on_conflict_do_nothing_with_select() {
 #[test]
 #[cfg(feature = "postgres")]
 fn on_conflict_do_update_with_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
     sql_query("CREATE UNIQUE INDEX ON posts (title)")

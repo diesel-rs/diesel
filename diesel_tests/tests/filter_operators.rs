@@ -1,9 +1,9 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn filter_by_inequality() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = User::new(1, "Sean");
@@ -29,7 +29,7 @@ fn filter_by_inequality() {
 
 #[test]
 fn filter_by_gt() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let tess = User::new(2, "Tess");
@@ -48,7 +48,7 @@ fn filter_by_gt() {
 
 #[test]
 fn filter_by_ge() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let tess = User::new(2, "Tess");
@@ -67,7 +67,7 @@ fn filter_by_ge() {
 
 #[test]
 fn filter_by_lt() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");
@@ -89,7 +89,7 @@ fn filter_by_lt() {
 
 #[test]
 fn filter_by_le() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");
@@ -111,7 +111,7 @@ fn filter_by_le() {
 
 #[test]
 fn filter_by_between() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");
@@ -138,7 +138,7 @@ fn filter_by_between() {
 
 #[test]
 fn filter_by_like() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![
@@ -176,7 +176,7 @@ fn filter_by_like() {
 #[test]
 #[cfg(feature = "postgres")]
 fn filter_by_ilike() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![
@@ -214,8 +214,8 @@ fn filter_by_ilike() {
 #[test]
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
+    use crate::schema::users::dsl::*;
     use diesel::dsl::any;
-    use schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");
@@ -244,7 +244,7 @@ fn filter_by_any() {
 
 #[test]
 fn filter_by_in() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_3_users();
     let sean = User::new(1, "Sean");

@@ -4,13 +4,13 @@
 extern crate bigdecimal;
 extern crate chrono;
 
-use diesel::deserialize::FromSql;
+use crate::schema::*;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::sql_types::*;
 use diesel::*;
-use schema::*;
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 use quickcheck::quickcheck;
 
 table! {
@@ -374,8 +374,22 @@ fn f32_from_sql() {
 }
 
 #[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f32_from_sql() {
+    assert_eq!(0.0, query_single_value::<Float, f32>("0.0"));
+    assert_eq!(0.5, query_single_value::<Float, f32>("0.5"));
+    // MySQL has no way to represent NaN or Infinity as a literal
+    #[cfg(feature = "sqlite")]
+    {
+        assert_eq!(f32::INFINITY, query_single_value::<Float, f32>("9e999"));
+        assert_eq!(-f32::INFINITY, query_single_value::<Float, f32>("-9e999"));
+        // SQLite has no way to represent NaN
+    }
+}
+
+#[test]
 #[cfg(feature = "postgres")]
-fn f32_to_sql_float() {
+fn f32_to_sql() {
     assert!(query_to_sql_equality::<Float, f32>("0.0::real", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5::real", 0.5));
     assert!(query_to_sql_equality::<Float, f32>("'NaN'::real", f32::NAN));
@@ -397,6 +411,26 @@ fn f32_to_sql_float() {
         "'-Infinity'::real",
         1.0
     ));
+}
+
+#[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f32_to_sql() {
+    assert!(query_to_sql_equality::<Float, f32>("0.0", 0.0));
+    assert!(query_to_sql_equality::<Float, f32>("0.5", 0.5));
+    // While MySQL will correctly round trip SELECT ? when the bind param is
+    // NaN or Infinity, any attempt to insert those values into a row will
+    // result in an error, and we have no way to write SELECT ? = NaN,
+    // so those cases are untested.
+    #[cfg(feature = "sqlite")]
+    {
+        assert!(query_to_sql_equality::<Float, f32>("9e999", f32::INFINITY));
+        assert!(query_to_sql_equality::<Float, f32>(
+            "-9e999",
+            -f32::INFINITY
+        ));
+        // SQLite has no way to represent NaN
+    }
 }
 
 #[test]
@@ -423,8 +457,22 @@ fn f64_from_sql() {
 }
 
 #[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f64_from_sql() {
+    assert_eq!(0.0, query_single_value::<Double, f64>("0.0"));
+    assert_eq!(0.5, query_single_value::<Double, f64>("0.5"));
+    // MySQL has no way to represent NaN or Infinity as a literal
+    #[cfg(feature = "sqlite")]
+    {
+        assert_eq!(f64::INFINITY, query_single_value::<Double, f64>("9e999"));
+        assert_eq!(-f64::INFINITY, query_single_value::<Double, f64>("-9e999"));
+        // SQLite has no way to represent NaN
+    }
+}
+
+#[test]
 #[cfg(feature = "postgres")]
-fn f64_to_sql_float() {
+fn f64_to_sql() {
     assert!(query_to_sql_equality::<Double, f64>(
         "0.0::double precision",
         0.0
@@ -461,6 +509,26 @@ fn f64_to_sql_float() {
         "'-Infinity'::double precision",
         1.0
     ));
+}
+
+#[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f64_to_sql() {
+    assert!(query_to_sql_equality::<Double, f64>("0.0", 0.0));
+    assert!(query_to_sql_equality::<Double, f64>("0.5", 0.5));
+    // While MySQL will correctly round trip SELECT ? when the bind param is
+    // NaN or Infinity, any attempt to insert those values into a row will
+    // result in an error, and we have no way to write SELECT ? = NaN,
+    // so those cases are untested.
+    #[cfg(feature = "sqlite")]
+    {
+        assert!(query_to_sql_equality::<Double, f64>("9e999", f64::INFINITY));
+        assert!(query_to_sql_equality::<Double, f64>(
+            "-9e999",
+            -f64::INFINITY
+        ));
+        // SQLite has no way to represent NaN
+    }
 }
 
 #[test]
@@ -1128,6 +1196,7 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 #[test]
 #[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
+    use diesel::deserialize::FromSql;
     use diesel::pg::PgValue;
 
     #[derive(Debug, Clone, Copy, QueryId, SqlType)]

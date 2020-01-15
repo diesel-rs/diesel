@@ -1,8 +1,9 @@
+use crate::schema::*;
+#[cfg(feature = "postgres")]
 use diesel::data_types::*;
 use diesel::dsl::*;
 use diesel::sql_types::Nullable;
 use diesel::*;
-use schema::{connection, TestConnection};
 
 table! {
     has_timestamps {
@@ -334,7 +335,7 @@ fn adding_interval_to_nullable_things() {
 
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn setup_test_table(conn: &TestConnection) {
-    use schema_dsl::*;
+    use crate::schema_dsl::*;
 
     create_table(
         "has_timestamps",
