@@ -1,0 +1,39 @@
+on:
+  push:
+    branches:
+      - master
+      - '0.[0-9]+.x'
+      - '1.[0-9]+.x'
+
+
+name: Publish Docs
+
+jobs:
+  publish_docs:
+    name: Publish Docs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - name: Build documentation
+      uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        args: --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras"
+
+    - name: Publish documentation
+      if: success()
+      uses: JamesIves/github-pages-deploy-action@releases/v3
+      with:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        BRANCH: gh-pages # The branch the action should deploy to.
+        FOLDER: target/doc # The folder the action should deploy.
+        # Store documentation for each branch in a different folder
+        # This allows us to differentiate between docs for master
+        # and docs for already released versions
+        TARGET_FOLDER: ${GITHUB_REF##*/}
