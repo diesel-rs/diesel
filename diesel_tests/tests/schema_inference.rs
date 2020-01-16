@@ -3,8 +3,8 @@ extern crate chrono;
 #[cfg(feature = "sqlite")]
 mod sqlite {
     use super::chrono::*;
+    use crate::schema::*;
     use diesel::*;
-    use schema::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
     #[table_name = "infer_all_the_ints"]
@@ -192,9 +192,9 @@ mod sqlite {
 #[cfg(feature = "postgres")]
 mod postgres {
     use super::chrono::*;
+    use crate::schema::*;
     use diesel::data_types::PgNumeric;
     use diesel::*;
-    use schema::*;
     use std::collections::Bound;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
@@ -241,8 +241,8 @@ mod postgres {
 
 #[cfg(feature = "mysql")]
 mod mysql {
+    use crate::schema::*;
     use diesel::*;
-    use schema::*;
 
     #[derive(Insertable)]
     #[table_name = "all_the_blobs"]
@@ -292,8 +292,8 @@ mod mysql {
 
 #[test]
 fn columns_named_as_reserved_keywords_are_renamed() {
+    use crate::schema::*;
     use diesel::*;
-    use schema::*;
 
     #[derive(Queryable, Insertable, Debug, PartialEq)]
     #[table_name = "with_keywords"]

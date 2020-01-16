@@ -3,7 +3,7 @@ use diesel::*;
 
 #[test]
 fn insert_records() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
@@ -33,7 +33,7 @@ fn insert_records() {
 
 #[test]
 fn insert_records_as_vec() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
     let connection = connection();
     let new_users = vec![
         NewUser::new("Sean", Some("Black")),
@@ -64,7 +64,7 @@ fn insert_records_as_vec() {
 #[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_using_returning_clause() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
@@ -94,7 +94,7 @@ fn insert_records_using_returning_clause() {
 #[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_with_custom_returning_clause() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let new_users: &[_] = &[
@@ -118,8 +118,8 @@ fn insert_records_with_custom_returning_clause() {
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
-    use schema::users::table as users;
-    use schema_dsl::*;
+    use crate::schema::users::table as users;
+    use crate::schema_dsl::*;
 
     let connection = connection();
     drop_table_cascade(&connection, "users");
@@ -163,8 +163,8 @@ fn batch_insert_with_defaults() {
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_with_defaults() {
-    use schema::users::table as users;
-    use schema_dsl::*;
+    use crate::schema::users::table as users;
+    use crate::schema_dsl::*;
 
     let connection = connection();
     drop_table_cascade(&connection, "users");
@@ -196,7 +196,7 @@ fn insert_with_defaults() {
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
     let connection = connection();
     drop_table_cascade(&connection, "users");
     connection
@@ -245,7 +245,7 @@ struct BorrowedUser<'a> {
 
 #[test]
 fn insert_borrowed_content() {
-    use schema::users::table as users;
+    use crate::schema::users::table as users;
     let connection = connection();
     let new_users: &[_] = &[BorrowedUser { name: "Sean" }, BorrowedUser { name: "Tess" }];
     insert_into(users)
@@ -305,9 +305,9 @@ fn upsert_empty_slice() {
 #[test]
 #[cfg(feature = "postgres")]
 fn insert_only_default_values_with_returning() {
-    use schema::users::id;
-    use schema::users::table as users;
-    use schema_dsl::*;
+    use crate::schema::users::id;
+    use crate::schema::users::table as users;
+    use crate::schema_dsl::*;
     let connection = connection();
 
     drop_table_cascade(&connection, "users");
@@ -333,7 +333,7 @@ fn insert_only_default_values_with_returning() {
 
 #[test]
 fn insert_single_bare_value() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     insert_into(users)
@@ -348,7 +348,7 @@ fn insert_single_bare_value() {
 
 #[test]
 fn insert_single_bare_value_reference() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     insert_into(users)
@@ -363,7 +363,7 @@ fn insert_single_bare_value_reference() {
 
 #[test]
 fn insert_multiple_bare_values() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     let new_users = vec![name.eq("Sean"), name.eq("Tess")];
@@ -380,7 +380,7 @@ fn insert_multiple_bare_values() {
 
 #[test]
 fn insert_single_tuple() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     insert_into(users)
@@ -395,7 +395,7 @@ fn insert_single_tuple() {
 
 #[test]
 fn insert_single_tuple_reference() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     insert_into(users)
@@ -410,7 +410,7 @@ fn insert_single_tuple_reference() {
 
 #[test]
 fn insert_nested_tuples() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     insert_into(users)
@@ -425,7 +425,7 @@ fn insert_nested_tuples() {
 
 #[test]
 fn insert_mixed_tuple_and_insertable_struct() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     let new_user = NewUser::new("Sean", Some("Brown"));
@@ -441,7 +441,7 @@ fn insert_mixed_tuple_and_insertable_struct() {
 
 #[test]
 fn insert_multiple_tuples() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     let new_users = vec![
@@ -463,7 +463,7 @@ fn insert_multiple_tuples() {
 
 #[test]
 fn insert_optional_field_with_null() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     let new_users = vec![
@@ -486,8 +486,8 @@ fn insert_optional_field_with_null() {
 #[test]
 #[cfg(not(feature = "mysql"))]
 fn insert_optional_field_with_default() {
-    use schema::users::dsl::*;
-    use schema_dsl::*;
+    use crate::schema::users::dsl::*;
+    use crate::schema_dsl::*;
     let connection = connection();
     drop_table_cascade(&connection, "users");
     create_table(
@@ -521,8 +521,8 @@ fn insert_optional_field_with_default() {
 #[test]
 #[cfg(not(feature = "mysql"))]
 fn insert_all_default_fields() {
-    use schema::users::dsl::*;
-    use schema_dsl::*;
+    use crate::schema::users::dsl::*;
+    use crate::schema_dsl::*;
     let connection = connection();
     drop_table_cascade(&connection, "users");
     create_table(
@@ -556,7 +556,7 @@ fn insert_all_default_fields() {
 #[test]
 #[cfg(feature = "sqlite")]
 fn batch_insert_is_atomic_on_sqlite() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection();
 
     let new_users = vec![Some(name.eq("Sean")), None];

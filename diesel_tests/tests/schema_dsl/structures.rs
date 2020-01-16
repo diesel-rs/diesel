@@ -74,7 +74,6 @@ use diesel::mysql::Mysql;
 use diesel::pg::Pg;
 use diesel::query_builder::*;
 use diesel::result::QueryResult;
-use diesel::sql_types::Integer;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
@@ -171,7 +170,7 @@ impl<Col> QueryId for AutoIncrement<Col> {
 }
 
 #[cfg(feature = "postgres")]
-impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, Integer>>> {
+impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, diesel::sql_types::Integer>>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_identifier((self.0).0.name)?;

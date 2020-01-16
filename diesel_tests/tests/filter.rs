@@ -1,5 +1,5 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 macro_rules! assert_sets_eq {
     ($set1:expr, $set2:expr) => {
@@ -20,7 +20,7 @@ macro_rules! assert_sets_eq {
 
 #[test]
 fn filter_by_int_equality() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean_id = find_user_by_name("Sean", &connection).id;
@@ -39,7 +39,7 @@ fn filter_by_int_equality() {
 
 #[test]
 fn filter_by_string_equality() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
 
@@ -55,7 +55,7 @@ fn filter_by_string_equality() {
 
 #[test]
 fn filter_by_equality_on_nullable_columns() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![
@@ -82,7 +82,7 @@ fn filter_by_equality_on_nullable_columns() {
 
 #[test]
 fn filter_by_is_not_null_on_nullable_columns() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![
@@ -102,7 +102,7 @@ fn filter_by_is_not_null_on_nullable_columns() {
 
 #[test]
 fn filter_by_is_null_on_nullable_columns() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![
@@ -122,7 +122,7 @@ fn filter_by_is_null_on_nullable_columns() {
 
 #[test]
 fn filter_after_joining() {
-    use schema::users::name;
+    use crate::schema::users::name;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     connection
@@ -155,7 +155,7 @@ fn filter_after_joining() {
 
 #[test]
 fn select_then_filter() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
 
@@ -176,7 +176,7 @@ fn select_then_filter() {
 
 #[test]
 fn filter_then_select() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
@@ -210,7 +210,7 @@ fn filter_then_select() {
 
 #[test]
 fn filter_on_multiple_columns() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data: &[_] = &[
@@ -245,7 +245,7 @@ fn filter_on_multiple_columns() {
 
 #[test]
 fn filter_called_twice_means_same_thing_as_and() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     let data: &[_] = &[
@@ -302,7 +302,7 @@ fn filter_on_column_equality() {
 
 #[test]
 fn filter_with_or() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     insert_into(users)
@@ -322,7 +322,7 @@ fn filter_with_or() {
 
 #[test]
 fn or_doesnt_mess_with_precedence_of_previous_statements() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let f = false.into_sql::<sql_types::Bool>();
@@ -344,8 +344,8 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
 
 #[test]
 fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
+    use crate::schema::users::dsl::*;
     use diesel::dsl::not;
-    use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users
@@ -359,8 +359,8 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
 
 #[test]
 fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
+    use crate::schema::users::dsl::*;
     use diesel::dsl::not;
-    use schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let count = users
@@ -427,7 +427,7 @@ fn filter_subselect_referencing_outer_table() {
 
 #[test]
 fn filter_subselect_with_boxed_query() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let conn = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &conn);
@@ -441,7 +441,7 @@ fn filter_subselect_with_boxed_query() {
 
 #[test]
 fn filter_subselect_with_nullable_column() {
-    use schema_dsl::*;
+    use crate::schema_dsl::*;
     table! {
         heros {
             id -> Integer,

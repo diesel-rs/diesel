@@ -1,9 +1,9 @@
+use crate::schema::TestBackend;
 use diesel::*;
-use schema::TestBackend;
 
 #[test]
 fn test_debug_count_output() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let sql = debug_query::<TestBackend, _>(&users.count()).to_string();
     if cfg!(feature = "postgres") {
         assert_eq!(sql, r#"SELECT COUNT(*) FROM "users" -- binds: []"#);
@@ -14,7 +14,7 @@ fn test_debug_count_output() {
 
 #[test]
 fn test_debug_output() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let command = update(users.filter(id.eq(1))).set(name.eq("new_name"));
     let sql = debug_query::<TestBackend, _>(&command).to_string();
     if cfg!(feature = "postgres") {
@@ -37,7 +37,7 @@ fn test_debug_batch_insert() {
     // This requires a separate impl because it's more than one sql statement that
     // is executed
 
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let values = vec![
         (name.eq("Sean"), hair_color.eq(Some("black"))),

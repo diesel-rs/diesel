@@ -1,5 +1,5 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn belongs_to() {
@@ -302,7 +302,7 @@ fn select_right_side_with_nullable_column_first() {
 
 #[test]
 fn select_then_join() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 
     connection

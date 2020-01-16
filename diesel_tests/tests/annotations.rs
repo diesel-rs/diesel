@@ -1,6 +1,6 @@
+use crate::schema::*;
 use diesel::sql_types::Text;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn association_where_struct_name_doesnt_match_table_name() {
@@ -133,7 +133,7 @@ mod associations_can_have_nullable_foreign_keys {
 // This module has no test functions, as it's only to test compilation.
 mod multiple_lifetimes_in_insertable_struct_definition {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Insertable)]
     #[table_name = "posts"]
@@ -145,7 +145,7 @@ mod multiple_lifetimes_in_insertable_struct_definition {
 
 mod lifetimes_with_names_other_than_a {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Insertable)]
     #[table_name = "posts"]
@@ -158,7 +158,7 @@ mod lifetimes_with_names_other_than_a {
 
 mod insertable_with_cow {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
     use std::borrow::Cow;
 
     #[derive(Insertable)]
@@ -173,7 +173,7 @@ mod insertable_with_cow {
 mod custom_foreign_keys_are_respected_on_belongs_to {
     #![allow(dead_code)]
 
-    use schema::User;
+    use crate::schema::User;
 
     table! { special_posts { id -> Integer, author_id -> Integer, } }
 
@@ -187,7 +187,7 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
 
 mod derive_identifiable_with_lifetime {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Identifiable)]
     pub struct Post<'a> {

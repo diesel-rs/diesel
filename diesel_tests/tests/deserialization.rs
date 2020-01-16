@@ -1,5 +1,5 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 use std::borrow::Cow;
 
 #[derive(Queryable, PartialEq, Debug)]
@@ -10,7 +10,7 @@ struct CowUser<'a> {
 
 #[test]
 fn generated_queryable_allows_lifetimes() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
 
     let expected_user = CowUser {

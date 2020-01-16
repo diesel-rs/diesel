@@ -1,9 +1,9 @@
+use crate::schema::*;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn test_updating_single_column() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     update(users)
@@ -18,7 +18,7 @@ fn test_updating_single_column() {
 
 #[test]
 fn test_updating_single_column_of_single_row() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -35,7 +35,7 @@ fn test_updating_single_column_of_single_row() {
 
 #[test]
 fn test_updating_nullable_column() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -66,7 +66,7 @@ fn test_updating_nullable_column() {
 
 #[test]
 fn test_updating_multiple_columns() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -84,7 +84,7 @@ fn test_updating_multiple_columns() {
 #[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn update_returning_struct() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -99,7 +99,7 @@ fn update_returning_struct() {
 #[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn update_with_custom_returning_clause() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -114,7 +114,7 @@ fn update_with_custom_returning_clause() {
 
 #[test]
 fn update_with_struct_as_changes() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -132,7 +132,7 @@ fn update_with_struct_as_changes() {
 
 #[test]
 fn save_on_struct_with_primary_key_changes_that_struct() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection_with_sean_and_tess_in_users_table();
     let sean = find_user_by_name("Sean", &connection);
@@ -268,10 +268,10 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
 #[test]
 #[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target() {
+    use crate::schema::users::dsl::*;
     use diesel::dsl::sql;
     use diesel::pg::upsert::*;
     use diesel::sql_types::Text;
-    use schema::users::dsl::*;
 
     let connection = connection();
     // This index needs to happen before the insert or we'll get a deadlock
