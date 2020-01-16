@@ -30,6 +30,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Removed
 
 * All previously deprecated items have been removed.
+* Support for uuid version < 0.7.0 has been removed
 
 ### Changed
 
@@ -54,6 +55,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   somewhere you need to change it to `mysql::MysqlValue` or `pg::PgValue`.
   For the postgres backend additionally type information where added to the `RawValue`
   type. This allows to dynamically deserialize `RawValues` in container types.
+* The uuidv07 feature was renamed to uuid, due to the removal of support for older uuid versions
 
 ### Fixed
 

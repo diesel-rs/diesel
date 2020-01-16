@@ -1,11 +1,9 @@
-extern crate uuid;
-
 use std::io::prelude::*;
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::Uuid;
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::Uuid;
 
 #[derive(FromSqlRow, AsExpression)]
 #[diesel(foreign_derive)]
@@ -14,9 +12,9 @@ use sql_types::Uuid;
 struct UuidProxy(uuid::Uuid);
 
 impl FromSql<Uuid, Pg> for uuid::Uuid {
-    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
-        uuid::Uuid::from_bytes(value.as_bytes()).map_err(Into::into)
+    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        let value = not_none!(bytes);
+        uuid::Uuid::from_slice(value.as_bytes()).map_err(Into::into)
     }
 }
 
@@ -47,7 +45,10 @@ fn some_uuid_from_sql() {
 #[test]
 fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(Some(PgValue::for_test(b"boom")));
-    assert_eq!(uuid.unwrap_err().description(), "UUID parse error");
+    assert_eq!(
+        uuid.unwrap_err().to_string(),
+        "invalid bytes length: expected 16, found 4"
+    );
 }
 
 #[test]
