@@ -233,7 +233,7 @@ fn bad_address_from_sql() {
             let address: Result<IpNetwork, _> =
                 FromSql::<$ty, Pg>::from_sql(Some(PgValue::for_test(&[7, PGSQL_AF_INET, 0])));
             assert_eq!(
-                address.unwrap_err().description(),
+                address.unwrap_err().to_string(),
                 "invalid network address format. input is too short."
             );
         };
@@ -249,7 +249,7 @@ fn no_address_from_sql() {
         ($ty:ty) => {
             let address: Result<IpNetwork, _> = FromSql::<$ty, Pg>::from_sql(None);
             assert_eq!(
-                address.unwrap_err().description(),
+                address.unwrap_err().to_string(),
                 "Unexpected null for non-null column"
             );
         };

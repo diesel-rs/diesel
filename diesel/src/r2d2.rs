@@ -66,14 +66,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::ConnectionError(ref e) => e.description(),
-            Error::QueryError(ref e) => e.description(),
-        }
-    }
-}
+impl ::std::error::Error for Error {}
 
 /// A trait indicating a connection could be used inside a r2d2 pool
 pub trait R2D2Connection: Connection {

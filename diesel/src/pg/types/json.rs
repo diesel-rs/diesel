@@ -76,14 +76,14 @@ fn some_json_from_sql() {
 fn bad_json_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Json, Pg>::from_sql(Some(PgValue::for_test(b"boom")));
-    assert_eq!(uuid.unwrap_err().description(), "JSON error");
+    assert_eq!(uuid.unwrap_err().to_string(), "JSON error");
 }
 
 #[test]
 fn no_json_from_sql() {
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Json, Pg>::from_sql(None);
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unexpected null for non-null column"
     );
 }
@@ -108,7 +108,7 @@ fn some_jsonb_from_sql() {
 fn bad_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x01boom")));
-    assert_eq!(uuid.unwrap_err().description(), "JSON error");
+    assert_eq!(uuid.unwrap_err().to_string(), "JSON error");
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn bad_jsonb_version_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x02true")));
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unsupported JSONB encoding version"
     );
 }
@@ -125,7 +125,7 @@ fn bad_jsonb_version_from_sql() {
 fn no_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(None);
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unexpected null for non-null column"
     );
 }

@@ -42,15 +42,11 @@ struct InvalidNumericSign(u16);
 
 impl ::std::fmt::Display for InvalidNumericSign {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "InvalidNumericSign({0:x})", self.0)
+        f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000")
     }
 }
 
-impl Error for InvalidNumericSign {
-    fn description(&self) -> &str {
-        "sign for numeric field was not one of 0, 0x4000, 0xC000"
-    }
-}
+impl Error for InvalidNumericSign {}
 
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
