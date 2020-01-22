@@ -95,7 +95,16 @@ where
             row.advance(fields_needed);
             Ok(None)
         } else {
-            T::build_from_row(row).map(Some)
+            match T::build_from_row(row) {
+                Ok(v) => Ok(Some(v)),
+                Err(e) => {
+                    if e.is::<UnexpectedNullError>() {
+                        Ok(None)
+                    } else {
+                        Err(e)
+                    }
+                }
+            }
         }
     }
 }
