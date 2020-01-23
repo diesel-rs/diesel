@@ -59,8 +59,8 @@ where
     }
 }
 
-impl<DB> Into<BoxedWhereClause<'static, DB>> for NoWhereClause {
-    fn into(self) -> BoxedWhereClause<'static, DB> {
+impl<'a, DB> Into<BoxedWhereClause<'a, DB>> for NoWhereClause {
+    fn into(self) -> BoxedWhereClause<'a, DB> {
         BoxedWhereClause::None
     }
 }
