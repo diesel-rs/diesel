@@ -267,36 +267,23 @@ impl From<NulError> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::InvalidCString(ref nul_err) => nul_err.fmt(f),
+            Error::InvalidCString(ref nul_err) => write!(f, "{}", nul_err),
             Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
-            Error::NotFound => f.write_str("NotFound"),
+            Error::NotFound => f.write_str("Record not found"),
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
-            Error::RollbackTransaction => write!(f, "{}", self.description()),
-            Error::AlreadyInTransaction => write!(f, "{}", self.description()),
+            Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
+            Error::AlreadyInTransaction => write!(
+                f,
+                "Cannot perform this operation while a transaction is open",
+            ),
             Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidCString(ref nul_err) => nul_err.description(),
-            Error::DatabaseError(_, ref e) => e.message(),
-            Error::NotFound => "Record not found",
-            Error::QueryBuilderError(ref e) => e.description(),
-            Error::DeserializationError(ref e) => e.description(),
-            Error::SerializationError(ref e) => e.description(),
-            Error::RollbackTransaction => "The current transaction was aborted",
-            Error::AlreadyInTransaction => {
-                "Cannot perform this operation while a transaction is open"
-            }
-            Error::__Nonexhaustive => unreachable!(),
-        }
-    }
-
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Error::InvalidCString(ref e) => Some(e),
@@ -321,16 +308,6 @@ impl Display for ConnectionError {
 }
 
 impl StdError for ConnectionError {
-    fn description(&self) -> &str {
-        match *self {
-            ConnectionError::InvalidCString(ref nul_err) => nul_err.description(),
-            ConnectionError::BadConnection(ref s) => s,
-            ConnectionError::InvalidConnectionUrl(ref s) => s,
-            ConnectionError::CouldntSetupConfiguration(ref e) => e.description(),
-            ConnectionError::__Nonexhaustive => unreachable!(),
-        }
-    }
-
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ConnectionError::InvalidCString(ref e) => Some(e),
@@ -372,12 +349,8 @@ pub struct UnexpectedNullError;
 
 impl fmt::Display for UnexpectedNullError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "Unexpected null for non-null column")
     }
 }
 
-impl StdError for UnexpectedNullError {
-    fn description(&self) -> &str {
-        "Unexpected null for non-null column"
-    }
-}
+impl StdError for UnexpectedNullError {}

@@ -55,7 +55,7 @@ fn bad_uuid_from_sql() {
 fn no_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(None);
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unexpected null for non-null column"
     );
 }

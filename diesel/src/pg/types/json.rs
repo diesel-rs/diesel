@@ -24,7 +24,7 @@ mod foreign_derives {
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
     fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);
-        serde_json::from_slice(value.as_bytes()).map_err(Into::into)
+        serde_json::from_slice(value.as_bytes()).map_err(|_| "Invalid Json".into())
     }
 }
 
@@ -43,7 +43,7 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
         if bytes[0] != 1 {
             return Err("Unsupported JSONB encoding version".into());
         }
-        serde_json::from_slice(&bytes[1..]).map_err(Into::into)
+        serde_json::from_slice(&bytes[1..]).map_err(|_| "Invalid Json".into())
     }
 }
 
@@ -76,14 +76,14 @@ fn some_json_from_sql() {
 fn bad_json_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Json, Pg>::from_sql(Some(PgValue::for_test(b"boom")));
-    assert_eq!(uuid.unwrap_err().description(), "JSON error");
+    assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
 }
 
 #[test]
 fn no_json_from_sql() {
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Json, Pg>::from_sql(None);
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unexpected null for non-null column"
     );
 }
@@ -108,7 +108,7 @@ fn some_jsonb_from_sql() {
 fn bad_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x01boom")));
-    assert_eq!(uuid.unwrap_err().description(), "JSON error");
+    assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn bad_jsonb_version_from_sql() {
     let uuid: Result<serde_json::Value, _> =
         FromSql::<sql_types::Jsonb, Pg>::from_sql(Some(PgValue::for_test(b"\x02true")));
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unsupported JSONB encoding version"
     );
 }
@@ -125,7 +125,7 @@ fn bad_jsonb_version_from_sql() {
 fn no_jsonb_from_sql() {
     let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Jsonb, Pg>::from_sql(None);
     assert_eq!(
-        uuid.unwrap_err().description(),
+        uuid.unwrap_err().to_string(),
         "Unexpected null for non-null column"
     );
 }
