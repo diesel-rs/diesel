@@ -13,7 +13,6 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 use crate::sql_types::ops::*;
 
-
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
