@@ -10,6 +10,7 @@ use std::io::Write;
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::ops::*;
 use crate::sql_types::*;
 
 impl ToSql<TinyInt, Mysql> for i8 {
@@ -29,6 +30,38 @@ impl FromSql<TinyInt, Mysql> for i8 {
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
 pub struct Unsigned<ST>(ST);
+
+impl<T> Add for Unsigned<T>
+where
+    T: Add,
+{
+    type Rhs = Unsigned<T::Rhs>;
+    type Output = Unsigned<T::Output>;
+}
+
+impl<T> Sub for Unsigned<T>
+where
+    T: Sub,
+{
+    type Rhs = Unsigned<T::Rhs>;
+    type Output = Unsigned<T::Output>;
+}
+
+impl<T> Mul for Unsigned<T>
+where
+    T: Mul,
+{
+    type Rhs = Unsigned<T::Rhs>;
+    type Output = Unsigned<T::Output>;
+}
+
+impl<T> Div for Unsigned<T>
+where
+    T: Div,
+{
+    type Rhs = Unsigned<T::Rhs>;
+    type Output = Unsigned<T::Output>;
+}
 
 impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {

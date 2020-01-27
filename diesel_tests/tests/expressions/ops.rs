@@ -199,3 +199,89 @@ fn precedence_with_parens_is_maintained() {
     let x = select((2.into_sql::<Integer>() + 3) * 4).get_result::<i32>(&connection());
     assert_eq!(Ok(20), x);
 }
+
+#[test]
+#[cfg(feature = "mysql")]
+fn test_adding_unsigned() {
+    use crate::schema::unsigned_table::dsl::*;
+    let connection = connection();
+    connection
+        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .unwrap();
+
+    let expected_data = vec![2, 3];
+    let data = unsigned_table.select(value + 1).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![2, 4];
+    let data = unsigned_table.select(value + value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn test_subtracting_unsigned() {
+    use crate::schema::unsigned_table::dsl::*;
+    let connection = connection();
+    connection
+        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .unwrap();
+
+    let expected_data = vec![0, 1];
+    let data = unsigned_table.select(value - 1).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![0, 0];
+    let data = unsigned_table.select(value - value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn test_multiplying_unsigned() {
+    use crate::schema::unsigned_table::dsl::*;
+    let connection = connection();
+    connection
+        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .unwrap();
+
+    let expected_data = vec![1, 2];
+    let data = unsigned_table.select(value * 1).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![1, 4];
+    let data = unsigned_table.select(value * value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn test_dividing_unsigned() {
+    use crate::schema::unsigned_table::dsl::*;
+    let connection = connection();
+    connection
+        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .unwrap();
+
+    let expected_data = vec![1, 2];
+    let data = unsigned_table.select(value / 1).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+
+    let expected_data = vec![1, 1];
+    let data = unsigned_table.select(value / value).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn test_multiple_unsigned() {
+    use crate::schema::unsigned_table::dsl::*;
+    let connection = connection();
+    connection
+        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .unwrap();
+
+    let expected_data = vec![1, 1];
+    let data = unsigned_table.select(value / id).load(&connection);
+    assert_eq!(Ok(expected_data), data);
+}
