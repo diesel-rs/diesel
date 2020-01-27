@@ -1,1 +1,0 @@
-DROP TABLE unsigned_table;
