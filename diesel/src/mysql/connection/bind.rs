@@ -12,22 +12,55 @@ pub struct Binds {
 }
 
 impl Binds {
-    pub fn from_input_data<Iter>(input: Iter) -> Self
+    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
-        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (Option<MysqlType>, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
-            .map(|(metadata, bytes)| BindData::for_input(metadata, bytes))
-            .collect();
+            .map(|(metadata, bytes)| {
+                if let Some(metadata) = metadata {
+                    Ok(BindData::for_input(metadata, bytes))
+                } else {
+                    Err("Unknown bind type.")
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| crate::result::Error::QueryBuilderError(e.into()))?;
 
-        Binds { data }
+        Ok(Binds { data })
     }
 
-    pub fn from_output_types(types: Vec<MysqlType>) -> Self {
-        let data = types
-            .into_iter()
-            .map(|metadata| metadata.into())
+    pub fn from_output_types(
+        types: Vec<Option<MysqlType>>,
+        fields: Option<&[ffi::MYSQL_FIELD]>,
+    ) -> Self {
+        let mut field_iter = fields.map(|f| f.iter());
+        let mut types_iter = types.into_iter();
+
+        let data = std::iter::from_fn(||{
+            // Depending on the input data we want different things here
+            // * Case 1: fields is none, then we want to return as many type data as are in types
+            // * Case 2: fields contains a list of binds, then we want to return as many type data
+            // as in fields
+            // For both cases the missing values are set to none
+            let next_type = types_iter.next();
+            if let Some(field_iter) = field_iter.as_mut() {
+                let next_field_type = field_iter.next()?;
+                Some((next_type.and_then(|i| i), Some(next_field_type)))
+            } else {
+                next_type.map(|t| (t, None))
+            }
+        })
+            .map(|(metadata, field)| {
+                if let Some(metadata) = metadata {
+                    metadata.into()
+                } else if let Some(field) = field {
+                    (field.type_, Flags::from(field.flags))
+                } else {
+                    unreachable!("We've checked that we load field metadata for the case there is any none in types")
+                }
+            })
             .map(BindData::for_output)
             .collect();
 
@@ -37,16 +70,7 @@ impl Binds {
     pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
         let data = fields
             .iter()
-            .map(|field| {
-                (
-                    field.type_,
-                    Flags::from_bits(field.flags).expect(
-                        "We encountered a unknown type flag while parsing \
-                         Mysql's type information. If you see this error message \
-                         please open an issue at diesels github page.",
-                    ),
-                )
-            })
+            .map(|field| (field.type_, Flags::from(field.flags)))
             .map(BindData::for_output)
             .collect();
 
@@ -95,6 +119,10 @@ impl Binds {
             MysqlValue::new(bytes, tpe)
         })
     }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
 }
 
 bitflags::bitflags! {
@@ -121,9 +149,15 @@ bitflags::bitflags! {
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
     }
+}
 
-    pub fn len(&self) -> usize {
-        self.data.len()
+impl From<u32> for Flags {
+    fn from(flags: u32) -> Self {
+        Flags::from_bits(flags).expect(
+            "We encountered a unknown type flag while parsing \
+             Mysql's type information. If you see this error message \
+             please open an issue at diesels github page.",
+        )
     }
 }
 

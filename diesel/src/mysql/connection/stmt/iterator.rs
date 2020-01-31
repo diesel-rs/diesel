@@ -14,8 +14,13 @@ pub struct StatementIterator<'a> {
 #[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
-        let mut output_binds = Binds::from_output_types(types);
+    pub fn new(stmt: &'a mut Statement, types: Vec<Option<MysqlType>>) -> QueryResult<Self> {
+        let mut output_binds = if types.iter().any(Option::is_none) {
+            let metadata = stmt.metadata()?;
+            Binds::from_output_types(types, Some(metadata.fields()))
+        } else {
+            Binds::from_output_types(types, None)
+        };
 
         stmt.execute_statement(&mut output_binds)?;
 

@@ -39,9 +39,9 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (Option<MysqlType>, Option<Vec<u8>>)>,
     {
-        let input_binds = Binds::from_input_data(binds);
+        let input_binds = Binds::from_input_data(binds)?;
         self.input_bind(input_binds)
     }
 
@@ -76,7 +76,10 @@ impl Statement {
     /// This function should be called instead of `execute` for queries which
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
-    pub unsafe fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
+    pub unsafe fn results(
+        &mut self,
+        types: Vec<Option<MysqlType>>,
+    ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
 

@@ -155,26 +155,26 @@ impl FromSql<Bool, Mysql> for bool {
 }
 
 impl HasSqlType<Unsigned<TinyInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
-        MysqlType::UnsignedTiny
+    fn metadata(_lookup: &()) -> Option<MysqlType> {
+        Some(MysqlType::UnsignedTiny)
     }
 }
 
 impl HasSqlType<Unsigned<SmallInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
-        MysqlType::UnsignedShort
+    fn metadata(_lookup: &()) -> Option<MysqlType> {
+        Some(MysqlType::UnsignedShort)
     }
 }
 
 impl HasSqlType<Unsigned<Integer>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
-        MysqlType::UnsignedLong
+    fn metadata(_lookup: &()) -> Option<MysqlType> {
+        Some(MysqlType::UnsignedLong)
     }
 }
 
 impl HasSqlType<Unsigned<BigInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
-        MysqlType::UnsignedLongLong
+    fn metadata(_lookup: &()) -> Option<MysqlType> {
+        Some(MysqlType::UnsignedLongLong)
     }
 }
 
