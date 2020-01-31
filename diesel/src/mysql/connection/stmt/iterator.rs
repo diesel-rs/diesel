@@ -77,11 +77,7 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
             .stmt
             .metadata()
             .expect("Failed to get result metadata from the mysql backend");
-        let field = if self.col_idx == 0 {
-            metadata.fields()[0]
-        } else {
-            metadata.fields()[self.col_idx - 1]
-        };
+        let field = metadata.fields()[self.col_idx];
         unsafe {
             Some(CStr::from_ptr(field.name).to_str().expect(
                 "Diesel assumes that your mysql database uses the \
