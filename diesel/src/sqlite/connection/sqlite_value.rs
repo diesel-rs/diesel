@@ -8,6 +8,10 @@ use std::{slice, str};
 use crate::row::*;
 use crate::sqlite::{Sqlite, SqliteType};
 
+/// Raw sqlite value as received from the database
+///
+/// Use existing `FromSql` implementations to convert this into
+/// rust values:
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct SqliteValue {
     value: ffi::sqlite3_value,
@@ -30,7 +34,7 @@ impl SqliteValue {
         })
     }
 
-    pub fn read_text(&self) -> &str {
+    pub(crate) fn read_text(&self) -> &str {
         unsafe {
             let ptr = ffi::sqlite3_value_text(self.value());
             let len = ffi::sqlite3_value_bytes(self.value());
@@ -41,7 +45,7 @@ impl SqliteValue {
         }
     }
 
-    pub fn read_blob(&self) -> &[u8] {
+    pub(crate) fn read_blob(&self) -> &[u8] {
         unsafe {
             let ptr = ffi::sqlite3_value_blob(self.value());
             let len = ffi::sqlite3_value_bytes(self.value());
@@ -49,22 +53,23 @@ impl SqliteValue {
         }
     }
 
-    pub fn read_integer(&self) -> i32 {
+    pub(crate) fn read_integer(&self) -> i32 {
         unsafe { ffi::sqlite3_value_int(self.value()) as i32 }
     }
 
-    pub fn read_long(&self) -> i64 {
+    pub(crate) fn read_long(&self) -> i64 {
         unsafe { ffi::sqlite3_value_int64(self.value()) as i64 }
     }
 
-    pub fn read_double(&self) -> f64 {
+    pub(crate) fn read_double(&self) -> f64 {
         unsafe { ffi::sqlite3_value_double(self.value()) as f64 }
     }
 
-    pub fn is_null(&self) -> bool {
+    pub(crate) fn is_null(&self) -> bool {
         self.value_type().is_none()
     }
 
+    /// Get the type of the value as returned by sqlite
     pub fn value_type(&self) -> Option<SqliteType> {
         let tpe = unsafe { ffi::sqlite3_value_type(self.value()) };
         match tpe {
@@ -119,11 +124,7 @@ impl Row<Sqlite> for SqliteRow {
 
     fn column_name(&self) -> Option<&str> {
         unsafe {
-            let ptr = if self.next_col_index == 0 {
-                ffi::sqlite3_column_name(self.stmt.as_ptr(), 0)
-            } else {
-                ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index - 1)
-            };
+            let ptr = ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index);
             Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
                 "The Sqlite documentation states that this is UTF8. \
                  If you see this error message something has gone \

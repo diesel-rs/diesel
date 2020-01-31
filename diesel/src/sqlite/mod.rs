@@ -13,6 +13,7 @@ pub mod query_builder;
 pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SqliteConnection;
 pub use self::query_builder::SqliteQueryBuilder;
+pub use self::connection::SqliteValue;
 
 /// Trait for the implementation of a SQLite aggregate function
 ///
