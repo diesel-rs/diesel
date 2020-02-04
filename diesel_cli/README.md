@@ -67,7 +67,7 @@ DATABASE_URL must be set in order to run this command, and there are several
 ways that you can set it:
 
 * Set it as an environment variable manually
-* Set it as an environment variable using [rust-dotenv][rust-dotenv]
+* Set it as an environment variable using [dotenv](https://github.com/dotenv-rs/dotenv#examples)
 * Pass it directly by adding the `--database-url` flag
 
 As an alternative to running migrations with the CLI, you can call
