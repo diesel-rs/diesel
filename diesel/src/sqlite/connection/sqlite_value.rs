@@ -123,19 +123,11 @@ impl Row<Sqlite> for SqliteRow {
     }
 
     fn column_name(&self) -> Option<&str> {
-        unsafe {
-            let ptr = ffi::sqlite3_column_name(self.stmt.as_ptr(), self.next_col_index);
-            Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
-                "The Sqlite documentation states that this is UTF8. \
-                 If you see this error message something has gone \
-                 horribliy wrong. Please open an issue at the \
-                 diesel repository.",
-            ))
-        }
+        column_name(self.stmt, self.next_col_index)
     }
 
     fn column_count(&self) -> usize {
-        unsafe { ffi::sqlite3_column_count(self.stmt.as_ptr()) as usize }
+        column_count(self.stmt) as usize
     }
 }
 
@@ -155,4 +147,30 @@ impl<'a> NamedRow<Sqlite> for SqliteNamedRow<'a> {
             SqliteValue::new(ptr)
         }
     }
+
+    fn field_names(&self) -> Vec<&str> {
+        (0..column_count(self.stmt))
+            .filter_map(|c| column_name(self.stmt, c))
+            .collect()
+    }
+}
+
+fn column_name<'a>(stmt: NonNull<ffi::sqlite3_stmt>, field_number: i32) -> Option<&'a str> {
+    unsafe {
+        let ptr = ffi::sqlite3_column_name(stmt.as_ptr(), field_number);
+        if ptr.is_null() {
+            None
+        } else {
+            Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
+                "The Sqlite documentation states that this is UTF8. \
+                 If you see this error message something has gone \
+                 horribliy wrong. Please open an issue at the \
+                 diesel repository.",
+            ))
+        }
+    }
+}
+
+fn column_count(stmt: NonNull<ffi::sqlite3_stmt>) -> i32 {
+    unsafe { ffi::sqlite3_column_count(stmt.as_ptr()) }
 }
