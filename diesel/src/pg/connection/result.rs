@@ -113,14 +113,14 @@ impl PgResult {
         }
     }
 
-    pub fn column_name(&self, col_idx: usize) -> &str {
+    pub fn column_name(&self, col_idx: usize) -> Option<&str> {
         unsafe {
-            CStr::from_ptr(PQfname(
-                self.internal_result.as_ptr(),
-                col_idx as libc::c_int,
-            ))
-            .to_str()
-            .expect("Utf8")
+            let ptr = PQfname(self.internal_result.as_ptr(), col_idx as libc::c_int);
+            if ptr.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(ptr).to_str().expect("Utf8"))
+            }
         }
     }
 

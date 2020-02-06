@@ -37,7 +37,7 @@ impl<'a> Row<Pg> for PgRow<'a> {
     }
 
     fn column_name(&self) -> Option<&str> {
-        Some(self.db_result.column_name(self.col_idx))
+        self.db_result.column_name(self.col_idx)
     }
 }
 
@@ -60,5 +60,11 @@ impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
 
     fn index_of(&self, column_name: &str) -> Option<usize> {
         self.cursor.index_of_column(column_name)
+    }
+
+    fn field_names(&self) -> Vec<&str> {
+        (0..self.cursor.db_result.column_count())
+            .filter_map(|i| self.cursor.db_result.column_name(i))
+            .collect()
     }
 }
