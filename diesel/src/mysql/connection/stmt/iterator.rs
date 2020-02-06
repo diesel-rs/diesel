@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ffi::CStr;
 
 use super::{Binds, Statement, StatementMetadata};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
@@ -9,22 +8,27 @@ use crate::row::*;
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
     output_binds: Binds,
+    metadata: StatementMetadata,
 }
 
 #[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: &'a mut Statement, types: Vec<Option<MysqlType>>) -> QueryResult<Self> {
+        let metadata = stmt.metadata()?;
         let mut output_binds = if types.iter().any(Option::is_none) {
-            let metadata = stmt.metadata()?;
-            Binds::from_output_types(types, Some(metadata.fields()))
+            Binds::from_output_types(types, Some(&metadata))
         } else {
             Binds::from_output_types(types, None)
         };
 
         stmt.execute_statement(&mut output_binds)?;
 
-        Ok(StatementIterator { stmt, output_binds })
+        Ok(StatementIterator {
+            stmt,
+            output_binds,
+            metadata,
+        })
     }
 
     pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>>
@@ -43,7 +47,7 @@ impl<'a> StatementIterator<'a> {
             Ok(Some(())) => Some(Ok(MysqlRow {
                 col_idx: 0,
                 binds: &mut self.output_binds,
-                stmt: &self.stmt,
+                metadata: &self.metadata,
             })),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -54,7 +58,7 @@ impl<'a> StatementIterator<'a> {
 pub struct MysqlRow<'a> {
     col_idx: usize,
     binds: &'a Binds,
-    stmt: &'a Statement,
+    metadata: &'a StatementMetadata,
 }
 
 impl<'a> Row<Mysql> for MysqlRow<'a> {
@@ -73,18 +77,7 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
     }
 
     fn column_name(&self) -> Option<&str> {
-        let metadata = self
-            .stmt
-            .metadata()
-            .expect("Failed to get result metadata from the mysql backend");
-        let field = metadata.fields()[self.col_idx];
-        unsafe {
-            Some(CStr::from_ptr(field.name).to_str().expect(
-                "Diesel assumes that your mysql database uses the \
-                 utf8mb4 encoding. That's not the case if you hit \
-                 this error message.",
-            ))
-        }
+        self.metadata.fields()[self.col_idx].field_name()
     }
 }
 
@@ -99,7 +92,7 @@ impl<'a> NamedStatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: &'a mut Statement) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
-        let mut output_binds = Binds::from_result_metadata(metadata.fields());
+        let mut output_binds = Binds::from_result_metadata(&metadata);
 
         stmt.execute_statement(&mut output_binds)?;
 
@@ -145,5 +138,9 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
 
     fn get_raw_value(&self, idx: usize) -> Option<MysqlValue<'_>> {
         self.binds.field_data(idx)
+    }
+
+    fn field_names(&self) -> Vec<&str> {
+        todo!()
     }
 }

@@ -8,10 +8,11 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 
 use self::iterator::*;
-use self::metadata::*;
 use super::bind::Binds;
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, QueryResult};
+
+pub use self::metadata::StatementMetadata;
 
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
@@ -21,7 +22,7 @@ pub struct Statement {
 impl Statement {
     pub(crate) fn new(stmt: NonNull<ffi::MYSQL_STMT>) -> Self {
         Statement {
-            stmt: stmt,
+            stmt,
             input_binds: None,
         }
     }
@@ -121,9 +122,9 @@ impl Statement {
     pub(super) fn metadata(&self) -> QueryResult<StatementMetadata> {
         use crate::result::Error::DeserializationError;
 
-        let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()).as_mut() };
+        let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()) };
         self.did_an_error_occur()?;
-        result_ptr
+        NonNull::new(result_ptr)
             .map(StatementMetadata::new)
             .ok_or_else(|| DeserializationError("No metadata exists".into()))
     }

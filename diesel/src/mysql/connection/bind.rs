@@ -3,6 +3,7 @@ use std::mem;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
+use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::MYSQL_TIME;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
@@ -33,44 +34,32 @@ impl Binds {
 
     pub fn from_output_types(
         types: Vec<Option<MysqlType>>,
-        fields: Option<&[ffi::MYSQL_FIELD]>,
+        metadata: Option<&StatementMetadata>,
     ) -> Self {
-        let mut field_iter = fields.map(|f| f.iter());
-        let mut types_iter = types.into_iter();
-
-        let data = std::iter::from_fn(||{
-            // Depending on the input data we want different things here
-            // * Case 1: fields is none, then we want to return as many type data as are in types
-            // * Case 2: fields contains a list of binds, then we want to return as many type data
-            // as in fields
-            // For both cases the missing values are set to none
-            let next_type = types_iter.next();
-            if let Some(field_iter) = field_iter.as_mut() {
-                let next_field_type = field_iter.next()?;
-                Some((next_type.and_then(|i| i), Some(next_field_type)))
-            } else {
-                next_type.map(|t| (t, None))
-            }
-        })
-            .map(|(metadata, field)| {
-                if let Some(metadata) = metadata {
-                    metadata.into()
-                } else if let Some(field) = field {
-                    (field.type_, Flags::from(field.flags))
-                } else {
-                    unreachable!("We've checked that we load field metadata for the case there is any none in types")
-                }
-            })
-            .map(BindData::for_output)
-            .collect();
+        let data = if let Some(metadata) = metadata {
+            metadata
+                .fields()
+                .iter()
+                .map(|f| (f.field_type(), f.flags()))
+                .map(BindData::for_output)
+                .collect()
+        } else {
+            types
+                .into_iter()
+                .map(|metadata| metadata.expect("We checked that before calling from_output_types, otherwise we would have passed metadata"))
+                .map(|metadata| metadata.into())
+                .map(BindData::for_output)
+                .collect()
+        };
 
         Binds { data }
     }
 
-    pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
-        let data = fields
+    pub fn from_result_metadata(metadata: &StatementMetadata) -> Self {
+        let data = metadata
+            .fields()
             .iter()
-            .map(|field| (field.type_, Flags::from(field.flags)))
+            .map(|field| (field.field_type(), field.flags()))
             .map(BindData::for_output)
             .collect();
 
@@ -126,7 +115,7 @@ impl Binds {
 }
 
 bitflags::bitflags! {
-    struct Flags: u32 {
+    pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
         const PRI_KEY_FAG = 2;
         const UNIQUE_KEY_FLAG = 4;
@@ -590,11 +579,11 @@ mod tests {
             .unwrap();
 
         let metadata = stmt.metadata().unwrap();
-        let mut output_binds = Binds::from_result_metadata(metadata.fields());
+        let mut output_binds = Binds::from_result_metadata(&metadata);
         stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
-        let results: Vec<(BindData, &ffi::st_mysql_field)> = output_binds
+        let results: Vec<(BindData, &_)> = output_binds
             .data
             .into_iter()
             .zip(metadata.fields())
