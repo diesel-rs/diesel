@@ -119,6 +119,7 @@ impl<'a> NamedStatementIterator<'a> {
             Ok(Some(())) => Some(Ok(NamedMysqlRow {
                 binds: &self.output_binds,
                 column_indices: self.metadata.column_indices(),
+                metadata: &self.metadata,
             })),
             Ok(None) => None,
             Err(e) => Some(Err(e)),
@@ -129,6 +130,7 @@ impl<'a> NamedStatementIterator<'a> {
 pub struct NamedMysqlRow<'a> {
     binds: &'a Binds,
     column_indices: &'a HashMap<&'a str, usize>,
+    metadata: &'a StatementMetadata,
 }
 
 impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
@@ -141,6 +143,11 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
     }
 
     fn field_names(&self) -> Vec<&str> {
-        todo!()
+        self.metadata
+            .fields()
+            .iter()
+            .filter_map(|f| f.field_name())
+            .collect()
     }
 }
+
