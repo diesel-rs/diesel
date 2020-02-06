@@ -72,4 +72,7 @@ pub trait NamedRow<DB: Backend> {
     fn index_of(&self, column_name: &str) -> Option<usize>;
     #[doc(hidden)]
     fn get_raw_value(&self, index: usize) -> Option<backend::RawValue<DB>>;
+
+    /// Get a list of all field names in the current row
+    fn field_names(&self) -> Vec<&str>;
 }
