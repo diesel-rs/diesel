@@ -14,18 +14,7 @@ use crate::sqlite::Sqlite;
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
 /// inserting more than one record.
 ///
-/// ### Deriving
-///
-/// This trait can be automatically derived by adding  `#[derive(Insertable)]`
-/// to your struct. Structs which derive this trait must also be annotated
-/// with `#[table_name = "some_table_name"]`. If the field name of your
-/// struct differs from the name of the column, you can annotate the field
-/// with `#[column_name = "some_column_name"]`.
-///
-/// Your struct can also contain fields which implement `Insertable`. This is
-/// useful when you want to have one field map to more than one column (for
-/// example, an enum that maps to a label and a value column). Add
-/// `#[diesel(embed)]` to any such fields.
+/// This trait can be [derived](derive.Insertable.html)
 pub trait Insertable<T> {
     /// The `VALUES` clause to insert these records
     ///
@@ -84,6 +73,9 @@ pub trait Insertable<T> {
         crate::insert_into(table).values(self)
     }
 }
+
+#[doc(inline)]
+pub use diesel_derives::Insertable;
 
 pub trait CanInsertInSingleQuery<DB: Backend> {
     /// How many rows will this query insert?

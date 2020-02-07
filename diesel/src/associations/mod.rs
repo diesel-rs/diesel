@@ -355,6 +355,9 @@ use crate::query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 
+#[doc(inline)]
+pub use diesel_derives::Associations;
+
 /// This trait indicates that a struct is associated with a single database table.
 ///
 /// This trait is implemented by structs which implement `Identifiable`,

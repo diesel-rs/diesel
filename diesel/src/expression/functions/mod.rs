@@ -1,4 +1,5 @@
-#[macro_export]
+//! Helper macros to define custom sql functions
+
 /// Declare a sql function for use in your code.
 ///
 /// Diesel only provides support for a very small number of SQL functions.
@@ -159,11 +160,7 @@
 /// #     Ok(())
 /// # }
 /// ```
-macro_rules! sql_function {
-    ($($args:tt)*) => {
-        sql_function_proc! { $($args)* }
-    }
-}
+pub use diesel_derives::sql_function_proc as sql_function;
 
 #[macro_export]
 #[doc(hidden)]
@@ -242,7 +239,11 @@ macro_rules! no_arg_sql_function {
     };
 }
 
+#[doc(hidden)]
 pub mod aggregate_folding;
+#[doc(hidden)]
 pub mod aggregate_ordering;
+#[doc(hidden)]
 pub mod date_and_time;
+#[doc(hidden)]
 pub mod helper_types;

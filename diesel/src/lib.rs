@@ -291,28 +291,27 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    #[doc(inline)]
-    pub use diesel_derives::*;
 
-    pub use crate::associations::{GroupedBy, Identifiable};
+    pub use crate::associations::{Associations, GroupedBy, Identifiable};
     pub use crate::connection::Connection;
-    #[deprecated(
-        since = "1.1.0",
-        note = "Explicitly `use diesel::deserialize::Queryable"
-    )]
+    #[doc(inline)]
     pub use crate::deserialize::Queryable;
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
+
+    #[doc(inline)]
+    pub use crate::expression::functions::sql_function;
+
     pub use crate::expression_methods::*;
     #[doc(inline)]
     pub use crate::insertable::Insertable;
+    #[doc(inline)]
+    pub use crate::macros::prelude::*;
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
-    #[doc(inline)]
-    pub use crate::macros::prelude::*;
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]

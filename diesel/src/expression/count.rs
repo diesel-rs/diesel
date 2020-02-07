@@ -1,3 +1,4 @@
+use super::functions::sql_function;
 use super::Expression;
 use crate::backend::Backend;
 use crate::query_builder::*;

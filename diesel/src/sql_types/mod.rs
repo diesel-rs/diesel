@@ -461,3 +461,8 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 pub trait SingleValue {}
 
 impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
+
+#[doc(inline)]
+pub use diesel_derives::DieselNumericOps;
+#[doc(inline)]
+pub use diesel_derives::SqlType;

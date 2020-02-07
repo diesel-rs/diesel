@@ -15,7 +15,8 @@ use std::any::{Any, TypeId};
 ///
 /// ### Deriving
 ///
-/// This trait can be automatically derived by Diesel.
+/// This trait can [be automatically derived](derive.QueryId.html)
+/// by Diesel.
 /// For example, given this struct:
 ///
 /// ```rust
@@ -87,6 +88,9 @@ pub trait QueryId {
         }
     }
 }
+
+#[doc(inline)]
+pub use diesel_derives::QueryId;
 
 impl QueryId for () {
     type QueryId = ();
