@@ -30,8 +30,8 @@ impl<Inner> SqlQuery<Inner> {
 
     /// Bind a value for use with this SQL query. The given query should have
     /// placeholders that vary based on the database type,
-    /// like [SQLite Parameters](https://sqlite.org/lang_expr.html#varparam) syntax,
-    /// the [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html),
+    /// like [SQLite Parameter](https://sqlite.org/lang_expr.html#varparam) syntax,
+    /// [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html),
     /// or [MySQL bind syntax](https://dev.mysql.com/doc/refman/8.0/en/mysql-stmt-bind-param.html).
     ///
     /// # Safety
