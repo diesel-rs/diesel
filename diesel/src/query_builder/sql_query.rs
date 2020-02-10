@@ -28,7 +28,10 @@ impl<Inner> SqlQuery<Inner> {
         SqlQuery { inner, query }
     }
 
-    /// Bind a value for use with this SQL query.
+    /// Bind a value for use with this SQL query. The given query should have
+    /// placeholders that vary based on the database type,
+    /// like [SQLite Parameters](https://sqlite.org/lang_expr.html#varparam) or
+    /// the [PostgreSQL PREPARE syntax](https://www.postgresql.org/docs/current/sql-prepare.html).
     ///
     /// # Safety
     ///
