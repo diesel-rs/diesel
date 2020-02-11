@@ -232,7 +232,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// ## Optional field attributes
 ///
 /// * `#[column_name = "some_table_name"]`, overrides the column the current
-/// field maps to to `some_table_name`. By default the field name is used
+/// field maps to `some_table_name`. By default the field name is used
 /// as column name
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 /// to single database field, but is a struct that implements `Insertable`
