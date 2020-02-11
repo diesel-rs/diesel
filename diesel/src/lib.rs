@@ -295,7 +295,7 @@ pub mod prelude {
     pub use crate::associations::{Associations, GroupedBy, Identifiable};
     pub use crate::connection::Connection;
     #[doc(inline)]
-    pub use crate::deserialize::Queryable;
+    pub use crate::deserialize::{Queryable, QueryableByName};
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
@@ -308,6 +308,8 @@ pub mod prelude {
     pub use crate::insertable::Insertable;
     #[doc(inline)]
     pub use crate::macros::prelude::*;
+    #[doc(inline)]
+    pub use crate::query_builder::AsChangeset;
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};

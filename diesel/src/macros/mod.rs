@@ -21,7 +21,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, $crate::QueryId, Default)]
+        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, Default)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -644,7 +644,7 @@ macro_rules! __diesel_table_impl {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, $crate::QueryId)]
+            #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query

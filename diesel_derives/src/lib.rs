@@ -346,6 +346,19 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// or custom types on sql side. The sql type will be usable for
 /// all backends you specified via the attributes listed below.
 ///
+/// This derive will implement `NotNull`, `HasSqlType` and `SingleValue`.
+/// When using this deriving,
+/// you need to specify how the type is represented on various backends.
+/// You don't need to specify every backend,
+/// only the ones supported by your type.
+///
+/// For PostgreSQL, add `#[postgres(oid = "some_oid", array_oid = "some_oid")]`
+/// or `#[postgres(type_name = "pg_type_name")]` if the OID is not stable.
+/// For MySQL, specify which variant of `MysqlType` should be used
+/// by adding `#[mysql_type = "Variant"]`.
+/// For SQLite, specify which variant of `SqliteType` should be used
+/// by adding `#[sqlite_type = "Variant"]`.
+///
 /// # Attributes
 ///
 /// ## Type attributes

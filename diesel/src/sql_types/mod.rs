@@ -363,31 +363,12 @@ pub use crate::mysql::types::*;
 
 /// Indicates that a SQL type exists for a backend.
 ///
-/// # Deriving
-///
-/// This trait can be automatically derived by `#[derive(SqlType)]`.
-/// This derive will also implement [`NotNull`] and [`SingleValue`].
-/// When deriving this trait,
-/// you need to specify how the type is represented on various backends.
-/// You don't need to specify every backend,
-/// only the ones supported by your type.
-///
-/// For PostgreSQL, add `#[postgres(oid = "some_oid", array_oid = "some_oid")]`
-/// or `#[postgres(type_name = "pg_type_name")]` if the OID is not stable.
-/// For MySQL, specify which variant of [`MysqlType`] should be used
-/// by adding `#[mysql_type = "Variant"]`.
-/// For SQLite, specify which variant of [`SqliteType`] should be used
-/// by adding `#[sqlite_type = "Variant"]`.
-///
-/// [`NotNull`]: trait.NotNull.html
-/// [`SingleValue`]: trait.SingleValue.html
-/// [`MysqlType`]: ../mysql/enum.MysqlType.html
-/// [`SqliteType`]: ../sqlite/enum.SqliteType.html
+/// This trait can be derived using the [`SqlType` derive](derive.SqlType.html)
 ///
 /// # Example
 ///
 /// ```rust
-/// #[derive(diesel::SqlType)]
+/// #[derive(diesel::sql_types::SqlType)]
 /// #[postgres(oid = "23", array_oid = "1007")]
 /// #[sqlite_type = "Integer"]
 /// #[mysql_type = "Long"]

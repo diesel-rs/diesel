@@ -20,7 +20,7 @@ use std::any::{Any, TypeId};
 /// For example, given this struct:
 ///
 /// ```rust
-/// #[derive(diesel::QueryId)]
+/// #[derive(diesel::query_builder::QueryId)]
 /// pub struct And<Left, Right> {
 ///     left: Left,
 ///     right: Right,

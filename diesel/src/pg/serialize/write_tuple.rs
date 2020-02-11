@@ -20,7 +20,7 @@ use crate::serialize::{self, Output};
 /// #     use diesel::prelude::*;
 /// #     use diesel::pg::Pg;
 /// #     use diesel::serialize::{self, ToSql, Output, WriteTuple};
-/// #     use diesel::sql_types::{Integer, Text};
+/// #     use diesel::sql_types::{Integer, Text, SqlType};
 /// #     use std::io::Write;
 /// #
 ///     #[derive(SqlType)]
