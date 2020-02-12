@@ -62,6 +62,8 @@ impl UsesInformationSchema for Mysql {
 
 #[allow(clippy::module_inception)]
 mod information_schema {
+    use diesel::prelude::{allow_tables_to_appear_in_same_query, table};
+
     table! {
         information_schema.tables (table_schema, table_name) {
             table_schema -> VarChar,

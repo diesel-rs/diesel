@@ -8,6 +8,8 @@ use super::information_schema::UsesInformationSchema;
 use super::table_data::TableName;
 
 mod information_schema {
+    use diesel::prelude::{allow_tables_to_appear_in_same_query, table};
+
     table! {
         information_schema.table_constraints (constraint_schema, constraint_name) {
             table_schema -> VarChar,
