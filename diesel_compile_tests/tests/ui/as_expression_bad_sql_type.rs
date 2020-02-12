@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate diesel;
+use diesel::expression::AsExpression;
 
 #[derive(AsExpression)]
 #[sql_type(Foo)]
