@@ -265,11 +265,11 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
 fn run_database_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
-            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
+            let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::setup_database(args, &migrations_dir)?;
         }
         ("reset", Some(args)) => {
-            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
+            let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::reset_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
