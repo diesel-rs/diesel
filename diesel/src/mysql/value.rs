@@ -22,6 +22,7 @@ impl<'a> MysqlValue<'a> {
 
     /// Checks that the type code is valid, and interprets the data as a
     /// `MYSQL_TIME` pointer
+    #[allow(dead_code)]
     pub(crate) fn time_value(&self) -> deserialize::Result<ffi::MYSQL_TIME> {
         match self.tpe.data_type {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
