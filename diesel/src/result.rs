@@ -113,6 +113,12 @@ pub enum DatabaseErrorKind {
     /// to lock the rows.
     ReadOnlyTransaction,
 
+    /// A not null constraint was violated.
+    NotNullViolation,
+
+    /// A check constraint was violated.
+    CheckViolation,
+
     #[doc(hidden)]
     __Unknown, // Match against _ instead, more variants may be added in the future
 }
