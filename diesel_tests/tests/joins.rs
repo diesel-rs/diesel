@@ -301,6 +301,35 @@ fn select_right_side_with_nullable_column_first() {
 }
 
 #[test]
+fn select_left_join_right_side_with_non_null_inside() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    connection
+        .execute(
+            "INSERT INTO posts (user_id, title, body) VALUES
+        (1, 'Hello', 'Content')
+    ",
+        )
+        .unwrap();
+
+    let expected_data = vec![
+        (None, 2),
+        (Some((1, "Hello".to_string(), "Hello".to_string())), 1),
+    ];
+
+    let source = users::table
+        .left_outer_join(posts::table)
+        .select((
+            (users::id, posts::title, posts::title).nullable(),
+            users::id,
+        ))
+        .order_by((users::id.desc(), posts::id.asc()));
+    let actual_data: Vec<_> = source.load(&connection).unwrap();
+
+    assert_eq!(expected_data, actual_data);
+}
+
+#[test]
 fn select_then_join() {
     use crate::schema::users::dsl::*;
     let connection = connection_with_sean_and_tess_in_users_table();
