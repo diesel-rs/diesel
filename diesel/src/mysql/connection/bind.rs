@@ -244,9 +244,13 @@ impl From<ffi::enum_field_types> for MysqlType {
     fn from(tpe: ffi::enum_field_types) -> Self {
         use self::ffi::enum_field_types::*;
 
+        // https://docs.oracle.com/cd/E17952_01/mysql-8.0-en/c-api-data-structures.html
+        // https://dev.mysql.com/doc/dev/mysql-server/8.0.12/binary__log__types_8h.html
+        // https://dev.mysql.com/doc/internals/en/binary-protocol-value.html
+        // https://mariadb.com/kb/en/packet_bindata/
         match tpe {
             MYSQL_TYPE_TINY => MysqlType::Tiny,
-            MYSQL_TYPE_SHORT => MysqlType::Short,
+            MYSQL_TYPE_YEAR | MYSQL_TYPE_SHORT => MysqlType::Short,
             MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG => MysqlType::Long,
             MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
             MYSQL_TYPE_FLOAT => MysqlType::Float,
@@ -255,25 +259,42 @@ impl From<ffi::enum_field_types> for MysqlType {
             MYSQL_TYPE_DATE => MysqlType::Date,
             MYSQL_TYPE_DATETIME => MysqlType::DateTime,
             MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
-            MYSQL_TYPE_STRING => MysqlType::String,
-            MYSQL_TYPE_BLOB => MysqlType::Blob,
-            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
-            MYSQL_TYPE_NULL
-            | MYSQL_TYPE_YEAR
-            | MYSQL_TYPE_NEWDATE
-            | MYSQL_TYPE_VARCHAR
-            | MYSQL_TYPE_BIT
-            | MYSQL_TYPE_TIMESTAMP2
-            | MYSQL_TYPE_DATETIME2
-            | MYSQL_TYPE_TIME2
-            | MYSQL_TYPE_JSON
-            | MYSQL_TYPE_ENUM
-            | MYSQL_TYPE_SET
+            MYSQL_TYPE_VAR_STRING | MYSQL_TYPE_VARCHAR | MYSQL_TYPE_STRING => MysqlType::String,
+            MYSQL_TYPE_BLOB
             | MYSQL_TYPE_TINY_BLOB
             | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_GEOMETRY => unimplemented!(),
+            | MYSQL_TYPE_LONG_BLOB => MysqlType::Blob,
+            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
+            // Null value
+            MYSQL_TYPE_NULL |
+            // bit type
+            // same encoding as string
+            MYSQL_TYPE_BIT |
+            // enum type
+            // same encoding as string
+            MYSQL_TYPE_ENUM |
+            // set type
+            // same encoding as string
+            MYSQL_TYPE_SET |
+            // spatial type
+            // same encoding as string
+            MYSQL_TYPE_GEOMETRY |
+            // json type, only available on newer mysql versions
+            // same encoding as string
+            MYSQL_TYPE_JSON => unimplemented!(
+                "Hit currently unsupported type, those variants should \
+                 probably be variants of MysqlType or at least be mapped \
+                 to one of the existing types"
+            ),
+            MYSQL_TYPE_NEWDATE
+            | MYSQL_TYPE_TIME2
+            | MYSQL_TYPE_DATETIME2
+            | MYSQL_TYPE_TIMESTAMP2 => panic!(
+                "The mysql documentation states that this types are \
+                 only used on server side, so if you see this error \
+                 something has gone wrong. Please open a issue at \
+                 the diesel github repo."
+            ),
         }
     }
 }
